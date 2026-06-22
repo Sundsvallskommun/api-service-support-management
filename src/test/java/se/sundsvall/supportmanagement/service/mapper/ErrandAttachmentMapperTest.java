@@ -62,13 +62,14 @@ class ErrandAttachmentMapperTest {
 
 			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, null);
 
-			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
 			assertThat(result.getAttachmentData().getFile()).isSameAs(blobMock);
 			assertThat(result.getMimeType()).isEqualTo("text/plain");
 			assertThat(result.getChannel()).isEqualTo("WEB_UI");
+			assertThat(result.getHash()).isNull();
 			assertThat(result.getErrandEntity()).isSameAs(errandEntity);
 		}
 	}
@@ -105,7 +106,7 @@ class ErrandAttachmentMapperTest {
 
 			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, FILE_NAME, fileSize, "MY_PAGES");
 
-			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified");
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
@@ -136,6 +137,7 @@ class ErrandAttachmentMapperTest {
 		assertThat(result.getFirst().getMimeType()).isEqualTo(MIME_TYPE);
 		assertThat(result.getFirst().getChannel()).isEqualTo("EMAIL");
 		assertThat(result.getFirst().getCreated()).isCloseTo(CREATED, within(5, SECONDS));
+		assertThat(result.getFirst().getHash()).isNull();
 	}
 
 	@Test
@@ -143,6 +145,16 @@ class ErrandAttachmentMapperTest {
 
 		assertThat(ErrandAttachmentMapper.toErrandAttachments(null))
 			.isNotNull().isEmpty();
+	}
+
+	@Test
+	void toErrandAttachmentMapsHash() {
+		final var hash = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+		final var entity = buildAttachmentEntity(buildErrandEntity()).withHash(hash);
+
+		final var result = ErrandAttachmentMapper.toErrandAttachment(entity);
+
+		assertThat(result.getHash()).isEqualTo(hash);
 	}
 
 	@Test

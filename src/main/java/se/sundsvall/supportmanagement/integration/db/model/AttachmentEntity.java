@@ -60,6 +60,9 @@ public class AttachmentEntity {
 	@Column(name = "file_size")
 	private Integer fileSize;
 
+	@Column(name = "hash", length = 64)
+	private String hash;
+
 	@ManyToOne(fetch = FetchType.LAZY, cascade = ALL)
 	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_attachment_data_attachment"))
 	private AttachmentDataEntity attachmentData;
@@ -233,20 +236,33 @@ public class AttachmentEntity {
 		return this;
 	}
 
+	public String getHash() {
+		return hash;
+	}
+
+	public void setHash(final String hash) {
+		this.hash = hash;
+	}
+
+	public AttachmentEntity withHash(final String hash) {
+		this.hash = hash;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final AttachmentEntity that = (AttachmentEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(
-			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(created, that.created) && Objects.equals(
-				modified, that.modified)
+			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(hash, that.hash) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(
+				created, that.created) && Objects.equals(modified, that.modified)
 			&& Objects.equals(errandEntity, that.errandEntity);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, channel, fileSize, attachmentData, created, modified, errandEntity);
+		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, channel, fileSize, hash, attachmentData, created, modified, errandEntity);
 	}
 
 	@Override
@@ -259,6 +275,7 @@ public class AttachmentEntity {
 			", mimeType='" + mimeType + '\'' +
 			", channel='" + channel + '\'' +
 			", fileSize=" + fileSize +
+			", hash='" + hash + '\'' +
 			", attachmentData=" + attachmentData +
 			", created=" + created +
 			", modified=" + modified +

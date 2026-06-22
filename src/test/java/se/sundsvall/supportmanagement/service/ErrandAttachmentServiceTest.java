@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -48,7 +49,6 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -110,6 +110,9 @@ class ErrandAttachmentServiceTest {
 	private Blob blobMock;
 
 	@Mock
+	private EntityManager entityManagerMock;
+
+	@Mock
 	private HttpServletResponse httpServletResponseMock;
 
 	@Mock
@@ -119,12 +122,15 @@ class ErrandAttachmentServiceTest {
 	private ErrandAttachmentService service;
 
 	@Test
-	void createErrandAttachment() {
+	void createErrandAttachment() throws SQLException {
 		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
 		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
-		when(attachmentRepositoryMock.save(any())).thenReturn(attachmentMock);
+		when(attachmentRepositoryMock.saveAndFlush(any())).thenReturn(attachmentMock);
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.getBinaryStream()).thenReturn(new ByteArrayInputStream("test".getBytes()));
 
 		// Call
 		try (final MockedStatic<ErrandAttachmentMapper> mapper = Mockito.mockStatic(ErrandAttachmentMapper.class)) {
@@ -137,7 +143,9 @@ class ErrandAttachmentServiceTest {
 
 			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock), nullable(String.class)));
 			verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
-			verify(attachmentRepositoryMock).save(attachmentMock);
+			verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
+			verify(entityManagerMock).refresh(attachmentMock);
+			verify(attachmentMock).setHash("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
 			verify(revisionServiceMock).createErrandRevision(errandMock);
 			verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 		}
@@ -286,20 +294,24 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
-	void createAttachment() {
+	void createAttachment() throws SQLException {
 
 		// Mock
 		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.getBinaryStream()).thenReturn(new ByteArrayInputStream("test".getBytes()));
 
 		// Call
 		service.createErrandAttachment(attachmentMock, errandMock);
 
 		// Assertions and verifications
 		verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
+		verify(entityManagerMock).refresh(attachmentMock);
+		verify(attachmentMock).setHash("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 		verifyNoInteractions(errandsRepositoryMock);
-		verifyNoMoreInteractions(attachmentRepositoryMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@Test

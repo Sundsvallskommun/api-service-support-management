@@ -59,7 +59,7 @@ public final class ErrandAttachmentMapper {
 		final InputStream content;
 		try {
 			content = errandAttachment.getBody().getInputStream();
-		} catch (final Exception e) {
+		} catch (final Exception _) {
 			throw Problem.valueOf(BAD_REQUEST, "Could not read input stream!");
 		}
 
@@ -88,7 +88,8 @@ public final class ErrandAttachmentMapper {
 				.withCreated(e.getCreated())
 				.withId(e.getId())
 				.withMimeType(e.getMimeType())
-				.withChannel(e.getChannel()))
+				.withChannel(e.getChannel())
+				.withHash(e.getHash()))
 			.orElse(null);
 	}
 
