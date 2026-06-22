@@ -36,7 +36,8 @@ class ParameterTest {
 			.withDisplayName(displayName)
 			.withKey(key)
 			.withValues(values)
-			.withGroup(group);
+			.withGroup(group)
+			.withVersion(1L);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);

@@ -287,7 +287,7 @@ class ErrandMapperTest {
 		assertThat(errand.getPhases()).hasSize(1)
 			.extracting(ErrandPhase::getPhaseId, ErrandPhase::getName, ErrandPhase::getDisplayName, ErrandPhase::getStarted, ErrandPhase::getEnded)
 			.containsExactly(tuple(PHASE_ID, PHASE_NAME, PHASE_DISPLAY_NAME, PHASE_STARTED, null));
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId");
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 	}
 
 	@Test
@@ -374,7 +374,7 @@ class ErrandMapperTest {
 					notification.setErrandId("cb20c51f-fcf3-42c0-b613-de563634a8ec");
 				}))));
 
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId");
+		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 	}
 
 	@Test
@@ -392,7 +392,7 @@ class ErrandMapperTest {
 				assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
 				assertThat(errand.getErrandNumber()).isEqualTo("limited");
 			} else {
-				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId");
+				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 				assertThat(errand.getErrandNumber()).isEqualTo("full");
 				assertThat(errand.getBusinessRelated()).isFalse();
 			}

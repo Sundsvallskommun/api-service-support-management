@@ -180,8 +180,27 @@ public class Errand {
 	})
 	private OffsetDateTime touched;
 
+	@Schema(description = "Optimistic locking version of the errand", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private Long version;
+
 	public static Errand create() {
 		return new Errand();
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public Errand withVersion(final Long version) {
+		this.version = version;
+		return this;
 	}
 
 	public String getId() {
@@ -565,7 +584,7 @@ public class Errand {
 	public int hashCode() {
 		return Objects.hash(activePhaseId, actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters,
 			labels, activeNotifications, modified,
-			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched);
+			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched, version);
 	}
 
 	@Override
@@ -582,7 +601,7 @@ public class Errand {
 			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(jsonParameters, other.jsonParameters) && Objects.equals(labels, other.labels)
 			&& Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && Objects.equals(phases, other.phases) && Objects.equals(priority, other.priority)
 			&& Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status)
-			&& Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched);
+			&& Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(version, other.version);
 	}
 
 	@Override
@@ -617,6 +636,7 @@ public class Errand {
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +
+			", version=" + version +
 			'}';
 	}
 }
