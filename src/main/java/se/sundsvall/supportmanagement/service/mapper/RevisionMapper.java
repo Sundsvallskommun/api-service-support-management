@@ -20,6 +20,7 @@ public class RevisionMapper {
 		.registerTypeAdapterFactory(new HibernateProxyAdapterFactory())
 		.addSerializationExclusionStrategy(CircularReferenceExclusionStrategy.create())
 		.addSerializationExclusionStrategy(AttachmentExclusionStrategy.create())
+		.addSerializationExclusionStrategy(VersionExclusionStrategy.create())
 		.create();
 
 	private RevisionMapper() {}

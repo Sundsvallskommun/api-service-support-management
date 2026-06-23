@@ -146,7 +146,7 @@ class ErrandsResource {
 		@Parameter(name = "If-Match", description = "Optional ETag for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@Valid @NotNull @RequestBody final Errand errand) {
 
-		final var updated = service.updateErrand(namespace, municipalityId, errandId, errand);
+		final var updated = service.updateErrand(namespace, municipalityId, errandId, ifMatch, errand);
 		return ok()
 			.header(ETAG, updated.getVersion() != null ? format(updated.getVersion()) : null)
 			.body(updated);

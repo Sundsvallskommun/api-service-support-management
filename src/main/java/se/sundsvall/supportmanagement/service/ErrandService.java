@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.accessmapper.Access;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -47,6 +49,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -75,6 +78,7 @@ public class ErrandService {
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final ErrandActionService errandActionService;
 	private final ErrandPhaseService errandPhaseService;
+	private final EntityManager entityManager;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -91,7 +95,8 @@ public class ErrandService {
 		final RelationClient relationClient,
 		final MetadataLabelRepository metadataLabelRepository,
 		final ErrandActionService errandActionService,
-		final ErrandPhaseService errandPhaseService) {
+		final ErrandPhaseService errandPhaseService,
+		final EntityManager entityManager) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -108,6 +113,7 @@ public class ErrandService {
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
+		this.entityManager = entityManager;
 	}
 
 	@Transactional
@@ -168,8 +174,14 @@ public class ErrandService {
 	}
 
 	@Transactional
-	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final Errand errand) {
+	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final String ifMatch, final Errand errand) {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
+
+		if (ifMatch == null) {
+			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", id, namespace, municipalityId);
+		}
+		validateIfMatch(ifMatch, errandEntityToUpdate.getVersion());
+		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand);
 

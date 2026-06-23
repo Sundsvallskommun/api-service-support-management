@@ -60,25 +60,29 @@
 				"value2",
 				"value3",
 				"value4"
-			]
+			],
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"key": "key-3",
 			"displayName": "The third key which will stay in order",
 			"values": [
 				"the second value"
-			]
+			],
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"key": "key-2",
 			"displayName": "The second key",
 			"values": [
 				"the second value"
-			]
+			],
+			"version": "${json-unit.any-number}"
 		}
 	],
 	"jsonParameters": [],
 	"assignedUserId": "joe01doe",
 	"suspension": {},
-	"status": "STATUS-2"
+	"status": "STATUS-2",
+	"version": "${json-unit.any-number}"
 }

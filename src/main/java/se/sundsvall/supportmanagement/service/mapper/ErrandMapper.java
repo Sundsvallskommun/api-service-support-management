@@ -41,9 +41,12 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.mergeParameters;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
 import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toParameterList;
@@ -131,13 +134,31 @@ public final class ErrandMapper {
 	}
 
 	private static void updateParameters(final ErrandEntity entity, final List<Parameter> parameters) {
-		ofNullable(entity.getParameters()).ifPresentOrElse(List::clear, () -> entity.setParameters(new ArrayList<>()));
-		entity.getParameters().addAll(toErrandParameterEntityList(parameters, entity));
+		mergeParameters(entity, parameters);
 	}
 
 	private static void updateJsonParameters(final ErrandEntity entity, final List<JsonParameter> jsonParameters) {
-		ofNullable(entity.getJsonParameters()).ifPresentOrElse(List::clear, () -> entity.setJsonParameters(new ArrayList<>()));
-		entity.getJsonParameters().addAll(toJsonParameterEntities(jsonParameters, entity));
+		if (entity.getJsonParameters() == null) {
+			entity.setJsonParameters(new ArrayList<>());
+		}
+		final var existing = entity.getJsonParameters();
+		final var incomingByKey = jsonParameters.stream().collect(toMap(JsonParameter::getKey, identity(), (a, b) -> b));
+		final var existingByKey = existing.stream().collect(toMap(JsonParameterEntity::getKey, identity()));
+
+		existing.removeIf(e -> !incomingByKey.containsKey(e.getKey()));
+		existing.forEach(e -> {
+			final var incoming = incomingByKey.get(e.getKey());
+			e.setSchemaId(incoming.getSchemaId());
+			e.setValue(toJsonString(incoming.getValue()));
+		});
+		jsonParameters.stream()
+			.filter(p -> !existingByKey.containsKey(p.getKey()))
+			.map(p -> JsonParameterEntity.create()
+				.withErrandEntity(entity)
+				.withKey(p.getKey())
+				.withSchemaId(p.getSchemaId())
+				.withValue(toJsonString(p.getValue())))
+			.forEach(existing::add);
 	}
 
 	private static void updateStakeholders(final ErrandEntity entity, final List<Stakeholder> stakeholders) {
@@ -205,7 +226,8 @@ public final class ErrandMapper {
 				.withLabels(toErrandLabels(e.getLabels()))
 				.withPhases(toErrandPhases(e.getPhases()))
 				.withActiveNotifications(toActiveNotifications(e.getNotifications()))
-				.withActions(toErrandActions(e.getActions())))
+				.withActions(toErrandActions(e.getActions()))
+				.withVersion(e.getVersion()))
 			.orElse(null);
 	}
 
@@ -380,7 +402,8 @@ public final class ErrandMapper {
 			.map(entity -> JsonParameter.create()
 				.withKey(entity.getKey())
 				.withSchemaId(entity.getSchemaId())
-				.withValue(toJsonNode(entity.getValue())))
+				.withValue(toJsonNode(entity.getValue()))
+				.withVersion(entity.getVersion()))
 			.toList();
 	}
 

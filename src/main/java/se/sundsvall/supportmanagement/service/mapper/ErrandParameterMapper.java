@@ -11,7 +11,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
 import static java.util.Collections.emptyList;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 
 public final class ErrandParameterMapper {
 
@@ -38,7 +40,30 @@ public final class ErrandParameterMapper {
 			.withDisplayName(parameter.getDisplayName())
 			.withGroup(parameter.getParameterGroup())
 			.withKey(parameter.getKey())
-			.withValues(parameter.getValues());
+			.withValues(parameter.getValues())
+			.withVersion(parameter.getVersion());
+	}
+
+	public static void mergeParameters(final ErrandEntity entity, final List<Parameter> parameters) {
+		if (entity.getParameters() == null) {
+			entity.setParameters(new ArrayList<>());
+		}
+		final var existing = entity.getParameters();
+		final var uniqueIncoming = toUniqueKeyList(parameters);
+		final var incomingByKey = uniqueIncoming.stream().collect(toMap(Parameter::getKey, identity()));
+		final var existingByKey = existing.stream().collect(toMap(ParameterEntity::getKey, identity()));
+
+		existing.removeIf(e -> !incomingByKey.containsKey(e.getKey()));
+		existing.forEach(e -> {
+			final var incoming = incomingByKey.get(e.getKey());
+			e.setDisplayName(incoming.getDisplayName());
+			e.setParameterGroup(incoming.getGroup());
+			e.setValues(incoming.getValues());
+		});
+		uniqueIncoming.stream()
+			.filter(p -> !existingByKey.containsKey(p.getKey()))
+			.map(p -> toErrandParameterEntity(p).withErrandEntity(entity))
+			.forEach(existing::add);
 	}
 
 	public static List<Parameter> toParameterList(final List<ParameterEntity> parameters) {

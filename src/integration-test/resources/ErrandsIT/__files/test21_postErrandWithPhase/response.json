@@ -26,5 +26,6 @@
 	"suspension": {},
 	"reporterUserId": "joe01doe",
 	"created": "${json-unit.any-string}",
-	"touched": "${json-unit.any-string}"
+	"touched": "${json-unit.any-string}",
+	"version": "${json-unit.any-number}"
 }

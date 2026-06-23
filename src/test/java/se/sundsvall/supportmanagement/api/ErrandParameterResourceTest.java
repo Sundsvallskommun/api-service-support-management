@@ -48,7 +48,7 @@ class ErrandParameterResourceTest {
 	void updateErrandParameters() {
 		final var requestBody = List.of(Parameter.create().withKey("key").withValues(List.of("value")));
 
-		when(errandParameterServiceMock.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody)).thenReturn(requestBody);
+		when(errandParameterServiceMock.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, requestBody)).thenReturn(requestBody);
 
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
@@ -64,7 +64,7 @@ class ErrandParameterResourceTest {
 			.returnResult();
 
 		assertThat(response).isNotNull();
-		verify(errandParameterServiceMock).updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verify(errandParameterServiceMock).updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, requestBody);
 		verifyNoMoreInteractions(errandParameterServiceMock);
 	}
 
@@ -120,7 +120,7 @@ class ErrandParameterResourceTest {
 
 		final var requestBody = List.of("value");
 
-		when(errandParameterServiceMock.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, requestBody)).thenReturn(Parameter.create().withKey("key").withValues(List.of("value")));
+		when(errandParameterServiceMock.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, null, requestBody)).thenReturn(Parameter.create().withKey("key").withValues(List.of("value")));
 
 		webTestClient.patch()
 			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
@@ -133,7 +133,7 @@ class ErrandParameterResourceTest {
 			.expectBody(Parameter.class)
 			.returnResult();
 
-		verify(errandParameterServiceMock).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, requestBody);
+		verify(errandParameterServiceMock).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, null, requestBody);
 		verifyNoMoreInteractions(errandParameterServiceMock);
 	}
 
@@ -146,6 +146,6 @@ class ErrandParameterResourceTest {
 			.expectHeader().contentType(ALL_VALUE);
 
 		// Verification
-		verify(errandParameterServiceMock).deleteErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
+		verify(errandParameterServiceMock).deleteErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, null);
 	}
 }

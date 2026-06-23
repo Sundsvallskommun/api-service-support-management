@@ -134,11 +134,13 @@
 				"valueA3",
 				"valueA4"
 			],
-			"key": "keyA"
+			"key": "keyA",
+			"version": "${json-unit.any-number}"
 		}
 	],
 	"jsonParameters": [],
 	"assignedUserId": "ASSIGNED_USER_ID-3",
 	"suspension": {},
-	"status": "STATUS-3"
+	"status": "STATUS-3",
+	"version": "${json-unit.any-number}"
 }

@@ -68,7 +68,7 @@ class ErrandParameterResource {
 		@Parameter(name = "If-Match", description = "Optional ETag of the errand for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@Valid @NotNull @RequestBody final List<se.sundsvall.supportmanagement.api.model.errand.Parameter> errandParameters) {
 
-		return ok(service.updateErrandParameters(namespace, municipalityId, errandId, errandParameters));
+		return ok(service.updateErrandParameters(namespace, municipalityId, errandId, ifMatch, errandParameters));
 	}
 
 	@GetMapping(path = "/{parameterKey}", produces = APPLICATION_JSON_VALUE)
@@ -112,7 +112,7 @@ class ErrandParameterResource {
 		@Parameter(name = "If-Match", description = "Optional ETag of the parameter for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@Valid @NotNull @RequestBody final List<String> parameterValues) {
 
-		final var updated = service.updateErrandParameter(namespace, municipalityId, errandId, parameterKey, parameterValues);
+		final var updated = service.updateErrandParameter(namespace, municipalityId, errandId, parameterKey, ifMatch, parameterValues);
 		return ok()
 			.header(ETAG, updated.getVersion() != null ? format(updated.getVersion()) : null)
 			.body(updated);
@@ -132,7 +132,7 @@ class ErrandParameterResource {
 		@Parameter(name = "parameterKey", description = "Errand parameter key", example = "propertyInfo") @NotBlank @PathVariable("parameterKey") final String parameterKey,
 		@Parameter(name = "If-Match", description = "Optional ETag of the parameter for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch) {
 
-		service.deleteErrandParameter(namespace, municipalityId, errandId, parameterKey);
+		service.deleteErrandParameter(namespace, municipalityId, errandId, parameterKey, ifMatch);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();

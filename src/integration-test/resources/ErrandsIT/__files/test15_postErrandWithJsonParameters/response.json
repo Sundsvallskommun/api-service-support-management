@@ -45,7 +45,8 @@
 				"lastName": "Doe",
 				"email": "john.doe@example.com",
 				"age": 30
-			}
+			},
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"key": "additionalInfo",
@@ -56,10 +57,12 @@
 					"urgent",
 					"customer-request"
 				]
-			}
+			},
+			"version": "${json-unit.any-number}"
 		}
 	],
 	"assignedUserId": "joe01doe",
 	"suspension": {},
-	"status": "STATUS-2"
+	"status": "STATUS-2",
+	"version": "${json-unit.any-number}"
 }

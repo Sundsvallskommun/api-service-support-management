@@ -1,4 +1,5 @@
 
+
     create table action_config (
         active bit not null,
         created datetime(6),
@@ -793,7 +794,7 @@
     alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    alter table if exists handover_idempotency 
+    alter table if exists handover_idempotency
        add constraint uq_handover_source_target unique (source_errand_id, target_namespace, target_municipality_id);
 
     create index idx_json_parameter_errand_id 
@@ -841,16 +842,16 @@
     create index idx_namespace_municipality_id 
        on notification (namespace, municipality_id);
 
-    create index idx_notification_municipality_id_namespace_owner_id 
+    create index idx_notification_municipality_id_namespace_owner_id
        on notification (municipality_id, namespace, owner_id);
 
-    create index idx_dispatch_errand_id 
+    create index idx_dispatch_errand_id
        on notification_dispatch (errand_id);
 
-    create index idx_dispatch_dead_letter_retry 
+    create index idx_dispatch_dead_letter_retry
        on notification_dispatch (dead_letter, next_retry_at);
 
-    create index idx_phase_municipality_id_namespace 
+    create index idx_phase_municipality_id_namespace
        on phase (municipality_id, namespace);
 
     alter table if exists phase 
@@ -898,25 +899,26 @@
     create index idx_subscriber_municipality_id_namespace_identifier 
        on subscriber (municipality_id, namespace, identifier_type, identifier_value);
 
-    alter table if exists subscriber 
+    alter table if exists subscriber
        add constraint uq_subscriber_municipality_namespace_identifier_name unique (municipality_id, namespace, identifier_type, identifier_value, name);
 
-    create index idx_sub_notif_identifier 
+    create index idx_sub_notif_identifier
        on subscriber_notification (municipality_id, namespace, identifier_type, identifier_value);
 
-    create index idx_sub_notif_errand 
+    create index idx_sub_notif_errand
        on subscriber_notification (errand_id);
 
-    alter table if exists subscriber_notification 
-       add constraint uq_sub_notif_errand_identifier unique (municipality_id, namespace, errand_id, identifier_type, identifier_value);
+    alter table if exists subscriber_notification
+       add constraint uq_sub_notif_errand_identifier
+       unique (municipality_id, namespace, errand_id, identifier_type, identifier_value);
 
-    create index idx_subscription_errand_id 
+    create index idx_subscription_errand_id
        on subscription (errand_id);
 
     create index idx_subscription_subscriber_target 
        on subscription (subscriber_id, target_type, errand_id);
 
-    alter table if exists `type` 
+    alter table if exists `type`
        add constraint uq_category_id_name unique (category_id, name);
 
     create index idx_namespace_municipality_id_type 
