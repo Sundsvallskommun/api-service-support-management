@@ -85,16 +85,15 @@ public class MessagingMapper {
 	}
 
 	public static se.sundsvall.supportmanagement.api.model.communication.EmailRequest createReporterEmailRequest(final ErrandEntity errandEntity, final StakeholderEntity stakeholder, String emailDestination, final MessagingSettings messagingSettings) {
-		final var subject = SUBJECT_TEMPLATE.formatted(errandEntity.getTitle(), errandEntity.getErrandNumber());
+		final var subject = SUBJECT_TEMPLATE.formatted(errandEntity.getErrandNumber());
 		final var message = ofNullable(messagingSettings.reporterSupportText())
 			// If present, supporttext is presumed to be something like "Hi [firstname], you have received a new message in errand
 			// [title], [errandnr]. Click [url prefix]/suffix/[errandId] to read."
 			.map(reporterSupportText -> reporterSupportText.formatted(
-				stakeholder.getFirstName(),
-				errandEntity.getTitle(),
+				ofNullable(stakeholder).map(StakeholderEntity::getFirstName).orElse(""),
 				errandEntity.getErrandNumber(),
 				messagingSettings.katlaUrl(),
-				errandEntity.getId()))
+				errandEntity.getErrandNumber()))
 			.orElse("");
 
 		return toEmailRequest(subject, message, emailDestination, messagingSettings);
@@ -263,7 +262,7 @@ public class MessagingMapper {
 	public static MessageRequest toMessagingMessageRequest(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
 		return new MessageRequest()
 			.messages(List.of(new generated.se.sundsvall.messaging.Message()
-				.subject(SUBJECT_TEMPLATE.formatted(errandEntity.getTitle(), errandEntity.getErrandNumber()))
+				.subject(SUBJECT_TEMPLATE.formatted(errandEntity.getErrandNumber()))
 				.message(createBody(errandEntity, messagingSettings))
 				.party(new MessageParty().partyId(findErrandOwnerPartyId(errandEntity)))
 				.sender(new MessageSender()
@@ -281,10 +280,9 @@ public class MessagingMapper {
 			.map(supportText -> String.format(
 				supportText,
 				findErrandOwnerFirstName(errandEntity),
-				errandEntity.getTitle(),
 				errandEntity.getErrandNumber(),
 				messagingSettings.contactInformationUrl(),
-				errandEntity.getId()) // Replace with actual caseId if available
+				errandEntity.getErrandNumber()) // Replace with actual caseId if available
 			).orElse("");
 	}
 
@@ -296,7 +294,7 @@ public class MessagingMapper {
 			.filter(stakeholder -> stakeholder.getRole().contains("PRIMARY"))
 			.findFirst()
 			.map(StakeholderEntity::getFirstName)
-			.orElse(null);
+			.orElse("");
 	}
 
 	static UUID findErrandOwnerPartyId(final ErrandEntity errandEntity) {

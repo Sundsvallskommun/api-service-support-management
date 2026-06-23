@@ -17,7 +17,7 @@
 			},
 			{
 				"key": "support_text",
-				"value": "Kontakta oss via e-post eller telefon",
+				"value": "Hej %s,\nDu har fått ett nytt meddelande kopplat till ditt ärende %s\nGå in på Mina Sidor via länken för att visa meddelandet: %s/privat/arenden/%s\n\nSundsvalls kommun",
 				"type": "STRING"
 			},
 			{

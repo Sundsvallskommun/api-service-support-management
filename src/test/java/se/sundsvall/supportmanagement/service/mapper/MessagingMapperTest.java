@@ -32,6 +32,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -135,7 +136,7 @@ class MessagingMapperTest {
 		final var errandNumber = "errandNumber";
 		final var title = "title";
 		final var firstName = "firstName";
-		final var reporterSupportText = "Hi %s, you have received a new message in errand %s, %s. Click %s/suffix/%s to read.";
+		final var reporterSupportText = "Hi %s, you have received a new message in errand %s. Click %s/suffix/%s to read.";
 		final var katlaUrl = "katlaUrl";
 
 		final var errandEntityMock = Mockito.mock(ErrandEntity.class);
@@ -153,9 +154,9 @@ class MessagingMapperTest {
 
 		final var result = MessagingMapper.createReporterEmailRequest(errandEntityMock, stakeholderMock, RECIPIENT, messagingsettingsMock);
 
-		verify(errandEntityMock).getId();
-		verify(errandEntityMock, times(2)).getErrandNumber();
-		verify(errandEntityMock, times(2)).getTitle();
+		verify(errandEntityMock, never()).getId();
+		verify(errandEntityMock, times(3)).getErrandNumber();
+		verify(errandEntityMock, never()).getTitle();
 		verify(stakeholderMock).getFirstName();
 		verify(messagingsettingsMock).reporterSupportText();
 		verify(messagingsettingsMock).katlaUrl();
@@ -163,8 +164,8 @@ class MessagingMapperTest {
 		verify(messagingsettingsMock).contactInformationEmailName();
 		verifyNoMoreInteractions(errandEntityMock, stakeholderMock, messagingsettingsMock);
 
-		assertThat(result.getMessage()).isEqualTo(reporterSupportText.formatted(firstName, title, errandNumber, katlaUrl, ERRAND_ID));
-		assertThat(result.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s %s".formatted(title, errandNumber));
+		assertThat(result.getMessage()).isEqualTo(reporterSupportText.formatted(firstName, errandNumber, katlaUrl, errandNumber));
+		assertThat(result.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s".formatted(errandNumber));
 		assertThat(result.getRecipient()).isEqualTo(RECIPIENT);
 		assertThat(result.getSender()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSenderName()).isEqualTo(SENDER_NAME);
@@ -368,7 +369,7 @@ class MessagingMapperTest {
 		final var emailAddress = "test™@example.com";
 		final var supportText = """
 			Hej %s,
-			Du har fått ett nytt meddelande kopplat till ditt ärende gällande %s, %s
+			Du har fått ett nytt meddelande kopplat till ditt ärende %s
 			Gå in på Mina Sidor via länken för att visa meddelandet: %s/privat/arenden/%s
 
 			Sundsvalls kommun
@@ -398,8 +399,8 @@ class MessagingMapperTest {
 		assertThat(bean.getMessages().getFirst().getMessage())
 			.isEqualTo("""
 				Hej Test,
-				Du har fått ett nytt meddelande kopplat till ditt ärende gällande Title, 123456789
-				Gå in på Mina Sidor via länken för att visa meddelandet: https://example.com/contact/privat/arenden/123
+				Du har fått ett nytt meddelande kopplat till ditt ärende 123456789
+				Gå in på Mina Sidor via länken för att visa meddelandet: https://example.com/contact/privat/arenden/123456789
 
 				Sundsvalls kommun
 				""");

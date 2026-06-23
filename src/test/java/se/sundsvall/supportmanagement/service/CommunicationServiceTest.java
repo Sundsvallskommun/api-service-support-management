@@ -785,7 +785,6 @@ class CommunicationServiceTest {
 	void sendEmailNotification() {
 		Identifier.set(Identifier.parse("bcd234; type=adAccount"));
 
-		final var title = "title";
 		final var errandNumber = "errandNumber";
 		final var reporterSupportText = "reporterSupportText";
 		final var katlaUrl = "katlaUrl";
@@ -797,7 +796,6 @@ class CommunicationServiceTest {
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW)).thenReturn(errandEntityMock);
 		when(errandEntityMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
 		when(errandEntityMock.getNamespace()).thenReturn(NAMESPACE);
-		when(errandEntityMock.getTitle()).thenReturn(title);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(errandEntityMock.getStakeholders()).thenReturn(List.of(StakeholderEntity.create()
 			.withRole("REPORTER")
@@ -822,7 +820,7 @@ class CommunicationServiceTest {
 		verifyNoMoreInteractions(accessControlServiceMock, messagingSettingsIntegrationMock, messagingClientMock);
 
 		assertThat(emailRequestCaptor.getValue()).satisfies(emailRequest -> {
-			assertThat(emailRequest.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s %s".formatted(title, errandNumber));
+			assertThat(emailRequest.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s".formatted(errandNumber));
 			assertThat(emailRequest.getMessage()).isEqualToNormalizingUnicode(reporterSupportText);
 			assertThat(emailRequest.getEmailAddress()).isEqualTo(recieverEmail);
 			assertThat(emailRequest.getHtmlMessage()).isNull();
