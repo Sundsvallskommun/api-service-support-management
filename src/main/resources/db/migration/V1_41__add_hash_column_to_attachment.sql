@@ -1,0 +1,1 @@
+ALTER TABLE attachment ADD COLUMN hash VARCHAR(64);

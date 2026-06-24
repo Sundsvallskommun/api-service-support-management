@@ -49,6 +49,7 @@ class AttachmentEntityTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var fileSize = 100;
+		final var hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
 		final var attachmentEntity = AttachmentEntity.create()
 			.withId(id)
@@ -61,7 +62,8 @@ class AttachmentEntityTest {
 			.withErrandEntity(errandEntity)
 			.withCreated(now().truncatedTo(SECONDS))
 			.withModified(now().truncatedTo(SECONDS))
-			.withFileSize(fileSize);
+			.withFileSize(fileSize)
+			.withHash(hash);
 
 		assertThat(attachmentEntity).hasNoNullFieldsOrProperties();
 		assertThat(attachmentEntity.getId()).isEqualTo(id);
@@ -73,6 +75,7 @@ class AttachmentEntityTest {
 		assertThat(attachmentEntity.getChannel()).isEqualTo(channel);
 		assertThat(attachmentEntity.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(attachmentEntity.getFileSize()).isEqualTo(fileSize);
+		assertThat(attachmentEntity.getHash()).isEqualTo(hash);
 	}
 
 	@Test
