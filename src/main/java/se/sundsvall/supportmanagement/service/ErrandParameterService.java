@@ -13,6 +13,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -56,9 +57,9 @@ public class ErrandParameterService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<String> readErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey) {
+	public Parameter readErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey) {
 		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
-		return findParameterEntityOrElseThrow(errand, parameterKey);
+		return toParameter(findParameterEntityOrElseThrow(errand, parameterKey));
 	}
 
 	@Transactional(readOnly = true)
@@ -110,11 +111,10 @@ public class ErrandParameterService {
 		errandsRepository.save(errandEntity);
 	}
 
-	List<String> findParameterEntityOrElseThrow(final ErrandEntity errandEntity, final String parameterKey) {
+	ParameterEntity findParameterEntityOrElseThrow(final ErrandEntity errandEntity, final String parameterKey) {
 		return Optional.ofNullable(errandEntity.getParameters()).orElse(emptyList()).stream()
 			.filter(paramEntity -> Objects.equals(paramEntity.getKey(), parameterKey))
 			.findAny()
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(PARAMETER_NOT_FOUND, parameterKey, errandEntity.getId())))
-			.getValues();
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(PARAMETER_NOT_FOUND, parameterKey, errandEntity.getId())));
 	}
 }

@@ -215,8 +215,13 @@ public class ErrandService {
 	}
 
 	@Transactional
-	public void deleteErrand(final String namespace, final String municipalityId, final String id) {
+	public void deleteErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
+
+		if (ifMatch == null) {
+			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", id, namespace, municipalityId);
+		}
+		validateIfMatch(ifMatch, entity.getVersion());
 
 		try {
 			conversationService.deleteByErrandId(entity);

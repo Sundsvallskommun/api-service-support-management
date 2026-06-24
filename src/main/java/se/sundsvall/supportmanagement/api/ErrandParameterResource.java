@@ -82,7 +82,10 @@ class ErrandParameterResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "parameterKey", description = "Errand parameter key", example = "propertyInfo") @NotBlank @PathVariable("parameterKey") final String parameterKey) {
 
-		return ok(service.readErrandParameter(namespace, municipalityId, errandId, parameterKey));
+		final var parameter = service.readErrandParameter(namespace, municipalityId, errandId, parameterKey);
+		return ok()
+			.header(ETAG, parameter.getVersion() != null ? format(parameter.getVersion()) : null)
+			.body(parameter.getValues());
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)

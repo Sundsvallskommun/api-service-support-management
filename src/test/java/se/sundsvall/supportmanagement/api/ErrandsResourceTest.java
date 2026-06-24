@@ -392,7 +392,7 @@ class ErrandsResourceTest {
 			.expectStatus().isNoContent()
 			.expectBody().isEmpty();
 
-		verify(errandServiceMock).deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(errandServiceMock).deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 	}
 
 	@Test

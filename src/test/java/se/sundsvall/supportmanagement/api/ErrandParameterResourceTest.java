@@ -70,7 +70,10 @@ class ErrandParameterResourceTest {
 
 	@Test
 	void readErrandParameter() {
-		final var errandParameter = List.of("value", "value2");
+		final var errandParameter = se.sundsvall.supportmanagement.api.model.errand.Parameter.create()
+			.withKey(PARAMETER_KEY)
+			.withValues(List.of("value", "value2"))
+			.withVersion(2L);
 		when(errandParameterServiceMock.readErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY)).thenReturn(errandParameter);
 
 		final var response = webTestClient.get()
@@ -79,15 +82,11 @@ class ErrandParameterResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
+			.expectHeader().valueEquals("ETag", "\"2\"")
 			.expectBodyList(String.class)
 			.returnResult();
 
-		assertThat(response).isNotNull();
-		assertThat(response.getResponseBody()).satisfies(p -> {
-			assertThat(p).isNotNull();
-			assertThat(p).hasSize(1);
-			assertThat(p).isEqualTo(List.of("[ \"value\", \"value2\" ]"));
-		});
+		assertThat(response.getResponseBody()).isEqualTo(List.of("[ \"value\", \"value2\" ]"));
 
 		verify(errandParameterServiceMock).readErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
 		verifyNoMoreInteractions(errandParameterServiceMock);

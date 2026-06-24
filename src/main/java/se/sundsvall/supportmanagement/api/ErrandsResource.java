@@ -169,7 +169,7 @@ class ErrandsResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "If-Match", description = "Optional ETag for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch) {
 
-		service.deleteErrand(namespace, municipalityId, errandId);
+		service.deleteErrand(namespace, municipalityId, errandId, ifMatch);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();

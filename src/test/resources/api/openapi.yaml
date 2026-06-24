@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.10"
 servers:
-- url: http://localhost:52590
+- url: http://localhost:55291
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -24,6 +24,8 @@ tags:
   description: User notifications operations
 - name: Handover
   description: Errand handover operations
+- name: Errand JSON Parameters
+  description: Errand JSON parameter operations
 - name: Subscribers
   description: "Subscriber CRUD operations. A subscriber describes who receives notifications\
     \ and how (channels, event filters, optional pause window)."
@@ -972,6 +974,269 @@ paths:
           description: Successful operation
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/json-parameters/{key}:
+    get:
+      tags:
+      - Errand JSON Parameters
+      summary: Read JSON parameter
+      description: Fetches the JSON parameter matching the provided errand id and
+        key
+      operationId: readJsonParameter
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: key
+        in: path
+        description: JSON parameter key
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: formData
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonParameter"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    put:
+      tags:
+      - Errand JSON Parameters
+      summary: Create or update JSON parameter
+      description: Creates or updates the JSON parameter matching the provided errand
+        id and key
+      operationId: updateJsonParameter
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: key
+        in: path
+        description: JSON parameter key
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: formData
+      - name: If-Match
+        in: header
+        description: Optional ETag of the JSON parameter for optimistic locking —
+          omit to skip version check
+        required: false
+        schema:
+          type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonParameter"
+        required: true
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonParameter"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Errand JSON Parameters
+      summary: Delete JSON parameter
+      description: Deletes the JSON parameter matching the provided errand id and
+        key
+      operationId: deleteJsonParameter
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: key
+        in: path
+        description: JSON parameter key
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: formData
+      - name: If-Match
+        in: header
+        description: Optional ETag of the JSON parameter for optimistic locking —
+          omit to skip version check
+        required: false
+        schema:
+          type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -8491,6 +8756,99 @@ components:
           examples:
           - 2000-10-31T01:30:00.000+02:00
           readOnly: true
+    JsonNode:
+      type: object
+      properties:
+        floatingPointNumber:
+          type: boolean
+        container:
+          type: boolean
+        number:
+          type: boolean
+        nodeType:
+          type: string
+          enum:
+          - ARRAY
+          - BINARY
+          - BOOLEAN
+          - MISSING
+          - "NULL"
+          - NUMBER
+          - OBJECT
+          - POJO
+          - STRING
+        string:
+          type: boolean
+        integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
+        pojo:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
+          type: boolean
+        embeddedValue:
+          type: boolean
+    JsonParameter:
+      type: object
+      description: JSON Parameter model
+      properties:
+        key:
+          type: string
+          description: Parameter key/name
+          examples:
+          - formData1
+          minLength: 1
+        value:
+          $ref: "#/components/schemas/JsonNode"
+          description: JSON structure value
+          example:
+            firstName: Joe
+            lastName: Doe
+        schemaId:
+          type: string
+          description: ID referencing a schema in the json-schema service
+          examples:
+          - 2281_person_1.0
+          minLength: 1
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the JSON parameter
+          readOnly: true
+      required:
+      - key
+      - schemaId
+      - value
     EmailIntegration:
       type: object
       description: Email integration config model
@@ -9608,99 +9966,6 @@ components:
           description: Value for external tag
           examples:
           - 8849-2848
-    JsonNode:
-      type: object
-      properties:
-        floatingPointNumber:
-          type: boolean
-        container:
-          type: boolean
-        number:
-          type: boolean
-        nodeType:
-          type: string
-          enum:
-          - ARRAY
-          - BINARY
-          - BOOLEAN
-          - MISSING
-          - "NULL"
-          - NUMBER
-          - OBJECT
-          - POJO
-          - STRING
-        string:
-          type: boolean
-        integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
-        pojo:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
-        embeddedValue:
-          type: boolean
-    JsonParameter:
-      type: object
-      description: JSON Parameter model
-      properties:
-        key:
-          type: string
-          description: Parameter key/name
-          examples:
-          - formData1
-          minLength: 1
-        value:
-          $ref: "#/components/schemas/JsonNode"
-          description: JSON structure value
-          example:
-            firstName: Joe
-            lastName: Doe
-        schemaId:
-          type: string
-          description: ID referencing a schema in the json-schema service
-          examples:
-          - 2281_person_1.0
-          minLength: 1
-        version:
-          type: integer
-          format: int64
-          description: Optimistic locking version of the JSON parameter
-          readOnly: true
-      required:
-      - key
-      - schemaId
-      - value
     Notification:
       type: object
       properties:
@@ -10868,10 +11133,10 @@ components:
           type: boolean
         last:
           type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10887,6 +11152,8 @@ components:
     PageableObject:
       type: object
       properties:
+        sort:
+          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -10895,8 +11162,6 @@ components:
         pageSize:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
         offset:
@@ -11084,10 +11349,10 @@ components:
           type: boolean
         last:
           type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11349,10 +11614,10 @@ components:
           type: boolean
         last:
           type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11582,10 +11847,10 @@ components:
           type: boolean
         last:
           type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32

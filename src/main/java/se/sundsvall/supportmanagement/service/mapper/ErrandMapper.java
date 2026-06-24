@@ -397,17 +397,21 @@ public final class ErrandMapper {
 			.collect(toCollection(ArrayList::new));
 	}
 
+	public static JsonParameter toJsonParameter(final JsonParameterEntity entity) {
+		return JsonParameter.create()
+			.withKey(entity.getKey())
+			.withSchemaId(entity.getSchemaId())
+			.withValue(toJsonNode(entity.getValue()))
+			.withVersion(entity.getVersion());
+	}
+
 	private static List<JsonParameter> toJsonParameters(final List<JsonParameterEntity> entities) {
 		return ofNullable(entities).orElse(emptyList()).stream()
-			.map(entity -> JsonParameter.create()
-				.withKey(entity.getKey())
-				.withSchemaId(entity.getSchemaId())
-				.withValue(toJsonNode(entity.getValue()))
-				.withVersion(entity.getVersion()))
+			.map(ErrandMapper::toJsonParameter)
 			.toList();
 	}
 
-	private static String toJsonString(final JsonNode jsonNode) {
+	public static String toJsonString(final JsonNode jsonNode) {
 		if (isNull(jsonNode)) {
 			return null;
 		}

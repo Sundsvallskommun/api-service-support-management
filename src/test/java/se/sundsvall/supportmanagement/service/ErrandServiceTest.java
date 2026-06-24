@@ -395,7 +395,7 @@ class ErrandServiceTest {
 		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note().id("id"))));
 
-		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(conversationServiceMock).deleteByErrandId(same(entity));
@@ -422,7 +422,7 @@ class ErrandServiceTest {
 		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
 			.thenThrow(new RuntimeException("Notes service down"));
 
-		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
@@ -442,7 +442,7 @@ class ErrandServiceTest {
 			.thenReturn(new FindNotesResponse().notes(emptyList()));
 		doThrow(new RuntimeException("Conversation service down")).when(conversationServiceMock).deleteByErrandId(any());
 
-		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
