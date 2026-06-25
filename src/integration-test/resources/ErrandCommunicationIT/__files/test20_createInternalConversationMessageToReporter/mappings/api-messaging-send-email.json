@@ -19,7 +19,7 @@
 						]
 					},
 					"emailAddress": "robert.reporter@testdomain.local",
-					"subject": "Nytt meddelande kopplat till ärendet E-service AP-23020003",
+					"subject": "Nytt meddelande kopplat till ärendet AP-23020003",
 					"message": "Som rapportör kan du kontakta oss via e-post eller telefon",
 					"sender": {
 						"name": "no-reply@localhost.local",

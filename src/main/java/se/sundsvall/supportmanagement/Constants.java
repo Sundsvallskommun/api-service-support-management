@@ -2,7 +2,7 @@ package se.sundsvall.supportmanagement;
 
 public final class Constants {
 
-	public static final String SUBJECT_TEMPLATE = "Nytt meddelande kopplat till ärendet %s %s";
+	public static final String SUBJECT_TEMPLATE = "Nytt meddelande kopplat till ärendet %s";
 	public static final String NAMESPACE_REGEXP = "[\\w|\\-]+";
 	public static final String NAMESPACE_VALIDATION_MESSAGE = "can only contain A-Z, a-z, 0-9, - and _";
 	public static final String SENT_BY_HEADER = "X-Sent-By";
