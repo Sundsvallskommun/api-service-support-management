@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.11"
 servers:
-- url: http://localhost:59940
+- url: http://localhost:54715
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -5617,6 +5617,12 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: If-Match
+        in: header
+        description: Optional ETag for optimistic locking — omit to skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -5639,6 +5645,18 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -5678,6 +5696,12 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: If-Match
+        in: header
+        description: Optional ETag for optimistic locking — omit to skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -5710,6 +5734,18 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -5811,6 +5847,13 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: If-Match
+        in: header
+        description: Optional ETag of the errand for optimistic locking — omit to
+          skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -5839,6 +5882,18 @@ paths:
                   $ref: "#/components/schemas/Parameter"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -5911,9 +5966,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
+                $ref: "#/components/schemas/Parameter"
         "404":
           description: Not Found
           content:
@@ -5972,6 +6025,13 @@ paths:
           type: string
           minLength: 1
         example: propertyInfo
+      - name: If-Match
+        in: header
+        description: Optional ETag of the parameter for optimistic locking — omit
+          to skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -5986,6 +6046,18 @@ paths:
           description: Successful operation
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -6042,6 +6114,13 @@ paths:
           type: string
           minLength: 1
         example: propertyInfo
+      - name: If-Match
+        in: header
+        description: Optional ETag of the parameter for optimistic locking — omit
+          to skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -6068,6 +6147,18 @@ paths:
                 $ref: "#/components/schemas/Parameter"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -8105,16 +8196,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        detail:
-          type: string
-        title:
-          type: string
         status:
           type: integer
           format: int32
@@ -8133,13 +8224,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
         instance:
           type: string
           format: uri
-        detail:
-          type: string
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
     ThrowableProblem:
       type: object
       properties:
@@ -9396,6 +9487,11 @@ components:
           examples:
           - 2000-10-31T01:30:00.000+02:00
           readOnly: true
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the errand
+          readOnly: true
     ErrandAction:
       type: object
       description: Errand action model
@@ -9513,50 +9609,15 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
         container:
-          type: boolean
-        pojo:
-          type: boolean
-        double:
-          type: boolean
-        binary:
-          type: boolean
-        int:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        string:
-          type: boolean
-        long:
-          type: boolean
-        short:
-          type: boolean
-        boolean:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
           type: boolean
         floatingPointNumber:
           type: boolean
-        bigDecimal:
-          type: boolean
-        missingNode:
-          type: boolean
-        bigInteger:
+        number:
           type: boolean
         valueNode:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -9570,6 +9631,41 @@ components:
           - OBJECT
           - POJO
           - STRING
+        string:
+          type: boolean
+        integralNumber:
+          type: boolean
+        pojo:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
+          type: boolean
         embeddedValue:
           type: boolean
     JsonParameter:
@@ -9594,6 +9690,11 @@ components:
           examples:
           - 2281_person_1.0
           minLength: 1
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the JSON parameter
+          readOnly: true
       required:
       - key
       - schemaId
@@ -9715,6 +9816,11 @@ components:
             type: string
             maxLength: 3000
             minLength: 0
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the parameter
+          readOnly: true
       required:
       - key
     Priority:
@@ -10753,6 +10859,17 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10763,25 +10880,11 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
         paged:
@@ -10794,14 +10897,17 @@ components:
           format: int32
         unpaged:
           type: boolean
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
+        sorted:
           type: boolean
         unsorted:
           type: boolean
-        sorted:
+        empty:
           type: boolean
     SubscriberNotification:
       type: object
@@ -10969,6 +11075,17 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10979,17 +11096,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Revision:
@@ -11234,6 +11340,17 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11244,17 +11361,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -11405,6 +11511,11 @@ components:
         mimeType:
           type: string
           description: Mime type of the file
+        hash:
+          type: string
+          description: Hash of the file content
+          examples:
+          - a3b4c5d6e7f8...
         created:
           type: string
           format: date-time
@@ -11467,6 +11578,17 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11477,17 +11599,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:
@@ -11544,7 +11655,7 @@ components:
           - 2023-01-01T00:00:00Z
         hash:
           type: string
-          description: "SHA-256 hash (hex encoded) of the attachment's raw content"
+          description: SHA-256 hash (hex encoded) of the attachment's raw content
           examples:
           - e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
           readOnly: true
