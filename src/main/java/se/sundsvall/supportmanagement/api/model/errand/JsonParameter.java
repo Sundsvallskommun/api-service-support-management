@@ -3,7 +3,10 @@ package se.sundsvall.supportmanagement.api.model.errand;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import tools.jackson.databind.JsonNode;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
@@ -29,6 +32,9 @@ public class JsonParameter {
 	private String schemaId;
 
 	@Schema(description = "Optimistic locking version of the JSON parameter", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private Long version;
 
 	public static JsonParameter create() {

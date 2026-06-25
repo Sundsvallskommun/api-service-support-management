@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.10"
+  version: "14.11"
 servers:
 - url: http://localhost:65018
   description: Generated server url
@@ -5966,9 +5966,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
+                $ref: "#/components/schemas/Parameter"
         "404":
           description: Not Found
           content:

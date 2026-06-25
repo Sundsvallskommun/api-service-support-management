@@ -1,4 +1,9 @@
-[
-	"value1",
-	"value2"
-]
+{
+	"displayName": "Displayname 1",
+	"group": "A",
+	"key": "key1",
+	"values": [
+		"value1",
+		"value2"
+	]
+}
