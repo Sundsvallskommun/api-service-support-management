@@ -120,6 +120,7 @@ public final class ConversationMapper {
 				.withId(attachment.getId())
 				.withFileName(attachment.getFileName())
 				.withMimeType(attachment.getMimeType())
+				.withHash(attachment.getHash())
 				.withFileSize(ofNullable(attachment.getFileSize()).orElse(0)))
 			.toList();
 	}
