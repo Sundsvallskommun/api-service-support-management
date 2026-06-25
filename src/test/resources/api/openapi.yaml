@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.10"
 servers:
-- url: http://localhost:60128
+- url: http://localhost:59940
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -8105,16 +8105,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        detail:
-          type: string
-        title:
-          type: string
         status:
           type: integer
           format: int32
@@ -8133,13 +8133,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        instance:
-          type: string
-          format: uri
         detail:
           type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        instance:
+          type: string
+          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -9513,50 +9513,9 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
         container:
           type: boolean
-        pojo:
-          type: boolean
-        double:
-          type: boolean
-        binary:
-          type: boolean
-        int:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        string:
-          type: boolean
-        long:
-          type: boolean
-        short:
-          type: boolean
-        boolean:
-          type: boolean
         number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        missingNode:
-          type: boolean
-        bigInteger:
-          type: boolean
-        valueNode:
           type: boolean
         nodeType:
           type: string
@@ -9570,6 +9529,47 @@ components:
           - OBJECT
           - POJO
           - STRING
+        string:
+          type: boolean
+        integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
+        pojo:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
+          type: boolean
         embeddedValue:
           type: boolean
     JsonParameter:
@@ -10753,6 +10753,17 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10763,25 +10774,11 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
         paged:
@@ -10794,14 +10791,17 @@ components:
           format: int32
         unpaged:
           type: boolean
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
+        sorted:
           type: boolean
         unsorted:
           type: boolean
-        sorted:
+        empty:
           type: boolean
     SubscriberNotification:
       type: object
@@ -10969,6 +10969,17 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -10979,17 +10990,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Revision:
@@ -11234,6 +11234,17 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11244,17 +11255,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     Communication:
@@ -11405,6 +11405,11 @@ components:
         mimeType:
           type: string
           description: Mime type of the file
+        hash:
+          type: string
+          description: Hash of the file content
+          examples:
+          - a3b4c5d6e7f8...
         created:
           type: string
           format: date-time
@@ -11467,6 +11472,17 @@ components:
         totalPages:
           type: integer
           format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11477,17 +11493,6 @@ components:
         number:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        numberOfElements:
-          type: integer
-          format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         empty:
           type: boolean
     ReadBy:
@@ -11544,7 +11549,7 @@ components:
           - 2023-01-01T00:00:00Z
         hash:
           type: string
-          description: "SHA-256 hash (hex encoded) of the attachment's raw content"
+          description: SHA-256 hash (hex encoded) of the attachment's raw content
           examples:
           - e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
           readOnly: true

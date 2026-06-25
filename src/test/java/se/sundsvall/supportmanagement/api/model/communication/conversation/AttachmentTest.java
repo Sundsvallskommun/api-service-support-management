@@ -40,6 +40,7 @@ class AttachmentTest {
 		final var created = now();
 		final var fileName = "fileName";
 		final var fileSize = 1;
+		final var hash = "hash";
 		final var id = randomUUID().toString();
 		final var mimeType = "mimeType";
 
@@ -47,6 +48,7 @@ class AttachmentTest {
 			.withCreated(created)
 			.withFileName(fileName)
 			.withFileSize(fileSize)
+			.withHash(hash)
 			.withId(id)
 			.withMimeType(mimeType);
 
@@ -54,6 +56,7 @@ class AttachmentTest {
 		assertThat(object.getCreated()).isEqualTo(created);
 		assertThat(object.getFileName()).isEqualTo(fileName);
 		assertThat(object.getFileSize()).isEqualTo(fileSize);
+		assertThat(object.getHash()).isEqualTo(hash);
 		assertThat(object.getId()).isEqualTo(id);
 		assertThat(object.getMimeType()).isEqualTo(mimeType);
 	}
