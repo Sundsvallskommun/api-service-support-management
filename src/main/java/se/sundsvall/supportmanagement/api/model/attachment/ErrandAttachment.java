@@ -35,6 +35,9 @@ public class ErrandAttachment {
 	@Schema(description = "The attachment created date", examples = "2023-01-01T00:00:00Z")
 	private OffsetDateTime created;
 
+	@Schema(description = "SHA-256 hash (hex encoded) of the attachment's raw content", accessMode = READ_ONLY, examples = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+	private String hash;
+
 	public static ErrandAttachment create() {
 		return new ErrandAttachment();
 	}
@@ -104,17 +107,30 @@ public class ErrandAttachment {
 		return this;
 	}
 
+	public String getHash() {
+		return hash;
+	}
+
+	public void setHash(final String hash) {
+		this.hash = hash;
+	}
+
+	public ErrandAttachment withHash(final String hash) {
+		this.hash = hash;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final ErrandAttachment that = (ErrandAttachment) o;
-		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(created, that.created);
+		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(created, that.created) && Objects.equals(hash, that.hash);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, fileName, mimeType, channel, created);
+		return Objects.hash(id, fileName, mimeType, channel, created, hash);
 	}
 
 	@Override
@@ -125,6 +141,7 @@ public class ErrandAttachment {
 			", mimeType='" + mimeType + '\'' +
 			", channel='" + channel + '\'' +
 			", created=" + created +
+			", hash='" + hash + '\'' +
 			'}';
 	}
 }

@@ -19,6 +19,9 @@ public class Attachment {
 	@Schema(description = "Mime type of the file")
 	private String mimeType;
 
+	@Schema(description = "Hash of the file content", examples = "a3b4c5d6e7f8...")
+	private String hash;
+
 	@Schema(description = "The attachment created date", examples = "2023-01-01T00:00:00+01:00")
 	private OffsetDateTime created;
 
@@ -78,6 +81,19 @@ public class Attachment {
 		return this;
 	}
 
+	public String getHash() {
+		return hash;
+	}
+
+	public void setHash(String hash) {
+		this.hash = hash;
+	}
+
+	public Attachment withHash(String hash) {
+		this.hash = hash;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -93,7 +109,7 @@ public class Attachment {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, fileName, fileSize, id, mimeType);
+		return Objects.hash(created, fileName, fileSize, hash, id, mimeType);
 	}
 
 	@Override
@@ -108,11 +124,11 @@ public class Attachment {
 			return false;
 		}
 		Attachment other = (Attachment) obj;
-		return Objects.equals(created, other.created) && Objects.equals(fileName, other.fileName) && fileSize == other.fileSize && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType);
+		return Objects.equals(created, other.created) && Objects.equals(fileName, other.fileName) && fileSize == other.fileSize && Objects.equals(hash, other.hash) && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType);
 	}
 
 	@Override
 	public String toString() {
-		return "Attachment [id=" + id + ", fileName=" + fileName + ", fileSize=" + fileSize + ", mimeType=" + mimeType + ", created=" + created + "]";
+		return "Attachment [id=" + id + ", fileName=" + fileName + ", fileSize=" + fileSize + ", mimeType=" + mimeType + ", hash=" + hash + ", created=" + created + "]";
 	}
 }

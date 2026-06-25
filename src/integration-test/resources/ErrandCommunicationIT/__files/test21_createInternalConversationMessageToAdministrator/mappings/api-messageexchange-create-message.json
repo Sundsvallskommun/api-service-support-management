@@ -6,7 +6,27 @@
 			"X-Sent-By": {
 				"equalTo": "rob01rep; type=adAccount"
 			}
-		}
+		},
+		"multipartPatterns": [
+			{
+				"matchingType": "ANY",
+				"headers": {
+					"Content-Disposition": {
+						"contains": "name=\"message\""
+					}
+				},
+				"bodyPatterns": [
+					{
+						"equalToJson": {
+							"inReplyToMessageId": "bbd34585-8754-47a3-a068-012b13540e94",
+							"content": "Someone ate my cake!",
+							"attachments": [],
+							"readBy": []
+						}
+					}
+				]
+			}
+		]
 	},
 	"response": {
 		"headers": {

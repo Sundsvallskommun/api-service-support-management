@@ -14,13 +14,26 @@
 					"Content-Disposition": {
 						"contains": "name=\"message\""
 					}
-				}
+				},
+				"bodyPatterns": [
+					{
+						"equalToJson": {
+							"inReplyToMessageId": "bbd34585-8754-47a3-a068-012b13540e94",
+							"content": "Here is the attachment you requested.",
+							"attachments": [],
+							"readBy": []
+						}
+					}
+				]
 			},
 			{
 				"matchingType": "ANY",
 				"headers": {
 					"Content-Disposition": {
-						"contains": "name=\"attachments\""
+						"matches": ".*name=\"attachments\".*filename=\"Test_image.jpg\".*"
+					},
+					"Content-Type": {
+						"equalTo": "image/jpeg"
 					}
 				}
 			}

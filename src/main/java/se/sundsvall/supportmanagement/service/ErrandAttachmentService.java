@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -38,6 +39,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ATTACHMENT;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.computeSha256Hex;
 
 @Service
 public class ErrandAttachmentService {
@@ -54,18 +56,20 @@ public class ErrandAttachmentService {
 	private final AttachmentRepository attachmentRepository;
 	private final RevisionService revisionService;
 	private final EventService eventService;
+	private final EntityManager entityManager;
 	private final Semaphore semaphore;
 
 	public ErrandAttachmentService(
 		final ErrandsRepository errandsRepository,
 		final AccessControlService accessControlService,
 		final RevisionService revisionService, final EventService eventService,
-		final AttachmentRepository attachmentRepository, final Semaphore semaphore) {
+		final AttachmentRepository attachmentRepository, final EntityManager entityManager, final Semaphore semaphore) {
 		this.errandsRepository = errandsRepository;
 		this.accessControlService = accessControlService;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.attachmentRepository = attachmentRepository;
+		this.entityManager = entityManager;
 		this.semaphore = semaphore;
 	}
 
@@ -87,7 +91,11 @@ public class ErrandAttachmentService {
 			.orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
 
 		// Save
-		attachmentEntity = attachmentRepository.save(attachmentEntity);
+		attachmentEntity = attachmentRepository.saveAndFlush(attachmentEntity);
+
+		// Compute hash by streaming from the persisted database blob
+		computeAndSetHash(attachmentEntity);
+
 		errandEntity.getAttachments().add(attachmentEntity);
 
 		// Update errand with new attachment and create new revision
@@ -134,7 +142,7 @@ public class ErrandAttachmentService {
 			errandEntity.getAttachments().remove(attachmentEntity);
 			entity = errandsRepository.save(errandEntity);
 
-		} catch (final Exception e) {
+		} catch (final Exception _) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Failed to delete attachment with id '%s' from errand with id '%s'", attachmentId, errandId));
 		}
 		final var revisionResult = revisionService.createErrandRevision(entity);
@@ -150,6 +158,10 @@ public class ErrandAttachmentService {
 	@Transactional
 	public void createErrandAttachment(final AttachmentEntity attachmentEntity, final ErrandEntity errandEntity) {
 		attachmentRepository.saveAndFlush(attachmentEntity);
+
+		// Compute hash by streaming from the persisted database blob
+		computeAndSetHash(attachmentEntity);
+
 		final var revisionResult = revisionService.createErrandRevision(errandEntity);
 		if (revisionResult != null) {
 			try {
@@ -189,10 +201,21 @@ public class ErrandAttachmentService {
 			StreamUtils.copy(attachment.getAttachmentData().getFile().getBinaryStream(), response.getOutputStream());
 		} catch (final IOException | SQLException e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "%s occurred when copying file with attachment id '%s' to response: %s".formatted(e.getClass().getSimpleName(), attachment.getId(), e.getMessage()));
-		} catch (final InterruptedException e) {
+		} catch (final InterruptedException _) {
 			Thread.currentThread().interrupt();
 		} finally {
 			semaphore.release(fileSize);
+		}
+	}
+
+	private void computeAndSetHash(final AttachmentEntity attachmentEntity) {
+		try {
+			// Refresh to get a database-backed blob (the in-memory BlobProxy is not re-readable after flush)
+			entityManager.refresh(attachmentEntity);
+			final var hash = computeSha256Hex(attachmentEntity.getAttachmentData().getFile().getBinaryStream());
+			attachmentEntity.setHash(hash);
+		} catch (final SQLException e) {
+			LOG.warn("Failed to compute hash for attachment {}: {}", attachmentEntity.getId(), e.getMessage());
 		}
 	}
 }
