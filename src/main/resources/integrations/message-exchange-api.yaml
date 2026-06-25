@@ -903,6 +903,11 @@ components:
           type: string
           description: Mime type of the file
           readOnly: true
+        hash:
+          type: string
+          description: Hash of the file content
+          readOnly: true
+          example: a3b4c5d6e7f8...
         created:
           type: string
           description: The attachment created date
