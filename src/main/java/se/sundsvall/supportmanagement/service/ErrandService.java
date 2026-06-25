@@ -178,7 +178,7 @@ public class ErrandService {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 
 		if (ifMatch == null) {
-			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", id, namespace, municipalityId);
+			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, errandEntityToUpdate.getVersion());
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
@@ -219,7 +219,7 @@ public class ErrandService {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
 
 		if (ifMatch == null) {
-			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", id, namespace, municipalityId);
+			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, entity.getVersion());
 

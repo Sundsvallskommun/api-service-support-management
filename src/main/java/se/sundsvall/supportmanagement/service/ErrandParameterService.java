@@ -20,6 +20,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.mergeParameters;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameter;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
@@ -46,7 +47,7 @@ public class ErrandParameterService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
 		if (ifMatch == null) {
-			LOG.debug("PATCH /errands/{}/parameters received without If-Match header (namespace={}, municipalityId={})", errandId, namespace, municipalityId);
+			LOG.debug("PATCH /errands/{}/parameters received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, errandEntity.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
@@ -78,7 +79,7 @@ public class ErrandParameterService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(PARAMETER_NOT_FOUND, parameterKey, errandEntity.getId())));
 
 		if (ifMatch == null) {
-			LOG.debug("PATCH /errands/{}/parameters/{} received without If-Match header (namespace={}, municipalityId={})", errandId, parameterKey, namespace, municipalityId);
+			LOG.debug("PATCH /errands/{}/parameters/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(parameterKey), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, parameterEntity.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
@@ -102,7 +103,7 @@ public class ErrandParameterService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(PARAMETER_NOT_FOUND, parameterKey, errandEntity.getId())));
 
 		if (ifMatch == null) {
-			LOG.debug("DELETE /errands/{}/parameters/{} received without If-Match header (namespace={}, municipalityId={})", errandId, parameterKey, namespace, municipalityId);
+			LOG.debug("DELETE /errands/{}/parameters/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(parameterKey), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, parameterToRemove.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);

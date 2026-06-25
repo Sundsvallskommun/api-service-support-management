@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonParameter;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonString;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
@@ -52,7 +53,7 @@ public class ErrandJsonParameterService {
 			.flatMap(list -> list.stream().filter(e -> Objects.equals(e.getKey(), key)).findFirst());
 
 		if (ifMatch == null) {
-			LOG.debug("PUT /errands/{}/json-parameters/{} received without If-Match header (namespace={}, municipalityId={})", errandId, key, namespace, municipalityId);
+			LOG.debug("PUT /errands/{}/json-parameters/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(key), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		existing.ifPresent(e -> validateIfMatch(ifMatch, e.getVersion()));
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
@@ -85,7 +86,7 @@ public class ErrandJsonParameterService {
 		final var entityToRemove = findJsonParameterEntityOrElseThrow(errandEntity, key);
 
 		if (ifMatch == null) {
-			LOG.debug("DELETE /errands/{}/json-parameters/{} received without If-Match header (namespace={}, municipalityId={})", errandId, key, namespace, municipalityId);
+			LOG.debug("DELETE /errands/{}/json-parameters/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(key), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, entityToRemove.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
