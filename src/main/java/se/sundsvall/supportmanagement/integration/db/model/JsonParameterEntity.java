@@ -8,6 +8,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.util.Objects;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
@@ -33,6 +34,10 @@ public class JsonParameterEntity {
 
 	@Column(name = "parameter_key")
 	private String key;
+
+	@Version
+	@Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+	private Long version;
 
 	@Column(name = "schema_id")
 	private String schemaId;
@@ -110,6 +115,19 @@ public class JsonParameterEntity {
 		return this;
 	}
 
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public JsonParameterEntity withVersion(final Long version) {
+		this.version = version;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, key, schemaId, value);
@@ -131,6 +149,7 @@ public class JsonParameterEntity {
 		return "JsonParameterEntity{" +
 			"id='" + id + '\'' +
 			", key='" + key + '\'' +
+			", version=" + version +
 			", schemaId='" + schemaId + '\'' +
 			", value='" + value + '\'' +
 			'}';

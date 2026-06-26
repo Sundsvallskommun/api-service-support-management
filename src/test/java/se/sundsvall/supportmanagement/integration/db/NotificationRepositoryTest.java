@@ -42,7 +42,8 @@ class NotificationRepositoryTest {
 		final var acknowledged = true;
 		final var errandEntity = ErrandEntity.create()
 			.withId("ERRAND_ID-1")
-			.withErrandNumber("KC-23020001");
+			.withErrandNumber("KC-23020001")
+			.withVersion(0L);
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
 
@@ -143,7 +144,8 @@ class NotificationRepositoryTest {
 		// Arrange
 		final var errandEntity = ErrandEntity.create()
 			.withId("ERRAND_ID-1")
-			.withErrandNumber("KC-23020001");
+			.withErrandNumber("KC-23020001")
+			.withVersion(0L);
 
 		// Act
 		final var exists = notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter("namespace-1", "2281", "owner_id-1", errandEntity, "description-1", now().minusHours(6));

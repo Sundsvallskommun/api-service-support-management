@@ -48,7 +48,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "${json-unit.any-string}",
-			"touched": "${json-unit.any-string}"
+			"touched": "${json-unit.any-string}",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "${json-unit.any-string}",
@@ -83,7 +84,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "${json-unit.any-string}",
-			"touched": "${json-unit.any-string}"
+			"touched": "${json-unit.any-string}",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "${json-unit.any-string}",
@@ -118,7 +120,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "${json-unit.any-string}",
-			"touched": "${json-unit.any-string}"
+			"touched": "${json-unit.any-string}",
+			"version": "${json-unit.any-number}"
 		}
 	],
 	"pageable": {

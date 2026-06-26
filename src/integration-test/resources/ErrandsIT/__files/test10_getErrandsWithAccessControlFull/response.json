@@ -55,7 +55,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "2024-01-01T12:00:00+01:00",
-			"touched": "2024-01-01T12:00:00+01:00"
+			"touched": "2024-01-01T12:00:00+01:00",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "7c57b4c3-9ef6-472d-8f03-5c15e9458ad6",
@@ -90,7 +91,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "2024-01-01T12:00:00+01:00",
-			"touched": "2024-01-01T12:00:00+01:00"
+			"touched": "2024-01-01T12:00:00+01:00",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "c9efe03d-deff-4828-a043-541fa78ffdeb",
@@ -125,7 +127,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "2024-01-01T12:00:00+01:00",
-			"touched": "2024-01-01T12:00:00+01:00"
+			"touched": "2024-01-01T12:00:00+01:00",
+			"version": "${json-unit.any-number}"
 		}
 	],
 	"pageable": {

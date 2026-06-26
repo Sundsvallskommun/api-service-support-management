@@ -6,12 +6,14 @@
 		"values": [
 			"value1",
 			"value2"
-		]
+		],
+		"version": "${json-unit.any-number}"
 	},
 	{
 		"key": "key2",
 		"displayName": "Displayname 2",
 		"group": "A",
-		"values": []
+		"values": [],
+		"version": "${json-unit.any-number}"
 	}
 ]

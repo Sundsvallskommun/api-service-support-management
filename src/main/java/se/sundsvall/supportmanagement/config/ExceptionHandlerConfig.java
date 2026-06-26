@@ -6,14 +6,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import se.sundsvall.dept44.problem.Problem;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.http.ResponseEntity.badRequest;
+import static org.springframework.http.ResponseEntity.status;
 
 @Configuration
 public class ExceptionHandlerConfig {
@@ -36,6 +39,20 @@ public class ExceptionHandlerConfig {
 					.withStatus(BAD_REQUEST)
 					.withTitle(TITLE)
 					.withDetail(extractMessage(exception))
+					.build());
+		}
+
+		@ExceptionHandler
+		@ResponseBody
+		ResponseEntity<Problem> handleOptimisticLockingFailure(final ObjectOptimisticLockingFailureException exception) {
+			LOGGER.warn("Optimistic locking failure: {}", exception.getMessage());
+
+			return status(CONFLICT)
+				.contentType(APPLICATION_PROBLEM_JSON)
+				.body(Problem.builder()
+					.withStatus(CONFLICT)
+					.withTitle("Conflict")
+					.withDetail("The resource was modified by a concurrent request, please reload and retry")
 					.build());
 		}
 

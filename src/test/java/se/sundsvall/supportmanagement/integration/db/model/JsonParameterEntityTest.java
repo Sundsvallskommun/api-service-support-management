@@ -18,8 +18,8 @@ class JsonParameterEntityTest {
 		MatcherAssert.assertThat(JsonParameterEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("errandEntity"),
-			hasValidBeanEqualsExcluding("errandEntity"),
+			hasValidBeanHashCodeExcluding("errandEntity", "version"),
+			hasValidBeanEqualsExcluding("errandEntity", "version"),
 			hasValidBeanToStringExcluding("errandEntity")));
 	}
 
@@ -31,13 +31,15 @@ class JsonParameterEntityTest {
 		final var schemaId = "schemaId";
 		final var value = "{\"field\": \"value\"}";
 		final var errandEntity = ErrandEntity.create().withId("errandId");
+		final var version = 1L;
 
 		final var jsonParameterEntity = JsonParameterEntity.create()
 			.withId(id)
 			.withErrandEntity(errandEntity)
 			.withKey(key)
 			.withSchemaId(schemaId)
-			.withValue(value);
+			.withValue(value)
+			.withVersion(version);
 
 		assertThat(jsonParameterEntity).hasNoNullFieldsOrProperties();
 		assertThat(jsonParameterEntity.getId()).isEqualTo(id);
@@ -45,6 +47,7 @@ class JsonParameterEntityTest {
 		assertThat(jsonParameterEntity.getSchemaId()).isEqualTo(schemaId);
 		assertThat(jsonParameterEntity.getValue()).isEqualTo(value);
 		assertThat(jsonParameterEntity.getErrandEntity()).isEqualTo(errandEntity);
+		assertThat(jsonParameterEntity.getVersion()).isEqualTo(version);
 	}
 
 	@Test

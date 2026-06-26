@@ -6,20 +6,23 @@
 			"value2",
 			"value3"
 		],
-		"key": "key1"
+		"key": "key1",
+		"version": "${json-unit.any-number}"
 	},
 	{
 		"displayName": "display name 3",
 		"values": [
 			"value4"
 		],
-		"key": "key0"
+		"key": "key0",
+		"version": "${json-unit.any-number}"
 	},
 	{
 		"displayName": "display name 2",
 		"values": [
 			"value4"
 		],
-		"key": "key2"
+		"key": "key2",
+		"version": "${json-unit.any-number}"
 	}
 ]

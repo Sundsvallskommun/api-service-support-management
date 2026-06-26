@@ -84,7 +84,8 @@
 			"jsonParameters": [],
 			"assignedUserId": "jane11dane",
 			"suspension": {},
-			"status": "STATUS-1"
+			"status": "STATUS-1",
+			"version": "${json-unit.any-number}"
 		}
 	],
 	"totalElements": 1,

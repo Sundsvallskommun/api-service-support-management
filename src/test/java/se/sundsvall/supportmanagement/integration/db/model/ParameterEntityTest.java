@@ -19,8 +19,8 @@ class ParameterEntityTest {
 		MatcherAssert.assertThat(ParameterEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("errandEntity"),
-			hasValidBeanEqualsExcluding("errandEntity"),
+			hasValidBeanHashCodeExcluding("errandEntity", "version"),
+			hasValidBeanEqualsExcluding("errandEntity", "version"),
 			hasValidBeanToStringExcluding("errandEntity")));
 	}
 
@@ -33,6 +33,7 @@ class ParameterEntityTest {
 		final var key = "key";
 		final var values = List.of("value");
 		final var errandEntity = ErrandEntity.create().withId("id");
+		final var version = 1L;
 
 		final var parameterEntity = ParameterEntity.create()
 			.withId(id)
@@ -40,7 +41,8 @@ class ParameterEntityTest {
 			.withParameterGroup(parameterGroup)
 			.withErrandEntity(errandEntity)
 			.withKey(key)
-			.withValues(values);
+			.withValues(values)
+			.withVersion(version);
 
 		assertThat(parameterEntity).hasNoNullFieldsOrProperties();
 		assertThat(parameterEntity.getKey()).isEqualTo(key);
@@ -49,6 +51,7 @@ class ParameterEntityTest {
 		assertThat(parameterEntity.getValues()).isEqualTo(values);
 		assertThat(parameterEntity.getId()).isEqualTo(id);
 		assertThat(parameterEntity.getErrandEntity()).isEqualTo(errandEntity);
+		assertThat(parameterEntity.getVersion()).isEqualTo(version);
 	}
 
 	@Test

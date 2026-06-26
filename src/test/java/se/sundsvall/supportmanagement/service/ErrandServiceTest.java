@@ -132,6 +132,9 @@ class ErrandServiceTest {
 	@Mock
 	private ErrandPhaseService errandPhaseServiceMock;
 
+	@Mock
+	private jakarta.persistence.EntityManager entityManagerMock;
+
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
 
@@ -339,7 +342,7 @@ class ErrandServiceTest {
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
-		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());
+		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, buildErrand());
 
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 		assertThat(response.getSuspension()).extracting("suspendedFrom", "suspendedTo").containsExactlyInAnyOrder(entity.getSuspendedFrom(), entity.getSuspendedTo());
@@ -365,7 +368,7 @@ class ErrandServiceTest {
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
-		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, buildErrand());
+		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, buildErrand());
 
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 
@@ -392,7 +395,7 @@ class ErrandServiceTest {
 		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note().id("id"))));
 
-		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(conversationServiceMock).deleteByErrandId(same(entity));
@@ -419,7 +422,7 @@ class ErrandServiceTest {
 		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
 			.thenThrow(new RuntimeException("Notes service down"));
 
-		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
@@ -439,7 +442,7 @@ class ErrandServiceTest {
 			.thenReturn(new FindNotesResponse().notes(emptyList()));
 		doThrow(new RuntimeException("Conversation service down")).when(conversationServiceMock).deleteByErrandId(any());
 
-		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);

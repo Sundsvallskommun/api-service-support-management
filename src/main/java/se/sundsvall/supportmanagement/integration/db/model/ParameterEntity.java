@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.UuidGenerator;
@@ -35,6 +36,10 @@ public class ParameterEntity {
 
 	@Column(name = "parameters_key")
 	private String key;
+
+	@Version
+	@Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+	private Long version;
 
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(
@@ -127,6 +132,19 @@ public class ParameterEntity {
 		return this;
 	}
 
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public ParameterEntity withVersion(final Long version) {
+		this.version = version;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(displayName, parameterGroup, id, key, values);
@@ -152,6 +170,7 @@ public class ParameterEntity {
 			", displayName='" + displayName + '\'' +
 			", parameterGroup='" + parameterGroup + '\'' +
 			", key='" + key + '\'' +
+			", version=" + version +
 			", values=" + values +
 			'}';
 	}

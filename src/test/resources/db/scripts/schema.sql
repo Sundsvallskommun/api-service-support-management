@@ -206,26 +206,27 @@ create table errand (
                         suspended_from datetime(6),
                         suspended_to datetime(6),
                         touched datetime(6),
-                        namespace varchar(32) not null,
-                        status varchar(64),
-                        type varchar(128),
-                        contact_reason_description varchar(4096),
-                        assigned_group_id varchar(255),
-                        assigned_user_id varchar(255),
-                        category varchar(255),
-                        channel varchar(255),
-                        contact_reason_id varchar(255),
-                        errand_number varchar(255) not null,
-                        escalation_email varchar(255),
-                        id varchar(255) not null,
-                        previous_status varchar(255),
-                        priority varchar(255),
-                        reporter_user_id varchar(255),
-                        resolution varchar(255),
-                        title varchar(255),
-                        description longtext,
-                        primary key (id)
-) engine=InnoDB;
+                        version bigint default 0 not null,
+        namespace varchar(32) not null,
+        status varchar(64),
+        type varchar(128),
+        contact_reason_description varchar(4096),
+        assigned_group_id varchar(255),
+        assigned_user_id varchar(255),
+        category varchar(255),
+        channel varchar(255),
+        contact_reason_id varchar(255),
+        errand_number varchar(255) not null,
+        escalation_email varchar(255),
+        id varchar(255) not null,
+        previous_status varchar(255),
+        priority varchar(255),
+        reporter_user_id varchar(255),
+        resolution varchar(255),
+        title varchar(255),
+        description longtext,
+        primary key (id)
+    ) engine=InnoDB;
 
 create table errand_access_labels (
                                       errand_id varchar(255) not null,
@@ -294,13 +295,14 @@ create table handover_idempotency (
 ) engine=InnoDB;
 
 create table json_parameter (
-                                errand_id varchar(255) not null,
-                                id varchar(255) not null,
-                                parameter_key varchar(255),
-                                schema_id varchar(255),
-                                value longtext,
-                                primary key (id)
-) engine=InnoDB;
+                                version bigint default 0 not null,
+        errand_id varchar(255) not null,
+        id varchar(255) not null,
+        parameter_key varchar(255),
+        schema_id varchar(255),
+        value longtext,
+        primary key (id)
+    ) engine=InnoDB;
 
 create table message_exchange_integration_config (
                                                      created datetime(6),
@@ -398,13 +400,14 @@ create table notification_dispatch (
 ) engine=InnoDB;
 
 create table parameter (
-                           display_name varchar(255),
-                           errand_id varchar(255) not null,
-                           id varchar(255) not null,
-                           parameter_group varchar(255),
-                           parameters_key varchar(255),
-                           primary key (id)
-) engine=InnoDB;
+                           version bigint default 0 not null,
+        display_name varchar(255),
+        errand_id varchar(255) not null,
+        id varchar(255) not null,
+        parameter_group varchar(255),
+        parameters_key varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
 
 create table parameter_values (
                                   value_order integer default 0 not null,

@@ -31,7 +31,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "2024-01-01T12:00:00+01:00",
-			"touched": "2024-01-01T12:00:00+01:00"
+			"touched": "2024-01-01T12:00:00+01:00",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "cad8ec4e-0b6b-473a-800d-feb063f59094",
@@ -64,7 +65,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "2024-01-01T12:00:00+01:00",
-			"touched": "2024-01-01T12:00:00+01:00"
+			"touched": "2024-01-01T12:00:00+01:00",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "147d355f-dc94-4fde-a4cb-9ddd16cb1946",
@@ -135,7 +137,8 @@
 			"phases": [],
 			"created": "2023-04-26T15:48:17.124+02:00",
 			"modified": "2023-04-26T16:05:08.806+02:00",
-			"touched": "2023-04-26T16:05:08.806+02:00"
+			"touched": "2023-04-26T16:05:08.806+02:00",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
@@ -191,7 +194,8 @@
 			"phases": [],
 			"created": "2022-02-01T12:00:00+01:00",
 			"modified": "2022-04-01T12:00:00+02:00",
-			"touched": "2022-04-01T12:00:00+02:00"
+			"touched": "2022-04-01T12:00:00+02:00",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "1be673c0-6ba3-4fb0-af4a-43acf23389f6",
@@ -223,14 +227,16 @@
 					"values": [
 						"valueA1",
 						"valueA2"
-					]
+					],
+					"version": "${json-unit.any-number}"
 				},
 				{
 					"key": "keyB",
 					"displayName": "Displayname B",
 					"values": [
 						"valueB1"
-					]
+					],
+					"version": "${json-unit.any-number}"
 				}
 			],
 			"jsonParameters": [],
@@ -315,7 +321,8 @@
 			"actions": [],
 			"phases": [],
 			"created": "2022-03-01T12:00:00+01:00",
-			"touched": "2022-03-01T12:00:00+01:00"
+			"touched": "2022-03-01T12:00:00+01:00",
+			"version": "${json-unit.any-number}"
 		},
 		{
 			"id": "ec677eb3-604c-4935-bff7-f8f0b500c8f4",
@@ -382,13 +389,15 @@
 					"values": [
 						"value1",
 						"value2"
-					]
+					],
+					"version": "${json-unit.any-number}"
 				},
 				{
 					"key": "key2",
 					"displayName": "Displayname 2",
 					"group": "A",
-					"values": []
+					"values": [],
+					"version": "${json-unit.any-number}"
 				}
 			],
 			"jsonParameters": [],
@@ -488,7 +497,8 @@
 				}
 			],
 			"created": "2022-01-01T12:00:00+01:00",
-			"touched": "2022-01-01T12:00:00+01:00"
+			"touched": "2022-01-01T12:00:00+01:00",
+			"version": "${json-unit.any-number}"
 		}
 	],
 	"pageable": {

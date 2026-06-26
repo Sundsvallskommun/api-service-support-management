@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
 import tools.jackson.databind.JsonNode;
 
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+
 @Schema(description = "JSON Parameter model")
 public class JsonParameter {
 
@@ -26,8 +28,24 @@ public class JsonParameter {
 	@NotBlank
 	private String schemaId;
 
+	@Schema(description = "Optimistic locking version of the JSON parameter", accessMode = READ_ONLY)
+	private Long version;
+
 	public static JsonParameter create() {
 		return new JsonParameter();
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public JsonParameter withVersion(final Long version) {
+		this.version = version;
+		return this;
 	}
 
 	public String getKey() {
@@ -71,7 +89,7 @@ public class JsonParameter {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(key, schemaId, value);
+		return Objects.hash(key, schemaId, value, version);
 	}
 
 	@Override
@@ -86,11 +104,11 @@ public class JsonParameter {
 			return false;
 		}
 		final var other = (JsonParameter) obj;
-		return Objects.equals(key, other.key) && Objects.equals(schemaId, other.schemaId) && Objects.equals(value, other.value);
+		return Objects.equals(key, other.key) && Objects.equals(schemaId, other.schemaId) && Objects.equals(value, other.value) && Objects.equals(version, other.version);
 	}
 
 	@Override
 	public String toString() {
-		return "JsonParameter [key=" + key + ", value=" + value + ", schemaId=" + schemaId + "]";
+		return "JsonParameter [key=" + key + ", value=" + value + ", schemaId=" + schemaId + ", version=" + version + "]";
 	}
 }
