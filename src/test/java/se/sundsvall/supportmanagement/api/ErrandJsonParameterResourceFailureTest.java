@@ -12,6 +12,7 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
+import se.sundsvall.supportmanagement.service.ErrandParameterService;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static java.util.UUID.randomUUID;
@@ -39,6 +40,9 @@ class ErrandJsonParameterResourceFailureTest {
 
 	@MockitoBean
 	private ErrandJsonParameterService errandJsonParameterServiceMock;
+
+	@MockitoBean
+	private ErrandParameterService errandParameterServiceMock;
 
 	@Test
 	void readJsonParameterInvalidNamespace() {

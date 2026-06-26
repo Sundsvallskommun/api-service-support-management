@@ -12,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
+import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 import static java.util.UUID.randomUUID;
@@ -40,6 +41,9 @@ class ErrandParameterResourceTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
+
+	@MockitoBean
+	private ErrandJsonParameterService errandJsonParameterServiceMock;
 
 	@MockitoBean
 	private ErrandParameterService errandParameterServiceMock;
