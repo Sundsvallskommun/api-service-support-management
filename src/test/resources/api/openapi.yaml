@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.10"
+  version: "14.11"
 servers:
-- url: http://localhost:59940
+- url: http://localhost:54715
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -5617,6 +5617,12 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: If-Match
+        in: header
+        description: Optional ETag for optimistic locking — omit to skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -5639,6 +5645,18 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -5678,6 +5696,12 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: If-Match
+        in: header
+        description: Optional ETag for optimistic locking — omit to skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -5710,6 +5734,18 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -5811,6 +5847,13 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: If-Match
+        in: header
+        description: Optional ETag of the errand for optimistic locking — omit to
+          skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -5839,6 +5882,18 @@ paths:
                   $ref: "#/components/schemas/Parameter"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -5911,9 +5966,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
+                $ref: "#/components/schemas/Parameter"
         "404":
           description: Not Found
           content:
@@ -5972,6 +6025,13 @@ paths:
           type: string
           minLength: 1
         example: propertyInfo
+      - name: If-Match
+        in: header
+        description: Optional ETag of the parameter for optimistic locking — omit
+          to skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -5986,6 +6046,18 @@ paths:
           description: Successful operation
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -6042,6 +6114,13 @@ paths:
           type: string
           minLength: 1
         example: propertyInfo
+      - name: If-Match
+        in: header
+        description: Optional ETag of the parameter for optimistic locking — omit
+          to skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -6068,6 +6147,18 @@ paths:
                 $ref: "#/components/schemas/Parameter"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -8133,10 +8224,10 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        detail:
-          type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
         instance:
           type: string
           format: uri
@@ -9396,6 +9487,11 @@ components:
           examples:
           - 2000-10-31T01:30:00.000+02:00
           readOnly: true
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the errand
+          readOnly: true
     ErrandAction:
       type: object
       description: Errand action model
@@ -9515,7 +9611,13 @@ components:
       properties:
         container:
           type: boolean
+        floatingPointNumber:
+          type: boolean
         number:
+          type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -9532,10 +9634,6 @@ components:
         string:
           type: boolean
         integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
           type: boolean
         pojo:
           type: boolean
@@ -9557,8 +9655,6 @@ components:
         boolean:
           type: boolean
         binary:
-          type: boolean
-        floatingPointNumber:
           type: boolean
         empty:
           type: boolean
@@ -9594,6 +9690,11 @@ components:
           examples:
           - 2281_person_1.0
           minLength: 1
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the JSON parameter
+          readOnly: true
       required:
       - key
       - schemaId
@@ -9715,6 +9816,11 @@ components:
             type: string
             maxLength: 3000
             minLength: 0
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the parameter
+          readOnly: true
       required:
       - key
     Priority:

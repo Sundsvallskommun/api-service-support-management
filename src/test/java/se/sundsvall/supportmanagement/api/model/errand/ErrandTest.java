@@ -102,7 +102,8 @@ class ErrandTest {
 			.withPhases(phases)
 			.withActivePhaseId(activePhaseId)
 			.withActiveNotifications(activeNotifications)
-			.withActions(actions);
+			.withActions(actions)
+			.withVersion(1L);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getAssignedGroupId()).isEqualTo(assignedGroupId);

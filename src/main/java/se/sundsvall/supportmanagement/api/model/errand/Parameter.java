@@ -3,9 +3,14 @@ package se.sundsvall.supportmanagement.api.model.errand;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
+
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 @Schema(description = "Parameter model")
 public class Parameter {
@@ -24,8 +29,27 @@ public class Parameter {
 	@Valid
 	private List<@Size(max = 3000) String> values;
 
+	@Schema(description = "Optimistic locking version of the parameter", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private Long version;
+
 	public static Parameter create() {
 		return new Parameter();
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public Parameter withVersion(final Long version) {
+		this.version = version;
+		return this;
 	}
 
 	public String getKey() {
@@ -82,7 +106,7 @@ public class Parameter {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(displayName, group, key, values);
+		return Objects.hash(displayName, group, key, values, version);
 	}
 
 	@Override
@@ -93,7 +117,7 @@ public class Parameter {
 		if (!(obj instanceof final Parameter other)) {
 			return false;
 		}
-		return Objects.equals(displayName, other.displayName) && Objects.equals(group, other.group) && Objects.equals(key, other.key) && Objects.equals(values, other.values);
+		return Objects.equals(displayName, other.displayName) && Objects.equals(group, other.group) && Objects.equals(key, other.key) && Objects.equals(values, other.values) && Objects.equals(version, other.version);
 	}
 
 	@Override
@@ -103,6 +127,7 @@ public class Parameter {
 			", displayName='" + displayName + '\'' +
 			", group='" + group + '\'' +
 			", values=" + values +
+			", version=" + version +
 			'}';
 	}
 }

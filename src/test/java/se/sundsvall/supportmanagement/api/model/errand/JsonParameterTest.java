@@ -44,7 +44,8 @@ class JsonParameterTest {
 		final var bean = JsonParameter.create()
 			.withKey(key)
 			.withValue(value)
-			.withSchemaId(schemaId);
+			.withSchemaId(schemaId)
+			.withVersion(1L);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getKey()).isEqualTo(key);
