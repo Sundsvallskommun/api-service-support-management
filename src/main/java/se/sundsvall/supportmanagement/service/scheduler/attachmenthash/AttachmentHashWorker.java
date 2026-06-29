@@ -1,14 +1,11 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
-import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.service.util.ServiceUtil;
 
 @Component
 public class AttachmentHashWorker {
@@ -17,12 +14,13 @@ public class AttachmentHashWorker {
 	private static final Logger LOG = LoggerFactory.getLogger(AttachmentHashWorker.class);
 
 	private final AttachmentRepository attachmentRepository;
+	private final AttachmentHashBatchProcessor batchProcessor;
 
-	public AttachmentHashWorker(final AttachmentRepository attachmentRepository) {
+	public AttachmentHashWorker(final AttachmentRepository attachmentRepository, final AttachmentHashBatchProcessor batchProcessor) {
 		this.attachmentRepository = attachmentRepository;
+		this.batchProcessor = batchProcessor;
 	}
 
-	@Transactional
 	public void computeHashForAttachmentsWithoutHash() {
 		var totalProcessed = 0;
 		var page = attachmentRepository.findByHashIsNull(PageRequest.of(0, PAGE_SIZE));
@@ -35,23 +33,11 @@ public class AttachmentHashWorker {
 		LOG.info("Found {} attachments without hash, starting hash computation", page.getTotalElements());
 
 		while (!page.isEmpty()) {
-			final var updatedAttachments = new ArrayList<AttachmentEntity>();
+			final var ids = page.getContent().stream()
+				.map(AttachmentEntity::getId)
+				.toList();
 
-			for (final AttachmentEntity attachment : page.getContent()) {
-				try {
-					final var blob = attachment.getAttachmentData().getFile();
-					final var hash = ServiceUtil.computeSha256Hex(blob.getBinaryStream());
-					attachment.setHash(hash);
-					updatedAttachments.add(attachment);
-				} catch (final Exception e) {
-					LOG.warn("Failed to compute hash for attachment with id: {}", attachment.getId(), e);
-				}
-			}
-
-			if (!updatedAttachments.isEmpty()) {
-				attachmentRepository.saveAll(updatedAttachments);
-				totalProcessed += updatedAttachments.size();
-			}
+			totalProcessed += batchProcessor.processBatch(ids);
 
 			if (page.hasNext()) {
 				page = attachmentRepository.findByHashIsNull(PageRequest.of(0, PAGE_SIZE));
