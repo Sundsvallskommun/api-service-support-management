@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
+import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
@@ -26,6 +27,9 @@ class AttachmentHashBatchProcessorTest {
 
 	@Mock
 	private AttachmentRepository attachmentRepositoryMock;
+
+	@Mock
+	private EntityManager entityManagerMock;
 
 	@Mock
 	private AttachmentEntity attachmentEntityMock;
@@ -56,6 +60,7 @@ class AttachmentHashBatchProcessorTest {
 		assertThat(result).isEqualTo(1);
 		verify(attachmentEntityMock).setHash(any(String.class));
 		verify(attachmentRepositoryMock).save(attachmentEntityMock);
+		verify(entityManagerMock).detach(attachmentEntityMock);
 	}
 
 	@Test
@@ -74,5 +79,6 @@ class AttachmentHashBatchProcessorTest {
 		// Assert
 		assertThat(result).isZero();
 		verify(attachmentRepositoryMock, never()).save(any());
+		verify(entityManagerMock).detach(attachmentEntityMock);
 	}
 }

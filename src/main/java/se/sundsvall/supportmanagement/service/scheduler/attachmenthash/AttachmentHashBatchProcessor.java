@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +16,11 @@ public class AttachmentHashBatchProcessor {
 	private static final Logger LOG = LoggerFactory.getLogger(AttachmentHashBatchProcessor.class);
 
 	private final AttachmentRepository attachmentRepository;
+	private final EntityManager entityManager;
 
-	public AttachmentHashBatchProcessor(final AttachmentRepository attachmentRepository) {
+	public AttachmentHashBatchProcessor(final AttachmentRepository attachmentRepository, final EntityManager entityManager) {
 		this.attachmentRepository = attachmentRepository;
+		this.entityManager = entityManager;
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -34,6 +37,8 @@ public class AttachmentHashBatchProcessor {
 				processed++;
 			} catch (final Exception e) {
 				LOG.warn("Failed to compute hash for attachment with id: {}", attachment.getId(), e);
+			} finally {
+				entityManager.detach(attachment);
 			}
 		}
 
