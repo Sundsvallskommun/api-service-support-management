@@ -1,8 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
-import java.io.ByteArrayInputStream;
-import java.sql.Blob;
-import java.sql.SQLException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,29 +10,27 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AttachmentHashWorkerTest {
 
+	private static final String ATTACHMENT_ID = "attachment-id";
+
 	@Mock
 	private AttachmentRepository attachmentRepositoryMock;
 
 	@Mock
+	private AttachmentHashBatchProcessor batchProcessorMock;
+
+	@Mock
 	private AttachmentEntity attachmentEntityMock;
-
-	@Mock
-	private AttachmentDataEntity attachmentDataEntityMock;
-
-	@Mock
-	private Blob blobMock;
 
 	@InjectMocks
 	private AttachmentHashWorker attachmentHashWorker;
@@ -51,50 +46,26 @@ class AttachmentHashWorkerTest {
 
 		// Verify
 		verify(attachmentRepositoryMock).findByHashIsNull(any(PageRequest.class));
-		verify(attachmentRepositoryMock, never()).saveAll(any());
+		verifyNoInteractions(batchProcessorMock);
 		verifyNoMoreInteractions(attachmentRepositoryMock);
 	}
 
 	@Test
-	void computeHashForAttachment() throws Exception {
+	void computeHashForAttachment() {
 
 		// Arrange
-		final var content = "test content".getBytes();
 		final var pageWithData = new PageImpl<>(List.of(attachmentEntityMock), PageRequest.of(0, 100), 1);
+		when(attachmentEntityMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class)))
 			.thenReturn(pageWithData)
 			.thenReturn(Page.empty());
-		when(attachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
-		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.getBinaryStream()).thenReturn(new ByteArrayInputStream(content));
+		when(batchProcessorMock.processBatch(any())).thenReturn(1);
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
 		// Verify
-		verify(attachmentEntityMock).getAttachmentData();
-		verify(attachmentEntityMock).setHash(any(String.class));
-		verify(attachmentRepositoryMock).saveAll(List.of(attachmentEntityMock));
-	}
-
-	@Test
-	void computeHashWhenBlobReadFails() throws Exception {
-
-		// Arrange
-		final var pageWithData = new PageImpl<>(List.of(attachmentEntityMock), PageRequest.of(0, 100), 1);
-		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class)))
-			.thenReturn(pageWithData)
-			.thenReturn(Page.empty());
-		when(attachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
-		when(attachmentEntityMock.getId()).thenReturn("attachment-id");
-		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
-		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Blob read error"));
-
-		// Act
-		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
-
-		// Verify
-		verify(attachmentEntityMock).getAttachmentData();
-		verify(attachmentRepositoryMock, never()).saveAll(any());
+		verify(batchProcessorMock).processBatch(List.of(ATTACHMENT_ID));
+		verifyNoMoreInteractions(batchProcessorMock);
 	}
 }
