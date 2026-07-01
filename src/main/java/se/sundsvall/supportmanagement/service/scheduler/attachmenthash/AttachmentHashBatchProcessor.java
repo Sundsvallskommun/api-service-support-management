@@ -25,19 +25,29 @@ public class AttachmentHashBatchProcessor {
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public int processBatch(final List<String> attachmentIds) {
-		final var attachments = attachmentRepository.findAllById(attachmentIds);
 		var processed = 0;
 
-		for (final var attachment : attachments) {
+		// Load, hash and detach one attachment at a time. Holding the whole batch would keep every
+		// materialized blob reachable (via the entity graph) for the entire loop, so peak heap would
+		// grow to the sum of all blobs in the batch. Processing one at a time bounds it to a single blob.
+		for (final var attachmentId : attachmentIds) {
+			final var attachment = attachmentRepository.findById(attachmentId).orElse(null);
+			if (attachment == null) {
+				LOG.warn("Attachment with id: {} no longer exists, skipping", attachmentId);
+				continue;
+			}
+
 			try {
 				final var blob = attachment.getAttachmentData().getFile();
 				final var hash = ServiceUtil.computeSha256Hex(blob.getBinaryStream());
 				attachment.setHash(hash);
-				attachmentRepository.save(attachment);
+				attachmentRepository.saveAndFlush(attachment);
 				processed++;
 			} catch (final Exception e) {
-				LOG.warn("Failed to compute hash for attachment with id: {}", attachment.getId(), e);
+				LOG.warn("Failed to compute hash for attachment with id: {}", attachmentId, e);
 			} finally {
+				// Detach so the entity and its blob leave the persistence context; the next iteration then
+				// overwrites the local reference, making the previous blob unreachable and GC-eligible.
 				entityManager.detach(attachment);
 			}
 		}
