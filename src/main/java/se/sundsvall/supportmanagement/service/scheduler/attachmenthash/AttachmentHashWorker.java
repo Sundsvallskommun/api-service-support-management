@@ -30,7 +30,11 @@ public class AttachmentHashWorker {
 			return;
 		}
 
-		LOG.info("Found {} attachments without hash, starting hash computation", page.getTotalElements());
+		final var totalElements = page.getTotalElements();
+		final var maxIterations = (totalElements + PAGE_SIZE - 1) / PAGE_SIZE;
+		var iteration = 0;
+
+		LOG.info("Found {} attachments without hash, starting hash computation", totalElements);
 
 		while (!page.isEmpty()) {
 			final var ids = page.getContent().stream()
@@ -38,12 +42,13 @@ public class AttachmentHashWorker {
 				.toList();
 
 			totalProcessed += batchProcessor.processBatch(ids);
+			iteration++;
 
-			if (page.hasNext()) {
-				page = attachmentRepository.findByHashIsNull(PageRequest.of(0, PAGE_SIZE));
-			} else {
+			if (iteration >= maxIterations) {
 				break;
 			}
+
+			page = attachmentRepository.findByHashIsNull(PageRequest.of(0, PAGE_SIZE));
 		}
 
 		LOG.info("Hash computation completed. Processed {} attachments", totalProcessed);

@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -56,9 +57,7 @@ class AttachmentHashWorkerTest {
 		// Arrange
 		final var pageWithData = new PageImpl<>(List.of(attachmentEntityMock), PageRequest.of(0, 100), 1);
 		when(attachmentEntityMock.getId()).thenReturn(ATTACHMENT_ID);
-		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class)))
-			.thenReturn(pageWithData)
-			.thenReturn(Page.empty());
+		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class))).thenReturn(pageWithData);
 		when(batchProcessorMock.processBatch(any())).thenReturn(1);
 
 		// Act
@@ -66,6 +65,23 @@ class AttachmentHashWorkerTest {
 
 		// Verify
 		verify(batchProcessorMock).processBatch(List.of(ATTACHMENT_ID));
+		verifyNoMoreInteractions(batchProcessorMock);
+	}
+
+	@Test
+	void computeHashTerminatesWhenAllAttachmentsFail() {
+
+		// Arrange - 200 attachments, 2 pages expected, but all fail (processBatch returns 0)
+		final var pageWithData = new PageImpl<>(List.of(attachmentEntityMock), PageRequest.of(0, 100), 200);
+		when(attachmentEntityMock.getId()).thenReturn(ATTACHMENT_ID);
+		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class))).thenReturn(pageWithData);
+		when(batchProcessorMock.processBatch(any())).thenReturn(0);
+
+		// Act
+		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
+
+		// Verify - should only iterate maxIterations (2) times, not loop infinitely
+		verify(batchProcessorMock, times(2)).processBatch(List.of(ATTACHMENT_ID));
 		verifyNoMoreInteractions(batchProcessorMock);
 	}
 }
