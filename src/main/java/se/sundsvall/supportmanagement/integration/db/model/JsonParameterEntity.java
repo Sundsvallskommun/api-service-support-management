@@ -38,7 +38,7 @@ public class JsonParameterEntity {
 	private String schemaId;
 
 	@JdbcTypeCode(LONG32VARCHAR)
-	@Column(name = "value")
+	@Column(name = "value", columnDefinition = "longtext")
 	private String value;
 
 	public static JsonParameterEntity create() {
