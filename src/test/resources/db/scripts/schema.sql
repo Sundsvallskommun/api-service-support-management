@@ -298,7 +298,7 @@
         id varchar(255) not null,
         parameter_key varchar(255),
         schema_id varchar(255),
-        value tinytext,
+        value longtext,
         primary key (id)
     ) engine=InnoDB;
 
