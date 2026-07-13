@@ -2523,17 +2523,26 @@ components:
       description: Attachment
     EmailRequest:
       required:
-        - emailAddress
         - subject
       type: object
       properties:
         party:
           $ref: "#/components/schemas/EmailRequestParty"
         emailAddress:
-          minLength: 1
           type: string
-          description: Recipient e-mail address
+          deprecated: true
+          description: Recipient e-mail address. Deprecated, use 'recipients' instead
           format: email
+        recipients:
+          type: array
+          description: Recipient (To) e-mail addresses
+          items:
+            type: string
+        cc:
+          type: array
+          description: Carbon-copy (CC) e-mail addresses
+          items:
+            type: string
         subject:
           minLength: 1
           type: string

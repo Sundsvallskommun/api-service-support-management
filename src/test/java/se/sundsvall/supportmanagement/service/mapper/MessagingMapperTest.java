@@ -90,7 +90,7 @@ class MessagingMapperTest {
 	void toEmailRequestWithSenderName() {
 		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(true, HTML_MESSAGE_IN_BASE64), List.of());
 
-		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
+		assertThat(result.getRecipients()).containsExactly(RECIPIENT);
 		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
@@ -115,7 +115,7 @@ class MessagingMapperTest {
 	void toEmailRequestWithoutSenderName() {
 		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(false, HTML_MESSAGE), List.of());
 
-		assertThat(result.getEmailAddress()).isEqualTo(RECIPIENT);
+		assertThat(result.getRecipients()).containsExactly(RECIPIENT);
 		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
