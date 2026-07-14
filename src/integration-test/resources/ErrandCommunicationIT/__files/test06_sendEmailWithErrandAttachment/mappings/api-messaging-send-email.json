@@ -21,7 +21,9 @@
 							"83e13aaf-33aa-4aa2-ae31-abf46eaf0152@test.com"
 						]
 					},
-					"emailAddress": "john.a@zoidberg.com",
+					"recipients": [
+						"john.a@zoidberg.com"
+					],
 					"attachments": [
 						{
 							"name": "Test3.txt",
@@ -33,6 +35,7 @@
 						"address": "bender@rodriguez.com",
 						"name": "Bender Bending Rodriguez"
 					},
+					"cc": [],
 					"subject": "Insane in the Mainframe",
 					"htmlMessage": "PGh0bWw+U29tZSBtZXNzYWdlIGFib3V0IHRoZSBIQUwgSW5zdGl0dXRlIGZvciA8Yj5DcmltaW5hbGx5IEluc2FuZSBSb2JvdHM8L2I+LCB3aGVyZSByb2JvdHMgdGhhdCA8aT5tdXJkZXJvdXNseTwvaT4gdHVybnMgYWdhaW5zdCBpdHMgaHVtYW4gY3JldyBhcmUgaGVsZDwvaHRtbD4=",
 					"message": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",

@@ -442,7 +442,7 @@ class CommunicationServiceTest {
 		verify(errandAttachmentServiceMock).createErrandAttachment(any(AttachmentEntity.class), any(ErrandEntity.class));
 
 		final var arguments = messagingEmailCaptor.getValue();
-		assertThat(arguments.getEmailAddress()).isEqualTo(RECIPIENT);
+		assertThat(arguments.getRecipients()).containsExactly(RECIPIENT);
 		assertThat(new String(BASE64_DECODER.decode(arguments.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(arguments.getMessage()).isEqualTo(PLAIN_MESSAGE);
 		assertThat(arguments.getParty().getPartyId()).isNull();
@@ -822,7 +822,7 @@ class CommunicationServiceTest {
 		assertThat(emailRequestCaptor.getValue()).satisfies(emailRequest -> {
 			assertThat(emailRequest.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s".formatted(errandNumber));
 			assertThat(emailRequest.getMessage()).isEqualToNormalizingUnicode(reporterSupportText);
-			assertThat(emailRequest.getEmailAddress()).isEqualTo(recieverEmail);
+			assertThat(emailRequest.getRecipients()).containsExactly(recieverEmail);
 			assertThat(emailRequest.getHtmlMessage()).isNull();
 			assertThat(emailRequest.getSender().getAddress()).isEqualTo(contactInformationEmail);
 			assertThat(emailRequest.getSender().getName()).isEqualTo(contactInformationName);
