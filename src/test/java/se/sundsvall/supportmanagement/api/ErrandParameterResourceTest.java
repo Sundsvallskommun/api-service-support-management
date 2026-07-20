@@ -87,10 +87,10 @@ class ErrandParameterResourceTest {
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
 			.expectHeader().valueEquals("ETag", "\"2\"")
-			.expectBodyList(String.class)
+			.expectBody(Parameter.class)
 			.returnResult();
 
-		assertThat(response.getResponseBody()).isEqualTo(List.of("[ \"value\", \"value2\" ]"));
+		assertThat(response.getResponseBody()).isEqualTo(errandParameter);
 
 		verify(errandParameterServiceMock).readErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
 		verifyNoMoreInteractions(errandParameterServiceMock);

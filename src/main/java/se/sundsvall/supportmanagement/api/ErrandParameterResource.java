@@ -85,7 +85,7 @@ class ErrandParameterResource {
 		final var parameter = service.readErrandParameter(namespace, municipalityId, errandId, parameterKey);
 		return ok()
 			.header(ETAG, parameter.getVersion() != null ? format(parameter.getVersion()) : null)
-			.body(parameter.getValues());
+			.body(parameter);
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
