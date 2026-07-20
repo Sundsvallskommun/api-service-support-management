@@ -18,7 +18,10 @@
 							}
 						]
 					},
-					"emailAddress": "robert.reporter@testdomain.local",
+					"recipients": [
+						"robert.reporter@testdomain.local"
+					],
+					"cc": [],
 					"subject": "Nytt meddelande kopplat till ärendet AP-23020003",
 					"message": "Som rapportör kan du kontakta oss via e-post eller telefon",
 					"sender": {

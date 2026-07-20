@@ -37,6 +37,8 @@ scheduler:
     cron: "-"
   action:
     cron: "-"
+  attachment-hash:
+    cron: "-"
 spring:
   cache:
     type: none

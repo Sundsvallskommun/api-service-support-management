@@ -106,7 +106,12 @@ public class ServiceUtil {
 	public static String computeSha256Hex(final InputStream inputStream) {
 		try {
 			final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
-			return HexFormat.of().formatHex(digest.digest(inputStream.readAllBytes()));
+			final var buffer = new byte[8192];
+			int bytesRead;
+			while ((bytesRead = inputStream.read(buffer)) != -1) {
+				digest.update(buffer, 0, bytesRead);
+			}
+			return HexFormat.of().formatHex(digest.digest());
 		} catch (final Exception e) {
 			LOGGER.warn("Exception when computing SHA-256 hash from stream", e);
 			return null;

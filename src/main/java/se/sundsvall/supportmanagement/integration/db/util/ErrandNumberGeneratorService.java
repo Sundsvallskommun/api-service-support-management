@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.integration.db.util;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ErrandNumberSequenceRepository;
@@ -27,7 +26,7 @@ public class ErrandNumberGeneratorService {
 		this.namespaceConfigRepository = namespaceConfigRepository;
 	}
 
-	@Transactional(isolation = Isolation.SERIALIZABLE, propagation = REQUIRES_NEW)
+	@Transactional(propagation = REQUIRES_NEW)
 	public String generateErrandNumber(final String namespace, final String municipalityId) {
 
 		final var shortcode = namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)

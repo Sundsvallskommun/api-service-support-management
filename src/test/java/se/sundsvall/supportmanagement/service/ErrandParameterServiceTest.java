@@ -89,7 +89,9 @@ class ErrandParameterServiceTest {
 		final var result = spy.readErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY);
 
 		// Assert
-		assertThat(result.getValues()).hasSize(1).containsExactly(PARAMETER_VALUE);
+		assertThat(result.getValues()).isNotNull();
+		assertThat(result.getKey()).isEqualTo(PARAMETER_KEY);
+		assertThat(result.getValues()).containsExactly(PARAMETER_VALUE);
 		assertThat(result.getKey()).isEqualTo(PARAMETER_KEY);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
 		verify(spy).findParameterEntityOrElseThrow(errand, PARAMETER_KEY);

@@ -34,8 +34,11 @@ scheduler:
     cron: 0 */5 * * * *
     shedlock-lock-at-most-for: PT9M
     maximum-execution-time: PT4M
-    max-retries: 3
-    dead-letter-retention-days: 7
+  attachment-hash:
+    name: compute_attachment_hash
+    cron: 0 0 2 * * *
+    shedlock-lock-at-most-for: PT2H40M
+    maximum-execution-time: PT2H30M
 integration:
   accessmapper:
     connectTimeout: 5

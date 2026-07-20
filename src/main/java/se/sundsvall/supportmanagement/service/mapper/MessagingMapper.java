@@ -66,7 +66,7 @@ public class MessagingMapper {
 			.attachments(Stream.of(attachments, toAttachments(emailRequest.getAttachments()))
 				.flatMap(List::stream)
 				.toList())
-			.emailAddress(emailRequest.getRecipient())
+			.recipients(ofNullable(emailRequest.getRecipient()).map(List::of).orElse(null))
 			.htmlMessage(addBase64Encoding(emailRequest.getHtmlMessage()))
 			.message(emailRequest.getMessage())
 			.party(toEmailRequestParty(errandEntity))
