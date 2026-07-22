@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.12"
 servers:
-- url: http://localhost:62643
+- url: http://localhost:59962
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -1129,7 +1129,13 @@ paths:
         required: true
       responses:
         "200":
-          description: Successful Operation
+          description: Successful Operation — parameter updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonParameter"
+        "201":
+          description: Created — parameter did not exist and was created
           content:
             application/json:
               schema:
@@ -7596,6 +7602,74 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/json-parameters:
+    get:
+      tags:
+      - Errand JSON Parameters
+      summary: Read all JSON parameters
+      description: Fetches all JSON parameters for the provided errand id
+      operationId: readAllJsonParameters
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JsonParameter"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/events:
     get:
       tags:
@@ -8461,9 +8535,9 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         instance:
           type: string
@@ -8761,8 +8835,6 @@ components:
           type: boolean
         number:
           type: boolean
-        floatingPointNumber:
-          type: boolean
         nodeType:
           type: string
           enum:
@@ -8803,6 +8875,8 @@ components:
         boolean:
           type: boolean
         binary:
+          type: boolean
+        floatingPointNumber:
           type: boolean
         empty:
           type: boolean
@@ -11118,12 +11192,14 @@ components:
     PageSubscriberNotification:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
         first:
@@ -11133,8 +11209,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11150,8 +11224,6 @@ components:
     PageableObject:
       type: object
       properties:
-        sort:
-          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -11162,6 +11234,8 @@ components:
           format: int32
         unpaged:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         offset:
           type: integer
           format: int64
@@ -11334,12 +11408,14 @@ components:
     PageErrand:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
         first:
@@ -11349,8 +11425,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11599,12 +11673,14 @@ components:
     PageEvent:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
         first:
@@ -11614,8 +11690,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11837,12 +11911,14 @@ components:
     PageMessage:
       type: object
       properties:
-        totalElements:
-          type: integer
-          format: int64
         totalPages:
           type: integer
           format: int32
+        totalElements:
+          type: integer
+          format: int64
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
         sort:
           $ref: "#/components/schemas/SortObject"
         first:
@@ -11852,8 +11928,6 @@ components:
         numberOfElements:
           type: integer
           format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32

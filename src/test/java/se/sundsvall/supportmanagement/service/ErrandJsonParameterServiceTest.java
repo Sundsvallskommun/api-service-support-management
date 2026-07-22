@@ -55,6 +55,31 @@ class ErrandJsonParameterServiceTest {
 	private ErrandJsonParameterService service;
 
 	@Test
+	void readAllJsonParameters() {
+		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"test\"}");
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+
+		final var result = service.readAllJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThat(result).hasSize(1);
+		assertThat(result.getFirst().getKey()).isEqualTo(KEY);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
+		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock);
+	}
+
+	@Test
+	void readAllJsonParametersEmpty() {
+		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(new ArrayList<>());
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+
+		final var result = service.readAllJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThat(result).isEmpty();
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
+		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock);
+	}
+
+	@Test
 	void readJsonParameter() {
 		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"test\"}");
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
@@ -90,8 +115,9 @@ class ErrandJsonParameterServiceTest {
 
 		final var result = service.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, request);
 
-		assertThat(result.getKey()).isEqualTo(KEY);
-		assertThat(result.getSchemaId()).isEqualTo("schema-2.0");
+		assertThat(result.jsonParameter().getKey()).isEqualTo(KEY);
+		assertThat(result.jsonParameter().getSchemaId()).isEqualTo("schema-2.0");
+		assertThat(result.created()).isFalse();
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
 		verify(entityManagerMock).lock(same(entity), eq(OPTIMISTIC_FORCE_INCREMENT));
 		verify(errandsRepositoryMock).save(entity);
@@ -109,8 +135,9 @@ class ErrandJsonParameterServiceTest {
 			.withSchemaId("schema-1.0")
 			.withValue(JsonNodeFactory.instance.objectNode().put("x", 1));
 
-		service.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "newKey", null, request);
+		final var result = service.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "newKey", null, request);
 
+		assertThat(result.created()).isTrue();
 		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
 		assertThat(errandEntityCaptor.getValue().getJsonParameters()).hasSize(1);
 		assertThat(errandEntityCaptor.getValue().getJsonParameters().getFirst().getKey()).isEqualTo("newKey");
@@ -127,8 +154,9 @@ class ErrandJsonParameterServiceTest {
 			.withSchemaId("schema-1.0")
 			.withValue(JsonNodeFactory.instance.objectNode());
 
-		service.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, request);
+		final var result = service.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, request);
 
+		assertThat(result.created()).isTrue();
 		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
 		assertThat(errandEntityCaptor.getValue().getJsonParameters()).isNotNull().hasSize(1);
 	}

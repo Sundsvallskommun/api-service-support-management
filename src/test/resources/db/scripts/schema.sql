@@ -803,6 +803,9 @@
     create index idx_json_parameter_key
        on json_parameter (parameter_key);
 
+    alter table if exists json_parameter
+       add constraint uq_json_parameter_errand_id_key unique (errand_id, parameter_key);
+
     create index idx_mex_integration_config_namespace_municipality_id
        on message_exchange_integration_config (namespace, municipality_id);
 

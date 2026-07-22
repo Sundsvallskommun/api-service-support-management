@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonParameter;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonParameters;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonString;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 
@@ -28,6 +30,8 @@ public class ErrandJsonParameterService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandJsonParameterService.class);
 	private static final String JSON_PARAMETER_NOT_FOUND = "A JSON parameter with key '%s' could not be found in errand with id '%s'";
+
+	public record UpsertResult(JsonParameter jsonParameter, boolean created) {}
 
 	private final ErrandsRepository errandsRepository;
 	private final AccessControlService accessControlService;
@@ -40,13 +44,19 @@ public class ErrandJsonParameterService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<JsonParameter> readAllJsonParameters(final String namespace, final String municipalityId, final String errandId) {
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		return toJsonParameters(errand.getJsonParameters());
+	}
+
+	@Transactional(readOnly = true)
 	public JsonParameter readJsonParameter(final String namespace, final String municipalityId, final String errandId, final String key) {
 		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
 		return toJsonParameter(findJsonParameterEntityOrElseThrow(errand, key));
 	}
 
 	@Transactional
-	public JsonParameter updateJsonParameter(final String namespace, final String municipalityId, final String errandId, final String key, final String ifMatch, final JsonParameter jsonParameter) {
+	public UpsertResult updateJsonParameter(final String namespace, final String municipalityId, final String errandId, final String key, final String ifMatch, final JsonParameter jsonParameter) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
 
 		final var existing = Optional.ofNullable(errandEntity.getJsonParameters())
@@ -59,10 +69,12 @@ public class ErrandJsonParameterService {
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final JsonParameterEntity entity;
+		final boolean created;
 		if (existing.isPresent()) {
 			entity = existing.get();
 			entity.setSchemaId(jsonParameter.getSchemaId());
 			entity.setValue(toJsonString(jsonParameter.getValue()));
+			created = false;
 		} else {
 			if (errandEntity.getJsonParameters() == null) {
 				errandEntity.setJsonParameters(new ArrayList<>());
@@ -73,10 +85,11 @@ public class ErrandJsonParameterService {
 				.withSchemaId(jsonParameter.getSchemaId())
 				.withValue(toJsonString(jsonParameter.getValue()));
 			errandEntity.getJsonParameters().add(entity);
+			created = true;
 		}
 
 		errandsRepository.save(errandEntity);
-		return toJsonParameter(entity);
+		return new UpsertResult(toJsonParameter(entity), created);
 	}
 
 	@Transactional

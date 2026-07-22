@@ -1,0 +1,1 @@
+ALTER TABLE json_parameter ADD CONSTRAINT uq_json_parameter_errand_id_key UNIQUE (errand_id, parameter_key);

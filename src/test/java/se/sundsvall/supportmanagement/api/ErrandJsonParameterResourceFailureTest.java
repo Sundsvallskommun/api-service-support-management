@@ -11,6 +11,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -43,6 +44,47 @@ class ErrandJsonParameterResourceFailureTest {
 
 	@MockitoBean
 	private ErrandParameterService errandParameterServiceMock;
+
+	@MockitoBean
+	private JsonSchemaClient jsonSchemaClientMock;
+
+	@Test
+	void readAllJsonParametersInvalidNamespace() {
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting("field", "message")
+			.containsExactlyInAnyOrder(tuple("readAllJsonParameters.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		verifyNoInteractions(errandJsonParameterServiceMock);
+	}
+
+	@Test
+	void readAllJsonParametersInvalidErrandId() {
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting("field", "message")
+			.containsExactlyInAnyOrder(tuple("readAllJsonParameters.errandId", "not a valid UUID"));
+
+		verifyNoInteractions(errandJsonParameterServiceMock);
+	}
 
 	@Test
 	void readJsonParameterInvalidNamespace() {
@@ -119,6 +161,54 @@ class ErrandJsonParameterResourceFailureTest {
 			.getResponseBody();
 
 		assertThat(response).isNotNull();
+
+		verifyNoInteractions(errandJsonParameterServiceMock);
+	}
+
+	@Test
+	void updateJsonParameterMissingValue() {
+		final var requestBody = JsonParameter.create()
+			.withKey(KEY)
+			.withSchemaId("test-schema-1.0");
+
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{key}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "key", KEY)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting("field", "message")
+			.containsExactlyInAnyOrder(tuple("value", "must not be null"));
+
+		verifyNoInteractions(errandJsonParameterServiceMock);
+	}
+
+	@Test
+	void updateJsonParameterMissingSchemaId() {
+		final var requestBody = JsonParameter.create()
+			.withKey(KEY)
+			.withValue(JsonNodeFactory.instance.objectNode().put("name", "test"));
+
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{key}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "key", KEY)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting("field", "message")
+			.containsExactlyInAnyOrder(tuple("schemaId", "must not be blank"));
 
 		verifyNoInteractions(errandJsonParameterServiceMock);
 	}

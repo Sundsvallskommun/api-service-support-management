@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,11 +21,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.validation.ValidJsonParameter;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -32,6 +35,7 @@ import static org.springframework.http.HttpHeaders.ETAG;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
+import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
@@ -54,6 +58,19 @@ class ErrandJsonParameterResource {
 		this.service = service;
 	}
 
+	@GetMapping(produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Read all JSON parameters", description = "Fetches all JSON parameters for the provided errand id", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<List<JsonParameter>> readAllJsonParameters(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId) {
+
+		return ok(service.readAllJsonParameters(namespace, municipalityId, errandId));
+	}
+
 	@GetMapping(path = "/{key}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read JSON parameter", description = "Fetches the JSON parameter matching the provided errand id and key", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
@@ -73,7 +90,8 @@ class ErrandJsonParameterResource {
 
 	@PutMapping(path = "/{key}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Create or update JSON parameter", description = "Creates or updates the JSON parameter matching the provided errand id and key", responses = {
-		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "200", description = "Successful Operation — parameter updated", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "201", description = "Created — parameter did not exist and was created", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "409", description = "Conflict — resource modified concurrently", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "412", description = "Precondition Failed — If-Match version mismatch", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -84,12 +102,22 @@ class ErrandJsonParameterResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "key", description = "JSON parameter key", example = "formData") @NotBlank @PathVariable final String key,
 		@Parameter(name = "If-Match", description = "Optional ETag of the JSON parameter for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
-		@Valid @NotNull @RequestBody final JsonParameter jsonParameter) {
+		@ValidJsonParameter @Valid @NotNull @RequestBody final JsonParameter jsonParameter) {
 
-		final var updated = service.updateJsonParameter(namespace, municipalityId, errandId, key, ifMatch, jsonParameter);
+		final var result = service.updateJsonParameter(namespace, municipalityId, errandId, key, ifMatch, jsonParameter);
+		final var etagValue = result.jsonParameter().getVersion() != null ? format(result.jsonParameter().getVersion()) : null;
+
+		if (result.created()) {
+			final var location = UriComponentsBuilder.fromPath("/{municipalityId}/{namespace}/errands/{errandId}/json-parameters/{key}")
+				.buildAndExpand(municipalityId, namespace, errandId, key)
+				.toUri();
+			return created(location)
+				.header(ETAG, etagValue)
+				.body(result.jsonParameter());
+		}
 		return ok()
-			.header(ETAG, updated.getVersion() != null ? format(updated.getVersion()) : null)
-			.body(updated);
+			.header(ETAG, etagValue)
+			.body(result.jsonParameter());
 	}
 
 	@DeleteMapping(path = "/{key}", produces = ALL_VALUE)

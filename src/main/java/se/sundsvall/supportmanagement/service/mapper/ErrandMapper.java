@@ -405,7 +405,7 @@ public final class ErrandMapper {
 			.withVersion(entity.getVersion());
 	}
 
-	private static List<JsonParameter> toJsonParameters(final List<JsonParameterEntity> entities) {
+	public static List<JsonParameter> toJsonParameters(final List<JsonParameterEntity> entities) {
 		return ofNullable(entities).orElse(emptyList()).stream()
 			.map(ErrandMapper::toJsonParameter)
 			.toList();
