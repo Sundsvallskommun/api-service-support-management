@@ -29,7 +29,6 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMat
 public class ErrandJsonParameterService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandJsonParameterService.class);
-	private static final String JSON_PARAMETER_NOT_FOUND = "A JSON parameter with key '%s' could not be found in errand with id '%s'";
 
 	public record UpsertResult(JsonParameter jsonParameter, boolean created) {}
 
@@ -108,11 +107,11 @@ public class ErrandJsonParameterService {
 		errandsRepository.save(errandEntity);
 	}
 
-	JsonParameterEntity findJsonParameterEntityOrElseThrow(final ErrandEntity errandEntity, final String key) {
+	private JsonParameterEntity findJsonParameterEntityOrElseThrow(final ErrandEntity errandEntity, final String key) {
 		return Optional.ofNullable(errandEntity.getJsonParameters()).stream()
 			.flatMap(java.util.List::stream)
 			.filter(e -> Objects.equals(e.getKey(), key))
 			.findFirst()
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(JSON_PARAMETER_NOT_FOUND, key, errandEntity.getId())));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "A JSON parameter with key '%s' could not be found in errand with id '%s'".formatted(key, errandEntity.getId())));
 	}
 }

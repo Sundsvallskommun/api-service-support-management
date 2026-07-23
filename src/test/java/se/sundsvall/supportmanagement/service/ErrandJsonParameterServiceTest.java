@@ -184,21 +184,6 @@ class ErrandJsonParameterServiceTest {
 			.satisfies(p -> assertThat(p.getStatus()).isEqualTo(NOT_FOUND));
 	}
 
-	@Test
-	void findJsonParameterEntityOrElseThrow_found() {
-		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", null);
-		final var result = service.findJsonParameterEntityOrElseThrow(entity, KEY);
-		assertThat(result.getKey()).isEqualTo(KEY);
-	}
-
-	@Test
-	void findJsonParameterEntityOrElseThrow_notFound() {
-		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(new ArrayList<>());
-		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service.findJsonParameterEntityOrElseThrow(entity, "missing"))
-			.satisfies(p -> assertThat(p.getStatus()).isEqualTo(NOT_FOUND));
-	}
-
 	private ErrandEntity buildEntityWithJsonParameter(final String key, final String schemaId, final String value) {
 		final var jsonParam = JsonParameterEntity.create()
 			.withId(UUID.randomUUID().toString())
