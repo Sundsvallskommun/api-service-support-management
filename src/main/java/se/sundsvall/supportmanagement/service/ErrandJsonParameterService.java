@@ -83,11 +83,12 @@ public class ErrandJsonParameterService {
 				.withKey(key)
 				.withSchemaId(jsonParameter.getSchemaId())
 				.withValue(toJsonString(jsonParameter.getValue()));
+			entityManager.persist(entity);
 			errandEntity.getJsonParameters().add(entity);
 			created = true;
 		}
 
-		errandsRepository.save(errandEntity);
+		errandsRepository.saveAndFlush(errandEntity);
 		return new UpsertResult(toJsonParameter(entity), created);
 	}
 

@@ -1,0 +1,11 @@
+{
+	"status": 400,
+	"title": "Constraint Violation",
+	"type": "https://github.com/Sundsvallskommun/dept44/problems/constraint-violation",
+	"violations": [
+		{
+			"field": "updateJsonParameter.jsonParameter",
+			"message": "Bad Gateway: json-schema error: {detail=/email: string found, does not match email format, /age: integer must be greater than or equal to 0, status=400 Bad Request, title=Constraint Violation}"
+		}
+	]
+}

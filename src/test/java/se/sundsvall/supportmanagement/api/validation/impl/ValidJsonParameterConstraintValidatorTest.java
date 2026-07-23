@@ -62,7 +62,7 @@ class ValidJsonParameterConstraintValidatorTest {
 
 	@Test
 	void validJsonParameter() {
-		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID);
+		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID, "key", "testKey");
 		final var schemaId = "testSchema";
 		final var jsonValue = createJsonNode();
 		final var jsonParameter = JsonParameter.create()
@@ -79,6 +79,25 @@ class ValidJsonParameterConstraintValidatorTest {
 		}
 	}
 
+	@Test
+	void keyMismatch() {
+		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID, "key", "pathKey");
+		final var jsonParameter = JsonParameter.create()
+			.withKey("bodyKey")
+			.withSchemaId("testSchema")
+			.withValue(createJsonNode());
+
+		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
+			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
+			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
+
+			assertThat(validator.isValid(jsonParameter, constraintValidatorContextMock)).isFalse();
+			verify(constraintValidatorContextMock).disableDefaultConstraintViolation();
+			verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate("Key in body 'bodyKey' does not match key in URL path 'pathKey'");
+			verifyNoInteractions(jsonSchemaClientMock);
+		}
+	}
+
 	private static Stream<Arguments> clientProblemTestCases() {
 		return Stream.of(
 			Arguments.of("error details", "Bad Request: error details"),
@@ -89,7 +108,7 @@ class ValidJsonParameterConstraintValidatorTest {
 	@ParameterizedTest
 	@MethodSource("clientProblemTestCases")
 	void invalidJsonParameterClientProblem(final String problemDetail, final String expectedMessage) {
-		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID);
+		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID, "key", "testKey");
 		final var schemaId = "testSchema";
 		final var jsonValue = createJsonNode();
 		final var jsonParameter = JsonParameter.create()
@@ -114,7 +133,7 @@ class ValidJsonParameterConstraintValidatorTest {
 
 	@Test
 	void serverProblemIsRethrown() {
-		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID);
+		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID, "key", "testKey");
 		final var schemaId = "testSchema";
 		final var jsonValue = createJsonNode();
 		final var jsonParameter = JsonParameter.create()

@@ -25,6 +25,12 @@ public class ValidJsonParameterConstraintValidator extends AbstractTagConstraint
 			return true;
 		}
 
+		final var pathKey = getPathVariable("key");
+		if (value.getKey() != null && !pathKey.equals(value.getKey())) {
+			useCustomMessageForValidation("Key in body '%s' does not match key in URL path '%s'".formatted(value.getKey(), pathKey), context);
+			return false;
+		}
+
 		final var municipalityId = getPathVariable(PATHVARIABLE_MUNICIPALITY_ID);
 
 		try {

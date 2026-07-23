@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
@@ -32,6 +33,7 @@ import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.ETAG;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
@@ -103,6 +105,10 @@ class ErrandJsonParameterResource {
 		@Parameter(name = "key", description = "JSON parameter key", example = "formData") @NotBlank @PathVariable final String key,
 		@Parameter(name = "If-Match", description = "Optional ETag of the JSON parameter for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@ValidJsonParameter @Valid @NotNull @RequestBody final JsonParameter jsonParameter) {
+
+		if (!key.equals(jsonParameter.getKey())) {
+			throw new ClientProblem(BAD_REQUEST, "Key in request body '%s' does not match key in path '%s'".formatted(jsonParameter.getKey(), key));
+		}
 
 		final var result = service.updateJsonParameter(namespace, municipalityId, errandId, key, ifMatch, jsonParameter);
 		final var etagValue = result.jsonParameter().getVersion() != null ? format(result.jsonParameter().getVersion()) : null;

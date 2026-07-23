@@ -1,0 +1,11 @@
+{
+	"status": 400,
+	"title": "Constraint Violation",
+	"type": "https://github.com/Sundsvallskommun/dept44/problems/constraint-violation",
+	"violations": [
+		{
+			"field": "updateJsonParameter.jsonParameter",
+			"message": "Key in body 'otherKey' does not match key in URL path 'formData'"
+		}
+	]
+}
