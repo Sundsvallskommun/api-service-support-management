@@ -539,7 +539,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/conversations/{conversationId}/messages/markAsRead:
+  /{municipalityId}/{namespace}/conversations/{conversationId}/messages/mark-as-read:
     post:
       tags:
       - Message resource
@@ -597,7 +597,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/conversations/{conversationId}/messages/countReadBy:
+  /{municipalityId}/{namespace}/conversations/{conversationId}/messages/count-read-by:
     get:
       tags:
       - Message resource

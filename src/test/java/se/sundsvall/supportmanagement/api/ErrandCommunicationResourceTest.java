@@ -432,7 +432,7 @@ class ErrandCommunicationResourceTest {
 
 		// Act
 		webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/markAsRead")
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/mark-as-read")
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(request)
@@ -456,7 +456,7 @@ class ErrandCommunicationResourceTest {
 
 		// Act
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/countReadBy")
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/count-read-by")
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.accept(APPLICATION_JSON)
 			.exchange()
@@ -485,7 +485,7 @@ class ErrandCommunicationResourceTest {
 
 		// Act
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/countReadBy")
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/count-read-by")
 				.queryParam("includeSystemMessages", "true")
 				.queryParam("conversationId", CONVERSATION_ID)
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))

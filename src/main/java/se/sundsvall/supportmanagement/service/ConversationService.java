@@ -251,6 +251,7 @@ public class ConversationService {
 
 		final List<ConversationEntity> conversations;
 		if (conversationId != null) {
+			// Returns empty list (not 404) when conversationId is not linked to the errand — intentional per spec.
 			conversations = conversationRepository.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, errandId, conversationId)
 				.map(List::of)
 				.orElse(emptyList());

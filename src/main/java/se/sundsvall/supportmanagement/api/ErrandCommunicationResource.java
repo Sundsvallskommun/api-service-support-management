@@ -317,7 +317,7 @@ class ErrandCommunicationResource {
 		conversationService.getConversationMessageAttachment(municipalityId, namespace, errandId, conversationId, messageId, attachmentId, response);
 	}
 
-	@PostMapping(path = "/conversations/{conversationId}/messages/markAsRead", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
+	@PostMapping(path = "/conversations/{conversationId}/messages/mark-as-read", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Mark messages as read", description = "Marks the specified messages in a conversation as read", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
@@ -335,7 +335,7 @@ class ErrandCommunicationResource {
 			.build();
 	}
 
-	@GetMapping(path = "/conversations/countReadBy", produces = APPLICATION_JSON_VALUE)
+	@GetMapping(path = "/conversations/count-read-by", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get read-by count statistics", description = "Returns read-by count statistics aggregated per conversation for the errand", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
 	})

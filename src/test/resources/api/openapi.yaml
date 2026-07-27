@@ -5,7 +5,7 @@ info:
   license:
     name: "MIT License"
     url: "https://opensource.org/licenses/MIT"
-  version: "14.12"
+  version: "14.13"
 servers:
 - url: "http://localhost:61849"
   description: "Generated server url"
@@ -3759,7 +3759,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/{conversationId}/messages/markAsRead:
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/{conversationId}/messages/mark-as-read:
     post:
       tags:
       - "Errand communication"
@@ -7795,7 +7795,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/countReadBy:
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/count-read-by:
     get:
       tags:
       - "Errand communication"

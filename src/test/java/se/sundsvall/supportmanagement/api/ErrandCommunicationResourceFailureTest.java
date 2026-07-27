@@ -1023,7 +1023,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Act
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/markAsRead")
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/mark-as-read")
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", INVALID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(request)
@@ -1051,7 +1051,7 @@ class ErrandCommunicationResourceFailureTest {
 
 		// Act
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/markAsRead")
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/mark-as-read")
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(request)
@@ -1075,7 +1075,7 @@ class ErrandCommunicationResourceFailureTest {
 	void getConversationCountReadByWithInvalidConversationId() {
 		// Act
 		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/countReadBy")
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/count-read-by")
 				.queryParam("conversationId", INVALID)
 				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
 			.accept(APPLICATION_JSON)
