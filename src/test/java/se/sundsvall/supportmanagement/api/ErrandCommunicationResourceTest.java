@@ -423,4 +423,85 @@ class ErrandCommunicationResourceTest {
 		verify(conversationServiceMock).getConversationMessageAttachment(any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(String.class), any(HttpServletResponse.class));
 		verifyNoMoreInteractions(conversationServiceMock, conversationServiceMock);
 	}
+
+	@Test
+	void markConversationMessagesAsRead() {
+		// Arrange
+		final var request = se.sundsvall.supportmanagement.api.model.communication.conversation.MarkAsReadRequest.create()
+			.withMessageIds(List.of(randomUUID().toString(), randomUUID().toString()));
+
+		// Act
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/markAsRead")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isNoContent()
+			.expectBody().isEmpty();
+
+		// Verification
+		verify(conversationServiceMock).markAsRead(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, request);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
+	void getConversationCountReadBy() {
+		// Arrange
+		final var stats = se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationReadByCount.create()
+			.withConversationId(CONVERSATION_ID)
+			.withMessageCount(5);
+
+		when(conversationServiceMock.countReadBy(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, false, null)).thenReturn(List.of(stats));
+
+		// Act
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/countReadBy")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBodyList(se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationReadByCount.class)
+			.returnResult();
+
+		// Verification
+		assertThat(response.getResponseBody()).isNotNull().hasSize(1);
+		assertThat(response.getResponseBody().getFirst().getConversationId()).isEqualTo(CONVERSATION_ID);
+		assertThat(response.getResponseBody().getFirst().getMessageCount()).isEqualTo(5);
+
+		verify(conversationServiceMock).countReadBy(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, false, null);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
+	void getConversationCountReadByWithFilter() {
+		// Arrange
+		final var stats = se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationReadByCount.create()
+			.withConversationId(CONVERSATION_ID)
+			.withMessageCount(3);
+
+		when(conversationServiceMock.countReadBy(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, true, CONVERSATION_ID)).thenReturn(List.of(stats));
+
+		// Act
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/countReadBy")
+				.queryParam("includeSystemMessages", "true")
+				.queryParam("conversationId", CONVERSATION_ID)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBodyList(se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationReadByCount.class)
+			.returnResult();
+
+		// Verification
+		assertThat(response.getResponseBody()).isNotNull().hasSize(1);
+		assertThat(response.getResponseBody().getFirst().getConversationId()).isEqualTo(CONVERSATION_ID);
+		assertThat(response.getResponseBody().getFirst().getMessageCount()).isEqualTo(3);
+
+		verify(conversationServiceMock).countReadBy(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, true, CONVERSATION_ID);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
+	}
 }

@@ -354,6 +354,52 @@ class ConversationMapperTest {
 			.withType(CONVERSATION_TYPE);
 	}
 
+	@Test
+	void toConversationReadByCount() {
+		final var smConversationId = "sm-conv-id";
+		final var part = "KC-23010001";
+		final var meStats = new generated.se.sundsvall.messageexchange.ConversationReadByCount()
+			.messageCount(10)
+			.readByCount(List.of(new generated.se.sundsvall.messageexchange.ReadByCountEntry()
+				.identifier(new generated.se.sundsvall.messageexchange.Identifier().type(IDENTIFIER_TYPE).value(IDENTIFIER_VALUE))
+				.count(5)))
+			.readByPartCount(List.of(new generated.se.sundsvall.messageexchange.PartReadByCountEntry()
+				.part(part)
+				.count(8)));
+
+		final var result = ConversationMapper.toConversationReadByCount(smConversationId, meStats);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getConversationId()).isEqualTo(smConversationId);
+		assertThat(result.getMessageCount()).isEqualTo(10);
+		assertThat(result.getReadByCount()).hasSize(1);
+		assertThat(result.getReadByCount().getFirst().getIdentifier().getType()).isEqualTo(IDENTIFIER_TYPE);
+		assertThat(result.getReadByCount().getFirst().getIdentifier().getValue()).isEqualTo(IDENTIFIER_VALUE);
+		assertThat(result.getReadByCount().getFirst().getCount()).isEqualTo(5);
+		assertThat(result.getReadByPartCount()).hasSize(1);
+		assertThat(result.getReadByPartCount().getFirst().getPart()).isEqualTo(part);
+		assertThat(result.getReadByPartCount().getFirst().getCount()).isEqualTo(8);
+	}
+
+	@Test
+	void toConversationReadByCountWithNull() {
+		assertThat(ConversationMapper.toConversationReadByCount("some-id", null)).isNull();
+	}
+
+	@Test
+	void toConversationReadByCountWithEmptyStats() {
+		final var smConversationId = "sm-conv-id";
+		final var meStats = new generated.se.sundsvall.messageexchange.ConversationReadByCount().messageCount(0);
+
+		final var result = ConversationMapper.toConversationReadByCount(smConversationId, meStats);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getConversationId()).isEqualTo(smConversationId);
+		assertThat(result.getMessageCount()).isZero();
+		assertThat(result.getReadByCount()).isEmpty();
+		assertThat(result.getReadByPartCount()).isEmpty();
+	}
+
 	private ConversationEntity createConversationEntity() {
 		return ConversationEntity.create()
 			.withErrandId(ERRAND_ID)

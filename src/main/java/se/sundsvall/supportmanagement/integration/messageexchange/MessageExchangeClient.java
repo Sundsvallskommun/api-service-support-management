@@ -2,6 +2,8 @@ package se.sundsvall.supportmanagement.integration.messageexchange;
 
 import feign.QueryMap;
 import generated.se.sundsvall.messageexchange.Conversation;
+import generated.se.sundsvall.messageexchange.ConversationReadByCount;
+import generated.se.sundsvall.messageexchange.MarkAsReadRequest;
 import generated.se.sundsvall.messageexchange.Message;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
@@ -159,4 +161,35 @@ public interface MessageExchangeClient {
 		@PathVariable("municipalityId") String municipalityId,
 		@PathVariable("namespace") String namespace,
 		@PathVariable("conversationId") String conversationId);
+
+	/**
+	 * Mark messages as read by a given part.
+	 *
+	 * @param municipalityId the id of the municipality
+	 * @param namespace      the namespace
+	 * @param conversationId the conversationId
+	 * @param request        the mark-as-read request containing message IDs and the part
+	 */
+	@PostMapping(path = "/{municipalityId}/{namespace}/conversations/{conversationId}/messages/markAsRead", consumes = APPLICATION_JSON_VALUE)
+	ResponseEntity<Void> markAsRead(
+		@PathVariable("municipalityId") String municipalityId,
+		@PathVariable("namespace") String namespace,
+		@PathVariable("conversationId") String conversationId,
+		@RequestBody MarkAsReadRequest request);
+
+	/**
+	 * Get read-by count statistics for a conversation.
+	 *
+	 * @param  municipalityId        the id of the municipality
+	 * @param  namespace             the namespace
+	 * @param  conversationId        the conversationId
+	 * @param  includeSystemMessages whether to include system messages in the count
+	 * @return                       read-by statistics for the conversation
+	 */
+	@GetMapping(path = "/{municipalityId}/{namespace}/conversations/{conversationId}/messages/countReadBy", produces = APPLICATION_JSON_VALUE)
+	ResponseEntity<ConversationReadByCount> countReadBy(
+		@PathVariable("municipalityId") String municipalityId,
+		@PathVariable("namespace") String namespace,
+		@PathVariable("conversationId") String conversationId,
+		@RequestParam(value = "includeSystemMessages", defaultValue = "false") Boolean includeSystemMessages);
 }

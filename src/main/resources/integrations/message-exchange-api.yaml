@@ -539,6 +539,126 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/conversations/{conversationId}/messages/markAsRead:
+    post:
+      tags:
+      - Message resource
+      description: Mark messages as read by a given part
+      operationId: markAsRead
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+        example: MY_NAMESPACE
+      - name: conversationId
+        in: path
+        description: Conversation ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      requestBody:
+        description: Mark-as-read request
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkAsReadRequest"
+        required: true
+      responses:
+        "204":
+          description: No Content - Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/conversations/{conversationId}/messages/countReadBy:
+    get:
+      tags:
+      - Message resource
+      description: Get read-by count statistics for a conversation
+      operationId: countReadBy
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+        example: MY_NAMESPACE
+      - name: conversationId
+        in: path
+        description: Conversation ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: includeSystemMessages
+        in: query
+        description: Whether to include system messages in the count
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: OK - Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationReadByCount"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /api-docs:
     get:
       tags:
@@ -1064,4 +1184,60 @@ components:
           format: int32
         empty:
           type: boolean
+    MarkAsReadRequest:
+      type: object
+      properties:
+        messageIds:
+          type: array
+          description: List of message IDs to mark as read
+          items:
+            type: string
+        part:
+          type: string
+          description: The part (e.g. errand number) marking the messages as read
+      description: Request to mark messages as read by a given part
+    ConversationReadByCount:
+      type: object
+      properties:
+        conversationId:
+          type: string
+          description: The unique identifier of the conversation
+          readOnly: true
+          example: 2af1002e-008f-4bdc-924b-daaae31f1118
+        messageCount:
+          type: integer
+          format: int32
+          description: Total number of messages in the conversation
+        readByCount:
+          type: array
+          description: Per-identifier read count
+          items:
+            $ref: "#/components/schemas/ReadByCountEntry"
+        readByPartCount:
+          type: array
+          description: Per-part read count
+          items:
+            $ref: "#/components/schemas/PartReadByCountEntry"
+      description: Read-by statistics for a conversation
+    ReadByCountEntry:
+      type: object
+      properties:
+        identifier:
+          $ref: "#/components/schemas/Identifier"
+        count:
+          type: integer
+          format: int32
+          description: Number of messages read by this identifier
+      description: Read count for a specific identifier
+    PartReadByCountEntry:
+      type: object
+      properties:
+        part:
+          type: string
+          description: The part that read the messages
+        count:
+          type: integer
+          format: int32
+          description: Number of messages read by this part
+      description: Read count for a specific part
   securitySchemes: {}
