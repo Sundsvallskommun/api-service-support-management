@@ -11798,14 +11798,17 @@ components:
           type: "integer"
           format: "int32"
           description: "Total number of messages in the conversation"
+          readOnly: true
         readByCount:
           type: "array"
           description: "Per-identifier read count"
+          readOnly: true
           items:
             $ref: "#/components/schemas/ReadByCountEntry"
         readByPartCount:
           type: "array"
           description: "Per-part read count"
+          readOnly: true
           items:
             $ref: "#/components/schemas/PartReadByCountEntry"
     PartReadByCountEntry:

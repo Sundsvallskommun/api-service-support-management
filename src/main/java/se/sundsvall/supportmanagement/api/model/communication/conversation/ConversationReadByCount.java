@@ -10,13 +10,13 @@ public class ConversationReadByCount {
 	@Schema(description = "The unique identifier of the conversation", accessMode = Schema.AccessMode.READ_ONLY, example = "2af1002e-008f-4bdc-924b-daaae31f1118")
 	private String conversationId;
 
-	@Schema(description = "Total number of messages in the conversation")
+	@Schema(description = "Total number of messages in the conversation", accessMode = Schema.AccessMode.READ_ONLY)
 	private Integer messageCount;
 
-	@Schema(description = "Per-identifier read count")
+	@Schema(description = "Per-identifier read count", accessMode = Schema.AccessMode.READ_ONLY)
 	private List<ReadByCountEntry> readByCount;
 
-	@Schema(description = "Per-part read count")
+	@Schema(description = "Per-part read count", accessMode = Schema.AccessMode.READ_ONLY)
 	private List<PartReadByCountEntry> readByPartCount;
 
 	public static ConversationReadByCount create() {
