@@ -145,29 +145,29 @@ public final class ConversationMapper {
 			.content(messageRequest.getContent());
 	}
 
-	public static ConversationReadByCount toConversationReadByCount(final String smConversationId, final generated.se.sundsvall.messageexchange.ConversationReadByCount meStats) {
+	public static ConversationReadByCount toConversationReadByCount(final String smConversationId, final generated.se.sundsvall.messageexchange.ReadByStatistics meStats) {
 		return ofNullable(meStats)
 			.map(s -> ConversationReadByCount.create()
 				.withConversationId(smConversationId)
-				.withMessageCount(s.getMessageCount())
+				.withMessageCount(s.getMessageCount() != null ? s.getMessageCount().intValue() : null)
 				.withReadByCount(toReadByCountEntries(s.getReadByCount()))
 				.withReadByPartCount(toPartReadByCountEntries(s.getReadByPartCount())))
 			.orElse(null);
 	}
 
-	private static List<ReadByCountEntry> toReadByCountEntries(final List<generated.se.sundsvall.messageexchange.ReadByCountEntry> entries) {
+	private static List<ReadByCountEntry> toReadByCountEntries(final List<generated.se.sundsvall.messageexchange.ReadByCount> entries) {
 		return ofNullable(entries).orElse(emptyList()).stream()
 			.map(e -> ReadByCountEntry.create()
 				.withIdentifier(toIdentifier(e.getIdentifier()))
-				.withCount(e.getCount()))
+				.withCount(e.getCount() != null ? e.getCount().intValue() : null))
 			.toList();
 	}
 
-	private static List<PartReadByCountEntry> toPartReadByCountEntries(final List<generated.se.sundsvall.messageexchange.PartReadByCountEntry> entries) {
+	private static List<PartReadByCountEntry> toPartReadByCountEntries(final List<generated.se.sundsvall.messageexchange.ReadByPartCount> entries) {
 		return ofNullable(entries).orElse(emptyList()).stream()
 			.map(e -> PartReadByCountEntry.create()
 				.withPart(e.getPart())
-				.withCount(e.getCount()))
+				.withCount(e.getCount() != null ? e.getCount().intValue() : null))
 			.toList();
 	}
 

@@ -2,9 +2,9 @@ package se.sundsvall.supportmanagement.integration.messageexchange;
 
 import feign.QueryMap;
 import generated.se.sundsvall.messageexchange.Conversation;
-import generated.se.sundsvall.messageexchange.ConversationReadByCount;
 import generated.se.sundsvall.messageexchange.MarkAsReadRequest;
 import generated.se.sundsvall.messageexchange.Message;
+import generated.se.sundsvall.messageexchange.ReadByStatistics;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -170,7 +170,7 @@ public interface MessageExchangeClient {
 	 * @param conversationId the conversationId
 	 * @param request        the mark-as-read request containing message IDs and the part
 	 */
-	@PostMapping(path = "/{municipalityId}/{namespace}/conversations/{conversationId}/messages/mark-as-read", consumes = APPLICATION_JSON_VALUE)
+	@PostMapping(path = "/{municipalityId}/{namespace}/conversations/{conversationId}/messages/markAsRead", consumes = APPLICATION_JSON_VALUE)
 	ResponseEntity<Void> markAsRead(
 		@PathVariable("municipalityId") String municipalityId,
 		@PathVariable("namespace") String namespace,
@@ -186,8 +186,8 @@ public interface MessageExchangeClient {
 	 * @param  includeSystemMessages whether to include system messages in the count
 	 * @return                       read-by statistics for the conversation
 	 */
-	@GetMapping(path = "/{municipalityId}/{namespace}/conversations/{conversationId}/messages/count-read-by", produces = APPLICATION_JSON_VALUE)
-	ResponseEntity<ConversationReadByCount> countReadBy(
+	@GetMapping(path = "/{municipalityId}/{namespace}/conversations/{conversationId}/countReadBy", produces = APPLICATION_JSON_VALUE)
+	ResponseEntity<ReadByStatistics> countReadBy(
 		@PathVariable("municipalityId") String municipalityId,
 		@PathVariable("namespace") String namespace,
 		@PathVariable("conversationId") String conversationId,

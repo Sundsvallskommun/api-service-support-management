@@ -358,14 +358,14 @@ class ConversationMapperTest {
 	void toConversationReadByCount() {
 		final var smConversationId = "sm-conv-id";
 		final var part = "KC-23010001";
-		final var meStats = new generated.se.sundsvall.messageexchange.ConversationReadByCount()
-			.messageCount(10)
-			.readByCount(List.of(new generated.se.sundsvall.messageexchange.ReadByCountEntry()
+		final var meStats = new generated.se.sundsvall.messageexchange.ReadByStatistics()
+			.messageCount(10L)
+			.readByCount(List.of(new generated.se.sundsvall.messageexchange.ReadByCount()
 				.identifier(new generated.se.sundsvall.messageexchange.Identifier().type(IDENTIFIER_TYPE).value(IDENTIFIER_VALUE))
-				.count(5)))
-			.readByPartCount(List.of(new generated.se.sundsvall.messageexchange.PartReadByCountEntry()
+				.count(5L)))
+			.readByPartCount(List.of(new generated.se.sundsvall.messageexchange.ReadByPartCount()
 				.part(part)
-				.count(8)));
+				.count(8L)));
 
 		final var result = ConversationMapper.toConversationReadByCount(smConversationId, meStats);
 
@@ -389,7 +389,7 @@ class ConversationMapperTest {
 	@Test
 	void toConversationReadByCountWithEmptyStats() {
 		final var smConversationId = "sm-conv-id";
-		final var meStats = new generated.se.sundsvall.messageexchange.ConversationReadByCount().messageCount(0);
+		final var meStats = new generated.se.sundsvall.messageexchange.ReadByStatistics().messageCount(0L);
 
 		final var result = ConversationMapper.toConversationReadByCount(smConversationId, meStats);
 

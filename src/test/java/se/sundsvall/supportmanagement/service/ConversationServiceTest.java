@@ -518,8 +518,8 @@ class ConversationServiceTest {
 		// Arrange
 		final var convEntity1 = ConversationEntity.create().withId("conv-1").withMessageExchangeId("me-id-1");
 		final var convEntity2 = ConversationEntity.create().withId("conv-2").withMessageExchangeId("me-id-2");
-		final var meStats1 = new generated.se.sundsvall.messageexchange.ConversationReadByCount().messageCount(5);
-		final var meStats2 = new generated.se.sundsvall.messageexchange.ConversationReadByCount().messageCount(3);
+		final var meStats1 = new generated.se.sundsvall.messageexchange.ReadByStatistics().messageCount(5L);
+		final var meStats2 = new generated.se.sundsvall.messageexchange.ReadByStatistics().messageCount(3L);
 
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID)).thenReturn(List.of(convEntity1, convEntity2));
 		when(messageExchangeClientMock.countReadBy(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, "me-id-1", false)).thenReturn(ResponseEntity.ok(meStats1));
@@ -548,7 +548,7 @@ class ConversationServiceTest {
 	void countReadByWithConversationIdFilter() {
 		// Arrange
 		final var convEntity = ConversationEntity.create().withId(CONVERSATION_ID).withMessageExchangeId(MESSAGE_EXCHANGE_ID);
-		final var meStats = new generated.se.sundsvall.messageexchange.ConversationReadByCount().messageCount(7);
+		final var meStats = new generated.se.sundsvall.messageexchange.ReadByStatistics().messageCount(7L);
 
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.of(convEntity));
 		when(messageExchangeClientMock.countReadBy(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID, true)).thenReturn(ResponseEntity.ok(meStats));
