@@ -1072,6 +1072,34 @@ class ErrandCommunicationResourceFailureTest {
 	}
 
 	@Test
+	void markConversationMessagesAsReadWithInvalidMessageId() {
+		// Arrange
+		final var request = se.sundsvall.supportmanagement.api.model.communication.conversation.MarkAsReadRequest.create()
+			.withMessageIds(List.of(INVALID));
+
+		// Act
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/mark-as-read")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("messageIds[0]", "not a valid UUID"));
+
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
 	void getConversationCountReadByWithInvalidConversationId() {
 		// Act
 		final var response = webTestClient.get()
