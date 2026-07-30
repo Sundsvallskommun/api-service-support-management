@@ -1,0 +1,40 @@
+[
+  {
+    "conversationId": "f4524497-a592-4618-a746-b59a60a76f13",
+    "messageCount": 5,
+    "readByCount": [
+      {
+        "identifier": {
+          "type": "adAccount",
+          "value": "joe01doe"
+        },
+        "count": 3
+      }
+    ],
+    "readByPartCount": [
+      {
+        "part": "KC-23020001",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "conversationId": "7a772d18-a588-41bc-91ec-13b7421c9bb8",
+    "messageCount": 2,
+    "readByCount": [
+      {
+        "identifier": {
+          "type": "adAccount",
+          "value": "jane01doe"
+        },
+        "count": 2
+      }
+    ],
+    "readByPartCount": [
+      {
+        "part": "KC-23020001",
+        "count": 2
+      }
+    ]
+  }
+]

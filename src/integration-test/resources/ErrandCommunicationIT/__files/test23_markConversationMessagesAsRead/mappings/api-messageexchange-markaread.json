@@ -1,0 +1,18 @@
+{
+	"request": {
+		"method": "POST",
+		"url": "/api-messageexchange/2281/draken/conversations/4c0167ae-18b2-459a-a5b3-52511d5979f9/messages/mark-as-read",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"messageIds": ["d82bd8ac-1507-4d9a-958d-369261eecc15"],
+					"part": "KC-23020001"
+				},
+				"ignoreExtraElements": true
+			}
+		]
+	},
+	"response": {
+		"status": 204
+	}
+}

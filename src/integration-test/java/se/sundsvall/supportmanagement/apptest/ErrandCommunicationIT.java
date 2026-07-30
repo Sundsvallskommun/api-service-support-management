@@ -334,4 +334,25 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test23_markConversationMessagesAsRead() {
+		setupCall()
+			.withHttpMethod(POST)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations/f4524497-a592-4618-a746-b59a60a76f13/messages/mark-as-read")
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test24_getConversationCountReadBy() {
+		setupCall()
+			.withHttpMethod(GET)
+			.withServicePath(PATH + "/ec677eb3-604c-4935-bff7-f8f0b500c8f4/communication/conversations/count-read-by")
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }
