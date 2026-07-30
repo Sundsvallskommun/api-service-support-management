@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.12"
+  version: "14.14"
 servers:
-- url: http://localhost:59962
+- url: http://localhost:52886
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -4007,6 +4007,81 @@ paths:
                     format: binary
               required:
               - message
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/{conversationId}/messages/mark-as-read:
+    post:
+      tags:
+      - Errand communication
+      summary: Mark messages as read
+      description: Marks the specified messages in a conversation as read
+      operationId: markConversationMessagesAsRead
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: conversationId
+        in: path
+        description: Conversation ID
+        required: true
+        schema:
+          type: string
+        example: 1aefbbb8-de82-414b-b5d7-ba7c5bbe4506
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkAsReadRequest"
+        required: true
       responses:
         "204":
           description: Successful operation
@@ -8057,6 +8132,83 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/count-read-by:
+    get:
+      tags:
+      - Errand communication
+      summary: Get read-by count statistics
+      description: Returns read-by count statistics aggregated per conversation for
+        the errand
+      operationId: getConversationCountReadBy
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: includeSystemMessages
+        in: query
+        description: Whether to include system messages in the count
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: conversationId
+        in: query
+        description: Optional conversation ID filter
+        required: false
+        schema:
+          type: string
+        example: 1aefbbb8-de82-414b-b5d7-ba7c5bbe4506
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConversationReadByCount"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}:
     get:
       tags:
@@ -8535,9 +8687,9 @@ components:
     Problem:
       type: object
       properties:
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         instance:
           type: string
@@ -11065,6 +11217,19 @@ components:
             description: List with attachment ids
       required:
       - content
+    MarkAsReadRequest:
+      type: object
+      description: MarkAsReadRequest model
+      properties:
+        messageIds:
+          type: array
+          items:
+            type: string
+            description: List of message IDs to mark as read
+            example: b82bd8ac-1507-4d9a-958d-369261eecc15
+          minItems: 1
+      required:
+      - messageIds
     UpdateErrandNoteRequest:
       type: object
       description: UpdateErrandNoteRequest model
@@ -11192,20 +11357,20 @@ components:
     PageSubscriberNotification:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        totalPages:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
@@ -11232,10 +11397,10 @@ components:
         pageSize:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
         offset:
           type: integer
           format: int64
@@ -11408,20 +11573,20 @@ components:
     PageErrand:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        totalPages:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
@@ -11673,20 +11838,20 @@ components:
     PageEvent:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        totalPages:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
@@ -11911,20 +12076,20 @@ components:
     PageMessage:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        totalPages:
+          type: integer
+          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        sort:
+          $ref: "#/components/schemas/SortObject"
         numberOfElements:
           type: integer
           format: int32
@@ -11955,6 +12120,55 @@ components:
           description: The timestamp when the message was read.
           examples:
           - 2023-01-01T12:00:00+01:00
+    ConversationReadByCount:
+      type: object
+      description: Read-by statistics for a conversation
+      properties:
+        conversationId:
+          type: string
+          description: The unique identifier of the conversation
+          example: 2af1002e-008f-4bdc-924b-daaae31f1118
+          readOnly: true
+        messageCount:
+          type: integer
+          format: int32
+          description: Total number of messages in the conversation
+          readOnly: true
+        readByCount:
+          type: array
+          description: Per-identifier read count
+          items:
+            $ref: "#/components/schemas/ReadByCountEntry"
+          readOnly: true
+        readByPartCount:
+          type: array
+          description: Per-part read count
+          items:
+            $ref: "#/components/schemas/PartReadByCountEntry"
+          readOnly: true
+    PartReadByCountEntry:
+      type: object
+      description: Read count for a specific part
+      properties:
+        part:
+          type: string
+          description: The part that read the messages
+          example: KC-23010001
+        count:
+          type: integer
+          format: int32
+          description: Number of messages read by this part
+    ReadByCountEntry:
+      type: object
+      description: Read count for a specific identifier
+      properties:
+        identifier:
+          $ref: "#/components/schemas/Identifier"
+          description: The identifier that read the messages
+        count:
+          type: integer
+          format: int32
+          description: Number of messages read by this identifier
     ErrandAttachment:
       type: object
       description: ErrandAttachment model
