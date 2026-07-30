@@ -6,6 +6,7 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.data.domain.Page;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Attachment;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationReadByCount;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Identifier;
@@ -13,7 +14,9 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.KeyVa
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageType;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.PartReadByCountEntry;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ReadBy;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.ReadByCountEntry;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.service.util.BlobMultipartFile;
@@ -140,6 +143,32 @@ public final class ConversationMapper {
 		return new generated.se.sundsvall.messageexchange.Message()
 			.inReplyToMessageId(messageRequest.getInReplyToMessageId())
 			.content(messageRequest.getContent());
+	}
+
+	public static ConversationReadByCount toConversationReadByCount(final String smConversationId, final generated.se.sundsvall.messageexchange.ReadByStatistics meStats) {
+		return ofNullable(meStats)
+			.map(s -> ConversationReadByCount.create()
+				.withConversationId(smConversationId)
+				.withMessageCount(s.getMessageCount() != null ? s.getMessageCount().intValue() : null)
+				.withReadByCount(toReadByCountEntries(s.getReadByCount()))
+				.withReadByPartCount(toPartReadByCountEntries(s.getReadByPartCount())))
+			.orElse(null);
+	}
+
+	private static List<ReadByCountEntry> toReadByCountEntries(final List<generated.se.sundsvall.messageexchange.ReadByCount> entries) {
+		return ofNullable(entries).orElse(emptyList()).stream()
+			.map(e -> ReadByCountEntry.create()
+				.withIdentifier(toIdentifier(e.getIdentifier()))
+				.withCount(e.getCount() != null ? e.getCount().intValue() : null))
+			.toList();
+	}
+
+	private static List<PartReadByCountEntry> toPartReadByCountEntries(final List<generated.se.sundsvall.messageexchange.ReadByPartCount> entries) {
+		return ofNullable(entries).orElse(emptyList()).stream()
+			.map(e -> PartReadByCountEntry.create()
+				.withPart(e.getPart())
+				.withCount(e.getCount() != null ? e.getCount().intValue() : null))
+			.toList();
 	}
 
 	private static List<KeyValues> toKeyValuesList(final List<generated.se.sundsvall.messageexchange.KeyValues> keyValueList) {

@@ -19,10 +19,9 @@
 					{
 						"equalToJson": {
 							"inReplyToMessageId": "bbd34585-8754-47a3-a068-012b13540e94",
-							"content": "Here is the attachment you requested.",
-							"attachments": [],
-							"readBy": []
-						}
+							"content": "Here is the attachment you requested."
+						},
+						"ignoreExtraElements": true
 					}
 				]
 			},

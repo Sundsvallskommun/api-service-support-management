@@ -1014,4 +1014,84 @@ class ErrandCommunicationResourceFailureTest {
 		// Assert
 		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
+
+	@Test
+	void markConversationMessagesAsReadWithInvalidConversationId() {
+		// Arrange
+		final var request = se.sundsvall.supportmanagement.api.model.communication.conversation.MarkAsReadRequest.create()
+			.withMessageIds(List.of(java.util.UUID.randomUUID().toString()));
+
+		// Act
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/mark-as-read")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", INVALID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("markConversationMessagesAsRead.conversationId", "not a valid UUID"));
+
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
+	void markConversationMessagesAsReadWithEmptyMessageIds() {
+		// Arrange
+		final var request = se.sundsvall.supportmanagement.api.model.communication.conversation.MarkAsReadRequest.create()
+			.withMessageIds(List.of());
+
+		// Act
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/{conversationId}/messages/mark-as-read")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "conversationId", CONVERSATION_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("messageIds", "must not be empty"));
+
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
+	void getConversationCountReadByWithInvalidConversationId() {
+		// Act
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/count-read-by")
+				.queryParam("conversationId", INVALID)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("getConversationCountReadBy.conversationId", "not a valid UUID"));
+
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
+	}
 }

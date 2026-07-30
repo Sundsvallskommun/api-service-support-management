@@ -78,6 +78,7 @@ class ConversationServiceTest {
 	private static final ConversationType CONVERSATION_TYPE = EXTERNAL;
 	private static final List<String> VALUES_LIST = List.of("value1", "value2");
 	private static final List<String> RELATION_VALUES_LIST = List.of("rel1", "rel2");
+	private static final String ERRAND_NUMBER = "KC-23010001";
 
 	@Mock
 	private MessageExchangeClient messageExchangeClientMock;
@@ -462,6 +463,127 @@ class ConversationServiceTest {
 
 		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock, messageExchangeSchedulerMock);
 		verifyNoInteractions(communicationServiceMock);
+	}
+
+	@Test
+	void markAsRead() {
+		// Arrange
+		final var messageIds = List.of("msg-id-1", "msg-id-2");
+		final var markAsReadRequest = se.sundsvall.supportmanagement.api.model.communication.conversation.MarkAsReadRequest.create().withMessageIds(messageIds);
+		final var errandEntity = new ErrandEntity();
+		errandEntity.setErrandNumber(ERRAND_NUMBER);
+		final var conversationEntity = ConversationEntity.create().withMessageExchangeId(MESSAGE_EXCHANGE_ID);
+
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW)).thenReturn(errandEntity);
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.of(conversationEntity));
+		when(messageExchangeClientMock.markAsRead(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any())).thenReturn(ResponseEntity.noContent().build());
+
+		// Act
+		conversationService.markAsRead(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID, markAsReadRequest);
+
+		// Assert
+		final var captor = ArgumentCaptor.forClass(generated.se.sundsvall.messageexchange.MarkAsReadRequest.class);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verify(messageExchangeClientMock).markAsRead(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), captor.capture());
+		assertThat(captor.getValue().getMessageIds()).isEqualTo(messageIds);
+		assertThat(captor.getValue().getPart()).isEqualTo(ERRAND_NUMBER);
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(accessControlServiceMock, conversationRepositoryMock, messageExchangeClientMock);
+	}
+
+	@Test
+	void markAsReadConversationNotFound() {
+		// Arrange
+		final var errandEntity = new ErrandEntity();
+		errandEntity.setErrandNumber(ERRAND_NUMBER);
+
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW)).thenReturn(errandEntity);
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.empty());
+
+		// Act & Assert
+		assertThatThrownBy(() -> conversationService.markAsRead(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID,
+			se.sundsvall.supportmanagement.api.model.communication.conversation.MarkAsReadRequest.create().withMessageIds(List.of("msg-id"))))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("Not Found");
+
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verify(messageExchangeClientMock, Mockito.never()).markAsRead(any(), any(), any(), any());
+	}
+
+	@Test
+	void countReadByWithoutConversationIdFilter() {
+		// Arrange
+		final var convEntity1 = ConversationEntity.create().withId("conv-1").withMessageExchangeId("me-id-1");
+		final var convEntity2 = ConversationEntity.create().withId("conv-2").withMessageExchangeId("me-id-2");
+		final var meStats1 = new generated.se.sundsvall.messageexchange.ReadByStatistics().messageCount(5L);
+		final var meStats2 = new generated.se.sundsvall.messageexchange.ReadByStatistics().messageCount(3L);
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID)).thenReturn(List.of(convEntity1, convEntity2));
+		when(messageExchangeClientMock.countReadBy(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, "me-id-1", false)).thenReturn(ResponseEntity.ok(meStats1));
+		when(messageExchangeClientMock.countReadBy(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, "me-id-2", false)).thenReturn(ResponseEntity.ok(meStats2));
+
+		// Act
+		final var result = conversationService.countReadBy(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, false, null);
+
+		// Assert
+		assertThat(result).hasSize(2);
+		assertThat(result.get(0).getConversationId()).isEqualTo("conv-1");
+		assertThat(result.get(0).getMessageCount()).isEqualTo(5);
+		assertThat(result.get(1).getConversationId()).isEqualTo("conv-2");
+		assertThat(result.get(1).getMessageCount()).isEqualTo(3);
+
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID);
+		verify(messageExchangeClientMock).countReadBy(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, "me-id-1", false);
+		verify(messageExchangeClientMock).countReadBy(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, "me-id-2", false);
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock);
+	}
+
+	@Test
+	void countReadByWithConversationIdFilter() {
+		// Arrange
+		final var convEntity = ConversationEntity.create().withId(CONVERSATION_ID).withMessageExchangeId(MESSAGE_EXCHANGE_ID);
+		final var meStats = new generated.se.sundsvall.messageexchange.ReadByStatistics().messageCount(7L);
+
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.of(convEntity));
+		when(messageExchangeClientMock.countReadBy(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID, true)).thenReturn(ResponseEntity.ok(meStats));
+
+		// Act
+		final var result = conversationService.countReadBy(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, true, CONVERSATION_ID);
+
+		// Assert
+		assertThat(result).hasSize(1);
+		assertThat(result.getFirst().getConversationId()).isEqualTo(CONVERSATION_ID);
+		assertThat(result.getFirst().getMessageCount()).isEqualTo(7);
+
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verify(messageExchangeClientMock).countReadBy(MUNICIPALITY_ID, MESSAGE_EXCHANGE_NAMESPACE, MESSAGE_EXCHANGE_ID, true);
+
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock);
+		verifyNoMoreInteractions(conversationRepositoryMock, messageExchangeClientMock);
+	}
+
+	@Test
+	void countReadByWithConversationIdFilterNotBelongingToErrand() {
+		// Arrange
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.empty());
+
+		// Act
+		final var result = conversationService.countReadBy(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, false, CONVERSATION_ID);
+
+		// Assert
+		assertThat(result).isEmpty();
+
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
+		verifyNoInteractions(messageExchangeSchedulerMock, communicationServiceMock, messageExchangeClientMock);
+		verifyNoMoreInteractions(conversationRepositoryMock);
 	}
 
 	private Conversation createMessageExchangeConversation() {
