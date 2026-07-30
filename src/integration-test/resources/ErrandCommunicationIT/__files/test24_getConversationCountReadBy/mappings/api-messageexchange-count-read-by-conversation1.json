@@ -1,0 +1,30 @@
+{
+	"request": {
+		"method": "GET",
+		"url": "/api-messageexchange/2281/draken/conversations/4c0167ae-18b2-459a-a5b3-52511d5979f9/count-read-by?includeSystemMessages=false"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"messageCount": 5,
+			"readByCount": [
+				{
+					"identifier": {
+						"type": "adAccount",
+						"value": "joe01doe"
+					},
+					"count": 3
+				}
+			],
+			"readByPartCount": [
+				{
+					"part": "KC-23020001",
+					"count": 3
+				}
+			]
+		},
+		"status": 200
+	}
+}
