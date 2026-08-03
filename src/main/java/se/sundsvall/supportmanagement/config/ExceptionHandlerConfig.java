@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import se.sundsvall.dept44.problem.Problem;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.status;
@@ -47,11 +47,11 @@ public class ExceptionHandlerConfig {
 		ResponseEntity<Problem> handleOptimisticLockingFailure(final ObjectOptimisticLockingFailureException exception) {
 			LOGGER.warn("Optimistic locking failure: {}", exception.getMessage());
 
-			return status(CONFLICT)
+			return status(PRECONDITION_FAILED)
 				.contentType(APPLICATION_PROBLEM_JSON)
 				.body(Problem.builder()
-					.withStatus(CONFLICT)
-					.withTitle("Conflict")
+					.withStatus(PRECONDITION_FAILED)
+					.withTitle("Precondition Failed")
 					.withDetail("The resource was modified by a concurrent request, please reload and retry")
 					.build());
 		}

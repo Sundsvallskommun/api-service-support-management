@@ -75,7 +75,7 @@ public class ErrandJsonParameterService {
 			errandEntity.getJsonParameters().add(entity);
 		}
 
-		errandsRepository.save(errandEntity);
+		errandsRepository.saveAndFlush(errandEntity);
 		return toJsonParameter(entity);
 	}
 

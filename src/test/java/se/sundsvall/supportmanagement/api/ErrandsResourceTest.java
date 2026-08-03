@@ -385,6 +385,34 @@ class ErrandsResourceTest {
 	}
 
 	@Test
+	void updateErrandWithIfMatchHeader() {
+		// Parameter values
+		final var ifMatch = "\"2\"";
+		final var errandInstance = createErrandInstance(null, true);
+		final var updatedInstance = Errand.create().withId(ERRAND_ID);
+
+		// Mock
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ifMatch, errandInstance)).thenReturn(updatedInstance);
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.header("If-Match", ifMatch)
+			.contentType(APPLICATION_JSON)
+			.bodyValue(errandInstance)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(Errand.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verification
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ifMatch, errandInstance);
+		assertThat(response).isEqualTo(updatedInstance);
+	}
+
+	@Test
 	void deleteErrand() {
 		webTestClient.delete()
 			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
