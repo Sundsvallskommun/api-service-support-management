@@ -16,7 +16,7 @@
 		<spring-filter.version>4.0.1</spring-filter.version>
 		<tika-core.version>3.3.2</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
-		<commons-validator.version>1.10.1</commons-validator.version>
+		<commons-validator.version>1.11.0</commons-validator.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
 	</properties>
