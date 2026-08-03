@@ -1,74 +1,74 @@
-openapi: 3.0.1
+openapi: 3.1.0
 info:
   title: message-exchange
   contact: {}
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "1.1"
+  version: "3.0"
 servers:
-- url: https://message-exchange-af-message-exchange.apps.ocp201.sundsvall.se
-  description: Generated server url
+  - url: http://localhost:45483
+    description: Generated server url
 tags:
-- name: Message resource
-  description: Message operations
-- name: Conversation resource
-  description: Conversation operations
+  - name: Message resource
+    description: Message operations
+  - name: Conversation resource
+    description: Conversation operations
 paths:
   /{municipalityId}/{namespace}/conversations:
     get:
       tags:
-      - Conversation resource
+        - Conversation resource
       description: Get all conversations with or without filters. The resource allows
         the client a wide range of variations on how to filter the result.
       operationId: getConversations
       parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
-      - name: filter
-        in: query
-        description: "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)"
-        required: false
-        schema:
-          type: string
-        example: topic:'My topic' and messages.createdBy.value:'joe01doe' and messages.created>'2023-01-01T00:00:00Z'
-      - name: page
-        in: query
-        description: Zero-based page index (0..N)
-        required: false
-        schema:
-          minimum: 0
-          type: integer
-          default: 0
-      - name: size
-        in: query
-        description: The size of the page to be returned
-        required: false
-        schema:
-          minimum: 1
-          type: integer
-          default: 20
-      - name: sort
-        in: query
-        description: "Sorting criteria in the format: property,(asc|desc). Default\
-          \ sort order is ascending. Multiple sort criteria are supported."
-        required: false
-        schema:
-          type: array
-          items:
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
             type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: filter
+          in: query
+          description: "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)"
+          required: false
+          schema:
+            type: string
+          example: topic:'My topic' and messages.createdBy.value:'joe01doe' and messages.created>'2023-01-01T00:00:00Z'
+        - name: page
+          in: query
+          description: Zero-based page index (0..N)
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          description: The size of the page to be returned
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+        - name: sort
+          in: query
+          description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         "200":
           description: OK - Successful operation
@@ -82,8 +82,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -92,24 +92,24 @@ paths:
                 $ref: "#/components/schemas/Problem"
     post:
       tags:
-      - Conversation resource
+        - Conversation resource
       description: Create a conversation
       operationId: createConversation
       parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
       requestBody:
         description: Conversation to be created
         content:
@@ -126,8 +126,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -137,72 +137,81 @@ paths:
   /{municipalityId}/{namespace}/conversations/{conversationId}/messages:
     get:
       tags:
-      - Message resource
+        - Message resource
       description: "Get all messages for a conversation, paginated."
       operationId: getMessages
       parameters:
-      - name: X-Sent-By
-        in: header
-        description: "User ID of the request sender, used to log who read the message.\
+        - name: X-Sent-By
+          in: header
+          description: "User ID of the request sender, used to log who read the message.\
           \ The value must follow the format: type=TYPE; VALUE. Valid types are 'adAccount'\
           \ and 'partyId'."
-        required: false
-        schema:
-          type: string
-        example: type=adAccount; joe01doe
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
-      - name: conversationId
-        in: path
-        description: Conversation ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: filter
-        in: query
-        description: "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)"
-        required: false
-        schema:
-          type: string
-        example: content:'My content' and createdBy.value:'joe01doe' and created>'2023-01-01T00:00:00Z'
-      - name: page
-        in: query
-        description: Zero-based page index (0..N)
-        required: false
-        schema:
-          minimum: 0
-          type: integer
-          default: 0
-      - name: size
-        in: query
-        description: The size of the page to be returned
-        required: false
-        schema:
-          minimum: 1
-          type: integer
-          default: 20
-      - name: sort
-        in: query
-        description: "Sorting criteria in the format: property,(asc|desc). Default\
-          \ sort order is ascending. Multiple sort criteria are supported."
-        required: false
-        schema:
-          type: array
-          items:
+          required: false
+          schema:
             type: string
+          example: type=adAccount; joe01doe
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: filter
+          in: query
+          description: "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)"
+          required: false
+          schema:
+            type: string
+          example: content:'My content' and createdBy.value:'joe01doe' and created>'2023-01-01T00:00:00Z'
+        - name: setReadBy
+          in: query
+          description: Whether the request sender should be marked as having read the
+            returned messages. Defaults to true.
+          required: false
+          schema:
+            type: boolean
+            default: true
+          example: true
+        - name: page
+          in: query
+          description: Zero-based page index (0..N)
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          description: The size of the page to be returned
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+        - name: sort
+          in: query
+          description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         "200":
           description: OK - Successful operation
@@ -216,8 +225,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -232,47 +241,45 @@ paths:
                 $ref: "#/components/schemas/Problem"
     post:
       tags:
-      - Message resource
+        - Message resource
       description: Post a message with attachment
       operationId: postMessage
       parameters:
-      - name: X-Sent-By
-        in: header
-        description: "User ID of the request sender, used to log who sent the message.\
+        - name: X-Sent-By
+          in: header
+          description: "User ID of the request sender, used to log who sent the message.\
           \ The value must follow the format: type=TYPE; VALUE. Valid types are 'adAccount'\
           \ and 'partyId'."
-        required: false
-        schema:
-          type: string
-        example: type=adAccount; joe01doe
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
-      - name: conversationId
-        in: path
-        description: Conversation ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+          required: false
+          schema:
+            type: string
+          example: type=adAccount; joe01doe
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
       requestBody:
         description: Message to be posted
         content:
           multipart/form-data:
             schema:
-              required:
-              - message
               type: object
               properties:
                 message:
@@ -283,6 +290,8 @@ paths:
                   items:
                     type: string
                     format: binary
+              required:
+                - message
       responses:
         "201":
           description: Created - Successful operation
@@ -292,8 +301,66 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/conversations/{conversationId}/messages/mark-as-read:
+    post:
+      tags:
+        - Message resource
+      description: Mark a list of messages as read by an identifier and/or a part
+      operationId: markAsRead
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      requestBody:
+        description: Messages to mark as read
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkAsReadRequest"
+        required: true
+      responses:
+        "204":
+          description: No Content - Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -309,31 +376,31 @@ paths:
   /{municipalityId}/{namespace}/conversations/{conversationId}:
     get:
       tags:
-      - Conversation resource
+        - Conversation resource
       description: Get a conversation
       operationId: getConversation
       parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
-      - name: conversationId
-        in: path
-        description: Conversation ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
         "200":
           description: OK - Successful operation
@@ -353,8 +420,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -363,31 +430,31 @@ paths:
                 $ref: "#/components/schemas/Problem"
     delete:
       tags:
-      - Conversation resource
+        - Conversation resource
       description: Delete a conversation
       operationId: deleteConversation
       parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
-      - name: conversationId
-        in: path
-        description: Conversation ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
         "204":
           description: No Content - Successful operation
@@ -403,8 +470,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -413,31 +480,31 @@ paths:
                 $ref: "#/components/schemas/Problem"
     patch:
       tags:
-      - Conversation resource
+        - Conversation resource
       description: Update a conversation
       operationId: updateConversation
       parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
-      - name: conversationId
-        in: path
-        description: Conversation ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
       requestBody:
         description: Conversation to be updated
         content:
@@ -464,8 +531,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -475,47 +542,47 @@ paths:
   /{municipalityId}/{namespace}/conversations/{conversationId}/messages/{messageId}/attachments/{attachmentId}:
     get:
       tags:
-      - Message resource
+        - Message resource
       summary: Read attachment
       description: Fetches the attachment that matches the provided message id and
         attachment id
       operationId: readErrandAttachment
       parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
-      - name: conversationId
-        in: path
-        description: Conversation ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: messageId
-        in: path
-        description: Message ID
-        required: true
-        schema:
-          type: string
-        example: d82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: attachmentId
-        in: path
-        description: Errand attachment id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        - name: municipalityId
+          in: path
+          description: Municipality id
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: messageId
+          in: path
+          description: Message ID
+          required: true
+          schema:
+            type: string
+          example: d82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: attachmentId
+          in: path
+          description: Errand attachment id
+          required: true
+          schema:
+            type: string
+          example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
       responses:
         "200":
           description: Successful Operation
@@ -531,8 +598,73 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/conversations/{conversationId}/count-read-by:
+    get:
+      tags:
+        - Conversation resource
+      description: "Get read statistics for a conversation, describing how many messages\
+        \ have been read per identifier and per part."
+      operationId: countReadBy
+      parameters:
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: includeSystemMessages
+          in: query
+          description: Whether system generated messages should be included in the statistics.
+            Defaults to false.
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: false
+      responses:
+        "200":
+          description: OK - Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadByStatistics"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -542,7 +674,7 @@ paths:
   /api-docs:
     get:
       tags:
-      - API
+        - API
       summary: OpenAPI
       operationId: getApiDocs
       responses:
@@ -558,38 +690,38 @@ paths:
   /{municipalityId}/{namespace}/conversations/{conversationId}/messages/{messageId}:
     delete:
       tags:
-      - Message resource
+        - Message resource
       description: Delete a message
       operationId: deleteMessage
       parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality ID
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-        example: MY_NAMESPACE
-      - name: conversationId
-        in: path
-        description: Conversation ID
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: messageId
-        in: path
-        description: Message ID
-        required: true
-        schema:
-          type: string
-        example: d82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+          example: MY_NAMESPACE
+        - name: conversationId
+          in: path
+          description: Conversation ID
+          required: true
+          schema:
+            type: string
+          example: b82bd8ac-1507-4d9a-958d-369261eecc15
+        - name: messageId
+          in: path
+          description: Message ID
+          required: true
+          schema:
+            type: string
+          example: d82bd8ac-1507-4d9a-958d-369261eecc15
       responses:
         "204":
           description: No Content - Successful operation
@@ -599,8 +731,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
           content:
@@ -617,75 +749,88 @@ components:
   schemas:
     Conversation:
       type: object
+      description: "Represents a conversation containing identifiers, messages, and\
+        \ metadata."
       properties:
         id:
           type: string
           description: The unique identifier of the conversation.
+          examples:
+            - 2af1002e-008f-4bdc-924b-daaae31f1118
           readOnly: true
-          example: 2af1002e-008f-4bdc-924b-daaae31f1118
         participants:
           type: array
           items:
             $ref: "#/components/schemas/Identifier"
+            description: The list of participants in the conversation.
         municipalityId:
           type: string
           description: The identifier of the municipality associated with the conversation.
+          examples:
+            - "2281"
           readOnly: true
-          example: "2281"
         namespace:
           type: string
           description: The namespace of the conversation.
+          examples:
+            - namespace-abc
           readOnly: true
-          example: namespace-abc
         externalReferences:
           type: array
           items:
             $ref: "#/components/schemas/KeyValues"
+            description: The list of external references associated with the conversation.
         metadata:
           type: array
           items:
             $ref: "#/components/schemas/KeyValues"
+            description: A list of metadata associated with the conversation.
         topic:
           type: string
           description: The topic of the conversation.
-          example: Customer Support
+          examples:
+            - Customer Support
         latestSequenceNumber:
           type: integer
-          description: The latest sequence number of the conversation.
           format: int64
+          description: The latest sequence number of the conversation.
+          examples:
+            - 1
           readOnly: true
-          example: 1
-      description: "Represents a conversation containing identifiers, messages, and\
-        \ metadata."
     Identifier:
-      required:
-      - value
       type: object
-      properties:
-        type:
-          pattern: ^(adAccount|partyId)$
-          type: string
-          description: "The type of the participant, e.g., adAccount or partyId"
-          example: user
-        value:
-          minLength: 1
-          type: string
-          description: The unique identifier or value of the participant.
-          example: ad012ad
       description: "Represents a participant in a conversation, including their type\
         \ and value."
+      properties:
+        type:
+          type: string
+          description: "The type of the participant, e.g., adAccount or partyId"
+          examples:
+            - user
+          pattern: ^(adAccount|partyId)$
+        value:
+          type: string
+          description: The unique identifier or value of the participant.
+          examples:
+            - ad012ad
+          minLength: 1
+      required:
+        - type
+        - value
     KeyValues:
       type: object
+      description: Represents a key-value pair of metadata.
       properties:
         key:
           type: string
           description: The key of the data
-          example: key1
+          examples:
+            - key1
         values:
           type: array
           items:
             type: string
-      description: Represents a key-value pair of metadata.
+            description: The values associated with the key
     Problem:
       type: object
       properties:
@@ -695,184 +840,52 @@ components:
         type:
           type: string
           format: uri
-        parameters:
-          type: object
-          additionalProperties:
-            type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
         detail:
           type: string
-    StatusType:
-      type: object
-      properties:
-        statusCode:
+        title:
+          type: string
+        status:
           type: integer
           format: int32
-        reasonPhrase:
-          type: string
     ConstraintViolationProblem:
       type: object
       properties:
-        cause:
-          $ref: "#/components/schemas/ThrowableProblem"
-        stackTrace:
-          type: array
-          items:
-            type: object
-            properties:
-              classLoaderName:
-                type: string
-              moduleName:
-                type: string
-              moduleVersion:
-                type: string
-              methodName:
-                type: string
-              fileName:
-                type: string
-              lineNumber:
-                type: integer
-                format: int32
-              className:
-                type: string
-              nativeMethod:
-                type: boolean
         type:
           type: string
           format: uri
         status:
-          $ref: "#/components/schemas/StatusType"
+          type: integer
+          format: int32
         violations:
           type: array
           items:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        message:
-          type: string
         instance:
           type: string
           format: uri
-        parameters:
-          type: object
-          additionalProperties:
-            type: object
         detail:
           type: string
-        suppressed:
-          type: array
-          items:
-            type: object
-            properties:
-              stackTrace:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    classLoaderName:
-                      type: string
-                    moduleName:
-                      type: string
-                    moduleVersion:
-                      type: string
-                    methodName:
-                      type: string
-                    fileName:
-                      type: string
-                    lineNumber:
-                      type: integer
-                      format: int32
-                    className:
-                      type: string
-                    nativeMethod:
-                      type: boolean
-              message:
-                type: string
-              localizedMessage:
-                type: string
-        localizedMessage:
-          type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
     ThrowableProblem:
       type: object
       properties:
-        cause:
-          $ref: "#/components/schemas/ThrowableProblem"
-        stackTrace:
-          type: array
-          items:
-            type: object
-            properties:
-              classLoaderName:
-                type: string
-              moduleName:
-                type: string
-              moduleVersion:
-                type: string
-              methodName:
-                type: string
-              fileName:
-                type: string
-              lineNumber:
-                type: integer
-                format: int32
-              className:
-                type: string
-              nativeMethod:
-                type: boolean
-        message:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
           type: string
         instance:
           type: string
           format: uri
-        type:
-          type: string
-          format: uri
-        parameters:
-          type: object
-          additionalProperties:
-            type: object
-        status:
-          $ref: "#/components/schemas/StatusType"
-        title:
-          type: string
-        detail:
-          type: string
-        suppressed:
-          type: array
-          items:
-            type: object
-            properties:
-              stackTrace:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    classLoaderName:
-                      type: string
-                    moduleName:
-                      type: string
-                    moduleVersion:
-                      type: string
-                    methodName:
-                      type: string
-                    fileName:
-                      type: string
-                    lineNumber:
-                      type: integer
-                      format: int32
-                    className:
-                      type: string
-                    nativeMethod:
-                      type: boolean
-              message:
-                type: string
-              localizedMessage:
-                type: string
-        localizedMessage:
-          type: string
+        causeAsProblem: {}
     Violation:
       type: object
       properties:
@@ -882,97 +895,168 @@ components:
           type: string
     Attachment:
       type: object
+      description: Represents an attachment in a message
       properties:
         id:
           type: string
           description: Unique identifier for the attachment
+          examples:
+            - cb20c51f-fcf3-42c0-b613-de563634a8ec
           readOnly: true
-          example: cb20c51f-fcf3-42c0-b613-de563634a8ec
         fileName:
           type: string
           description: Name of the file
+          examples:
+            - my-file.txt
           readOnly: true
-          example: my-file.txt
         fileSize:
           type: integer
-          description: Size of the file in bytes
           format: int32
+          description: Size of the file in bytes
+          examples:
+            - 1024
           readOnly: true
-          example: 1024
         mimeType:
           type: string
           description: Mime type of the file
           readOnly: true
         hash:
           type: string
-          description: Hash of the file content
+          description: SHA-256 content hash of the file (hex-encoded)
           readOnly: true
-          example: a3b4c5d6e7f8...
         created:
           type: string
-          description: The attachment created date
           format: date-time
+          description: The attachment created date
+          examples:
+            - 2023-01-01T00:00:00Z
           readOnly: true
-          example: 2023-01-01T00:00:00Z
-      description: Represents an attachment in a message
     Message:
       type: object
+      description: "Represents a message within a conversation, including metadata\
+        \ and content."
       properties:
         id:
           type: string
           description: The unique identifier of the message.
+          examples:
+            - 7f77f9fd-d01d-4742-974a-714b911e3496
           readOnly: true
-          example: 7f77f9fd-d01d-4742-974a-714b911e3496
         sequenceNumber:
           type: integer
-          description: The sequence number of the message in the conversation.
           format: int64
+          description: The sequence number of the message in the conversation.
+          examples:
+            - 1
           readOnly: true
-          example: 1
         inReplyToMessageId:
           type: string
           description: "The identifier of the message this message is replying to,\
             \ if any."
-          example: 2af1002e-008f-4bdc-924b-daaae31f1118
+          examples:
+            - 2af1002e-008f-4bdc-924b-daaae31f1118
         created:
           type: string
-          description: The timestamp when the message was created.
           format: date-time
+          description: The timestamp when the message was created.
+          examples:
+            - 2023-01-01T12:00:00
           readOnly: true
         createdBy:
           $ref: "#/components/schemas/Identifier"
+          description: Identifier for the person that created the message
+          readOnly: true
         content:
           type: string
           description: The content of the message.
-          example: "Hello, how can I help you?"
+          examples:
+            - "Hello, how can I help you?"
+        createdByPart:
+          type: string
+          description: "Optional part that is posting the message. When set, it is\
+            \ added directly to the message's readByPart list."
+          examples:
+            - errand-123
+          writeOnly: true
         readBy:
           type: array
           items:
             $ref: "#/components/schemas/ReadBy"
+            description: The list of people who have read the message.
+        readByPart:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadByPart"
+            description: The list of parts that have read the message.
         attachments:
           type: array
           items:
             $ref: "#/components/schemas/Attachment"
+            description: The list of attachments associated with the message.
         type:
           type: string
           description: Type of message (user or system created)
-          readOnly: true
           enum:
-          - USER_CREATED
-          - SYSTEM_CREATED
-      description: "Represents a message within a conversation, including metadata\
-        \ and content."
+            - USER_CREATED
+            - SYSTEM_CREATED
+          readOnly: true
     ReadBy:
       type: object
+      description: "Represents a person who has read a message, including their identifier\
+        \ and the timestamp of when they read it."
       properties:
         identifier:
           $ref: "#/components/schemas/Identifier"
+          description: The identifier of the person who read the message.
+          examples:
+            - ad012ad
         readAt:
           type: string
-          description: The timestamp when the message was read.
           format: date-time
-      description: "Represents a person who has read a message, including their identifier\
-        \ and the timestamp of when they read it."
+          description: The timestamp when the message was read.
+          examples:
+            - 2023-01-01T12:00:00
+    ReadByPart:
+      type: object
+      description: "Represents a part that has read a message, including the part\
+        \ identifier and the timestamp of when it was read."
+      properties:
+        part:
+          type: string
+          description: The part that read the message.
+          examples:
+            - errand-123
+        readAt:
+          type: string
+          format: date-time
+          description: The timestamp when the message was read.
+          examples:
+            - 2023-01-01T12:00:00
+    MarkAsReadRequest:
+      type: object
+      description: Request for marking a list of messages as read by an identifier
+        and/or a part.
+      properties:
+        messageIds:
+          type: array
+          items:
+            type: string
+            description: The identifiers of the messages to mark as read.
+            examples:
+              - 7f77f9fd-d01d-4742-974a-714b911e3496
+          minItems: 1
+        identifier:
+          $ref: "#/components/schemas/Identifier"
+          description: The identifier of the person that read the messages. Either
+            this and/or part must be provided.
+        part:
+          type: string
+          description: The part that read the messages. Either this and/or identifier
+            must be provided.
+          examples:
+            - errand-123
+      required:
+        - messageIds
     PageConversation:
       type: object
       properties:
@@ -982,12 +1066,6 @@ components:
         totalPages:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -998,6 +1076,12 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         numberOfElements:
@@ -1008,6 +1092,9 @@ components:
     PageableObject:
       type: object
       properties:
+        offset:
+          type: integer
+          format: int64
         paged:
           type: boolean
         pageNumber:
@@ -1016,9 +1103,6 @@ components:
         pageSize:
           type: integer
           format: int32
-        offset:
-          type: integer
-          format: int64
         sort:
           $ref: "#/components/schemas/SortObject"
         unpaged:
@@ -1026,9 +1110,9 @@ components:
     SortObject:
       type: object
       properties:
-        sorted:
-          type: boolean
         empty:
+          type: boolean
+        sorted:
           type: boolean
         unsorted:
           type: boolean
@@ -1041,12 +1125,6 @@ components:
         totalPages:
           type: integer
           format: int32
-        first:
-          type: boolean
-        last:
-          type: boolean
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -1057,6 +1135,12 @@ components:
         number:
           type: integer
           format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        first:
+          type: boolean
+        last:
+          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         numberOfElements:
@@ -1064,4 +1148,54 @@ components:
           format: int32
         empty:
           type: boolean
+    ReadByCount:
+      type: object
+      description: The number of messages read by a specific identifier within a conversation.
+      properties:
+        identifier:
+          $ref: "#/components/schemas/Identifier"
+          description: The identifier of the person the count refers to.
+        count:
+          type: integer
+          format: int64
+          description: The number of messages read by the identifier.
+          examples:
+            - 4
+    ReadByPartCount:
+      type: object
+      description: The number of messages read by a specific part within a conversation.
+      properties:
+        part:
+          type: string
+          description: The part the count refers to.
+          examples:
+            - errand-123
+        count:
+          type: integer
+          format: int64
+          description: The number of messages read by the part.
+          examples:
+            - 6
+    ReadByStatistics:
+      type: object
+      description: "Read statistics for a conversation, describing how many messages\
+        \ have been read per identifier and per part."
+      properties:
+        messageCount:
+          type: integer
+          format: int64
+          description: The total number of messages the statistics are based on.
+          examples:
+            - 13
+          readOnly: true
+        readByCount:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadByCount"
+            description: The number of messages read per identifier.
+        readByPartCount:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadByPartCount"
+            description: The number of messages read per part.
   securitySchemes: {}

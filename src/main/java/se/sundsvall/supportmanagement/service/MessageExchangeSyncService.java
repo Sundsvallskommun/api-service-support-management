@@ -119,11 +119,12 @@ public class MessageExchangeSyncService {
 	void syncAttachment(final ConversationEntity conversationEntity, final Message message, final Attachment attachment) {
 		final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
 
-		// Skip if attachment with same fileName already exists on the errand
-		final var alreadyExists = ofNullable(errandEntity.getAttachments()).orElse(Collections.emptyList()).stream()
-			.anyMatch(existing -> Objects.equals(existing.getFileName(), attachment.getFileName()));
-		if (alreadyExists) {
-			return;
+		if (attachment.getHash() != null) {
+			final var alreadyExists = ofNullable(errandEntity.getAttachments()).orElse(Collections.emptyList()).stream()
+				.anyMatch(existing -> Objects.equals(existing.getHash(), attachment.getHash()));
+			if (alreadyExists) {
+				return;
+			}
 		}
 
 		final var file = messageExchangeClient.getMessageAttachment(conversationEntity.getMunicipalityId(), messageExchangeNamespace, conversationEntity.getMessageExchangeId(), message.getId(), attachment.getId());

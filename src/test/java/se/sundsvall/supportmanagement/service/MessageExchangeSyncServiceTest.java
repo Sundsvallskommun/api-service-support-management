@@ -405,7 +405,31 @@ class MessageExchangeSyncServiceTest {
 	@Test
 	void syncAttachmentSkipsDuplicate() {
 		// Arrange
-		final var existingAttachment = se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity.create().withFileName("test.txt");
+		final var hash = "abc123def456";
+		final var existingAttachment = se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity.create().withHash(hash);
+		final var errandEntity = ErrandEntity.create().withId("123L").withAttachments(new java.util.ArrayList<>(List.of(existingAttachment)));
+		final var municipalityId = "municipalityId";
+		final var conversationEntity = ConversationEntity.create()
+			.withErrandId(errandEntity.getId())
+			.withMunicipalityId(municipalityId)
+			.withNamespace("namespace");
+		final var message = new Message();
+		final var attachment = new generated.se.sundsvall.messageexchange.Attachment().id("attachmentId").fileName("test.txt").fileSize(1024).hash(hash);
+
+		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
+
+		// Act
+		service.syncAttachment(conversationEntity, message, attachment);
+
+		// Assert
+		verify(errandsRepositoryMock).getReferenceById("123L");
+		verifyNoInteractions(messageExchangeClientMock, attachmentServiceMock, conversationRepositoryMock);
+	}
+
+	@Test
+	void syncAttachmentWithNullHashIsStored() {
+		// Arrange
+		final var existingAttachment = se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity.create().withHash(null);
 		final var errandEntity = ErrandEntity.create().withId("123L").withAttachments(new java.util.ArrayList<>(List.of(existingAttachment)));
 		final var municipalityId = "municipalityId";
 		final var conversationEntity = ConversationEntity.create()
@@ -416,13 +440,20 @@ class MessageExchangeSyncServiceTest {
 		final var attachment = new generated.se.sundsvall.messageexchange.Attachment().id("attachmentId").fileName("test.txt").fileSize(1024);
 
 		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
+		when(messageExchangeClientMock.getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId())))
+			.thenReturn(ResponseEntity.ok()
+				.header("Content-Type", "application/octet-stream")
+				.body(new InputStreamResource(new ByteArrayInputStream(new byte[0]))));
 
 		// Act
 		service.syncAttachment(conversationEntity, message, attachment);
 
 		// Assert
 		verify(errandsRepositoryMock).getReferenceById("123L");
-		verifyNoInteractions(messageExchangeClientMock, attachmentServiceMock, conversationRepositoryMock);
+		verify(messageExchangeClientMock).getMessageAttachment(eq(municipalityId), any(), any(), any(), eq(attachment.getId()));
+		verify(attachmentServiceMock).createErrandAttachment(same(errandEntity), ArgumentMatchers.<ResponseEntity<InputStreamResource>>any(), eq("test.txt"), eq(1024), nullable(String.class));
+		verifyNoMoreInteractions(messageExchangeClientMock, attachmentServiceMock);
+		verifyNoInteractions(conversationRepositoryMock);
 	}
 
 	@Test

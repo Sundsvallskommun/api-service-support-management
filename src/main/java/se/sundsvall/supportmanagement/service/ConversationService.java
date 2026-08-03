@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationReadByCount;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.MarkAsReadRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
@@ -36,6 +38,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.m
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversation;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationList;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationReadByCount;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageExchangeConversation;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessagePage;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageRequest;
@@ -230,6 +233,36 @@ public class ConversationService {
 			in.transferTo(out);
 			out.flush();
 		}
+	}
+
+	public void markAsRead(final String municipalityId, final String namespace, final String errandId, final String conversationId, final MarkAsReadRequest request) {
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
+		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
+
+		final var meRequest = new generated.se.sundsvall.messageexchange.MarkAsReadRequest()
+			.messageIds(request.getMessageIds())
+			.part(errand.getErrandNumber());
+
+		messageExchangeClient.markAsRead(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), meRequest);
+	}
+
+	public List<ConversationReadByCount> countReadBy(final String municipalityId, final String namespace, final String errandId, final Boolean includeSystemMessages, final String conversationId) {
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+
+		final List<ConversationEntity> conversations;
+		if (conversationId != null) {
+			// Returns empty list (not 404) when conversationId is not linked to the errand — intentional per spec.
+			conversations = conversationRepository.findByMunicipalityIdAndNamespaceAndErrandIdAndId(municipalityId, namespace, errandId, conversationId)
+				.map(List::of)
+				.orElse(emptyList());
+		} else {
+			conversations = conversationRepository.findByMunicipalityIdAndNamespaceAndErrandId(municipalityId, namespace, errandId);
+		}
+
+		return conversations.stream()
+			.map(conv -> toConversationReadByCount(conv.getId(),
+				messageExchangeClient.countReadBy(municipalityId, messageExchangeNamespace, conv.getMessageExchangeId(), includeSystemMessages).getBody()))
+			.toList();
 	}
 
 	public void deleteByErrandId(final ErrandEntity errandEntity) {

@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,7 +43,9 @@ import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationReadByCount;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
+import se.sundsvall.supportmanagement.api.model.communication.conversation.MarkAsReadRequest;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Message;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.MessageRequest;
 import se.sundsvall.supportmanagement.service.CommunicationService;
@@ -312,6 +315,39 @@ class ErrandCommunicationResource {
 		final HttpServletResponse response) throws IOException {
 
 		conversationService.getConversationMessageAttachment(municipalityId, namespace, errandId, conversationId, messageId, attachmentId, response);
+	}
+
+	@PostMapping(path = "/conversations/{conversationId}/messages/mark-as-read", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
+	@Operation(summary = "Mark messages as read", description = "Marks the specified messages in a conversation as read", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Void> markConversationMessagesAsRead(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
+		@Parameter(name = "conversationId", description = "Conversation ID", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506") @ValidUuid @PathVariable("conversationId") final String conversationId,
+		@Valid @NotNull @RequestBody final MarkAsReadRequest request) {
+
+		conversationService.markAsRead(municipalityId, namespace, errandId, conversationId, request);
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
+	}
+
+	@GetMapping(path = "/conversations/count-read-by", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Get read-by count statistics", description = "Returns read-by count statistics aggregated per conversation for the errand", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true)
+	})
+	ResponseEntity<List<ConversationReadByCount>> getConversationCountReadBy(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
+		@Parameter(name = "includeSystemMessages", description = "Whether to include system messages in the count") @RequestParam(value = "includeSystemMessages", defaultValue = "false") final Boolean includeSystemMessages,
+		@Parameter(name = "conversationId", description = "Optional conversation ID filter", example = "1aefbbb8-de82-414b-b5d7-ba7c5bbe4506") @ValidUuid(nullable = true) @RequestParam(value = "conversationId",
+			required = false) final String conversationId) {
+
+		return ok(conversationService.countReadBy(municipalityId, namespace, errandId, includeSystemMessages, conversationId));
 	}
 
 	private <T> void validate(final T t) {
