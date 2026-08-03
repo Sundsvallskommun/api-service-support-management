@@ -337,7 +337,7 @@ class ErrandServiceTest {
 		Identifier.set(user);
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
-		when(errandRepositoryMock.save(entity)).thenReturn(entity);
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
@@ -350,7 +350,7 @@ class ErrandServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
-		verify(errandRepositoryMock).save(entity);
+		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
@@ -364,7 +364,7 @@ class ErrandServiceTest {
 		Identifier.set(user);
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
-		when(errandRepositoryMock.save(entity)).thenReturn(entity);
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
@@ -375,7 +375,7 @@ class ErrandServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, Access.AccessLevelEnum.RW);
 		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
-		verify(errandRepositoryMock).save(entity);
+		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());

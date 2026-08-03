@@ -7,13 +7,13 @@
 			"value1",
 			"value2"
 		],
-		"version": "${json-unit.any-number}"
+		"version": 0
 	},
 	{
 		"key": "key2",
 		"displayName": "Displayname 2",
 		"group": "A",
 		"values": [],
-		"version": "${json-unit.any-number}"
+		"version": 0
 	}
 ]

@@ -198,7 +198,7 @@ public class ErrandService {
 		if (errand.getLabels() != null) {
 			computeAndSetAccessLabels(errandEntity);
 		}
-		final var entity = repository.save(errandEntity);
+		final var entity = repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 
 		final var revisionResult = revisionService.createErrandRevision(entity);

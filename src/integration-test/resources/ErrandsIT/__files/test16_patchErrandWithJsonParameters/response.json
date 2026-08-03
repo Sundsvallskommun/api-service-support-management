@@ -29,7 +29,7 @@
 				"valueA1",
 				"valueA2"
 			],
-			"version": "${json-unit.any-number}"
+			"version": 0
 		},
 		{
 			"key": "keyB",
@@ -37,7 +37,7 @@
 			"values": [
 				"valueB1"
 			],
-			"version": "${json-unit.any-number}"
+			"version": 0
 		}
 	],
 	"jsonParameters": [
@@ -50,7 +50,7 @@
 				"email": "jane.smith@example.com",
 				"age": 25
 			},
-			"version": "${json-unit.any-number}"
+			"version": 0
 		}
 	],
 	"classification": {
@@ -136,5 +136,5 @@
 	"created": "2022-03-01T12:00:00+01:00",
 	"touched": "${json-unit.any-string}",
 	"modified": "${json-unit.any-string}",
-	"version": "${json-unit.any-number}"
+	"version": 1
 }
