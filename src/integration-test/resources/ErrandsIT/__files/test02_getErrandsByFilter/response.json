@@ -66,14 +66,14 @@
 						"value1",
 						"value2"
 					],
-					"version": "${json-unit.any-number}"
+					"version": 0
 				},
 				{
 					"key": "key2",
 					"displayName": "Displayname 2",
 					"group": "A",
 					"values": [],
-					"version": "${json-unit.any-number}"
+					"version": 0
 				}
 			],
 			"jsonParameters": [],
@@ -174,7 +174,7 @@
 			],
 			"created": "2022-01-01T12:00:00+01:00",
 			"touched": "2022-01-01T12:00:00+01:00",
-			"version": "${json-unit.any-number}"
+			"version": 0
 		}
 	],
 	"pageable": {

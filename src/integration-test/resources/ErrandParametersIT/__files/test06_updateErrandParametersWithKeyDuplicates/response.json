@@ -8,6 +8,6 @@
 			"value4"
 		],
 		"key": "key1",
-		"version": "${json-unit.any-number}"
+		"version": 0
 	}
 ]

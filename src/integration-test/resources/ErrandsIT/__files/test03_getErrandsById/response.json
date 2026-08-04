@@ -29,7 +29,7 @@
 				"valueA1",
 				"valueA2"
 			],
-			"version": "${json-unit.any-number}"
+			"version": 0
 		},
 		{
 			"key": "keyB",
@@ -37,7 +37,7 @@
 			"values": [
 				"valueB1"
 			],
-			"version": "${json-unit.any-number}"
+			"version": 0
 		}
 	],
 	"jsonParameters": [],
@@ -123,5 +123,5 @@
 	"phases": [],
 	"created": "2022-03-01T12:00:00+01:00",
 	"touched": "2022-03-01T12:00:00+01:00",
-	"version": "${json-unit.any-number}"
+	"version": 0
 }

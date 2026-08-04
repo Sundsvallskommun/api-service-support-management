@@ -85,7 +85,7 @@
 			"assignedUserId": "jane11dane",
 			"suspension": {},
 			"status": "STATUS-1",
-			"version": "${json-unit.any-number}"
+			"version": 0
 		}
 	],
 	"totalElements": 1,

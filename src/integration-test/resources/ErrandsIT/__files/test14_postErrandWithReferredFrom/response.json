@@ -61,7 +61,7 @@
 				"value3",
 				"value4"
 			],
-			"version": "${json-unit.any-number}"
+			"version": 0
 		},
 		{
 			"key": "key-3",
@@ -69,7 +69,7 @@
 			"values": [
 				"the second value"
 			],
-			"version": "${json-unit.any-number}"
+			"version": 0
 		},
 		{
 			"key": "key-2",
@@ -77,12 +77,12 @@
 			"values": [
 				"the second value"
 			],
-			"version": "${json-unit.any-number}"
+			"version": 0
 		}
 	],
 	"jsonParameters": [],
 	"assignedUserId": "joe01doe",
 	"suspension": {},
 	"status": "STATUS-2",
-	"version": "${json-unit.any-number}"
+	"version": 0
 }

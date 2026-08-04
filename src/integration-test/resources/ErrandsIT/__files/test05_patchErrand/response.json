@@ -135,12 +135,12 @@
 				"valueA4"
 			],
 			"key": "keyA",
-			"version": "${json-unit.any-number}"
+			"version": 1
 		}
 	],
 	"jsonParameters": [],
 	"assignedUserId": "ASSIGNED_USER_ID-3",
 	"suspension": {},
 	"status": "STATUS-3",
-	"version": "${json-unit.any-number}"
+	"version": 1
 }

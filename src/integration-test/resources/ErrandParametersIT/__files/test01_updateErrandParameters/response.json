@@ -7,7 +7,7 @@
 			"value3"
 		],
 		"key": "key1",
-		"version": "${json-unit.any-number}"
+		"version": 0
 	},
 	{
 		"displayName": "display name 3",
@@ -15,7 +15,7 @@
 			"value4"
 		],
 		"key": "key0",
-		"version": "${json-unit.any-number}"
+		"version": 0
 	},
 	{
 		"displayName": "display name 2",
@@ -23,6 +23,6 @@
 			"value4"
 		],
 		"key": "key2",
-		"version": "${json-unit.any-number}"
+		"version": 0
 	}
 ]

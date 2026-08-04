@@ -25,5 +25,5 @@
 	"externalTags": [],
 	"parameters": [],
 	"stakeholders": [],
-	"version": "${json-unit.any-number}"
+	"version": 2
 }

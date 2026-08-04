@@ -6,5 +6,5 @@
 		"value3",
 		"value4"
 	],
-	"version": "${json-unit.any-number}"
+	"version": 0
 }
