@@ -445,6 +445,12 @@ VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),
        ('db93ed18-8f7b-4809-8bc0-1d8971be7291', 'valueB1', 0);
 
 -- -----------------------------------
+-- JSON Parameters
+-- -----------------------------------
+INSERT INTO json_parameter(errand_id, id, parameter_key, schema_id, value)
+VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'aabb1234-0001-0001-0001-000000000001', 'formData', 'schema-1.0', '{"firstName":"John","lastName":"Doe"}');
+
+-- -----------------------------------
 -- errandLabel
 -- -----------------------------------
 INSERT INTO errand_labels(errand_id, metadata_label_id)

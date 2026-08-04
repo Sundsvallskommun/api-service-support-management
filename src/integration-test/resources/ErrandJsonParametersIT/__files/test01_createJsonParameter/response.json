@@ -1,0 +1,9 @@
+{
+	"key": "newKey",
+	"schemaId": "schema-1.0",
+	"value": {
+		"city": "Sundsvall",
+		"population": 100000
+	},
+	"version": 0
+}

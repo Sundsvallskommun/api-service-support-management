@@ -72,6 +72,7 @@ public class ErrandJsonParameterService {
 				.withKey(key)
 				.withSchemaId(jsonParameter.getSchemaId())
 				.withValue(toJsonString(jsonParameter.getValue()));
+			entityManager.persist(entity);
 			errandEntity.getJsonParameters().add(entity);
 		}
 
