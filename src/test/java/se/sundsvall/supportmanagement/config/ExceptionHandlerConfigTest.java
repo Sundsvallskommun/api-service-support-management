@@ -8,7 +8,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 
 @SpringBootTest(classes = ExceptionHandlerConfig.class)
 class ExceptionHandlerConfigTest {
@@ -29,14 +29,14 @@ class ExceptionHandlerConfigTest {
 	}
 
 	@Test
-	void optimisticLockingFailureIsMappedToConflict() {
+	void optimisticLockingFailureIsMappedToPreconditionFailed() {
 		final var response = controllerExceptionHandler.handleOptimisticLockingFailure(new ObjectOptimisticLockingFailureException("ErrandEntity", "some-id"));
 
 		assertThat(response).isNotNull();
-		assertThat(response.getStatusCode()).isEqualTo(CONFLICT);
+		assertThat(response.getStatusCode()).isEqualTo(PRECONDITION_FAILED);
 		assertThat(response.getBody()).isNotNull();
-		assertThat(response.getBody().getTitle()).isEqualTo("Conflict");
+		assertThat(response.getBody().getTitle()).isEqualTo("Precondition Failed");
 		assertThat(response.getBody().getDetail()).isEqualTo("The resource was modified by a concurrent request, please reload and retry");
-		assertThat(response.getBody().getStatus()).isEqualTo(CONFLICT);
+		assertThat(response.getBody().getStatus()).isEqualTo(PRECONDITION_FAILED);
 	}
 }

@@ -14,6 +14,7 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
+import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 import static java.util.UUID.randomUUID;
@@ -39,6 +40,9 @@ class ErrandParameterResourceFailureTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
+
+	@MockitoBean
+	private ErrandJsonParameterService errandJsonParameterServiceMock;
 
 	@MockitoBean
 	private ErrandParameterService errandParameterServiceMock;

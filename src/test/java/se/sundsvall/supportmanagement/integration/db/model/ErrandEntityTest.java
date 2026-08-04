@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static java.time.OffsetDateTime.now;
@@ -31,8 +31,8 @@ class ErrandEntityTest {
 		assertThat(ErrandEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
+			hasValidBeanHashCodeExcluding("version"),
+			hasValidBeanEqualsExcluding("version"),
 			hasValidBeanToString()));
 	}
 
@@ -73,6 +73,7 @@ class ErrandEntityTest {
 		final var notifications = List.of(NotificationEntity.create());
 		final var actions = List.of(ErrandActionEntity.create().withId("action-id"));
 		final var phases = List.of(ErrandPhaseEntity.create().withId("phase-id"));
+		final var version = 1L;
 
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -111,7 +112,8 @@ class ErrandEntityTest {
 			.withActions(actions)
 			.withPhases(phases)
 			.withLabels(labels)
-			.withAccessLabels(accessLabels);
+			.withAccessLabels(accessLabels)
+			.withVersion(version);
 
 		assertThat(errandEntity).hasNoNullFieldsOrProperties();
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
@@ -148,6 +150,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getAccessLabels()).isEqualTo(accessLabels);
 		assertThat(errandEntity.getNotifications()).isEqualTo(notifications);
 		assertThat(errandEntity.getActions()).isEqualTo(actions);
+		assertThat(errandEntity.getVersion()).isEqualTo(version);
 	}
 
 	@Test

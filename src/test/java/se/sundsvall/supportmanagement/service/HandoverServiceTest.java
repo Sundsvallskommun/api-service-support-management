@@ -395,7 +395,7 @@ class HandoverServiceTest {
 		service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
 
 		final var errandCaptor = ArgumentCaptor.forClass(se.sundsvall.supportmanagement.api.model.errand.Errand.class);
-		verify(errandServiceMock).updateErrand(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), errandCaptor.capture());
+		verify(errandServiceMock).updateErrand(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), isNull(), errandCaptor.capture());
 		assertThat(errandCaptor.getValue().getStatus()).isEqualTo("SOLVED");
 		assertThat(errandCaptor.getValue().getResolution()).isEqualTo("HANDED_OVER");
 	}

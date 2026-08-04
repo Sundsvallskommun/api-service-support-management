@@ -15,6 +15,7 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -194,6 +195,10 @@ public class ErrandEntity {
 
 	@Column(name = "errand_number", nullable = false)
 	private String errandNumber;
+
+	@Version
+	@Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+	private Long version;
 
 	@Transient
 	private String tempPreviousStatus;
@@ -592,6 +597,19 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public ErrandEntity withVersion(final Long version) {
+		this.version = version;
+		return this;
+	}
+
 	public ContactReasonEntity getContactReason() {
 		return contactReasonEntity;
 	}
@@ -762,6 +780,7 @@ public class ErrandEntity {
 			", modified=" + modified +
 			", touched=" + touched +
 			", errandNumber='" + errandNumber + '\'' +
+			", version=" + version +
 			", tempPreviousStatus='" + tempPreviousStatus + '\'' +
 			", previousStatus='" + previousStatus + '\'' +
 			", timeMeasures=" + timeMeasures +

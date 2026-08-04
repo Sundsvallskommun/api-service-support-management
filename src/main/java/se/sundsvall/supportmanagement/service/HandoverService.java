@@ -306,7 +306,7 @@ public class HandoverService {
 		}
 		final var action = request.getSourceHandling().getAction();
 		if (HandoverSourceAction.CLOSE.equals(action)) {
-			errandService.updateErrand(namespace, municipalityId, errandId, Errand.create()
+			errandService.updateErrand(namespace, municipalityId, errandId, null, Errand.create()
 				.withStatus(request.getSourceHandling().getStatus())
 				.withResolution(request.getSourceHandling().getResolution()));
 			if (!isBlank(request.getSourceHandling().getClosingComment())) {

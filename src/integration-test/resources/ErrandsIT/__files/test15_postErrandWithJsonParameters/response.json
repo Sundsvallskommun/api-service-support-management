@@ -45,7 +45,8 @@
 				"lastName": "Doe",
 				"email": "john.doe@example.com",
 				"age": 30
-			}
+			},
+			"version": 0
 		},
 		{
 			"key": "additionalInfo",
@@ -56,10 +57,12 @@
 					"urgent",
 					"customer-request"
 				]
-			}
+			},
+			"version": 0
 		}
 	],
 	"assignedUserId": "joe01doe",
 	"suspension": {},
-	"status": "STATUS-2"
+	"status": "STATUS-2",
+	"version": 0
 }
