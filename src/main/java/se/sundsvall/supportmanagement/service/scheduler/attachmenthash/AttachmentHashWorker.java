@@ -44,6 +44,8 @@ public class AttachmentHashWorker {
 			totalProcessed += batchProcessor.processBatch(ids);
 			iteration++;
 
+			LOG.info("Processed page {} of {}, {} attachments processed so far", iteration, maxIterations, totalProcessed);
+
 			if (iteration >= maxIterations) {
 				break;
 			}
