@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +45,7 @@ class AttachmentHashBatchProcessorTest {
 	private AttachmentHashBatchProcessor batchProcessor;
 
 	@Test
-	void processBatchSuccessfully() throws Exception {
+	void processAttachmentSuccessfully() throws Exception {
 
 		// Arrange
 		final var content = "test content".getBytes();
@@ -56,17 +55,17 @@ class AttachmentHashBatchProcessorTest {
 		when(blobMock.getBinaryStream()).thenReturn(new ByteArrayInputStream(content));
 
 		// Act
-		final var result = batchProcessor.processBatch(List.of(ATTACHMENT_ID));
+		final var result = batchProcessor.processAttachment(ATTACHMENT_ID);
 
 		// Assert
-		assertThat(result).isEqualTo(1);
+		assertThat(result).isTrue();
 		verify(attachmentEntityMock).setHash(any(String.class));
 		verify(attachmentRepositoryMock).saveAndFlush(attachmentEntityMock);
 		verify(entityManagerMock).detach(attachmentEntityMock);
 	}
 
 	@Test
-	void processBatchWhenBlobReadFails() throws Exception {
+	void processAttachmentWhenBlobReadFails() throws Exception {
 
 		// Arrange
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(Optional.of(attachmentEntityMock));
@@ -75,25 +74,25 @@ class AttachmentHashBatchProcessorTest {
 		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Blob read error"));
 
 		// Act
-		final var result = batchProcessor.processBatch(List.of(ATTACHMENT_ID));
+		final var result = batchProcessor.processAttachment(ATTACHMENT_ID);
 
 		// Assert
-		assertThat(result).isZero();
+		assertThat(result).isFalse();
 		verify(attachmentRepositoryMock, never()).saveAndFlush(any());
 		verify(entityManagerMock).detach(attachmentEntityMock);
 	}
 
 	@Test
-	void processBatchWhenAttachmentNotFound() {
+	void processAttachmentWhenAttachmentNotFound() {
 
 		// Arrange
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(Optional.empty());
 
 		// Act
-		final var result = batchProcessor.processBatch(List.of(ATTACHMENT_ID));
+		final var result = batchProcessor.processAttachment(ATTACHMENT_ID);
 
 		// Assert
-		assertThat(result).isZero();
+		assertThat(result).isFalse();
 		verify(attachmentRepositoryMock, never()).saveAndFlush(any());
 		verifyNoInteractions(entityManagerMock);
 	}

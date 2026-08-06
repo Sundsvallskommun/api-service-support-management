@@ -32,11 +32,10 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
  *
  * <p>
  * The test method runs with {@link Propagation#NOT_SUPPORTED} so it is <em>not</em> wrapped in a test-managed
- * transaction. That matters because {@code processBatch} commits in its own {@code REQUIRES_NEW} transaction; verifying
- * from within a surrounding transaction would return a stale REPEATABLE_READ snapshot taken before that commit. Instead
- * each read runs in its own short transaction via {@link TransactionTemplate}, so it observes committed state and has
- * an
- * open session for lazy blob loading.
+ * transaction. That matters because {@code processAttachment} commits in its own {@code REQUIRES_NEW} transaction;
+ * verifying from within a surrounding transaction would return a stale REPEATABLE_READ snapshot taken before that
+ * commit. Instead each read runs in its own short transaction via {@link TransactionTemplate}, so it observes committed
+ * state and has an open session for lazy blob loading.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -78,8 +77,13 @@ class AttachmentHashBatchProcessorPersistenceTest {
 			}
 		}));
 
-		// Act - runs in its own REQUIRES_NEW transaction that commits.
-		final var processed = batchProcessor.processBatch(ATTACHMENT_IDS);
+		// Act - each attachment runs in its own REQUIRES_NEW transaction that commits.
+		var processed = 0;
+		for (final var id : ATTACHMENT_IDS) {
+			if (batchProcessor.processAttachment(id)) {
+				processed++;
+			}
+		}
 
 		// Assert - hash is committed, well-formed and matches the content hash.
 		assertThat(processed).isEqualTo(ATTACHMENT_IDS.size());

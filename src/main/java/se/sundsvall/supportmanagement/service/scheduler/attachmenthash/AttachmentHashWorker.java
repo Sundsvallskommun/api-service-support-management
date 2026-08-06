@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 
 @Component
 public class AttachmentHashWorker {
@@ -37,11 +36,15 @@ public class AttachmentHashWorker {
 		LOG.info("Found {} attachments without hash, starting hash computation", totalElements);
 
 		while (!page.isEmpty()) {
-			final var ids = page.getContent().stream()
-				.map(AttachmentEntity::getId)
-				.toList();
-
-			totalProcessed += batchProcessor.processBatch(ids);
+			for (final var attachment : page.getContent()) {
+				try {
+					if (batchProcessor.processAttachment(attachment.getId())) {
+						totalProcessed++;
+					}
+				} catch (final Exception e) {
+					LOG.warn("Failed to process attachment with id: {}", attachment.getId(), e);
+				}
+			}
 			iteration++;
 
 			LOG.info("Processed page {} of {}, {} attachments processed so far", iteration, maxIterations, totalProcessed);
