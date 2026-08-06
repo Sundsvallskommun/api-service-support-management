@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
-import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
@@ -18,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,9 +26,6 @@ class AttachmentHashBatchProcessorTest {
 
 	@Mock
 	private AttachmentRepository attachmentRepositoryMock;
-
-	@Mock
-	private EntityManager entityManagerMock;
 
 	@Mock
 	private AttachmentEntity attachmentEntityMock;
@@ -61,7 +56,6 @@ class AttachmentHashBatchProcessorTest {
 		assertThat(result).isTrue();
 		verify(attachmentEntityMock).setHash(any(String.class));
 		verify(attachmentRepositoryMock).saveAndFlush(attachmentEntityMock);
-		verify(entityManagerMock).detach(attachmentEntityMock);
 	}
 
 	@Test
@@ -79,7 +73,6 @@ class AttachmentHashBatchProcessorTest {
 		// Assert
 		assertThat(result).isFalse();
 		verify(attachmentRepositoryMock, never()).saveAndFlush(any());
-		verify(entityManagerMock).detach(attachmentEntityMock);
 	}
 
 	@Test
@@ -94,6 +87,5 @@ class AttachmentHashBatchProcessorTest {
 		// Assert
 		assertThat(result).isFalse();
 		verify(attachmentRepositoryMock, never()).saveAndFlush(any());
-		verifyNoInteractions(entityManagerMock);
 	}
 }
