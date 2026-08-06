@@ -2,14 +2,12 @@ package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 
 @Component
 public class AttachmentHashWorker {
 
-	private static final int PAGE_SIZE = 100;
 	private static final Logger LOG = LoggerFactory.getLogger(AttachmentHashWorker.class);
 
 	private final AttachmentRepository attachmentRepository;
@@ -21,41 +19,31 @@ public class AttachmentHashWorker {
 	}
 
 	public void computeHashForAttachmentsWithoutHash() {
-		var totalProcessed = 0;
-		var page = attachmentRepository.findByHashIsNull(PageRequest.of(0, PAGE_SIZE));
+		final var attachmentIds = attachmentRepository.findIdsByHashIsNull();
 
-		if (page.isEmpty()) {
+		if (attachmentIds.isEmpty()) {
 			LOG.info("No attachments without hash found");
 			return;
 		}
 
-		final var totalElements = page.getTotalElements();
-		final var maxIterations = (totalElements + PAGE_SIZE - 1) / PAGE_SIZE;
-		var iteration = 0;
+		LOG.info("Found {} attachments without hash, starting hash computation", attachmentIds.size());
 
-		LOG.info("Found {} attachments without hash, starting hash computation", totalElements);
+		var totalProcessed = 0;
+		var totalFailed = 0;
 
-		while (!page.isEmpty()) {
-			for (final var attachment : page.getContent()) {
-				try {
-					if (batchProcessor.processAttachment(attachment.getId())) {
-						totalProcessed++;
-					}
-				} catch (final Exception e) {
-					LOG.warn("Failed to process attachment with id: {}", attachment.getId(), e);
+		for (final var attachmentId : attachmentIds) {
+			try {
+				if (batchProcessor.processAttachment(attachmentId)) {
+					totalProcessed++;
+				} else {
+					totalFailed++;
 				}
+			} catch (final Exception e) {
+				totalFailed++;
+				LOG.warn("Failed to process attachment with id: {}", attachmentId, e);
 			}
-			iteration++;
-
-			LOG.info("Processed page {} of {}, {} attachments processed so far", iteration, maxIterations, totalProcessed);
-
-			if (iteration >= maxIterations) {
-				break;
-			}
-
-			page = attachmentRepository.findByHashIsNull(PageRequest.of(0, PAGE_SIZE));
 		}
 
-		LOG.info("Hash computation completed. Processed {} attachments", totalProcessed);
+		LOG.info("Hash computation completed. Processed {} attachments successfully, {} failed", totalProcessed, totalFailed);
 	}
 }

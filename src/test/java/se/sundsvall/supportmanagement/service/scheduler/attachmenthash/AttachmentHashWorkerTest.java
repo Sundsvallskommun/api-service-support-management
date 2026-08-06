@@ -1,18 +1,14 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -22,16 +18,14 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AttachmentHashWorkerTest {
 
-	private static final String ATTACHMENT_ID = "attachment-id";
+	private static final String ATTACHMENT_ID_1 = "attachment-id-1";
+	private static final String ATTACHMENT_ID_2 = "attachment-id-2";
 
 	@Mock
 	private AttachmentRepository attachmentRepositoryMock;
 
 	@Mock
 	private AttachmentHashBatchProcessor batchProcessorMock;
-
-	@Mock
-	private AttachmentEntity attachmentEntityMock;
 
 	@InjectMocks
 	private AttachmentHashWorker attachmentHashWorker;
@@ -40,13 +34,13 @@ class AttachmentHashWorkerTest {
 	void computeHashWhenNoAttachmentsWithoutHash() {
 
 		// Arrange
-		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class))).thenReturn(Page.empty());
+		when(attachmentRepositoryMock.findIdsByHashIsNull()).thenReturn(Collections.emptyList());
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
 		// Verify
-		verify(attachmentRepositoryMock).findByHashIsNull(any(PageRequest.class));
+		verify(attachmentRepositoryMock).findIdsByHashIsNull();
 		verifyNoInteractions(batchProcessorMock);
 		verifyNoMoreInteractions(attachmentRepositoryMock);
 	}
@@ -55,51 +49,47 @@ class AttachmentHashWorkerTest {
 	void computeHashForAttachment() {
 
 		// Arrange
-		final var pageWithData = new PageImpl<>(List.of(attachmentEntityMock), PageRequest.of(0, 100), 1);
-		when(attachmentEntityMock.getId()).thenReturn(ATTACHMENT_ID);
-		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class))).thenReturn(pageWithData);
-		when(batchProcessorMock.processAttachment(ATTACHMENT_ID)).thenReturn(true);
+		when(attachmentRepositoryMock.findIdsByHashIsNull()).thenReturn(List.of(ATTACHMENT_ID_1));
+		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenReturn(true);
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
 		// Verify
-		verify(batchProcessorMock).processAttachment(ATTACHMENT_ID);
+		verify(batchProcessorMock).processAttachment(ATTACHMENT_ID_1);
 		verifyNoMoreInteractions(batchProcessorMock);
 	}
 
 	@Test
-	void computeHashTerminatesWhenAllAttachmentsFail() {
+	void computeHashProcessesEachAttachmentOnlyOnce() {
 
-		// Arrange - 200 attachments, 2 pages expected, but all fail
-		final var pageWithData = new PageImpl<>(List.of(attachmentEntityMock), PageRequest.of(0, 100), 200);
-		when(attachmentEntityMock.getId()).thenReturn(ATTACHMENT_ID);
-		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class))).thenReturn(pageWithData);
-		when(batchProcessorMock.processAttachment(ATTACHMENT_ID)).thenReturn(false);
+		// Arrange
+		when(attachmentRepositoryMock.findIdsByHashIsNull()).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenReturn(false);
+		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_2)).thenReturn(true);
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
-		// Verify - should only iterate maxIterations (2) times, not loop infinitely
-		verify(batchProcessorMock, times(2)).processAttachment(ATTACHMENT_ID);
+		// Verify - each attachment processed exactly once, even if it fails
+		verify(batchProcessorMock, times(1)).processAttachment(ATTACHMENT_ID_1);
+		verify(batchProcessorMock, times(1)).processAttachment(ATTACHMENT_ID_2);
 		verifyNoMoreInteractions(batchProcessorMock);
 	}
 
 	@Test
 	void computeHashContinuesAfterException() {
 
-		// Arrange - 200 attachments, first throws exception, second succeeds
-		final var pageWithData = new PageImpl<>(List.of(attachmentEntityMock), PageRequest.of(0, 100), 200);
-		when(attachmentEntityMock.getId()).thenReturn(ATTACHMENT_ID);
-		when(attachmentRepositoryMock.findByHashIsNull(any(PageRequest.class))).thenReturn(pageWithData);
-		when(batchProcessorMock.processAttachment(ATTACHMENT_ID))
-			.thenThrow(new RuntimeException("Connection error"))
-			.thenReturn(true);
+		// Arrange
+		when(attachmentRepositoryMock.findIdsByHashIsNull()).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenThrow(new RuntimeException("Connection error"));
+		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_2)).thenReturn(true);
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
-		// Verify - should continue to second page despite first throwing
-		verify(batchProcessorMock, times(2)).processAttachment(ATTACHMENT_ID);
+		// Verify - should continue to next attachment despite exception
+		verify(batchProcessorMock).processAttachment(ATTACHMENT_ID_1);
+		verify(batchProcessorMock).processAttachment(ATTACHMENT_ID_2);
 	}
 }

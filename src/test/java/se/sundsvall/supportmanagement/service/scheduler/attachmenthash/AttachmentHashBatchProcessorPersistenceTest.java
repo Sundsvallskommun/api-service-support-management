@@ -23,12 +23,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 
 /**
  * Persistence-level test verifying that {@link AttachmentHashBatchProcessor} actually commits the computed hash to the
- * database.
- *
- * <p>
- * This guards a regression: the entity is detached inside the processing loop, so hashing with {@code save()} (which
- * does not flush) discarded the pending update on detach and persisted nothing, while all mocked unit tests still
- * passed. Only a real database round-trip catches it.
+ * database. Only a real database round-trip catches regressions that mocked unit tests miss.
  *
  * <p>
  * The test method runs with {@link Propagation#NOT_SUPPORTED} so it is <em>not</em> wrapped in a test-managed
