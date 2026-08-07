@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.service.util.ServiceUtil;
@@ -19,7 +18,7 @@ public class AttachmentHashBatchProcessor {
 		this.attachmentRepository = attachmentRepository;
 	}
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public boolean processAttachment(final String attachmentId) {
 		final var attachment = attachmentRepository.findById(attachmentId).orElse(null);
 		if (attachment == null) {
