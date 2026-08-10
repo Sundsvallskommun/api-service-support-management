@@ -45,6 +45,44 @@ class ErrandJsonParameterResourceFailureTest {
 	private ErrandParameterService errandParameterServiceMock;
 
 	@Test
+	void readJsonParametersInvalidNamespace() {
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting("field", "message")
+			.containsExactlyInAnyOrder(tuple("readJsonParameters.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		verifyNoInteractions(errandJsonParameterServiceMock);
+	}
+
+	@Test
+	void readJsonParametersInvalidErrandId() {
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting("field", "message")
+			.containsExactlyInAnyOrder(tuple("readJsonParameters.errandId", "not a valid UUID"));
+
+		verifyNoInteractions(errandJsonParameterServiceMock);
+	}
+
+	@Test
 	void readJsonParameterInvalidNamespace() {
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PATH + "/{key}").build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "key", KEY)))
@@ -119,6 +157,23 @@ class ErrandJsonParameterResourceFailureTest {
 			.getResponseBody();
 
 		assertThat(response).isNotNull();
+
+		verifyNoInteractions(errandJsonParameterServiceMock);
+	}
+
+	@Test
+	void updateJsonParameterKeyMismatch() {
+		final var requestBody = JsonParameter.create()
+			.withKey("differentKey")
+			.withSchemaId("test-schema-1.0")
+			.withValue(JsonNodeFactory.instance.objectNode().put("name", "test"));
+
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{key}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "key", KEY)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest();
 
 		verifyNoInteractions(errandJsonParameterServiceMock);
 	}

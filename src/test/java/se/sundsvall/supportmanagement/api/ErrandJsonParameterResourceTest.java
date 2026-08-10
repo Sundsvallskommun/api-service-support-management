@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
@@ -42,6 +44,33 @@ class ErrandJsonParameterResourceTest {
 
 	@MockitoBean
 	private ErrandParameterService errandParameterServiceMock;
+
+	@Test
+	void readJsonParameters() {
+		final var result = List.of(
+			JsonParameter.create()
+				.withKey(KEY)
+				.withSchemaId("test-schema-1.0")
+				.withValue(JsonNodeFactory.instance.objectNode().put("name", "test"))
+				.withVersion(0L));
+
+		when(errandJsonParameterServiceMock.readJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(result);
+
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.accept(APPLICATION_JSON)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBodyList(JsonParameter.class)
+			.returnResult();
+
+		assertThat(response.getResponseBody()).isNotNull().hasSize(1);
+		assertThat(response.getResponseBody().getFirst().getKey()).isEqualTo(KEY);
+
+		verify(errandJsonParameterServiceMock).readJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verifyNoMoreInteractions(errandJsonParameterServiceMock);
+	}
 
 	@Test
 	void readJsonParameter() {
@@ -72,7 +101,7 @@ class ErrandJsonParameterResourceTest {
 	}
 
 	@Test
-	void updateJsonParameter() {
+	void updateJsonParameterReturns200WhenExisting() {
 		final var requestBody = JsonParameter.create()
 			.withKey(KEY)
 			.withSchemaId("test-schema-1.0")
@@ -83,7 +112,8 @@ class ErrandJsonParameterResourceTest {
 			.withValue(JsonNodeFactory.instance.objectNode().put("name", "test"))
 			.withVersion(1L);
 
-		when(errandJsonParameterServiceMock.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, requestBody)).thenReturn(updated);
+		when(errandJsonParameterServiceMock.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, requestBody))
+			.thenReturn(new ErrandJsonParameterService.UpsertResult(updated, false));
 
 		final var response = webTestClient.put()
 			.uri(builder -> builder.path(PATH + "/{key}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "key", KEY)))
@@ -101,6 +131,59 @@ class ErrandJsonParameterResourceTest {
 		assertThat(response.getResponseBody().getVersion()).isEqualTo(1L);
 
 		verify(errandJsonParameterServiceMock).updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, requestBody);
+		verifyNoMoreInteractions(errandJsonParameterServiceMock);
+	}
+
+	@Test
+	void updateJsonParameterReturns201WhenCreated() {
+		final var requestBody = JsonParameter.create()
+			.withKey(KEY)
+			.withSchemaId("test-schema-1.0")
+			.withValue(JsonNodeFactory.instance.objectNode().put("name", "test"));
+		final var created = JsonParameter.create()
+			.withKey(KEY)
+			.withSchemaId("test-schema-1.0")
+			.withValue(JsonNodeFactory.instance.objectNode().put("name", "test"))
+			.withVersion(0L);
+
+		when(errandJsonParameterServiceMock.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, requestBody))
+			.thenReturn(new ErrandJsonParameterService.UpsertResult(created, true));
+
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{key}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "key", KEY)))
+			.contentType(APPLICATION_JSON)
+			.accept(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isCreated()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectHeader().valueEquals("ETag", "\"0\"")
+			.expectHeader().exists(LOCATION)
+			.expectBody(JsonParameter.class)
+			.returnResult();
+
+		assertThat(response.getResponseBody()).isNotNull();
+		assertThat(response.getResponseBody().getVersion()).isEqualTo(0L);
+
+		verify(errandJsonParameterServiceMock).updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, requestBody);
+		verifyNoMoreInteractions(errandJsonParameterServiceMock);
+	}
+
+	@Test
+	void updateJsonParameterWithMismatchedKeyReturns400() {
+		final var requestBody = JsonParameter.create()
+			.withKey("differentKey")
+			.withSchemaId("test-schema-1.0")
+			.withValue(JsonNodeFactory.instance.objectNode().put("name", "test"));
+
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{key}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "key", KEY)))
+			.contentType(APPLICATION_JSON)
+			.accept(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest();
+
 		verifyNoMoreInteractions(errandJsonParameterServiceMock);
 	}
 

@@ -1,0 +1,8 @@
+{
+	"key": "newKey",
+	"value": {
+		"firstName": "Joe",
+		"lastName": "Doe"
+	},
+	"schemaId": "test-schema-1.0"
+}

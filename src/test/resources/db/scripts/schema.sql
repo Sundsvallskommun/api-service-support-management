@@ -301,7 +301,8 @@
         parameter_key varchar(255),
         schema_id varchar(255),
         value longtext,
-        primary key (id)
+        primary key (id),
+        constraint uq_json_parameter_errand_id_key unique (errand_id, parameter_key)
     ) engine=InnoDB;
 
     create table message_exchange_integration_config (
