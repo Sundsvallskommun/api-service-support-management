@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -111,7 +112,7 @@ class ErrandJsonParameterResource {
 		final var result = service.updateJsonParameter(namespace, municipalityId, errandId, key, ifMatch, jsonParameter);
 		final var eTag = result.jsonParameter().getVersion() != null ? format(result.jsonParameter().getVersion()) : null;
 		if (result.created()) {
-			final var location = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
+			final var location = URI.create(ServletUriComponentsBuilder.fromCurrentRequest().build().getPath());
 			return ResponseEntity.created(location).header(ETAG, eTag).body(result.jsonParameter());
 		}
 		return ok().header(ETAG, eTag).body(result.jsonParameter());

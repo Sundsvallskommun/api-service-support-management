@@ -1,6 +1,6 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PUT;
@@ -12,13 +12,13 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.JsonParameterRepository;
 
 /**
  * ErrandJsonParameters IT tests.
@@ -35,9 +35,6 @@ class ErrandJsonParametersIT extends AbstractAppTest {
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 
-	@Autowired
-	private JsonParameterRepository jsonParameterRepository;
-
 	@Test
 	void test01_readJsonParameter() {
 		setupCall()
@@ -50,12 +47,6 @@ class ErrandJsonParametersIT extends AbstractAppTest {
 
 	@Test
 	void test02_updateJsonParameter() {
-		final var initialId = jsonParameterRepository.findAll().stream()
-			.filter(p -> "formData".equals(p.getKey()))
-			.findFirst()
-			.map(e -> e.getId())
-			.orElseThrow();
-
 		setupCall()
 			.withServicePath(PATH + "/formData")
 			.withHttpMethod(PUT)
@@ -63,10 +54,6 @@ class ErrandJsonParametersIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
-
-		final var updated = jsonParameterRepository.findById(initialId);
-		assertThat(updated).isPresent();
-		assertThat(updated.get().getSchemaId()).isEqualTo("test-schema-1.0");
 	}
 
 	@Test
@@ -94,8 +81,11 @@ class ErrandJsonParametersIT extends AbstractAppTest {
 
 	@Test
 	void test05_deleteJsonParameter() {
-		assertThat(jsonParameterRepository.findAll().stream()
-			.anyMatch(p -> "formData".equals(p.getKey()))).isTrue();
+		setupCall()
+			.withServicePath(PATH + "/formData")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
 
 		setupCall()
 			.withServicePath(PATH + "/formData")
@@ -103,8 +93,11 @@ class ErrandJsonParametersIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jsonParameterRepository.findAll().stream()
-			.anyMatch(p -> "formData".equals(p.getKey()))).isFalse();
+		setupCall()
+			.withServicePath(PATH + "/formData")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -114,11 +107,15 @@ class ErrandJsonParametersIT extends AbstractAppTest {
 			.withHttpMethod(PUT)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of(PATH + "/newKey"))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jsonParameterRepository.findAll().stream()
-			.anyMatch(p -> "newKey".equals(p.getKey()))).isTrue();
+		setupCall()
+			.withServicePath(PATH + "/newKey")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
 	}
 
 	@Test
