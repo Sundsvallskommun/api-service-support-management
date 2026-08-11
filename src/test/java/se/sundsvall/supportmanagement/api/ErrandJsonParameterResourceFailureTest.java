@@ -11,6 +11,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -43,6 +44,9 @@ class ErrandJsonParameterResourceFailureTest {
 
 	@MockitoBean
 	private ErrandParameterService errandParameterServiceMock;
+
+	@MockitoBean
+	private JsonSchemaClient jsonSchemaClientMock;
 
 	@Test
 	void readJsonParametersInvalidNamespace() {

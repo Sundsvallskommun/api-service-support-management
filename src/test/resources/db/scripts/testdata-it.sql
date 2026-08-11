@@ -548,8 +548,8 @@ VALUES ('aabbccdd-0000-0000-0000-000000000002', 0, 'UPDATE', 'ATTACHMENT'),
 -- -----------------------------------
 -- JSON Parameters
 -- -----------------------------------
-INSERT INTO json_parameter(id, json_parameter_order, errand_id, parameter_key, schema_id, value, version)
-VALUES ('jp000000-0000-0000-0000-000000000001', 0, 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'formData', 'test-schema-1.0', '{"firstName":"John","lastName":"Doe"}', 0);
+INSERT INTO json_parameter(id, errand_id, parameter_key, schema_id, value, version)
+VALUES ('jp000000-0000-0000-0000-000000000001', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'formData', 'test-schema-1.0', '{"firstName":"John","lastName":"Doe"}', 0);
 
 -- -----------------------------------
 -- Subscriptions

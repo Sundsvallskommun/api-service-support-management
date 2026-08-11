@@ -40,9 +40,9 @@ public class ValidJsonParameterConstraintValidator extends AbstractTagConstraint
 	}
 
 	private String extractErrorMessage(final ThrowableProblem e, final JsonParameter param) {
-		return ofNullable(e.getMessage())
-			.filter(detail -> !detail.isBlank())
-			.orElse("validation failed for schema '%s'".formatted(param.getSchemaId()));
+		final var fallback = "validation failed for schema '%s'".formatted(param.getSchemaId());
+		final var detail = e.getDetail();
+		return (detail != null && detail.isBlank()) ? fallback : ofNullable(e.getMessage()).orElse(fallback);
 	}
 
 	private void useCustomMessageForValidation(final String message, final ConstraintValidatorContext context) {

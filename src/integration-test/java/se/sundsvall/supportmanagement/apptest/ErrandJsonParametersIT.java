@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -166,6 +167,18 @@ class ErrandJsonParametersIT extends AbstractAppTest {
 			.withServicePath("/2281/NAMESPACE-1/errands/cc236cf1-c00f-4479-8341-ecf5dd90b5b9/json-parameters")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test12_createJsonParameterWithSchemaServiceError() {
+		// The json-schema service responds with 500 → the validator rethrows the ServerProblem → 502 Bad Gateway.
+		setupCall()
+			.withServicePath(PATH + "/newKey")
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_GATEWAY)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}

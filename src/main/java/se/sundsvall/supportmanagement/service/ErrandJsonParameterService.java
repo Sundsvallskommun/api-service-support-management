@@ -91,8 +91,12 @@ public class ErrandJsonParameterService {
 			created = true;
 		}
 
-		errandsRepository.saveAndFlush(errandEntity);
-		return new UpsertResult(toJsonParameter(entity), created);
+		final var savedErrand = errandsRepository.saveAndFlush(errandEntity);
+		final var savedEntity = savedErrand.getJsonParameters().stream()
+			.filter(e -> Objects.equals(e.getKey(), key))
+			.findFirst()
+			.orElse(entity);
+		return new UpsertResult(toJsonParameter(savedEntity), created);
 	}
 
 	@Transactional

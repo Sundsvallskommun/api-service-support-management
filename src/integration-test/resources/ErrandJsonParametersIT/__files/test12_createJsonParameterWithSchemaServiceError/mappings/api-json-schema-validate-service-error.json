@@ -1,0 +1,22 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "POST",
+		"urlPath": "/api-json-schema/2281/schemas/test-schema-1.0/validation"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/problem+json"
+		},
+		"jsonBody": {
+			"title": "Internal Server Error",
+			"status": 500
+		},
+		"status": 500
+	},
+	"name": "api-json-schema-validate-service-error"
+}
