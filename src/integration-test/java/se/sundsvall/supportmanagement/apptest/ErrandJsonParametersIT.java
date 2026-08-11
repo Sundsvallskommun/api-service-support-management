@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PUT;
-import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -173,12 +173,13 @@ class ErrandJsonParametersIT extends AbstractAppTest {
 
 	@Test
 	void test12_createJsonParameterWithSchemaServiceError() {
-		// The json-schema service responds with 500 → the validator rethrows the ServerProblem → 502 Bad Gateway.
+		// The json-schema service responds with 500 → the ServerProblem propagates out of the constraint validator,
+		// Hibernate Validator wraps it ("Unexpected exception during isValid call") → 500 Internal Server Error.
 		setupCall()
 			.withServicePath(PATH + "/newKey")
 			.withHttpMethod(PUT)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(BAD_GATEWAY)
+			.withExpectedResponseStatus(INTERNAL_SERVER_ERROR)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
