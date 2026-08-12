@@ -35,6 +35,8 @@ class NotificationDispatchWorkerTest {
 	private static final String ERRAND_ID = "errand-id";
 	private static final String ERRAND_NUMBER = "PRH-2022-000001";
 	private static final String EVENT_TYPE = "CREATE";
+	private static final String DESCRIPTION = "Bilaga har skapats";
+	private static final String SUB_TYPE = "ATTACHMENT";
 
 	@Mock
 	private NotificationDispatchRepository dispatchRepositoryMock;
@@ -64,6 +66,8 @@ class NotificationDispatchWorkerTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
 			.withEventType(EVENT_TYPE)
+			.withDescription(DESCRIPTION)
+			.withSubType(SUB_TYPE)
 			.withExecutingUserId(executingUserId);
 	}
 
@@ -90,7 +94,7 @@ class NotificationDispatchWorkerTest {
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock).send(any(), any(), any(), any(), any(), any());
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 		verify(dispatchRepositoryMock, never()).save(any());
 	}
@@ -176,7 +180,7 @@ class NotificationDispatchWorkerTest {
 
 		worker.processGroup(List.of(entryBySelf, entryByOther));
 
-		verify(channelDispatcherMock).send(any(), any(), any(), any(), any(), any());
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 		verify(dispatchRepositoryMock).deleteAll(List.of(entryBySelf, entryByOther));
 	}
 
