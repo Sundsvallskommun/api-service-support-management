@@ -124,6 +124,8 @@ scheduler:
     cron: "-"
   notification:
     cron: "-"
+  notification-dispatch:
+    cron: "-"
   messageexchange:
     cron: "-"
     enabled: false
