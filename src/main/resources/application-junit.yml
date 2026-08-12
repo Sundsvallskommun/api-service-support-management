@@ -39,6 +39,7 @@ spring:
       maximum-pool-size: 3
       minimum-idle: 1
   jpa:
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
