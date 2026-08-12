@@ -306,4 +306,32 @@ class HandoverIT extends AbstractAppTest {
         assertThat(idempotencyRepository.findAll()).hasSize(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM attachment WHERE errand_id = ?", Integer.class, newErrandId)).isEqualTo(1);
     }
+
+	@Test
+	void test16_previewHandoverSchemaRegisteredInTarget() {
+		// The source errand has a json parameter with schemaId 'test-schema-1.0'.
+		// The stub returns 200 → schema is registered in the target → no PARAMETER_SCHEMA_MISMATCH warning.
+		setupCall()
+			.withServicePath(SOURCE_PATH + "/handover/preview")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test17_previewHandoverSchemaNotRegisteredInTarget() {
+		// The source errand has a json parameter with schemaId 'test-schema-1.0'.
+		// The stub returns 404 → schema is not registered in the target → PARAMETER_SCHEMA_MISMATCH warning is included.
+		setupCall()
+			.withServicePath(SOURCE_PATH + "/handover/preview")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

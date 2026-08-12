@@ -8,6 +8,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.util.Objects;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -21,7 +22,10 @@ import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
 	indexes = {
 		@Index(name = "idx_json_parameter_errand_id", columnList = "errand_id"),
 		@Index(name = "idx_json_parameter_key", columnList = "parameter_key")
-	})
+	},
+	uniqueConstraints = @UniqueConstraint(name = "uq_json_parameter_errand_id_key", columnNames = {
+		"errand_id", "parameter_key"
+	}))
 public class JsonParameterEntity {
 
 	@Id

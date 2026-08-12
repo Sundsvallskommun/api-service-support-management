@@ -36,6 +36,7 @@ spring:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
     url: jdbc:tc:mariadb:10.6:///junittest
   jpa:
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
@@ -123,6 +124,8 @@ scheduler:
   web-message-collector:
     cron: "-"
   notification:
+    cron: "-"
+  notification-dispatch:
     cron: "-"
   messageexchange:
     cron: "-"

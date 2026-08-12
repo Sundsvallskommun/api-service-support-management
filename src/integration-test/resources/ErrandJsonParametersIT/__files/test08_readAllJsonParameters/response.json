@@ -1,0 +1,11 @@
+[
+	{
+		"key": "formData",
+		"value": {
+			"firstName": "John",
+			"lastName": "Doe"
+		},
+		"schemaId": "test-schema-1.0",
+		"version": 0
+	}
+]

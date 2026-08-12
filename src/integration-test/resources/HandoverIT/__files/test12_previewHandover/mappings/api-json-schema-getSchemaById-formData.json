@@ -1,0 +1,23 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "GET",
+		"urlPath": "/api-json-schema/2281/schemas/test-schema-1.0"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"id": "test-schema-1.0",
+			"name": "test-schema",
+			"version": "1.0"
+		},
+		"status": 200
+	},
+	"name": "api-json-schema-getSchemaById-formData"
+}
