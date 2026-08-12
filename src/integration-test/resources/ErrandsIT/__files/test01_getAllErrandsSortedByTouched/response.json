@@ -400,7 +400,17 @@
 					"version": 0
 				}
 			],
-			"jsonParameters": [],
+			"jsonParameters": [
+				{
+					"key": "formData",
+					"schemaId": "test-schema-1.0",
+					"value": {
+						"firstName": "John",
+						"lastName": "Doe"
+					},
+					"version": 0
+				}
+			],
 			"classification": {
 				"category": "CATEGORY-1",
 				"type": "TYPE-1"
