@@ -43,6 +43,8 @@ class NotificationDispatchEntityTest {
 		final var municipalityId = "2281";
 		final var namespace = "NAMESPACE-1";
 		final var eventType = "CREATE";
+		final var description = "Bilaga har skapats";
+		final var subType = "ATTACHMENT";
 		final var executingUserId = "joe01doe";
 		final var retryCount = 2;
 		final var nextRetryAt = now().plusMinutes(4);
@@ -55,6 +57,8 @@ class NotificationDispatchEntityTest {
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withEventType(eventType)
+			.withDescription(description)
+			.withSubType(subType)
 			.withExecutingUserId(executingUserId)
 			.withRetryCount(retryCount)
 			.withNextRetryAt(nextRetryAt)
@@ -66,6 +70,8 @@ class NotificationDispatchEntityTest {
 		assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(bean.getNamespace()).isEqualTo(namespace);
 		assertThat(bean.getEventType()).isEqualTo(eventType);
+		assertThat(bean.getDescription()).isEqualTo(description);
+		assertThat(bean.getSubType()).isEqualTo(subType);
 		assertThat(bean.getExecutingUserId()).isEqualTo(executingUserId);
 		assertThat(bean.getRetryCount()).isEqualTo(retryCount);
 		assertThat(bean.getNextRetryAt()).isEqualTo(nextRetryAt);

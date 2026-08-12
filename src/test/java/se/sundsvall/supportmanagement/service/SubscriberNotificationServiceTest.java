@@ -38,6 +38,9 @@ class SubscriberNotificationServiceTest {
 	private static final String ERRAND_NUMBER = "PRH-2022-000001";
 	private static final String IDENTIFIER_TYPE = "adAccount";
 	private static final String IDENTIFIER_VALUE = "joe01doe";
+	private static final String EVENT_TYPE = "UPDATE";
+	private static final String DESCRIPTION = "Bilaga har skapats";
+	private static final String SUB_TYPE = "ATTACHMENT";
 
 	@Mock
 	private SubscriberNotificationRepository repositoryMock;
@@ -117,7 +120,7 @@ class SubscriberNotificationServiceTest {
 	}
 
 	@Test
-	void upsert_existingNotification_resetsAcknowledgedAndUpdatesErrandNumber() {
+	void upsert_existingNotification_resetsAcknowledgedAndUpdatesFields() {
 		final var subscriber = buildSubscriber();
 		final var existing = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID);
 		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
@@ -125,10 +128,13 @@ class SubscriberNotificationServiceTest {
 		when(repositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
 			MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, IDENTIFIER_TYPE, IDENTIFIER_VALUE)).thenReturn(Optional.of(existing));
 
-		service.upsert(ERRAND_ID, ERRAND_NUMBER, subscriber);
+		service.upsert(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 
 		assertThat(existing.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
 		assertThat(existing.getAcknowledged()).isNull();
+		assertThat(existing.getEventType()).isEqualTo(EVENT_TYPE);
+		assertThat(existing.getDescription()).isEqualTo(DESCRIPTION);
+		assertThat(existing.getSubType()).isEqualTo(SUB_TYPE);
 		verify(repositoryMock).save(existing);
 	}
 
@@ -140,7 +146,7 @@ class SubscriberNotificationServiceTest {
 		when(repositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
 			MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, IDENTIFIER_TYPE, IDENTIFIER_VALUE)).thenReturn(Optional.empty());
 
-		service.upsert(ERRAND_ID, ERRAND_NUMBER, subscriber);
+		service.upsert(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 
 		verify(repositoryMock).save(any(SubscriberNotificationEntity.class));
 	}

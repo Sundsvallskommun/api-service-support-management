@@ -48,6 +48,12 @@ public class NotificationDispatchEntity {
 	@Column(name = "event_type", nullable = false, length = 64)
 	private String eventType;
 
+	@Column(name = "description")
+	private String description;
+
+	@Column(name = "sub_type", length = 64)
+	private String subType;
+
 	@Column(name = "executing_user_id")
 	private String executingUserId;
 
@@ -167,6 +173,32 @@ public class NotificationDispatchEntity {
 		return this;
 	}
 
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(final String description) {
+		this.description = description;
+	}
+
+	public NotificationDispatchEntity withDescription(final String description) {
+		this.description = description;
+		return this;
+	}
+
+	public String getSubType() {
+		return subType;
+	}
+
+	public void setSubType(final String subType) {
+		this.subType = subType;
+	}
+
+	public NotificationDispatchEntity withSubType(final String subType) {
+		this.subType = subType;
+		return this;
+	}
+
 	public String getExecutingUserId() {
 		return executingUserId;
 	}
@@ -234,7 +266,7 @@ public class NotificationDispatchEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, eventId, requestGroupId, errandId, municipalityId, namespace, eventType, executingUserId, created, retryCount, nextRetryAt, deadLetter);
+		return Objects.hash(id, eventId, requestGroupId, errandId, municipalityId, namespace, eventType, description, subType, executingUserId, created, retryCount, nextRetryAt, deadLetter);
 	}
 
 	@Override
@@ -255,6 +287,8 @@ public class NotificationDispatchEntity {
 			&& Objects.equals(municipalityId, other.municipalityId)
 			&& Objects.equals(namespace, other.namespace)
 			&& Objects.equals(eventType, other.eventType)
+			&& Objects.equals(description, other.description)
+			&& Objects.equals(subType, other.subType)
 			&& Objects.equals(executingUserId, other.executingUserId)
 			&& Objects.equals(created, other.created)
 			&& Objects.equals(nextRetryAt, other.nextRetryAt);
@@ -270,6 +304,8 @@ public class NotificationDispatchEntity {
 			", municipalityId='" + municipalityId + '\'' +
 			", namespace='" + namespace + '\'' +
 			", eventType='" + eventType + '\'' +
+			", description='" + description + '\'' +
+			", subType='" + subType + '\'' +
 			", executingUserId='" + executingUserId + '\'' +
 			", created=" + created +
 			", retryCount=" + retryCount +

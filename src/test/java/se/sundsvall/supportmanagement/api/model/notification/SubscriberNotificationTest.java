@@ -44,6 +44,9 @@ class SubscriberNotificationTest {
 		final var errandNumber = "PRH-2022-000001";
 		final var expires = now().plusDays(7);
 		final var acknowledged = now().plusHours(1);
+		final var eventType = "UPDATE";
+		final var description = "Bilaga har skapats";
+		final var subType = "ATTACHMENT";
 
 		final var bean = SubscriberNotification.create()
 			.withId(id)
@@ -54,7 +57,10 @@ class SubscriberNotificationTest {
 			.withErrandId(errandId)
 			.withErrandNumber(errandNumber)
 			.withExpires(expires)
-			.withAcknowledged(acknowledged);
+			.withAcknowledged(acknowledged)
+			.withEventType(eventType)
+			.withDescription(description)
+			.withSubType(subType);
 
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(created);
@@ -65,6 +71,9 @@ class SubscriberNotificationTest {
 		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(bean.getExpires()).isEqualTo(expires);
 		assertThat(bean.getAcknowledged()).isEqualTo(acknowledged);
+		assertThat(bean.getEventType()).isEqualTo(eventType);
+		assertThat(bean.getDescription()).isEqualTo(description);
+		assertThat(bean.getSubType()).isEqualTo(subType);
 	}
 
 	@Test

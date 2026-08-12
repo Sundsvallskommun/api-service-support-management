@@ -69,7 +69,7 @@ public class EventService {
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
 		}
 	}
 
@@ -90,7 +90,7 @@ public class EventService {
 		}
 		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		createNotification(errandEntity, event);
-		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId);
+		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue());
 	}
 
 	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable) {
@@ -106,7 +106,7 @@ public class EventService {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
 
-	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId) {
+	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType) {
 		final var executingUser = getExecutingUser();
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
 			.withEventId(eventId)
@@ -115,6 +115,8 @@ public class EventService {
 			.withMunicipalityId(errandEntity.getMunicipalityId())
 			.withNamespace(errandEntity.getNamespace())
 			.withEventType(eventType.getValue())
+			.withDescription(description)
+			.withSubType(subType)
 			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null)));
 	}
 

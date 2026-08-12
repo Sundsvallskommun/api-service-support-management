@@ -395,6 +395,8 @@
         id varchar(36) not null,
         request_group_id varchar(36),
         event_type varchar(64) not null,
+        sub_type varchar(64),
+        description varchar(255),
         executing_user_id varchar(255),
         primary key (id)
     ) engine=InnoDB;
@@ -557,6 +559,9 @@
         namespace varchar(32) not null,
         errand_id varchar(36) not null,
         id varchar(36) not null,
+        event_type varchar(64),
+        sub_type varchar(64),
+        description varchar(255),
         errand_number varchar(255),
         identifier_value varchar(255) not null,
         primary key (id)

@@ -10,7 +10,7 @@ public final class SubscriberNotificationMapper {
 
 	private SubscriberNotificationMapper() {}
 
-	public static SubscriberNotificationEntity toEntity(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final int notificationTTLInDays) {
+	public static SubscriberNotificationEntity toEntity(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final int notificationTTLInDays, final String eventType, final String description, final String subType) {
 		return SubscriberNotificationEntity.create()
 			.withMunicipalityId(subscriber.getMunicipalityId())
 			.withNamespace(subscriber.getNamespace())
@@ -18,7 +18,10 @@ public final class SubscriberNotificationMapper {
 			.withIdentifierValue(subscriber.getIdentifier().getValue())
 			.withErrandId(errandId)
 			.withErrandNumber(errandNumber)
-			.withExpires(now().plusDays(notificationTTLInDays));
+			.withExpires(now().plusDays(notificationTTLInDays))
+			.withEventType(eventType)
+			.withDescription(description)
+			.withSubType(subType);
 	}
 
 	public static SubscriberNotification toModel(final SubscriberNotificationEntity entity) {
@@ -31,6 +34,9 @@ public final class SubscriberNotificationMapper {
 			.withErrandId(entity.getErrandId())
 			.withErrandNumber(entity.getErrandNumber())
 			.withExpires(entity.getExpires())
-			.withAcknowledged(entity.getAcknowledged());
+			.withAcknowledged(entity.getAcknowledged())
+			.withEventType(entity.getEventType())
+			.withDescription(entity.getDescription())
+			.withSubType(entity.getSubType());
 	}
 }

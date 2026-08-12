@@ -49,7 +49,7 @@ public class SubscriberNotificationService {
 	}
 
 	@Transactional(propagation = REQUIRES_NEW)
-	public void upsert(final String errandId, final String errandNumber, final SubscriberEntity subscriber) {
+	public void upsert(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final String eventType, final String description, final String subType) {
 		final var namespaceConfig = namespaceConfigRepository.findByNamespaceAndMunicipalityId(subscriber.getNamespace(), subscriber.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "Namespace with name:'%s' and municipalityId '%s' not found!".formatted(subscriber.getNamespace(), subscriber.getMunicipalityId())));
 		final var ttlInDays = ConfigPropertyExtractor.<Integer>getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS);
@@ -64,9 +64,12 @@ public class SubscriberNotificationService {
 				existing -> {
 					existing.setErrandNumber(errandNumber);
 					existing.setAcknowledged(null);
+					existing.setEventType(eventType);
+					existing.setDescription(description);
+					existing.setSubType(subType);
 					repository.save(existing);
 				},
-				() -> repository.save(toEntity(errandId, errandNumber, subscriber, ttlInDays)));
+				() -> repository.save(toEntity(errandId, errandNumber, subscriber, ttlInDays, eventType, description, subType)));
 	}
 
 	private SubscriberNotificationEntity findOrThrow(final String notificationId, final String municipalityId, final String namespace) {

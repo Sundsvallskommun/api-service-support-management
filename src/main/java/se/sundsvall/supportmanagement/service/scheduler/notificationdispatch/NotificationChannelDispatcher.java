@@ -17,12 +17,12 @@ public class NotificationChannelDispatcher {
 		this.subscriberNotificationService = subscriberNotificationService;
 	}
 
-	public boolean send(final String errandId, final String errandNumber, final SubscriberEntity subscriber) {
+	public boolean send(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final String eventType, final String description, final String subType) {
 		var allSucceeded = true;
 		for (final var channel : subscriber.getChannels()) {
 			try {
 				switch (channel.getType()) {
-					case INTERNAL -> subscriberNotificationService.upsert(errandId, errandNumber, subscriber);
+					case INTERNAL -> subscriberNotificationService.upsert(errandId, errandNumber, subscriber, eventType, description, subType);
 					case SMS, EMAIL -> throw new UnsupportedOperationException("Channel type %s is not yet implemented".formatted(channel.getType()));
 				}
 			} catch (final Exception e) {
