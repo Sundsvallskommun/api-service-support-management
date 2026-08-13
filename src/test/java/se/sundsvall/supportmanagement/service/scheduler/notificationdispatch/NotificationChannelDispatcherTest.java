@@ -20,6 +20,9 @@ class NotificationChannelDispatcherTest {
 
 	private static final String ERRAND_ID = "errand-id";
 	private static final String ERRAND_NUMBER = "PRH-2022-000001";
+	private static final String EVENT_TYPE = "UPDATE";
+	private static final String DESCRIPTION = "Bilaga har skapats";
+	private static final String SUB_TYPE = "ATTACHMENT";
 
 	@Mock
 	private SubscriberNotificationService subscriberNotificationServiceMock;
@@ -32,10 +35,10 @@ class NotificationChannelDispatcherTest {
 		final var channel = NotificationChannelEmbeddable.create().withType(NotificationChannelType.INTERNAL);
 		final var subscriber = SubscriberEntity.create().withChannels(List.of(channel));
 
-		final var result = dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber);
+		final var result = dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 
 		assertThat(result).isTrue();
-		verify(subscriberNotificationServiceMock).upsert(ERRAND_ID, ERRAND_NUMBER, subscriber);
+		verify(subscriberNotificationServiceMock).upsert(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 	}
 
 	@Test
@@ -43,7 +46,7 @@ class NotificationChannelDispatcherTest {
 		final var channel = NotificationChannelEmbeddable.create().withType(NotificationChannelType.SMS);
 		final var subscriber = SubscriberEntity.create().withChannels(List.of(channel));
 
-		final var result = dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber);
+		final var result = dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 
 		assertThat(result).isFalse();
 		verifyNoInteractions(subscriberNotificationServiceMock);
@@ -54,7 +57,7 @@ class NotificationChannelDispatcherTest {
 		final var channel = NotificationChannelEmbeddable.create().withType(NotificationChannelType.EMAIL);
 		final var subscriber = SubscriberEntity.create().withChannels(List.of(channel));
 
-		final var result = dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber);
+		final var result = dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 
 		assertThat(result).isFalse();
 		verifyNoInteractions(subscriberNotificationServiceMock);

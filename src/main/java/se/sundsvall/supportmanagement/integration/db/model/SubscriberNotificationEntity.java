@@ -68,6 +68,15 @@ public class SubscriberNotificationEntity {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime acknowledged;
 
+	@Column(name = "event_type", length = 64)
+	private String eventType;
+
+	@Column(name = "description")
+	private String description;
+
+	@Column(name = "sub_type", length = 64)
+	private String subType;
+
 	public static SubscriberNotificationEntity create() {
 		return new SubscriberNotificationEntity();
 	}
@@ -225,9 +234,48 @@ public class SubscriberNotificationEntity {
 		return this;
 	}
 
+	public String getEventType() {
+		return eventType;
+	}
+
+	public void setEventType(final String eventType) {
+		this.eventType = eventType;
+	}
+
+	public SubscriberNotificationEntity withEventType(final String eventType) {
+		this.eventType = eventType;
+		return this;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(final String description) {
+		this.description = description;
+	}
+
+	public SubscriberNotificationEntity withDescription(final String description) {
+		this.description = description;
+		return this;
+	}
+
+	public String getSubType() {
+		return subType;
+	}
+
+	public void setSubType(final String subType) {
+		this.subType = subType;
+	}
+
+	public SubscriberNotificationEntity withSubType(final String subType) {
+		this.subType = subType;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, created, modified, identifierType, identifierValue, municipalityId, namespace, errandId, errandNumber, expires, acknowledged);
+		return Objects.hash(id, created, modified, identifierType, identifierValue, municipalityId, namespace, errandId, errandNumber, expires, acknowledged, eventType, description, subType);
 	}
 
 	@Override
@@ -247,7 +295,10 @@ public class SubscriberNotificationEntity {
 			&& Objects.equals(errandId, other.errandId)
 			&& Objects.equals(errandNumber, other.errandNumber)
 			&& Objects.equals(expires, other.expires)
-			&& Objects.equals(acknowledged, other.acknowledged);
+			&& Objects.equals(acknowledged, other.acknowledged)
+			&& Objects.equals(eventType, other.eventType)
+			&& Objects.equals(description, other.description)
+			&& Objects.equals(subType, other.subType);
 	}
 
 	@Override
@@ -264,6 +315,9 @@ public class SubscriberNotificationEntity {
 			", errandNumber='" + errandNumber + '\'' +
 			", expires=" + expires +
 			", acknowledged=" + acknowledged +
+			", eventType='" + eventType + '\'' +
+			", description='" + description + '\'' +
+			", subType='" + subType + '\'' +
 			'}';
 	}
 }

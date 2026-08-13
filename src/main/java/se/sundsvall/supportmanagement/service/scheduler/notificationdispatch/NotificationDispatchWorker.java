@@ -79,7 +79,8 @@ public class NotificationDispatchWorker {
 				continue;
 			}
 
-			if (!channelDispatcher.send(errandId, errandNumber, subscriber)) {
+			final var representative = relevantEntries.getFirst();
+			if (!channelDispatcher.send(errandId, errandNumber, subscriber, representative.getEventType(), representative.getDescription(), representative.getSubType())) {
 				allSucceeded = false;
 			}
 		}

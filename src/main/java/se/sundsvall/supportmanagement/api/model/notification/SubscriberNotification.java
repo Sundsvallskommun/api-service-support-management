@@ -41,6 +41,15 @@ public class SubscriberNotification {
 	@Schema(description = "Timestamp when the notification was acknowledged, null if not yet acknowledged", example = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime acknowledged;
 
+	@Schema(description = "Event type that triggered the notification", example = "UPDATE", accessMode = READ_ONLY)
+	private String eventType;
+
+	@Schema(description = "Description of the event that triggered the notification", example = "Bilaga har skapats", accessMode = READ_ONLY)
+	private String description;
+
+	@Schema(description = "Subtype describing what kind of entity the event refers to", example = "ATTACHMENT", accessMode = READ_ONLY)
+	private String subType;
+
 	public static SubscriberNotification create() {
 		return new SubscriberNotification();
 	}
@@ -162,6 +171,45 @@ public class SubscriberNotification {
 		return this;
 	}
 
+	public String getEventType() {
+		return eventType;
+	}
+
+	public void setEventType(final String eventType) {
+		this.eventType = eventType;
+	}
+
+	public SubscriberNotification withEventType(final String eventType) {
+		this.eventType = eventType;
+		return this;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(final String description) {
+		this.description = description;
+	}
+
+	public SubscriberNotification withDescription(final String description) {
+		this.description = description;
+		return this;
+	}
+
+	public String getSubType() {
+		return subType;
+	}
+
+	public void setSubType(final String subType) {
+		this.subType = subType;
+	}
+
+	public SubscriberNotification withSubType(final String subType) {
+		this.subType = subType;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (o == null || getClass() != o.getClass())
@@ -175,12 +223,15 @@ public class SubscriberNotification {
 			&& Objects.equals(errandId, that.errandId)
 			&& Objects.equals(errandNumber, that.errandNumber)
 			&& Objects.equals(expires, that.expires)
-			&& Objects.equals(acknowledged, that.acknowledged);
+			&& Objects.equals(acknowledged, that.acknowledged)
+			&& Objects.equals(eventType, that.eventType)
+			&& Objects.equals(description, that.description)
+			&& Objects.equals(subType, that.subType);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, created, modified, identifierType, identifierValue, errandId, errandNumber, expires, acknowledged);
+		return Objects.hash(id, created, modified, identifierType, identifierValue, errandId, errandNumber, expires, acknowledged, eventType, description, subType);
 	}
 
 	@Override
@@ -195,6 +246,9 @@ public class SubscriberNotification {
 			", errandNumber='" + errandNumber + '\'' +
 			", expires=" + expires +
 			", acknowledged=" + acknowledged +
+			", eventType='" + eventType + '\'' +
+			", description='" + description + '\'' +
+			", subType='" + subType + '\'' +
 			'}';
 	}
 }

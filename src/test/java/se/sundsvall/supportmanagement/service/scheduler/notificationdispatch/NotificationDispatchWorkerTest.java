@@ -35,6 +35,8 @@ class NotificationDispatchWorkerTest {
 	private static final String ERRAND_ID = "errand-id";
 	private static final String ERRAND_NUMBER = "PRH-2022-000001";
 	private static final String EVENT_TYPE = "CREATE";
+	private static final String DESCRIPTION = "Bilaga har skapats";
+	private static final String SUB_TYPE = "ATTACHMENT";
 
 	@Mock
 	private NotificationDispatchRepository dispatchRepositoryMock;
@@ -64,6 +66,8 @@ class NotificationDispatchWorkerTest {
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
 			.withEventType(EVENT_TYPE)
+			.withDescription(DESCRIPTION)
+			.withSubType(SUB_TYPE)
 			.withExecutingUserId(executingUserId);
 	}
 
@@ -86,11 +90,11 @@ class NotificationDispatchWorkerTest {
 		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		when(channelDispatcherMock.send(any(), any(), any())).thenReturn(true);
+		when(channelDispatcherMock.send(any(), any(), any(), any(), any(), any())).thenReturn(true);
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock).send(any(), any(), any());
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 		verify(dispatchRepositoryMock, never()).save(any());
 	}
@@ -104,7 +108,7 @@ class NotificationDispatchWorkerTest {
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock, never()).send(any(), any(), any());
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
@@ -117,7 +121,7 @@ class NotificationDispatchWorkerTest {
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock, never()).send(any(), any(), any());
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
@@ -127,7 +131,7 @@ class NotificationDispatchWorkerTest {
 		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		when(channelDispatcherMock.send(any(), any(), any())).thenReturn(false);
+		when(channelDispatcherMock.send(any(), any(), any(), any(), any(), any())).thenReturn(false);
 
 		worker.processGroup(List.of(entry));
 
@@ -144,7 +148,7 @@ class NotificationDispatchWorkerTest {
 		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		when(channelDispatcherMock.send(any(), any(), any())).thenReturn(false);
+		when(channelDispatcherMock.send(any(), any(), any(), any(), any(), any())).thenReturn(false);
 
 		worker.processGroup(List.of(entry));
 
@@ -161,7 +165,7 @@ class NotificationDispatchWorkerTest {
 
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock, never()).send(any(), any(), any());
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
@@ -172,11 +176,11 @@ class NotificationDispatchWorkerTest {
 		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		when(channelDispatcherMock.send(any(), any(), any())).thenReturn(true);
+		when(channelDispatcherMock.send(any(), any(), any(), any(), any(), any())).thenReturn(true);
 
 		worker.processGroup(List.of(entryBySelf, entryByOther));
 
-		verify(channelDispatcherMock).send(any(), any(), any());
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 		verify(dispatchRepositoryMock).deleteAll(List.of(entryBySelf, entryByOther));
 	}
 
