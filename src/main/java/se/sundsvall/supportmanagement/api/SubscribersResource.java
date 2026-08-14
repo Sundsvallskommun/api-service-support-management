@@ -29,8 +29,11 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.SubscriberService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -54,9 +57,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class SubscribersResource {
 
 	private final SubscriberService service;
+	private final AccessControlService accessControlService;
 
-	SubscribersResource(final SubscriberService service) {
+	SubscribersResource(final SubscriberService service, final AccessControlService accessControlService) {
 		this.service = service;
+		this.accessControlService = accessControlService;
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -98,6 +103,8 @@ class SubscribersResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Subscriber subscriber) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIBER, RW);
+
 		final var id = service.createSubscriber(municipalityId, namespace, subscriber);
 		return created(fromPath("/{municipalityId}/{namespace}/subscribers/{id}")
 			.buildAndExpand(municipalityId, namespace, id).toUri())
@@ -120,6 +127,8 @@ class SubscribersResource {
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId,
 		@Valid @NotNull @RequestBody final Subscriber subscriber) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIBER, RW);
+
 		return ok(service.updateSubscriber(municipalityId, namespace, subscriberId, subscriber));
 	}
 
@@ -132,6 +141,8 @@ class SubscribersResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIBER, RW);
 
 		service.deleteSubscriber(municipalityId, namespace, subscriberId);
 		return noContent()

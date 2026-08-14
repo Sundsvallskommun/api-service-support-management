@@ -22,8 +22,9 @@ import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
@@ -75,7 +76,7 @@ public class ErrandAttachmentService {
 
 	@Transactional
 	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment, final String channel) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.ATTACHMENT, RW);
 
 		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment, channel));
 	}
@@ -113,7 +114,7 @@ public class ErrandAttachmentService {
 	@Transactional(readOnly = true)
 	public void readErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final HttpServletResponse response) {
 
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.ATTACHMENT, LR);
 
 		final var attachmentEntity = attachmentRepository
 			.findById(attachmentId)
@@ -124,13 +125,13 @@ public class ErrandAttachmentService {
 
 	@Transactional(readOnly = true)
 	public List<ErrandAttachment> readErrandAttachments(final String namespace, final String municipalityId, final String errandId) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.ATTACHMENT, LR);
 		return toErrandAttachments(errandEntity.getAttachments());
 	}
 
 	@Transactional
 	public void deleteErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.ATTACHMENT, RW);
 		final var attachmentEntity = ofNullable(errandEntity.getAttachments()).orElse(emptyList()).stream()
 			.filter(attachment -> attachment.getId().equalsIgnoreCase(attachmentId))
 			.findAny()

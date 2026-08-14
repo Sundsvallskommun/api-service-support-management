@@ -17,6 +17,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
@@ -28,8 +29,7 @@ import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
 import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
 import static com.jayway.jsonpath.Configuration.defaultConfiguration;
 import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -130,7 +130,7 @@ public class RevisionService {
 	 */
 	@Transactional(readOnly = true)
 	public List<Revision> getErrandRevisions(final String namespace, final String municipalityId, final String errandId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.REVISION, LR);
 
 		return RevisionMapper.toRevisions(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(namespace, municipalityId, errandId));
 	}
@@ -174,7 +174,7 @@ public class RevisionService {
 	 */
 	@Transactional(readOnly = true)
 	public DifferenceResponse compareErrandRevisionVersions(final String namespace, final String municipalityId, final String errandId, final int sourceVersion, final int targetVersion) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.REVISION, LR);
 
 		final var sourceRevision = revisionRepository.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(namespace, municipalityId, errandId, sourceVersion)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(VERSION_DOES_NOT_EXIST, "source")));
@@ -209,7 +209,7 @@ public class RevisionService {
 	 */
 	@Transactional(readOnly = true)
 	public List<Revision> getNoteRevisions(final String namespace, final String municipalityId, final String errandId, final String noteId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTE_REVISION, LR);
 
 		return ErrandNoteMapper.toRevisions(notesClient.findAllNoteRevisions(municipalityId, noteId));
 	}
@@ -227,7 +227,7 @@ public class RevisionService {
 	 */
 	@Transactional(readOnly = true)
 	public DifferenceResponse compareNoteRevisionVersions(final String namespace, final String municipalityId, final String errandId, final String noteId, final int sourceVersion, final int targetVersion) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTE_REVISION, LR);
 
 		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(municipalityId, noteId, sourceVersion, targetVersion));
 	}

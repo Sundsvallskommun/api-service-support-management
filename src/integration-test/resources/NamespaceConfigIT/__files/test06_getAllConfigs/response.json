@@ -8,7 +8,9 @@
 		"created": "2021-12-31T23:59:59.999+01:00",
 		"modified": "2022-12-31T23:59:59.999+01:00",
 		"accessControl": false,
-		"notifyReporter": false
+		"notifyReporter": false,
+		"roleBasedMapping": false,
+		"resourceAccessControl": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -18,7 +20,9 @@
 		"notificationTTLInDays": 20,
 		"created": "2024-06-12T15:23:59.999+02:00",
 		"accessControl": false,
-		"notifyReporter": false
+		"notifyReporter": false,
+		"roleBasedMapping": false,
+		"resourceAccessControl": false
 	},
 	{
 		"namespace": "NAMESPACE-3",
@@ -29,7 +33,9 @@
 		"created": "2021-12-31T23:59:59.999+01:00",
 		"modified": "2022-12-31T23:59:59.999+01:00",
 		"accessControl": false,
-		"notifyReporter": false
+		"notifyReporter": false,
+		"roleBasedMapping": false,
+		"resourceAccessControl": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -39,7 +45,9 @@
 		"notificationTTLInDays": 40,
 		"created": "2024-06-12T15:24:00.001+02:00",
 		"accessControl": false,
-		"notifyReporter": false
+		"notifyReporter": false,
+		"roleBasedMapping": false,
+		"resourceAccessControl": false
 	},
 	{
 		"namespace": "NAMESPACE-2506",
@@ -49,6 +57,78 @@
 		"notificationTTLInDays": 40,
 		"created": "2024-06-12T15:24:00.001+02:00",
 		"accessControl": true,
-		"notifyReporter": true
+		"notifyReporter": true,
+		"roleBasedMapping": true,
+		"resourceAccessControl": false,
+		"reporterAccess": {
+			"resources": [
+				{
+					"resource": "COMMUNICATION",
+					"level": "R"
+				},
+				{
+					"resource": "ERRAND",
+					"level": "R"
+				},
+				{
+					"resource": "PARAMETER",
+					"level": "R"
+				}
+			],
+			"fields": [
+				{
+					"field": "ID"
+				},
+				{
+					"field": "ERRAND_NUMBER"
+				},
+				{
+					"field": "TITLE"
+				},
+				{
+					"field": "STATUS"
+				},
+				{
+					"field": "PARAMETERS",
+					"keys": [
+						"granted-key"
+					]
+				}
+			]
+		},
+		"limitedReadAccess": {
+			"resources": [
+				"COMMUNICATION"
+			],
+			"fields": [
+				{
+					"field": "ID"
+				},
+				{
+					"field": "ERRAND_NUMBER"
+				},
+				{
+					"field": "TITLE"
+				},
+				{
+					"field": "STATUS"
+				},
+				{
+					"field": "RESOLUTION"
+				},
+				{
+					"field": "CHANNEL"
+				},
+				{
+					"field": "CREATED"
+				},
+				{
+					"field": "MODIFIED"
+				},
+				{
+					"field": "TOUCHED"
+				}
+			]
+		}
 	}
 ]

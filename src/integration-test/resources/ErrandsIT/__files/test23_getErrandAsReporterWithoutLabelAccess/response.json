@@ -1,0 +1,17 @@
+{
+	"id": "58c41b44-0b9f-413d-bd46-406d24bf5ca8",
+	"errandNumber": "AP-23020003",
+	"title": "E-service",
+	"status": "STATUS-2506",
+	"channel": "ESERVICE_INTERNAL",
+	"created": "2024-01-01T12:00:00+01:00",
+	"touched": "2024-01-01T12:00:00+01:00",
+	"parameters": [
+		{
+			"key": "granted-key",
+			"displayName": "Granted",
+			"values": [],
+			"version": 0
+		}
+	]
+}

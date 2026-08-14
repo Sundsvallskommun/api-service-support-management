@@ -260,6 +260,202 @@ spring:
 
   Adjust logging levels if necessary.
 
+## Access Control
+
+Access control is **opt-in per namespace** and inert by default. The `accessControl` flag on the namespace config is
+the master switch: while it is `false`, none of the machinery below applies and every caller sees every errand in the
+namespace.
+
+### The two authorities
+
+The system answers two different questions from two different sources, and keeping them apart is the key to reading
+the rest of this section:
+
+> **The access mapper answers "what may this AD identity do".**
+> **Namespace config answers "what may a non-AD role do on its own errand".**
+
+A case officer exists in AD, so the access mapper supplies everything for them: which errands they see, which
+sub-resources they may reach, and which role governs the payload they get back. A reporter is not in AD at all — no
+group, no patterns — so none of it applies to them, and their grants live in namespace config instead.
+
+The two never conflict. Namespace config only adds access where the access mapper is silent by construction, so a case
+officer who also happens to have reported an errand keeps their officer entitlements untouched.
+
+### Access levels
+
+Three levels, ordered `LR < R < RW`:
+
+| Level |                            Meaning                            |
+|-------|---------------------------------------------------------------|
+| `LR`  | Limited read — the errand is visible, but trimmed (see below) |
+| `R`   | Read                                                          |
+| `RW`  | Read and write                                                |
+
+Every read guard in the service layer requires **at least `LR`**. That makes limited read a floor rather than a dead
+end: a namespace can widen `LR` all the way up to `R` by extending the resources and fields it covers.
+
+### Access mapper group types
+
+The access mapper is queried per AD identity with three group types, each carrying ant-style patterns and a level:
+
+|    Type    |    Patterns match against     |                    Governs                     |
+|------------|-------------------------------|------------------------------------------------|
+| `label`    | metadata label resource paths | Which errands are visible / writable (Layer A) |
+| `resource` | `ProtectedResource` paths     | Which sub-resources are reachable (Layer B)    |
+| `role`     | free-form role names          | Which fields come back (Layer C)               |
+
+### The three layers
+
+**Layer A — visibility and write filtering.** A JPA specification restricts which errands come back and whether a
+write is allowed, based on the caller's label grants. An errand carrying no access labels is accessible to everyone.
+
+**Layer B — resource entitlement.** Which sub-resources the caller may reach, from the access mapper's `resource`
+groups. Gated by the `resourceAccessControl` flag: while it is `false`, resources are unrestricted and only labels
+apply. This exists so a namespace can enable `accessControl` before the access mapper has any `resource` groups
+configured, without every sub-resource turning into a 401.
+
+**Layer C — field mapping.** Which fields of the errand payload are returned. Governed by `roleBasedMapping`; while it
+is `false`, everything maps through the full mapper.
+
+### Resource taxonomy
+
+`ProtectedResource` gives every guarded resource a hierarchical path, which is what access-mapper `resource` patterns
+are matched against with `AntPathMatcher`. Note that `errand/**` matches `errand` itself as well as everything beneath
+it, so one pattern really does grant the whole errand tree. Where several patterns match, the most permissive wins.
+
+|          Constant          |                                                                        Path                                                                         |
+|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ERRAND`                   | `errand`                                                                                                                                            |
+| `ATTACHMENT`               | `errand/attachment`                                                                                                                                 |
+| `COMMUNICATION`            | `errand/communication`                                                                                                                              |
+| `COMMUNICATION_ATTACHMENT` | `errand/communication/attachment`                                                                                                                   |
+| `CONVERSATION`             | `errand/conversation`                                                                                                                               |
+| `CONVERSATION_MESSAGE`     | `errand/conversation/message`                                                                                                                       |
+| `CONVERSATION_ATTACHMENT`  | `errand/conversation/attachment`                                                                                                                    |
+| `EVENT`                    | `errand/event`                                                                                                                                      |
+| `NOTE`                     | `errand/note`                                                                                                                                       |
+| `NOTE_REVISION`            | `errand/note/revision`                                                                                                                              |
+| `PARAMETER`                | `errand/parameter`                                                                                                                                  |
+| `JSON_PARAMETER`           | `errand/json-parameter`                                                                                                                             |
+| `NOTIFICATION`             | `errand/notification`                                                                                                                               |
+| `REVISION`                 | `errand/revision`                                                                                                                                   |
+| `TIME_MEASURE`             | `errand/time-measure`                                                                                                                               |
+| `NAMESPACE_CONFIG`         | `namespace-config`                                                                                                                                  |
+| `METADATA_*`               | `metadata/category`, `metadata/contact-reason`, `metadata/external-id-type`, `metadata/label`, `metadata/phase`, `metadata/role`, `metadata/status` |
+| `SUBSCRIBER`               | `subscriber`                                                                                                                                        |
+| `SUBSCRIPTION`             | `subscriber/subscription`                                                                                                                           |
+| `SUBSCRIBER_NOTIFICATION`  | `subscriber-notification`                                                                                                                           |
+
+Everything from `NAMESPACE_CONFIG` down is **namespace-scoped** rather than errand-scoped — see below.
+
+### Namespace config blocks
+
+Three named blocks shape what a caller sees. They are named after their nature rather than made uniform, because they
+do genuinely different things.
+
+|          Block          |                   Applies when                    |                Carries                 |                Absence means                |
+|-------------------------|---------------------------------------------------|----------------------------------------|---------------------------------------------|
+| `limitedReadAccess`     | the caller's labels do not cover the errand fully | resources (no level) **and** fields    | the errand only, showing a built-in minimum |
+| `reporterAccess`        | `reporterUserId` matches the caller               | resources (with levels) **and** fields | the reporter gets nothing                   |
+| `roleFieldRestrictions` | the caller holds the role, per the access mapper  | fields                                 | no restriction, so the full errand          |
+
+`reporterAccess` **grants** — it is the only thing that lets a reporter in at all. `limitedReadAccess` is mixed: its
+resources grant reach, its fields restrict the payload. `roleFieldRestrictions` can only ever narrow a payload, never
+grant anything, since the caller has already cleared Layers A and B to reach the errand.
+
+**Failing open is right for a restriction, wrong for limited read.** An unlisted role is genuinely unrestricted, which
+keeps rollout incremental. But declaring an errand *limited* and then returning every field would be
+self-contradictory, so limited read never resolves to empty — with no configured fields it falls back to `ID`,
+`ERRAND_NUMBER`, `TITLE`, `STATUS`. Turning `roleBasedMapping` on can therefore never widen what a limited-read user
+sees.
+
+`limitedReadAccess.resources` deliberately carries **no level**, because whether an errand is limited is already
+settled by the caller's labels, and within limited read a resource is simply readable or not — a resource cannot be
+partially read the way a payload can be trimmed. `reporterAccess.resources` keeps levels, because a reporter may
+legitimately be granted write, e.g. `CONVERSATION_MESSAGE: RW` so they can reply on their own errand.
+
+`ERRAND` is implicitly reachable on the limited path — that *is* what limited read means — so a namespace that
+configures nothing behaves exactly as it did before access control existed.
+
+### Reporter identity
+
+A caller is treated as the reporter when the `X-Sent-By` identifier is of type `adAccount` and its value equals the
+errand's `reporterUserId`. A `partyId` identifier never matches, and an errand with a null `reporterUserId` never
+matches anyone.
+
+### Key-level grants
+
+Three fields are *keyed*, meaning a grant may name individual keys instead of the whole collection:
+`PARAMETERS`, `JSON_PARAMETERS` and `EXTERNAL_TAGS`. A field granted with no keys exposes all of them.
+
+These grants bind the dedicated sub-resource endpoints too, not just the errand payload — otherwise a role limited to
+one parameter key could simply read every key through `/parameters`. Reads of an ungranted key return 401 and list
+endpoints filter. Writes are covered on the same basis: a key you cannot read is a key you cannot write, so nobody can
+overwrite or remove data they are not allowed to see.
+
+### Namespace-scoped resources
+
+Namespace config, metadata, subscribers, subscriptions and subscriber notifications are not errands, so they are
+guarded differently: **write** endpoints require `RW` on the corresponding `ProtectedResource` from the access mapper's
+`resource` groups. This exists so that a caller with broad errand rights cannot simply switch access control off. A
+grant of `errand/**` deliberately does **not** cover `namespace-config`, `metadata/*` or `subscriber*`.
+
+Creating an errand subscription is additionally checked against the errand itself, requiring at least `LR` on
+`ERRAND` — subscribing reveals the errand's activity, and routing the lookup through the access control service also
+stops the endpoint being used as an existence oracle.
+
+These guards live in the resource layer rather than the service layer, because placing them in `MetadataService`
+creates a circular dependency (`metadataService → accessControlService → accessMapperService → metadataService`).
+
+Reads of namespace config and metadata are not currently guarded, and neither is **ownership** of subscribers: any
+caller may currently list, read or modify another identity's subscriber, subscriptions and notifications. Resource
+entitlement is the wrong tool for that — it needs an ownership rule — so it remains open.
+
+### Worked example
+
+```json
+{
+  "accessControl": true,
+  "resourceAccessControl": true,
+  "roleBasedMapping": true,
+  "limitedReadAccess": {
+    "resources": ["COMMUNICATION"],
+    "fields": [
+      { "field": "ID" }, { "field": "ERRAND_NUMBER" },
+      { "field": "TITLE" }, { "field": "STATUS" }
+    ]
+  },
+  "reporterAccess": {
+    "resources": [
+      { "resource": "ERRAND", "level": "R" },
+      { "resource": "COMMUNICATION", "level": "R" },
+      { "resource": "CONVERSATION_MESSAGE", "level": "RW" }
+    ],
+    "fields": [
+      { "field": "TITLE" }, { "field": "STATUS" },
+      { "field": "PARAMETERS", "keys": ["contactChannel"] }
+    ]
+  },
+  "roleFieldRestrictions": [
+    {
+      "role": "FIRST_LINE_CASE_OFFICER",
+      "fields": [{ "field": "TITLE" }, { "field": "STATUS" }, { "field": "STAKEHOLDERS" }]
+    }
+  ]
+}
+```
+
+### How a request is evaluated
+
+1. If `accessControl` is `false` for the namespace, stop — everything is permitted.
+2. **Layer B** — if `resourceAccessControl` is on, the access mapper's `resource` grants must permit the target
+   resource at the required level, otherwise 401.
+3. **Layer A** — the errand must be reachable, which is true if either the caller's label grants cover it at the
+   required level, or the caller is the reporter and `reporterAccess` grants the resource at that level.
+4. **Layer C** — on the way out, if `roleBasedMapping` is on, the payload is trimmed: limited errands use
+   `limitedReadAccess.fields`, otherwise the matched roles' `roleFieldRestrictions` apply, and reporter fields union
+   on top either way.
+
 ## Contributing
 
 Contributions are welcome! Please

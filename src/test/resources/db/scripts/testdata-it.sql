@@ -163,7 +163,7 @@ VALUES ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', '
         '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'AP-23020002', false, 'STATUS-2',
         'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000'),
        ('2506', '58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
-        null, 'NAMESPACE-2506', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-2506', 'E-service', 'TYPE-2506',
+        null, 'NAMESPACE-2506', 'LOW', 'rob01rep', 'STATUS-2506', 'E-service', 'TYPE-2506',
         '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'AP-23020003', false, 'STATUS-2',
         'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000');
 -- -----------------------------------
@@ -399,26 +399,56 @@ VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
        (1, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
        (1, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (1, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (1, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (1, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (2, 'DISPLAY_NAME', 'Kontaktcenter', 'STRING'),
        (2, 'SHORT_CODE', 'KC', 'STRING'),
        (2, 'NOTIFICATION_TTL_IN_DAYS', '20', 'INTEGER'),
        (2, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (2, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (2, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (2, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (3, 'DISPLAY_NAME', 'Namespace 3', 'STRING'),
        (3, 'SHORT_CODE', 'NS3', 'STRING'),
        (3, 'NOTIFICATION_TTL_IN_DAYS', '30', 'INTEGER'),
        (3, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (3, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (3, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (3, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (4, 'DISPLAY_NAME', 'Kontaktcenter', 'STRING'),
        (4, 'SHORT_CODE', 'KC', 'STRING'),
        (4, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
        (4, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (4, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (4, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (4, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (5, 'DISPLAY_NAME', 'Namespace 2506', 'STRING'),
        (5, 'SHORT_CODE', 'AP', 'STRING'),
        (5, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
        (5, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
-       (5, 'NOTIFY_REPORTER', 'true', 'BOOLEAN');
+       (5, 'NOTIFY_REPORTER', 'true', 'BOOLEAN'),
+       (5, 'ROLE_BASED_MAPPING', 'true', 'BOOLEAN'),
+       (5, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN');
+
+INSERT INTO namespace_config_access_grant(namespace_config_id, `scope`, `type`, `value`, access_level)
+VALUES (5, 'LIMITED', 'RESOURCE', 'COMMUNICATION', null),
+       (5, 'LIMITED', 'FIELD', 'ID', null),
+       (5, 'LIMITED', 'FIELD', 'ERRAND_NUMBER', null),
+       (5, 'LIMITED', 'FIELD', 'TITLE', null),
+       (5, 'LIMITED', 'FIELD', 'STATUS', null),
+       (5, 'LIMITED', 'FIELD', 'RESOLUTION', null),
+       (5, 'LIMITED', 'FIELD', 'CHANNEL', null),
+       (5, 'LIMITED', 'FIELD', 'CREATED', null),
+       (5, 'LIMITED', 'FIELD', 'MODIFIED', null),
+       (5, 'LIMITED', 'FIELD', 'TOUCHED', null),
+       (5, 'REPORTER', 'RESOURCE', 'ERRAND', 'R'),
+       (5, 'REPORTER', 'RESOURCE', 'COMMUNICATION', 'R'),
+       (5, 'REPORTER', 'RESOURCE', 'PARAMETER', 'R'),
+       (5, 'REPORTER', 'FIELD', 'ID', null),
+       (5, 'REPORTER', 'FIELD', 'ERRAND_NUMBER', null),
+       (5, 'REPORTER', 'FIELD', 'TITLE', null),
+       (5, 'REPORTER', 'FIELD', 'STATUS', null),
+       (5, 'REPORTER', 'FIELD', 'PARAMETERS:granted-key', null);
        
 -- -----------------------------------
 -- Time measurement
@@ -435,7 +465,9 @@ INSERT INTO parameter(errand_id, id, parameters_key, display_name, parameter_gro
 VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', '45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'key1', 'Displayname 1', 'A'),
        ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2', 'key2', 'Displayname 2', 'A'),
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'cb638956-0823-402b-ab2a-ae947c0ba006', 'keyA', 'Displayname A', null),
-       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB', 'Displayname B', null);
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB', 'Displayname B', null),
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'e1b9a0d3-6a7c-4f4a-9d0e-1a2b3c4d5e6f', 'granted-key', 'Granted', null),
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'f2c8b1e4-7b8d-4a5b-8e1f-2b3c4d5e6f70', 'hidden-key', 'Hidden', null);
 
 INSERT INTO parameter_values(parameter_id, value, value_order)
 VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),

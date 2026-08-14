@@ -12,22 +12,32 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
+import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
+import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
+import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.PARAMETERS;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.TITLE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.ERRAND;
 
 @ExtendWith(MockitoExtension.class)
 class NamespaceConfigServiceTest {
@@ -208,4 +218,41 @@ class NamespaceConfigServiceTest {
 		verify(configRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 	}
 
+	@Test
+	void createWithDuplicatedRoleAccess() {
+		final var request = NamespaceConfig.create().withRoleFieldRestrictions(List.of(
+			RoleFieldRestriction.create().withRole("REPORTER"),
+			RoleFieldRestriction.create().withRole("reporter")));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: Role 'REPORTER' occurs more than once in role access");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithKeysOnNonKeyedField() {
+		final var request = NamespaceConfig.create().withRoleFieldRestrictions(List.of(
+			RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(FieldAccess.create().withField(TITLE).withKeys(List.of("key-1"))))));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: Keys may not be set for field 'TITLE' of 'CASE_OFFICER' as the field holds no keyed collection");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithValidRoleAccess() {
+		final var request = NamespaceConfig.create()
+			.withReporterAccess(ReporterAccess.create()
+				.withResources(List.of(ResourceAccess.create().withResource(ERRAND).withLevel(R)))
+				.withFields(List.of(FieldAccess.create().withField(PARAMETERS).withKeys(List.of("key-1")))))
+			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE))));
+
+		configService.create(request, "namespace", "municipalityId");
+
+		verify(configRepositoryMock).save(any());
+	}
 }

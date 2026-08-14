@@ -9,9 +9,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -54,7 +54,7 @@ class TimeMeasurementServiceTest {
 		final var result = timeMeasurementService.getErrandTimeMeasurements(namespace, municipalityId, errandId);
 
 		// Assert
-		verify(accessControlServiceMock).getErrand(namespace, municipalityId, errandId, false, R, RW);
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, errandId, false, ProtectedResource.TIME_MEASURE, LR);
 		assertThat(result).hasSize(1);
 		assertThat(result.getFirst().getStartTime()).isEqualTo(startTime);
 		assertThat(result.getFirst().getStopTime()).isEqualTo(stopTime);
@@ -76,7 +76,7 @@ class TimeMeasurementServiceTest {
 		final var result = timeMeasurementService.getErrandTimeMeasurements(namespace, municipalityId, errandId);
 
 		// Assert
-		verify(accessControlServiceMock).getErrand(namespace, municipalityId, errandId, false, R, RW);
+		verify(accessControlServiceMock).getErrand(namespace, municipalityId, errandId, false, ProtectedResource.TIME_MEASURE, LR);
 		assertThat(result).isEmpty();
 	}
 }

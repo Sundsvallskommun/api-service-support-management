@@ -34,7 +34,9 @@ spring:
     type: none
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:mariadb:10.6:///junittest
+    # TC_TMPFS keeps the container data directory in RAM. The test setup is DDL heavy (truncate + testdata
+    # before every test method), which makes this worth roughly 25% of total build time.
+    url: jdbc:tc:mariadb:10.6:///junittest?TC_TMPFS=/var/lib/mysql:rw
   jpa:
     properties:
       hibernate:

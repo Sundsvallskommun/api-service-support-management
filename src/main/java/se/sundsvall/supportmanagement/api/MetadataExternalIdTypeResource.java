@@ -28,8 +28,11 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -49,9 +52,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class MetadataExternalIdTypeResource {
 
 	private final MetadataService metadataService;
+	private final AccessControlService accessControlService;
 
-	MetadataExternalIdTypeResource(final MetadataService metadataService) {
+	MetadataExternalIdTypeResource(final MetadataService metadataService, final AccessControlService accessControlService) {
 		this.metadataService = metadataService;
+		this.accessControlService = accessControlService;
 	}
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -66,6 +71,8 @@ class MetadataExternalIdTypeResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final ExternalIdType body) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_EXTERNAL_ID_TYPE, RW);
 
 		return created(fromPath("/{municipalityId}/{namespace}/metadata/external-id-types/{id}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createExternalIdType(namespace, municipalityId, body)).toUri())
@@ -121,6 +128,8 @@ class MetadataExternalIdTypeResource {
 		@Parameter(name = "id", description = "ExternalIdType id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final ExternalIdType body) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_EXTERNAL_ID_TYPE, RW);
+
 		return ok(metadataService.updateExternalIdType(namespace, municipalityId, id, body));
 	}
 
@@ -137,6 +146,8 @@ class MetadataExternalIdTypeResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "ExternalIdType id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_EXTERNAL_ID_TYPE, RW);
 
 		metadataService.deleteExternalIdType(namespace, municipalityId, id);
 		return noContent()

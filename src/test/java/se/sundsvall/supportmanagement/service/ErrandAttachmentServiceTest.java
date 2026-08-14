@@ -29,10 +29,11 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.of;
@@ -124,7 +125,7 @@ class ErrandAttachmentServiceTest {
 	@Test
 	void createErrandAttachment() throws SQLException {
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandMock);
 		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 		when(attachmentRepositoryMock.saveAndFlush(any())).thenReturn(attachmentMock);
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
@@ -142,7 +143,7 @@ class ErrandAttachmentServiceTest {
 			assertThat(result).isNotNull().isEqualTo(ATTACHMENT_ID);
 
 			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock), nullable(String.class)));
-			verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
+			verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ATTACHMENT, RW);
 			verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
 			verify(entityManagerMock).refresh(attachmentMock);
 			verify(attachmentMock).setHash("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
@@ -179,7 +180,7 @@ class ErrandAttachmentServiceTest {
 			verify(httpServletResponseMock).setContentLength(123);
 			streamMock.verify(() -> StreamUtils.copy(same(inputStreamMock), same(outputStreamMock)));
 
-			verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+			verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ATTACHMENT, LR);
 			verifyNoInteractions(revisionServiceMock, eventServiceMock);
 		}
 	}
@@ -200,7 +201,7 @@ class ErrandAttachmentServiceTest {
 		assertThat(result.getFirst().getFileName()).isEqualTo(FILE_NAME);
 		assertThat(result.getFirst().getMimeType()).isEqualTo(MIME_TYPE);
 
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ATTACHMENT, LR);
 		verifyNoInteractions(revisionServiceMock);
 	}
 
@@ -218,7 +219,7 @@ class ErrandAttachmentServiceTest {
 			});
 
 		// Verifications
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ATTACHMENT, LR);
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
@@ -226,7 +227,7 @@ class ErrandAttachmentServiceTest {
 	void deleteErrandAttachment() {
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandMock);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errandMock);
@@ -238,7 +239,7 @@ class ErrandAttachmentServiceTest {
 		// Assertions and verifications
 		assertThat(errandMock.getAttachments()).isEmpty();
 
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ATTACHMENT, RW);
 		verify(errandsRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 
@@ -249,7 +250,7 @@ class ErrandAttachmentServiceTest {
 	void deleteErrandAttachmentAttachmentIdNotFound() {
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandMock);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn("other-id");
 
@@ -264,7 +265,7 @@ class ErrandAttachmentServiceTest {
 			});
 
 		// Verifications
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ATTACHMENT, RW);
 		verify(errandsRepositoryMock, never()).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
@@ -272,7 +273,7 @@ class ErrandAttachmentServiceTest {
 	@Test
 	void deleteErrandAttachmentThrowException() {
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errandMock);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandMock);
 		when(errandMock.getAttachments()).thenReturn(new ArrayList<>(List.of(attachmentMock)));
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenThrow(new RuntimeException("Test exception"));
@@ -288,7 +289,7 @@ class ErrandAttachmentServiceTest {
 			});
 
 		// Verifications
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ATTACHMENT, RW);
 		verify(errandsRepositoryMock).save(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
@@ -401,6 +402,6 @@ class ErrandAttachmentServiceTest {
 		assertThatThrownBy(() -> service.readErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, httpServletResponseMock))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Insufficient Storage: Insufficient storage available to process the request.");
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ATTACHMENT, LR);
 	}
 }

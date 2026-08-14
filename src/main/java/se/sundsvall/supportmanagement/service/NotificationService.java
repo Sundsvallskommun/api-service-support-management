@@ -16,10 +16,11 @@ import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.data.domain.Sort.unsorted;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -57,7 +58,7 @@ public class NotificationService {
 	}
 
 	public Notification getNotification(final String municipalityId, final String namespace, final String errandId, final String notificationId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTIFICATION, LR);
 		return notificationRepository.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)
 			.map(NotificationMapper::toNotification)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, errandId)));
@@ -71,7 +72,7 @@ public class NotificationService {
 	}
 
 	public List<Notification> getNotificationsByErrandId(final String municipalityId, final String namespace, final String errandId, final Sort sort) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTIFICATION, LR);
 		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, sort)
 			.stream()
 			.map(NotificationMapper::toNotification)
@@ -79,7 +80,7 @@ public class NotificationService {
 	}
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.NOTIFICATION, RW);
 		return createNotification(errandEntity, notification);
 	}
 
@@ -111,7 +112,7 @@ public class NotificationService {
 	}
 
 	public void globalAcknowledgeNotificationsByErrandId(final String municipalityId, final String namespace, final String errandId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTIFICATION, RW);
 		final var errandEntityList = notificationRepository.findAllByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId, unsorted());
 
 		errandEntityList.forEach(errand -> errand.withGlobalAcknowledged(true));
@@ -120,7 +121,7 @@ public class NotificationService {
 	}
 
 	private void updateNotification(final String municipalityId, final String namespace, final String notificationId, final Notification notification) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, notification.getErrandId(), RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, notification.getErrandId(), ProtectedResource.NOTIFICATION, RW);
 		final var entity = notificationRepository.findByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, notification.getErrandId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, notification.getErrandId())));
 
@@ -132,7 +133,7 @@ public class NotificationService {
 	}
 
 	public void deleteNotification(final String municipalityId, final String namespace, final String errandId, final String notificationId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTIFICATION, RW);
 		if (!notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId(notificationId, namespace, municipalityId, errandId)) {
 			throw Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, errandId));
 		}

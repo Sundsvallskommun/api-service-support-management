@@ -217,16 +217,22 @@ VALUES (1, 'DISPLAY_NAME', 'display name 1', 'STRING'),
        (1, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
        (1, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (1, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (1, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (1, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (2, 'DISPLAY_NAME', 'display name 3', 'STRING'),
        (2, 'SHORT_CODE', 'short_code-3', 'STRING'),
        (2, 'NOTIFICATION_TTL_IN_DAYS', '30', 'INTEGER'),
        (2, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
        (2, 'NOTIFY_REPORTER', 'true', 'BOOLEAN'),
+       (2, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (2, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (3, 'DISPLAY_NAME', 'display name 2', 'STRING'),
        (3, 'SHORT_CODE', 'short_code-2', 'STRING'),
        (3, 'NOTIFICATION_TTL_IN_DAYS', '20', 'INTEGER'),
        (3, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
-       (3, 'NOTIFY_REPORTER', 'false', 'BOOLEAN');
+       (3, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (3, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (3, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN');
 
 -------------------------------------
 -- WebMessageCollect

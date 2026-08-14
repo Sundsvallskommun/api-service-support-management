@@ -7,5 +7,7 @@
 	"shortCode": "NS1-UPDATE",
 	"notificationTTLInDays": 30,
 	"accessControl": true,
-	"notifyReporter": true
+	"notifyReporter": true,
+	"roleBasedMapping": false,
+	"resourceAccessControl": false
 }
