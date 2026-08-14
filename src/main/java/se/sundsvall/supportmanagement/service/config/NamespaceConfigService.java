@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.config;
 
 import java.util.List;
 import java.util.Map.Entry;
+import org.apache.commons.lang3.EnumUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -11,7 +12,9 @@ import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
+import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static java.util.Collections.emptyList;
@@ -31,6 +34,7 @@ public class NamespaceConfigService {
 	private static final String CONFIG_ENTITY_NOT_FOUND = "No config found in namespace '%s' for municipality '%s'";
 	private static final String CONFIG_ENTITY_ALREADY_EXISTS = "Namespace '%s' already exists in municipality '%s'";
 	private static final String ROLE_OCCURS_MORE_THAN_ONCE = "Role '%s' occurs more than once in role access";
+	private static final String ROLE_NAME_IS_RESERVED = "Role '%s' is reserved and may not be used in role access";
 	private static final String KEYS_NOT_ALLOWED = "Keys may not be set for field '%s' of '%s' as the field holds no keyed collection";
 
 	private final NamespaceConfigRepository configRepository;
@@ -43,7 +47,8 @@ public class NamespaceConfigService {
 
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}")
 	})
 	public void create(NamespaceConfig request, String namespace, String municipalityId) {
 		if (configRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
@@ -54,8 +59,8 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * Verifies the access configuration. Keys only make sense for fields holding a keyed collection, and a role may only
-	 * appear once.
+	 * Verifies the access configuration. Keys only make sense for fields holding a keyed collection, a role may only
+	 * appear once, and a role may not be named after one of the scopes this service resolves itself.
 	 */
 	private void validateAccessConfiguration(NamespaceConfig request) {
 		final var restrictions = ofNullable(request.getRoleFieldRestrictions()).orElse(emptyList());
@@ -70,6 +75,16 @@ public class NamespaceConfigService {
 		if (duplicatedRole.isPresent()) {
 			throw Problem.valueOf(BAD_REQUEST, ROLE_OCCURS_MORE_THAN_ONCE.formatted(duplicatedRole.get()));
 		}
+
+		// A role stored under a reserved scope would be read back as the limited read or reporter configuration of the
+		// namespace, granting its fields to entirely different principals, so it is rejected rather than silently mutated.
+		restrictions.stream()
+			.map(RoleFieldRestriction::getRole)
+			.filter(role -> EnumUtils.isValidEnumIgnoreCase(AccessGrantScope.class, role))
+			.findFirst()
+			.ifPresent(role -> {
+				throw Problem.valueOf(BAD_REQUEST, ROLE_NAME_IS_RESERVED.formatted(role));
+			});
 
 		validateFields(ofNullable(request.getLimitedReadAccess()).map(LimitedReadAccess::getFields).orElse(null), "limitedReadAccess");
 		validateFields(ofNullable(request.getReporterAccess()).map(ReporterAccess::getFields).orElse(null), "reporterAccess");
@@ -91,7 +106,8 @@ public class NamespaceConfigService {
 
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}")
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
@@ -107,12 +123,16 @@ public class NamespaceConfigService {
 
 	/**
 	 * Signals if access control is active for the namespace. A namespace with no configuration at all answers false rather
-	 * than failing, since it cannot have access control switched on.
+	 * than failing, since it cannot have access control switched on, which is also why this cannot simply delegate to
+	 * {@link #get(String, String)}.
+	 * <p>
+	 * Cached in its own right, since it is asked on every request reaching a namespace scoped resource.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
 	 * @return                true if access control is active
 	 */
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public boolean isAccessControlActive(String namespace, String municipalityId) {
 		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.map(mapper::toNamespaceConfig)
@@ -135,7 +155,8 @@ public class NamespaceConfigService {
 
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}")
 	})
 	public void delete(String namespace, String municipalityId) {
 		if (configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {

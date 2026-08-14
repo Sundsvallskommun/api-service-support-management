@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,8 @@ import tools.jackson.databind.ObjectMapper;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -306,7 +309,7 @@ class ErrandMapperTest {
 		fields.put(ErrandField.TITLE, Set.of());
 		fields.put(ErrandField.STATUS, Set.of());
 
-		final var errand = toErrandWithAccessControl(createEntity(), true, _ -> fields);
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> fields);
 
 		assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "errandNumber", "title", "status");
 		assertThat(errand.getId()).isEqualTo(ID);
@@ -321,7 +324,7 @@ class ErrandMapperTest {
 		final var configuredKey = entity.getParameters().getFirst().getKey();
 		final var fields = Map.of(ErrandField.PARAMETERS, Set.of(configuredKey));
 
-		final var errand = toErrandWithAccessControl(entity, true, _ -> fields);
+		final var errand = toErrandWithAccessControl(entity, _ -> fields);
 
 		assertThat(errand.getParameters()).hasSize(1).extracting(Parameter::getKey).containsExactly(configuredKey);
 	}
@@ -331,28 +334,39 @@ class ErrandMapperTest {
 		final var entity = createEntity();
 		final var fields = Map.of(ErrandField.PARAMETERS, Set.<String>of());
 
-		final var errand = toErrandWithAccessControl(entity, true, _ -> fields);
+		final var errand = toErrandWithAccessControl(entity, _ -> fields);
 
 		assertThat(errand.getParameters()).hasSameSizeAs(entity.getParameters());
 	}
 
 	@Test
-	void testToErrandWithAccessControlMapsFullErrandWhenNoRoleMatches() {
-		final var errand = toErrandWithAccessControl(createEntity(), true, _ -> Map.of());
+	void testToErrandWithAccessControlMapsFullErrandWhenNothingRestrictsTheUser() {
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> null);
 
 		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 	}
 
 	@Test
-	void testToErrandWithAccessControlMapsFullErrandWhenRoleBasedMappingIsInactive() {
-		final var errand = toErrandWithAccessControl(createEntity(), false, _ -> Map.of(ErrandField.ID, Set.of()));
+	void testToErrandWithAccessControlMapsNoFieldsWhenRestrictionResolvesToNone() {
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> Map.of());
 
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
+		assertThat(errand).hasAllNullFieldsOrProperties();
 	}
 
 	@Test
 	void testToErrandWithAccessControlFromNull() {
-		assertThat(toErrandWithAccessControl(null, true, _ -> Map.of(ErrandField.ID, Set.of()))).isNull();
+		assertThat(toErrandWithAccessControl(null, _ -> Map.of(ErrandField.ID, Set.of()))).isNull();
+	}
+
+	@Test
+	void testToErrandMapsEveryRestrictableFieldTheSameWayAsARoleMappedErrand() {
+		final var entity = createEntity();
+		final var allFields = Arrays.stream(ErrandField.values()).collect(toMap(identity(), _ -> Set.<String>of()));
+
+		// The full errand is the role mapped errand of every field, plus the properties no ErrandField names.
+		assertThat(toErrand(entity)).usingRecursiveComparison()
+			.ignoringFields("phases", "actions")
+			.isEqualTo(toErrandWithAccessControl(entity, _ -> allFields));
 	}
 
 	@Test
@@ -425,8 +439,8 @@ class ErrandMapperTest {
 		final var roleMapped = createEntity().withErrandNumber("role-mapped");
 		final var fullyMapped = createEntity().withErrandNumber("full").withBusinessRelated(false);
 
-		final var result = toErrandsWithAccessControl(List.of(roleMapped, fullyMapped), true,
-			entity -> "role-mapped".equals(entity.getErrandNumber()) ? Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of()) : Map.of());
+		final var result = toErrandsWithAccessControl(List.of(roleMapped, fullyMapped),
+			entity -> "role-mapped".equals(entity.getErrandNumber()) ? Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of()) : null);
 
 		assertThat(result).hasSize(2);
 
@@ -448,7 +462,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandsWithAccessControlFromNull() {
-		assertThat(toErrandsWithAccessControl(null, true, _ -> Map.of())).isEmpty();
+		assertThat(toErrandsWithAccessControl(null, _ -> Map.of())).isEmpty();
 	}
 
 	@Test
@@ -681,6 +695,33 @@ class ErrandMapperTest {
 		assertThat(entity.getDescription()).isNull();
 		assertThat(entity.getEscalationEmail()).isNull();
 		assertThat(entity.getContactReasonDescription()).isNull();
+	}
+
+	@Test
+	void testUpdateEntityLeavesKeysTheUserMayNotReachUntouched() {
+		final var entity = ErrandEntity.create()
+			.withParameters(new ArrayList<>(List.of(
+				ParameterEntity.create().withKey("visible").withValues(new ArrayList<>(List.of("old"))),
+				ParameterEntity.create().withKey("hidden").withValues(new ArrayList<>(List.of("secret"))))))
+			.withJsonParameters(new ArrayList<>(List.of(
+				JsonParameterEntity.create().withKey("visible").withValue("1"),
+				JsonParameterEntity.create().withKey("hidden").withValue("2"))))
+			.withExternalTags(new ArrayList<>(List.of(
+				DbExternalTag.create().withKey("visible").withValue("old"),
+				DbExternalTag.create().withKey("hidden").withValue("secret"))));
+
+		// The caller patches back the keys they were served, which are the ones they may reach.
+		final var patch = Errand.create()
+			.withParameters(List.of(Parameter.create().withKey("visible").withValues(List.of("new"))))
+			.withJsonParameters(List.of(JsonParameter.create().withKey("visible")))
+			.withExternalTags(List.of(ExternalTag.create().withKey("visible").withValue("new")));
+
+		updateEntity(entity, patch, _ -> "visible"::equals);
+
+		assertThat(entity.getParameters()).extracting(ParameterEntity::getKey).containsExactlyInAnyOrder("visible", "hidden");
+		assertThat(entity.getJsonParameters()).extracting(JsonParameterEntity::getKey).containsExactlyInAnyOrder("visible", "hidden");
+		assertThat(entity.getExternalTags()).extracting(DbExternalTag::getKey, DbExternalTag::getValue)
+			.containsExactlyInAnyOrder(tuple("visible", "new"), tuple("hidden", "secret"));
 	}
 
 	@Test

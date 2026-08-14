@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,9 +31,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
@@ -57,6 +62,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -70,6 +76,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
@@ -272,8 +279,7 @@ class ErrandServiceTest {
 
 		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(List.of(buildErrandEntity(), buildErrandEntity()), pageable, 2L));
 		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
-		when(accessControlServiceMock.hasRoleBasedMappingActive(any(), any())).thenReturn(limited);
-		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> limited ? Map.of(ErrandField.ID, Set.<String>of()) : Map.of());
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> limited ? Map.of(ErrandField.ID, Set.<String>of()) : null);
 
 		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
 
@@ -324,8 +330,7 @@ class ErrandServiceTest {
 		Identifier.set(user);
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		when(accessControlServiceMock.hasRoleBasedMappingActive(any(), any())).thenReturn(limited);
-		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> limited ? Map.of(ErrandField.ID, Set.<String>of()) : Map.of());
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> limited ? Map.of(ErrandField.ID, Set.<String>of()) : null);
 
 		final var response = service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
@@ -344,6 +349,8 @@ class ErrandServiceTest {
 		Identifier.set(user);
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
 		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
@@ -371,6 +378,8 @@ class ErrandServiceTest {
 		Identifier.set(user);
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
 		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
@@ -387,6 +396,48 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	void updateErrandRejectsAKeyTheUserMayNotReach() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> "visible"::equals);
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
+		doThrow(Problem.valueOf(UNAUTHORIZED)).when(accessControlServiceMock).verifyAccessibleKeys(ArgumentMatchers.<Predicate<String>>any(), eq(List.of("salary")));
+
+		final var patch = Errand.create().withParameters(List.of(Parameter.create().withKey("salary").withValues(List.of("secret"))));
+
+		// The whole errand patch is bound by the same key grants as the dedicated parameter endpoints.
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch))
+			.isInstanceOf(ThrowableProblem.class)
+			.extracting("status").isEqualTo(UNAUTHORIZED);
+
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	void updateErrandReturnsAPayloadMappedByTheSameGrantsAsARead() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> Map.of(ErrandField.ID, Set.<String>of()));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+
+		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withTitle("new title"));
+
+		assertThat(response.getId()).isEqualTo(ERRAND_ID);
+		assertThat(response).hasAllNullFieldsOrPropertiesExcept("id");
+
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
 	}
 
 	@Test

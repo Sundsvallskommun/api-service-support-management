@@ -1,7 +1,7 @@
 {
 	"request": {
 		"method": "GET",
-		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/ad/joe01doe",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/joe01doe",
 		"queryParameters": {
 			"type": {
 				"equalTo": "resource"

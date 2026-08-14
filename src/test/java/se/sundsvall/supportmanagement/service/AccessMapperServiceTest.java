@@ -194,4 +194,14 @@ class AccessMapperServiceTest {
 		assertThat(accessMapperService.getAccessibleRoles(MUNICIPALITY_ID, NAMESPACE, Identifier.create().withType(Identifier.Type.PARTY_ID).withValue(AD_USER))).isEmpty();
 		verifyNoInteractions(accessMapperClientMock);
 	}
+
+	@Test
+	void notFoundFromAccessMapperYieldsNoAccessRatherThanFailure() {
+		// The client bypasses 404, so an unknown user arrives here as a non-2xx response and must resolve to "no grants".
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.notFound().build());
+
+		assertThat(accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(R))).isEmpty();
+		assertThat(accessMapperService.getAccessibleRoles(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).isEmpty();
+		assertThat(accessMapperService.getAccessibleResources(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).isEmpty();
+	}
 }

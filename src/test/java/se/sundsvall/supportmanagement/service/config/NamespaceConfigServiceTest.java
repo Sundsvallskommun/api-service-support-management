@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -228,6 +230,33 @@ class NamespaceConfigServiceTest {
 
 		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(exception.getMessage()).isEqualTo("Bad Request: Role 'REPORTER' occurs more than once in role access");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"LIMITED", "limited", "Reporter", "REPORTER"
+	})
+	void createWithRoleNamedAfterAReservedScope(final String role) {
+		// Stored verbatim, such a role would be read back as the limited read or reporter configuration of the namespace.
+		final var request = NamespaceConfig.create().withRoleFieldRestrictions(List.of(
+			RoleFieldRestriction.create().withRole(role).withFields(List.of(FieldAccess.create().withField(TITLE)))));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: Role '%s' is reserved and may not be used in role access".formatted(role));
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void replaceWithRoleNamedAfterAReservedScope() {
+		final var request = NamespaceConfig.create().withRoleFieldRestrictions(List.of(
+			RoleFieldRestriction.create().withRole("LIMITED").withFields(List.of(FieldAccess.create().withField(TITLE)))));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.replace(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
 		verify(configRepositoryMock, never()).save(any());
 	}
 

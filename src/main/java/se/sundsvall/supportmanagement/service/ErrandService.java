@@ -3,8 +3,10 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,9 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Relation;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -27,6 +32,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
@@ -46,7 +52,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
@@ -163,23 +168,31 @@ public class ErrandService {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		final var matches = repository.findAll(fullFilter, pageable);
-		final var roleBasedMapping = accessControlService.hasRoleBasedMappingActive(namespace, municipalityId);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
 
-		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), roleBasedMapping, fieldResolver), pageable, matches.getTotalElements());
+		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver), pageable, matches.getTotalElements());
 	}
 
 	@Transactional(readOnly = true)
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.ERRAND, LR);
-		final var roleBasedMapping = accessControlService.hasRoleBasedMappingActive(namespace, municipalityId);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
-		return toErrandWithAccessControl(errandEntity, roleBasedMapping, fieldResolver);
+		return toErrandWithAccessControl(errandEntity, fieldResolver);
 	}
 
 	@Transactional
 	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final String ifMatch, final Errand errand) {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
+
+		// Resolved before the errand is touched, so that patching it does not flush mid transaction, and so that the
+		// response is mapped by the same grants a plain read of the errand would be.
+		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
+		final var accessibleKey = accessControlService.readableKeyResolver(namespace, municipalityId, Identifier.get(), errandEntityToUpdate);
+
+		// A key the caller cannot read is a key they cannot write, whichever endpoint they write it through.
+		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.PARAMETERS), keysOf(errand.getParameters(), Parameter::getKey));
+		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.JSON_PARAMETERS), keysOf(errand.getJsonParameters(), JsonParameter::getKey));
+		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.EXTERNAL_TAGS), keysOf(errand.getExternalTags(), ExternalTag::getKey));
 
 		if (ifMatch == null) {
 			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
@@ -187,7 +200,7 @@ public class ErrandService {
 		validateIfMatch(ifMatch, errandEntityToUpdate.getVersion());
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		final var errandEntity = updateEntity(errandEntityToUpdate, errand);
+		final var errandEntity = updateEntity(errandEntityToUpdate, errand, accessibleKey);
 
 		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
 		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errand.getStatus());
@@ -215,7 +228,16 @@ public class ErrandService {
 			}
 		}
 
-		return toErrand(entity);
+		return toErrandWithAccessControl(entity, fieldResolver);
+	}
+
+	/**
+	 * Keys of a keyed collection of a patch, or null when the patch leaves the collection alone.
+	 */
+	private static <T> List<String> keysOf(final List<T> values, final Function<T, String> keyExtractor) {
+		return ofNullable(values)
+			.map(list -> list.stream().map(keyExtractor).toList())
+			.orElse(null);
 	}
 
 	@Transactional
