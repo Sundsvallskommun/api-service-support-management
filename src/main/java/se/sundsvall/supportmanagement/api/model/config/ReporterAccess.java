@@ -13,7 +13,7 @@ public class ReporterAccess {
 	private List<ResourceAccess> resources;
 
 	@Valid
-	@Schema(description = "Fields of the errand exposed to its reporter, when role based mapping is active")
+	@Schema(description = "Fields of the errand exposed to its reporter. These widen whatever else applies, whether or not the namespace maps errands per role, since reporting an errand may never reduce what its reporter sees")
 	private List<FieldAccess> fields;
 
 	public static ReporterAccess create() {

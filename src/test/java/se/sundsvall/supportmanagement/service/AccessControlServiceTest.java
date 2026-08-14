@@ -77,6 +77,13 @@ class AccessControlServiceTest {
 		return Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue(AD_ACCOUNT);
 	}
 
+	/**
+	 * An errand carrying a label the user is not given, so their labels never cover it fully and it is limited for them.
+	 */
+	private static ErrandEntity limitedErrand() {
+		return ErrandEntity.create().withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId("label-id-1")));
+	}
+
 	private static NamespaceConfig configWithReporterAccess(final List<ResourceAccess> resources, final List<FieldAccess> fields) {
 		return NamespaceConfig.create()
 			.withAccessControl(true)
@@ -87,23 +94,8 @@ class AccessControlServiceTest {
 	}
 
 	@Test
-	void hasRoleBasedMappingActiveWhenEnabled() {
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withRoleBasedMapping(true));
-
-		assertThat(accessControlService.hasRoleBasedMappingActive(NAMESPACE, MUNICIPALITY_ID)).isTrue();
-	}
-
-	@Test
-	void hasRoleBasedMappingActiveWhenAccessControlIsInactive() {
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(false).withRoleBasedMapping(true));
-
-		assertThat(accessControlService.hasRoleBasedMappingActive(NAMESPACE, MUNICIPALITY_ID)).isFalse();
-		verifyNoInteractions(accessMapperService);
-	}
-
-	@Test
 	void roleBasedFieldResolverResolvesFieldsForReporter() {
-		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(
 			FieldAccess.create().withField(ErrandField.TITLE),
 			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")))));
@@ -116,11 +108,20 @@ class AccessControlServiceTest {
 	}
 
 	@Test
+	void roleBasedFieldResolverLeavesAnOtherwiseUnrestrictedReporterUnrestricted() {
+		// Reporting an errand may not reduce access: reporter fields widen a restriction, they never introduce one.
+		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.TITLE))));
+
+		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
+	}
+
+	@Test
 	void roleBasedFieldResolverResolvesNothingWhenUserIsNotReporter() {
 		final var errand = ErrandEntity.create().withReporterUserId("someone-else");
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.TITLE))));
 
-		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isEmpty();
+		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
 	}
 
 	@Test
@@ -129,7 +130,7 @@ class AccessControlServiceTest {
 		final var partyIdUser = Identifier.create().withType(Identifier.Type.PARTY_ID).withValue(AD_ACCOUNT);
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.TITLE))));
 
-		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, partyIdUser).apply(errand)).isEmpty();
+		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, partyIdUser).apply(errand)).isNull();
 	}
 
 	@Test
@@ -137,7 +138,7 @@ class AccessControlServiceTest {
 		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withRoleBasedMapping(true));
 
-		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isEmpty();
+		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
 	}
 
 	@Test
@@ -164,7 +165,7 @@ class AccessControlServiceTest {
 			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE)))));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of(MetadataLabelEntity.create().withId("label-id-1")));
 
-		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isEmpty();
+		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
 	}
 
 	@Test
@@ -256,6 +257,30 @@ class AccessControlServiceTest {
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.COMMUNICATION, R);
 
 		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
+	}
+
+	@Test
+	void withAccessControlAcceptsAResourceGrantedAtLimitedReadForALimitedReadOperation() {
+		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withResourceAccessControl(true));
+		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.ERRAND, LR));
+		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, LR);
+
+		// An explicitly granted limited read resource may not behave the same as no grant at all.
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
+		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, adUser(), List.of(LR, R, RW));
+	}
+
+	@Test
+	void withAccessControlDeniesAResourceGrantedAtLimitedReadForAFullRead() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withResourceAccessControl(true));
+		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.COMMUNICATION, LR));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.COMMUNICATION, R);
+
+		assertThat(matches(specification)).isFalse();
 	}
 
 	@Test
@@ -546,13 +571,22 @@ class AccessControlServiceTest {
 	}
 
 	@Test
-	void readableKeyPredicateAllowsEveryKeyWhenRoleBasedMappingIsInactive() {
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+	void readableKeyPredicateAllowsEveryKeyWhenAccessControlIsInactive() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(false));
 
 		final var predicate = accessControlService.readableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), ErrandEntity.create(), ErrandField.PARAMETERS);
 
 		assertThat(predicate.test("any-key")).isTrue();
 		verifyNoInteractions(accessMapperService);
+	}
+
+	@Test
+	void readableKeyPredicateAllowsEveryKeyOfAnErrandNothingRestricts() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+
+		final var predicate = accessControlService.readableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), ErrandEntity.create(), ErrandField.PARAMETERS);
+
+		assertThat(predicate.test("any-key")).isTrue();
 	}
 
 	@Test
@@ -567,7 +601,7 @@ class AccessControlServiceTest {
 
 	@Test
 	void readableKeyPredicateLimitsToConfiguredKeys() {
-		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")))));
 
 		final var predicate = accessControlService.readableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS);
@@ -578,7 +612,7 @@ class AccessControlServiceTest {
 
 	@Test
 	void readableKeyPredicateAllowsEveryKeyWhenFieldIsGrantedWithoutKeys() {
-		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.PARAMETERS))));
 
 		final var predicate = accessControlService.readableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS);
@@ -588,7 +622,7 @@ class AccessControlServiceTest {
 
 	@Test
 	void readableKeyPredicateDeniesEveryKeyWhenFieldIsNotGranted() {
-		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.TITLE))));
 
 		final var predicate = accessControlService.readableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS);
@@ -598,7 +632,7 @@ class AccessControlServiceTest {
 
 	@Test
 	void verifyAccessibleKeyThrowsForUngrantedKey() {
-		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
 		Identifier.set(adUser());
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")))));
 
@@ -611,7 +645,7 @@ class AccessControlServiceTest {
 
 	@Test
 	void verifyAccessibleKeyPassesForGrantedKey() {
-		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
 		Identifier.set(adUser());
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")))));
 
@@ -715,6 +749,35 @@ class AccessControlServiceTest {
 	}
 
 	@Test
+	void roleBasedFieldResolverTrimsALimitedErrandWithoutRoleBasedMapping() {
+		// Limited read may never silently mean full read, so the toggle governs role restrictions only.
+		final var errand = limitedErrand();
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withRoleBasedMapping(false)
+			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE)))));
+		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
+
+		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
+
+		assertThat(result).containsOnlyKeys(ErrandField.TITLE);
+		verify(accessMapperService, never()).getAccessibleRoles(any(), any(), any());
+	}
+
+	@Test
+	void roleBasedFieldResolverIgnoresRoleRestrictionsWithoutRoleBasedMapping() {
+		final var errand = ErrandEntity.create();
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withRoleBasedMapping(false)
+			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE))))));
+		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
+
+		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
+		verify(accessMapperService, never()).getAccessibleRoles(any(), any(), any());
+	}
+
+	@Test
 	void roleBasedFieldResolverLeavesAnUnrestrictedRoleUnmapped() {
 		final var errand = ErrandEntity.create();
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
@@ -725,7 +788,7 @@ class AccessControlServiceTest {
 		when(accessMapperService.getAccessibleRoles(any(), any(), any())).thenReturn(Set.of("CASE_OFFICER"));
 
 		// No restriction listed for the role held, and the errand is not limited, so the errand is mapped in full.
-		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isEmpty();
+		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
 	}
 
 	@Test
@@ -766,5 +829,16 @@ class AccessControlServiceTest {
 
 		assertThrows(ThrowableProblem.class,
 			() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
+	}
+
+	@Test
+	void roleBasedFieldResolverNeverCallsAccessMapperWhileAccessControlIsOff() {
+		// A namespace that has not opted in must cost no remote calls at all: an access mapper outage may not turn
+		// errand reads into 500s for namespaces that never enabled access control.
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(false));
+
+		accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(ErrandEntity.create());
+
+		verifyNoInteractions(accessMapperService);
 	}
 }

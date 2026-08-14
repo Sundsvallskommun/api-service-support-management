@@ -48,12 +48,12 @@ public class ErrandParameterService {
 	@Transactional
 	public List<Parameter> updateErrandParameters(final String namespace, final String municipalityId, final String errandId, final String ifMatch, final List<Parameter> parameters) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.PARAMETER, RW);
-		accessControlService.verifyAccessibleKeys(namespace, municipalityId, errandEntity, ErrandField.PARAMETERS,
-			ofNullable(parameters).orElse(emptyList()).stream().map(Parameter::getKey).toList());
 
-		// Resolved before the merge below. Resolving it afterwards would query mid transaction, auto flushing the changed
-		// parameters and bumping their version before they are returned.
+		// Resolved once, before the merge below. Resolving it afterwards would query mid transaction, auto flushing the
+		// changed parameters and bumping their version before they are returned.
 		final var accessibleKey = accessControlService.readableKeyPredicate(namespace, municipalityId, Identifier.get(), errandEntity, ErrandField.PARAMETERS);
+
+		accessControlService.verifyAccessibleKeys(accessibleKey, ofNullable(parameters).orElse(emptyList()).stream().map(Parameter::getKey).toList());
 
 		if (ifMatch == null) {
 			LOG.debug("PATCH /errands/{}/parameters received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
@@ -61,7 +61,8 @@ public class ErrandParameterService {
 		validateIfMatch(ifMatch, errandEntity.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		mergeParameters(errandEntity, parameters);
+		// Parameters the caller cannot see are left as they are, so patching back a filtered list cannot delete them.
+		mergeParameters(errandEntity, parameters, accessibleKey);
 
 		return toParameterList(ofNullable(errandsRepository.save(errandEntity).getParameters()).orElse(emptyList()).stream()
 			.filter(parameter -> accessibleKey.test(parameter.getKey()))

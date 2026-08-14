@@ -4,9 +4,11 @@ import generated.se.sundsvall.accessmapper.Access;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -253,9 +255,13 @@ public class NamespaceConfigMapper {
 
 	/**
 	 * Values that no longer resolve to a known field are skipped, for the same reason.
+	 * <p>
+	 * A grant carrying no key means the whole collection, so it wins over any grant naming individual keys of the same
+	 * field, mirroring how the keys of two scopes are merged when access is resolved.
 	 */
 	private List<FieldAccess> toFieldAccesses(final List<NamespaceConfigAccessGrantEmbeddable> grants) {
 		final Map<ErrandField, List<String>> keysByField = new LinkedHashMap<>();
+		final Set<ErrandField> wholeCollectionFields = new LinkedHashSet<>();
 
 		grants.stream()
 			.filter(grant -> FIELD == grant.getType())
@@ -272,6 +278,8 @@ public class NamespaceConfigMapper {
 				final var keys = keysByField.computeIfAbsent(field, _ -> new ArrayList<>());
 				if (separatorIndex >= 0) {
 					keys.add(grant.getValue().substring(separatorIndex + 1));
+				} else {
+					wholeCollectionFields.add(field);
 				}
 			});
 
@@ -283,7 +291,7 @@ public class NamespaceConfigMapper {
 			.sorted(Map.Entry.comparingByKey())
 			.map(entry -> FieldAccess.create()
 				.withField(entry.getKey())
-				.withKeys(entry.getValue().isEmpty() ? null : entry.getValue()))
+				.withKeys(wholeCollectionFields.contains(entry.getKey()) || entry.getValue().isEmpty() ? null : entry.getValue()))
 			.toList();
 	}
 }

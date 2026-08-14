@@ -227,6 +227,21 @@ class NamespaceConfigMapperTest {
 	}
 
 	@Test
+	void toNamespaceConfigLetsAKeylessGrantWinOverAKeyedOneForTheSameField() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
+			.withAccessGrants(List.of(
+				accessGrantRow("FIRST_LINE_CASE_OFFICER", FIELD, "PARAMETERS", null),
+				accessGrantRow("FIRST_LINE_CASE_OFFICER", FIELD, "PARAMETERS:key-1", null)));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		// A grant without keys means the whole collection, so it may not be narrowed by a grant naming a single key.
+		assertThat(config.getRoleFieldRestrictions()).containsExactly(RoleFieldRestriction.create()
+			.withRole("FIRST_LINE_CASE_OFFICER")
+			.withFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS))));
+	}
+
+	@Test
 	void toNamespaceConfigKeepsKeysContainingTheSeparator() {
 		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
 			.withAccessGrants(List.of(accessGrantRow("LIMITED", FIELD, "PARAMETERS:ns:key", null)));

@@ -314,8 +314,10 @@ groups. Gated by the `resourceAccessControl` flag: while it is `false`, resource
 apply. This exists so a namespace can enable `accessControl` before the access mapper has any `resource` groups
 configured, without every sub-resource turning into a 401.
 
-**Layer C — field mapping.** Which fields of the errand payload are returned. Governed by `roleBasedMapping`; while it
-is `false`, everything maps through the full mapper.
+**Layer C — field mapping.** Which fields of the errand payload are returned. `roleBasedMapping` governs the *role*
+restrictions only: while it is `false` no role trims anything, but an errand the caller only has limited read for is
+still trimmed, since limited read may never silently mean full read. The same grants bind writes, so a whole-errand
+`PATCH` can neither set nor delete a key the caller may not read.
 
 ### Resource taxonomy
 
@@ -357,14 +359,15 @@ do genuinely different things.
 |-------------------------|---------------------------------------------------|----------------------------------------|---------------------------------------------|
 | `limitedReadAccess`     | the caller's labels do not cover the errand fully | resources (no level) **and** fields    | the errand only, showing a built-in minimum |
 | `reporterAccess`        | `reporterUserId` matches the caller               | resources (with levels) **and** fields | the reporter gets nothing                   |
-| `roleFieldRestrictions` | the caller holds the role, per the access mapper  | fields                                 | no restriction, so the full errand          |
+| `roleFieldRestrictions` | the caller holds the role and mapping is on       | fields                                 | no restriction, so the full errand          |
 
 `reporterAccess` **grants** — it is the only thing that lets a reporter in at all. `limitedReadAccess` is mixed: its
 resources grant reach, its fields restrict the payload. `roleFieldRestrictions` can only ever narrow a payload, never
 grant anything, since the caller has already cleared Layers A and B to reach the errand.
 
 **Failing open is right for a restriction, wrong for limited read.** An unlisted role is genuinely unrestricted, which
-keeps rollout incremental. But declaring an errand *limited* and then returning every field would be
+keeps rollout incremental. Reporter fields therefore widen a restriction rather than introduce one: a caller nothing
+else restricts stays unrestricted on an errand they reported, since reporting an errand may not reduce their access. But declaring an errand *limited* and then returning every field would be
 self-contradictory, so limited read never resolves to empty — with no configured fields it falls back to `ID`,
 `ERRAND_NUMBER`, `TITLE`, `STATUS`. Turning `roleBasedMapping` on can therefore never widen what a limited-read user
 sees.
@@ -376,6 +379,10 @@ legitimately be granted write, e.g. `CONVERSATION_MESSAGE: RW` so they can reply
 
 `ERRAND` is implicitly reachable on the limited path — that *is* what limited read means — so a namespace that
 configures nothing behaves exactly as it did before access control existed.
+
+A role may not be named `LIMITED` or `REPORTER`. Those are the reserved scopes the two blocks above are stored under,
+so such a restriction would be read back as the namespace's limited read or reporter configuration; the config
+endpoints answer 400 instead.
 
 ### Reporter identity
 
@@ -452,9 +459,10 @@ entitlement is the wrong tool for that — it needs an ownership rule — so it 
    resource at the required level, otherwise 401.
 3. **Layer A** — the errand must be reachable, which is true if either the caller's label grants cover it at the
    required level, or the caller is the reporter and `reporterAccess` grants the resource at that level.
-4. **Layer C** — on the way out, if `roleBasedMapping` is on, the payload is trimmed: limited errands use
-   `limitedReadAccess.fields`, otherwise the matched roles' `roleFieldRestrictions` apply, and reporter fields union
-   on top either way.
+4. **Layer C** — on the way out the payload is trimmed: a limited errand uses `limitedReadAccess.fields` whatever the
+   `roleBasedMapping` flag says, and otherwise the matched roles' `roleFieldRestrictions` apply if that flag is on.
+   Reporter fields union on top of whichever restriction applied, and a caller no restriction applied to receives the
+   full errand.
 
 ## Contributing
 

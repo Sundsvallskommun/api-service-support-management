@@ -17,7 +17,7 @@ import static se.sundsvall.supportmanagement.integration.accessmapper.configurat
 @CircuitBreaker(name = CLIENT_ID)
 public interface AccessMapperClient {
 
-	@GetMapping(path = "/{municipalityId}/{namespace}/ad/{adId}", produces = APPLICATION_JSON_VALUE)
+	@GetMapping(path = "/{municipalityId}/{namespace}/access/ad/{adId}", produces = APPLICATION_JSON_VALUE)
 	ResponseEntity<List<AccessGroup>> getAccessDetails(
 		@PathVariable("municipalityId") String municipalityId,
 		@PathVariable("namespace") String namespace,

@@ -78,6 +78,25 @@ class ErrandParameterServiceTest {
 	}
 
 	@Test
+	void updateErrandParametersLeavesKeysTheUserMayNotSeeUntouched() {
+		final var errand = ErrandEntity.create().withParameters(new ArrayList<>(List.of(
+			ParameterEntity.create().withKey("visible").withValues(new ArrayList<>(List.of("old"))),
+			ParameterEntity.create().withKey("hidden").withValues(new ArrayList<>(List.of("secret"))))));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
+		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn("visible"::equals);
+		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errand);
+
+		// The caller patches back the list they were served, which holds the keys they may see only.
+		final var result = errandParameterService.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null,
+			List.of(Parameter.create().withKey("visible").withValues(List.of("new"))));
+
+		// A key they cannot see is a key they cannot delete.
+		assertThat(errand.getParameters()).extracting(ParameterEntity::getKey).containsExactlyInAnyOrder("visible", "hidden");
+		assertThat(result).extracting(Parameter::getKey).containsExactly("visible");
+	}
+
+	@Test
 	void readErrandParameter() {
 
 		// Arrange
