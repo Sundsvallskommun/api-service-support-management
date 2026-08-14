@@ -11,10 +11,11 @@ import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesResponse;
 import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.model.RevisionType;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
@@ -51,7 +52,7 @@ public class ErrandNoteService {
 	}
 
 	public String createErrandNote(final String namespace, final String municipalityId, final String id, final CreateErrandNoteRequest createErrandNoteRequest) {
-		var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.NOTE, RW);
 
 		final var response = notesClient.createNote(municipalityId, toCreateNoteRequest(id, CLIENT_ID, createErrandNoteRequest));
 
@@ -70,12 +71,12 @@ public class ErrandNoteService {
 	}
 
 	public ErrandNote readErrandNote(final String namespace, final String municipalityId, final String id, final String noteId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.NOTE, LR);
 		return toErrandNote(notesClient.findNoteById(municipalityId, noteId));
 	}
 
 	public FindErrandNotesResponse findErrandNotes(final String namespace, final String municipalityId, final String id, final FindErrandNotesRequest findErrandNotesRequest) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.NOTE, LR);
 		return toFindErrandNotesResponse(notesClient.findNotes(
 			municipalityId,
 			findErrandNotesRequest.getContext(),
@@ -88,7 +89,7 @@ public class ErrandNoteService {
 	}
 
 	public ErrandNote updateErrandNote(final String namespace, final String municipalityId, final String id, final String noteId, final UpdateErrandNoteRequest updateErrandNoteRequest) {
-		var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.NOTE, RW);
 
 		final var response = notesClient.updateNoteById(municipalityId, noteId, toUpdateNoteRequest(updateErrandNoteRequest));
 
@@ -108,7 +109,7 @@ public class ErrandNoteService {
 	}
 
 	public void deleteErrandNote(final String namespace, final String municipalityId, final String id, final String noteId) {
-		var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.NOTE, RW);
 
 		final var response = notesClient.deleteNoteById(municipalityId, noteId);
 

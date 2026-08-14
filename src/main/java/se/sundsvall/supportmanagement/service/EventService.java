@@ -20,9 +20,11 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -45,12 +47,15 @@ public class EventService {
 	private final NotificationService notificationService;
 	private final ApplicationEventPublisher eventPublisher;
 	private final NotificationDispatchRepository notificationDispatchRepository;
+	private final AccessControlService accessControlService;
 
-	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository) {
+	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository,
+		final AccessControlService accessControlService) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
 		this.eventPublisher = eventPublisher;
 		this.notificationDispatchRepository = notificationDispatchRepository;
+		this.accessControlService = accessControlService;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
@@ -93,7 +98,9 @@ public class EventService {
 		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue());
 	}
 
-	public Page<Event> readEvents(final String municipalityId, final String id, final Pageable pageable) {
+	public Page<Event> readEvents(final String namespace, final String municipalityId, final String id, final Pageable pageable) {
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.EVENT, LR);
+
 		final var response = eventLogClient.getEvents(municipalityId, id, pageable);
 
 		return new PageImpl<>(response.getContent().stream()

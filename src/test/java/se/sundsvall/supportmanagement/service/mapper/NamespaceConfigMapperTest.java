@@ -5,12 +5,25 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
+import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
+import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
+import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigAccessGrantEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.FIELD;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.RESOURCE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.BOOLEAN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
@@ -116,7 +129,7 @@ class NamespaceConfigMapperTest {
 
 		final var config = mapper.toNamespaceConfig(entity);
 
-		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays");
+		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
 		assertThat(config.getNamespace()).isEqualTo(namespace);
 		assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -143,7 +156,7 @@ class NamespaceConfigMapperTest {
 		final var configs = mapper.toNamespaceConfigs(entities);
 
 		assertThat(configs).hasSize(1).satisfiesExactly(config -> {
-			assertThat(config).hasNoNullFieldsOrProperties();
+			assertThat(config).hasNoNullFieldsOrPropertiesExcept("limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
 			assertThat(config.getNamespace()).isEqualTo(namespace);
 			assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -158,5 +171,104 @@ class NamespaceConfigMapperTest {
 	@Test
 	void toNamespaceConfigsFromNull() {
 		assertThat(mapper.toNamespaceConfigs(null)).isEmpty();
+	}
+
+	@Test
+	void toEntityFlattensEachBlockIntoScopedRows() {
+		final var config = NamespaceConfig.create()
+			.withDisplayName("displayName")
+			.withShortCode("shortCode")
+			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.STATUS))))
+			.withReporterAccess(ReporterAccess.create()
+				.withResources(List.of(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(R)))
+				.withFields(List.of(
+					FieldAccess.create().withField(ErrandField.TITLE),
+					FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1", "key-2")))))
+			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create()
+				.withRole("FIRST_LINE_CASE_OFFICER")
+				.withFields(List.of(FieldAccess.create().withField(ErrandField.DESCRIPTION)))));
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		assertThat(entity.getAccessGrants())
+			.extracting(NamespaceConfigAccessGrantEmbeddable::getScope, NamespaceConfigAccessGrantEmbeddable::getType, NamespaceConfigAccessGrantEmbeddable::getValue, NamespaceConfigAccessGrantEmbeddable::getAccessLevel)
+			.containsExactly(
+				tuple("LIMITED", FIELD, "STATUS", null),
+				tuple("REPORTER", RESOURCE, "COMMUNICATION", "R"),
+				tuple("REPORTER", FIELD, "TITLE", null),
+				tuple("REPORTER", FIELD, "PARAMETERS:key-1", null),
+				tuple("REPORTER", FIELD, "PARAMETERS:key-2", null),
+				tuple("FIRST_LINE_CASE_OFFICER", FIELD, "DESCRIPTION", null));
+	}
+
+	@Test
+	void toNamespaceConfigRebuildsEachBlockFromRows() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
+			.withAccessGrants(List.of(
+				accessGrantRow("LIMITED", FIELD, "STATUS", null),
+				accessGrantRow("REPORTER", RESOURCE, "COMMUNICATION", "R"),
+				accessGrantRow("REPORTER", FIELD, "TITLE", null),
+				accessGrantRow("REPORTER", FIELD, "PARAMETERS:key-1", null),
+				accessGrantRow("REPORTER", FIELD, "PARAMETERS:key-2", null),
+				accessGrantRow("FIRST_LINE_CASE_OFFICER", FIELD, "DESCRIPTION", null)));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getLimitedReadAccess().getFields()).containsExactly(FieldAccess.create().withField(ErrandField.STATUS));
+
+		assertThat(config.getReporterAccess().getResources()).containsExactly(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(R));
+		assertThat(config.getReporterAccess().getFields()).containsExactly(
+			FieldAccess.create().withField(ErrandField.TITLE),
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1", "key-2")));
+
+		assertThat(config.getRoleFieldRestrictions()).containsExactly(RoleFieldRestriction.create()
+			.withRole("FIRST_LINE_CASE_OFFICER")
+			.withFields(List.of(FieldAccess.create().withField(ErrandField.DESCRIPTION))));
+	}
+
+	@Test
+	void toNamespaceConfigKeepsKeysContainingTheSeparator() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
+			.withAccessGrants(List.of(accessGrantRow("LIMITED", FIELD, "PARAMETERS:ns:key", null)));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getLimitedReadAccess().getFields()).containsExactly(
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("ns:key")));
+	}
+
+	@Test
+	void toNamespaceConfigSkipsRowsThatNoLongerResolve() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
+			.withAccessGrants(List.of(
+				accessGrantRow("REPORTER", FIELD, "NO_SUCH_FIELD", null),
+				accessGrantRow("REPORTER", RESOURCE, "NO_SUCH_RESOURCE", "R"),
+				accessGrantRow("REPORTER", RESOURCE, "ERRAND", "NO_SUCH_LEVEL"),
+				accessGrantRow("REPORTER", FIELD, "TITLE", null)));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getReporterAccess().getResources()).isNull();
+		assertThat(config.getReporterAccess().getFields()).containsExactly(FieldAccess.create().withField(ErrandField.TITLE));
+	}
+
+	@Test
+	void toNamespaceConfigWithoutAccessGrants() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true);
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getLimitedReadAccess()).isNull();
+		assertThat(config.getReporterAccess()).isNull();
+		assertThat(config.getRoleFieldRestrictions()).isNull();
+		assertThat(config.isRoleBasedMapping()).isFalse();
+	}
+
+	private static NamespaceConfigAccessGrantEmbeddable accessGrantRow(final String scope, final RoleAccessType type, final String value, final String accessLevel) {
+		return NamespaceConfigAccessGrantEmbeddable.create()
+			.withScope(scope)
+			.withType(type)
+			.withValue(value)
+			.withAccessLevel(accessLevel);
 	}
 }

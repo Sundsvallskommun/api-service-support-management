@@ -11,7 +11,9 @@ import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.ROLE;
 
@@ -40,6 +42,8 @@ class NamespaceConfigIT extends AbstractAppTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final Function<String, String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/namespace-config";
 	private static final Function<String, String> VALIDATION_PATH = namespace -> PATH.apply(namespace) + "/validation";
+	private static final String ACCESS_CONTROLLED_PATH = "/2506/NAMESPACE-2506/namespace-config";
+	private static final String ACCESS_CONTROLLED_LABEL_PATH = "/2506/NAMESPACE-2506/metadata/labels";
 
 	@Autowired
 	private NamespaceConfigRepository repository;
@@ -183,5 +187,29 @@ class NamespaceConfigIT extends AbstractAppTest {
 
 		assertThat(validationRepository.findByNamespaceAndMunicipalityIdAndType(NAMESPACE_1, MUNICIPALITY_ID, ROLE))
 			.hasValueSatisfying(entity -> assertThat(entity.isValidated()).isTrue());
+	}
+
+	@Test
+	void test10_updateConfigWithoutResourceAccessIsNotAllowed() {
+		// Access control is on for this namespace and the user is granted the whole errand tree but nothing beyond it,
+		// so they cannot reach the config that would let them switch access control off.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_PATH)
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test11_createLabelsWithoutResourceAccessIsNotAllowed() {
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_LABEL_PATH)
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
 	}
 }

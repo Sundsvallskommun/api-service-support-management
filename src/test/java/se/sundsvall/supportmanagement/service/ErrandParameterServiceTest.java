@@ -17,8 +17,9 @@ import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
@@ -59,14 +60,14 @@ class ErrandParameterServiceTest {
 
 		// Arrange
 		final var parameters = List.of(Parameter.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE)));
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ErrandEntity.create().withParameters(new ArrayList<>()));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ErrandEntity.create().withParameters(new ArrayList<>()));
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create());
 
 		// Act
 		errandParameterService.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, parameters);
 
 		// Assert
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.PARAMETER, RW);
 		verify(errandsRepositoryMock).save(errandEntityArgumentCaptor.capture());
 		final var errandEntity = errandEntityArgumentCaptor.getValue();
 
@@ -93,7 +94,7 @@ class ErrandParameterServiceTest {
 		assertThat(result.getKey()).isEqualTo(PARAMETER_KEY);
 		assertThat(result.getValues()).containsExactly(PARAMETER_VALUE);
 		assertThat(result.getKey()).isEqualTo(PARAMETER_KEY);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.PARAMETER, LR);
 		verify(spy).findParameterEntityOrElseThrow(errand, PARAMETER_KEY);
 	}
 
@@ -104,6 +105,7 @@ class ErrandParameterServiceTest {
 		final var spy = Mockito.spy(errandParameterService);
 		final var errand = buildErrandEntity();
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
+		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(_ -> true);
 
 		// Act
 		final var result = spy.findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
@@ -111,7 +113,7 @@ class ErrandParameterServiceTest {
 		// Assert
 		assertThat(result).hasSize(1).isEqualTo(List.of(Parameter.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE))));
 		verify(spy).findErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.PARAMETER, LR);
 		verifyNoMoreInteractions(errandsRepositoryMock, spy);
 	}
 
@@ -123,7 +125,7 @@ class ErrandParameterServiceTest {
 		final var errand = buildErrandEntity();
 		final var errandParameterValues = List.of("anotherValue");
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 		when(errandsRepositoryMock.save(errand)).thenReturn(errand);
 
 		// Act
@@ -132,7 +134,7 @@ class ErrandParameterServiceTest {
 		// Assert
 		assertThat(result).isNotNull();
 		assertThat(result.getValues()).isEqualTo(List.of("anotherValue"));
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.PARAMETER, RW);
 		verify(spy).updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, null, errandParameterValues);
 		verifyNoMoreInteractions(errandsRepositoryMock, spy);
 	}
@@ -142,13 +144,13 @@ class ErrandParameterServiceTest {
 		// Arrange
 		final var spy = Mockito.spy(errandParameterService);
 		final var errand = buildErrandEntity().withParameters(new ArrayList<>(List.of(ParameterEntity.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE)))));
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(errand);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 
 		// Act
 		spy.deleteErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, null);
 
 		// Assert
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.PARAMETER, RW);
 		verify(errandsRepositoryMock).save(errandEntityArgumentCaptor.capture());
 		assertThat(errandEntityArgumentCaptor.getValue().getParameters()).isEmpty();
 		verifyNoMoreInteractions(errandsRepositoryMock);

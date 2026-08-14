@@ -1,0 +1,15 @@
+[
+	{
+		"accessByType": [
+			{
+				"type": "resource",
+				"access": [
+					{
+						"accessLevel": "RW",
+						"pattern": "errand/**"
+					}
+				]
+			}
+		]
+	}
+]

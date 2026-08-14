@@ -19,10 +19,11 @@ import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -109,7 +110,7 @@ class ErrandNoteServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.createNote(MUNICIPALITY_ID, createNoteRequest)).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(httpHeadersMock.get(anyString())).thenAnswer(
@@ -129,7 +130,7 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isEqualTo(NOTE_ID);
 
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.NOTE, RW);
 		verify(notesClientMock).createNote(MUNICIPALITY_ID, createNoteRequest);
 		verify(eventServiceMock).createErrandNoteEvent(EventType.CREATE, "Ärendenotering har skapats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(0), null);
 	}
@@ -146,7 +147,7 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.NOTE, LR);
 		verify(notesClientMock).findNoteById(MUNICIPALITY_ID, NOTE_ID);
 	}
 
@@ -170,7 +171,7 @@ class ErrandNoteServiceTest {
 
 		// Assertions and verifications
 		assertThat(result).isNotNull();
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.NOTE, LR);
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, CONTEXT, ROLE, ERRAND_ID, APPLICATION_NAME, PARTY_ID, PAGE, LIMIT);
 	}
 
@@ -184,7 +185,7 @@ class ErrandNoteServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
 		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
@@ -207,7 +208,7 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.NOTE, RW);
 		verify(notesClientMock).updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest);
 		verify(eventServiceMock).createErrandNoteEvent(EventType.UPDATE, "Ärendenotering har uppdaterats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), Revision.create().withId("previousRevision")
 			.withVersion(0));
@@ -233,7 +234,7 @@ class ErrandNoteServiceTest {
 		// Assertions and verifications
 		assertThat(result).isNotNull();
 
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.NOTE, RW);
 		verify(notesClientMock).updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest);
 		verify(eventServiceMock, never()).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
 	}
@@ -244,7 +245,7 @@ class ErrandNoteServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
 
 		// Mock
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.deleteNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(httpHeadersMock.get(anyString())).thenAnswer(
@@ -261,7 +262,7 @@ class ErrandNoteServiceTest {
 		service.deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
 
 		// Assertions and verifications
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.NOTE, RW);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, NOTE_ID);
 		verify(eventServiceMock).createErrandNoteEvent(EventType.DELETE, "Ärendenotering har raderats.", ERRAND_ID, ERRAND_ENTITY, NOTE_ID, Revision.create().withId("currentRevision").withVersion(1), null);
 	}
@@ -271,7 +272,7 @@ class ErrandNoteServiceTest {
 		final var locationUrl = "http://localhost/2281/notes/" + NOTE_ID;
 		final var errandNote = buildCreateErrandNoteRequest();
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.createNote(any(), any())).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(httpHeadersMock.get(anyString())).thenAnswer((Answer<List<String>>) invocation -> switch ((String) invocation.getArgument(0)) {
@@ -294,7 +295,7 @@ class ErrandNoteServiceTest {
 		final var errandNote = buildUpdateErrandNoteRequest();
 		final var updateNoteRequest = ErrandNoteMapper.toUpdateNoteRequest(errandNote);
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.updateNoteById(MUNICIPALITY_ID, NOTE_ID, updateNoteRequest)).thenReturn(responseEntityWithNoteMock);
 		when(responseEntityWithNoteMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(responseEntityWithNoteMock.getBody()).thenReturn(new Note());
@@ -313,7 +314,7 @@ class ErrandNoteServiceTest {
 
 	@Test
 	void deleteErrandNote_eventServiceFails_deletionCompletes() {
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(ERRAND_ENTITY);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.deleteNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
 		when(httpHeadersMock.get(anyString())).thenAnswer((Answer<List<String>>) invocation -> switch ((String) invocation.getArgument(0)) {

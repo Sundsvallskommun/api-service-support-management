@@ -12,6 +12,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
@@ -388,5 +389,146 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test23_getErrandAsReporterWithoutLabelAccess() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test24_getErrandNotReportedByRequestingUser() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/c9efe03d-deff-4828-a043-541fa78ffdeb")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test25_getErrandAsReporterWithPartyIdIdentifier() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=partyId")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test26_patchErrandAsReporterIsNotAllowed() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test27_getNotesAsReporterIsNotAllowed() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/notes")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test28_getGrantedParameterAsReporter() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters/granted-key")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test29_getUngrantedParameterAsReporter() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters/hidden-key")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test30_getParametersAsReporterListsGrantedKeysOnly() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test31_patchUngrantedParameterAsReporterIsNotAllowed() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters/hidden-key")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test32_deleteUngrantedParameterAsReporterIsNotAllowed() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters/hidden-key")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test33_patchParametersWithUngrantedKeyAsReporterIsNotAllowed() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters")
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+	}
+
+	@Test
+	void test34_getCommunicationOnLimitedReadErrand() {
+		// joe01doe holds limited read for this errand, and the namespace extends limited read to the communication.
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/communication")
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+	}
+
+	@Test
+	void test35_getNotesOnLimitedReadErrandIsNotAllowed() {
+		// The namespace does not extend limited read to notes, so the same user is refused here.
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/notes")
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
 	}
 }

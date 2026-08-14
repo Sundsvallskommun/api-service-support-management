@@ -27,8 +27,11 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -52,9 +55,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class MetadataPhaseResource {
 
 	private final MetadataService metadataService;
+	private final AccessControlService accessControlService;
 
-	MetadataPhaseResource(final MetadataService metadataService) {
+	MetadataPhaseResource(final MetadataService metadataService, final AccessControlService accessControlService) {
 		this.metadataService = metadataService;
+		this.accessControlService = accessControlService;
 	}
 
 	// =================================================================
@@ -69,6 +74,8 @@ class MetadataPhaseResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Phase phase) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_PHASE, RW);
 
 		return created(fromPath("/{municipalityId}/{namespace}/metadata/phases/{phaseId}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createPhase(namespace, municipalityId, phase)).toUri())
@@ -110,6 +117,8 @@ class MetadataPhaseResource {
 		@Parameter(name = "phaseId", description = "Phase ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String phaseId,
 		@Valid @NotNull @RequestBody final Phase body) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_PHASE, RW);
+
 		return ok(metadataService.patchPhase(phaseId, namespace, municipalityId, body));
 	}
 
@@ -122,6 +131,8 @@ class MetadataPhaseResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "phaseId", description = "Phase ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String phaseId) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_PHASE, RW);
 
 		metadataService.deletePhase(phaseId, namespace, municipalityId);
 		return noContent()
@@ -142,6 +153,8 @@ class MetadataPhaseResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "phaseId", description = "Phase ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String phaseId,
 		@Valid @NotNull @RequestBody final PhaseTransition transition) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_PHASE, RW);
 
 		return created(fromPath("/{municipalityId}/{namespace}/metadata/phases/{phaseId}/transitions/{transitionId}")
 			.buildAndExpand(municipalityId, namespace, phaseId, metadataService.createPhaseTransition(namespace, municipalityId, phaseId, transition)).toUri())
@@ -171,6 +184,8 @@ class MetadataPhaseResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "phaseId", description = "Phase ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String phaseId,
 		@Parameter(name = "transitionId", description = "Transition ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String transitionId) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_PHASE, RW);
 
 		metadataService.deletePhaseTransition(namespace, municipalityId, phaseId, transitionId);
 		return noContent()

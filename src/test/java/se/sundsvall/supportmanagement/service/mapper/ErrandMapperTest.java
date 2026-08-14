@@ -3,8 +3,10 @@ package se.sundsvall.supportmanagement.service.mapper;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -35,6 +37,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import tools.jackson.databind.ObjectMapper;
 
 import static java.time.OffsetDateTime.now;
@@ -48,9 +51,9 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificati
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toLimitedErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toReferredFromRelation;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 
@@ -296,25 +299,65 @@ class ErrandMapperTest {
 	}
 
 	@Test
-	void testToLimitedErrand() {
-		final var errand = toLimitedErrand(createEntity());
+	void testToErrandWithAccessControlMapsConfiguredFieldsOnly() {
+		final var fields = new LinkedHashMap<ErrandField, Set<String>>();
+		fields.put(ErrandField.ID, Set.of());
+		fields.put(ErrandField.ERRAND_NUMBER, Set.of());
+		fields.put(ErrandField.TITLE, Set.of());
+		fields.put(ErrandField.STATUS, Set.of());
 
-		assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
+		final var errand = toErrandWithAccessControl(createEntity(), true, _ -> fields);
 
+		assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "errandNumber", "title", "status");
 		assertThat(errand.getId()).isEqualTo(ID);
-		assertThat(errand.getCreated()).isCloseTo(CREATED, within(2, SECONDS));
 		assertThat(errand.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
-		assertThat(errand.getModified()).isCloseTo(MODIFIED, within(2, SECONDS));
-		assertThat(errand.getStatus()).isEqualTo(STATUS);
 		assertThat(errand.getTitle()).isEqualTo(TITLE);
-		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
-		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
-		assertThat(errand.getChannel()).isEqualTo(CHANNEL);
+		assertThat(errand.getStatus()).isEqualTo(STATUS);
 	}
 
 	@Test
-	void testToLimitedErrandFromNull() {
-		assertThat(toLimitedErrand(null)).isNull();
+	void testToErrandWithAccessControlLimitsKeyedFieldToConfiguredKeys() {
+		final var entity = createEntity();
+		final var configuredKey = entity.getParameters().getFirst().getKey();
+		final var fields = Map.of(ErrandField.PARAMETERS, Set.of(configuredKey));
+
+		final var errand = toErrandWithAccessControl(entity, true, _ -> fields);
+
+		assertThat(errand.getParameters()).hasSize(1).extracting(Parameter::getKey).containsExactly(configuredKey);
+	}
+
+	@Test
+	void testToErrandWithAccessControlExposesWholeKeyedFieldWhenNoKeysConfigured() {
+		final var entity = createEntity();
+		final var fields = Map.of(ErrandField.PARAMETERS, Set.<String>of());
+
+		final var errand = toErrandWithAccessControl(entity, true, _ -> fields);
+
+		assertThat(errand.getParameters()).hasSameSizeAs(entity.getParameters());
+	}
+
+	@Test
+	void testToErrandWithAccessControlMapsFullErrandWhenNoRoleMatches() {
+		final var errand = toErrandWithAccessControl(createEntity(), true, _ -> Map.of());
+
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
+	}
+
+	@Test
+	void testToErrandWithAccessControlMapsFullErrandWhenRoleBasedMappingIsInactive() {
+		final var errand = toErrandWithAccessControl(createEntity(), false, _ -> Map.of(ErrandField.ID, Set.of()));
+
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
+	}
+
+	@Test
+	void testToErrandWithAccessControlFromNull() {
+		assertThat(toErrandWithAccessControl(null, true, _ -> Map.of(ErrandField.ID, Set.of()))).isNull();
+	}
+
+	@Test
+	void testEveryErrandFieldHasAMapper() {
+		assertThat(ErrandMapper.fieldMappers()).containsOnlyKeys(ErrandField.values());
 	}
 
 	@Test
@@ -379,18 +422,17 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandsWithAccessControl() {
-		Predicate<ErrandEntity> mapLimited = ErrandEntity::getBusinessRelated;
-		var errandLimited = createEntity().withErrandNumber("limited");
-		var errandNotLimited = createEntity().withErrandNumber("full").withBusinessRelated(false);
+		final var roleMapped = createEntity().withErrandNumber("role-mapped");
+		final var fullyMapped = createEntity().withErrandNumber("full").withBusinessRelated(false);
 
-		var result = toErrandsWithAccessControl(List.of(errandLimited, errandNotLimited), mapLimited);
+		final var result = toErrandsWithAccessControl(List.of(roleMapped, fullyMapped), true,
+			entity -> "role-mapped".equals(entity.getErrandNumber()) ? Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of()) : Map.of());
 
 		assertThat(result).hasSize(2);
 
 		result.forEach(errand -> {
-			if (errand.getErrandNumber().equals("limited")) {
-				assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "created", "errandNumber", "modified", "status", "title", "touched", "resolution", "channel");
-				assertThat(errand.getErrandNumber()).isEqualTo("limited");
+			if ("role-mapped".equals(errand.getErrandNumber())) {
+				assertThat(errand).hasAllNullFieldsOrPropertiesExcept("errandNumber");
 			} else {
 				assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 				assertThat(errand.getErrandNumber()).isEqualTo("full");
@@ -406,7 +448,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandsWithAccessControlFromNull() {
-		assertThat(toErrandsWithAccessControl(null, ErrandEntity::getBusinessRelated)).isEmpty();
+		assertThat(toErrandsWithAccessControl(null, true, _ -> Map.of())).isEmpty();
 	}
 
 	@Test

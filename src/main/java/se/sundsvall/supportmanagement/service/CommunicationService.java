@@ -36,12 +36,13 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -106,20 +107,20 @@ public class CommunicationService {
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, LR);
 
 		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(errand.getErrandNumber()));
 	}
 
 	public List<Communication> readExternalCommunications(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, LR);
 		final var communications = communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndInternal(errand.getErrandNumber(), false));
 		communications.forEach(communication -> communication.setViewed(null));
 		return communications;
 	}
 
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.COMMUNICATION, RW);
 
 		final var message = communicationRepository
 			.findById(communicationId)
@@ -130,7 +131,7 @@ public class CommunicationService {
 	}
 
 	public void getMessageAttachmentStreamed(final String namespace, final String municipalityId, final String errandId, final String communicationId, final String attachmentId, final HttpServletResponse response) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION_ATTACHMENT, LR);
 		final var communicationAttachment = communicationAttachmentRepository.findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(namespace, municipalityId, communicationId, attachmentId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_NOT_FOUND));
 
@@ -166,7 +167,7 @@ public class CommunicationService {
 	}
 
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
 		sendEmail(errandEntity, request);
 	}
 
@@ -194,7 +195,7 @@ public class CommunicationService {
 	}
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
-		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
 		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
@@ -206,7 +207,7 @@ public class CommunicationService {
 	}
 
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
-		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
 
 		final var fullName = getFullName(municipalityId);
@@ -288,7 +289,7 @@ public class CommunicationService {
 	 * @param departmentName the department name to use when retreiving which messaging settings to use
 	 */
 	public void sendMessageNotification(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, RW);
 		final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
 
 		sendMessageNotification(errand, messagingSettings);
@@ -304,7 +305,7 @@ public class CommunicationService {
 	 */
 	public void sendEmailNotificationToReporter(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
 		LOGGER.info("Processing logic to send email notification to stakeholder with reporter role.");
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, RW);
 		final var stakeholder = getStakeholderMatchingRole(errandEntity, "REPORTER");
 
 		// Create a notification and send email if logic determins that mail should be sent

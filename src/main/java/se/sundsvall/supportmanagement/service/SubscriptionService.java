@@ -14,14 +14,15 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -32,7 +33,6 @@ public class SubscriptionService {
 	private static final Logger LOG = LoggerFactory.getLogger(SubscriptionService.class);
 
 	private static final String SUBSCRIPTION_NOT_FOUND = "Subscription with id:'%s' not found for subscriber with id:'%s' in namespace:'%s' for municipality with id:'%s'";
-	private static final String ERRAND_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 	private static final String TARGET_ID_REQUIRED_FOR_ERRAND = "Subscription target id is required when target type is ERRAND";
 	private static final String TARGET_ID_NOT_ALLOWED_FOR_NAMESPACE = "Subscription target id must be null when target type is NAMESPACE";
 	private static final String DUPLICATE_ERRAND_SUBSCRIPTION = "Subscription for errand:'%s' already exists for subscriber with id:'%s'";
@@ -40,15 +40,15 @@ public class SubscriptionService {
 
 	private final SubscriberService subscriberService;
 	private final SubscriptionRepository subscriptionRepository;
-	private final ErrandsRepository errandsRepository;
+	private final AccessControlService accessControlService;
 
 	public SubscriptionService(
 		final SubscriberService subscriberService,
 		final SubscriptionRepository subscriptionRepository,
-		final ErrandsRepository errandsRepository) {
+		final AccessControlService accessControlService) {
 		this.subscriberService = subscriberService;
 		this.subscriptionRepository = subscriptionRepository;
-		this.errandsRepository = errandsRepository;
+		this.accessControlService = accessControlService;
 	}
 
 	@Transactional(readOnly = true)
@@ -121,8 +121,9 @@ public class SubscriptionService {
 		if (target.getType() != SubscriptionTargetType.ERRAND) {
 			return null;
 		}
-		return errandsRepository.findByIdAndNamespaceAndMunicipalityId(target.getId(), namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_NOT_FOUND.formatted(target.getId(), namespace, municipalityId)));
+		// Subscribing reveals the errand's activity, so it requires at least limited read on the errand itself. Going
+		// through the access control service also stops this endpoint from being used as an existence oracle.
+		return accessControlService.getErrand(namespace, municipalityId, target.getId(), false, ProtectedResource.ERRAND, LR);
 	}
 
 	private void rejectDuplicate(final String subscriberId, final SubscriptionTargetType targetType, final ErrandEntity errand) {

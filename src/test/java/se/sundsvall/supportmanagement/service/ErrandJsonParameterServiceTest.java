@@ -15,9 +15,11 @@ import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import tools.jackson.databind.node.JsonNodeFactory;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static jakarta.persistence.LockModeType.OPTIMISTIC_FORCE_INCREMENT;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,7 +101,8 @@ class ErrandJsonParameterServiceTest {
 
 		assertThat(result.getKey()).isEqualTo(KEY);
 		assertThat(result.getSchemaId()).isEqualTo("schema-1.0");
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.JSON_PARAMETER, LR);
+		verify(accessControlServiceMock).verifyAccessibleKey(NAMESPACE, MUNICIPALITY_ID, entity, ErrandField.JSON_PARAMETERS, KEY);
 		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock);
 	}
 
@@ -116,7 +119,7 @@ class ErrandJsonParameterServiceTest {
 	@Test
 	void updateJsonParameterExistingReturnsNotCreated() {
 		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"old\"}");
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(errandsRepositoryMock.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
 
 		final var request = JsonParameter.create()
@@ -129,7 +132,8 @@ class ErrandJsonParameterServiceTest {
 		assertThat(result.jsonParameter().getKey()).isEqualTo(KEY);
 		assertThat(result.jsonParameter().getSchemaId()).isEqualTo("schema-2.0");
 		assertThat(result.created()).isFalse();
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.JSON_PARAMETER, RW);
+		verify(accessControlServiceMock).verifyAccessibleKey(NAMESPACE, MUNICIPALITY_ID, entity, ErrandField.JSON_PARAMETERS, KEY);
 		verify(entityManagerMock).lock(same(entity), eq(OPTIMISTIC_FORCE_INCREMENT));
 		verify(errandsRepositoryMock).saveAndFlush(entity);
 		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock);
@@ -138,7 +142,7 @@ class ErrandJsonParameterServiceTest {
 	@Test
 	void updateJsonParameterNewReturnsCreated() {
 		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(new ArrayList<>());
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(errandsRepositoryMock.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
 
 		final var request = JsonParameter.create()
@@ -157,7 +161,7 @@ class ErrandJsonParameterServiceTest {
 	@Test
 	void updateJsonParameterNullList() {
 		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(null);
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(errandsRepositoryMock.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
 
 		final var request = JsonParameter.create()
@@ -175,7 +179,7 @@ class ErrandJsonParameterServiceTest {
 	@Test
 	void deleteJsonParameter() {
 		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"test\"}");
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(errandsRepositoryMock.save(any())).thenAnswer(i -> i.getArgument(0));
 
 		service.deleteJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null);
@@ -188,7 +192,7 @@ class ErrandJsonParameterServiceTest {
 	@Test
 	void deleteJsonParameterNotFound() {
 		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(new ArrayList<>());
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.deleteJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "missing", null))
