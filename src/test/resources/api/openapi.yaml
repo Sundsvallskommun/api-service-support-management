@@ -8797,14 +8797,14 @@ components:
           description: If set to true access control will be enabled. If no value
             is set it defaults to false.
           examples:
-          - "true"
+          - true
         notifyReporter:
           type: boolean
           description: If set to true notification will be sent to the stakeholder
             when stakeholder with reporter role recieves an internal message. If no
             value is set it defaults to false.
           examples:
-          - "true"
+          - true
       required:
       - displayName
       - shortCode
@@ -8847,7 +8847,7 @@ components:
           default: false
           description: "If set to true, action will be active"
           examples:
-          - "true"
+          - true
         conditions:
           type: array
           description: Conditions for when the action should be added to errand. Parameters
@@ -8909,7 +8909,7 @@ components:
           default: false
           description: Indicates if the label is deprecated
           examples:
-          - "true"
+          - true
         labels:
           type: array
           items:
@@ -9190,12 +9190,12 @@ components:
           description: "If true, auto-reply emails (with Auto-Submitted header) will\
             \ be ignored and not processed, except for delivery-status reports"
           examples:
-          - "true"
+          - true
         ignoreNoReply:
           type: boolean
           description: "If true, no confirmation email will be sent to no-reply addresses"
           examples:
-          - "true"
+          - true
         created:
           type: string
           format: date-time
@@ -9505,7 +9505,7 @@ components:
           default: false
           description: Indicates if the status is deprecated
           examples:
-          - "true"
+          - true
         created:
           type: string
           format: date-time
@@ -9558,7 +9558,7 @@ components:
           default: false
           description: Indicates if the role is deprecated
           examples:
-          - "true"
+          - true
         created:
           type: string
           format: date-time
@@ -9626,7 +9626,7 @@ components:
           default: false
           description: Indicates if the phase is deprecated
           examples:
-          - "true"
+          - true
         created:
           type: string
           format: date-time
@@ -9681,7 +9681,7 @@ components:
           default: false
           description: Indicates if the phase transition is deprecated
           examples:
-          - "true"
+          - true
       required:
       - targetPhaseId
     ExternalIdType:
@@ -9720,7 +9720,7 @@ components:
           default: false
           description: Indicates if the external ID type is deprecated
           examples:
-          - "true"
+          - true
         created:
           type: string
           format: date-time
@@ -9773,7 +9773,7 @@ components:
           default: false
           description: Indicates if the contact reason is deprecated
           examples:
-          - "true"
+          - true
         created:
           type: string
           format: date-time
@@ -9823,7 +9823,7 @@ components:
           default: false
           description: Indicates if the category is deprecated
           examples:
-          - "true"
+          - true
         types:
           type: array
           items:
@@ -9869,7 +9869,7 @@ components:
           default: false
           description: Indicates if the type is deprecated
           examples:
-          - "true"
+          - true
         created:
           type: string
           format: date-time
@@ -10020,7 +10020,7 @@ components:
           type: boolean
           description: Flag to indicate if the errand is business related
           examples:
-          - "true"
+          - true
         labels:
           type: array
           description: List of labels for the errand
@@ -10266,13 +10266,13 @@ components:
           description: Acknowledged status of the notification (global level). I.e.
             this notification is acknowledged by anyone.
           examples:
-          - "true"
+          - true
         acknowledged:
           type: boolean
           description: Acknowledged status of the notification (owner level). I.e.
             this notification is acknowledged by the owner of this notification.
           examples:
-          - "true"
+          - true
         errandId:
           type: string
           description: Errand id of the notification
@@ -10994,14 +10994,14 @@ components:
           type: boolean
           description: Indicates if the message is internal
           examples:
-          - "false"
+          - false
         dispatch:
           type: boolean
           default: true
           description: Indicates if the message should be dispatched with messaging
             or not
           examples:
-          - "true"
+          - true
         message:
           type: string
           description: Message in plain text
@@ -11044,7 +11044,7 @@ components:
           type: boolean
           description: Indicates if the message is internal
           examples:
-          - "false"
+          - false
       required:
       - message
       - recipient
@@ -11113,7 +11113,7 @@ components:
           type: boolean
           description: Indicates if the message is internal
           examples:
-          - "false"
+          - false
         emailHeaders:
           type: object
           additionalProperties:
@@ -11520,7 +11520,7 @@ components:
           default: false
           description: Whether this definition is mandatory
           examples:
-          - "true"
+          - true
         description:
           type: string
           description: Description of the definition
@@ -11963,12 +11963,12 @@ components:
           type: boolean
           description: Indicates if the communication is internal
           examples:
-          - "false"
+          - false
         viewed:
           type: boolean
           description: Signal if the communication has been viewed or not
           examples:
-          - "true"
+          - true
         emailHeaders:
           type: object
           additionalProperties:
