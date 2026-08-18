@@ -1,16 +1,20 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import java.util.List;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotification;
+import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotificationEvent;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEventEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
 import static java.time.OffsetDateTime.now;
+import static java.util.Optional.ofNullable;
 
 public final class SubscriberNotificationMapper {
 
 	private SubscriberNotificationMapper() {}
 
-	public static SubscriberNotificationEntity toEntity(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final int notificationTTLInDays, final String eventType, final String description, final String subType) {
+	public static SubscriberNotificationEntity toEntity(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final int notificationTTLInDays, final List<SubscriberNotificationEventEntity> events) {
 		return SubscriberNotificationEntity.create()
 			.withMunicipalityId(subscriber.getMunicipalityId())
 			.withNamespace(subscriber.getNamespace())
@@ -19,6 +23,11 @@ public final class SubscriberNotificationMapper {
 			.withErrandId(errandId)
 			.withErrandNumber(errandNumber)
 			.withExpires(now().plusDays(notificationTTLInDays))
+			.withEvents(events);
+	}
+
+	public static SubscriberNotificationEventEntity toEventEntity(final String eventType, final String description, final String subType) {
+		return SubscriberNotificationEventEntity.create()
 			.withEventType(eventType)
 			.withDescription(description)
 			.withSubType(subType);
@@ -35,6 +44,14 @@ public final class SubscriberNotificationMapper {
 			.withErrandNumber(entity.getErrandNumber())
 			.withExpires(entity.getExpires())
 			.withAcknowledged(entity.getAcknowledged())
+			.withEvents(ofNullable(entity.getEvents())
+				.map(events -> events.stream().map(SubscriberNotificationMapper::toEventModel).toList())
+				.orElse(null));
+	}
+
+	private static SubscriberNotificationEvent toEventModel(final SubscriberNotificationEventEntity entity) {
+		return SubscriberNotificationEvent.create()
+			.withCreated(entity.getCreated())
 			.withEventType(entity.getEventType())
 			.withDescription(entity.getDescription())
 			.withSubType(entity.getSubType());

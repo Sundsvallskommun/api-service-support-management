@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.notification;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,9 +45,10 @@ class SubscriberNotificationTest {
 		final var errandNumber = "PRH-2022-000001";
 		final var expires = now().plusDays(7);
 		final var acknowledged = now().plusHours(1);
-		final var eventType = "UPDATE";
-		final var description = "Bilaga har skapats";
-		final var subType = "ATTACHMENT";
+		final var events = List.of(SubscriberNotificationEvent.create()
+			.withEventType("UPDATE")
+			.withDescription("Bilaga har skapats")
+			.withSubType("ATTACHMENT"));
 
 		final var bean = SubscriberNotification.create()
 			.withId(id)
@@ -58,9 +60,7 @@ class SubscriberNotificationTest {
 			.withErrandNumber(errandNumber)
 			.withExpires(expires)
 			.withAcknowledged(acknowledged)
-			.withEventType(eventType)
-			.withDescription(description)
-			.withSubType(subType);
+			.withEvents(events);
 
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getCreated()).isEqualTo(created);
@@ -71,9 +71,7 @@ class SubscriberNotificationTest {
 		assertThat(bean.getErrandNumber()).isEqualTo(errandNumber);
 		assertThat(bean.getExpires()).isEqualTo(expires);
 		assertThat(bean.getAcknowledged()).isEqualTo(acknowledged);
-		assertThat(bean.getEventType()).isEqualTo(eventType);
-		assertThat(bean.getDescription()).isEqualTo(description);
-		assertThat(bean.getSubType()).isEqualTo(subType);
+		assertThat(bean.getEvents()).isEqualTo(events);
 	}
 
 	@Test

@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.16"
+  version: "14.17"
 servers:
 - url: http://localhost:52015
   description: Generated server url
@@ -11466,15 +11466,31 @@ components:
             \ not yet acknowledged"
           example: 2000-10-31T01:30:00.000+02:00
           readOnly: true
-        eventType:
+        events:
+          type: array
+          description: Events that have occurred on the errand since the notification
+            was last acknowledged
+          readOnly: true
+          items:
+            $ref: "#/components/schemas/SubscriberNotificationEvent"
+    SubscriberNotificationEvent:
+      type: object
+      properties:
+        created:
           type: string
-          description: Event type that triggered the notification
-          example: UPDATE
+          format: date-time
+          description: Timestamp when the event occurred
+          example: 2000-10-31T01:30:00.000+02:00
           readOnly: true
         description:
           type: string
-          description: Description of the event that triggered the notification
+          description: Description of the event
           example: Bilaga har skapats
+          readOnly: true
+        eventType:
+          type: string
+          description: Event type
+          example: UPDATE
           readOnly: true
         subType:
           type: string

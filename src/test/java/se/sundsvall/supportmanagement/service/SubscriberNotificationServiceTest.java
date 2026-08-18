@@ -1,9 +1,11 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,6 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepos
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEventEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
@@ -120,9 +123,12 @@ class SubscriberNotificationServiceTest {
 	}
 
 	@Test
-	void upsert_existingNotification_resetsAcknowledgedAndUpdatesFields() {
+	void upsert_existingNotification_appendsEventAndResetsAcknowledged() {
 		final var subscriber = buildSubscriber();
-		final var existing = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID);
+		final var existingEvent = SubscriberNotificationEventEntity.create().withEventType("CREATE");
+		final var existing = SubscriberNotificationEntity.create()
+			.withId(NOTIFICATION_ID)
+			.withEvents(new ArrayList<>(List.of(existingEvent)));
 		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(buildNamespaceConfig()));
 		when(repositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
@@ -132,14 +138,16 @@ class SubscriberNotificationServiceTest {
 
 		assertThat(existing.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
 		assertThat(existing.getAcknowledged()).isNull();
-		assertThat(existing.getEventType()).isEqualTo(EVENT_TYPE);
-		assertThat(existing.getDescription()).isEqualTo(DESCRIPTION);
-		assertThat(existing.getSubType()).isEqualTo(SUB_TYPE);
+		assertThat(existing.getEvents()).hasSize(2);
+		final var addedEvent = existing.getEvents().get(1);
+		assertThat(addedEvent.getEventType()).isEqualTo(EVENT_TYPE);
+		assertThat(addedEvent.getDescription()).isEqualTo(DESCRIPTION);
+		assertThat(addedEvent.getSubType()).isEqualTo(SUB_TYPE);
 		verify(repositoryMock).save(existing);
 	}
 
 	@Test
-	void upsert_newNotification_setsExpiry() {
+	void upsert_newNotification_createsEntityWithEvent() {
 		final var subscriber = buildSubscriber();
 		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(buildNamespaceConfig()));
@@ -148,7 +156,15 @@ class SubscriberNotificationServiceTest {
 
 		service.upsert(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
 
-		verify(repositoryMock).save(any(SubscriberNotificationEntity.class));
+		final var captor = ArgumentCaptor.forClass(SubscriberNotificationEntity.class);
+		verify(repositoryMock).save(captor.capture());
+		final var saved = captor.getValue();
+		assertThat(saved.getErrandId()).isEqualTo(ERRAND_ID);
+		assertThat(saved.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+		assertThat(saved.getEvents()).hasSize(1);
+		assertThat(saved.getEvents().getFirst().getEventType()).isEqualTo(EVENT_TYPE);
+		assertThat(saved.getEvents().getFirst().getDescription()).isEqualTo(DESCRIPTION);
+		assertThat(saved.getEvents().getFirst().getSubType()).isEqualTo(SUB_TYPE);
 	}
 
 	private SubscriberEntity buildSubscriber() {
