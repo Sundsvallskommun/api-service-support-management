@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -134,7 +135,7 @@ public class ErrandActionService {
 			.forEach(config -> {
 				final var action = actions.get(config.getName());
 				action.createAction(errand, config).ifPresent(errandAction -> {
-					if (errandAction.getExecuteAfter().isEqual(now()) || errandAction.getExecuteAfter().isBefore(now())) {
+					if (errandAction.getExecuteAfter().isEqual(now(ZoneId.systemDefault())) || errandAction.getExecuteAfter().isBefore(now(ZoneId.systemDefault()))) {
 						action.executeAction(errand, config);
 					} else {
 						actionsToAdd.add(errandAction);

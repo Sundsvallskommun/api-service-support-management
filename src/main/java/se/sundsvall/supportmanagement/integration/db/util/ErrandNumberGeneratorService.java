@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.util;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,7 @@ public class ErrandNumberGeneratorService {
 			.map(namespaceConfigEntity -> ConfigPropertyExtractor.getNullableValue(namespaceConfigEntity, PROPERTY_SHORT_CODE))
 			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Missing shortCode for namespace/municipalityId: '%s/%s'. Add via /namespaceConfig resource.", namespace, municipalityId)));
 
-		final var todayDate = dateFormatter.format(LocalDate.now());
+		final var todayDate = dateFormatter.format(LocalDate.now(ZoneId.systemDefault()));
 
 		var sequence = repository.findByNamespaceAndMunicipalityId(namespace, municipalityId).orElse(null);
 

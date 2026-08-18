@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.action;
 
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ public class ActionWorker {
 
 	@Transactional
 	public List<ErrandActionEntity> getExpiredActions() {
-		return errandActionRepository.findAllByExecuteAfterBefore(now());
+		return errandActionRepository.findAllByExecuteAfterBefore(now(ZoneId.systemDefault()));
 	}
 
 	@Transactional(propagation = REQUIRES_NEW)

@@ -5,6 +5,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -33,8 +34,8 @@ public class ErrandListener {
 
 		Optional.ofNullable(errandEntity.getTimeMeasures())
 			.ifPresentOrElse(
-				list -> list.add(startTimeEntry(errandEntity, now())),
-				() -> errandEntity.setTimeMeasures(new ArrayList<>(List.of(startTimeEntry(errandEntity, now())))));
+				list -> list.add(startTimeEntry(errandEntity, now(ZoneId.systemDefault()))),
+				() -> errandEntity.setTimeMeasures(new ArrayList<>(List.of(startTimeEntry(errandEntity, now(ZoneId.systemDefault()))))));
 	}
 
 	@PreUpdate
@@ -61,7 +62,7 @@ public class ErrandListener {
 	@PreRemove
 	void onDelete(final ErrandEntity errandEntity) {
 		Optional.ofNullable(errandEntity.getTimeMeasures())
-			.ifPresent(_ -> findTimeMeasureEntityWithoutStopTime(errandEntity, now()));
+			.ifPresent(_ -> findTimeMeasureEntityWithoutStopTime(errandEntity, now(ZoneId.systemDefault())));
 	}
 
 	private TimeMeasurementEntity startTimeEntry(final ErrandEntity errandEntity, final OffsetDateTime now) {

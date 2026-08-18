@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import generated.se.sundsvall.eventlog.Event;
+import java.time.ZoneId;
 import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -23,7 +24,7 @@ public final class NotificationMapper {
 			.withSubtype(notification.getSubtype())
 			.withDescription(notification.getDescription())
 			.withContent(notification.getContent())
-			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(now().plusDays(notificationTTLInDays)))
+			.withExpires(Optional.ofNullable(notification.getExpires()).orElse(now(ZoneId.systemDefault()).plusDays(notificationTTLInDays)))
 			.withAcknowledged(notification.isAcknowledged())
 			.withGlobalAcknowledged(notification.isGlobalAcknowledged())
 			.withErrandEntity(errandEntity)

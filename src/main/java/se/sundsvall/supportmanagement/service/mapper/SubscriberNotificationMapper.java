@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import java.time.ZoneId;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotification;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
@@ -18,7 +19,7 @@ public final class SubscriberNotificationMapper {
 			.withIdentifierValue(subscriber.getIdentifier().getValue())
 			.withErrandId(errandId)
 			.withErrandNumber(errandNumber)
-			.withExpires(now().plusDays(notificationTTLInDays))
+			.withExpires(now(ZoneId.systemDefault()).plusDays(notificationTTLInDays))
 			.withEventType(eventType)
 			.withDescription(description)
 			.withSubType(subType);

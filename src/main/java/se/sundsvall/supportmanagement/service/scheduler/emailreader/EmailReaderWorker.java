@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.scheduler.emailreader;
 import generated.se.sundsvall.emailreader.Email;
 import generated.se.sundsvall.eventlog.EventType;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -166,7 +167,7 @@ public class EmailReaderWorker {
 		return (config.getInactiveStatus() != null)
 			&& errand.getStatus().equals(config.getInactiveStatus())
 			&& (config.getDaysOfInactivityBeforeReject() != null)
-			&& errand.getTouched().isBefore(OffsetDateTime.now().minusDays(config.getDaysOfInactivityBeforeReject()));
+			&& errand.getTouched().isBefore(OffsetDateTime.now(ZoneId.systemDefault()).minusDays(config.getDaysOfInactivityBeforeReject()));
 	}
 
 	private boolean isErrandNew(final ErrandEntity errand, final EmailWorkerConfigEntity config) {

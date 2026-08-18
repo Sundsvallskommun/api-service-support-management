@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -523,8 +524,8 @@ public class MetadataMapper {
 					.withSortOrder(request.getSortOrder())
 					.withNamespace(namespace)
 					.withMunicipalityId(municipalityId)
-					.withCreated(now())
-					.withModified(now());
+					.withCreated(now(ZoneId.systemDefault()))
+					.withModified(now(ZoneId.systemDefault()));
 				ofNullable(request.getDeprecated()).ifPresent(entity::setDeprecated);
 				return entity;
 			})
