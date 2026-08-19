@@ -31,7 +31,7 @@ refereras från respektive deluppgift.
 | 14 | **`ProcessStatus` med `releasesLock()` och `isTerminal()` som metoder** | Två fristående mappningstabeller | De styr *olika* saker och får inte drifta isär — se §4.1 |
 | 15 | **Fem statusvärden**, `START_FAILED` blir `FAILED` + `errorCode` | Åtta värden | Skillnaden syns redan på `processInstanceId IS NULL` |
 | 16 | **Modelleringsregel: inga parallella grenar som muterar ärendet** | Refcount på låset | Se §6.5. Refcount är eskaleringsvägen om regeln inte räcker |
-| 17 | **Ingen lock-token.** Identitet (`X-Sent-By`) styr om ärendet får skrivas, `lock_owner_task_id` vem som får släppa | Serverutfärdad fencing-token i header | Skyddade bara mot en inaktuell worker efter TTL-utgång; `@Version` fångar ändå verkliga konflikter. Låg dessutom i läsmodellen och läckte — se §6.3 |
+| 17 | Identitet (`X-Sent-By`) styr om ärendet får skrivas, `lock_owner_task_id` vem som får släppa låset | Serverutfärdad fencing-token per förvärv | Skyddade bara mot en inaktuell worker efter TTL-utgång, och `@Version` fångar ändå verkliga konflikter |
 
 ---
 
@@ -454,7 +454,7 @@ Svar `201 Created` (första gången, med `Location`) eller `200 OK`:
 }
 ```
 
-`lockExpires` är satt när låset hålls efter anropet, annars null. **Ingen token** — se §6.3.
+`lockExpires` är satt när låset hålls efter anropet, annars null.
 
 **Felrapport** — samma endpoint:
 
@@ -693,17 +693,11 @@ select 1 from errand_process_instance
 
 Träff **och** skribenten är inte namespacets `PROCESS_CONSUMER` (enligt `X-Sent-By`) ⇒ `423`.
 
-**Ingen lock-token.** En tidigare version av designen delade ut en serverutfärdad fencing-token vid förvärv, som pw skulle echo:a i en header. Den utgick, av tre skäl:
-
-- **Den skyddade mot ett enda kvarvarande fall** — en inaktuell worker som vaknar efter TTL-utgång och släpper sin efterträdares lås. Allt annat täcks redan: en andra processinstans hindras av `uq_epi_one_active_per_errand`, parallella grenar av `lock_owner_task_id`, och handläggarens klient av att den inte sätter `X-Sent-By`.
-- **Konsekvensen av det fallet är begränsad.** `ErrandEntity` har `@Version` och PATCH kör `OPTIMISTIC_FORCE_INCREMENT`, så en genuint samtidig ändring ger `412`. Låset är en koordineringsmekanism, inte den sista försvarslinjen mot lost updates — den finns redan.
-- **Den läckte.** Token låg i läsmodellen `ProcessInstance`, som returneras av `GET .../process-instances`. Vem som helst med läsrätt på ärendet kunde hämta den och skriva under låset. En mekanism som utlovar en garanti den inte levererar är sämre än ingen — den ser ut som skydd i en granskning och ifrågasätts aldrig igen.
-
-**Vad vi ger upp, uttryckligen:** fencing. En inaktuell worker kan släppa sin efterträdares lås. Det skulle motivera en token igen om låset någon gång blir en säkerhetsgräns snarare än en arbetsflödeskontroll, eller om en konsument tillkommer som vi litar mindre på.
-
 **Rapportendpointen har andra semantik än ärendeskrivningar.** Guarden ovan gäller `PATCH /errands/{id}` och övriga ärendeskrivningar. `PUT .../process-instances/{piid}` måste däremot **alltid ta emot rapporten** och skriva tillstånd och aktiviteter — annars går en tillståndsrapport från fel task förlorad, och därmed även den WARN-post som ska göra regelbrottet i §6.5 synligt. Låseffekten tillämpas separat: bara när inget lås finns, eller när `lock_owner_task_id` matchar rapportens `externalTaskId`.
 
 Kort: **skribentens identitet styr om ärendet får skrivas; `lock_owner_task_id` styr vem som får släppa låset.**
+
+**Låset är en koordineringsmekanism, inte den sista försvarslinjen mot lost updates.** Den finns redan: `ErrandEntity` har `@Version` och PATCH kör `OPTIMISTIC_FORCE_INCREMENT`, så en genuint samtidig ändring ger `412` oavsett lås.
 
 Ordningen faller ut gratis: `updateErrand` anropar `getErrand:178` före `validateIfMatch:183`, så lås före ETag. Guarden körs efter accesskontrollen, så obehöriga får `401`/`404` — inte en `423` som avslöjar att en process finns.
 
@@ -721,7 +715,7 @@ Ordningen faller ut gratis: `updateErrand` anropar `getErrand:178` före `valida
 
 **Brist som måste hanteras:** Operaton kan ha två external tasks aktiva samtidigt i samma processinstans (parallell gateway). Båda rapporterar `RUNNING` → den som blir klar först rapporterar `WAITING` och skulle **släppa låset medan den andra fortfarande arbetar**. Handläggaren kan då editera mitt i.
 
-Detta är också vad `lock_owner_task_id` bär efter att lock-token utgick (§6.3): två parallella tasks har **olika** `externalTaskId`, så fältet räcker för att avgöra vem som får släppa.
+Två parallella tasks har **olika** `externalTaskId`, så `lock_owner_task_id` räcker för att avgöra vem som får släppa låset.
 
 **Beslut: en modelleringsregel.** BPMN-modellerna får inte ha parallella grenar där mer än en gren muterar ärendet. För myndighetsprocesser är parallell mutation av samma ärende ändå en modelleringssmell.
 
@@ -998,7 +992,6 @@ Varje uppgift är mergbar för sig. Acceptanskriterierna är avsedda att kunna k
 - `RUNNING` från annan `externalTaskId` medan låset hålls ⇒ WARN-aktivitet, låset behålls; terminal rapport från icke-ägare släpper **inte** låset (§6.5).
 - **Rapportendpointen tar emot rapporten även när låset hålls av en annan task** — tillstånd och aktiviteter skrivs, `lock_expires` och `lock_owner_task_id` lämnas orörda (§6.3). Ett `423` här hade tystat WARN-posten.
 - Skrivning mot ärendet under lås från en klient som **inte** är namespacets `PROCESS_CONSUMER` ⇒ `423` med `Retry-After` och låsdetaljer.
-- Ingenstans i koden finns en lock-token. Fältet är borta ur entitet, API-modell och headers.
 
 ### T5 — Publicering (SM)
 
@@ -1052,7 +1045,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 `AbstractTaskWorker` enligt §9.4; `ProcessStateReport` med fabriksmetoder; `FailureHandler` rapporterar `RETRYING`/`FAILED`.
 
-**Acceptans:** IT verifierar ordningen `RUNNING` → PATCH → terminal rapport; ett fall där `executeBusinessLogic` kastar asserterar att `RETRYING` rapporterats **och** låset släppts. Workern hanterar ingen token — identiteten sätts av interceptorn i P3, och det är allt som behövs.
+**Acceptans:** IT verifierar ordningen `RUNNING` → PATCH → terminal rapport; ett fall där `executeBusinessLogic` kastar asserterar att `RETRYING` rapporterats **och** låset släppts.
 
 ### P5 — Tillsynsprocessen (pw)
 
