@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.16"
 servers:
-- url: http://localhost:41221
+- url: http://localhost:33231
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -9065,9 +9065,9 @@ components:
           type: string
           description: Access level granted for the resource
           enum:
-          - RW
-          - R
           - LR
+          - R
+          - RW
           examples:
           - R
       required:

@@ -29,11 +29,11 @@ class ResourceAccessTest {
 	void testCreatePattern() {
 		final var bean = ResourceAccess.create()
 			.withResource(COMMUNICATION)
-			.withLevel(R);
+			.withLevel(AccessLevel.R);
 
 		assertThat(bean).hasNoNullFieldsOrProperties();
 		assertThat(bean.getResource()).isEqualTo(COMMUNICATION);
-		assertThat(bean.getLevel()).isEqualTo(R);
+		assertThat(bean.getLevel()).isEqualTo(AccessLevel.R);
 	}
 
 	@Test

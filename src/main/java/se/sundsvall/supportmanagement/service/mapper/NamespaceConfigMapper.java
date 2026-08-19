@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import generated.se.sundsvall.accessmapper.Access;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -13,6 +12,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -239,7 +239,7 @@ public class NamespaceConfigMapper {
 			.filter(grant -> RESOURCE == grant.getType())
 			.map(grant -> {
 				final var resource = EnumUtils.getEnum(ProtectedResource.class, grant.getValue());
-				final var level = EnumUtils.getEnum(Access.AccessLevelEnum.class, grant.getAccessLevel());
+				final var level = EnumUtils.getEnum(AccessLevel.class, grant.getAccessLevel());
 
 				if (resource == null || level == null) {
 					LOG.warn("Skipping unknown resource grant '{}' with level '{}' for scope '{}'", grant.getValue(), grant.getAccessLevel(), grant.getScope());

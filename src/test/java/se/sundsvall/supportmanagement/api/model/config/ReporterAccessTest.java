@@ -29,7 +29,7 @@ class ReporterAccessTest {
 
 	@Test
 	void testCreatePattern() {
-		final var resources = List.of(ResourceAccess.create().withResource(ERRAND).withLevel(R));
+		final var resources = List.of(ResourceAccess.create().withResource(ERRAND).withLevel(AccessLevel.R));
 		final var fields = List.of(FieldAccess.create().withField(TITLE));
 
 		final var bean = ReporterAccess.create()
