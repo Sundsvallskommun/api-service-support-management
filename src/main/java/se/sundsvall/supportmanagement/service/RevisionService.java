@@ -63,14 +63,16 @@ public class RevisionService {
 	private final ObjectMapper objectMapper;
 
 	private final NotesClient notesClient;
+	private final ErrandNoteService errandNoteService;
 
 	public RevisionService(final AccessControlService accessControlService,
 		final RevisionRepository revisionRepository, final ObjectMapper objectMapper,
-		final NotesClient notesClient) {
+		final NotesClient notesClient, final ErrandNoteService errandNoteService) {
 		this.accessControlService = accessControlService;
 		this.revisionRepository = revisionRepository;
 		this.objectMapper = objectMapper;
 		this.notesClient = notesClient;
+		this.errandNoteService = errandNoteService;
 	}
 
 	/**
@@ -210,6 +212,8 @@ public class RevisionService {
 	@Transactional(readOnly = true)
 	public List<Revision> getNoteRevisions(final String namespace, final String municipalityId, final String errandId, final String noteId) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTE_REVISION, LR);
+		// Revisions expose the historical bodies of the note, so the note must belong to this errand.
+		errandNoteService.findNoteOnErrand(municipalityId, errandId, noteId);
 
 		return ErrandNoteMapper.toRevisions(notesClient.findAllNoteRevisions(municipalityId, noteId));
 	}
@@ -228,6 +232,7 @@ public class RevisionService {
 	@Transactional(readOnly = true)
 	public DifferenceResponse compareNoteRevisionVersions(final String namespace, final String municipalityId, final String errandId, final String noteId, final int sourceVersion, final int targetVersion) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTE_REVISION, LR);
+		errandNoteService.findNoteOnErrand(municipalityId, errandId, noteId);
 
 		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(municipalityId, noteId, sourceVersion, targetVersion));
 	}

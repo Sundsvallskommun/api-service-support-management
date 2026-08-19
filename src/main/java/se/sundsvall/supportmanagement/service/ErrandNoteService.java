@@ -1,10 +1,13 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.notes.Note;
+import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.note.ErrandNote;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
@@ -21,9 +24,11 @@ import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.HttpHeaders.LOCATION;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toErrandNote;
@@ -39,6 +44,7 @@ public class ErrandNoteService {
 	private static final String EVENT_LOG_UPDATE_ERRAND_NOTE = "Ärendenotering har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND_NOTE = "Ärendenotering har raderats.";
 	private static final String CLIENT_ID = "support-management";
+	private static final String NOTE_NOT_FOUND_ON_ERRAND = "A note with id '%s' could not be found on errand with id '%s'";
 
 	private final NotesClient notesClient;
 	private final AccessControlService accessControlService;
@@ -72,7 +78,29 @@ public class ErrandNoteService {
 
 	public ErrandNote readErrandNote(final String namespace, final String municipalityId, final String id, final String noteId) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.NOTE, LR);
-		return toErrandNote(notesClient.findNoteById(municipalityId, noteId));
+		return toErrandNote(findNoteOnErrand(municipalityId, id, noteId));
+	}
+
+	/**
+	 * Fetches a note and verifies it belongs to sent in errand. Notes live in another service, which has no endpoint for
+	 * fetching a note by id and case together, so the link has to be checked here. Authorising the errand says nothing
+	 * about a note hanging off a different one.
+	 * <p>
+	 * A note belonging elsewhere answers 404 rather than 401, so the response cannot be used to tell whether a note
+	 * exists on an errand the user may not reach. A note without a case id is treated the same way, since nothing ties
+	 * it to this errand.
+	 *
+	 * @param  municipalityId municipality id
+	 * @param  errandId       id of the errand the note must belong to, which notes carry as their case id
+	 * @param  noteId         id of the note
+	 * @return                the note, when it belongs to the errand
+	 */
+	public Note findNoteOnErrand(final String municipalityId, final String errandId, final String noteId) {
+		final var note = notesClient.findNoteById(municipalityId, noteId);
+		if (isNull(note) || !Objects.equals(note.getCaseId(), errandId)) {
+			throw Problem.valueOf(NOT_FOUND, NOTE_NOT_FOUND_ON_ERRAND.formatted(noteId, errandId));
+		}
+		return note;
 	}
 
 	public FindErrandNotesResponse findErrandNotes(final String namespace, final String municipalityId, final String id, final FindErrandNotesRequest findErrandNotesRequest) {
@@ -90,6 +118,7 @@ public class ErrandNoteService {
 
 	public ErrandNote updateErrandNote(final String namespace, final String municipalityId, final String id, final String noteId, final UpdateErrandNoteRequest updateErrandNoteRequest) {
 		var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.NOTE, RW);
+		findNoteOnErrand(municipalityId, id, noteId);
 
 		final var response = notesClient.updateNoteById(municipalityId, noteId, toUpdateNoteRequest(updateErrandNoteRequest));
 
@@ -110,6 +139,7 @@ public class ErrandNoteService {
 
 	public void deleteErrandNote(final String namespace, final String municipalityId, final String id, final String noteId) {
 		var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.NOTE, RW);
+		findNoteOnErrand(municipalityId, id, noteId);
 
 		final var response = notesClient.deleteNoteById(municipalityId, noteId);
 

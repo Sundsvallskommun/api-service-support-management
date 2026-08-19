@@ -63,6 +63,9 @@ class RevisionServiceTest {
 	@Mock
 	private NotesClient notesClientMock;
 
+	@Mock
+	private ErrandNoteService errandNoteServiceMock;
+
 	@InjectMocks
 	private RevisionService service;
 

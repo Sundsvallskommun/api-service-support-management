@@ -50,9 +50,9 @@ public class AccessControlService {
 	private static final String RESOURCE_NOT_ACCESSIBLE = "Resource '%s' not accessible by user '%s'";
 
 	/**
-	 * Fields a limited read falls back to when the namespace has not said what limited read exposes. Keeps a namespace
-	 * from widening what a limited read user sees simply by switching role based mapping on, and is overridden by
-	 * configuring limitedReadAccess.
+	 * Fields a limited read falls back to when the namespace has not said what limited read exposes. Keeps a namespace from
+	 * widening what a limited read user sees simply by switching role based mapping on, and is overridden by configuring
+	 * limitedReadAccess.
 	 */
 	private static final List<FieldAccess> DEFAULT_LIMITED_READ_FIELDS = List.of(
 		FieldAccess.create().withField(ErrandField.ID),
@@ -74,18 +74,20 @@ public class AccessControlService {
 	 * Resolves which fields of an errand the requesting user may see.
 	 * <p>
 	 * An errand their labels only grant limited read for is trimmed to the limited read fields of the namespace, whatever
-	 * roles the user holds, since a role says what they see of errands they properly have access to. That trimming does
-	 * not depend on role based mapping, as limited read may never silently mean full read. Role field restrictions, on
-	 * the other hand, only apply while the namespace maps errands per role.
+	 * roles the user holds, since a role says what they see of errands they properly have access to. That trimming does not
+	 * depend on role
+	 * based mapping, as limited read may never silently mean full read. Role field restrictions, on the other hand, only
+	 * apply while the namespace maps errands per role.
 	 * <p>
-	 * Fields given to the reporter of an errand union on top of whatever restriction applies, so someone who both
-	 * reported an errand and handles it keeps the fuller view. They never restrict a user nothing else restricts, since
-	 * reporting an errand may not reduce what its reporter sees.
+	 * Fields given to the reporter of an errand union on top of whatever restriction applies, so someone who both reported
+	 * an errand and handles it keeps the fuller view. They never restrict a user nothing else restricts, since reporting an
+	 * errand may not
+	 * reduce what its reporter sees.
 	 * <p>
 	 * A null result means no restriction applies at all and the errand is mapped in full, which is what an unrestricted
 	 * role yields. An empty result, in contrast, is a restriction resolving to no fields whatsoever. A limited read never
-	 * resolves to nothing, since a namespace that has not said what limited read exposes falls back to a built in
-	 * minimum.
+	 * resolves to
+	 * nothing, since a namespace that has not said what limited read exposes falls back to a built in minimum.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -152,8 +154,8 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Signals if the labels of the user fail to cover the errand fully, meaning the access mapper granted them limited
-	 * read for it.
+	 * Signals if the labels of the user fail to cover the errand fully, meaning the access mapper granted them limited read
+	 * for it.
 	 */
 	private static boolean isLimited(Set<String> fullReadLabelIds, ErrandEntity errandEntity) {
 		return !fullReadLabelIds.containsAll(ofNullable(errandEntity.getAccessLabels()).orElse(emptyList()).stream()
@@ -166,11 +168,11 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Tells which keys of a keyed field the user may read on sent in errand, so that the endpoints serving that data on
-	 * its own honour the same grants as the errand payload does.
+	 * Tells which keys of a keyed field the user may read on sent in errand, so that the endpoints serving that data on its
+	 * own honour the same grants as the errand payload does.
 	 * <p>
-	 * Every key is readable whenever the whole errand is returned, which is the case for a user nothing restricts. A
-	 * field the applicable restriction does not expose at all yields no readable keys.
+	 * Every key is readable whenever the whole errand is returned, which is the case for a user nothing restricts. A field
+	 * the applicable restriction does not expose at all yields no readable keys.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -186,7 +188,8 @@ public class AccessControlService {
 	/**
 	 * The same answer as {@link #readableKeyPredicate}, for every keyed field of one errand at once. A request touching
 	 * several fields resolves the grants once instead of once per field, which matters since resolving them queries the
-	 * database and would otherwise flush a half updated errand mid transaction.
+	 * database and would
+	 * otherwise flush a half updated errand mid transaction.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -269,7 +272,8 @@ public class AccessControlService {
 	 * <p>
 	 * Access granted through the labels of the access mapper is combined with access granted through a role the user holds
 	 * on the errand itself. The two are unioned, so a role can only ever add access for principals the access mapper does
-	 * not know about, never reduce what it already granted.
+	 * not know about,
+	 * never reduce what it already granted.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -319,11 +323,13 @@ public class AccessControlService {
 	/**
 	 * Signals if the access mapper lets the user reach sent in resource at sent in level. Namespaces that have not switched
 	 * on resource access control are unrestricted here and rely on their labels alone, which is what keeps the feature
-	 * inert until the access mapper has been configured for the namespace.
+	 * inert until the
+	 * access mapper has been configured for the namespace.
 	 * <p>
-	 * The granted level is weighed against the level the operation actually asks for, so a resource granted at limited
-	 * read satisfies a read but neither a full read nor a write. Weighing it against the full access level instead would
-	 * make a limited read grant equal to no grant at all.
+	 * The granted level is weighed against the level the operation actually asks for, so a resource granted at limited read
+	 * satisfies a read but neither a full read nor a write. Weighing it against the full access level instead would make a
+	 * limited read
+	 * grant equal to no grant at all.
 	 */
 	private boolean grantsResourceAccess(NamespaceConfig config, String namespace, String municipalityId, Identifier user, ProtectedResource resource, Access.AccessLevelEnum required) {
 		if (!config.isResourceAccessControl()) {
@@ -337,7 +343,8 @@ public class AccessControlService {
 	/**
 	 * Signals if limited read reaches sent in resource. Whether an errand is limited for the user is settled by their
 	 * labels, so within limited read a resource is simply reachable or not and carries no level of its own. Operations
-	 * asking for more than limited read are never satisfied by it.
+	 * asking for more than
+	 * limited read are never satisfied by it.
 	 * <p>
 	 * The errand itself is always reachable, that is what limited read means, and a namespace extends it beyond the errand
 	 * by listing further resources.
@@ -403,7 +410,8 @@ public class AccessControlService {
 	 * <p>
 	 * Enforced whenever access control is active for the namespace. A namespace without configuration enforces nothing,
 	 * since access control cannot be active without it, which is also what lets a configuration be created in the first
-	 * place. Because the check reads the persisted configuration, switching access control off is itself guarded.
+	 * place. Because the
+	 * check reads the persisted configuration, switching access control off is itself guarded.
 	 *
 	 * @param namespace      namespace
 	 * @param municipalityId municipality id
@@ -429,16 +437,16 @@ public class AccessControlService {
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
-	 * @param  id             errand id
+	 * @param  errandId       errand id
 	 * @param  lock           db row locking enable if true
 	 * @param  resource       resource being guarded
 	 * @param  required       lowest access level accepted for the operation
 	 * @return                errand entity
 	 */
-	public ErrandEntity getErrand(final String namespace, final String municipalityId, final String id, boolean lock, ProtectedResource resource, Access.AccessLevelEnum required) {
-		verifyExistingErrand(id, namespace, municipalityId, lock);
+	public ErrandEntity getErrand(final String namespace, final String municipalityId, final String errandId, boolean lock, ProtectedResource resource, Access.AccessLevelEnum required) {
+		verifyExistingErrand(errandId, namespace, municipalityId, lock);
 		return errandsRepository
-			.findOne(withId(id).and(withAccessControl(namespace, municipalityId, Identifier.get(), resource, required)))
+			.findOne(withId(errandId).and(withAccessControl(namespace, municipalityId, Identifier.get(), resource, required)))
 			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
 				.map(Identifier::getValue)
 				.orElse(null))));
