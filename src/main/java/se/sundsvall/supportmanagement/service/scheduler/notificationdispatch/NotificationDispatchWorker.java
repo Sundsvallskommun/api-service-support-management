@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 
+import java.time.ZoneId;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,13 +47,13 @@ public class NotificationDispatchWorker {
 
 	@Transactional
 	public void cleanUpDeadLetters() {
-		dispatchRepository.deleteByDeadLetterTrueAndCreatedBefore(now().minusDays(deadLetterRetentionDays));
+		dispatchRepository.deleteByDeadLetterTrueAndCreatedBefore(now(ZoneId.systemDefault()).minusDays(deadLetterRetentionDays));
 	}
 
 	@Transactional(readOnly = true)
 	public List<NotificationDispatchEntity> fetchProcessable() {
-		final var cutoff = now().minusSeconds(TRANSACTION_BUFFER_SECONDS);
-		return dispatchRepository.findProcessable(cutoff, now());
+		final var cutoff = now(ZoneId.systemDefault()).minusSeconds(TRANSACTION_BUFFER_SECONDS);
+		return dispatchRepository.findProcessable(cutoff, now(ZoneId.systemDefault()));
 	}
 
 	@Transactional(propagation = REQUIRES_NEW)
@@ -99,7 +100,7 @@ public class NotificationDispatchWorker {
 			entry.setDeadLetter(true);
 		} else {
 			final long delayMinutes = (long) Math.pow(2, entry.getRetryCount() - 1.0);
-			entry.setNextRetryAt(now().plusMinutes(delayMinutes));
+			entry.setNextRetryAt(now(ZoneId.systemDefault()).plusMinutes(delayMinutes));
 			LOG.info("Notification dispatch id: {} scheduled for retry in {} minute(s)", entry.getId(), delayMinutes);
 		}
 		dispatchRepository.save(entry);

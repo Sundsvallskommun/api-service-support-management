@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.notifications;
 
+import java.time.ZoneId;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
@@ -17,6 +18,6 @@ public class NotificationWorker {
 
 	@Transactional
 	public void cleanUpNotifications() {
-		notificationRepository.deleteByExpiresBefore(now());
+		notificationRepository.deleteByExpiresBefore(now(ZoneId.systemDefault()));
 	}
 }

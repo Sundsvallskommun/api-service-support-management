@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -115,7 +116,7 @@ public class CommunicationMapper {
 			.withDirection(Direction.OUTBOUND)
 			.withMessageBody(request.getMessage())
 			.withHtmlMessageBody(request.getHtmlMessage())
-			.withSent(OffsetDateTime.now())
+			.withSent(OffsetDateTime.now(ZoneId.systemDefault()))
 			.withSubject(request.getSubject())
 			.withType(CommunicationType.EMAIL)
 			.withTarget(request.getRecipient())
@@ -141,7 +142,7 @@ public class CommunicationMapper {
 			.withSender(request.getSender())
 			.withDirection(Direction.OUTBOUND)
 			.withMessageBody(request.getMessage())
-			.withSent(OffsetDateTime.now())
+			.withSent(OffsetDateTime.now(ZoneId.systemDefault()))
 			.withType(CommunicationType.SMS)
 			.withInternal(request.getInternal())
 			.withTarget(request.getRecipient())
@@ -157,7 +158,7 @@ public class CommunicationMapper {
 			.withErrandNumber(errandNumber)
 			.withDirection(Direction.OUTBOUND)
 			.withMessageBody(request.getMessage())
-			.withSent(OffsetDateTime.now())
+			.withSent(OffsetDateTime.now(ZoneId.systemDefault()))
 			.withType(CommunicationType.WEB_MESSAGE)
 			.withAttachments(toMessageAttachments(namespace, municipalityId, request.getAttachments()))
 			.withViewed(false)

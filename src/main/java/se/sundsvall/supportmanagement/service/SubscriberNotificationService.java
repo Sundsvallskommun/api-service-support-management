@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.time.ZoneId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class SubscriberNotificationService {
 	}
 
 	public Page<SubscriberNotification> getNotifications(final String municipalityId, final String namespace, final String identifierType, final String identifierValue, final Pageable pageable) {
-		return repository.findActiveByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(municipalityId, namespace, identifierType, identifierValue, now(), pageable)
+		return repository.findActiveByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(municipalityId, namespace, identifierType, identifierValue, now(ZoneId.systemDefault()), pageable)
 			.map(se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper::toModel);
 	}
 
@@ -44,7 +45,7 @@ public class SubscriberNotificationService {
 	@Transactional
 	public void acknowledgeNotification(final String municipalityId, final String namespace, final String notificationId) {
 		final var entity = findOrThrow(notificationId, municipalityId, namespace);
-		entity.setAcknowledged(now());
+		entity.setAcknowledged(now(ZoneId.systemDefault()));
 		repository.save(entity);
 	}
 

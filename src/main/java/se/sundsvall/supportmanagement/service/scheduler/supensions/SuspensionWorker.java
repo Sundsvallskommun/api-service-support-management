@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
 import generated.se.sundsvall.eventlog.EventType;
+import java.time.ZoneId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -32,7 +33,7 @@ public class SuspensionWorker {
 	@Transactional
 	public void processExpiredSuspensions() {
 		errandsRepository
-			.findAllBySuspendedToBefore(now())
+			.findAllBySuspendedToBefore(now(ZoneId.systemDefault()))
 			.forEach(entity -> {
 
 				if (!"SUSPENDED".equals(entity.getStatus())) {
