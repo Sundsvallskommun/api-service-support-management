@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -276,7 +277,7 @@ class NamespaceConfigServiceTest {
 	void createWithValidRoleAccess() {
 		final var request = NamespaceConfig.create()
 			.withReporterAccess(ReporterAccess.create()
-				.withResources(List.of(ResourceAccess.create().withResource(ERRAND).withLevel(R)))
+				.withResources(List.of(ResourceAccess.create().withResource(ERRAND).withLevel(AccessLevel.R)))
 				.withFields(List.of(FieldAccess.create().withField(PARAMETERS).withKeys(List.of("key-1")))))
 			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE))));
 

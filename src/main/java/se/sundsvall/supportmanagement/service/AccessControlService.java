@@ -16,6 +16,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -367,7 +368,7 @@ public class AccessControlService {
 		return ofNullable(config.getReporterAccess())
 			.map(ReporterAccess::getResources)
 			.orElse(emptyList()).stream()
-			.anyMatch(resourceAccess -> resource == resourceAccess.getResource() && satisfies(resourceAccess.getLevel(), required));
+			.anyMatch(resourceAccess -> resource == resourceAccess.getResource() && satisfies(toAccessLevelEnum(resourceAccess.getLevel()), required));
 	}
 
 	/**
@@ -379,6 +380,14 @@ public class AccessControlService {
 			.filter(identifier -> Identifier.Type.AD_ACCOUNT.equals(identifier.getType()))
 			.map(Identifier::getValue)
 			.orElse(null);
+	}
+
+	/**
+	 * Translates a level configured on this API into the client enum the service layer compares with. The two enums
+	 * carry the same names, and are kept apart so that a change to the access mapper contract cannot alter this API.
+	 */
+	private static Access.AccessLevelEnum toAccessLevelEnum(final AccessLevel level) {
+		return isNull(level) ? null : Access.AccessLevelEnum.valueOf(level.name());
 	}
 
 	/**

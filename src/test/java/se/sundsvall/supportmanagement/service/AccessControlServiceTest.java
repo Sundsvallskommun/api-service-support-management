@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -319,7 +320,7 @@ class AccessControlServiceTest {
 	void withAccessControlAddsReporterClauseWhenResourceIsGranted() {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(R)), null));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.R)), null));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, R);
@@ -331,7 +332,7 @@ class AccessControlServiceTest {
 	void withAccessControlOmitsReporterClauseWhenResourceIsNotGranted() {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(R)), null));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(AccessLevel.R)), null));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, R);
@@ -343,7 +344,7 @@ class AccessControlServiceTest {
 	void withAccessControlOmitsReporterClauseWhenGrantedLevelIsTooLow() {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(R)), null));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.R)), null));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, RW);
@@ -355,7 +356,7 @@ class AccessControlServiceTest {
 	void withAccessControlAddsReporterClauseForWriteWhenGranted() {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.CONVERSATION_MESSAGE).withLevel(RW)), null));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.CONVERSATION_MESSAGE).withLevel(AccessLevel.RW)), null));
 		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.CONVERSATION_MESSAGE, RW);

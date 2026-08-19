@@ -5,6 +5,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -180,7 +181,7 @@ class NamespaceConfigMapperTest {
 			.withShortCode("shortCode")
 			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.STATUS))))
 			.withReporterAccess(ReporterAccess.create()
-				.withResources(List.of(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(R)))
+				.withResources(List.of(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(AccessLevel.R)))
 				.withFields(List.of(
 					FieldAccess.create().withField(ErrandField.TITLE),
 					FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1", "key-2")))))
@@ -216,7 +217,7 @@ class NamespaceConfigMapperTest {
 
 		assertThat(config.getLimitedReadAccess().getFields()).containsExactly(FieldAccess.create().withField(ErrandField.STATUS));
 
-		assertThat(config.getReporterAccess().getResources()).containsExactly(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(R));
+		assertThat(config.getReporterAccess().getResources()).containsExactly(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(AccessLevel.R));
 		assertThat(config.getReporterAccess().getFields()).containsExactly(
 			FieldAccess.create().withField(ErrandField.TITLE),
 			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1", "key-2")));

@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.api.model.config;
 
-import generated.se.sundsvall.accessmapper.Access;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
@@ -15,7 +14,7 @@ public class ResourceAccess {
 
 	@NotNull
 	@Schema(description = "Access level granted for the resource", examples = "R")
-	private Access.AccessLevelEnum level;
+	private AccessLevel level;
 
 	public static ResourceAccess create() {
 		return new ResourceAccess();
@@ -34,15 +33,15 @@ public class ResourceAccess {
 		return this;
 	}
 
-	public Access.AccessLevelEnum getLevel() {
+	public AccessLevel getLevel() {
 		return level;
 	}
 
-	public void setLevel(final Access.AccessLevelEnum level) {
+	public void setLevel(final AccessLevel level) {
 		this.level = level;
 	}
 
-	public ResourceAccess withLevel(final Access.AccessLevelEnum level) {
+	public ResourceAccess withLevel(final AccessLevel level) {
 		this.level = level;
 		return this;
 	}
