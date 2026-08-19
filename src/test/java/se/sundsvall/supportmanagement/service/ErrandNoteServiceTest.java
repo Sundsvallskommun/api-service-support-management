@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.note.CreateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
@@ -27,6 +28,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -36,6 +38,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.LOCATION;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper.toCreateNoteRequest;
@@ -139,7 +142,7 @@ class ErrandNoteServiceTest {
 	void readErrandNote() {
 
 		// Mock
-		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note());
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note().caseId(ERRAND_ID));
 
 		// Call
 		final var result = service.readErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID);
@@ -177,6 +180,7 @@ class ErrandNoteServiceTest {
 
 	@Test
 	void updateErrandNote() {
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note().caseId(ERRAND_ID));
 
 		// Setup
 		final var errandNote = buildUpdateErrandNoteRequest();
@@ -216,6 +220,7 @@ class ErrandNoteServiceTest {
 
 	@Test
 	void updateErrandWithNoChangedNote() {
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note().caseId(ERRAND_ID));
 
 		// Setup
 		final var errandNote = buildUpdateErrandNoteRequest();
@@ -241,6 +246,7 @@ class ErrandNoteServiceTest {
 
 	@Test
 	void deleteErrandNote() {
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note().caseId(ERRAND_ID));
 
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTING_USER));
 
@@ -292,6 +298,7 @@ class ErrandNoteServiceTest {
 
 	@Test
 	void updateErrandNote_eventServiceFails_noteStillReturned() {
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note().caseId(ERRAND_ID));
 		final var errandNote = buildUpdateErrandNoteRequest();
 		final var updateNoteRequest = ErrandNoteMapper.toUpdateNoteRequest(errandNote);
 
@@ -314,6 +321,7 @@ class ErrandNoteServiceTest {
 
 	@Test
 	void deleteErrandNote_eventServiceFails_deletionCompletes() {
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note().caseId(ERRAND_ID));
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ERRAND_ENTITY);
 		when(notesClientMock.deleteNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(responseEntityWithVoidMock);
 		when(responseEntityWithVoidMock.getHeaders()).thenReturn(httpHeadersMock);
@@ -327,5 +335,37 @@ class ErrandNoteServiceTest {
 		assertThatNoException().isThrownBy(() -> service.deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID));
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, NOTE_ID);
 		verify(eventServiceMock).createErrandNoteEvent(any(), any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	void readingANoteBelongingToAnotherErrandIsNotFound() {
+		// Authorising the errand says nothing about a note hanging off a different one. 404 rather than 401, so the
+		// answer cannot be used to tell whether the note exists elsewhere.
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note().caseId("another-errand"));
+
+		assertThatThrownBy(() -> service.readErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(NOT_FOUND);
+	}
+
+	@Test
+	void deletingANoteBelongingToAnotherErrandIsNotFound() {
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note().caseId("another-errand"));
+
+		assertThatThrownBy(() -> service.deleteErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(NOT_FOUND);
+
+		verify(notesClientMock, never()).deleteNoteById(any(), any());
+	}
+
+	@Test
+	void aNoteWithoutACaseIdIsNotFound() {
+		// Fail closed: nothing ties such a note to this errand.
+		when(notesClientMock.findNoteById(MUNICIPALITY_ID, NOTE_ID)).thenReturn(new Note());
+
+		assertThatThrownBy(() -> service.readErrandNote(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, NOTE_ID))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(NOT_FOUND);
 	}
 }
