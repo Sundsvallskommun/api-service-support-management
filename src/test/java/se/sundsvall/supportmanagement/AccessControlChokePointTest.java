@@ -54,7 +54,13 @@ class AccessControlChokePointTest {
 		// AccessControlService without creating a circular dependency
 		// (metadataService -> accessControlService -> accessMapperService -> metadataService), which is why the
 		// metadata endpoints are guarded in the resource layer instead.
-		se.sundsvall.supportmanagement.service.MetadataService.class);
+		se.sundsvall.supportmanagement.service.MetadataService.class,
+
+		// SubscriptionService reaches the errand only to attach it to a subscription. Subscribing deliberately does not
+		// require access to the errand - subscribing a colleague is a supported workflow, and a subscriber only ever
+		// receives notifications for errands they may reach themselves, because dispatch filters on access. Reading and
+		// deleting subscriptions is restricted by ownership instead, which the access mapper says nothing about.
+		se.sundsvall.supportmanagement.service.SubscriptionService.class);
 
 	@Test
 	void errandAccessGoesThroughAccessControlService() {

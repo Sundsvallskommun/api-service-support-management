@@ -378,7 +378,8 @@ class AccessControlServiceTest {
 		// Verify
 		assertThat(specification).usingRecursiveComparison().isEqualTo((Specification<ErrandEntity>) (_, _, criteriaBuilder) -> criteriaBuilder.conjunction());
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
-
+		// A namespace that has not opted in must cost no remote calls, so an access mapper outage cannot affect it.
+		verifyNoInteractions(accessMapperService);
 	}
 
 	@Test

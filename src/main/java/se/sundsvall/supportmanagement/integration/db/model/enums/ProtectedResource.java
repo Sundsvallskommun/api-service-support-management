@@ -27,6 +27,8 @@ public enum ProtectedResource {
 	TIME_MEASURE("errand/time-measure"),
 
 	NAMESPACE_CONFIG("namespace-config"),
+	EMAIL_INTEGRATION_CONFIG("email-integration-config"),
+	MESSAGE_EXCHANGE_INTEGRATION_CONFIG("messageexchange-integration-config"),
 	METADATA_CATEGORY("metadata/category"),
 	METADATA_CONTACT_REASON("metadata/contact-reason"),
 	METADATA_EXTERNAL_ID_TYPE("metadata/external-id-type"),

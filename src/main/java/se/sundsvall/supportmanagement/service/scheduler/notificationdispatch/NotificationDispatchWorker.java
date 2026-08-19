@@ -79,6 +79,27 @@ public class NotificationDispatchWorker {
 			.map(ErrandEntity::getErrandNumber)
 			.orElse(null);
 
+		// TODO Subscriber notifications, remaining work. Honouring the subscription is now done, by the query below.
+		// Two decisions are still outstanding:
+		//
+		// 1. Filter on access when the notification is created, not when it is read. A subscriber who no longer reaches
+		// the errand, because its labels changed, gets no notification created for it. The subscription itself is left
+		// untouched, so notifications resume by themselves if the errand later becomes reachable again - nothing has to
+		// be repaired or re-subscribed. Creating the row and hiding it on read was rejected: the row carries the errand
+		// id and number, so the association would already be stored and every future read path would have to remember to
+		// filter it.
+		//
+		// The check has to be evaluated as the subscriber, not as the caller. This job runs without an Identifier, but
+		// AccessControlService.withAccessControl takes the user explicitly, so one can be built per subscriber from
+		// SubscriberEntity.getIdentifier(). Label lookups are cached per user and namespace, so the cost stays bounded.
+		//
+		// Note this makes the worker authorise, which is not what its entry in AccessControlChokePointTest.EXEMPT says.
+		// The exemption still holds - it authorises on behalf of subscribers rather than a caller - but fix the wording.
+		//
+		// 2. Notifications already created are NOT retracted. One created before the errand became unreachable stays in
+		// the subscriber's list and stays readable, because the subscriber did have access at the time it was created -
+		// it tells them nothing they were not already entitled to know. Losing access stops new notifications, it does
+		// not rewrite history.
 		subscriptionRepository.findAllActiveForErrand(first.getMunicipalityId(), first.getNamespace(), errandId, now(ZoneId.systemDefault()))
 			.stream()
 			// A subscriber may cover the same errand through both a NAMESPACE and an ERRAND subscription
