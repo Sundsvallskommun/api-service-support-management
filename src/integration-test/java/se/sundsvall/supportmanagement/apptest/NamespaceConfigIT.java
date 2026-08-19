@@ -199,7 +199,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withHttpMethod(PUT)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -210,6 +210,6 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 }

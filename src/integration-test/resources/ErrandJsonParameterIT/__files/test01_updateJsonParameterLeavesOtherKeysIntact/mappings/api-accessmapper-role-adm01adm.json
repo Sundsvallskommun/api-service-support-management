@@ -1,7 +1,7 @@
 {
 	"request": {
 		"method": "GET",
-		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/rob01rep",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/adm01adm",
 		"queryParameters": {
 			"type": {
 				"equalTo": "role"
@@ -15,5 +15,5 @@
 		"body": "[]",
 		"status": 200
 	},
-	"name": "api-accessmapper-role"
+	"name": "api-accessmapper-role-adm01adm"
 }

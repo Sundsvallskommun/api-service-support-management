@@ -1,0 +1,16 @@
+[
+	{
+		"key": "granted-key",
+		"displayName": "Granted",
+		"values": [
+			"updated"
+		],
+		"version": 1
+	},
+	{
+		"key": "hidden-key",
+		"displayName": "Hidden",
+		"values": [],
+		"version": 0
+	}
+]

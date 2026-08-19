@@ -59,7 +59,7 @@ class EventsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -68,6 +68,6 @@ class EventsIT extends AbstractAppTest {
 			.withServicePath(PATH + "d3a1f2c4-0000-4000-8000-000000000000/events")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(NOT_FOUND)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 }
