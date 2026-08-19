@@ -256,7 +256,7 @@ public class ErrandService {
 			LOG.warn("Failed to delete conversations for errand {}: {}", sanitizedId, e.getMessage());
 		}
 
-		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
+		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber(), entity.getNamespace(), entity.getMunicipalityId());
 		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)
 			.forEach(attachment -> attachmentRepository.deleteById(attachment.getId()));
 

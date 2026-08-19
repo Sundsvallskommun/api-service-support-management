@@ -460,7 +460,7 @@ class ErrandServiceTest {
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "id");
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
-		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
+		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(entity.getErrandNumber(), entity.getNamespace(), entity.getMunicipalityId());
 		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(attachmentRepositoryMock).deleteById(errandAttachment.getId());
 		verify(revisionServiceMock).getLatestErrandRevision(same(entity));

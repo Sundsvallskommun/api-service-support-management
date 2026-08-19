@@ -127,7 +127,7 @@ class WebMessageCollectorWorkerTest {
 			.withTouched(now().minusDays(2));
 
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(errandEntity));
-		when(communicationRepositoryMock.existsByErrandNumberAndExternalId(any(), any())).thenReturn(false);
+		when(communicationRepositoryMock.existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId(any(), any(), any(), any())).thenReturn(false);
 		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
 		when(webMessageCollectorClientMock.getAttachment(any(), anyInt())).thenReturn(data);
 		when(webMessageCollectorMapperMock.toAttachmentDataEntity(any())).thenReturn(attachmentDataEntityMock);
@@ -147,7 +147,7 @@ class WebMessageCollectorWorkerTest {
 		}
 
 		verify(errandsRepositoryMock).findOne(same(specificationMock));
-		verify(communicationRepositoryMock).existsByErrandNumberAndExternalId(errandNumber, messageId);
+		verify(communicationRepositoryMock).existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId(errandNumber, errandEntity.getNamespace(), errandEntity.getMunicipalityId(), messageId);
 		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
 		verify(communicationServiceMock).saveCommunication(communicationEntityCaptor.capture());
 		verify(communicationServiceMock).saveAttachment(communicationEntityCaptor.capture(), same(errandEntity));
@@ -205,7 +205,7 @@ class WebMessageCollectorWorkerTest {
 		final var errandEntity = ErrandEntity.create().withErrandNumber("errandNumber").withMunicipalityId(MUNICIPALITY_ID);
 
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(errandEntity));
-		when(communicationRepositoryMock.existsByErrandNumberAndExternalId(any(), any())).thenReturn(false);
+		when(communicationRepositoryMock.existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId(any(), any(), any(), any())).thenReturn(false);
 		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
 		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), any());
 
@@ -225,7 +225,7 @@ class WebMessageCollectorWorkerTest {
 		final var errandEntity = ErrandEntity.create().withErrandNumber("errandNumber").withMunicipalityId(MUNICIPALITY_ID);
 
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(errandEntity));
-		when(communicationRepositoryMock.existsByErrandNumberAndExternalId(any(), any())).thenReturn(false);
+		when(communicationRepositoryMock.existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId(any(), any(), any(), any())).thenReturn(false);
 		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
 		doThrow(new RuntimeException("WebMessageCollector down")).when(webMessageCollectorClientMock).deleteMessages(any(), any());
 

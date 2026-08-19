@@ -156,7 +156,7 @@ public class ConversationService {
 
 		// Fetch referenced errand attachments and convert to MultipartFiles
 		final var referencedAttachments = toMultipartFiles(
-			errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, messageRequest.getAttachmentIds()));
+			errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, errandId, messageRequest.getAttachmentIds()));
 
 		// Merge uploaded attachments with referenced attachments
 		final var mergedAttachments = new ArrayList<MultipartFile>();

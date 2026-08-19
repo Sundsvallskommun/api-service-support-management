@@ -156,11 +156,11 @@ VALUES
 -- Communication
 -------------------------------------
 INSERT INTO communication(internal,viewed, sender, sender_user_id, sent, id, errand_number, external_id,
-                          message_body, target, subject, direction, type)
+                          message_body, target, subject, direction, type, namespace, municipality_id)
 VALUES (1, 0,'Test Testorsson', 'userId', '2023-01-01 12:00:00.000', 'comm1', 'errand1', 'case1',
-        'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS'),
+        'message body 1', '1234567890', 'subject1', 'INBOUND', 'SMS', 'NAMESPACE.1', '2281'),
        (0,1, 'Test Testorsson','userId', '2023-01-02 12:00:00.000', 'comm2',  'errand2', 'case2',
-        'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL');
+        'message body 2', '0987654321', 'subject2', 'OUTBOUND', 'EMAIL', 'NAMESPACE.1', '2281');
 
 -------------------------------------
 -- Communication_attachment
