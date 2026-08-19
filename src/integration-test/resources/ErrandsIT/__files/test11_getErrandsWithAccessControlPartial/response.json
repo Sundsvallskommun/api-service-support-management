@@ -43,7 +43,24 @@
 					"version": 0
 				}
 			],
-			"jsonParameters": [],
+			"jsonParameters": [
+				{
+					"key": "granted-json",
+					"schemaId": "test-schema-1.0",
+					"value": {
+						"visible": true
+					},
+					"version": 0
+				},
+				{
+					"key": "hidden-json",
+					"schemaId": "test-schema-1.0",
+					"value": {
+						"secret": "must survive"
+					},
+					"version": 0
+				}
+			],
 			"classification": {
 				"type": "TYPE-2506"
 			},

@@ -1,0 +1,20 @@
+{
+	"jsonParameters": [
+		{
+			"key": "granted-json",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"visible": false
+			},
+			"version": 1
+		},
+		{
+			"key": "hidden-json",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"secret": "must survive"
+			},
+			"version": 0
+		}
+	]
+}

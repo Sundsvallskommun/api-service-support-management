@@ -18,6 +18,7 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
+import net.javacrumbs.jsonunit.core.Option;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,7 @@ class ErrandsIT extends AbstractAppTest {
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
+	private static final String ACCESS_CONTROLLED_ERRAND = "/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8";
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
@@ -410,7 +412,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -420,7 +422,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=partyId")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -431,7 +433,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -441,7 +443,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -463,7 +465,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -486,7 +488,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -496,7 +498,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -507,7 +509,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -518,7 +520,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -529,6 +531,33 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(UNAUTHORIZED)
-			.sendRequest();
+			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test36_patchErrandKeepsKeysTheUserMayNotSee() {
+		// smo02key holds FIRST_LINE, restricted to one parameter key and one json parameter key, and writes through the
+		// whole errand PATCH. Patching back only what they were served must not delete what they never saw.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_ERRAND)
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequest();
+
+		// Read back as a user holding no role, who is therefore unrestricted and sees every key. Only the two keyed
+		// collections are asserted, so the test does not couple to the rest of the payload.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_ERRAND)
+			.withHeader(SENT_BY_HEADER, "adm01adm; type=adAccount")
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(List.of(Option.IGNORING_EXTRA_FIELDS, Option.IGNORING_ARRAY_ORDER))
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-privileged.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+
 }

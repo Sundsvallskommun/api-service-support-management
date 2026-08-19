@@ -448,7 +448,14 @@ VALUES (5, 'LIMITED', 'RESOURCE', 'COMMUNICATION', null),
        (5, 'REPORTER', 'FIELD', 'ERRAND_NUMBER', null),
        (5, 'REPORTER', 'FIELD', 'TITLE', null),
        (5, 'REPORTER', 'FIELD', 'STATUS', null),
-       (5, 'REPORTER', 'FIELD', 'PARAMETERS:granted-key', null);
+       (5, 'REPORTER', 'FIELD', 'PARAMETERS:granted-key', null),
+       -- A case officer role restricted to one parameter key and one json parameter key. Holders can write, unlike the
+       -- reporter, which is what makes it possible to test that a wholesale update cannot drop the keys they cannot see.
+       (5, 'FIRST_LINE', 'FIELD', 'ID', null),
+       (5, 'FIRST_LINE', 'FIELD', 'ERRAND_NUMBER', null),
+       (5, 'FIRST_LINE', 'FIELD', 'TITLE', null),
+       (5, 'FIRST_LINE', 'FIELD', 'PARAMETERS:granted-key', null),
+       (5, 'FIRST_LINE', 'FIELD', 'JSON_PARAMETERS:granted-json', null);
        
 -- -----------------------------------
 -- Time measurement
@@ -468,6 +475,13 @@ VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', '45d266a7-1ff2-4bf4-b6f3-0473b2b
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB', 'Displayname B', null),
        ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'e1b9a0d3-6a7c-4f4a-9d0e-1a2b3c4d5e6f', 'granted-key', 'Granted', null),
        ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'f2c8b1e4-7b8d-4a5b-8e1f-2b3c4d5e6f70', 'hidden-key', 'Hidden', null);
+
+-- -----------------------------------
+-- Json parameters
+-- -----------------------------------
+INSERT INTO json_parameter(errand_id, id, parameter_key, schema_id, value)
+VALUES ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'a9c1d2e3-0000-0000-0000-00000000000a', 'granted-json', 'test-schema-1.0', '{"visible": true}'),
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'b8d2e3f4-0000-0000-0000-00000000000b', 'hidden-json', 'test-schema-1.0', '{"secret": "must survive"}');
 
 INSERT INTO parameter_values(parameter_id, value, value_order)
 VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),

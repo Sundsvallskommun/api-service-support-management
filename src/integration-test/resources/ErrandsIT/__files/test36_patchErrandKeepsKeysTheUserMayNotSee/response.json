@@ -1,0 +1,25 @@
+{
+	"id": "58c41b44-0b9f-413d-bd46-406d24bf5ca8",
+	"errandNumber": "AP-23020003",
+	"title": "Updated by first line",
+	"parameters": [
+		{
+			"key": "granted-key",
+			"displayName": "Granted",
+			"values": [
+				"updated"
+			],
+			"version": 1
+		}
+	],
+	"jsonParameters": [
+		{
+			"key": "granted-json",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"visible": false
+			},
+			"version": 1
+		}
+	]
+}

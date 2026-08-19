@@ -59,6 +59,34 @@
 		"accessControl": true,
 		"notifyReporter": true,
 		"roleBasedMapping": true,
+		"roleFieldRestrictions": [
+			{
+				"role": "FIRST_LINE",
+				"fields": [
+					{
+						"field": "ID"
+					},
+					{
+						"field": "ERRAND_NUMBER"
+					},
+					{
+						"field": "TITLE"
+					},
+					{
+						"field": "PARAMETERS",
+						"keys": [
+							"granted-key"
+						]
+					},
+					{
+						"field": "JSON_PARAMETERS",
+						"keys": [
+							"granted-json"
+						]
+					}
+				]
+			}
+		],
 		"resourceAccessControl": false,
 		"reporterAccess": {
 			"resources": [
