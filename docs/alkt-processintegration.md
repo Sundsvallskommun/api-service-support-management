@@ -31,6 +31,7 @@ refereras från respektive deluppgift.
 | 14 | **`ProcessStatus` med `releasesLock()` och `isTerminal()` som metoder** | Två fristående mappningstabeller | De styr *olika* saker och får inte drifta isär — se §4.1 |
 | 15 | **Fem statusvärden**, `START_FAILED` blir `FAILED` + `errorCode` | Åtta värden | Skillnaden syns redan på `processInstanceId IS NULL` |
 | 16 | **Modelleringsregel: inga parallella grenar som muterar ärendet** | Refcount på låset | Se §6.5. Refcount är eskaleringsvägen om regeln inte räcker |
+| 17 | **Ingen lock-token.** Identitet (`X-Sent-By`) styr om ärendet får skrivas, `lock_owner_task_id` vem som får släppa | Serverutfärdad fencing-token i header | Skyddade bara mot en inaktuell worker efter TTL-utgång; `@Version` fångar ändå verkliga konflikter. Låg dessutom i läsmodellen och läckte — se §6.3 |
 
 ---
 
@@ -191,7 +192,6 @@ create table if not exists errand_process_instance (
     error_code            varchar(64),
     error_message         varchar(2048),
     -- Laset. Aktivt endast nar lock_expires > now().
-    lock_token            varchar(36),
     lock_expires          datetime(3),
     lock_reason           varchar(512),
     lock_owner_task_id    varchar(64),             -- Operatons externalTaskId, se 6.5
@@ -295,7 +295,7 @@ public enum ProcessStatus {
         this.terminal = terminal;
     }
 
-    /** Styr lock_token/lock_expires. Allt utom RUNNING släpper låset. */
+    /** Styr lock_expires. Allt utom RUNNING släpper låset. */
     public boolean holdsLock() { return holdsLock; }
 
     /** Styr active_marker. OBS: en annan mängd än holdsLock - WAITING lever men håller inget lås. */
@@ -363,7 +363,6 @@ public class ErrandProcessInstanceEntity {
     @Column(name = "error_code",    length = 64)   private String errorCode;
     @Column(name = "error_message", length = 2048) private String errorMessage;
 
-    @Column(name = "lock_token", length = 36)          private String lockToken;
     @Column(name = "lock_expires")                     private OffsetDateTime lockExpires;
     @Column(name = "lock_reason", length = 512)        private String lockReason;
     @Column(name = "lock_owner_task_id", length = 64)  private String lockOwnerTaskId;
@@ -397,7 +396,6 @@ public class ErrandProcessInstanceEntity {
     }
 
     private void releaseLock() {
-        this.lockToken = null;
         this.lockExpires = null;
         this.lockReason = null;
         this.lockOwnerTaskId = null;
@@ -416,7 +414,6 @@ public class ErrandProcessInstanceEntity {
 ```http
 PUT /{municipalityId}/{namespace}/errands/{errandId}/process-instances/{processInstanceId}
 X-Sent-By: pw-alkt; type=processEngine
-X-Process-Lock-Token: b41f0d5a-9c2e-4b77-8f10-3a6d5e1c2f44     (utom vid forsta RUNNING)
 X-Request-Group-Id: 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
 Content-Type: application/json
 ```
@@ -453,12 +450,11 @@ Svar `201 Created` (första gången, med `Location`) eller `200 OK`:
   "id": "1f0e4c21-...",
   "processInstanceId": "8f1c2b6e-...",
   "processStatus": "RUNNING",
-  "lockToken": "b41f0d5a-9c2e-4b77-8f10-3a6d5e1c2f44",
   "lockExpires": "2026-08-19T09:32:03.221+02:00"
 }
 ```
 
-`lockToken` returneras **endast** när låset hålls efter anropet.
+`lockExpires` är satt när låset hålls efter anropet, annars null. **Ingen token** — se §6.3.
 
 **Felrapport** — samma endpoint:
 
@@ -505,7 +501,6 @@ public class ProcessInstance {
     private OffsetDateTime ended;
     private ProcessError error;
     private List<ProcessActivity> activities;      // skrivs in, lases via egen endpoint
-    @Schema(accessMode = READ_ONLY) private String lockToken;
     @Schema(accessMode = READ_ONLY) private OffsetDateTime lockExpires;
     @Schema(accessMode = READ_ONLY) private OffsetDateTime created;
     @Schema(accessMode = READ_ONLY) private OffsetDateTime modified;
@@ -632,7 +627,7 @@ Fabriksmetoderna finns för att en worker inte ska behöva komma ihåg vilken st
 | `403` | `X-Sent-By` saknas; `processService` matchar inte namespacets `PROCESS_CONSUMER` |
 | `404` | Ärendet finns inte eller ligger i annat namespace |
 | `409` | Andra levande instans för ärendet; instans med annat `process_key` än ärendets befintliga; `max-total` passerat |
-| `423` | Låst av annan instans/task, eller fel/saknad token |
+| `423` | Ärendet är låst och skribenten är inte namespacets konfigurerade konsument (§6.3) |
 
 ### 5.7 Beteendeförändring på befintliga endpoints
 
@@ -664,7 +659,7 @@ Ingen escape hatch går förlorad: `POST errand-events` fungerar som manuell tri
 
 Två kolumner, två olika mängder — se §4.1. Ett tabelldrivet test måste räkna upp **varje** enumvärde mot **båda** kolumnerna.
 
-**Idempotent acquire:** samma `processInstanceId` som rapporterar `RUNNING` igen får samma token, förnyad `lock_expires` och `lock_renew_count++`. En **annan** instans får `423`.
+**Idempotent acquire:** samma `processInstanceId` som rapporterar `RUNNING` igen förnyar `lock_expires` och räknar upp `lock_renew_count`. En **annan** instans kan inte finnas — `uq_epi_one_active_per_errand` hindrar det (§7.4).
 
 ### 6.2 Crash-säkerhet
 
@@ -696,7 +691,19 @@ select 1 from errand_process_instance
    and lock_expires > :now
 ```
 
-Träff + (token saknas eller `token != lock_token`) ⇒ `423`.
+Träff **och** skribenten är inte namespacets `PROCESS_CONSUMER` (enligt `X-Sent-By`) ⇒ `423`.
+
+**Ingen lock-token.** En tidigare version av designen delade ut en serverutfärdad fencing-token vid förvärv, som pw skulle echo:a i en header. Den utgick, av tre skäl:
+
+- **Den skyddade mot ett enda kvarvarande fall** — en inaktuell worker som vaknar efter TTL-utgång och släpper sin efterträdares lås. Allt annat täcks redan: en andra processinstans hindras av `uq_epi_one_active_per_errand`, parallella grenar av `lock_owner_task_id`, och handläggarens klient av att den inte sätter `X-Sent-By`.
+- **Konsekvensen av det fallet är begränsad.** `ErrandEntity` har `@Version` och PATCH kör `OPTIMISTIC_FORCE_INCREMENT`, så en genuint samtidig ändring ger `412`. Låset är en koordineringsmekanism, inte den sista försvarslinjen mot lost updates — den finns redan.
+- **Den läckte.** Token låg i läsmodellen `ProcessInstance`, som returneras av `GET .../process-instances`. Vem som helst med läsrätt på ärendet kunde hämta den och skriva under låset. En mekanism som utlovar en garanti den inte levererar är sämre än ingen — den ser ut som skydd i en granskning och ifrågasätts aldrig igen.
+
+**Vad vi ger upp, uttryckligen:** fencing. En inaktuell worker kan släppa sin efterträdares lås. Det skulle motivera en token igen om låset någon gång blir en säkerhetsgräns snarare än en arbetsflödeskontroll, eller om en konsument tillkommer som vi litar mindre på.
+
+**Rapportendpointen har andra semantik än ärendeskrivningar.** Guarden ovan gäller `PATCH /errands/{id}` och övriga ärendeskrivningar. `PUT .../process-instances/{piid}` måste däremot **alltid ta emot rapporten** och skriva tillstånd och aktiviteter — annars går en tillståndsrapport från fel task förlorad, och därmed även den WARN-post som ska göra regelbrottet i §6.5 synligt. Låseffekten tillämpas separat: bara när inget lås finns, eller när `lock_owner_task_id` matchar rapportens `externalTaskId`.
+
+Kort: **skribentens identitet styr om ärendet får skrivas; `lock_owner_task_id` styr vem som får släppa låset.**
 
 Ordningen faller ut gratis: `updateErrand` anropar `getErrand:178` före `validateIfMatch:183`, så lås före ETag. Guarden körs efter accesskontrollen, så obehöriga får `401`/`404` — inte en `423` som avslöjar att en process finns.
 
@@ -712,7 +719,9 @@ Ordningen faller ut gratis: `updateErrand` anropar `getErrand:178` före `valida
 
 ### 6.5 Parallella grenar — modelleringsregel, inte kod
 
-**Brist som måste hanteras:** Operaton kan ha två external tasks aktiva samtidigt i samma processinstans (parallell gateway). Båda rapporterar `RUNNING` → båda får samma token (idempotent acquire) → den som blir klar först rapporterar `WAITING` och **släpper låset medan den andra fortfarande arbetar**. Handläggaren kan då editera mitt i.
+**Brist som måste hanteras:** Operaton kan ha två external tasks aktiva samtidigt i samma processinstans (parallell gateway). Båda rapporterar `RUNNING` → den som blir klar först rapporterar `WAITING` och skulle **släppa låset medan den andra fortfarande arbetar**. Handläggaren kan då editera mitt i.
+
+Detta är också vad `lock_owner_task_id` bär efter att lock-token utgick (§6.3): två parallella tasks har **olika** `externalTaskId`, så fältet räcker för att avgöra vem som får släppa.
 
 **Beslut: en modelleringsregel.** BPMN-modellerna får inte ha parallella grenar där mer än en gren muterar ärendet. För myndighetsprocesser är parallell mutation av samma ärende ändå en modelleringssmell.
 
@@ -987,7 +996,9 @@ Varje uppgift är mergbar för sig. Acceptanskriterierna är avsedda att kunna k
 - `@Sql`-laddad rad med `lock_expires` i det förflutna ⇒ PATCH ger `200` **utan** att svepningen körts.
 - Svepningen ändrar **inte** `process_status`; den skriver WARN-aktivitet.
 - `RUNNING` från annan `externalTaskId` medan låset hålls ⇒ WARN-aktivitet, låset behålls; terminal rapport från icke-ägare släpper **inte** låset (§6.5).
-- `423` bär `Retry-After` och låsdetaljer.
+- **Rapportendpointen tar emot rapporten även när låset hålls av en annan task** — tillstånd och aktiviteter skrivs, `lock_expires` och `lock_owner_task_id` lämnas orörda (§6.3). Ett `423` här hade tystat WARN-posten.
+- Skrivning mot ärendet under lås från en klient som **inte** är namespacets `PROCESS_CONSUMER` ⇒ `423` med `Retry-After` och låsdetaljer.
+- Ingenstans i koden finns en lock-token. Fältet är borta ur entitet, API-modell och headers.
 
 ### T5 — Publicering (SM)
 
@@ -1017,7 +1028,7 @@ Varje uppgift är mergbar för sig. Acceptanskriterierna är avsedda att kunna k
 
 ### T8 — `ProcessLoopGuardIT` (SM)
 
-**Det viktigaste enskilda testet.** Kör hela varvet: ärende skapas ⇒ outbox-rad; stub agerar pw, rapporterar `RUNNING` (tar låset), PATCHar ärendet, rapporterar `WAITING`. **Assertera att ingen ny odelivererad outbox-rad uppstod.** Kör om utan lock-token och verifiera att lager 2 fångar.
+**Det viktigaste enskilda testet.** Kör hela varvet: ärende skapas ⇒ outbox-rad; stub agerar pw, rapporterar `RUNNING` (tar låset), PATCHar ärendet, rapporterar `WAITING`. **Assertera att ingen ny odelivererad outbox-rad uppstod** (lager 1). Kör sedan samma PATCH **utan lås** men med `X-Sent-By: pw-alkt` och verifiera att lager 2 fångar den i stället.
 
 Utan detta test är loop-skyddet en hypotes.
 
@@ -1041,7 +1052,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 `AbstractTaskWorker` enligt §9.4; `ProcessStateReport` med fabriksmetoder; `FailureHandler` rapporterar `RETRYING`/`FAILED`.
 
-**Acceptans:** IT verifierar ordningen `RUNNING` → PATCH → terminal rapport; ett fall där `executeBusinessLogic` kastar asserterar att `RETRYING` rapporterats **och** låset släppts.
+**Acceptans:** IT verifierar ordningen `RUNNING` → PATCH → terminal rapport; ett fall där `executeBusinessLogic` kastar asserterar att `RETRYING` rapporterats **och** låset släppts. Workern hanterar ingen token — identiteten sätts av interceptorn i P3, och det är allt som behövs.
 
 ### P5 — Tillsynsprocessen (pw)
 
