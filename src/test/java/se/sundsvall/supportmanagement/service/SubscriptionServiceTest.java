@@ -12,17 +12,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +43,19 @@ import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 @ExtendWith(MockitoExtension.class)
 class SubscriptionServiceTest {
 
+	private static final String IDENTIFIER_TYPE = "adAccount";
+	private static final String IDENTIFIER_VALUE = "joe01doe";
+
+	@BeforeEach
+	void setUpIdentity() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue(IDENTIFIER_VALUE));
+	}
+
+	@AfterEach
+	void clearIdentity() {
+		Identifier.remove();
+	}
+
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "my-namespace";
 	private static final String SUBSCRIBER_ID = "subscriber-1";
@@ -56,7 +70,7 @@ class SubscriptionServiceTest {
 	private SubscriptionRepository subscriptionRepositoryMock;
 
 	@Mock
-	private AccessControlService accessControlServiceMock;
+	private ErrandsRepository errandsRepositoryMock;
 
 	@InjectMocks
 	private SubscriptionService service;
@@ -77,7 +91,7 @@ class SubscriptionServiceTest {
 
 	@Test
 	void findSubscriptions() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var sub = SubscriptionEntity.create().withId("sub-1").withSubscriber(subscriber).withTargetType(DB_NAMESPACE);
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
 		when(subscriptionRepositoryMock.findAllBySubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId(SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
@@ -90,7 +104,7 @@ class SubscriptionServiceTest {
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verify(subscriptionRepositoryMock).findAllBySubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId(SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
-		verifyNoInteractions(accessControlServiceMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
@@ -104,18 +118,18 @@ class SubscriptionServiceTest {
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verifyNoMoreInteractions(subscriberServiceMock);
-		verifyNoInteractions(subscriptionRepositoryMock, accessControlServiceMock);
+		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
 	void createErrandSubscriptionHappyPath() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var errand = new ErrandEntity().withId(ERRAND_ID);
 		final var dto = Subscription.create()
 			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId(ERRAND_ID));
 
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR)).thenReturn(errand);
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
 		final var newId = randomUUID().toString();
 		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId(newId));
@@ -124,7 +138,7 @@ class SubscriptionServiceTest {
 
 		assertThat(result).isEqualTo(newId);
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
 		verify(subscriptionRepositoryMock).saveAndFlush(entityCaptor.capture());
 		final var saved = entityCaptor.getValue();
@@ -133,12 +147,12 @@ class SubscriptionServiceTest {
 		assertThat(saved.getTargetType()).isEqualTo(DB_ERRAND);
 		assertThat(saved.getCreatedBy().getType()).isEqualTo("adAccount");
 		assertThat(saved.getCreatedBy().getValue()).isEqualTo("joe01doe");
-		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock, accessControlServiceMock);
+		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
 	void createNamespaceSubscriptionHappyPath() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var dto = Subscription.create()
 			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.NAMESPACE));
 
@@ -154,7 +168,7 @@ class SubscriptionServiceTest {
 		assertThat(entityCaptor.getValue().getErrand()).isNull();
 		assertThat(entityCaptor.getValue().getTargetType()).isEqualTo(DB_NAMESPACE);
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
-		verifyNoInteractions(accessControlServiceMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
@@ -171,15 +185,14 @@ class SubscriptionServiceTest {
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verifyNoMoreInteractions(subscriberServiceMock);
-		verifyNoInteractions(subscriptionRepositoryMock, accessControlServiceMock);
+		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
 	void createErrandSubscriptionErrandNotFound() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR))
-			.thenThrow(Problem.valueOf(NOT_FOUND, "Errand not found"));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 
 		final var dto = Subscription.create()
 			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId(ERRAND_ID));
@@ -189,18 +202,18 @@ class SubscriptionServiceTest {
 			.extracting("status").isEqualTo(NOT_FOUND);
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
-		verifyNoMoreInteractions(subscriberServiceMock, accessControlServiceMock);
+		verifyNoMoreInteractions(subscriberServiceMock, errandsRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}
 
 	@Test
 	void createErrandSubscriptionConflict() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var errand = new ErrandEntity().withId(ERRAND_ID);
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR)).thenReturn(errand);
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(true);
 
 		final var dto = Subscription.create()
@@ -211,15 +224,15 @@ class SubscriptionServiceTest {
 			.extracting("status").isEqualTo(CONFLICT);
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
 		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
-		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock, accessControlServiceMock);
+		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
 	void createNamespaceSubscriptionConflict() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIsNull(SUBSCRIBER_ID, DB_NAMESPACE)).thenReturn(true);
 
@@ -234,12 +247,12 @@ class SubscriptionServiceTest {
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIsNull(SUBSCRIBER_ID, DB_NAMESPACE);
 		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
-		verifyNoInteractions(accessControlServiceMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
 	void createSubscriptionErrandTypeMissingId() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
 
 		final var dto = Subscription.create()
@@ -251,12 +264,12 @@ class SubscriptionServiceTest {
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verifyNoMoreInteractions(subscriberServiceMock);
-		verifyNoInteractions(subscriptionRepositoryMock, accessControlServiceMock);
+		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
 	void createSubscriptionNamespaceTypeWithErrandId() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
 
 		final var dto = Subscription.create()
@@ -268,17 +281,17 @@ class SubscriptionServiceTest {
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
 		verifyNoMoreInteractions(subscriberServiceMock);
-		verifyNoInteractions(subscriptionRepositoryMock, accessControlServiceMock);
+		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
 	void createErrandSubscriptionRaceTranslatesDbViolationToConflict() {
 		// Precheck reports no duplicate (false), but saveAndFlush throws DataIntegrityViolationException
 		// — simulates the TOCTOU race past rejectDuplicate.
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var errand = new ErrandEntity().withId(ERRAND_ID);
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR)).thenReturn(errand);
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
 		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class)))
 			.thenThrow(new org.springframework.dao.DataIntegrityViolationException("uq_subscription_subscriber_target_errand"));
@@ -293,7 +306,7 @@ class SubscriptionServiceTest {
 
 	@Test
 	void createNamespaceSubscriptionRaceTranslatesDbViolationToConflict() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIsNull(SUBSCRIBER_ID, DB_NAMESPACE)).thenReturn(false);
 		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class)))
@@ -310,6 +323,8 @@ class SubscriptionServiceTest {
 	@Test
 	void deleteSubscription() {
 		final var entity = SubscriptionEntity.create().withId("sub-1");
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(SubscriberEntity.create().withId(SUBSCRIBER_ID)
+			.withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE)));
 		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(entity));
 
@@ -318,11 +333,13 @@ class SubscriptionServiceTest {
 		verify(subscriptionRepositoryMock).findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).delete(entity);
 		verifyNoMoreInteractions(subscriptionRepositoryMock);
-		verifyNoInteractions(subscriberServiceMock, accessControlServiceMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
 	void deleteSubscriptionNotFound() {
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(SubscriberEntity.create().withId(SUBSCRIBER_ID)
+			.withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE)));
 		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.empty());
 
@@ -333,7 +350,7 @@ class SubscriptionServiceTest {
 		verify(subscriptionRepositoryMock).findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock, never()).delete(any(SubscriptionEntity.class));
 		verifyNoMoreInteractions(subscriptionRepositoryMock);
-		verifyNoInteractions(subscriberServiceMock, accessControlServiceMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
@@ -342,13 +359,13 @@ class SubscriptionServiceTest {
 
 		service.autoSubscribeErrandAssignee(errand);
 
-		verifyNoInteractions(subscriberServiceMock, subscriptionRepositoryMock, accessControlServiceMock);
+		verifyNoInteractions(subscriberServiceMock, subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
 	void autoSubscribeErrandAssigneeWhenSubscriptionAlreadyExists() {
 		final var assignedUserId = "joe01doe";
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withAssignedUserId(assignedUserId);
 		when(subscriberServiceMock.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId)).thenReturn(subscriber);
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(true);
@@ -359,13 +376,13 @@ class SubscriptionServiceTest {
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
 		verify(subscriptionRepositoryMock, never()).save(any());
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
-		verifyNoInteractions(accessControlServiceMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
 	void autoSubscribeErrandAssigneeCreatesSubscriberAndSubscription() {
 		final var assignedUserId = "joe01doe";
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withAssignedUserId(assignedUserId);
 		when(subscriberServiceMock.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId)).thenReturn(subscriber);
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
@@ -381,7 +398,7 @@ class SubscriptionServiceTest {
 		assertThat(saved.getErrand()).isSameAs(errand);
 		assertThat(saved.getTargetType()).isEqualTo(DB_ERRAND);
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
-		verifyNoInteractions(accessControlServiceMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
@@ -394,24 +411,48 @@ class SubscriptionServiceTest {
 
 		verify(subscriberServiceMock).findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, "joe01doe");
 		verifyNoMoreInteractions(subscriberServiceMock);
-		verifyNoInteractions(subscriptionRepositoryMock, accessControlServiceMock);
+		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock);
 	}
 
 	@Test
-	void createErrandSubscriptionOnInaccessibleErrandIsRejected() {
-		// Subscribing must not be usable to reach an errand the caller cannot read.
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
-		final var dto = Subscription.create()
-			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId(ERRAND_ID));
+	void createSubscriptionDoesNotRequireAccessToTheErrand() {
+		// Subscribing a colleague is a supported workflow, so creation deliberately does not check errand access.
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID)
+			.withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue("someone-else"));
+		final var errand = new ErrandEntity().withId(ERRAND_ID);
+		final var dto = Subscription.create().withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId(ERRAND_ID));
 
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR))
-			.thenThrow(Problem.valueOf(UNAUTHORIZED, "Errand not accessible by user 'rob01rep'"));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
+		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId("new-id"));
 
-		assertThatThrownBy(() -> service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto))
+		assertThat(service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto)).isEqualTo("new-id");
+	}
+
+	@Test
+	void listingAnotherSubscribersSubscriptionsIsRefused() {
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID)
+			.withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue("someone-else"));
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+
+		assertThatThrownBy(() -> service.findSubscriptions(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID))
 			.isInstanceOf(Problem.class)
 			.extracting("status").isEqualTo(UNAUTHORIZED);
 
-		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void deletingAnotherSubscribersSubscriptionIsRefused() {
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID)
+			.withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue("someone-else"));
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+
+		assertThatThrownBy(() -> service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "subscription-1"))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(UNAUTHORIZED);
+
+		verifyNoInteractions(subscriptionRepositoryMock);
 	}
 }

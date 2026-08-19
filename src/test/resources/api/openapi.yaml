@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "14.16"
 servers:
-- url: http://localhost:44059
+- url: http://localhost:41221
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -8892,6 +8892,8 @@ components:
             - REVISION
             - TIME_MEASURE
             - NAMESPACE_CONFIG
+            - EMAIL_INTEGRATION_CONFIG
+            - MESSAGE_EXCHANGE_INTEGRATION_CONFIG
             - METADATA_CATEGORY
             - METADATA_CONTACT_REASON
             - METADATA_EXTERNAL_ID_TYPE
@@ -9045,6 +9047,8 @@ components:
           - REVISION
           - TIME_MEASURE
           - NAMESPACE_CONFIG
+          - EMAIL_INTEGRATION_CONFIG
+          - MESSAGE_EXCHANGE_INTEGRATION_CONFIG
           - METADATA_CATEGORY
           - METADATA_CONTACT_REASON
           - METADATA_EXTERNAL_ID_TYPE

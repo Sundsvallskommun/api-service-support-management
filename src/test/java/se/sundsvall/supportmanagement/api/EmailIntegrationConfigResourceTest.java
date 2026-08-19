@@ -12,17 +12,24 @@ import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.EmailIntegration;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.config.EmailIntegrationConfigService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
@@ -42,6 +49,9 @@ class EmailIntegrationConfigResourceTest {
 
 	@MockitoBean
 	private EmailIntegrationConfigService serviceMock;
+
+	@MockitoBean
+	private AccessControlService accessControlServiceMock;
 
 	@MockitoBean
 	private MetadataService metadataServiceMock;
@@ -117,4 +127,17 @@ class EmailIntegrationConfigResourceTest {
 		verify(serviceMock).delete(NAMESPACE, MUNICIPALITY_ID);
 	}
 
+	@Test
+	void writeIsRefusedWhenTheNamespaceResourceIsNotAccessible() {
+		// The guard must run before the service, so a refused caller cannot change the configuration.
+		doThrow(Problem.valueOf(UNAUTHORIZED, "Resource not accessible"))
+			.when(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.EMAIL_INTEGRATION_CONFIG, RW);
+
+		webTestClient.delete()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isUnauthorized();
+
+		verifyNoInteractions(serviceMock);
+	}
 }

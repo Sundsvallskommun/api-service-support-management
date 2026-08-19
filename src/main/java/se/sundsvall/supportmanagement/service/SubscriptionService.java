@@ -14,24 +14,30 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static java.util.Objects.isNull;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.isRequestingUser;
 
 @Service
 public class SubscriptionService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SubscriptionService.class);
 
+	private static final String ERRAND_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
+	private static final String SUBSCRIPTION_NOT_OWNED = "Subscriptions of subscriber '%s' not accessible by user '%s'";
 	private static final String SUBSCRIPTION_NOT_FOUND = "Subscription with id:'%s' not found for subscriber with id:'%s' in namespace:'%s' for municipality with id:'%s'";
 	private static final String TARGET_ID_REQUIRED_FOR_ERRAND = "Subscription target id is required when target type is ERRAND";
 	private static final String TARGET_ID_NOT_ALLOWED_FOR_NAMESPACE = "Subscription target id must be null when target type is NAMESPACE";
@@ -40,20 +46,20 @@ public class SubscriptionService {
 
 	private final SubscriberService subscriberService;
 	private final SubscriptionRepository subscriptionRepository;
-	private final AccessControlService accessControlService;
+	private final ErrandsRepository errandsRepository;
 
 	public SubscriptionService(
 		final SubscriberService subscriberService,
 		final SubscriptionRepository subscriptionRepository,
-		final AccessControlService accessControlService) {
+		final ErrandsRepository errandsRepository) {
 		this.subscriberService = subscriberService;
 		this.subscriptionRepository = subscriptionRepository;
-		this.accessControlService = accessControlService;
+		this.errandsRepository = errandsRepository;
 	}
 
 	@Transactional(readOnly = true)
 	public List<Subscription> findSubscriptions(final String municipalityId, final String namespace, final String subscriberId) {
-		subscriberService.findEntity(municipalityId, namespace, subscriberId);
+		verifyOwnedByRequestingUser(subscriberService.findEntity(municipalityId, namespace, subscriberId));
 		return subscriptionRepository.findAllBySubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId(subscriberId, namespace, municipalityId)
 			.stream()
 			.map(SubscriptionMapper::toSubscription)
@@ -77,6 +83,7 @@ public class SubscriptionService {
 
 	@Transactional
 	public void deleteSubscription(final String municipalityId, final String namespace, final String subscriberId, final String subscriptionId) {
+		verifyOwnedByRequestingUser(subscriberService.findEntity(municipalityId, namespace, subscriberId));
 		final var entity = loadSubscriptionOrThrow(municipalityId, namespace, subscriberId, subscriptionId);
 		subscriptionRepository.delete(entity);
 	}
@@ -117,13 +124,30 @@ public class SubscriptionService {
 		}
 	}
 
+	/**
+	 * A subscriber's subscriptions are their own to read and remove. Anyone may create one, since subscribing a
+	 * colleague is a supported workflow and the creator is recorded on the subscription, but listing or deleting them
+	 * discloses or changes another user's state and is therefore limited to the subscriber themselves.
+	 * <p>
+	 * The stored identifier type is the wire form ("adAccount"), which is what {@link Identifier#getTypeString()}
+	 * returns. A request without an identifier owns nothing and is refused.
+	 */
+	private void verifyOwnedByRequestingUser(final SubscriberEntity subscriber) {
+		final var owner = subscriber.getIdentifier();
+		if (isNull(owner) || !isRequestingUser(owner.getType(), owner.getValue())) {
+			throw Problem.valueOf(UNAUTHORIZED, SUBSCRIPTION_NOT_OWNED.formatted(subscriber.getId(), getAdUser()));
+		}
+	}
+
 	private ErrandEntity resolveErrand(final SubscriptionTarget target, final String namespace, final String municipalityId) {
 		if (target.getType() != SubscriptionTargetType.ERRAND) {
 			return null;
 		}
-		// Subscribing reveals the errand's activity, so it requires at least limited read on the errand itself. Going
-		// through the access control service also stops this endpoint from being used as an existence oracle.
-		return accessControlService.getErrand(namespace, municipalityId, target.getId(), false, ProtectedResource.ERRAND, LR);
+		// Deliberately no access check: subscribing a colleague to an errand is a supported workflow, and a subscriber
+		// only ever receives notifications for errands they themselves may reach, because dispatch filters on access.
+		// See the TODO in NotificationDispatchWorker - that filtering must land together with honouring subscriptions.
+		return errandsRepository.findByIdAndNamespaceAndMunicipalityId(target.getId(), namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_NOT_FOUND.formatted(target.getId(), namespace, municipalityId)));
 	}
 
 	private void rejectDuplicate(final String subscriberId, final SubscriptionTargetType targetType, final ErrandEntity errand) {
