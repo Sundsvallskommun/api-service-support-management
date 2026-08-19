@@ -34,13 +34,13 @@ public class NotificationDispatchScheduler {
 
 		try {
 			final var groups = worker.fetchProcessable().stream()
-				.collect(Collectors.groupingBy(e -> e.getErrandId()));
+				.collect(Collectors.groupingBy(e -> e.getErrandId() + "|" + e.getRequestGroupId()));
 
-			groups.forEach((errandId, group) -> {
+			groups.forEach((groupKey, group) -> {
 				try {
 					worker.processGroup(group);
 				} catch (final Exception e) {
-					LOG.error("Error processing notification dispatch for errand: {}", errandId, e);
+					LOG.error("Error processing notification dispatch for group: {}", groupKey, e);
 					healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing notification dispatch: " + e.getMessage());
 				}
 			});

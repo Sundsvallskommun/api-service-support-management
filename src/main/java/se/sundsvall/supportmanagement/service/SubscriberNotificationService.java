@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,10 +15,12 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 
 import static java.time.OffsetDateTime.now;
+import static java.util.Collections.singletonList;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEntity;
+import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEventEntity;
 
 @Service
 public class SubscriberNotificationService {
@@ -65,12 +68,13 @@ public class SubscriberNotificationService {
 				existing -> {
 					existing.setErrandNumber(errandNumber);
 					existing.setAcknowledged(null);
-					existing.setEventType(eventType);
-					existing.setDescription(description);
-					existing.setSubType(subType);
+					if (existing.getEvents() == null) {
+						existing.setEvents(new ArrayList<>());
+					}
+					existing.getEvents().add(toEventEntity(eventType, description, subType));
 					repository.save(existing);
 				},
-				() -> repository.save(toEntity(errandId, errandNumber, subscriber, ttlInDays, eventType, description, subType)));
+				() -> repository.save(toEntity(errandId, errandNumber, subscriber, ttlInDays, new ArrayList<>(singletonList(toEventEntity(eventType, description, subType))))));
 	}
 
 	private SubscriberNotificationEntity findOrThrow(final String notificationId, final String municipalityId, final String namespace) {

@@ -559,11 +559,18 @@
         namespace varchar(32) not null,
         errand_id varchar(36) not null,
         id varchar(36) not null,
+        errand_number varchar(255),
+        identifier_value varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table subscriber_notification_event (
+        created datetime(3) not null,
+        id varchar(36) not null,
+        notification_id varchar(36) not null,
         event_type varchar(64),
         sub_type varchar(64),
         description varchar(255),
-        errand_number varchar(255),
-        identifier_value varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -1132,6 +1139,11 @@
        add constraint fk_subscriber_event_filter_subscriber_id
        foreign key (subscriber_id)
        references subscriber (id);
+
+    alter table if exists subscriber_notification_event
+       add constraint FK9o94wu44495ht25u34j60shie
+       foreign key (notification_id)
+       references subscriber_notification (id);
 
     alter table if exists subscription
        add constraint fk_subscription_errand_id

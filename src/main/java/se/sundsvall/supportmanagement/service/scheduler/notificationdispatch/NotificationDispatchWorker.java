@@ -80,9 +80,10 @@ public class NotificationDispatchWorker {
 				continue;
 			}
 
-			final var representative = relevantEntries.getFirst();
-			if (!channelDispatcher.send(errandId, errandNumber, subscriber, representative.getEventType(), representative.getDescription(), representative.getSubType())) {
-				allSucceeded = false;
+			for (final var entry : relevantEntries) {
+				if (!channelDispatcher.send(errandId, errandNumber, subscriber, entry.getEventType(), entry.getDescription(), entry.getSubType())) {
+					allSucceeded = false;
+				}
 			}
 		}
 

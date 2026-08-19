@@ -52,17 +52,19 @@ class NotificationDispatchSchedulerTest {
 	}
 
 	@Test
-	void processDispatch_groupsEntriesByErrandId() {
-		final var entry1 = NotificationDispatchEntity.create().withId("id-1").withErrandId("errand-A");
-		final var entry2 = NotificationDispatchEntity.create().withId("id-2").withErrandId("errand-A");
-		final var entry3 = NotificationDispatchEntity.create().withId("id-3").withErrandId("errand-B");
-		when(workerMock.fetchProcessable()).thenReturn(List.of(entry1, entry2, entry3));
+	void processDispatch_groupsEntriesByErrandIdAndRequestGroupId() {
+		final var entry1 = NotificationDispatchEntity.create().withId("id-1").withErrandId("errand-A").withRequestGroupId("group-1");
+		final var entry2 = NotificationDispatchEntity.create().withId("id-2").withErrandId("errand-A").withRequestGroupId("group-1");
+		final var entry3 = NotificationDispatchEntity.create().withId("id-3").withErrandId("errand-A").withRequestGroupId("group-2");
+		final var entry4 = NotificationDispatchEntity.create().withId("id-4").withErrandId("errand-B").withRequestGroupId("group-1");
+		when(workerMock.fetchProcessable()).thenReturn(List.of(entry1, entry2, entry3, entry4));
 
 		scheduler.processDispatch();
 
 		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
 		verify(workerMock).processGroup(List.of(entry1, entry2));
 		verify(workerMock).processGroup(List.of(entry3));
+		verify(workerMock).processGroup(List.of(entry4));
 		verify(workerMock).cleanUpDeadLetters();
 		verifyNoMoreInteractions(workerMock, healthUtilityMock);
 	}

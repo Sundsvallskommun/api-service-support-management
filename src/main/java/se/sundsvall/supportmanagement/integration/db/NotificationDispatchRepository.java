@@ -14,9 +14,18 @@ public interface NotificationDispatchRepository extends JpaRepository<Notificati
 	@Query("""
 		SELECT d FROM NotificationDispatchEntity d
 		WHERE d.deadLetter = false
-		AND d.created < :cutoff
 		AND (d.nextRetryAt IS NULL OR d.nextRetryAt <= :now)
-		ORDER BY d.errandId
+		AND (
+		    (d.requestGroupId IS NULL AND d.created < :cutoff)
+		    OR
+		    (d.requestGroupId IS NOT NULL AND d.requestGroupId IN (
+		        SELECT d2.requestGroupId FROM NotificationDispatchEntity d2
+		        WHERE d2.deadLetter = false
+		        GROUP BY d2.requestGroupId
+		        HAVING MAX(d2.created) < :cutoff
+		    ))
+		)
+		ORDER BY d.errandId, d.requestGroupId
 		""")
 	List<NotificationDispatchEntity> findProcessable(
 		@Param("cutoff") OffsetDateTime cutoff,
