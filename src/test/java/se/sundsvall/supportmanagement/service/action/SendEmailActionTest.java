@@ -287,7 +287,7 @@ class SendEmailActionTest {
 			.withRecipients(List.of(RECIPIENT_ADDRESS))
 			.withSubject(EMAIL_SUBJECT + " - " + ERRAND_NUMBER);
 
-		when(communicationRepository.findByErrandNumber(ERRAND_NUMBER)).thenReturn(List.of(communication));
+		when(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(ERRAND_NUMBER, errand.getNamespace(), errand.getMunicipalityId())).thenReturn(List.of(communication));
 
 		assertThat(sendEmailAction.actionFulfilled(errand, Map.of(
 			"recipient", List.of(RECIPIENT_ADDRESS),
@@ -295,7 +295,7 @@ class SendEmailActionTest {
 			"subject", List.of(EMAIL_SUBJECT),
 			"body", List.of(EMAIL_BODY)))).isTrue();
 
-		verify(communicationRepository).findByErrandNumber(ERRAND_NUMBER);
+		verify(communicationRepository).findByErrandNumberAndNamespaceAndMunicipalityId(ERRAND_NUMBER, errand.getNamespace(), errand.getMunicipalityId());
 	}
 
 	@Test
@@ -306,7 +306,7 @@ class SendEmailActionTest {
 			.withId(ERRAND_ID)
 			.withErrandNumber(ERRAND_NUMBER);
 
-		when(communicationRepository.findByErrandNumber(ERRAND_NUMBER)).thenReturn(List.of());
+		when(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(ERRAND_NUMBER, errand.getNamespace(), errand.getMunicipalityId())).thenReturn(List.of());
 
 		assertThat(sendEmailAction.actionFulfilled(errand, Map.of(
 			"recipient", List.of(RECIPIENT_ADDRESS),
@@ -314,7 +314,7 @@ class SendEmailActionTest {
 			"subject", List.of(EMAIL_SUBJECT),
 			"body", List.of(EMAIL_BODY)))).isFalse();
 
-		verify(communicationRepository).findByErrandNumber(ERRAND_NUMBER);
+		verify(communicationRepository).findByErrandNumberAndNamespaceAndMunicipalityId(ERRAND_NUMBER, errand.getNamespace(), errand.getMunicipalityId());
 	}
 
 	@Test
@@ -332,7 +332,7 @@ class SendEmailActionTest {
 			.withRecipients(List.of(RECIPIENT_ADDRESS))
 			.withSubject(EMAIL_SUBJECT + " - " + ERRAND_NUMBER);
 
-		when(communicationRepository.findByErrandNumber(ERRAND_NUMBER)).thenReturn(List.of(communication));
+		when(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(ERRAND_NUMBER, errand.getNamespace(), errand.getMunicipalityId())).thenReturn(List.of(communication));
 
 		assertThat(sendEmailAction.actionFulfilled(errand, Map.of(
 			"recipient", List.of(RECIPIENT_ADDRESS),
@@ -340,7 +340,7 @@ class SendEmailActionTest {
 			"subject", List.of(EMAIL_SUBJECT),
 			"body", List.of(EMAIL_BODY)))).isFalse();
 
-		verify(communicationRepository).findByErrandNumber(ERRAND_NUMBER);
+		verify(communicationRepository).findByErrandNumberAndNamespaceAndMunicipalityId(ERRAND_NUMBER, errand.getNamespace(), errand.getMunicipalityId());
 	}
 
 	// createAction tests

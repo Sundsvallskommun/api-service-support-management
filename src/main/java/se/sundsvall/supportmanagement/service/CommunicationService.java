@@ -109,21 +109,22 @@ public class CommunicationService {
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
 		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, LR);
 
-		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(errand.getErrandNumber()));
+		return communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errand.getErrandNumber(), namespace, municipalityId));
 	}
 
 	public List<Communication> readExternalCommunications(final String namespace, final String municipalityId, final String errandId) {
 		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, LR);
-		final var communications = communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndInternal(errand.getErrandNumber(), false));
+		final var communications = communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityIdAndInternal(errand.getErrandNumber(), namespace, municipalityId, false));
 		communications.forEach(communication -> communication.setViewed(null));
 		return communications;
 	}
 
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.COMMUNICATION, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
 
+		// Scoped to the errand, so a communication belonging to another errand cannot be marked through this one.
 		final var message = communicationRepository
-			.findById(communicationId)
+			.findByIdAndErrandNumberAndNamespaceAndMunicipalityId(communicationId, errand.getErrandNumber(), namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, COMMUNICATION_NOT_FOUND.formatted(communicationId)));
 
 		message.setViewed(isViewed);
@@ -178,7 +179,7 @@ public class CommunicationService {
 			}
 		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of(MESSAGE_ID_TEMPLATE.formatted(UUID.randomUUID(), errandEntity.getNamespace())))));
 
-		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), request.getAttachmentIds());
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity.getId(), request.getAttachmentIds());
 
 		final var emailRequest = toEmailRequest(errandEntity, request, toEmailAttachments(errandAttachments));
 
@@ -208,7 +209,7 @@ public class CommunicationService {
 
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
-		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, entity.getId(), request.getAttachmentIds());
 
 		final var fullName = getFullName(municipalityId);
 
@@ -361,8 +362,10 @@ public class CommunicationService {
 	}
 
 	@Transactional
-	public void deleteAllCommunicationsByErrandNumber(final String errandNumber) {
-		final var list = communicationRepository.findByErrandNumber(errandNumber);
+	public void deleteAllCommunicationsByErrandNumber(final String errandNumber, final String namespace, final String municipalityId) {
+		// Errand numbers repeat across tenants that share a short code, so an unscoped delete would remove another
+		// tenant's communications.
+		final var list = communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, namespace, municipalityId);
 		communicationRepository.deleteAll(list);
 	}
 }

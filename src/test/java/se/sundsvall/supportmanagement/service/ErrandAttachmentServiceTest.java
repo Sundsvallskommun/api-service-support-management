@@ -157,7 +157,7 @@ class ErrandAttachmentServiceTest {
 	void readErrandAttachment() throws IOException, SQLException, InterruptedException {
 
 		// Mock
-		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(of(attachmentMock));
+		when(attachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID)).thenReturn(of(attachmentMock));
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
 		when(attachmentMock.getMimeType()).thenReturn(MIME_TYPE);
@@ -394,7 +394,7 @@ class ErrandAttachmentServiceTest {
 	void readErrandAttachmentBusy() throws InterruptedException {
 		// Arrange
 		final byte[] fileContent = "file content".getBytes();
-		when(attachmentRepositoryMock.findById(ATTACHMENT_ID)).thenReturn(of(attachmentMock));
+		when(attachmentRepositoryMock.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID)).thenReturn(of(attachmentMock));
 		when(attachmentMock.getFileSize()).thenReturn(fileContent.length);
 		when(semaphoreMock.tryAcquire(fileContent.length, 5, SECONDS)).thenReturn(false);
 

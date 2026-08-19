@@ -116,8 +116,9 @@ public class ErrandAttachmentService {
 
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.ATTACHMENT, LR);
 
+		// Scoped to the errand: authorising the errand says nothing about an attachment belonging to a different one.
 		final var attachmentEntity = attachmentRepository
-			.findById(attachmentId)
+			.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(namespace, municipalityId, errandId, attachmentId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(ATTACHMENT_ENTITY_NOT_FOUND, attachmentId, errandId)));
 
 		streamAttachmentData(attachmentEntity, response);
@@ -174,11 +175,12 @@ public class ErrandAttachmentService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AttachmentEntity> findByNamespaceAndMunicipalityIdAndIdIn(final String namespace, final String municipalityId, final List<String> attachmentIds) {
+	public List<AttachmentEntity> findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(final String namespace, final String municipalityId, final String errandId, final List<String> attachmentIds) {
 		if (attachmentIds == null) {
 			return emptyList();
 		}
-		final var attachments = attachmentRepository.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, attachmentIds);
+		// Scoped to the errand, so an attachment of another errand cannot be pulled into a message.
+		final var attachments = attachmentRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndIdIn(namespace, municipalityId, errandId, attachmentIds);
 		if (attachments.size() != attachmentIds.size()) {
 			throw Problem.valueOf(BAD_REQUEST, "There was a mismatch in the given attachment Ids and the found attachments.");
 		}

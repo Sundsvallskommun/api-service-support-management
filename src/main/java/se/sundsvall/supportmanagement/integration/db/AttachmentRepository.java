@@ -15,5 +15,7 @@ public interface AttachmentRepository extends JpaRepository<AttachmentEntity, St
 
 	List<AttachmentEntity> findByNamespaceAndMunicipalityIdAndIdIn(final String namespace, final String municipalityId, final List<String> ids);
 
+	List<AttachmentEntity> findByNamespaceAndMunicipalityIdAndErrandEntityIdAndIdIn(final String namespace, final String municipalityId, final String errandId, final List<String> ids);
+
 	Page<AttachmentEntity> findByHashIsNull(final Pageable pageable);
 }
