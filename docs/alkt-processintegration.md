@@ -888,12 +888,17 @@ integration:
   pw-alkt: { url: "${...}", connect-timeout: 5, read-timeout: 30 }
 process-engine:
   loop-guard: { max-events-per-errand: 20, window: PT10M }
-  consumers:
-    pw-alkt: { identifier: pw-alkt }        # matchas mot X-Sent-By
+  consumers: [pw-alkt]                      # registret; namnet matchas mot X-Sent-By
 scheduler:
   process-event:   { cron: "0 * * * * *", name: processEvent,   lockAtMostFor: PT2M }
   process-cleanup: { cron: "0 30 2 * * *", name: processCleanup, lockAtMostFor: PT10M }
 ```
+
+`consumers` är **registret över kända processkonsumenter**, inte en mappning. Namnet är identiteten:
+det är samma sträng som Feign-målet under `integration`, som OAuth2-registreringen, som `X-Sent-By`-värdet
+loop-skyddet jämför mot (§6.5) och som `PROCESS_CONSUMER` i `namespace_config` pekar ut. Registret finns
+för att en felstavad `PROCESS_CONSUMER` ska avvisas vid skrivning i stället för att tyst sluta fungera —
+utan det går processkonsumenter inte att skilja från övriga poster under `integration`.
 
 I `application-it.yml` sätts samtliga cron till `"-"`.
 
@@ -1184,7 +1189,7 @@ Tabellen nedan är **utförandeordningen**. T- och P-numreringen längre ner fö
 
 **Acceptans:**
 - `getValues` returnerar **alla** rader för en nyckel (regression mot `.findFirst()`).
-- Skrivning av okänd `PROCESS_CONSUMER` ger `400`.
+- Skrivning av okänd `PROCESS_CONSUMER` ger `400`. Registret är `process-engine.consumers` (§7.2), och namnet i det är identiteten — ingen separat `identifier`-egenskap som kan drifta från sin nyckel.
 - Verifierat att `namespaceConfigCache` evikteras vid skrivning — annars är runtime-redigerbarheten en illusion.
 
 ### T3 — Process-instance-API (SM)
