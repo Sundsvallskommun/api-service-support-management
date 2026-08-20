@@ -2,7 +2,7 @@
 
 Designunderlag för ALKT-namespacets myndighetsprocess i Operaton, körd av tjänsten
 [pw-alkt](https://github.com/Sundsvallskommun/pw-alkt). Innehåller datamodell, API-kontrakt,
-regler för lås och loop-skydd, samt uppgiftsnedbrytning med acceptanskriterier.
+regler för samtidighet och loop-skydd, samt uppgiftsnedbrytning med acceptanskriterier.
 
 **Jira:** DRAKEN-4692 (story) med DRAKEN-4694…4707 som deluppgifter. Avsnittsnumren nedan
 refereras från respektive deluppgift.
@@ -21,17 +21,21 @@ refereras från respektive deluppgift.
 | 4 | Konfiguration i befintlig `namespace_config` | Ny tabell; `application.yml` | Nycklarna driver redan beteende. Flervärd per nyckel. Cache + CRUD finns |
 | 5 | Etikett → process via `metadata_label_attribute[processKey]`, utan trädtraversering | Path-matchning; subträdsarv | Subträd låter en process tillkomma implicit vid metadata-omflyttning |
 | 6 | 1-1 mellan ärende och processtyp | Flera processtyper per ärende | Tillsyn är ett nytt ärende. Ger DB-constraint i stället för disciplin |
-| 7 | Låset som kolumner på `errand_process_instance` | Egen låstabell | Låset hålls alltid av den aktiva instansen. Atomicitet gratis |
-| 8 | **Ett** skrivendpoint bär tillstånd, aktiviteter och låseffekt | Separata endpoints | Färre anrop, en transaktion, omöjligt att hålla lås utan att ha rapporterat |
-| 9 | Ingen force-unlock | `?force=true` | Fyra automatiska utgångar. SM saknar rollbaserad auktorisation |
-| 10 | Inga processvariabler för idempotens | `updateAvailable`, versionsräknare | Racy read-modify-write. Skyddet finns strukturellt |
-| 11 | `errand.status` frikopplat från processens faser | Process äger status | Skilda begrepp. Listvyn läser processläget ur `errand.process` |
-| 12 | SM:s `phase`/`errand_phase` används inte för ALKT | Återanvänd fasmodellen | Processmodellen ägs av BPMN |
-| 13 | pw-alkt:s `start`/`update`-endpoints tas bort | Deprecation | Inga konsumenter. Två startvägar ⇒ någon använder fel |
-| 14 | **`ProcessStatus` med `releasesLock()` och `isTerminal()` som metoder** | Två fristående mappningstabeller | De styr *olika* saker och får inte drifta isär — se §4.1 |
-| 15 | **Fem statusvärden**, `START_FAILED` blir `FAILED` + `errorCode` | Åtta värden | Skillnaden syns redan på `processInstanceId IS NULL` |
-| 16 | **Modelleringsregel: inga parallella grenar som muterar ärendet** | Refcount på låset | Se §6.5. Refcount är eskaleringsvägen om regeln inte räcker |
-| 17 | Identitet (`X-Sent-By`) styr om ärendet får skrivas, `lock_owner_task_id` vem som får släppa låset | Serverutfärdad fencing-token per förvärv | Skyddade bara mot en inaktuell worker efter TTL-utgång, och `@Version` fångar ändå verkliga konflikter |
+| 7 | **Optimistisk kontroll via `errand.version` och `If-Match`** — konflikten upptäcks vid skrivning | Pessimistiskt ärendelås med TTL, guard och `423` | Kravet är att ändringar inte tappas, inte att handläggaren hindras. Maskineriet finns redan i drift — §6.2 |
+| 8 | **Ett** skrivendpoint bär tillstånd och aktiviteter | Separata endpoints | Färre anrop, en transaktion, en rapport per arbetssteg |
+| 9 | Inga processvariabler för idempotens | `updateAvailable`, versionsräknare | Racy read-modify-write. Skyddet finns strukturellt |
+| 10 | `errand.status` frikopplat från processens faser | Process äger status | Skilda begrepp. Listvyn läser processläget ur `errand.process` |
+| 11 | SM:s `phase`/`errand_phase` används inte för ALKT | Återanvänd fasmodellen | Processmodellen ägs av BPMN |
+| 12 | pw-alkt:s `start`/`update`-endpoints tas bort | Deprecation | Inga konsumenter. Två startvägar ⇒ någon använder fel |
+| 13 | **`ProcessStatus.isTerminal()` som metod på enumet** | Fristående mappningstabell | Styr `active_marker` och därmed 1-1-invarianten. `WAITING` är den fällan — se §4.1 |
+| 14 | **Fem statusvärden**, `START_FAILED` blir `FAILED` + `errorCode` | Åtta värden | Skillnaden syns redan på `processInstanceId IS NULL` |
+| 15 | **Modelleringsregel: inga parallella grenar som muterar ärendet** | Ingen regel | Två grenar som skriver samma ärende ger ömsesidiga `412` utan konvergens — §6.4 |
+| 16 | `X-Sent-By` bär loop-filtret, inte auktorisation | Identitetsbaserad skrivspärr | Med optimistisk kontroll finns ingen skrivspärr att auktorisera mot. `@Version` fångar de verkliga konflikterna |
+| 17 | **Publiceringsfel märker transaktionen `rollback-only`** | Lita på att anropsstället propagerar felet | Samtliga anropsställen sväljer undantag från `createErrandEvent` (§1.7). Utan detta finns ingen transaktionell outbox |
+| 18 | **Start styrs av `processKey`, inte av `eventType`** | Start endast på `CREATE` | Ärendet som får sin etikett i ett andra anrop hade annars aldrig startat — §7.1 motiverar triggern, §9.3 utför den |
+| 19 | Aktiviteter får sakna processinstans — `errand_process_instance_id` nullbar, aktivitetsläsning ärendescopad | `not null` | Tvetydig etikett och nödbroms inträffar innan någon instans finns. Posten hade inte gått att skriva |
+| 20 | Rena läs-workers rapporterar `errandVersion`; SM svarar `412` om den glidit | Inget skydd alls för läs-workers | Workern har annars ingenting att kollidera på — §6.3 |
+| 21 | **`POST .../process-instances` skapar men uppdaterar aldrig** | `409` så snart en rad finns | Workern kan `PUT`:a före pw:s `POST`. Med create-only är ankomstordningen likgiltig, och `409` betyder bara en sak — §5.1 |
 
 ---
 
@@ -39,55 +43,69 @@ refereras från respektive deluppgift.
 
 ### 1.1 `EventService` är den universella kanalen
 
-`EventService.createErrandEvent` anropas från 13 ställen:
+`EventService.createErrandEvent` anropas från 12 ställen:
 
 | Väg | Anropsställe |
 |---|---|
-| PATCH / create / delete | `ErrandService.java:142, 208, 251` |
-| Bilagor | `ErrandAttachmentService.java:105, 151, 168` |
-| Handover | `HandoverService.java:326, 332` |
-| Konversationer | `MessageExchangeSyncService.java:63` |
-| E-postintag | `EmailReaderWorker.java:149` |
-| Webbmeddelanden | `WebMessageCollectorWorker.java:80` |
-| Suspension | `SuspensionWorker.java:46` |
+| PATCH / create / delete | `ErrandService.createErrand/updateErrand/deleteErrand` |
+| Bilagor | `ErrandAttachmentService.createErrandAttachmentInternal/deleteErrandAttachment/createErrandAttachment(AttachmentEntity, …)` |
+| Handover | `HandoverService.logHandoverEvents` |
+| Konversationer | `MessageExchangeSyncService.syncConversation` |
+| E-postintag | `EmailReaderWorker.processErrand` |
+| Webbmeddelanden | `WebMessageCollectorWorker.saveMessage` |
+| Suspension | `SuspensionWorker.processExpiredSuspensions` |
 
-**Revisioner skapas bara på fem ställen** — `ErrandService:139, 204`, `ErrandAttachmentService:102, 148, 165`. Intaget (`EmailReaderWorker:145`, `MessageExchangeSyncService:109`) sparar direkt via repository. Därför kan trigger-filtret inte bygga på revisionsdiff.
+**Revisioner skapas bara på fem ställen** — `ErrandService.createErrand/updateErrand`, `ErrandAttachmentService.createErrandAttachmentInternal/deleteErrandAttachment/createErrandAttachment(AttachmentEntity, …)`. Intaget (`EmailReaderWorker.processErrand`, `MessageExchangeSyncService.applyStatusChange`) sparar direkt via repository. Därför kan trigger-filtret inte bygga på revisionsdiff.
 
 `EventSubType` (befintlig enum): `ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, SYSTEM, SUSPENSION`. `EventType` kommer från eventlog-specen.
 
 ### 1.2 Leveransmaskineriet finns redan
 
-`EventService:109-121` (outbox-rad), `NotificationDispatchEntity:20-24, 62-74`, `NotificationDispatchScheduler:27-53` (ShedLock + hälsoindikator), `NotificationDispatchWorker:112-160` (retry/backoff/dead letter), `:168-174` (eventtypfilter), `:162-166` (hoppa över upphovet).
+`EventService.saveDispatchEntry` (outbox-rad), `NotificationDispatchEntity` (fälten `retryCount`/`nextRetryAt`/`deadLetter`, indexet `idx_dispatch_dead_letter_retry`), `NotificationDispatchScheduler.processDispatch` (ShedLock + hälsoindikator), `NotificationDispatchWorker.processGroup`/`handleFailure` (retry/backoff/dead letter), `.subscriberWantsEventType` (eventtypfilter), `.isExecutingUser` (hoppa över upphovet).
 
-Ärv **inte**: `NotificationDispatchRepository.findProcessable:14-23` saknar `LIMIT`; `NotificationDispatchWorker:24` har `TRANSACTION_BUFFER_SECONDS = 10`. Och `cleanUpDeadLetters:48-49` **raderar** dead letters efter 7 dagar utan möjlighet att köra om dem — se §8.3.
+Ärv **inte**: `NotificationDispatchRepository.findProcessable` saknar `LIMIT`; `NotificationDispatchWorker.TRANSACTION_BUFFER_SECONDS` är 10 s. Och `NotificationDispatchWorker.cleanUpDeadLetters` **raderar** dead letters efter 7 dagar utan möjlighet att köra om dem — se §8.3.
 
 ### 1.3 Chokepoint för errand-skrivningar
 
-Allt går via `AccessControlService.getErrand(...)`, och **skrivvägar skickar `RW` ensamt, läsvägar `R, RW`**.
+Allt går via `AccessControlService`, och **skrivvägar skickar `RW` ensamt, läsvägar `R, RW`**. Det finns **två** ingångar. Med optimistisk kontroll (§6.2) finns ingen guard som måste täcka båda — men kartan behövs ändå för att veta vilka vägar som muterar ärendet:
 
-Skriv: `ErrandService:178, 219`, `ErrandParameterService:47, 74, 94`, `ErrandJsonParameterService:63, 104`, `ErrandAttachmentService:78, 133`, `CommunicationService:122, 169, 197, 209`, `ConversationService:87, 126, 153, 239`, `ErrandNoteService:54, 91, 111`, `NotificationService:82, 114, 123, 135`.
+`getErrand(...)` — hämtar entiteten och filtrerar:
+`ErrandService.updateErrand/deleteErrand`, `ErrandParameterService.updateErrandParameters/updateErrandParameter/deleteErrandParameter`, `ErrandJsonParameterService.updateJsonParameter/deleteJsonParameter`, `ErrandAttachmentService.createErrandAttachment/deleteErrandAttachment`, `CommunicationService.sendEmail/sendSms/sendWebMessage`, `ConversationService.markAsRead`, `ErrandNoteService.createErrandNote/updateErrandNote/deleteErrandNote`, `NotificationService.createNotification`.
 
-Undantag: **`HandoverService:135`** hämtar utan filter men muterar källärendet på `:309`. Schemaläggarna går förbi chokepointen helt — vilket är önskvärt (§6.4).
+`verifyExistingErrandAndAuthorization(...)` — kontrollerar **utan** att hämta entiteten:
+`CommunicationService.updateViewedStatus`, `ConversationService.createConversation/updateConversationById/createMessage`, `NotificationService.globalAcknowledgeNotificationsByErrandId/updateNotification/deleteNotification`.
+
+Undantag: **`HandoverService.handover`** hämtar utan filter men muterar källärendet i `handleSourceErrand`. Schemaläggarna går förbi chokepointen helt — de skriver via repository direkt (`EmailReaderWorker.processErrand`, `MessageExchangeSyncService.applyStatusChange`) och höjer därmed inte heller `errand.version` (§6.2).
 
 ### 1.4 Revisionssnapshotten är hela entiteten
 
-`RevisionMapper:18-24` Gson-serialiserar hela `ErrandEntity`; `CircularReferenceExclusionStrategy` tar bara bakåtreferenser. **Två hårda regler:** inga nya kolumner på `errand`, inga nya `@OneToMany` på `ErrandEntity`. Dessutom gör `ErrandService:184` `OPTIMISTIC_FORCE_INCREMENT` — en kolumn på `errand` hade invaliderat varje ETag.
+`RevisionMapper.toSerializedSnapshot` Gson-serialiserar hela `ErrandEntity`; `CircularReferenceExclusionStrategy` tar bara bakåtreferenser. **Två hårda regler:** inga nya kolumner på `errand`, inga nya `@OneToMany` på `ErrandEntity`. Dessutom gör `ErrandService.updateErrand` `OPTIMISTIC_FORCE_INCREMENT` — en kolumn på `errand` hade invaliderat varje ETag.
 
 ### 1.5 `namespace_config` driver redan beteende
 
-`ConfigPropertyExtractor:15-19` har `ACCESS_CONTROL` och `NOTIFY_REPORTER` — beteendeflaggor. `namespace_config_value` (`V1_19:2-7`): `key`, `value text`, `type` (`BOOLEAN|STRING|INTEGER`), unikt på **`(namespace_config_id, key, value)`** ⇒ flervärd per nyckel. `@ElementCollection(EAGER)`, cachad via `namespaceConfigCache`.
+`ConfigPropertyExtractor` har `PROPERTY_ACCESS_CONTROL` och `PROPERTY_NOTIFY_REPORTER` — beteendeflaggor. `namespace_config_value` (`V1_19`): `key`, `value text`, `type` (`BOOLEAN|STRING|INTEGER`), unikt på **`(namespace_config_id, key, value)`** ⇒ flervärd per nyckel. `@ElementCollection(EAGER)`, cachad via `namespaceConfigCache`.
 
-**Fallgrop:** `getNullableValue:36` gör `.findFirst()` och ignorerar tyst resten.
+**Fallgrop:** `ConfigPropertyExtractor.getNullableValue` gör `.findFirst()` och ignorerar tyst resten.
 
 ### 1.6 Övrigt
 
-- `metadata_label_attribute` (`V1_37`): fri key/value, unik på `(metadata_label_id, key)`. Nycklar **inte** whitelistade (`ValidLabelAttributesConstraintValidator:34-42`).
-- `ErrandPhaseService:38-40, 62-65` returnerar direkt när ingen fas finns ⇒ oanvänd fasmodell kostar noll.
-- `errand.id` är `varchar(255)` (`V1_0:136`).
-- pw-alkt är stateless. `AbstractTaskWorker:38-44` varnar för races vid skrivning av processvariabler. `alkt-ansokan.bpmn` innehåller **inget** `updateAvailable`; `clearUpdateAvailable` har **inga anropare**.
+- `metadata_label_attribute` (`V1_37`): fri key/value, unik på `(metadata_label_id, key)`. Nycklar **inte** whitelistade (`ValidLabelAttributesConstraintValidator.hasUniqueAttributeKeys`).
+- `ErrandPhaseService.processPhaseChange` och `.validateStatusAgainstActivePhase` returnerar direkt när ingen fas finns ⇒ oanvänd fasmodell kostar noll.
+- `errand.id` är `varchar(255)` (`V1_0`).
+- pw-alkt är stateless. `AbstractTaskWorker.clearUpdateAvailable` varnar för races vid skrivning av processvariabler. `alkt-ansokan.bpmn` innehåller **inget** `updateAvailable`; `clearUpdateAvailable` har **inga anropare**.
 - Varje PW-tjänst har eget API i WSO2 ⇒ en OAuth2-registrering per PW-tjänst.
-- SM saknar Testcontainers-uppsättning; `application-it.yml` har `schema-generation: validate`.
+- **SM har Testcontainers.** `application-it.yml` (`spring.datasource`): `driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver`, `url: jdbc:tc:mariadb:10.6:///ittest`. Uppsättningen syns inte i `src/integration-test/java` eftersom den sker via JDBC-URL, inte via en `@Container`-deklaration. `schema-generation: validate` är påslaget. MariaDB **10.6** ⇒ `SKIP LOCKED` är tillgängligt.
 - `truncate.sql` måste utökas med varje ny tabell.
+
+### 1.7 Varje anrop till `createErrandEvent` sväljer undantag
+
+`ErrandService.createErrand/updateErrand/deleteErrand`, `ErrandAttachmentService.createErrandAttachmentInternal/deleteErrandAttachment/createErrandAttachment(AttachmentEntity, …)`,
+`EmailReaderWorker.processErrand` och `MessageExchangeSyncService.syncConversation` har alla `try { … } catch (final Exception e) { LOG.warn(…) }` runt anropet.
+
+`EventService.createErrandEvent` har **redan** en inre `try/catch` runt eventlog-anropet, så de yttre fångarna är
+redundanta för sitt uttalade syfte. Men de finns, och de fångar `Exception`. En publicering som hängs in
+sist i `createErrandEvent` och bara kastar blir därför en WARN-rad i loggen medan ärendeskrivningen
+committar — dual-write-problemet outboxen skulle lösa, återinfört. Motmedlet står i §2.2.
 
 ---
 
@@ -110,7 +128,7 @@ Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_eve
                                                                           |
                                                                    external task -> worker
                                                                           |
-                                              PUT process-instances (tillstånd + aktiviteter + lås)
+                                                    PUT process-instances (tillstånd + aktiviteter)
                                                                           |
                                                                          SM
 ```
@@ -121,24 +139,49 @@ Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_eve
 
 ```
 1. PROCESS_CONSUMER för (municipalityId, namespace)?      nej -> return
-2. Aktivt processlås på ärendet?                          ja  -> return        (loop-skydd, lager 1)
-3. Levererade event för ärendet i fönstret > tröskel?      ja  -> ERROR-aktivitet, return  (lager 4)
-4. eventSubType i PROCESS_TRIGGER?                        nej -> return        (lager 3)
+2. executedBy == PROCESS_CONSUMER?                        ja  -> return        (loop-skydd, lager 1)
+3. Levererade event för ärendet i fönstret > tröskel?      ja  -> ERROR-aktivitet, return  (lager 3)
+4. eventSubType i PROCESS_TRIGGER?                        nej -> return        (lager 2)
 5. processKey ur etiketterna                              0 -> return; >1 -> ERROR-aktivitet, return
 6. INSERT process_event_outbox
 ```
 
 Steg 1 är en cachad map-uppslagning. Namespace utan process betalar inget mer.
 
+ERROR-aktiviteterna i steg 3 och 5 skrivs **utan processinstans** — de inträffar per definition när
+ingen instans finns (§3.1).
+
+**Publiceringen får inte kunna svälja sitt eget fel.** Anropsställena fångar `Exception` (§1.7), och
+regeln att inte lägga till en nionde svalgande fångst är inte en garanti. Därför:
+
+```java
+// ProcessEventPublisher, vid varje fel som inte är ett medvetet "return" enligt regeln ovan
+if (TransactionSynchronizationManager.isActualTransactionActive()) {
+    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+}
+throw ...;   // anropsstället får svälja detta; transaktionen kan ändå inte committa
+```
+
+Effekten: en utebliven outbox-rad fäller ärendeskrivningen (`UnexpectedRollbackException` vid commit),
+oavsett vad anropsstället gör med undantaget. Namespace utan `PROCESS_CONSUMER` returnerar i steg 1 och
+påverkas aldrig.
+
+Saknas transaktion helt går det inte att rulla tillbaka — då är ärendeskrivningen redan committad.
+Det loggas som ERROR och räknas i `process_event.publish_failed` (§8.1); i dagsläget har varje
+anropsväg en transaktion (`ErrandService`, `EmailReaderWorker.processEmail`, `MessageExchangeWorker.processConversation`).
+
+Att ta bort de yttre fångarna löser inte problemet ensamt — det skulle också göra notisfel dödliga för
+ärendeskrivningen. Gör det i så fall som separat städning.
+
 ### 2.3 Latens
 
-`@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` + `@Async("processEventExecutor")` (core 2 / max 4 / kö 500, **`AbortPolicy`**). Mönstret finns i `SubscriptionService:84-86`.
+`@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` + `@Async("processEventExecutor")` (core 2 / max 4 / kö 500, **`AbortPolicy`**). Mönstret finns i `SubscriptionService.handleAutoSubscribeEvent`.
 
 Cron `0 * * * * *` som nät, samma kodväg, buffert 5 s **endast** där. Ordning per ärende via `@Lock(PESSIMISTIC_WRITE)` på radgruppen sorterad på `created, id`.
 
 ### 2.4 Transport
 
-**Nu REST**, eftersom outboxen byggs ändå, brokern inte är bevisat driftklar och SM saknar Testcontainers-infrastruktur.
+**Nu REST**, eftersom outboxen byggs ändå och brokern inte är bevisat driftklar. Det senare är enda grinden — SM har Testcontainers (§1.6), så en `RabbitMQContainer` är ingen tröskel.
 
 **Målbild AMQP:** varje ny PW-tjänst kräver annars registrering + url + Feign-mål i SM. Migreringen är **en metod** — `ProcessEventDelivery.deliver(row)`. Varje REST-konsument som byggs innan bytet är kastat arbete.
 
@@ -191,12 +234,6 @@ create table if not exists errand_process_instance (
     current_activity_name varchar(255),
     error_code            varchar(64),
     error_message         varchar(2048),
-    -- Laset. Aktivt endast nar lock_expires > now().
-    lock_expires          datetime(3),
-    lock_reason           varchar(512),
-    lock_owner_task_id    varchar(64),             -- Operatons externalTaskId, se 6.5
-    lock_first_acquired   datetime(3),             -- for max-total-taket
-    lock_renew_count      int          default 0 not null,
     started               datetime(3),
     ended                 datetime(3),
     -- 1 medan instansen lever, NULL nar den ar terminal. NULL ar distinkt i unika index
@@ -210,7 +247,6 @@ create table if not exists errand_process_instance (
 ) engine=InnoDB;
 
 create index if not exists idx_epi_errand_id  on errand_process_instance (errand_id);
-create index if not exists idx_epi_lock_sweep on errand_process_instance (lock_expires);
 
 alter table if exists errand_process_instance
     add constraint fk_epi_errand_id foreign key (errand_id) references errand (id) on delete cascade;
@@ -218,10 +254,12 @@ alter table if exists errand_process_instance
 -- 3. Append-only faktalogg. Processagnostisk: inga FK mot SM-metadata, ingen validering.
 create table if not exists errand_process_activity (
     id                         varchar(36)  not null,
-    errand_process_instance_id varchar(36)  not null,
+    -- Nullbar med flit: SM skriver CONFIG/ERROR-poster (tvetydig etikett, nodbroms) innan
+    -- nagon processinstans finns. Se 4.2. errand_id ar da enda kopplingen.
+    errand_process_instance_id varchar(36)  null,
     errand_id                  varchar(255) not null,
     external_task_id           varchar(64),             -- idempotensnyckel, stabil over retries
-    activity_type              varchar(64)  not null,   -- fri strang: PHASE | TASK | INCIDENT | LOCK | CONFIG
+    activity_type              varchar(64)  not null,   -- fri strang: PHASE | TASK | INCIDENT | CONFIG | CONCURRENCY
     activity_id                varchar(255),
     activity_name              varchar(255),
     severity                   varchar(16)  default 'INFO' not null,   -- INFO | WARN | ERROR
@@ -232,30 +270,24 @@ create table if not exists errand_process_activity (
     primary key (id),
     constraint fk_epa_instance foreign key (errand_process_instance_id)
         references errand_process_instance (id) on delete cascade,
+    constraint fk_epa_errand foreign key (errand_id)
+        references errand (id) on delete cascade,
     constraint uq_epa_idempotency unique (errand_process_instance_id, external_task_id, activity_id)
 ) engine=InnoDB;
 
 create index if not exists idx_epa_instance_occurred on errand_process_activity (errand_process_instance_id, occurred_at);
+create index if not exists idx_epa_errand_occurred   on errand_process_activity (errand_id, occurred_at);
 create index if not exists idx_epa_retention         on errand_process_activity (created);
 ```
-
-**Förenklingar mot v3, medvetna:**
-
-| Borttaget | Skäl |
-|---|---|
-| `business_key` | Är alltid `errand_id` per konstruktion. Härledbart |
-| `errand_number` i outbox | pw hämtar ärendet ändå; fältet användes inte |
-| `executed_by_type` | Filtret matchar på värdet. Typen tillförde inget |
-| `started`/`ended` på aktivitet | Tre nullbara tidsstämplar där två oftast var null. En aktivitetslogg är en sekvens av händelser; UI parar ihop `occurred_at` för att visa varaktighet |
-| `STARTING`, `CANCELLED`, `START_FAILED` som statusvärden | §4.1 |
 
 ### 3.2 FK och kaskad
 
 | Tabell | FK | Motiv |
 |---|---|---|
 | `process_event_outbox` → `errand` | **Ingen, medvetet** | Samma val som `notification_dispatch` (`V1_38`). Ett DELETE-event måste överleva att ärendet raderas |
-| `errand_process_instance` → `errand` | `ON DELETE CASCADE`, **ingen JPA-relation på `ErrandEntity`** | DB-kaskaden räcker för att undvika föräldralösa rader vid `repository.deleteById` (`ErrandService:246`). JPA-mappning vore aktivt skadlig (§1.4) |
-| `errand_process_activity` → instans | `ON DELETE CASCADE` | `errand_id`-kolumnen får ingen egen FK — InnoDB kaskaderar rekursivt |
+| `errand_process_instance` → `errand` | `ON DELETE CASCADE`, **ingen JPA-relation på `ErrandEntity`** | DB-kaskaden räcker för att undvika föräldralösa rader vid `repository.deleteById` (`ErrandService.deleteErrand`). JPA-mappning vore aktivt skadlig (§1.4) |
+| `errand_process_activity` → instans | `ON DELETE CASCADE`, **nullbar** | Poster utan instans måste kunna skrivas (§4.2) |
+| `errand_process_activity` → `errand` | `ON DELETE CASCADE` | Krävs när instans-FK:n är nullbar — annars överlever instanslösa poster ärendet. InnoDB tillåter båda kaskadvägarna parallellt |
 
 **Retention:** aktiviteter röjs på `created` (default 365 d); outbox-rader röjs när `delivered_at` är äldre än **max(loop-guard-fönstret × 6, 24 h)**; dead letters enligt §8.3.
 
@@ -265,45 +297,44 @@ create index if not exists idx_epa_retention         on errand_process_activity 
 
 ### 4.1 `ProcessStatus` — beteendet bor på enumet
 
-**Detta är den viktigaste enskilda klassen i lösningen.** Två helt olika frågor styrs av statusen, och de har **olika** svarsmängder. Skiljs de åt i två fristående mappningar kommer de förr eller senare drifta isär.
+Statusen styr en sak till utöver att visas: `active_marker`, och därmed 1-1-invarianten. Den kopplingen
+måste bo på enumet, inte i en mappningstabell någon annanstans.
 
 ```java
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
 public enum ProcessStatus {
 
-    /** En worker exekverar just nu. Enda status som behåller processlåset. */
-    RUNNING   (true,  false),
+    /** En worker exekverar just nu. */
+    RUNNING   (false),
 
     /** Processen väntar på handläggare, timer eller extern part. Lever, men arbetar inte. */
-    WAITING   (false, false),
+    WAITING   (false),
 
     /** Ett försök fallerade, Operaton kommer att försöka igen. Lever, men arbetar inte. */
-    RETRYING  (false, false),
+    RETRYING  (false),
 
     /** Processen nådde sitt slut. */
-    COMPLETED (false, true),
+    COMPLETED (true),
 
     /** Retries uttömda, incident rest, eller starten misslyckades (errorCode säger vilket). */
-    FAILED    (false, true);
+    FAILED    (true);
 
-    private final boolean holdsLock;
     private final boolean terminal;
 
-    ProcessStatus(final boolean holdsLock, final boolean terminal) {
-        this.holdsLock = holdsLock;
+    ProcessStatus(final boolean terminal) {
         this.terminal = terminal;
     }
 
-    /** Styr lock_expires. Allt utom RUNNING släpper låset. */
-    public boolean holdsLock() { return holdsLock; }
-
-    /** Styr active_marker. OBS: en annan mängd än holdsLock - WAITING lever men håller inget lås. */
+    /** Styr active_marker — och därmed hur många levande instanser ett ärende kan ha. */
     public boolean isTerminal() { return terminal; }
 }
 ```
 
-> **Buggen detta förhindrar:** i v3 stod att den slutna enumen "styr även låsets släpp", vilket är sant — men `active_marker` styrs av en *annan* mängd. Implementeras "terminal = släpper lås = `active_marker = NULL`" får en **`WAITING`-instans `active_marker = NULL`**, och då kan en andra processinstans startas för samma ärende. Hela 1-1-invarianten faller.
+> **Fällan:** `WAITING` betyder att processen inte arbetar, och det är lätt att läsa som "klar".
+> Behandlas den som terminal får instansen `active_marker = NULL`, och då kan en **andra**
+> processinstans startas för samma ärende. Hela 1-1-invarianten faller. Ett tabelldrivet test måste
+> räkna upp **varje** enumvärde mot `isTerminal()`, med `WAITING` explicit verifierad som icke-terminal.
 
 Motsvarande i pw-alkt (`se.sundsvall.alkt.api.model.ProcessStatus`) med samma fem värden.
 
@@ -313,7 +344,11 @@ Motsvarande i pw-alkt (`se.sundsvall.alkt.api.model.ProcessStatus`) med samma fe
 public enum ActivitySeverity { INFO, WARN, ERROR }
 ```
 
-`activityType` och `activityId` är **fria strängar** — SM tolkar dem inte. Konvention i pw: `PHASE`, `TASK`, `INCIDENT`. SM skriver själv `LOCK` (låsutgång) och `CONFIG` (tvetydig etikett, okänd processKey).
+`activityType` och `activityId` är **fria strängar** — SM tolkar dem inte. Konvention i pw: `PHASE`, `TASK`, `INCIDENT`. SM skriver själv `CONFIG` (tvetydig etikett, okänd processKey) och `CONCURRENCY` (två external tasks samtidigt, §6.4).
+
+**Poster utan processinstans.** `CONFIG`-posterna och nödbromsens ERROR-post uppstår när etiketterna är
+tvetydiga eller när eventflödet skenar — i båda fallen finns typiskt **ingen** instans att hänga posten
+på. Därför är `errand_process_instance_id` nullbar (§3.1) och aktiviteter läses ärendescopat (§5.2).
 
 ### 4.3 JPA-entitet — `ErrandProcessInstanceEntity`
 
@@ -323,8 +358,7 @@ Följer mönstret i `NamespaceConfigEntity`: `@PrePersist`/`@PreUpdate` för tid
 @Entity
 @Table(name = "errand_process_instance",
     indexes = {
-        @Index(name = "idx_epi_errand_id",  columnList = "errand_id"),
-        @Index(name = "idx_epi_lock_sweep", columnList = "lock_expires")
+        @Index(name = "idx_epi_errand_id", columnList = "errand_id")
     },
     uniqueConstraints = {
         @UniqueConstraint(name = "uq_epi_process_instance_id",   columnNames = "process_instance_id"),
@@ -363,12 +397,6 @@ public class ErrandProcessInstanceEntity {
     @Column(name = "error_code",    length = 64)   private String errorCode;
     @Column(name = "error_message", length = 2048) private String errorMessage;
 
-    @Column(name = "lock_expires")                     private OffsetDateTime lockExpires;
-    @Column(name = "lock_reason", length = 512)        private String lockReason;
-    @Column(name = "lock_owner_task_id", length = 64)  private String lockOwnerTaskId;
-    @Column(name = "lock_first_acquired")              private OffsetDateTime lockFirstAcquired;
-    @Column(name = "lock_renew_count", nullable = false) private int lockRenewCount;
-
     @Column(name = "started") private OffsetDateTime started;
     @Column(name = "ended")   private OffsetDateTime ended;
 
@@ -379,31 +407,18 @@ public class ErrandProcessInstanceEntity {
     @Column(name = "created")  private OffsetDateTime created;
     @Column(name = "modified") private OffsetDateTime modified;
 
-    /** Enda stallet som far satta status - haller de tva harledda falten i synk. */
+    /** Enda stallet som far satta status - haller active_marker och ended i synk. */
     public void applyStatus(final ProcessStatus status, final Clock clock) {
         this.processStatus = status;
         this.activeMarker  = status.isTerminal() ? null : (byte) 1;
-        if (status.isTerminal()) {
-            this.ended = OffsetDateTime.now(clock);
-            releaseLock();
-        } else if (!status.holdsLock()) {
-            releaseLock();
-        }
-    }
-
-    public boolean isLocked(final Clock clock) {
-        return lockExpires != null && lockExpires.isAfter(OffsetDateTime.now(clock));
-    }
-
-    private void releaseLock() {
-        this.lockExpires = null;
-        this.lockReason = null;
-        this.lockOwnerTaskId = null;
+        this.ended         = status.isTerminal() ? OffsetDateTime.now(clock) : null;
     }
 }
 ```
 
-**`applyStatus` är enda vägen att sätta status.** Sätts `processStatus` direkt någon annanstans hamnar `active_marker` och låset ur synk — och det är exakt buggen i §4.1. Gör settern privat/paketprivat.
+**`applyStatus` är enda vägen att sätta status.** Sätts `processStatus` direkt någon annanstans hamnar `active_marker` ur synk — och det är exakt fällan i §4.1. Gör settern privat/paketprivat.
+
+`ended` nollas när status blir icke-terminal. Det spelar roll när en incident löses manuellt i Operaton och en `FAILED` instans börjar köra igen: raden ska inte bära en sluttid mitt under körning. Notera att `active_marker`-platsen frigjordes när instansen blev terminal — hann ett nytt flöde starta en instans dessförinnan ger återupplivningen `409` på `uq_epi_one_active_per_errand`. Det är rätt utfall, men felmeddelandet måste peka ut den blockerande instansen.
 
 ---
 
@@ -426,8 +441,7 @@ Content-Type: application/json
   "currentActivityId": "investigation_phase",
   "currentActivityName": "Utredning",
   "externalTaskId": "a91c7f30-4d2b-11f0-9e21-0242ac120004",
-  "lockReason": "Hämtar beslutsunderlag",
-  "ttlSeconds": 1200,
+  "errandVersion": 7,
   "started": "2026-08-19T08:55:11.004+02:00",
   "ended": null,
   "error": null,
@@ -443,18 +457,19 @@ Content-Type: application/json
 }
 ```
 
+`errandVersion` är valfri och bär den version av ärendet workern läste. Är den satt och har glidit svarar
+SM `412` och skriver ingenting — se §6.3. Workers som skriver tillbaka till ärendet behöver den inte;
+för dem gör `If-Match` på själva PATCH:en samma jobb.
+
 Svar `201 Created` (första gången, med `Location`) eller `200 OK`:
 
 ```json
 {
   "id": "1f0e4c21-...",
   "processInstanceId": "8f1c2b6e-...",
-  "processStatus": "RUNNING",
-  "lockExpires": "2026-08-19T09:32:03.221+02:00"
+  "processStatus": "RUNNING"
 }
 ```
-
-`lockExpires` är satt när låset hålls efter anropet, annars null.
 
 **Felrapport** — samma endpoint:
 
@@ -465,22 +480,59 @@ Svar `201 Created` (första gången, med `Location`) eller `200 OK`:
   "error": { "code": "INCIDENT", "message": "Timeout mot Employee efter 30 s" } }
 ```
 
-**Startfel** (Operaton svarade aldrig med ett id) rapporteras utan `processInstanceId` i path — använd `POST .../process-instances` i stället:
+**`POST .../process-instances` — registrera ett startförsök.** Två fall:
+
+| Utfall i Operaton | Kropp | SM svarar |
+|---|---|---|
+| Start lyckades | `processKey`, `processInstanceId`, `processStatus: RUNNING` | Raden saknas ⇒ `201` med `Location`. Raden finns redan med **samma** `processInstanceId` ⇒ `200`, och ingenting ändras. Annan **levande** instans för ärendet ⇒ `409` |
+| Start misslyckades | `processKey`, `processStatus: FAILED`, `error` — **inget** `processInstanceId` | Terminal rad skapas ⇒ `201` |
 
 ```json
 { "processKey": "alkt-ansokan", "processStatus": "FAILED",
   "error": { "code": "START_FAILED", "message": "..." } }
 ```
 
+**Regeln som gör det hela ofarligt: `POST` skapar, den uppdaterar aldrig.**
+
+Operaton kan göra den första external task:en tillgänglig innan `startProcessInstance` ens returnerat till
+pw. En worker — kanske i en annan pod — hinner alltså `PUT`:a sin `RUNNING`-rapport innan pw:s `POST`
+landar. Eftersom `PUT` är upsert och `POST` är create-only spelar ordningen ingen roll: den som kommer
+först skapar raden, den andra blir en no-op respektive en vanlig tillståndsuppdatering. Utan regeln hade
+pw fått `409` på en fullt frisk process och, enligt §9.3, avbrutit den.
+
+Implementationen får inte bero på vilken constraint som råkar fyra först — `uq_epi_process_instance_id`
+och `uq_epi_one_active_per_errand` kan båda träffa på samma insert. Slå upp på `process_instance_id`
+i stället, före och efter:
+
+```
+existing = findByProcessInstanceId(piid)
+if existing: return 200 existing            // nagon hann fore, ror ingenting
+
+try:
+    insert(... RUNNING ...)
+    return 201
+catch ConstraintViolationException:
+    existing = findByProcessInstanceId(piid)
+    if existing: return 200 existing        // kapplopningen vanns av den andra
+    throw 409                               // annan levande instans for arendet
+```
+
+Startfelsfallet kan inte kapplöpa: utan `processInstanceId` finns ingen processinstans, och därmed ingen
+external task och ingen worker.
+
 ### 5.2 SM — läsning
 
 ```
 GET .../errands/{errandId}/process-instances                        -> 200 List<ProcessInstance>
-GET .../errands/{errandId}/process-instances/{piid}/activities      -> 200 Page<ProcessActivity>
-                                                                       ?page=&size=50 (max 200)&sort=occurredAt,desc
+GET .../errands/{errandId}/process-activities                       -> 200 Page<ProcessActivity>
+                                                                       ?processInstanceId= (valfritt filter)
+                                                                       &page=&size=50 (max 200)&sort=occurredAt,desc
 GET .../errands/{errandId}                                          -> 200 Errand med process-objektet
 GET .../process-labels                                              -> 200 List<ProcessLabelMapping> (diagnostik)
 ```
+
+Aktivitetsläsningen är **ärendescopad, inte instansscopad** — annars går poster utan instans (§3.1)
+inte att läsa, och det är de posterna som förklarar varför ingen process startade.
 
 ### 5.3 API-modeller (SM)
 
@@ -495,19 +547,18 @@ public class ProcessInstance {
     private String currentActivityId;
     private String currentActivityName;
     private String externalTaskId;                 // idempotensnyckel for activities
-    private String lockReason;
-    private Integer ttlSeconds;                    // onskad TTL; kaps av max-ttl
+    private Long errandVersion;                    // valfri; version workern laste (6.3)
     private OffsetDateTime started;
     private OffsetDateTime ended;
     private ProcessError error;
     private List<ProcessActivity> activities;      // skrivs in, lases via egen endpoint
-    @Schema(accessMode = READ_ONLY) private OffsetDateTime lockExpires;
     @Schema(accessMode = READ_ONLY) private OffsetDateTime created;
     @Schema(accessMode = READ_ONLY) private OffsetDateTime modified;
 }
 
 public class ProcessActivity {
     @Schema(accessMode = READ_ONLY) private String id;
+    @Schema(accessMode = READ_ONLY) private String processInstanceId;   // null for poster SM skrivit utan instans
     private String activityType;                   // fri strang
     private String activityId;
     private String activityName;
@@ -535,14 +586,6 @@ public class ErrandProcess {
     private OffsetDateTime started;
     private OffsetDateTime ended;
     private ProcessError error;
-    private boolean locked;
-    private ProcessLock lock;                      // null nar locked == false
-}
-
-public class ProcessLock {
-    private String lockedBy;
-    private String reason;
-    private OffsetDateTime expires;
 }
 
 /** Diagnostik: vilka etiketter startar vilken process. */
@@ -592,7 +635,7 @@ public class ErrandEvent {
     @NotNull  private EventType eventType;      // CREATE | UPDATE | DELETE
     private String eventSubType;
     @ValidUuid private String errandId;
-    private String processKey;                  // kravs vid CREATE
+    private String processKey;                  // satt nar arendets etiketter ger en nyckel; styr start (9.3)
     private OffsetDateTime occurredAt;
 }
 ```
@@ -605,11 +648,11 @@ public record ProcessStateReport(
         ProcessStatus status,
         String currentActivityId,
         String currentActivityName,
-        String lockReason,
+        Long errandVersion,
         ProcessError error,
         List<ProcessActivity> activities) {
 
-    public static ProcessStateReport running(String activityId, String activityName, String reason) { ... }
+    public static ProcessStateReport running(String activityId, String activityName) { ... }
     public static ProcessStateReport waiting(String activityId, String activityName) { ... }
     public static ProcessStateReport completed() { ... }
     public static ProcessStateReport failed(String code, String message) { ... }
@@ -617,7 +660,7 @@ public record ProcessStateReport(
 }
 ```
 
-Fabriksmetoderna finns för att en worker inte ska behöva komma ihåg vilken status som släpper låset.
+Fabriksmetoderna finns för att en worker inte ska behöva komma ihåg vilken status som är terminal.
 
 ### 5.6 Statuskoder i SM
 
@@ -626,121 +669,126 @@ Fabriksmetoderna finns för att en worker inte ska behöva komma ihåg vilken st
 | `400` | `activePhaseId` sätts på ärende med processinstans; etikettändring som byter `processKey` |
 | `403` | `X-Sent-By` saknas; `processService` matchar inte namespacets `PROCESS_CONSUMER` |
 | `404` | Ärendet finns inte eller ligger i annat namespace |
-| `409` | Andra levande instans för ärendet; instans med annat `process_key` än ärendets befintliga; `max-total` passerat |
-| `423` | Ärendet är låst och skribenten är inte namespacets konfigurerade konsument (§6.3) |
+| `409` | Annan levande instans för ärendet **med ett annat `processInstanceId`**; instans med annat `process_key` än ärendets befintliga. Samma `processInstanceId` är aldrig `409` — se §5.1 |
+| `412` | `errandVersion` i rapporten matchar inte ärendets aktuella version (§6.3) |
 
 ### 5.7 Beteendeförändring på befintliga endpoints
 
-**`423 Locked` tillkommer på:** PATCH och DELETE errand, parametrar, JSON-parametrar, bilagor (API-vägen), `sendEmail`/`sendSms`/`sendWebMessage`, konversationer, handover.
+**Ingen.**
 
-Frontend måste hantera `423` som eget fall. Bättre väg: läs `errand.process.locked` **innan** användaren försöker skriva, disabla redigering och visa *"Processen arbetar med ärendet — klart om ca N minuter"*. `Retry-After` och `lock.expires` ger tiden.
+Inga nya statuskoder, inga nya spärrar, inget nytt felfall att hantera i frontend. Optimistisk kontroll
+(§6.2) använder `If-Match` och `412`, som redan finns på ärende- och parameterendpointsen och redan är
+dokumenterade i specen. Verksamheter utanför ALKT ser ingen skillnad alls.
 
-`423` uppstår bara i namespace med `PROCESS_CONSUMER`. Övriga verksamheter ser ingen skillnad.
+Vad frontend däremot **bör** göra är att visa processläget. `errand.process.processStatus` och
+`currentActivityName` säger om en process arbetar med ärendet just nu, och *"Processen arbetar med
+ärendet: Hämtar beslutsunderlag"* räcker för att handläggaren ska förstå varför ärendet kan ändras
+under fötterna. Att skicka `If-Match` från frontend är också en förbättring — då upptäcks kollisionen
+i stället för att sista skrivningen vinner — men det är en fristående förbättring, inte ett krav
+härifrån.
 
 ### 5.8 Borttaget i pw-alkt
 
-`POST /process/start/{errandId}` och `POST /process/update/{processInstanceId}` **tas bort** i samma steg som `errand-events` införs. Kaskad: `ProcessService.updateProcess:42-55`, `StartProcessResponse` + test, `AbstractTaskWorker.clearUpdateAvailable:38-44` (död kod), `Constants.PROCESS_VARIABLE_UPDATE_AVAILABLE`, `Constants.FALSE`, `OperatonClient.setProcessInstanceVariable(s)`, `AbstractTaskWorker.setProcessInstanceVariable`.
+`POST /process/start/{errandId}` och `POST /process/update/{processInstanceId}` **tas bort** i samma steg som `errand-events` införs. Kaskad: `ProcessService.updateProcess`, `StartProcessResponse` + test, `AbstractTaskWorker.clearUpdateAvailable` (död kod), `Constants.PROCESS_VARIABLE_UPDATE_AVAILABLE`, `Constants.FALSE`, `OperatonClient.setProcessInstanceVariable(s)`, `AbstractTaskWorker.setProcessInstanceVariable`.
 
 Ingen escape hatch går förlorad: `POST errand-events` fungerar som manuell trigger via samma kodväg som produktionsflödet.
 
 ---
 
-## 6. Lås och loop-skydd
+## 6. Samtidighet och loop-skydd
 
 ### 6.1 Livscykeln bärs av rapporten
 
-| Rapporterad status | Låset | `active_marker` |
-|---|---|---|
-| `RUNNING` | tas eller förnyas | 1 |
-| `WAITING` | **släpps** | 1 |
-| `RETRYING` | **släpps** | 1 |
-| `COMPLETED` | **släpps** | NULL |
-| `FAILED` | **släpps** | NULL |
+| Rapporterad status | `active_marker` |
+|---|---|
+| `RUNNING` | 1 |
+| `WAITING` | 1 |
+| `RETRYING` | 1 |
+| `COMPLETED` | NULL |
+| `FAILED` | NULL |
 
-Två kolumner, två olika mängder — se §4.1. Ett tabelldrivet test måste räkna upp **varje** enumvärde mot **båda** kolumnerna.
+En **annan** levande instans kan inte finnas samtidigt — `uq_epi_one_active_per_errand` hindrar det (§7.4).
 
-**Idempotent acquire:** samma `processInstanceId` som rapporterar `RUNNING` igen förnyar `lock_expires` och räknar upp `lock_renew_count`. En **annan** instans kan inte finnas — `uq_epi_one_active_per_errand` hindrar det (§7.4).
+### 6.2 Samtidighet — optimistisk kontroll, inget lås
 
-### 6.2 Crash-säkerhet
+**Kravet är att handläggarens ändringar inte tappas, inte att handläggaren hindras.** Det avgör
+mekanismen, och SM har den redan.
 
-**Ett utgånget lås är inget lås** — guarden är `lock_expires > now()`, så självläkning kräver ingen schemaläggare.
+`ErrandEntity` har `@Version`, och de sex skrivvägar som rör ärendets beslutsunderlag —
+`ErrandService.updateErrand`, `ErrandParameterService.updateErrandParameters`/`updateErrandParameter`/`deleteErrandParameter`
+och `ErrandJsonParameterService.updateJsonParameter`/`deleteJsonParameter` — gör alla
+`entityManager.lock(..., OPTIMISTIC_FORCE_INCREMENT)`. Ingen annan väg i SM höjer versionen med tvång:
+bilagor, kommunikation, konversationer, anteckningar och notiser ligger i egna tabeller och rör inte
+ärenderaden.
 
-- TTL **20 min**, konfigurerbart. pw kan begära kortare via `ttlSeconds`; `max-ttl` kapar.
-- Förnyelse via `RUNNING`-rapport. Ingen heartbeat-endpoint.
-- `max-total` (4 h) räknat från `lock_first_acquired`; därefter `409` på förnyelse.
-- **Ingen force-unlock.** Nödutgång vid verklig incident: `update errand_process_instance set lock_expires = null where ...`, vilket kräver DB-åtkomst och loggas där.
+`errand.version` betyder alltså redan exakt **"ärendets beslutsunderlag har ändrats"**.
+`GET /errands/{id}` returnerar den både som `ETag`-header och i
+`version`-fältet, `PATCH` tar `If-Match` och svarar `412`, och `ETagUtil.validateIfMatch` returnerar
+direkt när headern saknas. Allt är opt-in per klient, i drift och testat.
 
-**Svepningen rör inte `process_status`.** `ProcessLockWorker` nollar utgångna låsfält och skriver en `errand_process_activity` med `severity = WARN`. Den sätter **inte** `FAILED`: Operaton retryar själv task:en när dess eget lås löper ut, så processen återhämtar sig — och `FAILED` vore terminalt, vilket skulle nolla `active_marker` och kollidera med nästa rapport.
+**Regeln för pw:**
 
-### 6.3 Guarden
+1. Workern läser ärendet och behåller `ETag`.
+2. Workern skriver tillbaka med `If-Match: "<version>"`.
+3. `412` ⇒ handläggaren hann före. Workern rapporterar `RETRYING` och kastar; Operaton kör om steget,
+   och vid omkörningen läser workern om och beslutar om.
 
-```java
-public enum ProcessLockPolicy { ENFORCE, BYPASS }
-```
+Skyddsfönstret är ett arbetssteg — läs, besluta, skriv — och det är exakt vad `If-Match` täcker.
 
-Ny överlagring på `AccessControlService.getErrand(...)`. **Härledd default: `ENFORCE` när accessfiltret är exakt `{RW}`, annars `BYPASS`.** Medvetna undantag skickar `BYPASS` explicit — `ErrandNoteService:54, 91, 111`, `NotificationService:82, 114, 123, 135`, `CommunicationService:122`, `ConversationService:239` — så varje undantag syns i diffen.
+En kraschad worker lämnar ingenting efter sig som måste städas: det finns inget tillstånd att städa. Inga
+befintliga endpoints ändrar beteende (§5.7).
 
-**Kortslut först:** saknas `PROCESS_CONSUMER` för namespacet, returnera utan att röra databasen. Annars betalar alla övriga namespace en fråga per skrivning.
+**Priset** är att arbete kan behöva göras om. Det förutsätter att ett arbetssteg tål omkörning — vilket
+Operatons egen retry redan kräver (§9.4), så det är inget nytt krav. Steg med extern sidoeffekt bör
+lägga sidoeffekten sist, så att en omkörning inte dubblerar den.
 
-**Guardens villkor:**
+### 6.3 Workers som inte skriver tillbaka
 
-```sql
-select 1 from errand_process_instance
- where errand_id = :errandId
-   and active_marker = 1
-   and lock_expires > :now
-```
+En worker som bara läser ärendet och gör något externt — skickar ett brev, anropar en extern part — har
+inget att kollidera på.
 
-Träff **och** skribenten är inte namespacets `PROCESS_CONSUMER` (enligt `X-Sent-By`) ⇒ `423`.
+Lösningen kostar ett fält. Rapporten (§5.1) bär `errandVersion`: den version workern läste. SM jämför mot
+`errand.version` och svarar **`412`** om den glidit, utan att skriva tillstånd eller aktiviteter. Workern
+behandlar det som vilket `412` som helst — `RETRYING`, kasta, låt Operaton köra om.
 
-**Rapportendpointen har andra semantik än ärendeskrivningar.** Guarden ovan gäller `PATCH /errands/{id}` och övriga ärendeskrivningar. `PUT .../process-instances/{piid}` måste däremot **alltid ta emot rapporten** och skriva tillstånd och aktiviteter — annars går en tillståndsrapport från fel task förlorad, och därmed även den WARN-post som ska göra regelbrottet i §6.5 synligt. Låseffekten tillämpas separat: bara när inget lås finns, eller när `lock_owner_task_id` matchar rapportens `externalTaskId`.
+Rapporten är strukturellt obligatorisk (§5.5), så inget nytt anropsmönster tillkommer. Fältet är valfritt:
+utelämnas det görs ingen kontroll, vilket är rätt för workers som varken läser eller skriver ärendet.
 
-Kort: **skribentens identitet styr om ärendet får skrivas; `lock_owner_task_id` styr vem som får släppa låset.**
+### 6.4 Parallella grenar — modelleringsregel, inte kod
 
-**Låset är en koordineringsmekanism, inte den sista försvarslinjen mot lost updates.** Den finns redan: `ErrandEntity` har `@Version` och PATCH kör `OPTIMISTIC_FORCE_INCREMENT`, så en genuint samtidig ändring ger `412` oavsett lås.
+Operaton kan ha två external tasks aktiva samtidigt i samma processinstans (parallell gateway). Skriver
+båda mot ärendet får den ena `412`, kör om, och slår i sin tur ut den andra. Det konvergerar inte av sig
+självt.
 
-Ordningen faller ut gratis: `updateErrand` anropar `getErrand:178` före `validateIfMatch:183`, så lås före ETag. Guarden körs efter accesskontrollen, så obehöriga får `401`/`404` — inte en `423` som avslöjar att en process finns.
+**Beslut: en modelleringsregel.** BPMN-modellerna får inte ha parallella grenar där mer än en gren muterar
+ärendet. För myndighetsprocesser är parallell mutation av samma ärende ändå en modelleringssmell.
 
-**Explicit guard** vid ingången av `HandoverService.handover:97` (§1.3).
+**Regeln görs synlig i stället för att förutsättas.** Rapporterar två skilda `externalTaskId` `RUNNING` mot
+samma instans utan en terminal rapport emellan, skriver SM en `errand_process_activity` med
+`severity = WARN` och texten *"concurrent external tasks detected"*, och räknar upp
+`process_instance.concurrent_task_detected`. Båda rapporterna tas emot — ett avslag här hade tystat just
+den post som ska göra regelbrottet synligt.
 
-**Ärligt om gränsen:** att `RW` betyder skrivning är en observerad egenskap, inte en invariant. En endpoint som inte går via `AccessControlService` är osynlig för guarden. Motmedel: härledd default + explicita `BYPASS` + tabelldrivet test + regel i `CLAUDE.md`.
+### 6.5 Loop-skydd
 
-### 6.4 Vad som blockeras
+**Lager 1 — origin-filter.** `executedBy` (`X-Sent-By`) lika med namespacets `PROCESS_CONSUMER` ⇒ ingen
+outbox-rad. Processens egna skrivningar väcker inte processen. Filtret sitter vid **publicering**, inte vid
+leverans: raden ska inte skrivas alls, annars räknar nödbromsen fel.
 
-**Nekas:** PATCH/DELETE errand, parametrar, JSON-parametrar, bilagor via API-vägen (`ErrandAttachmentService:77, 132` — inte överlagringarna `:84`/`:159` som används av intag/handover), utgående kommunikation, konversationer, handover.
+**Lager 2 — trigger-filter** på `(EventType, EventSubType)`. Ortogonalt: ser på *vad* som hände, inte *vem*.
 
-**Tillåts:** all läsning, anteckningar, notiser, läsmarkering, prenumerationer — och **allt intag** (`EmailReaderWorker`, `MessageExchangeSyncService`, `WebMessageCollectorWorker`, `SuspensionWorker`), som går förbi chokepointen av konstruktion. Extern parts data får aldrig tappas för att en process arbetar.
+**Lager 3 — orsaksagnostisk nödbroms.** Räkna rader med `errand_id = ? and created > now() - window`. Över
+tröskeln (20 / 10 min): ingen rad, ERROR-aktivitet utan instans, hälsoindikator unhealthy.
 
-### 6.5 Parallella grenar — modelleringsregel, inte kod
-
-**Brist som måste hanteras:** Operaton kan ha två external tasks aktiva samtidigt i samma processinstans (parallell gateway). Båda rapporterar `RUNNING` → den som blir klar först rapporterar `WAITING` och skulle **släppa låset medan den andra fortfarande arbetar**. Handläggaren kan då editera mitt i.
-
-Två parallella tasks har **olika** `externalTaskId`, så `lock_owner_task_id` räcker för att avgöra vem som får släppa låset.
-
-**Beslut: en modelleringsregel.** BPMN-modellerna får inte ha parallella grenar där mer än en gren muterar ärendet. För myndighetsprocesser är parallell mutation av samma ärende ändå en modelleringssmell.
-
-**Regeln görs synlig i stället för att förutsättas:** `lock_owner_task_id` lagrar den `externalTaskId` som tog låset. Kommer en `RUNNING`-rapport från en **annan** task medan låset hålls, skriver SM en `errand_process_activity` med `severity = WARN` och texten *"concurrent external tasks detected"* — och låset behålls av den ursprungliga ägaren. En terminal rapport **släpper bara låset om den kommer från `lock_owner_task_id`**; annars uppdateras tillstånd och aktiviteter men låset lämnas orört.
-
-Det gör att regelbrott (a) inte tyst öppnar ärendet mitt i en körning och (b) syns i ärendets processlogg.
-
-**Eskaleringsväg om parallell mutation blir nödvändig:** referensräkning på låset. Det är en kontenerad ändring — låset är en rad — men den bär en egen felmodell (en kraschad gren lämnar räknaren fel; TTL:n får rädda den). Bygg det inte i förväg.
-
-### 6.6 Loop-skydd
-
-**Lager 1 — strukturellt:** *finns ett aktivt processlås ⇒ skriv ingen outbox-rad.* Bygger på SM:s eget tillstånd, inte en klientheader. Korrekt eftersom en skrivning som *lyckas* under lås måste komma från låshållaren — alla andra får `423`.
-**Invariant:** varje pw-skrivning mot ärendet sker under lås. Därför **ingen lås-opt-out** i `AbstractTaskWorker` för workers som skriver.
-
-**Lager 2 — origin-filter** (`X-Sent-By` mot `PROCESS_CONSUMER`-identiteten) vid dispatch, som djupförsvar.
-
-**Lager 3 — trigger-filter** på `(EventType, EventSubType)`. Ortogonalt: ser på *vad* som hände, inte *vem*.
-
-**Lager 4 — orsaksagnostisk nödbroms.** Räkna rader med `errand_id = ? and created > now() - window`. Över tröskeln (20 / 10 min): ingen rad, ERROR-aktivitet, hälsoindikator unhealthy.
-
-> Räkningen kräver att outbox-rader **soft-deletas** (`delivered_at`). Raderades de direkt skulle en snabb loop aldrig lämna mer än en rad och bromsen vore verkningslös precis när den behövs.
+> Räkningen kräver att outbox-rader **soft-deletas** (`delivered_at`). Raderades de direkt skulle en snabb
+> loop aldrig lämna mer än en rad och bromsen vore verkningslös precis när den behövs.
 
 **Inte** ett loop-skydd: versionsbaserad idempotens — versionen stiger varje varv.
 
----
+**Ärligt om lager 1:** det vilar på en klientsatt header. En pw-tjänst som glömmer `X-Sent-By` loopar tills
+lager 2 eller 3 fångar den. Motmedel: `RequestInterceptor` sätter headern på **alla** utgående anrop (P3),
+och `process_event.suppressed{reason=ORIGIN}` ska vara skild från noll i drift — är den noll skriver
+processen antingen inte alls, eller så är headern fel.
 
 ## 7. Konfiguration och processval
 
@@ -771,6 +819,8 @@ insert into namespace_config_value (namespace_config_id, `key`, `value`, `type`)
 ```
 
 **`ERRAND` är obligatorisk** — utan den startar aldrig ett ärende som får sin etikett i ett andra anrop.
+Triggern räcker dock inte ensam: pw måste starta på förekomsten av `processKey`, inte på `eventType`,
+annars faller samma fall ändå bort på mottagarsidan. Se §9.3.
 
 ### 7.2 `application.yml`
 
@@ -783,13 +833,11 @@ spring.security.oauth2.client:
 integration:
   pw-alkt: { url: "${...}", connect-timeout: 5, read-timeout: 30 }
 process-engine:
-  lock:       { default-ttl: PT20M, max-ttl: PT30M, max-total: PT4H }
   loop-guard: { max-events-per-errand: 20, window: PT10M }
   consumers:
     pw-alkt: { identifier: pw-alkt }        # matchas mot X-Sent-By
 scheduler:
   process-event:   { cron: "0 * * * * *", name: processEvent,   lockAtMostFor: PT2M }
-  process-lock:    { cron: "0 */5 * * * *", name: processLock,  lockAtMostFor: PT2M }
   process-cleanup: { cron: "0 30 2 * * *", name: processCleanup, lockAtMostFor: PT10M }
 ```
 
@@ -819,7 +867,14 @@ insert into metadata_label_attribute (metadata_label_id, `key`, `value`) values
 2. Högst en **levande** instans per ärende (`active_marker`, §4.1).
 3. Alla instanser för ett ärende delar samma `process_key` — service-kontroll under radlås, ej uttryckbart i DB.
 
-Constraint-violation på `uq_epi_one_active_per_errand` **måste översättas** till `409` med `detail` som pekar ut den blockerande instansen.
+Constraint-violation **måste översättas**, aldrig bubbla upp som `500`. Men de två unika indexen betyder olika saker och får inte behandlas lika:
+
+| Constraint | Betydelse | Utfall |
+|---|---|---|
+| `uq_epi_process_instance_id` | Någon registrerade **samma** instans först — kapplöpningen i §5.1 | Läs om raden, returnera den. Inget fel |
+| `uq_epi_one_active_per_errand` | En **annan** levande instans blockerar | `409` med `detail` som pekar ut den |
+
+Eftersom en och samma insert kan träffa båda, avgörs utfallet av en uppslagning på `process_instance_id` — inte av vilket index som råkade fyra (§5.1).
 
 ---
 
@@ -827,15 +882,16 @@ Constraint-violation på `uq_epi_one_active_per_errand` **måste översättas** 
 
 ### 8.1 Mätvärden som måste finnas
 
-Utan dessa är loop-skyddet och låset otestbara i drift.
+Utan dessa är loop-skyddet och samtidighetsbeteendet otestbara i drift.
 
 | Mätvärde | Varför |
 |---|---|
-| `process_event.suppressed{reason=LOCK\|ORIGIN\|TRIGGER\|GUARD}` | Ett tyst loop-skydd som slutar fungera märks annars först när loopen är där |
+| `process_event.suppressed{reason=ORIGIN\|TRIGGER\|GUARD}` | Ett tyst loop-skydd som slutar fungera märks annars först när loopen är där. `ORIGIN` ska vara **skild från noll** |
 | `process_event.published`, `.delivered`, `.dead_lettered` | Leveranshälsa |
+| `process_event.publish_failed` | Publicering som inte kunde rullas tillbaka (ingen aktiv transaktion, §2.2). Ska vara noll |
 | `process_event.nudge_rejected` | Executorn mättad ⇒ latensen faller tillbaka på cron |
-| `process_lock.expired_without_report` | **Viktigaste driftindikatorn.** Stiger den kraschar workers, eller finns ett arbetssteg längre än TTL |
-| `process_lock.concurrent_task_detected` | Brott mot modelleringsregeln i §6.5 |
+| `process_instance.errand_conflict` | **Viktigaste driftindikatorn.** Hur ofta process och handläggare krockar (`412`). Stiger den arbetar processen på ärenden som redigeras samtidigt, och arbete görs om i onödan |
+| `process_instance.concurrent_task_detected` | Brott mot modelleringsregeln i §6.4 |
 | `process_instance.start_failed` | Feltaggade etiketter |
 
 Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id` — dubbelleveranser blir då spårbara i efterhand.
@@ -845,13 +901,14 @@ Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id`
 | Fråga | Svar |
 |---|---|
 | Varför startade ingen process för ärendet? | `GET .../process-instances` tom + `errand.process` null. Kontrollera etikett-tagg via `GET /process-labels`, och att `PROCESS_CONSUMER` finns för namespacet |
-| Varför är ärendet låst? | `errand.process.lock` visar `lockedBy`, `reason`, `expires` |
+| Varför kör processen om samma steg gång på gång? | Handläggaren ändrar ärendet mitt i steget ⇒ `412` (§6.2). Se `process_instance.errand_conflict` och aktivitetsloggen |
 | Varför väcks inte processen av inkommande e-post? | `MESSAGE` saknas i `PROCESS_TRIGGER` |
-| Varför får handläggaren `423` fast processen ser klar ut? | Instansen har `WAITING` men låset inte släppt ⇒ terminal rapport uteblev. TTL löser inom 20 min; se `process_lock.expired_without_report` |
+| Varför väcks processen inte av sina egna ändringar? | Det är meningen — lager 1 i §6.5 |
+| Varför står instansen kvar som `RUNNING` fast inget händer? | Workern kraschade utan att rapportera. Operaton kör om task:en när dess eget lås löper ut; instansen uppdateras vid nästa rapport |
 
 ### 8.3 Dead letters — bygg en väg tillbaka
 
-`NotificationDispatchWorker.cleanUpDeadLetters:48-49` **raderar** dead letters efter 7 dagar. Ärv inte det rakt av: en dead-letterad processhändelse betyder att en process aldrig fick veta något, och att bara radera den gör felet permanent och osynligt.
+`NotificationDispatchWorker.cleanUpDeadLetters` **raderar** dead letters efter 7 dagar. Ärv inte det rakt av: en dead-letterad processhändelse betyder att en process aldrig fick veta något, och att bara radera den gör felet permanent och osynligt.
 
 **Krav:**
 
@@ -864,25 +921,24 @@ Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id`
 1. Skapa namespace-config med `PROCESS_CONSUMER=pw-alkt` och `PROCESS_TRIGGER=ERRAND,MESSAGE`.
 2. Tagga en label med `processKey=alkt-ansokan`.
 3. `POST /2281/ALKT/errands` med den labeln ⇒ rad i `process_event_outbox` inom en sekund, `delivered_at` satt när stubben svarat.
-4. `GET /2281/ALKT/errands/{id}` ⇒ `process.processStatus = RUNNING`.
-5. `PATCH` samma ärende under lås ⇒ `423` med `Retry-After`.
-
----
+4. `GET /2281/ALKT/errands/{id}` ⇒ `process.processStatus = RUNNING`, och `ETag` i svarshuvudet.
+5. `PATCH` samma ärende med den ETag:en ⇒ `200`. `PATCH` igen med **samma** ETag ⇒ `412`.
+6. Låt stubben rapportera med ett `errandVersion` som ligger efter ⇒ `412` på rapporten, inget tillstånd skrivet.
 
 ## 9. pw-alkt
 
 ### 9.1 En BPMN-fil per processdefinition
 
-`alkt-ansokan.bpmn`, `alkt-tillsyn.bpmn`. `TenantAwareAutoDeployment:59-84` deployar en deployment per fil — gemensam fil hade betytt att en ändring i tillsyn versionerar upp ansökan och drar in pågående instanser.
+`alkt-ansokan.bpmn`, `alkt-tillsyn.bpmn`. `TenantAwareAutoDeployment.deployResources` deployar en deployment per fil — gemensam fil hade betytt att en ändring i tillsyn versionerar upp ansökan och drar in pågående instanser.
 
-Processens `id` måste matcha `Constants.PROCESS_KEY_*`. **`ProcessWithoutDeviationIT:72-76` väntar på `size() == 1`** och måste justeras när fil två läggs till.
+Processens `id` måste matcha `Constants.PROCESS_KEY_*`. **`ProcessWithoutDeviationIT.setup` väntar på `getDeployments(...).size() == 1`** och måste justeras när fil två läggs till.
 
 ### 9.2 Modelleringskrav
 
 Dessa är förutsättningar för att designen ska hålla — de är inte råd.
 
 1. **Wait states ska omvärdera sitt villkor vid inträde.** Läs aktuellt ärendetillstånd och avgör om villkoret redan är uppfyllt innan väntan börjar. En sväljd `MismatchingMessageCorrelation` kan vara en legitim väckning som kom medan processen var mellan två wait states; att det ändå är ofarligt vilar helt på detta.
-2. **Inga parallella grenar som muterar ärendet** (§6.5).
+2. **Inga parallella grenar som muterar ärendet** (§6.4).
 3. **Inga processvariabler för idempotens eller signalering.** Skälet står i koden som tas bort — `"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."` Bevara resonemanget även när metoden är borta; det är det första någon återinför när ett dubblettproblem dyker upp.
 4. **Inga call activities eller delade subprocesser** nu — framtida processer kan skilja sig avsevärt.
 
@@ -897,14 +953,19 @@ handleErrandEvent(municipalityId, namespace, event):
 
     instans = findProcessInstances(errandId, event.processKey, "ALKT")
     om tom:
-        om event.eventType == CREATE:
-            om processKey inte deployad -> 422
-            start med businessKey = errandId
-            POST .../process-instances {RUNNING}   // 409 -> avbryt instansen
-        annars: logga, 202
+        om event.processKey saknas -> logga, 202   // arendet har ingen processetikett
+        om processKey inte deployad -> 422
+        start med businessKey = errandId
+        POST .../process-instances {RUNNING}       // 200 = nagon hann fore, ok
+                                                   // 409 = annan levande instans -> avbryt den nystartade
     annars:
         correlateMessage(messageName = "errandUpdated", businessKey = errandId, tenantId = "ALKT")
 ```
+
+**Starten styrs av `processKey`, inte av `eventType`.** Ett ärende kan skapas utan etikett och få den i
+ett andra anrop — då kommer nyckeln med ett `UPDATE`-event, inte ett `CREATE`. Startades bara på `CREATE`
+skulle det ärendet aldrig få någon process, och `PROCESS_TRIGGER=ERRAND` (§7.1) vore verkningslös för
+just det fall den motiveras av. Villkoret är därför: ingen levande instans **och** `processKey` satt.
 
 **`MismatchingMessageCorrelationException` (400) ⇒ INFO + `202`, ingen retry.** Annars fylls dead letter-kön av normala händelser.
 
@@ -923,8 +984,7 @@ public abstract class AbstractTaskWorker implements ExternalTaskHandler {
     public void execute(final ExternalTask task, final ExternalTaskService service) {
         RequestId.init(task.getVariable(PROCESS_VARIABLE_REQUEST_ID));
         try {
-            supportManagement.report(task, ProcessStateReport.running(
-                    activityId(task), activityName(task), lockReason()));
+            supportManagement.report(task, ProcessStateReport.running(activityId(task), activityName(task)));
             final var report = executeBusinessLogic(task, service);
             supportManagement.report(task, report);
             service.complete(task);
@@ -938,11 +998,15 @@ public abstract class AbstractTaskWorker implements ExternalTaskHandler {
 }
 ```
 
-Returtypen gör rapporten **strukturellt obligatorisk** — en worker kan inte kompilera utan att producera en. **Ingen lås-opt-out** för workers som skriver till SM.
+Returtypen gör rapporten **strukturellt obligatorisk** — en worker kan inte kompilera utan att producera en.
 
-`FailureHandler` rapporterar till SM **före** `handleFailure`: `RETRYING` när `calculateRetries:52-56` ger fler försök, annars `FAILED`. Det är vad som får felmeddelandet till ärendets UI *och* släpper låset. Följd: mellan två försök (`retry.timeout: 10000`) är ärendet redigerbart i ~10 s — korrekt enligt "låst endast under exekvering", men en medveten skillnad.
+**Samtidighet.** `SupportManagementClient.getErrand` returnerar ärendet tillsammans med dess `ETag`, och
+`patchErrand` skickar den som `If-Match`. Ett `412` betyder att handläggaren hann före: låt undantaget gå
+upp till `execute`, så rapporterar `FailureHandler` `RETRYING` och Operaton kör om steget. En worker som
+läser men inte skriver sätter i stället `errandVersion` i sin rapport (§6.3).
 
-`SupportManagementConfiguration` får en `RequestInterceptor` som sätter `X-Sent-By: pw-alkt; type=processEngine` och `X-Request-Group-Id` på **alla** utgående anrop.
+`FailureHandler` rapporterar till SM **före** `handleFailure`: `RETRYING` när `FailureHandler.calculateRetries`
+ger fler försök, annars `FAILED`. Det är vad som får felmeddelandet till ärendets UI.
 
 ---
 
@@ -952,12 +1016,14 @@ Varje uppgift är mergbar för sig. Acceptanskriterierna är avsedda att kunna k
 
 ### T1 — Datamodell och domänenums (SM)
 
-**Bygg:** `V1_47`-migrering (§3.1); `ProcessStatus` med `holdsLock()`/`isTerminal()` (§4.1); `ActivitySeverity`; entiteterna `ProcessEventOutboxEntity`, `ErrandProcessInstanceEntity` (§4.3), `ErrandProcessActivityEntity`; repositories med `Pageable` på **alla** sökfrågor; tabellerna i `truncate.sql`.
+**Bygg:** `V1_47`-migrering (§3.1); `ProcessStatus` med `isTerminal()` (§4.1); `ActivitySeverity`; entiteterna `ProcessEventOutboxEntity`, `ErrandProcessInstanceEntity` (§4.3), `ErrandProcessActivityEntity`; repositories med `Pageable` på **alla** sökfrågor; tabellerna i `truncate.sql`.
 
 **Acceptans:**
 - Ingen av entiteterna är mappad som relation på `ErrandEntity`.
 - `ErrandProcessInstanceEntity.applyStatus` är enda vägen att sätta status; settern är inte publik.
-- Tabelldrivet test räknar upp **varje** `ProcessStatus` mot både `holdsLock()` och `isTerminal()`, med `WAITING` explicit verifierad som *icke*-terminal men *icke*-låshållande.
+- Tabelldrivet test räknar upp **varje** `ProcessStatus` mot `isTerminal()`, med `WAITING` explicit verifierad som *icke*-terminal.
+- `applyStatus` med icke-terminal status nollar `ended`.
+- Aktivitet **utan** processinstans går att spara, och kaskaderas bort när ärendet raderas (`fk_epa_errand`).
 - Någon IT startar grönt ⇒ `schema-generation: validate` bekräftar DDL mot entiteter.
 
 ### T2 — Konfigurationsläsning (SM)
@@ -971,37 +1037,41 @@ Varje uppgift är mergbar för sig. Acceptanskriterierna är avsedda att kunna k
 
 ### T3 — Process-instance-API (SM)
 
-**Bygg:** `ProcessInstanceResource` (`PUT`, `POST`, `GET`, `GET activities`); `ProcessInstanceService`; API-modellerna (§5.3); `Errand.process` + batchberikning i `readErrand`/`findErrands`; regenerera `openapi.yaml`.
+**Bygg:** `ProcessInstanceResource` (`PUT`, `POST`, `GET`) och ärendescopad `GET .../process-activities` med valfritt `processInstanceId`-filter (§5.2); `ProcessInstanceService`; API-modellerna (§5.3); `Errand.process` + batchberikning i `readErrand`/`findErrands`; regenerera `openapi.yaml`.
 
 **Acceptans:**
 - `PUT` två gånger ⇒ `revision`-tabellen oförändrad (skyddar mot framtida `@OneToMany` på `ErrandEntity`).
 - Aktiviteter idempotenta på `(processInstanceId, externalTaskId, activityId)`; batch > 100 ⇒ `400`.
-- Andra levande instans ⇒ `409`; instans med annat `process_key` ⇒ `409`; constraint-violation översatt, aldrig `500`.
+- `GET .../process-activities` returnerar även poster utan processinstans; filtret `processInstanceId` utesluter dem.
+- **Kapplöpningen i §5.1 körd i båda ordningarna:** `PUT` först (skapar raden) följt av `POST` med samma `processInstanceId` ⇒ `200` och orört tillstånd; `POST` först följt av workerns `PUT` ⇒ tillståndet uppdateras. Ingen av ordningarna ger `409`.
+- Annan levande instans med **annat** `processInstanceId` ⇒ `409`; instans med annat `process_key` ⇒ `409`; constraint-violation översatt enligt §7.4, aldrig `500`.
 - `findErrands` gör **en** fråga för berikningen (verifieras med query-räkning, inte ögonmått).
 - Beslut fattat och dokumenterat om `process` ska strippas av `limitedMappingPredicateByLabel`.
 
-### T4 — Processlås (SM)
+### T4 — Optimistisk samtidighetskontroll (SM)
 
-**Bygg:** låshanteringen i `ProcessInstanceService` (§6.1–6.2); `ProcessLockPolicy` + överlagring i `AccessControlService` med härledd default och explicita `BYPASS`; kortslutning för namespace utan `PROCESS_CONSUMER`; explicit guard i `HandoverService.handover:97`; `ProcessLockWorker`.
+**Bygg:** `errandVersion` i rapportmodellen och kontrollen mot `errand.version` i `ProcessInstanceService` (§6.3); WARN-aktivitet och `process_instance.concurrent_task_detected` när två skilda `externalTaskId` rapporterar `RUNNING` mot samma instans utan terminal rapport emellan (§6.4); `process_instance.errand_conflict`.
 
 **Acceptans:**
-- `ProcessLockService` tar en injicerad `Clock`. **Inget test använder `Thread.sleep`.**
-- Tabelldrivet test över varje skrivväg i §6.4 med förväntat utfall.
-- `@Sql`-laddad rad med `lock_expires` i det förflutna ⇒ PATCH ger `200` **utan** att svepningen körts.
-- Svepningen ändrar **inte** `process_status`; den skriver WARN-aktivitet.
-- `RUNNING` från annan `externalTaskId` medan låset hålls ⇒ WARN-aktivitet, låset behålls; terminal rapport från icke-ägare släpper **inte** låset (§6.5).
-- **Rapportendpointen tar emot rapporten även när låset hålls av en annan task** — tillstånd och aktiviteter skrivs, `lock_expires` och `lock_owner_task_id` lämnas orörda (§6.3). Ett `423` här hade tystat WARN-posten.
-- Skrivning mot ärendet under lås från en klient som **inte** är namespacets `PROCESS_CONSUMER` ⇒ `423` med `Retry-After` och låsdetaljer.
+- Rapport med `errandVersion` som glidit ⇒ `412`, och **varken** tillstånd eller aktiviteter skrivs.
+- Rapport utan `errandVersion` ⇒ ingen kontroll, `200`.
+- Två skilda `externalTaskId` med `RUNNING` mot samma instans ⇒ WARN-aktivitet skriven, **båda** rapporterna tas emot.
+- `ProcessInstanceService` tar en injicerad `Clock`. **Inget test använder `Thread.sleep`.**
+- Ett test bekräftar att `PATCH /errands/{id}` med föråldrad `If-Match` ger `412` — regressionsskydd för att hela samtidighetsmodellen vilar på befintligt beteende.
 
 ### T5 — Publicering (SM)
 
-**Bygg:** `ProcessEventPublisher` anropad från `EventService.createErrandEvent`; `ProcessKeySelector` (§7.3); nödbromsen; `GET /process-labels`.
+**Bygg:** `ProcessEventPublisher` anropad från `EventService.createErrandEvent`, med `setRollbackOnly` före kast (§2.2); `ProcessKeySelector` (§7.3); nödbromsen; `GET /process-labels`.
 
 **Acceptans:**
-- **IT som verifierar att ett e-postintag ger en outbox-rad** — regressionsskydd för den allvarligaste bristen som hittades.
-- Enhetstest per gren i §2.2, inklusive: aktivt lås ⇒ ingen rad; icke-triggad subtyp ⇒ ingen rad; namespace utan konsument ⇒ ingen rad.
+- **IT som verifierar att ett e-postintag ger en outbox-rad.** Intaget skapar inga revisioner och går förbi chokepointen (§1.1) — tappas det där märks det inte av något annat test.
+- Enhetstest per gren i §2.2, inklusive: `executedBy` == konsumenten ⇒ ingen rad; icke-triggad subtyp ⇒ ingen rad; namespace utan konsument ⇒ ingen rad.
+- **`executedBy` == en handläggare ⇒ raden skrivs.** Origin-filtret får inte vara bredare än sitt syfte.
 - `ProcessKeySelectorTest`: en tagg ⇒ en nyckel; två med samma ⇒ en; två med olika ⇒ ERROR-aktivitet och ingen rad; `deprecated` ignoreras; **namnbyte och omflyttning av labeln lämnar upplösningen oförändrad**.
-- Nödbromsen slår över tröskeln med rader som har `delivered_at` satt.
+- **Publisher kastar ⇒ ärendeskrivningen är inte committad**, trots att anropsstället sväljer undantaget (§1.7). Verifieras genom att PATCH:a och sedan läsa tillbaka ärendet — inte genom att inspektera loggen.
+- Utan aktiv transaktion: ERROR-logg och `process_event.publish_failed` ökar, inget kast som spräcker anropet.
+- Nödbromsen slår över tröskeln med rader som har `delivered_at` satt, och dess ERROR-aktivitet skrivs **utan** instans.
+- `ProcessKeySelector` med två skilda nycklar skriver ERROR-aktivitet **utan** instans — testet får inte förutsätta att en instansrad finns.
 
 ### T6 — Relay och leverans (SM)
 
@@ -1015,13 +1085,19 @@ Varje uppgift är mergbar för sig. Acceptanskriterierna är avsedda att kunna k
 
 ### T7 — Skyddsräcken (SM)
 
-**Bygg:** `400` på `activePhaseId` när ärendet har processinstans; `400` på etikettändring som byter `processKey`.
+**Bygg:** `400` på `activePhaseId` när ärendet har processinstans; `400` på etikettändring som byter `processKey` — **både i `ErrandService.updateErrand` och i `AddLabelAction.executeAction`**, som körs schemalagt och aldrig passerar API:t.
 
-**Acceptans:** båda täckta av enhetstest och ett IT-fall vardera.
+**Acceptans:**
+- Båda `400`-fallen täckta av enhetstest och ett IT-fall vardera.
+- `AddLabelAction` som skulle byta upplöst `processKey` på ett ärende med levande instans ⇒ etiketten läggs inte till, ERROR-aktivitet skrivs. Utan detta slutar processen tyst få väckningar (§11).
 
 ### T8 — `ProcessLoopGuardIT` (SM)
 
-**Det viktigaste enskilda testet.** Kör hela varvet: ärende skapas ⇒ outbox-rad; stub agerar pw, rapporterar `RUNNING` (tar låset), PATCHar ärendet, rapporterar `WAITING`. **Assertera att ingen ny odelivererad outbox-rad uppstod** (lager 1). Kör sedan samma PATCH **utan lås** men med `X-Sent-By: pw-alkt` och verifiera att lager 2 fångar den i stället.
+**Det viktigaste enskilda testet.** Kör hela varvet: ärende skapas ⇒ outbox-rad; stub agerar pw, rapporterar `RUNNING`, PATCHar ärendet med `X-Sent-By: pw-alkt` och rapporterar `WAITING`.
+
+- **Assertera att pw:s egen PATCH inte gav någon ny outbox-rad** (lager 1).
+- Kör sedan **samma** PATCH med en handläggaridentitet och assertera att den **ger** en rad. Filtret får inte vara så brett att äkta ändringar tystas — det felet är osynligt i drift tills någon undrar varför processen aldrig vaknar.
+- Kör pw:s PATCH **utan** `X-Sent-By` och verifiera att lager 2 eller 3 fångar den.
 
 Utan detta test är loop-skyddet en hypotes.
 
@@ -1034,22 +1110,26 @@ Utan detta test är loop-skyddet en hypotes.
 `POST /process/errand-events` med logiken i §9.3, **och borttagningen i §5.8 i samma steg**. Regenerera `openapi.yaml`.
 
 **Acceptans:** start / korrelera / okänt ärende / DELETE / okänd nyckel (`422`) täckta; inga referenser kvar till `updateAvailable`, `StartProcessResponse` eller `setProcessInstanceVariable`.
+- **`UPDATE`-event utan levande instans men med `processKey` ⇒ processen startas.** Det är fallet där etiketten sattes i ett andra anrop (§7.1); startas bara på `CREATE` faller det tyst bort.
+- `UPDATE`-event utan `processKey` ⇒ `202`, ingen start.
 
 ### P3 — SM-klienten (pw)
 
-`patchErrand`, `report(...)`, `getErrand`; `RequestInterceptor` för `X-Sent-By`/`X-Request-Group-Id`; uppdatera `support-management.yaml` och regenerera; WireMock-stubbar.
+`patchErrand`, `report(...)`, `getErrand`; `RequestInterceptor` för `X-Sent-By`/`X-Request-Group-Id`; uppdatera `support-management.yaml` och regenerera; WireMock-stubbar. `getErrand` måste returnera ärendets `ETag` tillsammans med kroppen, och `patchErrand` skicka den som `If-Match` (§6.2).
 
-**Acceptans:** test som verifierar att headern sätts på **alla** utgående anrop, inte bara ett.
+**Acceptans:**
+- Test som verifierar att `X-Sent-By` sätts på **alla** utgående anrop, inte bara ett.
+- `getErrand` följt av `patchErrand` skickar den ETag servern gav; stub som svarar `412` ger ett undantag som når `execute`.
 
 ### P4 — Workerstruktur (pw)
 
 `AbstractTaskWorker` enligt §9.4; `ProcessStateReport` med fabriksmetoder; `FailureHandler` rapporterar `RETRYING`/`FAILED`.
 
-**Acceptans:** IT verifierar ordningen `RUNNING` → PATCH → terminal rapport; ett fall där `executeBusinessLogic` kastar asserterar att `RETRYING` rapporterats **och** låset släppts.
+**Acceptans:** IT verifierar ordningen `RUNNING` → PATCH → terminal rapport; ett fall där `executeBusinessLogic` kastar asserterar att `RETRYING` rapporterats; ett fall där SM svarar `412` på PATCH asserterar att steget körs om och att andra försöket läser om ärendet.
 
 ### P5 — Tillsynsprocessen (pw)
 
-`alkt-tillsyn.bpmn`; justera `ProcessWithoutDeviationIT:75` till 2; egen `ProcessPathway`.
+`alkt-tillsyn.bpmn`; justera väntevillkoret i `ProcessWithoutDeviationIT.setup` till 2; egen `ProcessPathway`.
 
 ### P6 — Incidentåterkoppling (pw)
 
@@ -1063,12 +1143,15 @@ Schemalagd kontroll som skriver `FAILED` + `error` till SM när Operaton rest en
 |---|---|
 | **RabbitMQ-mognad** (öppen fråga) | §2.4. Varje REST-konsument byggd innan bytet är kastat arbete |
 | **`WAITING` felaktigt behandlad som terminal** | Skulle bryta 1-1-invarianten tyst. Skyddas av `applyStatus` som enda väg + tabelldrivet test (T1) |
-| **Parallella grenar släpper låset i förtid** | Modelleringsregel + `lock_owner_task_id` gör brottet synligt (§6.5). Eskalering: refcount |
-| **Loop SM ↔ pw** | Fyra lager (§6.6), varav lager 1 vilar på SM:s eget tillstånd och lager 4 är orsaksagnostiskt. **Kräver mätvärdena i §8.1** |
-| **`RW` ⇒ skrivning är observerad, inte garanterad** | Härledd default + explicita `BYPASS` + tabelldrivet test + regel i `CLAUDE.md`. Inte vattentätt |
-| **Ny endpoint utan låskontroll** | Fångas om den går via `AccessControlService`. Annars osynlig — enda motmedlet är kodgranskning |
-| **`423` manglas av WSO2** | Verifiera i miljö; fallback `409` med särskiljande `type` |
-| **Handläggare blockerad efter krasch** | Upp till 20 min. Ingen force-unlock; kortare tak är spaken |
+| **Handläggarändring mitt i ett arbetssteg** | `412`, workern kör om steget (§6.2). Kostar en omkörning. Mäts av `process_instance.errand_conflict` |
+| **Steg med extern sidoeffekt körs om** | Sidoeffekten kan dubbleras. Samma krav som vid kraschad worker (§9.4) — lägg sidoeffekten sist i steget, eller gör den idempotent |
+| **Rena läs-workers utan `errandVersion`** | Då finns inget skydd alls (§6.3). Medvetet val per worker, men ett val som måste göras aktivt |
+| **Underresurser fångas inte av versionen** | En bilaga som raderas mitt i en körning höjer inte `errand.version`. Processen måste läsa om bilagor när den behöver dem |
+| **Parallella grenar** | Modelleringsregel + WARN-aktivitet gör brottet synligt (§6.4) |
+| **Loop SM ↔ pw** | Tre lager (§6.5). Lager 1 vilar på en klientsatt header — därför är `process_event.suppressed{reason=ORIGIN}` ett mätvärde som **ska** vara skilt från noll |
+| **Etikettändring utanför API:t** | `AddLabelAction.executeAction` körs schemalagt och lägger till etiketter utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar — T7:s kontroll måste ligga även där |
+| **Publiceringsfel sväljs av anropsstället** | `setRollbackOnly` före kast (§2.2) gör svälj-fångsten ofarlig. Kvarstående hål: anropsväg helt utan transaktion — mäts av `process_event.publish_failed` |
+| **Start uteblir när etiketten sätts sent** | Start villkoras av `processKey`, inte `eventType` (§9.3). Täckt av ett P2-fall |
 | **Felstavat `processKey`** | Upptäcks vid första ärendet. `422` ⇒ ingen retry, `FAILED` + ERROR-aktivitet direkt på ärendet |
 | **Dead letter raderas och felet blir permanent** | §8.3 — redrive-endpoint och retention före röjning |
 | **Runtime-redigerbar routing utan granskning** | Priset för att slippa release. Validering av `PROCESS_CONSUMER`; överväg ändringslogg |
@@ -1078,6 +1161,6 @@ Schemalagd kontroll som skriver `FAILED` + `error` till SM när Operaton rest en
 
 ### Vad som inte går att verifiera automatiskt
 
-- Att WSO2 släpper igenom med rätt scope och inte manglar `423`.
+- Att WSO2 släpper igenom med rätt scope, och att `If-Match`/`ETag` passerar oförvanskade.
 - Verklig samtidighet mellan poddar — ShedLock täcks indirekt av `ShedlockConfigurationIT`.
 - Långtidsbeteende hos outbox och aktivitetslogg. Kompensation: mätvärdena i §8.1.
