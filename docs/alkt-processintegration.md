@@ -39,6 +39,8 @@ står i tabellen där.
 | 21 | **`POST .../process-instances` skapar men uppdaterar aldrig** | `409` så snart en rad finns | Workern kan `PUT`:a före pw:s `POST`. Med create-only är ankomstordningen likgiltig, och `409` betyder bara en sak — §5.1 |
 | 22 | **Ett avslutat processliv startas aldrig om.** `FAILED` får startas om | Starta på nästa triggande händelse oavsett historik | `findProcessInstances` ser bara Operatons runtime, så en `COMPLETED` process ser ut som ingen process alls. Nästa process är ett nytt ärende — §7.4 |
 | 23 | `errand.process` projicerar **senaste** instansen | Den levande instansen | En misslyckad start lämnar ingen levande instans. Projiceras bara den levande ser handläggaren ingenting alls — §5.3 |
+| 24 | **Beslutet lagras som `json_parameter` med nyckeln `alkt.beslut`** | Kolumner på `errand_process_instance`; vanliga parametrar; aktivitetsloggen | Ett ärende, ett beslut — unikheten på `(errand_id, parameter_key)` *är* invarianten. Se §7.5 |
+| 25 | **Handläggaren fattar beslutet; processen väntar på det** | Processen fattar beslutet | Delegationsbeslut fattas av människa. Följden: `DECISION` måste vara `PROCESS_TRIGGER`, och `updateJsonParameter` måste skapa event — §7.5 |
 
 ---
 
@@ -98,6 +100,9 @@ Undantag: **`HandoverService.handover`** hämtar utan filter men muterar källä
 - pw-alkt är stateless. `AbstractTaskWorker.clearUpdateAvailable` varnar för races vid skrivning av processvariabler. `alkt-ansokan.bpmn` innehåller **inget** `updateAvailable`; `clearUpdateAvailable` har **inga anropare**.
 - Varje PW-tjänst har eget API i WSO2 ⇒ en OAuth2-registrering per PW-tjänst.
 - **SM har Testcontainers.** `application-it.yml` (`spring.datasource`): `driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver`, `url: jdbc:tc:mariadb:10.6:///ittest`. Uppsättningen syns inte i `src/integration-test/java` eftersom den sker via JDBC-URL, inte via en `@Container`-deklaration. `schema-generation: validate` är påslaget. MariaDB **10.6** ⇒ `SKIP LOCKED` är tillgängligt.
+- `json_parameter` (`V1_43`–`V1_45`): `errand_id`, `parameter_key`, `schema_id`, `value longtext`, egen `version`. Unik på `(errand_id, parameter_key)`, `@OneToMany` på `ErrandEntity`, validerad mot JSON-schema via `ValidJsonParameterConstraintValidator` och `JsonSchemaClient`. Vanliga parametrar duger inte till fritext: `parameter_values.value` är `varchar(255)`.
+- **Varken `ErrandJsonParameterService` eller `ErrandParameterService` skapar revision eller event.** En parameterskrivning höjer `errand.version` och gör i övrigt ingenting. `EventSubType.DECISION` finns i enumet men används ingenstans i kodbasen.
+- `ErrandService.createErrand` tar `referredFrom` och skapar en relation via `RelationClient` — den befintliga vägen att koppla ihop två ärenden.
 - `truncate.sql` måste utökas med varje ny tabell.
 
 ### 1.7 Varje anrop till `createErrandEvent` sväljer undantag
@@ -818,7 +823,7 @@ processen antingen inte alls, eller så är headern fel.
 | Nyckel | Typ | Antal | Värde |
 |---|---|---|---|
 | `PROCESS_CONSUMER` | STRING | 1 | `pw-alkt` |
-| `PROCESS_TRIGGER` | STRING | N | `ERRAND`, `MESSAGE`, `ATTACHMENT` |
+| `PROCESS_TRIGGER` | STRING | N | `ERRAND`, `MESSAGE`, `ATTACHMENT`, `DECISION` |
 
 ```java
 // ConfigPropertyExtractor - nya konstanter
@@ -836,12 +841,17 @@ insert into namespace_config_value (namespace_config_id, `key`, `value`, `type`)
   (42, 'PROCESS_CONSUMER', 'pw-alkt',    'STRING'),
   (42, 'PROCESS_TRIGGER',  'ERRAND',     'STRING'),
   (42, 'PROCESS_TRIGGER',  'MESSAGE',    'STRING'),
-  (42, 'PROCESS_TRIGGER',  'ATTACHMENT', 'STRING');
+  (42, 'PROCESS_TRIGGER',  'ATTACHMENT', 'STRING'),
+  (42, 'PROCESS_TRIGGER',  'DECISION',   'STRING');
 ```
 
 **`ERRAND` är obligatorisk** — utan den startar aldrig ett ärende som får sin etikett i ett andra anrop.
 Triggern räcker dock inte ensam: pw måste starta på förekomsten av `processKey`, inte på `eventType`,
 annars faller samma fall ändå bort på mottagarsidan. Se §9.3.
+
+**`DECISION` är lika obligatorisk.** Handläggaren fattar beslutet och processen väntar på det (§7.5).
+Saknas triggern får processen aldrig veta att beslutet är fattat och instansen står kvar i `WAITING`
+för alltid.
 
 ### 7.2 `application.yml`
 
@@ -899,6 +909,73 @@ Constraint-violation **måste översättas**, aldrig bubbla upp som `500`. Men d
 | `uq_epi_one_active_per_errand` | En **annan** levande instans blockerar | `409` med `detail` som pekar ut den |
 
 Eftersom en och samma insert kan träffa båda, avgörs utfallet av en uppslagning på `process_instance_id` — inte av vilket index som råkade fyra (§5.1).
+
+---
+
+### 7.5 Processens utfall — beslutet
+
+**Ett ärende, en processinstans, ett beslut.** Ska ett nytt beslut fattas skapas ett nytt ärende, kopplat
+till det ursprungliga. Kopplingen finns redan: `POST /errands` tar `referredFrom` och `ErrandService.createErrand`
+skapar relationen via `RelationClient` — samma väg handover använder.
+
+Regeln är den yttersta av tre som säger samma sak på olika nivåer:
+
+| Nivå | Invariant | Upprätthålls av |
+|---|---|---|
+| Processinstans | Högst en levande per ärende | `uq_epi_one_active_per_errand` |
+| Processliv | En `COMPLETED` startas aldrig om | `hasCompletedInstance` i `POST` (§7.4) |
+| Beslut | Ett per ärende | `uq_json_parameter_errand_id_key` |
+
+#### Var beslutet lagras
+
+Som en **`json_parameter` med nyckeln `alkt.beslut`** och ett registrerat JSON-schema:
+
+```json
+{ "utfall": "BIFALL",
+  "beslutsdatum": "2026-09-14",
+  "beslutsfattare": "anna.andersson",
+  "delegationspunkt": "3.2.1",
+  "motivering": "..." }
+```
+
+Unikheten på `(errand_id, parameter_key)` **är** invarianten — ingen ny tabell, ingen ny endpoint och
+ingen kod som upprätthåller regeln. Dokumentet valideras mot schemat vid systemgränsen, har egen
+`version` för ETag, och ligger som `@OneToMany` på `ErrandEntity` och därmed i revisionssnapshotten.
+
+Tre alternativ valdes bort. **Kolumner på `errand_process_instance`**: ett myndighetsbeslut är ärendedata,
+inte processmaskineri — det måste kunna läsas av e-tjänst och arkiv utan kännedom om Operaton, och
+tabellen ligger medvetet utanför ärendets aggregat (§1.4), alltså utan revision och event. **Vanliga
+parametrar**: `parameter_values.value` är `varchar(255)`, en motivering får inte plats. **Aktivitetsloggen**:
+den är en logg SM inte tolkar, utan unikhet, och `message` får enligt §11 inte innehålla PII — vilket en
+beslutsmotivering nästan alltid gör.
+
+#### Vem som skriver, och vad det kräver
+
+**Handläggaren fattar beslutet**, baserat på det underlag som kommit in. Processen väntar på det. Två saker
+följer, och båda är förutsättningar för att flödet ska fungera alls:
+
+1. **`DECISION` måste ligga i `PROCESS_TRIGGER`** (§7.1).
+2. **`ErrandJsonParameterService.updateJsonParameter` måste skapa event och revision** med
+   `EventSubType.DECISION`. I dag skapar den ingetdera (§1.6), så utan den ändringen publiceras aldrig
+   något processevent och processen vaknar aldrig. `EventSubType.DECISION` finns redan i enumet, oanvänd.
+
+Beslutsskrivningen forcerar `errand.version` precis som andra parameterskrivningar, så en worker som
+håller en äldre ETag får `412` och kör om sitt steg (§6.2). Det är rätt utfall: beslutet ändrade underlaget.
+
+#### Låsning
+
+Beslutet får skrivas medan processen lever — det steg som förbereder beslutet kan behöva korrigera sig
+självt. När instansen är `COMPLETED` är det låst: samma `hasCompletedInstance(errandId)` som hindrar
+omstart av processen (§7.4) hindrar då också ändring av beslutet. En kontroll, två användningar. Rättelse
+eller omprövning sker genom ett nytt ärende.
+
+#### Modelleringskravet detta hänger på
+
+Wait state:t som väntar på beslutet **måste omvärdera sitt villkor vid inträde** (§9.2 punkt 1). Skrivs
+beslutet medan processen är mitt i ett arbetssteg sväljs korrelationen som en `MismatchingMessageCorrelation`
+och väckningen är borta. Läser processen inte om ärendet när den går in i väntan står ärendet stilla för
+alltid — med ett fattat beslut liggande i databasen. Det är den enskilt allvarligaste modelleringsmissen
+som går att göra i den här lösningen.
 
 ---
 
@@ -961,7 +1038,7 @@ Processens `id` måste matcha `Constants.PROCESS_KEY_*`. **`ProcessWithoutDeviat
 
 Dessa är förutsättningar för att designen ska hålla — de är inte råd.
 
-1. **Wait states ska omvärdera sitt villkor vid inträde.** Läs aktuellt ärendetillstånd och avgör om villkoret redan är uppfyllt innan väntan börjar. En sväljd `MismatchingMessageCorrelation` kan vara en legitim väckning som kom medan processen var mellan två wait states; att det ändå är ofarligt vilar helt på detta.
+1. **Wait states ska omvärdera sitt villkor vid inträde.** Läs aktuellt ärendetillstånd och avgör om villkoret redan är uppfyllt innan väntan börjar. En sväljd `MismatchingMessageCorrelation` kan vara en legitim väckning som kom medan processen var mellan två wait states; att det ändå är ofarligt vilar helt på detta. **Det skarpaste fallet är beslutet** (§7.5): skrivs det medan processen arbetar och väntan inte omvärderar, står ärendet stilla för alltid med ett fattat beslut i databasen.
 2. **Inga parallella grenar som muterar ärendet** (§6.4).
 3. **Inga processvariabler för idempotens eller signalering.** Skälet står i koden som tas bort — `"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."` Bevara resonemanget även när metoden är borta; det är det första någon återinför när ett dubblettproblem dyker upp.
 4. **Inga call activities eller delade subprocesser** nu — framtida processer kan skilja sig avsevärt.
@@ -1057,13 +1134,14 @@ Tabellen nedan är **utförandeordningen**. T- och P-numreringen längre ner fö
 | 5 | DRAKEN-4718 | T5 — Publicering |
 | 6 | DRAKEN-4719 | T6 — Relay och leverans |
 | 7 | DRAKEN-4720 | T7 — Skyddsräcken |
-| 8 | DRAKEN-4721 | P1 — Operaton-klienten |
-| 9 | DRAKEN-4722 | P2 — Event-endpoint och borttagning |
-| 10 | DRAKEN-4723 | P3 — SM-klienten |
-| 11 | DRAKEN-4724 | P4 — Workerstruktur |
-| 12 | DRAKEN-4725 | T8 — `ProcessLoopGuardIT` |
-| 13 | DRAKEN-4726 | P5 — Tillsynsprocessen |
-| 14 | DRAKEN-4727 | P6 — Incidentåterkoppling |
+| 8 | DRAKEN-4728 | T9 — Beslutsdokument och spårbarhet |
+| 9 | DRAKEN-4721 | P1 — Operaton-klienten |
+| 10 | DRAKEN-4722 | P2 — Event-endpoint och borttagning |
+| 11 | DRAKEN-4723 | P3 — SM-klienten |
+| 12 | DRAKEN-4724 | P4 — Workerstruktur |
+| 13 | DRAKEN-4725 | T8 — `ProcessLoopGuardIT` |
+| 14 | DRAKEN-4726 | P5 — Tillsynsprocessen |
+| 15 | DRAKEN-4727 | P6 — Incidentåterkoppling |
 
 ### T1 — Datamodell och domänenums (SM)
 
@@ -1156,6 +1234,18 @@ Tabellen nedan är **utförandeordningen**. T- och P-numreringen längre ner fö
 
 Utan detta test är loop-skyddet en hypotes.
 
+### T9 — Beslutsdokument och spårbarhet (SM)
+
+**Bygg:** JSON-schema för `alkt.beslut` registrerat i JsonSchema-tjänsten (§7.5); `EventSubType.DECISION`-event och revision från `ErrandJsonParameterService.updateJsonParameter`; låsning av beslutet mot `COMPLETED` instans; `DECISION` i `PROCESS_TRIGGER` för ALKT.
+
+**Acceptans:**
+- Skrivning av `alkt.beslut` ger en eventlogg-post med subtyp `DECISION` **och** en revision. Utan detta publiceras inget processevent och processen vaknar aldrig.
+- Skrivning som inte validerar mot schemat ger `400`.
+- Andra skrivning av `alkt.beslut` på samma ärende går igenom medan instansen lever, men ger `409` när instansen är `COMPLETED`.
+- Skrivningen höjer `errand.version`; en worker med äldre ETag får `412`.
+- **IT: handläggaren skriver beslutet ⇒ outbox-rad med subtyp `DECISION`.** Det är hela kedjan som gör att processen kan avslutas.
+- Enhetstest som verifierar att beslutsskrivning från namespacets `PROCESS_CONSUMER` **inte** ger en outbox-rad — origin-filtret gäller även här.
+
 ### P1 — Operaton-klienten (pw)
 
 `correlateMessage`, `findProcessInstances`, `deleteProcessInstance`; `businessKey` i mappern; nya konstanter. **Acceptans:** `ProcessWithoutDeviationIT` fortsatt grön.
@@ -1205,6 +1295,8 @@ Schemalagd kontroll som skriver `FAILED` + `error` till SM när Operaton rest en
 | **Underresurser fångas inte av versionen** | En bilaga som raderas mitt i en körning höjer inte `errand.version`. Processen måste läsa om bilagor när den behöver dem |
 | **Parallella grenar** | Modelleringsregel + WARN-aktivitet gör brottet synligt (§6.4) |
 | **Loop SM ↔ pw** | Tre lager (§6.5). Lager 1 vilar på en klientsatt header — därför är `process_event.suppressed{reason=ORIGIN}` ett mätvärde som **ska** vara skilt från noll |
+| **Beslut skrivet medan processen arbetar** | Korrelationen sväljs och väckningen är borta. Fångas bara av modelleringskravet i §9.2 punkt 1 — wait state:t måste läsa om ärendet vid inträde. Ingen kod i SM kan rädda ett wait state som inte omvärderar |
+| **`DECISION` saknas i `PROCESS_TRIGGER`** | Processen vaknar aldrig av beslutet och står i `WAITING` för alltid. Validering av triggervärden och ett IT-fall i T9 |
 | **Etikettändring utanför API:t** | `AddLabelAction.executeAction` körs schemalagt och lägger till etiketter utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar — T7:s kontroll måste ligga även där |
 | **Publiceringsfel sväljs av anropsstället** | `setRollbackOnly` före kast (§2.2) gör svälj-fångsten ofarlig. Kvarstående hål: anropsväg helt utan transaktion — mäts av `process_event.publish_failed` |
 | **Start uteblir när etiketten sätts sent** | Start villkoras av `processKey`, inte `eventType` (§9.3). Täckt av ett P2-fall |
