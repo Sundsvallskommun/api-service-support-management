@@ -41,6 +41,7 @@ står i tabellen där.
 | 23 | `errand.process` projicerar **senaste** instansen | Den levande instansen | En misslyckad start lämnar ingen levande instans. Projiceras bara den levande ser handläggaren ingenting alls — §5.3 |
 | 24 | **Beslutet lagras som `json_parameter` med nyckeln `alkt.beslut`** | Kolumner på `errand_process_instance`; vanliga parametrar; aktivitetsloggen | Ett ärende, ett beslut — unikheten på `(errand_id, parameter_key)` *är* invarianten. Se §7.5 |
 | 25 | **Handläggaren fattar beslutet; processen väntar på det** | Processen fattar beslutet | Delegationsbeslut fattas av människa. Följden: `DECISION` måste vara `PROCESS_TRIGGER`, och `updateJsonParameter` måste skapa event — §7.5 |
+| 26 | `processKey` läses ur instansen först, etiketterna i andra hand; `DELETE` publiceras även utan nyckel | Alltid lösa upp ur etiketterna | En borttagen etikett skulle annars lämna en föräldralös processinstans i Operaton — §2.2 |
 
 ---
 
@@ -150,7 +151,8 @@ Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_eve
 2. executedBy == PROCESS_CONSUMER?                        ja  -> return        (loop-skydd, lager 1)
 3. Levererade event för ärendet i fönstret > tröskel?      ja  -> ERROR-aktivitet, return  (lager 3)
 4. eventSubType i PROCESS_TRIGGER?                        nej -> return        (lager 2)
-5. processKey ur etiketterna                              0 -> return; >1 -> ERROR-aktivitet, return
+5. processKey: instansens om den finns, annars ur etiketterna
+                       0 -> DELETE publiceras anda, ovriga return; >1 -> ERROR-aktivitet, return
 6. INSERT process_event_outbox
 ```
 
@@ -158,6 +160,17 @@ Steg 1 är en cachad map-uppslagning. Namespace utan process betalar inget mer.
 
 ERROR-aktiviteterna i steg 3 och 5 skrivs **utan processinstans** — de inträffar per definition när
 ingen instans finns (§3.1).
+
+**Steg 5 läser instansens `process_key` först, etiketterna bara i andra hand.** Så snart ärendet har en
+processinstans är nyckeln fastnaglad, och en etikett som ändras eller tas bort kan inte längre ändra vad
+som publiceras. Det spelar särskilt roll för `DELETE`: löstes nyckeln alltid ur etiketterna skulle ett
+ärende vars etikett hunnit tas bort inte ge någon rad alls, och processinstansen leva vidare i Operaton
+för ett ärende som inte finns (§9.3).
+
+Därför publiceras `DELETE` **även utan nyckel**. pw matchar på `businessKey`, inte på `processKey`, när det
+ska radera (§9.3), så fältet är informationsbärande för `DELETE` och obligatoriskt bara för `CREATE` och
+`UPDATE`. Det gör också publiceringen okänslig för att instansraden redan kaskaderats bort när
+`ErrandService.deleteErrand` anropar `createErrandEvent` efter `repository.deleteById`.
 
 **Publiceringen får inte kunna svälja sitt eget fel.** Anropsställena fångar `Exception` (§1.7), och
 regeln att inte lägga till en nionde svalgande fångst är inte en garanti. Därför:
@@ -183,7 +196,14 @@ Att ta bort de yttre fångarna löser inte problemet ensamt — det skulle ocks�
 
 ### 2.3 Latens
 
-`@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` + `@Async("processEventExecutor")` (core 2 / max 4 / kö 500, **`AbortPolicy`**). Mönstret finns i `SubscriptionService.handleAutoSubscribeEvent`.
+`@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` + `@Async("processEventExecutor")` (core 2 / max 4 / kö 500). Mönstret finns i `SubscriptionService.handleAutoSubscribeEvent`.
+
+**Rejection-policyn ska kasta bort nudgen, inte `AbortPolicy`.** Ett `RejectedExecutionException` från en
+`AFTER_COMMIT`-listener kastas i den committande tråden *efter* commit och propagerar till anroparen — en
+mättad kö hade alltså gett `500` på en ärendeskrivning som redan lyckats. Kasta i stället bort nudgen,
+räkna `process_event.nudge_rejected`, och wrappa listenern i try/catch precis som
+`SubscriptionService.handleAutoSubscribeEvent` redan gör. Cron är nätet: en tappad nudge kostar upp till en
+minut, aldrig ett fel.
 
 Cron `0 * * * * *` som nät, samma kodväg, buffert 5 s **endast** där. Ordning per ärende via `@Lock(PESSIMISTIC_WRITE)` på radgruppen sorterad på `created, id`.
 
@@ -212,7 +232,9 @@ create table if not exists process_event_outbox (
     municipality_id   varchar(8)   not null,
     namespace         varchar(32)  not null,
     errand_id         varchar(36)  not null,
-    process_key       varchar(128) not null,
+    -- Nullbar: kravs for CREATE och UPDATE, irrelevant for DELETE dar pw matchar
+    -- pa businessKey. Se 2.2 steg 5.
+    process_key       varchar(128),
     event_type        varchar(64)  not null,   -- CREATE | UPDATE | DELETE
     event_sub_type    varchar(64)  not null,   -- ERRAND | MESSAGE | ATTACHMENT | ...
     executed_by       varchar(255),            -- X-Sent-By-varde, for loop-filtret
@@ -661,7 +683,8 @@ public class ErrandEvent {
     @NotNull  private EventType eventType;      // CREATE | UPDATE | DELETE
     private String eventSubType;
     @ValidUuid private String errandId;
-    private String processKey;                  // satt nar arendets etiketter ger en nyckel; styr start (9.3)
+    private String processKey;                  // instansens nyckel, annars etiketternas. Null vid
+                                                //  DELETE av arende utan losbar nyckel. Styr start (9.3)
     private OffsetDateTime occurredAt;
 }
 ```
@@ -1200,6 +1223,8 @@ Tabellen nedan är **utförandeordningen**. T- och P-numreringen längre ner fö
 - **IT som verifierar att ett e-postintag ger en outbox-rad.** Intaget skapar inga revisioner och går förbi chokepointen (§1.1) — tappas det där märks det inte av något annat test.
 - Enhetstest per gren i §2.2, inklusive: `executedBy` == konsumenten ⇒ ingen rad; icke-triggad subtyp ⇒ ingen rad; namespace utan konsument ⇒ ingen rad.
 - **`executedBy` == en handläggare ⇒ raden skrivs.** Origin-filtret får inte vara bredare än sitt syfte.
+- **`DELETE` av ett ärende vars etikett tagits bort ⇒ raden publiceras ändå**, med `process_key` null. Utan det blir processinstansen föräldralös i Operaton.
+- Ärende med processinstans: `process_key` i raden kommer från instansen, inte från etiketterna. Verifieras genom att ändra etiketten i testdata och se att nyckeln står still.
 - `ProcessKeySelectorTest`: en tagg ⇒ en nyckel; två med samma ⇒ en; två med olika ⇒ ERROR-aktivitet och ingen rad; `deprecated` ignoreras; **namnbyte och omflyttning av labeln lämnar upplösningen oförändrad**.
 - **Publisher kastar ⇒ ärendeskrivningen är inte committad**, trots att anropsstället sväljer undantaget (§1.7). Verifieras genom att PATCH:a och sedan läsa tillbaka ärendet — inte genom att inspektera loggen.
 - Utan aktiv transaktion: ERROR-logg och `process_event.publish_failed` ökar, inget kast som spräcker anropet.
@@ -1213,7 +1238,7 @@ Tabellen nedan är **utförandeordningen**. T- och P-numreringen längre ner fö
 **Acceptans:**
 - WireMock svarar `202` / `422` / `503` / timeout — samtliga fyra vägar verifierade, inklusive att `422` **inte** retryas och skriver `FAILED` + ERROR-aktivitet.
 - Ordning per ärende hålls när flera rader finns.
-- Mättad executor ⇒ nudgen släpps och cron levererar; ingen HTTP-tråd blockeras.
+- Mättad executor ⇒ nudgen släpps, `process_event.nudge_rejected` ökar och cron levererar. **Inget undantag når anroparen** — testet ska mätta kön och verifiera att ärendeskrivningen ändå svarar `200` (§2.3).
 - Dead letters raderas inte inom retentionstiden; redrive nollar räknarna.
 
 ### T7 — Skyddsräcken (SM)
@@ -1297,6 +1322,7 @@ Schemalagd kontroll som skriver `FAILED` + `error` till SM när Operaton rest en
 | **Loop SM ↔ pw** | Tre lager (§6.5). Lager 1 vilar på en klientsatt header — därför är `process_event.suppressed{reason=ORIGIN}` ett mätvärde som **ska** vara skilt från noll |
 | **Beslut skrivet medan processen arbetar** | Korrelationen sväljs och väckningen är borta. Fångas bara av modelleringskravet i §9.2 punkt 1 — wait state:t måste läsa om ärendet vid inträde. Ingen kod i SM kan rädda ett wait state som inte omvärderar |
 | **`DECISION` saknas i `PROCESS_TRIGGER`** | Processen vaknar aldrig av beslutet och står i `WAITING` för alltid. Validering av triggervärden och ett IT-fall i T9 |
+| **Föräldralös processinstans efter radering** | `DELETE` publiceras även utan `processKey` (§2.2), och pw raderar på `businessKey` (§9.3). Restrisk kvarstår om leveransen dead-letteras — därför retention och redrive före röjning (§8.3) |
 | **Etikettändring utanför API:t** | `AddLabelAction.executeAction` körs schemalagt och lägger till etiketter utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar — T7:s kontroll måste ligga även där |
 | **Publiceringsfel sväljs av anropsstället** | `setRollbackOnly` före kast (§2.2) gör svälj-fångsten ofarlig. Kvarstående hål: anropsväg helt utan transaktion — mäts av `process_event.publish_failed` |
 | **Start uteblir när etiketten sätts sent** | Start villkoras av `processKey`, inte `eventType` (§9.3). Täckt av ett P2-fall |
