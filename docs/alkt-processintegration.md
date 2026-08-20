@@ -37,6 +37,8 @@ står i tabellen där.
 | 19 | Aktiviteter får sakna processinstans — `errand_process_instance_id` nullbar, aktivitetsläsning ärendescopad | `not null` | Tvetydig etikett och nödbroms inträffar innan någon instans finns. Posten hade inte gått att skriva |
 | 20 | Rena läs-workers rapporterar `errandVersion`; SM svarar `412` om den glidit | Inget skydd alls för läs-workers | Workern har annars ingenting att kollidera på — §6.3 |
 | 21 | **`POST .../process-instances` skapar men uppdaterar aldrig** | `409` så snart en rad finns | Workern kan `PUT`:a före pw:s `POST`. Med create-only är ankomstordningen likgiltig, och `409` betyder bara en sak — §5.1 |
+| 22 | **Ett avslutat processliv startas aldrig om.** `FAILED` får startas om | Starta på nästa triggande händelse oavsett historik | `findProcessInstances` ser bara Operatons runtime, så en `COMPLETED` process ser ut som ingen process alls. Nästa process är ett nytt ärende — §7.4 |
+| 23 | `errand.process` projicerar **senaste** instansen | Den levande instansen | En misslyckad start lämnar ingen levande instans. Projiceras bara den levande ser handläggaren ingenting alls — §5.3 |
 
 ---
 
@@ -493,6 +495,10 @@ Svar `201 Created` (första gången, med `Location`) eller `200 OK`:
   "error": { "code": "START_FAILED", "message": "..." } }
 ```
 
+**Ett avslutat processliv startas inte om.** Har ärendet en instans med `COMPLETED` svarar `POST` `409`
+även om ingen levande instans finns. En `FAILED` instans blockerar däremot inte — omstart efter ett
+misslyckat startförsök är återhämtning, inte en ny process (§7.4).
+
 **Regeln som gör det hela ofarligt: `POST` skapar, den uppdaterar aldrig.**
 
 Operaton kan göra den första external task:en tillgänglig innan `startProcessInstance` ens returnerat till
@@ -508,6 +514,9 @@ i stället, före och efter:
 ```
 existing = findByProcessInstanceId(piid)
 if existing: return 200 existing            // nagon hann fore, ror ingenting
+
+if hasCompletedInstance(errandId):
+    throw 409                               // processlivet ar over, se 7.4
 
 try:
     insert(... RUNNING ...)
@@ -525,6 +534,7 @@ external task och ingen worker.
 
 ```
 GET .../errands/{errandId}/process-instances                        -> 200 List<ProcessInstance>
+                                                                       nyast först; normalt exakt ett element
 GET .../errands/{errandId}/process-activities                       -> 200 Page<ProcessActivity>
                                                                        ?processInstanceId= (valfritt filter)
                                                                        &page=&size=50 (max 200)&sort=occurredAt,desc
@@ -575,7 +585,7 @@ public class ProcessError {
     private String message;
 }
 
-/** Lasprojektion pa Errand. Null for namespace utan processmodell. */
+/** Lasprojektion pa Errand: SENASTE instansen, inte den levande. Null for namespace utan processmodell. */
 @Schema(accessMode = READ_ONLY, description = "Process state driving this errand")
 public class ErrandProcess {
     private String processService;
@@ -604,6 +614,16 @@ public class ProcessLabelMapping {
 @Schema(accessMode = READ_ONLY, description = "Process state driving this errand; null for namespaces without a process model")
 private ErrandProcess process;
 ```
+
+**`process` projicerar den senaste instansen, inte den levande.** Skillnaden spelar roll i två lägen som
+båda är sådana handläggaren måste se: en misslyckad start lämnar en terminal `FAILED`-rad och ingen levande
+instans, och en avslutad process lämnar en `COMPLETED`-rad och ingen levande instans. Projicerades bara den
+levande skulle båda visa `null`, alltså samma sak som "ärendet har ingen process" — och felstavat `processKey`
+vore osynligt trots att §11 lovar motsatsen.
+
+Följden för berikningen: frågan är "senaste per ärende", inte "där `active_marker = 1`". Över en mängd
+ärende-id kräver det en window function (`ROW_NUMBER()`, finns i MariaDB 10.6) eller en join mot
+`max(created)`. Det ska fortfarande vara **en** fråga.
 
 ### 5.4 pw-alkt — inkommande
 
@@ -670,7 +690,7 @@ Fabriksmetoderna finns för att en worker inte ska behöva komma ihåg vilken st
 | `400` | `activePhaseId` sätts på ärende med processinstans; etikettändring som byter `processKey` |
 | `403` | `X-Sent-By` saknas; `processService` matchar inte namespacets `PROCESS_CONSUMER` |
 | `404` | Ärendet finns inte eller ligger i annat namespace |
-| `409` | Annan levande instans för ärendet **med ett annat `processInstanceId`**; instans med annat `process_key` än ärendets befintliga. Samma `processInstanceId` är aldrig `409` — se §5.1 |
+| `409` | Annan levande instans för ärendet **med ett annat `processInstanceId`**; ärendet har redan en `COMPLETED` instans (§7.4); instans med annat `process_key` än ärendets befintliga. Samma `processInstanceId` är aldrig `409` — se §5.1 |
 | `412` | `errandVersion` i rapporten matchar inte ärendets aktuella version (§6.3) |
 
 ### 5.7 Beteendeförändring på befintliga endpoints
@@ -867,6 +887,9 @@ insert into metadata_label_attribute (metadata_label_id, `key`, `value`) values
 1. Etikettändring som skulle byta upplöst `processKey` avvisas med `400` så snart ärendet har en instans — även avslutad.
 2. Högst en **levande** instans per ärende (`active_marker`, §4.1).
 3. Alla instanser för ett ärende delar samma `process_key` — service-kontroll under radlås, ej uttryckbart i DB.
+4. **En `COMPLETED` instans avslutar ärendets processliv.** En ny instans får inte startas. Nästa process är ett nytt ärende (beslut 6). En `FAILED` instans får däremot startas om — det är återhämtning efter ett misslyckat startförsök.
+
+Regel 4 är inte uttryckbar i DB: `active_marker` är NULL för både `COMPLETED` och `FAILED` och skiljer dem inte åt. Kontrollen ligger i `POST .../process-instances` (§5.1). Att lägga den där och inte bara i pw är avsiktligt — pw frågar Operatons runtime, som inte känner till avslutade instanser alls (§9.3).
 
 Constraint-violation **måste översättas**, aldrig bubbla upp som `500`. Men de två unika indexen betyder olika saker och får inte behandlas lika:
 
@@ -954,14 +977,22 @@ handleErrandEvent(municipalityId, namespace, event):
 
     instans = findProcessInstances(errandId, event.processKey, "ALKT")
     om tom:
-        om event.processKey saknas -> logga, 202   // arendet har ingen processetikett
+        om event.processKey saknas -> logga, 202       // arendet har ingen processetikett
+        om SM har en COMPLETED instans -> logga, 202   // processlivet ar over, se 7.4
         om processKey inte deployad -> 422
         start med businessKey = errandId
-        POST .../process-instances {RUNNING}       // 200 = nagon hann fore, ok
-                                                   // 409 = annan levande instans -> avbryt den nystartade
+        POST .../process-instances {RUNNING}           // 200 = nagon hann fore, ok
+                                                       // 409 = avslutad eller annan levande
+                                                       //       instans -> avbryt den nystartade
     annars:
         correlateMessage(messageName = "errandUpdated", businessKey = errandId, tenantId = "ALKT")
 ```
+
+**`findProcessInstances` ser bara Operatons runtime.** En avslutad process finns inte där — den ligger i
+historiken. Utan kontrollen mot SM skulle alltså varje triggande händelse efter `COMPLETED` starta en helt
+ny process på samma ärende: ett meddelande eller en bilaga som kommer in efter beslut skulle dra igång
+ansökningsprocessen från början. Kontrollen mot SM är förstahandsspärren, `409` från `POST` är
+backstoppet (§7.4).
 
 **Starten styrs av `processKey`, inte av `eventType`.** Ett ärende kan skapas utan etikett och få den i
 ett andra anrop — då kommer nyckeln med ett `UPDATE`-event, inte ett `CREATE`. Startades bara på `CREATE`
@@ -1065,6 +1096,10 @@ Tabellen nedan är **utförandeordningen**. T- och P-numreringen längre ner fö
 - `GET .../process-activities` returnerar även poster utan processinstans; filtret `processInstanceId` utesluter dem.
 - **Kapplöpningen i §5.1 körd i båda ordningarna:** `PUT` först (skapar raden) följt av `POST` med samma `processInstanceId` ⇒ `200` och orört tillstånd; `POST` först följt av workerns `PUT` ⇒ tillståndet uppdateras. Ingen av ordningarna ger `409`.
 - Annan levande instans med **annat** `processInstanceId` ⇒ `409`; instans med annat `process_key` ⇒ `409`; constraint-violation översatt enligt §7.4, aldrig `500`.
+- `POST` mot ärende som redan har en `COMPLETED` instans ⇒ `409`. `POST` mot ärende som bara har en `FAILED` instans ⇒ `201`.
+- `errand.process` projicerar **senaste** instansen: ärende med misslyckad start visar `FAILED` med sitt felmeddelande, inte `null`.
+- Batchberikningen är "senaste per ärende" och fortfarande **en** fråga — verifieras med query-räkning.
+- `GET .../process-instances` sorterar nyast först.
 - `findErrands` gör **en** fråga för berikningen (verifieras med query-räkning, inte ögonmått).
 - Beslut fattat och dokumenterat om `process` ska strippas av `limitedMappingPredicateByLabel`.
 
@@ -1132,6 +1167,7 @@ Utan detta test är loop-skyddet en hypotes.
 **Acceptans:** start / korrelera / okänt ärende / DELETE / okänd nyckel (`422`) täckta; inga referenser kvar till `updateAvailable`, `StartProcessResponse` eller `setProcessInstanceVariable`.
 - **`UPDATE`-event utan levande instans men med `processKey` ⇒ processen startas.** Det är fallet där etiketten sattes i ett andra anrop (§7.1); startas bara på `CREATE` faller det tyst bort.
 - `UPDATE`-event utan `processKey` ⇒ `202`, ingen start.
+- **Event mot ärende vars process är `COMPLETED` ⇒ `202`, ingen ny start.** `findProcessInstances` mot Operatons runtime räcker inte som villkor — den ser inte avslutade instanser (§9.3).
 
 ### P3 — SM-klienten (pw)
 
