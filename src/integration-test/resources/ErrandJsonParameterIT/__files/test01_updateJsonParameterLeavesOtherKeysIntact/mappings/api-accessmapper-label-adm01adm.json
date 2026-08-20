@@ -1,0 +1,19 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/adm01adm",
+		"queryParameters": {
+			"type": {
+				"equalTo": "label"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test01_updateJsonParameterLeavesOtherKeysIntact/responses/label-rw.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-label-adm01adm"
+}

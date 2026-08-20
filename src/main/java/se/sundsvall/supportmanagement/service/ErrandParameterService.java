@@ -10,12 +10,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -44,7 +47,13 @@ public class ErrandParameterService {
 
 	@Transactional
 	public List<Parameter> updateErrandParameters(final String namespace, final String municipalityId, final String errandId, final String ifMatch, final List<Parameter> parameters) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.PARAMETER, RW);
+
+		// Resolved once, before the merge below. Resolving it afterwards would query mid transaction, auto flushing the
+		// changed parameters and bumping their version before they are returned.
+		final var accessibleKey = accessControlService.readableKeyPredicate(namespace, municipalityId, Identifier.get(), errandEntity, ErrandField.PARAMETERS);
+
+		accessControlService.verifyAccessibleKeys(accessibleKey, ofNullable(parameters).orElse(emptyList()).stream().map(Parameter::getKey).toList());
 
 		if (ifMatch == null) {
 			LOG.debug("PATCH /errands/{}/parameters received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
@@ -52,26 +61,35 @@ public class ErrandParameterService {
 		validateIfMatch(ifMatch, errandEntity.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		mergeParameters(errandEntity, parameters);
+		// Parameters the caller cannot see are left as they are, so patching back a filtered list cannot delete them.
+		mergeParameters(errandEntity, parameters, accessibleKey);
 
-		return toParameterList(errandsRepository.save(errandEntity).getParameters());
+		return toParameterList(ofNullable(errandsRepository.save(errandEntity).getParameters()).orElse(emptyList()).stream()
+			.filter(parameter -> accessibleKey.test(parameter.getKey()))
+			.toList());
 	}
 
 	@Transactional(readOnly = true)
 	public Parameter readErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.PARAMETER, LR);
+		accessControlService.verifyAccessibleKey(namespace, municipalityId, errand, ErrandField.PARAMETERS, parameterKey);
 		return toParameter(findParameterEntityOrElseThrow(errand, parameterKey));
 	}
 
 	@Transactional(readOnly = true)
 	public List<Parameter> findErrandParameters(final String namespace, final String municipalityId, final String errandId) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
-		return toParameterList(errandEntity.getParameters());
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.PARAMETER, LR);
+		final var readableKey = accessControlService.readableKeyPredicate(namespace, municipalityId, Identifier.get(), errandEntity, ErrandField.PARAMETERS);
+
+		return toParameterList(ofNullable(errandEntity.getParameters()).orElse(emptyList()).stream()
+			.filter(parameter -> readableKey.test(parameter.getKey()))
+			.toList());
 	}
 
 	@Transactional
 	public Parameter updateErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey, final String ifMatch, final List<String> parameterValues) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.PARAMETER, RW);
+		accessControlService.verifyAccessibleKey(namespace, municipalityId, errandEntity, ErrandField.PARAMETERS, parameterKey);
 
 		final var parameterEntity = errandEntity.getParameters().stream()
 			.filter(paramEntity -> Objects.equals(paramEntity.getKey(), parameterKey))
@@ -91,7 +109,8 @@ public class ErrandParameterService {
 
 	@Transactional
 	public void deleteErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.PARAMETER, RW);
+		accessControlService.verifyAccessibleKey(namespace, municipalityId, errandEntity, ErrandField.PARAMETERS, parameterKey);
 
 		if (errandEntity.getParameters() == null) {
 			return;

@@ -29,14 +29,44 @@
 				}
 			],
 			"externalTags": [],
-			"parameters": [],
-			"jsonParameters": [],
+			"parameters": [
+				{
+					"key": "granted-key",
+					"displayName": "Granted",
+					"values": [],
+					"version": 0
+				},
+				{
+					"key": "hidden-key",
+					"displayName": "Hidden",
+					"values": [],
+					"version": 0
+				}
+			],
+			"jsonParameters": [
+				{
+					"key": "granted-json",
+					"schemaId": "test-schema-1.0",
+					"value": {
+						"visible": true
+					},
+					"version": 0
+				},
+				{
+					"key": "hidden-json",
+					"schemaId": "test-schema-1.0",
+					"value": {
+						"secret": "must survive"
+					},
+					"version": 0
+				}
+			],
 			"classification": {
 				"type": "TYPE-2506"
 			},
 			"status": "STATUS-2506",
 			"channel": "ESERVICE_INTERNAL",
-			"reporterUserId": "REPORTER_USER_ID-X",
+			"reporterUserId": "rob01rep",
 			"assignedUserId": "ASSIGNED_USER_ID-X",
 			"assignedGroupId": "ASSIGNED_GROUP_ID-X",
 			"escalationEmail": "ESCALATION_EMAIL_1",

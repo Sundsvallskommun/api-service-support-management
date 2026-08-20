@@ -114,6 +114,7 @@ class SubscribersIT extends AbstractAppTest {
 	void test07_updateSubscriber() {
 		setupCall()
 			.withServicePath(PATH + "/" + SUBSCRIBER_SERVICEDESK_ID)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(OK)
@@ -138,6 +139,7 @@ class SubscribersIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(PATH + "/" + SUBSCRIBER_TO_DELETE_ID)
+			.withHeader(HEADER_NAME, "del01usr; type=adAccount")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
@@ -151,6 +153,7 @@ class SubscribersIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(PATH + "/" + SUBSCRIBER_SERVICEDESK_ID)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();

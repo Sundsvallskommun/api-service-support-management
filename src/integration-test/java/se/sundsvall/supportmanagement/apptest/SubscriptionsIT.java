@@ -55,6 +55,7 @@ class SubscriptionsIT extends AbstractAppTest {
 	void test01_getSubscriptions() {
 		setupCall()
 			.withServicePath(PATH)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
@@ -76,7 +77,7 @@ class SubscriptionsIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(TICKETS_PATH)
 			.withHttpMethod(POST)
-			.withHeader(HEADER_NAME, "type=adAccount; jane11dane")
+			.withHeader(HEADER_NAME, "jane11dane; type=adAccount")
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("^" + TICKETS_PATH + "/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))
@@ -88,7 +89,7 @@ class SubscriptionsIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(TICKETS_PATH)
 			.withHttpMethod(POST)
-			.withHeader(HEADER_NAME, "type=adAccount; jane11dane")
+			.withHeader(HEADER_NAME, "jane11dane; type=adAccount")
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("^" + TICKETS_PATH + "/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))
@@ -146,6 +147,7 @@ class SubscriptionsIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(PATH + "/" + SUBSCRIPTION_ERRAND_ID)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
@@ -158,6 +160,7 @@ class SubscriptionsIT extends AbstractAppTest {
 	void test10_deleteSubscriptionNotFound() {
 		setupCall()
 			.withServicePath(PATH + "/" + UNKNOWN_SUBSCRIPTION_ID)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NOT_FOUND)
 			.withExpectedResponse(RESPONSE_FILE)
@@ -169,6 +172,7 @@ class SubscriptionsIT extends AbstractAppTest {
 		// SUBSCRIPTION_NAMESPACE_ID belongs to SUBSCRIBER_SERVICEDESK, not SUBSCRIBER_TICKETS
 		setupCall()
 			.withServicePath(TICKETS_PATH + "/" + SUBSCRIPTION_NAMESPACE_ID)
+			.withHeader(HEADER_NAME, "jane11dane; type=adAccount")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NOT_FOUND)
 			.withExpectedResponse(RESPONSE_FILE)
@@ -180,8 +184,8 @@ class SubscriptionsIT extends AbstractAppTest {
 		// 1. POST a new subscription for SUBSCRIBER_TICKETS (errand 1be673… not previously subscribed by this subscriber).
 		setupCall()
 			.withServicePath(TICKETS_PATH)
+			.withHeader(HEADER_NAME, "jane11dane; type=adAccount")
 			.withHttpMethod(POST)
-			.withHeader(HEADER_NAME, "type=adAccount; jane11dane")
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("^" + TICKETS_PATH + "/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))
@@ -190,6 +194,7 @@ class SubscriptionsIT extends AbstractAppTest {
 		// 2. GET fetches the listing and verifies the new entry was fully persisted (eventFilters, expiresAt, createdBy).
 		setupCall()
 			.withServicePath(TICKETS_PATH)
+			.withHeader(HEADER_NAME, "jane11dane; type=adAccount")
 			.withHttpMethod(GET)
 			.withJsonAssertOptions(List.of(Option.IGNORING_ARRAY_ORDER))
 			.withExpectedResponseStatus(OK)

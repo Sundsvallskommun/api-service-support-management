@@ -30,8 +30,11 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -51,9 +54,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class MetadataCategoryResource {
 
 	private final MetadataService metadataService;
+	private final AccessControlService accessControlService;
 
-	MetadataCategoryResource(final MetadataService metadataService) {
+	MetadataCategoryResource(final MetadataService metadataService, final AccessControlService accessControlService) {
 		this.metadataService = metadataService;
+		this.accessControlService = accessControlService;
 	}
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -69,6 +74,8 @@ class MetadataCategoryResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Category body) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_CATEGORY, RW);
 
 		return created(fromPath("/{municipalityId}/{namespace}/metadata/categories/{id}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createCategory(namespace, municipalityId, body)).toUri())
@@ -136,6 +143,8 @@ class MetadataCategoryResource {
 		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final Category body) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_CATEGORY, RW);
+
 		return ok(metadataService.updateCategory(namespace, municipalityId, id, body));
 	}
 
@@ -152,6 +161,8 @@ class MetadataCategoryResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Category id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_CATEGORY, RW);
 
 		metadataService.deleteCategory(namespace, municipalityId, id);
 		return noContent()

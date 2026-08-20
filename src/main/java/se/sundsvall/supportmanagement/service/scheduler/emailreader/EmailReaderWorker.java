@@ -122,7 +122,7 @@ public class EmailReaderWorker {
 	private Optional<ErrandEntity> getErrand(final String errandNumber, final Email email, final EmailWorkerConfigEntity config) {
 
 		return Optional.ofNullable(errandNumber)
-			.flatMap(number -> errandRepository.findByErrandNumberAndNamespace(number, config.getNamespace()))
+			.flatMap(number -> errandRepository.findByErrandNumberAndNamespaceAndMunicipalityId(number, config.getNamespace(), config.getMunicipalityId()))
 			.or(() -> errandRepository
 				.findById(errandService.createErrand(
 					config.getNamespace(),

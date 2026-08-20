@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotification;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
@@ -14,14 +15,18 @@ import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtracto
 
 import static java.time.OffsetDateTime.now;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEntity;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.isRequestingUser;
 
 @Service
 public class SubscriberNotificationService {
 
 	private static final String NOTIFICATION_NOT_FOUND = "SubscriberNotification with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
+	private static final String NOTIFICATION_NOT_OWNED = "Notifications of '%s' not accessible by user '%s'";
 
 	private final SubscriberNotificationRepository repository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
@@ -32,18 +37,22 @@ public class SubscriberNotificationService {
 	}
 
 	public Page<SubscriberNotification> getNotifications(final String municipalityId, final String namespace, final String identifierType, final String identifierValue, final Pageable pageable) {
+		verifyOwnedByRequestingUser(identifierType, identifierValue);
 		return repository.findActiveByMunicipalityIdAndNamespaceAndIdentifierTypeAndIdentifierValue(municipalityId, namespace, identifierType, identifierValue, now(), pageable)
 			.map(se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper::toModel);
 	}
 
 	@Transactional
 	public void deleteNotification(final String municipalityId, final String namespace, final String notificationId) {
-		repository.delete(findOrThrow(notificationId, municipalityId, namespace));
+		final var entity = findOrThrow(notificationId, municipalityId, namespace);
+		verifyOwnedByRequestingUser(entity.getIdentifierType(), entity.getIdentifierValue());
+		repository.delete(entity);
 	}
 
 	@Transactional
 	public void acknowledgeNotification(final String municipalityId, final String namespace, final String notificationId) {
 		final var entity = findOrThrow(notificationId, municipalityId, namespace);
+		verifyOwnedByRequestingUser(entity.getIdentifierType(), entity.getIdentifierValue());
 		entity.setAcknowledged(now());
 		repository.save(entity);
 	}
@@ -67,6 +76,20 @@ public class SubscriberNotificationService {
 					repository.save(existing);
 				},
 				() -> repository.save(toEntity(errandId, errandNumber, subscriber, ttlInDays)));
+	}
+
+	/**
+	 * A notification belongs to the identity it was created for, so only that identity may read or change it. This is
+	 * ownership rather than access control: the access mapper says nothing about who owns a notification, and being
+	 * allowed to reach an errand does not make someone the recipient of another user's notifications about it.
+	 * <p>
+	 * The stored identifier type is the wire form ("adAccount"), which is what {@link Identifier#getTypeString()}
+	 * returns. A request without an identifier owns nothing and is refused.
+	 */
+	private void verifyOwnedByRequestingUser(final String identifierType, final String identifierValue) {
+		if (!isRequestingUser(identifierType, identifierValue)) {
+			throw Problem.valueOf(UNAUTHORIZED, NOTIFICATION_NOT_OWNED.formatted(identifierValue, getAdUser()));
+		}
 	}
 
 	private SubscriberNotificationEntity findOrThrow(final String notificationId, final String municipalityId, final String namespace) {

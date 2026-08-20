@@ -29,8 +29,11 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -49,9 +52,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class MetadataStatusResource {
 
 	private final MetadataService metadataService;
+	private final AccessControlService accessControlService;
 
-	MetadataStatusResource(final MetadataService metadataService) {
+	MetadataStatusResource(final MetadataService metadataService, final AccessControlService accessControlService) {
 		this.metadataService = metadataService;
+		this.accessControlService = accessControlService;
 	}
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -66,6 +71,8 @@ class MetadataStatusResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Status body) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_STATUS, RW);
 
 		return created(UriComponentsBuilder.fromPath("/{municipalityId}/{namespace}/metadata/statuses/{id}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createStatus(namespace, municipalityId, body)).toUri())
@@ -121,6 +128,8 @@ class MetadataStatusResource {
 		@Parameter(name = "id", description = "Status id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final Status body) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_STATUS, RW);
+
 		return ok(metadataService.updateStatus(namespace, municipalityId, id, body));
 	}
 
@@ -137,6 +146,8 @@ class MetadataStatusResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Status id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_STATUS, RW);
 
 		metadataService.deleteStatus(namespace, municipalityId, id);
 		return noContent()

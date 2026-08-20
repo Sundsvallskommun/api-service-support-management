@@ -66,6 +66,31 @@ public class NotificationDispatchWorker {
 			.map(ErrandEntity::getErrandNumber)
 			.orElse(null);
 
+		// TODO Subscriber notifications are reworked in a separate PR. Three things are decided and belong here:
+		//
+		// 1. Honour the subscription. This loads every subscriber of the namespace and filters only on event type and
+		// executing user, so a subscriber is notified about errands they never subscribed to. SubscriptionRepository is
+		// not consulted anywhere in this package. The target of the subscription (a single errand, or the namespace as a
+		// whole) has to decide who is in scope before anything else is considered.
+		//
+		// 2. Filter on access when the notification is created, not when it is read. A subscriber who no longer reaches
+		// the errand, because its labels changed, gets no notification created for it. The subscription itself is left
+		// untouched, so notifications resume by themselves if the errand later becomes reachable again - nothing has to
+		// be repaired or re-subscribed. Creating the row and hiding it on read was rejected: the row carries the errand
+		// id and number, so the association would already be stored and every future read path would have to remember to
+		// filter it.
+		//
+		// The check has to be evaluated as the subscriber, not as the caller. This job runs without an Identifier, but
+		// AccessControlService.withAccessControl takes the user explicitly, so one can be built per subscriber from
+		// SubscriberEntity.getIdentifier(). Label lookups are cached per user and namespace, so the cost stays bounded.
+		//
+		// Note this makes the worker authorise, which is not what its entry in AccessControlChokePointTest.EXEMPT says.
+		// The exemption still holds - it authorises on behalf of subscribers rather than a caller - but fix the wording.
+		//
+		// 3. Notifications already created are NOT retracted. One created before the errand became unreachable stays in
+		// the subscriber's list and stays readable, because the subscriber did have access at the time it was created -
+		// it tells them nothing they were not already entitled to know. Losing access stops new notifications, it does
+		// not rewrite history.
 		final var subscribers = subscriberRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
 		var allSucceeded = true;
 

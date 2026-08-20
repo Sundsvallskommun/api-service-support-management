@@ -60,7 +60,7 @@ class EventResourceTest {
 		final var errandId = randomUUID().toString();
 
 		// Mock
-		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create()), PageRequest.of(0, 20), 1));
+		when(eventServiceMock.readEvents(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create()), PageRequest.of(0, 20), 1));
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH).build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", errandId)))
@@ -75,7 +75,7 @@ class EventResourceTest {
 
 		// Verification
 		final var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
+		verify(eventServiceMock).readEvents(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
 
 		assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
 		assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
@@ -91,7 +91,7 @@ class EventResourceTest {
 		final var errandId = randomUUID().toString();
 
 		// Mock
-		when(eventServiceMock.readEvents(eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create(), Event.create())));
+		when(eventServiceMock.readEvents(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(errandId), any(Pageable.class))).thenReturn(new RestResponsePage<>(List.of(Event.create(), Event.create())));
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
@@ -110,7 +110,7 @@ class EventResourceTest {
 
 		// Verification
 		final var pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-		verify(eventServiceMock).readEvents(eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
+		verify(eventServiceMock).readEvents(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(errandId), pageableCaptor.capture());
 		assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(10);
 		assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(5);
 		assertThat(pageableCaptor.getValue().getSort()).isEqualTo(Sort.by(Direction.DESC, "created"));

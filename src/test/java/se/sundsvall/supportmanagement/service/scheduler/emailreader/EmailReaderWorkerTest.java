@@ -116,13 +116,13 @@ class EmailReaderWorkerTest {
 		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create().withAttachments(List.of(CommunicationAttachmentEntity.create().withForeignId("2").withMunicipalityId(MUNICIPALITY_ID)));
 
-		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderClientMock.getAttachment(MUNICIPALITY_ID, 2)).thenReturn(bytes);
 
 		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
-		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000001", NAMESPACE);
+		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000001", NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).save(same(errandEntity));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
@@ -145,13 +145,13 @@ class EmailReaderWorkerTest {
 		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create().withAttachments(List.of(CommunicationAttachmentEntity.create().withForeignId("2").withMunicipalityId(MUNICIPALITY_ID)));
 
-		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderClientMock.getAttachment(MUNICIPALITY_ID, 2)).thenReturn(null);
 
 		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
-		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000002", NAMESPACE);
+		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000002", NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).save(same(errandEntity));
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
@@ -177,13 +177,13 @@ class EmailReaderWorkerTest {
 		final var communicationEntity = CommunicationEntity.create();
 		final var emailRequest = new EmailRequest();
 
-		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
 
 		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
 
-		verify(errandRepositoryMock).findByErrandNumberAndNamespace("PRH-2022-000002", NAMESPACE);
+		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000002", NAMESPACE, MUNICIPALITY_ID);
 		verify(emailReaderMapperMock).createEmailRequest(same(email), eq(emailConfig.getErrandClosedEmailSender()), eq(emailConfig.getErrandClosedEmailTemplate()), eq(emailConfig.getErrandClosedEmailHTMLTemplate()),
 			eq("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4"));
 		verify(communicationServiceMock).sendEmail(eq(errandEntity), same(emailRequest));
@@ -205,7 +205,7 @@ class EmailReaderWorkerTest {
 		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create();
 
-		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), any());
 
@@ -224,7 +224,7 @@ class EmailReaderWorkerTest {
 		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withModified(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create();
 
-		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		doThrow(new RuntimeException("EmailReader down")).when(emailReaderClientMock).deleteEmail(any(), any());
 
@@ -348,7 +348,7 @@ class EmailReaderWorkerTest {
 		final var communicationEntity = CommunicationEntity.create();
 		final var emailRequest = new EmailRequest();
 
-		when(errandRepositoryMock.findByErrandNumberAndNamespace(anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(), any(), any(), any())).thenReturn(emailRequest);
 		doThrow(new RuntimeException("Messaging down")).when(communicationServiceMock).sendEmail(any(ErrandEntity.class), any());
