@@ -4,9 +4,9 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 
 import static org.mockito.Mockito.times;
@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AttachmentHashWorkerTest {
 
+	private static final int BATCH_SIZE = 250;
 	private static final String ATTACHMENT_ID_1 = "attachment-id-1";
 	private static final String ATTACHMENT_ID_2 = "attachment-id-2";
 
@@ -27,20 +28,20 @@ class AttachmentHashWorkerTest {
 	@Mock
 	private AttachmentHashBatchProcessor batchProcessorMock;
 
-	@InjectMocks
 	private AttachmentHashWorker attachmentHashWorker;
 
 	@Test
 	void computeHashWhenNoAttachmentsWithoutHash() {
 
 		// Arrange
-		when(attachmentRepositoryMock.findIdsByHashIsNull()).thenReturn(Collections.emptyList());
+		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, batchProcessorMock, BATCH_SIZE);
+		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(Collections.emptyList());
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
 		// Verify
-		verify(attachmentRepositoryMock).findIdsByHashIsNull();
+		verify(attachmentRepositoryMock).findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE));
 		verifyNoInteractions(batchProcessorMock);
 		verifyNoMoreInteractions(attachmentRepositoryMock);
 	}
@@ -49,7 +50,8 @@ class AttachmentHashWorkerTest {
 	void computeHashForAttachment() {
 
 		// Arrange
-		when(attachmentRepositoryMock.findIdsByHashIsNull()).thenReturn(List.of(ATTACHMENT_ID_1));
+		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, batchProcessorMock, BATCH_SIZE);
+		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1));
 		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenReturn(true);
 
 		// Act
@@ -64,7 +66,8 @@ class AttachmentHashWorkerTest {
 	void computeHashProcessesEachAttachmentOnlyOnce() {
 
 		// Arrange
-		when(attachmentRepositoryMock.findIdsByHashIsNull()).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, batchProcessorMock, BATCH_SIZE);
+		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
 		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenReturn(false);
 		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_2)).thenReturn(true);
 
@@ -81,7 +84,8 @@ class AttachmentHashWorkerTest {
 	void computeHashContinuesAfterException() {
 
 		// Arrange
-		when(attachmentRepositoryMock.findIdsByHashIsNull()).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, batchProcessorMock, BATCH_SIZE);
+		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
 		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenThrow(new RuntimeException("Connection error"));
 		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_2)).thenReturn(true);
 
