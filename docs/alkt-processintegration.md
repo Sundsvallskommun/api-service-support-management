@@ -4,8 +4,9 @@ Designunderlag för ALKT-namespacets myndighetsprocess i Operaton, körd av tjä
 [pw-alkt](https://github.com/Sundsvallskommun/pw-alkt). Innehåller datamodell, API-kontrakt,
 regler för samtidighet och loop-skydd, samt uppgiftsnedbrytning med acceptanskriterier.
 
-**Jira:** DRAKEN-4692 (story) med DRAKEN-4694…4707 som deluppgifter. Avsnittsnumren nedan
-refereras från respektive deluppgift.
+**Jira:** DRAKEN-4713 (story) med DRAKEN-4714…4727 som deluppgifter. Avsnittsnumren nedan
+refereras från respektive deluppgift; kopplingen mellan uppgifterna i §10 och Jira-nycklarna
+står i tabellen där.
 
 **Öppen fråga:** när RabbitMQ är produktionsklar (§2.4). Blockerar inte T1–T8.
 
@@ -1013,6 +1014,25 @@ ger fler försök, annars `FAILED`. Det är vad som får felmeddelandet till är
 ## 10. Implementationsuppgifter
 
 Varje uppgift är mergbar för sig. Acceptanskriterierna är avsedda att kunna klistras in i en task.
+
+Tabellen nedan är **utförandeordningen**. T- och P-numreringen längre ner följer tjänst, inte ordning.
+
+| Steg | Jira | Uppgift |
+|---|---|---|
+| 1 | DRAKEN-4714 | T1 — Datamodell och domänenums |
+| 2 | DRAKEN-4715 | T2 — Konfigurationsläsning |
+| 3 | DRAKEN-4716 | T3 — Process-instance-API |
+| 4 | DRAKEN-4717 | T4 — Optimistisk samtidighetskontroll |
+| 5 | DRAKEN-4718 | T5 — Publicering |
+| 6 | DRAKEN-4719 | T6 — Relay och leverans |
+| 7 | DRAKEN-4720 | T7 — Skyddsräcken |
+| 8 | DRAKEN-4721 | P1 — Operaton-klienten |
+| 9 | DRAKEN-4722 | P2 — Event-endpoint och borttagning |
+| 10 | DRAKEN-4723 | P3 — SM-klienten |
+| 11 | DRAKEN-4724 | P4 — Workerstruktur |
+| 12 | DRAKEN-4725 | T8 — `ProcessLoopGuardIT` |
+| 13 | DRAKEN-4726 | P5 — Tillsynsprocessen |
+| 14 | DRAKEN-4727 | P6 — Incidentåterkoppling |
 
 ### T1 — Datamodell och domänenums (SM)
 
