@@ -1134,7 +1134,7 @@ Tabellen nedan är **utförandeordningen**. T- och P-numreringen längre ner fö
 | 5 | DRAKEN-4718 | T5 — Publicering |
 | 6 | DRAKEN-4719 | T6 — Relay och leverans |
 | 7 | DRAKEN-4720 | T7 — Skyddsräcken |
-| 8 | DRAKEN-4728 | T9 — Beslutsdokument och spårbarhet |
+| 8 | DRAKEN-4729 | T9 — Beslutsdokument och spårbarhet |
 | 9 | DRAKEN-4721 | P1 — Operaton-klienten |
 | 10 | DRAKEN-4722 | P2 — Event-endpoint och borttagning |
 | 11 | DRAKEN-4723 | P3 — SM-klienten |
