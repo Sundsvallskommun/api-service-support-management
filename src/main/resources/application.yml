@@ -36,9 +36,11 @@ scheduler:
     maximum-execution-time: PT4M
   attachment-hash:
     name: compute_attachment_hash
-    cron: 0 0 2 * * *
-    shedlock-lock-at-most-for: PT2H40M
-    maximum-execution-time: PT2H30M
+    enabled: true
+    cron: 0 */1 * * * *
+    shedlock-lock-at-most-for: PT15M
+    maximum-execution-time: PT5M
+    batch-size: 250
 integration:
   accessmapper:
     connectTimeout: 5
