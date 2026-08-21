@@ -5,7 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
+import se.sundsvall.supportmanagement.service.util.ServiceUtil;
 
 @Component
 public class AttachmentHashWorker {
@@ -13,13 +17,15 @@ public class AttachmentHashWorker {
 	private static final Logger LOG = LoggerFactory.getLogger(AttachmentHashWorker.class);
 
 	private final AttachmentRepository attachmentRepository;
-	private final AttachmentHashBatchProcessor batchProcessor;
+	private final TransactionTemplate transactionTemplate;
 	private final int batchSize;
 
-	public AttachmentHashWorker(final AttachmentRepository attachmentRepository, final AttachmentHashBatchProcessor batchProcessor,
+	public AttachmentHashWorker(final AttachmentRepository attachmentRepository,
+		final PlatformTransactionManager transactionManager,
 		@Value("${scheduler.attachment-hash.batch-size:250}") final int batchSize) {
 		this.attachmentRepository = attachmentRepository;
-		this.batchProcessor = batchProcessor;
+		this.transactionTemplate = new TransactionTemplate(transactionManager);
+		this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 		this.batchSize = batchSize;
 	}
 
@@ -37,18 +43,42 @@ public class AttachmentHashWorker {
 		var totalFailed = 0;
 
 		for (final var attachmentId : attachmentIds) {
-			try {
-				if (batchProcessor.processAttachment(attachmentId)) {
-					totalProcessed++;
-				} else {
-					totalFailed++;
-				}
-			} catch (final Exception e) {
+			if (Thread.currentThread().isInterrupted()) {
+				LOG.info("Thread interrupted, stopping early. Processed {} attachments successfully, {} failed", totalProcessed, totalFailed);
+				return;
+			}
+			if (processAttachment(attachmentId)) {
+				totalProcessed++;
+			} else {
 				totalFailed++;
-				LOG.warn("Failed to process attachment with id: {}", attachmentId, e);
 			}
 		}
 
 		LOG.info("Hash computation completed. Processed {} attachments successfully, {} failed", totalProcessed, totalFailed);
+	}
+
+	private boolean processAttachment(final String attachmentId) {
+		try {
+			return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+				final var attachment = attachmentRepository.findById(attachmentId).orElse(null);
+				if (attachment == null) {
+					LOG.warn("Attachment with id: {} no longer exists, skipping", attachmentId);
+					return false;
+				}
+				try {
+					final var blob = attachment.getAttachmentData().getFile();
+					final var hash = ServiceUtil.computeSha256Hex(blob.getBinaryStream());
+					attachment.setHash(hash);
+					attachmentRepository.saveAndFlush(attachment);
+					return true;
+				} catch (final Exception e) {
+					LOG.warn("Failed to compute hash for attachment with id: {}", attachmentId, e);
+					return false;
+				}
+			}));
+		} catch (final Exception e) {
+			LOG.warn("Failed to process attachment with id: {}", attachmentId, e);
+			return false;
+		}
 	}
 }
