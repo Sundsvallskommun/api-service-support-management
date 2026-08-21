@@ -16,7 +16,7 @@ respektive deluppgift, och kopplingen mellan uppgifterna i §10 och Jira-nycklar
 
 | # | Beslut | Valdes bort | Skäl |
 |---|---|---|---|
-| 1 | Outbox + REST-anrop via WSO2, med en knuff så fort ärendet sparats | Direkt mot RabbitMQ; SSE; att processen frågar efter ändringar | Outboxen behövs ändå, annars kan ärendet sparas utan att händelsen skickas. **AMQP är målbilden** |
+| 1 | Outbox + REST-anrop via WSO2, med direktkörning av relayet så fort ärendet sparats | Direkt mot RabbitMQ; SSE; att processen frågar efter ändringar | Outboxen behövs ändå, annars kan ärendet sparas utan att händelsen skickas. **AMQP är målbilden** |
 | 2 | Publiceringen hängs in i `EventService.createErrandEvent` | Att hänga in den i `ErrandService` och jämföra revisioner | Intaget skapar inga revisioner, så processen hade varit blind för kompletteringar |
 | 3 | Filtrera på händelsens typ och subtyp | Jämföra JSON-fält mellan versioner | Fungerar oavsett hur ändringen kom in, och mekanismen finns redan för notisprenumeranter |
 | 4 | Konfiguration i befintlig `namespace_config` | Ny tabell; `application.yml` | Nycklarna driver redan beteende. Flervärd per nyckel. Cache + CRUD finns |
@@ -150,13 +150,13 @@ ALKT-namespacet körs utan etikettbaserad åtkomstkontroll, så pw:s identitet f
 
 Kortversionen: när något händer med ett ärende skriver SM ner en rad om det i en egen tabell — outboxen —
 i samma transaktion som ändringen. Ett bakgrundsjobb plockar sedan raden och skickar den vidare till
-pw-alkt, som antingen startar processen eller knuffar den vidare. När processen sedan gör något av
+pw-alkt, som antingen startar processen eller väcker den. När processen sedan gör något av
 betydelse rapporterar den tillbaka till SM.
 
 ```
 Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_event_outbox
                                                                           |
-                                    knuff efter commit / cronjobb -> ProcessEventRelay
+                              direktkörning efter commit / cronjobb -> ProcessEventRelay
                                                                           |
                                                                     POST errand-events (WSO2)
                                                                           |
@@ -226,24 +226,42 @@ så det ska aldrig hända.
 Att i stället plocka bort de yttre fångsterna löser inte problemet ensamt, och skulle dessutom göra ett
 misslyckat notisutskick dödligt för ärendeskrivningen. Vill man städa där är det ett eget arbete.
 
-### 2.3 Hur snabbt det går
+### 2.3 Hur snabbt det går — direktkörning och cronjobb
 
-Ett cronjobb varje minut hade räckt funktionellt, men gjort att handläggaren väntar i upp till en minut på
-att processen ska reagera. Därför får relayet en knuff så fort ärendet är sparat:
-`@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` tillsammans med
+Relayet startas på två sätt, och det är värt att hålla isär dem.
+
+> **Direktkörning** är en tom signal — den bär ingen data — som startar relayet så fort ärendets
+> transaktion har sparats, i stället för att vänta på nästa cron-tick. Den *levererar ingenting själv*:
+> den startar samma jobb som cronjobbet startar. Och den är frivillig i den meningen att den får tappas
+> — då hämtar cronjobbet raden i stället, inom en minut.
+
+Tre saker är lätta att blanda ihop:
+
+| | Direktkörning | Cronjobb |
+|---|---|---|
+| Startas av | att ärendet just sparats | klockan, `0 * * * * *` |
+| Syfte | latens: sekunder i stället för upp till en minut | att ingenting blir liggande |
+| Får utebli? | Ja, utan att något går förlorat | Nej — det är sanningen i systemet |
+
+Direktkörningen **väcker relayet, inte processen**. Att väcka processen är något helt annat och sker längre
+fram i kedjan, när pw korrelerar ett meddelande in i Operaton (§9.3).
+
+Mekaniken: `@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` tillsammans med
 `@Async("processEventExecutor")` (2 trådar normalt, 4 som mest, kö på 500). Samma mönster används redan i
 `SubscriptionService.handleAutoSubscribeEvent`.
 
-**Blir kön full ska knuffen tappas, inte anropet fällas.** Standardbeteendet `AbortPolicy` kastar ett
-`RejectedExecutionException` i den tråd som just sparat ärendet, och det når hela vägen ut till anroparen —
-en full kö hade alltså gett `500` på en ärendeskrivning som faktiskt gick bra. Kasta i stället bort knuffen,
-räkna upp `process_event.nudge_rejected` och lägg try/catch runt lyssnaren, precis som
-`handleAutoSubscribeEvent` redan gör. Cronjobbet är skyddsnätet: en tappad knuff kostar upp till en minut,
-aldrig ett fel.
+**Blir kön full ska direktkörningen hoppas över, inte anropet fällas.** Standardbeteendet `AbortPolicy`
+kastar ett `RejectedExecutionException` i den tråd som just sparat ärendet, och det når hela vägen ut till
+anroparen — en full kö hade alltså gett `500` på en ärendeskrivning som faktiskt gick bra. Kasta i stället
+bort signalen, räkna upp `process_event.direct_run_rejected` och lägg try/catch runt lyssnaren, precis som
+`handleAutoSubscribeEvent` redan gör. Cronjobbet är skyddsnätet: en missad direktkörning kostar upp till en
+minut, aldrig ett fel.
 
-Cronjobbet (`0 * * * * *`) går genom samma kod och tar bara med rader som är minst fem sekunder gamla, så
-att det inte krockar med en transaktion som håller på att sparas. Ordningen inom ett ärende hålls med
-`@Lock(PESSIMISTIC_WRITE)` på radgruppen, sorterad på `created, id`.
+Cronjobbet går genom samma kod och tar bara med rader som är minst fem sekunder gamla, så att det inte
+krockar med en transaktion som håller på att sparas. Krockar de ändå — direktkörning och cronjobb på samma
+rad — är det ofarligt: båda tar radgruppen med `@Lock(PESSIMISTIC_WRITE)` sorterad på `created, id` och
+plockar bara rader utan `delivered_at`, så den som kommer sist hittar ingenting att göra. Samma lås är det
+som håller ordningen inom ett ärende.
 
 ### 2.4 Hur händelserna tar sig över till pw
 
@@ -882,7 +900,7 @@ och just den skillnaden har både handläggaren och den sökande rätt att se.
 
 `POST /process/start/{errandId}` och `POST /process/update/{processInstanceId}` **tas bort** i samma steg som `errand-events` införs. Med dem försvinner även: `ProcessService.updateProcess`, `StartProcessResponse` + test, `AbstractTaskWorker.clearUpdateAvailable` (död kod), `Constants.PROCESS_VARIABLE_UPDATE_AVAILABLE`, `Constants.FALSE`, `OperatonClient.setProcessInstanceVariable(s)`, `AbstractTaskWorker.setProcessInstanceVariable`.
 
-Vi förlorar ingen nödutgång på kuppen: behöver någon knuffa igång en process för hand går det utmärkt att posta ett `errand-events` — samma kod som i skarp drift.
+Vi förlorar ingen nödutgång på kuppen: behöver någon starta en process för hand går det utmärkt att posta ett `errand-events` — samma kod som i skarp drift.
 
 ---
 
@@ -1223,7 +1241,7 @@ först när någon hör av sig.
 | `process_event.suppressed{reason=ORIGIN\|TRIGGER\|GUARD}` | Ett tyst loop-skydd som slutar fungera märks annars först när loopen är där. `ORIGIN` ska vara **skild från noll** |
 | `process_event.published`, `.delivered`, `.dead_lettered` | Leveranshälsa |
 | `process_event.publish_failed` | Publicering som inte kunde rullas tillbaka (ingen aktiv transaktion, §2.2). Ska vara noll |
-| `process_event.nudge_rejected` | Trådpoolen är full, så leveransen får vänta på cronjobbet i stället |
+| `process_event.direct_run_rejected` | Trådpoolen är full, så direktkörningen hoppades över och leveransen får vänta på cronjobbet (§2.3) |
 | `process.errand_conflict` | **Viktigaste driftindikatorn.** Hur ofta process och handläggare krockar (`412`). Stiger den arbetar processen på ärenden som redigeras samtidigt, och arbete görs om i onödan |
 | `process.concurrent_task_detected` | Brott mot modelleringsregeln i §6.4 |
 | `process.start_failed` | Feltaggade etiketter |
@@ -1466,12 +1484,12 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T6 — Relay och leverans (SM)
 
-**Bygg:** paketet `service/scheduler/processevent/` med schemaläggare, jobb och relay; knuffen efter commit tillsammans med en trådpool med tak; `ProcessEngineClient` med ett lager som översätter felen; `422` som permanent fel och `5xx` som tillfälligt; endpointen för att köra om och reglerna för hur länge rader sparas (§8.3); mätvärdena i §8.1.
+**Bygg:** paketet `service/scheduler/processevent/` med schemaläggare, jobb och relay; direktkörningen efter commit tillsammans med en trådpool med tak; `ProcessEngineClient` med ett lager som översätter felen; `422` som permanent fel och `5xx` som tillfälligt; endpointen för att köra om och reglerna för hur länge rader sparas (§8.3); mätvärdena i §8.1.
 
 **Acceptans:**
 - WireMock svarar `202` / `422` / `503` / timeout — samtliga fyra vägar verifierade, inklusive att `422` **inte** retryas och skriver `FAILED` + ERROR-aktivitet.
 - Ordning per ärende hålls när flera rader finns.
-- Full trådpool ⇒ knuffen tappas, `process_event.nudge_rejected` ökar och cronjobbet levererar i stället. **Inget undantag når anroparen** — testet ska fylla kön och kontrollera att ärendeskrivningen ändå svarar `200` (§2.3).
+- Full trådpool ⇒ direktkörningen hoppas över, `process_event.direct_run_rejected` ökar och cronjobbet levererar i stället. **Inget undantag når anroparen** — testet ska fylla kön och kontrollera att ärendeskrivningen ändå svarar `200` (§2.3).
 - Dead letters raderas inte inom retentionstiden; redrive nollar räknarna.
 
 ### T7 — Skyddsräcken (SM)
