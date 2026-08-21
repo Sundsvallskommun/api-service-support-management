@@ -7,23 +7,29 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,6 +62,9 @@ class NotificationDispatchWorkerTest {
 
 	@Mock
 	private NotificationChannelDispatcher channelDispatcherMock;
+
+	@Mock
+	private AccessControlService accessControlServiceMock;
 
 	@InjectMocks
 	private NotificationDispatchWorker worker;
@@ -103,6 +112,16 @@ class NotificationDispatchWorkerTest {
 	private void mockDispatchOf(final SubscriptionEntity... subscriptions) {
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
 		when(subscriptionRepositoryMock.findAllActiveForErrand(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), any())).thenReturn(List.of(subscriptions));
+		// Only reached once there is a subscriber to evaluate, so stubbing it without one would be unused
+		if (subscriptions.length > 0) {
+			mockErrandReachable(true);
+		}
+	}
+
+	private void mockErrandReachable(final boolean reachable) {
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn((root, query, cb) -> cb.conjunction());
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any()))
+			.thenReturn(reachable ? Optional.of(ErrandEntity.create()) : Optional.empty());
 	}
 
 	@Test
@@ -183,6 +202,29 @@ class NotificationDispatchWorkerTest {
 
 		// Assert
 		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
+	}
+
+	@Test
+	void processGroupSkipsSubscriberThatCanNoLongerReachTheErrand() {
+
+		// Arrange
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
+		when(subscriptionRepositoryMock.findAllActiveForErrand(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), any()))
+			.thenReturn(List.of(buildSubscription(subscriber, null)));
+		mockErrandReachable(false);
+		final var identifierCaptor = ArgumentCaptor.forClass(Identifier.class);
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert - access is evaluated as the subscriber, since the scheduler runs without an identifier of its own
+		verify(accessControlServiceMock).withAccessControl(eq(NAMESPACE), eq(MUNICIPALITY_ID), identifierCaptor.capture(), eq(ProtectedResource.NOTIFICATION), eq(LR));
+		assertThat(identifierCaptor.getValue()).extracting(Identifier::getType, Identifier::getValue).containsExactly(Identifier.Type.AD_ACCOUNT, "joe01doe");
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		// The group is still cleared - an unreachable errand is not a failure to retry
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
@@ -313,6 +355,7 @@ class NotificationDispatchWorkerTest {
 		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.empty());
 		when(subscriptionRepositoryMock.findAllActiveForErrand(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), any()))
 			.thenReturn(List.of(buildSubscription(subscriber, null)));
+		mockErrandReachable(true);
 
 		// Act
 		worker.processGroup(List.of(entry));

@@ -60,13 +60,15 @@ class ErrandJsonParameterServiceTest {
 	void readJsonParameters() {
 		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"test\"}");
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(key -> true);
 
 		final var result = service.readJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		assertThat(result).hasSize(1);
 		assertThat(result.getFirst().getKey()).isEqualTo(KEY);
 		assertThat(result.getFirst().getSchemaId()).isEqualTo("schema-1.0");
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.JSON_PARAMETER, LR);
+		verify(accessControlServiceMock).readableKeyPredicate(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), eq(entity), eq(ErrandField.JSON_PARAMETERS));
 		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock);
 	}
 
@@ -74,11 +76,13 @@ class ErrandJsonParameterServiceTest {
 	void readJsonParametersEmptyList() {
 		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(new ArrayList<>());
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(key -> true);
 
 		final var result = service.readJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		assertThat(result).isEmpty();
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, R, RW);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.JSON_PARAMETER, LR);
+		verify(accessControlServiceMock).readableKeyPredicate(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), eq(entity), eq(ErrandField.JSON_PARAMETERS));
 		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock);
 	}
 
@@ -86,6 +90,7 @@ class ErrandJsonParameterServiceTest {
 	void readJsonParametersNullList() {
 		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(null);
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(key -> true);
 
 		final var result = service.readJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 

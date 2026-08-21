@@ -8,19 +8,26 @@ import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.time.OffsetDateTime.now;
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
 @Component
 public class NotificationDispatchWorker {
@@ -42,16 +49,19 @@ public class NotificationDispatchWorker {
 	private final SubscriptionRepository subscriptionRepository;
 	private final ErrandsRepository errandsRepository;
 	private final NotificationChannelDispatcher channelDispatcher;
+	private final AccessControlService accessControlService;
 
 	public NotificationDispatchWorker(
 		final NotificationDispatchRepository dispatchRepository,
 		final SubscriptionRepository subscriptionRepository,
 		final ErrandsRepository errandsRepository,
-		final NotificationChannelDispatcher channelDispatcher) {
+		final NotificationChannelDispatcher channelDispatcher,
+		final AccessControlService accessControlService) {
 		this.dispatchRepository = dispatchRepository;
 		this.subscriptionRepository = subscriptionRepository;
 		this.errandsRepository = errandsRepository;
 		this.channelDispatcher = channelDispatcher;
+		this.accessControlService = accessControlService;
 	}
 
 	@Transactional(readOnly = true)
@@ -79,27 +89,6 @@ public class NotificationDispatchWorker {
 			.map(ErrandEntity::getErrandNumber)
 			.orElse(null);
 
-		// TODO Subscriber notifications, remaining work. Honouring the subscription is now done, by the query below.
-		// Two decisions are still outstanding:
-		//
-		// 1. Filter on access when the notification is created, not when it is read. A subscriber who no longer reaches
-		// the errand, because its labels changed, gets no notification created for it. The subscription itself is left
-		// untouched, so notifications resume by themselves if the errand later becomes reachable again - nothing has to
-		// be repaired or re-subscribed. Creating the row and hiding it on read was rejected: the row carries the errand
-		// id and number, so the association would already be stored and every future read path would have to remember to
-		// filter it.
-		//
-		// The check has to be evaluated as the subscriber, not as the caller. This job runs without an Identifier, but
-		// AccessControlService.withAccessControl takes the user explicitly, so one can be built per subscriber from
-		// SubscriberEntity.getIdentifier(). Label lookups are cached per user and namespace, so the cost stays bounded.
-		//
-		// Note this makes the worker authorise, which is not what its entry in AccessControlChokePointTest.EXEMPT says.
-		// The exemption still holds - it authorises on behalf of subscribers rather than a caller - but fix the wording.
-		//
-		// 2. Notifications already created are NOT retracted. One created before the errand became unreachable stays in
-		// the subscriber's list and stays readable, because the subscriber did have access at the time it was created -
-		// it tells them nothing they were not already entitled to know. Losing access stops new notifications, it does
-		// not rewrite history.
 		subscriptionRepository.findAllActiveForErrand(first.getMunicipalityId(), first.getNamespace(), errandId, now(ZoneId.systemDefault()))
 			.stream()
 			// A subscriber may cover the same errand through both a NAMESPACE and an ERRAND subscription
@@ -113,6 +102,14 @@ public class NotificationDispatchWorker {
 	private void dispatch(final String errandId, final String errandNumber, final List<NotificationDispatchEntity> group, final List<SubscriptionEntity> subscriptions) {
 		final var subscriber = subscriptions.getFirst().getSubscriber();
 
+		// A subscription outlives access to the errand. If the subscriber can no longer reach it, because its labels
+		// changed, no notification is created - the subscription is left alone, so notifications resume by themselves
+		// once the errand is reachable again. Already delivered notifications are deliberately not retracted: the
+		// subscriber had access when they were created, so they tell them nothing they were not entitled to know.
+		if (!mayReachErrand(errandId, subscriber)) {
+			return;
+		}
+
 		final var events = group.stream()
 			.filter(this::isWithinMaxAge)
 			.filter(entry -> !isExecutingUser(subscriber, entry))
@@ -122,6 +119,26 @@ public class NotificationDispatchWorker {
 		if (!events.isEmpty()) {
 			channelDispatcher.send(errandId, errandNumber, subscriber, events);
 		}
+	}
+
+	/**
+	 * Signals whether the subscriber may still reach the errand. Evaluated as the subscriber rather than as a caller,
+	 * since this job runs without an Identifier of its own - which is why the access control specification takes the
+	 * user explicitly. A subscriber whose identifier cannot be resolved reaches nothing.
+	 */
+	private boolean mayReachErrand(final String errandId, final SubscriberEntity subscriber) {
+		return errandsRepository.findOne(withId(errandId)
+			.and(accessControlService.withAccessControl(subscriber.getNamespace(), subscriber.getMunicipalityId(), toIdentifier(subscriber), ProtectedResource.NOTIFICATION, LR)))
+			.isPresent();
+	}
+
+	private static Identifier toIdentifier(final SubscriberEntity subscriber) {
+		return ofNullable(subscriber.getIdentifier())
+			.map(owner -> {
+				final var type = Identifier.Type.fromString(owner.getType());
+				return isNull(type) ? null : Identifier.create().withType(type).withValue(owner.getValue());
+			})
+			.orElse(null);
 	}
 
 	/**

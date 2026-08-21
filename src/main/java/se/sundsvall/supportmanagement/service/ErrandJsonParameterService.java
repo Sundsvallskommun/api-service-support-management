@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -48,8 +49,11 @@ public class ErrandJsonParameterService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readJsonParameters(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.JSON_PARAMETER, LR);
+		final var readableKey = accessControlService.readableKeyPredicate(namespace, municipalityId, Identifier.get(), errand, ErrandField.JSON_PARAMETERS);
+
 		return ofNullable(errand.getJsonParameters()).orElse(emptyList()).stream()
+			.filter(entity -> readableKey.test(entity.getKey()))
 			.map(entity -> toJsonParameter(entity))
 			.toList();
 	}

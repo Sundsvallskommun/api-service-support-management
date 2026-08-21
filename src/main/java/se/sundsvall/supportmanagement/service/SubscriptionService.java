@@ -144,8 +144,8 @@ public class SubscriptionService {
 			return null;
 		}
 		// Deliberately no access check: subscribing a colleague to an errand is a supported workflow, and a subscriber
-		// only ever receives notifications for errands they themselves may reach, because dispatch filters on access.
-		// See the TODO in NotificationDispatchWorker - that filtering must land together with honouring subscriptions.
+		// only ever receives notifications for errands they themselves may reach, since NotificationDispatchWorker
+		// re-evaluates access as the subscriber before every delivery.
 		return errandsRepository.findByIdAndNamespaceAndMunicipalityId(target.getId(), namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_NOT_FOUND.formatted(target.getId(), namespace, municipalityId)));
 	}

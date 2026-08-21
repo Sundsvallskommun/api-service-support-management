@@ -39,8 +39,9 @@ class AccessControlChokePointTest {
 		// The choke point itself.
 		AccessControlService.class,
 
-		// Scheduled workers and system triggered actions. These run without an Identifier, so there is no user to
-		// authorize and access control does not apply.
+		// Scheduled workers and system triggered actions. These run without an Identifier of their own, so there is no
+		// caller to authorize. NotificationDispatchWorker is a nuance: it does authorize, but on behalf of each
+		// subscriber rather than a caller, passing that user to AccessControlService explicitly.
 		se.sundsvall.supportmanagement.service.action.AddLabelAction.class,
 		se.sundsvall.supportmanagement.service.scheduler.action.ActionWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderWorker.class,
