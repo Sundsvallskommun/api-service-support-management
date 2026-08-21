@@ -1,17 +1,26 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
+import java.io.ByteArrayInputStream;
+import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -26,15 +35,31 @@ class AttachmentHashWorkerTest {
 	private AttachmentRepository attachmentRepositoryMock;
 
 	@Mock
-	private AttachmentHashBatchProcessor batchProcessorMock;
+	private PlatformTransactionManager transactionManagerMock;
+
+	@Mock
+	private TransactionStatus transactionStatusMock;
+
+	@Mock
+	private AttachmentEntity attachmentEntityMock;
+
+	@Mock
+	private AttachmentDataEntity attachmentDataEntityMock;
+
+	@Mock
+	private Blob blobMock;
 
 	private AttachmentHashWorker attachmentHashWorker;
+
+	@BeforeEach
+	void setUp() {
+		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, transactionManagerMock, BATCH_SIZE);
+	}
 
 	@Test
 	void computeHashWhenNoAttachmentsWithoutHash() {
 
 		// Arrange
-		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, batchProcessorMock, BATCH_SIZE);
 		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(Collections.emptyList());
 
 		// Act
@@ -42,58 +67,79 @@ class AttachmentHashWorkerTest {
 
 		// Verify
 		verify(attachmentRepositoryMock).findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE));
-		verifyNoInteractions(batchProcessorMock);
 		verifyNoMoreInteractions(attachmentRepositoryMock);
 	}
 
 	@Test
-	void computeHashForAttachment() {
+	void computeHashForAttachmentSuccessfully() throws Exception {
 
 		// Arrange
-		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, batchProcessorMock, BATCH_SIZE);
+		final var content = "test content".getBytes();
+		when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
 		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1));
-		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenReturn(true);
+		when(attachmentRepositoryMock.findById(ATTACHMENT_ID_1)).thenReturn(Optional.of(attachmentEntityMock));
+		when(attachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.getBinaryStream()).thenReturn(new ByteArrayInputStream(content));
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
 		// Verify
-		verify(batchProcessorMock).processAttachment(ATTACHMENT_ID_1);
-		verifyNoMoreInteractions(batchProcessorMock);
+		verify(attachmentEntityMock).setHash(any(String.class));
+		verify(attachmentRepositoryMock).saveAndFlush(attachmentEntityMock);
 	}
 
 	@Test
-	void computeHashProcessesEachAttachmentOnlyOnce() {
+	void computeHashWhenAttachmentNotFound() {
 
 		// Arrange
-		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, batchProcessorMock, BATCH_SIZE);
-		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
-		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenReturn(false);
-		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_2)).thenReturn(true);
+		when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
+		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1));
+		when(attachmentRepositoryMock.findById(ATTACHMENT_ID_1)).thenReturn(Optional.empty());
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
-		// Verify - each attachment processed exactly once, even if it fails
-		verify(batchProcessorMock, times(1)).processAttachment(ATTACHMENT_ID_1);
-		verify(batchProcessorMock, times(1)).processAttachment(ATTACHMENT_ID_2);
-		verifyNoMoreInteractions(batchProcessorMock);
+		// Verify
+		verify(attachmentRepositoryMock, never()).saveAndFlush(any());
 	}
 
 	@Test
-	void computeHashContinuesAfterException() {
+	void computeHashContinuesAfterBlobReadFailure() throws SQLException {
 
 		// Arrange
-		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, batchProcessorMock, BATCH_SIZE);
+		when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
 		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
-		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_1)).thenThrow(new RuntimeException("Connection error"));
-		when(batchProcessorMock.processAttachment(ATTACHMENT_ID_2)).thenReturn(true);
+		when(attachmentRepositoryMock.findById(ATTACHMENT_ID_1)).thenReturn(Optional.of(attachmentEntityMock));
+		when(attachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.getBinaryStream()).thenThrow(new SQLException("Blob read error"));
+		when(attachmentRepositoryMock.findById(ATTACHMENT_ID_2)).thenReturn(Optional.empty());
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
 		// Verify - should continue to next attachment despite exception
-		verify(batchProcessorMock).processAttachment(ATTACHMENT_ID_1);
-		verify(batchProcessorMock).processAttachment(ATTACHMENT_ID_2);
+		verify(attachmentRepositoryMock).findById(ATTACHMENT_ID_1);
+		verify(attachmentRepositoryMock).findById(ATTACHMENT_ID_2);
+		verify(attachmentRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	void computeHashStopsWhenThreadIsInterrupted() {
+
+		// Arrange
+		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+		Thread.currentThread().interrupt();
+
+		// Act
+		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
+
+		// Verify - should stop before processing any attachment
+		verify(attachmentRepositoryMock, never()).findById(any());
+
+		// Clear interrupt flag so it doesn't leak into other tests
+		Thread.interrupted();
 	}
 }
