@@ -1459,7 +1459,9 @@ Det här är inte råd. Håller inte modellerna sig till dem faller delar av des
 2. **Manuella grindar modelleras som namngivna väntlägen** (§5.9). Ska handläggaren avgöra när processen går vidare räcker det inte att villkoret är uppfyllt — väntläget ska lyssna på ett *namngivet* meddelande, till exempel `granskning-godkand`. Finns flera vägar framåt används en event-based gateway med ett catch event per alternativ, så att handläggarens val också blir processens vägval. Sätt en tidsgräns på grindar som kan glömmas bort: ett väntläge som ingen någonsin klickar på står kvar för alltid.
 3. **Inga user tasks.** Det är lätt att tro att ett väntläge på en människa ska vara en user task — det är BPMN-lärobokens svar. Här är det fel: handläggaren arbetar i SM och loggar aldrig in i Operaton. En user task skulle skapa en uppgiftslista som ingen tittar i, och grinden skulle aldrig öppnas. Manuella grindar är meddelandehändelser, ingenting annat.
 4. **Inga parallella grenar som ändrar ärendet** (§6.4).
-5. **Inga processvariabler för att hålla reda på vad som redan gjorts eller för att signalera.** Skälet står i den kod som nu tas bort: *"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."* Behåll resonemanget även när metoden är borta — det är det första någon återinför nästa gång ett dubblettproblem dyker upp.
+5. **Inga processvariabler som minne mellan väckningar.** Tillståndet bor i ärendet, och kontrollen läser om det varje gång — annars börjar processen tro saker som inte längre är sanna. Skälet står i den kod som nu tas bort: *"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."* Behåll resonemanget även när metoden är borta; det är det första någon återinför nästa gång ett dubblettproblem dyker upp.
+
+    Ett **resultatvärde** är något annat och fullt tillåtet: det som ett arbetssteg sätter när det slutförs, `complete(task, variables)`, och som nästa gateway läser. Det skrivs atomiskt med slutförandet och har ingen kapplöpning i sig. Utan det gick det inte att ha gateways över huvud taget. Skillnaden är alltså: *resultat i ett steg är i sin ordning, minne mellan väckningar är det inte.*
 6. **Processens slut måste rapporteras.** SM får bara veta att en process är klar genom en rapport, och rapporter kommer från arbetssteg. Slutar en gren utan att ett arbetssteg kört sist står SM:s rad kvar som `RUNNING` för alltid medan instansen är borta ur Operaton — och då kan ärendet varken gå vidare eller få en ny process. Antingen är sista steget före varje slutevent ett arbetssteg som rapporterar `completed()`, eller så hängs en execution listener på sluteventet som gör det. P6 stämmer av det som ändå glider isär.
 7. **Inga call activities eller delade subprocesser** tills vidare. Kommande processer kan se helt annorlunda ut, och då är det lättare att ha hållit dem isär.
 
@@ -1471,35 +1473,50 @@ Kraven ovan hänger ihop, och det är lättare att se hur i en bild än i löpte
 start_<fas>
     |
     v
-[arbetssteg]         external task med topic. pw kor det och rapporterar RUNNING,
-    |                aktiviteter och till sist vad steget kom fram till
-    v
-[kontroll]           external task som LASER OM arendet och avgor om fasen ar klar
+[arbetssteg]         external tasks som gor jobbet. Kors EN gang.
+[arbetssteg]         pw rapporterar RUNNING, aktiviteter och resultat.
     |
     v
- <gateway: klar?> -- ja --> end_<fas>
-    |
-   nej
-    |
-    v
-(vantlage)           manuell grind:  message catch "granskning-godkand"
-    |                automatisk:     message catch "errandUpdated"
-    |                + boundary timer for paminnelse eller eskalering
-    +--> tillbaka till [kontroll]
+[kontroll] <-----------------+   external task: laser om arendet och avgor om fasen
+    |                        |   ar klar. Satter ett resultatvarde nar den slutfors.
+    v                        |
+ <klar?> -- ja --> end_<fas> |
+    |                        |
+   nej                       |
+    |                        |
+    v                        |
+(vantlage) -- vackt ---------+   manuell grind: message catch "granskning-godkand"
+                                 automatisk:    message catch "errandUpdated"
+                                 + boundary timer for paminnelse eller eskalering
 ```
 
-Det viktiga är **slingan tillbaka från väntläget till kontrollsteget**. Varje väckning leder till en
-omläsning av ärendet, aldrig till ett antagande om att villkoret nu är uppfyllt — det är krav 1, ritat.
-Kommer väckningen för tidigt, eller kommer den två gånger, gör kontrollen samma sak som förra gången och
-processen står kvar där den ska.
+**Slingan tillbaka är det bärande.** Varje väckning leder till en omläsning av ärendet, aldrig till ett
+antagande om att villkoret nu är uppfyllt — det är krav 1, ritat. Kommer väckningen för tidigt, eller kommer
+den två gånger, gör kontrollen samma sak som förra gången och processen står kvar där den ska.
 
-Formen bär också krav 2 och 3: väntläget är en meddelandehändelse med ett namn, inte en user task. Är
-namnet ett signalnamn som handläggaren kan skicka (§5.9) är grinden manuell; är det `errandUpdated` går
-fasen vidare av sig själv så snart kontrollen säger att den är klar.
+Därav den enda hårda regeln om formen: **det slingan går tillbaka till måste tåla att köras om**. Är
+arbetssteget rent — läser och bedömer, utan sidoeffekter utåt — får det gärna slås ihop med kontrollen till
+ett enda steg. Skickar det ett brev, skapar en post i ett annat system eller aviserar sökanden måste de
+hållas isär, annars skickas brevet om varje gång någon lägger en bilaga på ärendet.
+
+**Kontrollen hör till väntläget, inte till arbetsstegen.** En fas med fem arbetssteg i rad behöver bara en
+kontroll: den som sitter före grinden. Det är där processen tar ställning, och det är dit slingan går.
+
+**Kontrollerna får dela topic.** Villkoren skiljer sig mellan faser — *är granskningen klar?* mot *finns ett
+beslut?* — men mekaniken är identisk: hämta ärendet, pröva ett predikat, returnera ett resultat. En gemensam
+topic som tar villkorets namn som input-parameter räcker, med en worker i pw som slår upp predikatet. Då
+finns ett ställe att ändra hämtningen och felhanteringen på, och predikaten blir små rena funktioner som är
+enkla att testa. Priset är att villkorsnamnen blir ett kontrakt mellan BPMN-filen och koden — så låt workern
+**kasta hårt på okänt villkor** i stället för att tyst svara "inte klar". Då blir ett stavfel en incident som
+syns på ärendet, inte en process som står still utan förklaring.
+
+**En ren manuell grind behöver ingen kontroll alls.** Är villkoret bara *"handläggaren tryckte"* är signalen
+svaret. Det fungerar därför att SM bara accepterar signaler som står i `awaitingSignals` (§5.9) — en
+handläggare kan alltså inte skicka en signal medan processen är upptagen någon annanstans, för då visas
+ingen knapp, och en skrivning ändå ger `409`.
 
 Krav 6 gäller processens sista fas: steget före `end_process` ska vara ett arbetssteg som rapporterar
 `completed()`, annars får SM aldrig veta att processen är slut.
-
 ### 9.3 Starta, fortsätta och radera
 
 ```
@@ -1827,6 +1844,7 @@ den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. U
 | **Instans som försvinner utan slutrapport** | SM står kvar på `RUNNING` medan instansen är borta ur Operaton, och ärendet kan varken gå vidare eller få en ny process. Modelleringskravet i §9.2 punkt 5 ska hindra det; P6:s schemalagda kontroll stämmer av det som ändå glider isär |
 | **Skelettmodellen driftsatt för tidigt** | Sex tomma subprocesser springer igenom på millisekunder. Startas den mot ett skarpt ärende är ärendets processliv förbrukat (§9.1). Driftsätt inte förrän väntlägena finns |
 | **Manuell grind som ingen klickar på** | Processen står i `WAITING` för alltid. Modelleringsregeln i §9.2 punkt 2 kräver en tidsgräns på grindar som kan glömmas bort, och `process.signal_sent` visar vilka grindar som faktiskt används |
+| **Signal som accepteras men aldrig konsumeras** | Går processen vidare på en timer i samma stund som handläggaren trycker, hinner SM svara `202` innan den nya bilden rapporterats. Signalen når då inget väntläge och är borta. Handläggaren ser det vid nästa omläsning, men vi räknar det inte någonstans — överväg ett mätvärde om det visar sig hända |
 | **Knapp som inte längre gäller** | Handläggaren ser en signal processen hunnit lämna. Skrivningen ger `409` och räknas i `process.signal_rejected` — gränssnittet ska läsa om ärendet, inte försöka igen |
 | **Beslut på ärende helt utan process** | Tillåtet och olåst: det finns ingen `COMPLETED` process att låsa mot. Spårbarheten bärs då av revisionen, inte av spärren (§7.5) |
 | **Föräldralös processinstans efter radering** | `DELETE` publiceras även utan `processKey` (§2.2), och pw raderar på `businessKey` (§9.3). Restrisk kvarstår om leveransen dead-letteras — därför retention och redrive före röjning (§8.3) |
