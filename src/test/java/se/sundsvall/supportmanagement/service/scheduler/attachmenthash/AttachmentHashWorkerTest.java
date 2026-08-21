@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 import java.io.ByteArrayInputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
 class AttachmentHashWorkerTest {
 
 	private static final int BATCH_SIZE = 250;
+	private static final Duration MAX_EXECUTION_TIME = Duration.ofMinutes(5);
 	private static final String ATTACHMENT_ID_1 = "attachment-id-1";
 	private static final String ATTACHMENT_ID_2 = "attachment-id-2";
 
@@ -53,7 +55,7 @@ class AttachmentHashWorkerTest {
 
 	@BeforeEach
 	void setUp() {
-		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, transactionManagerMock, BATCH_SIZE);
+		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, transactionManagerMock, BATCH_SIZE, MAX_EXECUTION_TIME);
 	}
 
 	@Test
@@ -141,5 +143,19 @@ class AttachmentHashWorkerTest {
 
 		// Clear interrupt flag so it doesn't leak into other tests
 		Thread.interrupted();
+	}
+
+	@Test
+	void computeHashStopsWhenTimeLimitReached() {
+
+		// Arrange - use zero duration to trigger immediate timeout
+		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, transactionManagerMock, BATCH_SIZE, Duration.ZERO);
+		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+
+		// Act
+		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
+
+		// Verify - should stop before processing any attachment
+		verify(attachmentRepositoryMock, never()).findById(any());
 	}
 }
