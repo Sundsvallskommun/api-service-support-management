@@ -60,4 +60,6 @@ TRUNCATE table subscriber_channel;
 TRUNCATE table subscriber;
 TRUNCATE table notification_dispatch;
 TRUNCATE table subscriber_notification;
+TRUNCATE table measure;
+TRUNCATE table measure_type;
 SET FOREIGN_KEY_CHECKS = 1;

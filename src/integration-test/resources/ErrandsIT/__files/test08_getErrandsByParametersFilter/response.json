@@ -125,7 +125,8 @@
 			"phases": [],
 			"created": "2022-03-01T12:00:00+01:00",
 			"touched": "2022-03-01T12:00:00+01:00",
-			"version": 0
+			"version": 0,
+			"measures": []
 		}
 	],
 	"pageable": {

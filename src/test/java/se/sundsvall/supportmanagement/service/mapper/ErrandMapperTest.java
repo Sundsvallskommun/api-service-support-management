@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandPhase;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
@@ -33,11 +34,13 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import tools.jackson.databind.ObjectMapper;
 
@@ -114,6 +117,22 @@ class ErrandMapperTest {
 	private static final String PHASE_NAME = "INVESTIGATION";
 	private static final String PHASE_DISPLAY_NAME = "Utredning";
 	private static final OffsetDateTime PHASE_STARTED = now().minusDays(3);
+	private static final String MEASURE_ID = "measure-id";
+	private static final String MEASURE_RESPONSIBLE_USER = "measureResponsibleUser";
+	private static final String MEASURE_TYPE = "INTERVENTION";
+	private static final OffsetDateTime MEASURE_PLANNED_START = now().plusDays(10);
+	private static final OffsetDateTime MEASURE_PLANNED_COMPLETE = now().plusDays(40);
+	private static final OffsetDateTime MEASURE_EXECUTED = now().plusDays(20);
+	private static final String MEASURE_ADDED_BY_USER = "measureAddedByUser";
+	private static final String MEASURE_ADDED_BY_ROLE = "MANAGER";
+	private static final String MEASURE_GOAL = "measureGoal";
+	private static final String MEASURE_DESCRIPTION = "measureDescription";
+	private static final Accept MEASURE_ACCEPT = Accept.TRUE;
+	private static final String MEASURE_ACCEPT_MOTIVATION = "measureAcceptMotivation";
+	private static final String MEASURE_REWORK_GOAL = "measureReworkGoal";
+	private static final String MEASURE_REWORK_DESCRIPTION = "measureReworkDescription";
+	private static final OffsetDateTime MEASURE_CREATED = now().minusDays(5);
+	private static final OffsetDateTime MEASURE_MODIFIED = now().minusDays(1);
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	private static final ErrandLabel LABEL_1 = ErrandLabel.create().withId("id1");
@@ -152,7 +171,21 @@ class ErrandMapperTest {
 			.withSuspension(Suspension.create().withSuspendedFrom(SUSPENDED_FROM).withSuspendedTo(SUSPENDED_TO))
 			.withContactReason(CONTACT_REASON)
 			.withContactReasonDescription(CONTACT_REASON_DESCRIPTION)
-			.withLabels(List.of(LABEL_1, LABEL_2));
+			.withLabels(List.of(LABEL_1, LABEL_2))
+			.withMeasures(List.of(Measure.create()
+				.withResponsibleUser(MEASURE_RESPONSIBLE_USER)
+				.withType(MEASURE_TYPE)
+				.withPlannedStart(MEASURE_PLANNED_START)
+				.withPlannedComplete(MEASURE_PLANNED_COMPLETE)
+				.withExecuted(MEASURE_EXECUTED)
+				.withAddedByUser(MEASURE_ADDED_BY_USER)
+				.withAddedByRole(MEASURE_ADDED_BY_ROLE)
+				.withGoal(MEASURE_GOAL)
+				.withDescription(MEASURE_DESCRIPTION)
+				.withAccept(MEASURE_ACCEPT.name())
+				.withAcceptMotivation(MEASURE_ACCEPT_MOTIVATION)
+				.withReworkGoal(MEASURE_REWORK_GOAL)
+				.withReworkDescription(MEASURE_REWORK_DESCRIPTION)));
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -214,7 +247,24 @@ class ErrandMapperTest {
 					.withId(PHASE_ID)
 					.withName(PHASE_NAME)
 					.withDisplayName(PHASE_DISPLAY_NAME))
-				.withStarted(PHASE_STARTED)));
+				.withStarted(PHASE_STARTED)))
+			.withMeasures(List.of(MeasureEntity.create()
+				.withId(MEASURE_ID)
+				.withResponsibleUser(MEASURE_RESPONSIBLE_USER)
+				.withType(MEASURE_TYPE)
+				.withPlannedStart(MEASURE_PLANNED_START)
+				.withPlannedComplete(MEASURE_PLANNED_COMPLETE)
+				.withExecuted(MEASURE_EXECUTED)
+				.withAddedByUser(MEASURE_ADDED_BY_USER)
+				.withAddedByRole(MEASURE_ADDED_BY_ROLE)
+				.withGoal(MEASURE_GOAL)
+				.withDescription(MEASURE_DESCRIPTION)
+				.withAccept(MEASURE_ACCEPT)
+				.withAcceptMotivation(MEASURE_ACCEPT_MOTIVATION)
+				.withReworkGoal(MEASURE_REWORK_GOAL)
+				.withReworkDescription(MEASURE_REWORK_DESCRIPTION)
+				.withCreated(MEASURE_CREATED)
+				.withModified(MEASURE_MODIFIED)));
 
 	}
 
@@ -293,6 +343,11 @@ class ErrandMapperTest {
 		assertThat(errand.getPhases()).hasSize(1)
 			.extracting(ErrandPhase::getPhaseId, ErrandPhase::getName, ErrandPhase::getDisplayName, ErrandPhase::getStarted, ErrandPhase::getEnded)
 			.containsExactly(tuple(PHASE_ID, PHASE_NAME, PHASE_DISPLAY_NAME, PHASE_STARTED, null));
+		assertThat(errand.getMeasures()).hasSize(1)
+			.extracting(Measure::getId, Measure::getResponsibleUser, Measure::getType, Measure::getPlannedStart, Measure::getPlannedComplete, Measure::getExecuted, Measure::getAddedByUser, Measure::getAddedByRole, Measure::getGoal,
+				Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation, Measure::getReworkGoal, Measure::getReworkDescription, Measure::getCreated, Measure::getModified)
+			.containsExactly(tuple(MEASURE_ID, MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION,
+				MEASURE_ACCEPT.name(), MEASURE_ACCEPT_MOTIVATION, MEASURE_REWORK_GOAL, MEASURE_REWORK_DESCRIPTION, MEASURE_CREATED, MEASURE_MODIFIED));
 		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 	}
 
@@ -555,6 +610,13 @@ class ErrandMapperTest {
 				JSON_PARAMETER_SCHEMA_ID,
 				JSON_PARAMETER_VALUE_STRING));
 
+		assertThat(entity.getMeasures()).hasSize(1)
+			.extracting(MeasureEntity::getResponsibleUser, MeasureEntity::getType, MeasureEntity::getPlannedStart, MeasureEntity::getPlannedComplete, MeasureEntity::getExecuted, MeasureEntity::getAddedByUser, MeasureEntity::getAddedByRole,
+				MeasureEntity::getGoal, MeasureEntity::getDescription, MeasureEntity::getAccept, MeasureEntity::getAcceptMotivation, MeasureEntity::getReworkGoal, MeasureEntity::getReworkDescription)
+			.containsExactly(tuple(MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION, MEASURE_ACCEPT,
+				MEASURE_ACCEPT_MOTIVATION, MEASURE_REWORK_GOAL, MEASURE_REWORK_DESCRIPTION));
+		assertThat(entity.getMeasures().getFirst().getErrandEntity()).isSameAs(entity);
+
 		assertThat(entity.getCreated()).isNull();
 		assertThat(entity.getId()).isNull();
 		assertThat(entity.getModified()).isNull();
@@ -687,7 +749,7 @@ class ErrandMapperTest {
 
 		assertThat(entity).hasNoNullFieldsOrPropertiesExcept(
 			"assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "channel", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus", "tempPreviousStatus", "timeMeasures", "contactReasonDescription",
-			"accessLabels", "phases", "version");
+			"accessLabels", "phases", "version", "measures");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();

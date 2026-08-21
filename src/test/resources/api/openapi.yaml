@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "14.16"
+  version: "14.17"
 servers:
-- url: http://localhost:33231
+- url: http://localhost:45923
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -48,6 +48,8 @@ tags:
     \ listens for (an errand or all events in a namespace). Subscriptions support\
     \ create, list and delete — to change what is being listened to, delete and create\
     \ a new one."
+- name: Errand Measures
+  description: Errand measure operations
 - name: Errand notes
   description: Errand notes operations
 - name: Metadata for contact reasons
@@ -56,6 +58,8 @@ tags:
   description: ExternalIdType metadata operations
 - name: Metadata
   description: Metadata operations
+- name: Metadata for measure types
+  description: Measure type metadata operations
 - name: Metadata for roles
   description: Role metadata operations
 - name: Errand communication
@@ -2548,6 +2552,137 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/measuretypes:
+    get:
+      tags:
+      - Metadata for measure types
+      summary: Get measure types
+      description: "Get all measure types for the namespace and municipality, optionally\
+        \ filtered by group"
+      operationId: getMeasureTypes
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: measureGroup
+        in: query
+        description: Filter by measure group
+        required: false
+        schema:
+          type: string
+        example: MANAGERS
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MeasureType"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for measure types
+      summary: Create measure type
+      description: Create new measure type for the namespace and municipality
+      operationId: createMeasureType
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MeasureType"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/external-id-types:
     get:
       tags:
@@ -3339,6 +3474,140 @@ paths:
               style: simple
               schema:
                 type: string
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/measures:
+    get:
+      tags:
+      - Errand Measures
+      summary: Find errand measures
+      description: Fetches all measures for the errand
+      operationId: findErrandMeasures
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Measure"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Errand Measures
+      summary: Create errand measure
+      description: Creates a new measure for the errand
+      operationId: createErrandMeasure
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Measure"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -5360,6 +5629,204 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/measuretypes/{id}:
+    get:
+      tags:
+      - Metadata for measure types
+      summary: Get measure type
+      description: "Get measure type matching namespace, municipality and id"
+      operationId: getMeasureType
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Measure type id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeasureType"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for measure types
+      summary: Delete measure type
+      description: "Delete measure type matching namespace, municipality and id"
+      operationId: deleteMeasureType
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Measure type id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Metadata for measure types
+      summary: Update measure type
+      description: "Update measure type matching namespace, municipality and id"
+      operationId: updateMeasureType
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Measure type id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MeasureType"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeasureType"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/external-id-types/{id}:
     get:
       tags:
@@ -6813,6 +7280,228 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/measures/{measureId}:
+    get:
+      tags:
+      - Errand Measures
+      summary: Read errand measure
+      description: Fetches the measure matching the provided errand id and measure
+        id
+      operationId: readErrandMeasure
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: measureId
+        in: path
+        description: Measure id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Measure"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Errand Measures
+      summary: Delete errand measure
+      description: Deletes the measure matching the provided errand id and measure
+        id
+      operationId: deleteErrandMeasure
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: measureId
+        in: path
+        description: Measure id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Errand Measures
+      summary: Update errand measure
+      description: Updates the measure matching the provided errand id and measure
+        id
+      operationId: updateErrandMeasure
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: measureId
+        in: path
+        description: Measure id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Measure"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Measure"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -8844,6 +9533,7 @@ components:
           - ESCALATION_EMAIL
           - LABELS
           - STAKEHOLDERS
+          - MEASURES
           - ACTIVE_NOTIFICATIONS
           - VERSION
           - PARAMETERS
@@ -8888,6 +9578,7 @@ components:
             - NOTE_REVISION
             - PARAMETER
             - JSON_PARAMETER
+            - MEASURE
             - NOTIFICATION
             - REVISION
             - TIME_MEASURE
@@ -8898,6 +9589,7 @@ components:
             - METADATA_CONTACT_REASON
             - METADATA_EXTERNAL_ID_TYPE
             - METADATA_LABEL
+            - METADATA_MEASURE_TYPE
             - METADATA_PHASE
             - METADATA_ROLE
             - METADATA_STATUS
@@ -9043,6 +9735,7 @@ components:
           - NOTE_REVISION
           - PARAMETER
           - JSON_PARAMETER
+          - MEASURE
           - NOTIFICATION
           - REVISION
           - TIME_MEASURE
@@ -9053,6 +9746,7 @@ components:
           - METADATA_CONTACT_REASON
           - METADATA_EXTERNAL_ID_TYPE
           - METADATA_LABEL
+          - METADATA_MEASURE_TYPE
           - METADATA_PHASE
           - METADATA_ROLE
           - METADATA_STATUS
@@ -9969,6 +10663,66 @@ components:
           - "true"
       required:
       - targetPhaseId
+    MeasureType:
+      type: object
+      description: MeasureType model
+      properties:
+        id:
+          type: string
+          description: MeasureType ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        name:
+          type: string
+          description: Name for the measure type. Used as key
+          examples:
+          - INTERVENTION
+          minLength: 1
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the measure type
+          examples:
+          - Intervention
+        measureGroup:
+          type: string
+          description: Group that this measure type belongs to
+          examples:
+          - MANAGERS
+          minLength: 1
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the measure type
+          examples:
+          - 1
+        deprecated:
+          type: boolean
+          default: false
+          description: Indicates if the measure type is deprecated
+          examples:
+          - "true"
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the measure type was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the measure type was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+      required:
+      - measureGroup
+      - name
     ExternalIdType:
       type: object
       description: ExternalIdType model
@@ -10335,6 +11089,11 @@ components:
           items:
             $ref: "#/components/schemas/ErrandAction"
           readOnly: true
+        measures:
+          type: array
+          description: List of measures for the errand
+          items:
+            $ref: "#/components/schemas/Measure"
         created:
           type: string
           format: date-time
@@ -10475,6 +11234,107 @@ components:
           description: Value for external tag
           examples:
           - 8849-2848
+    Measure:
+      type: object
+      description: Measure model
+      properties:
+        id:
+          type: string
+          description: Measure ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        responsibleUser:
+          type: string
+          description: Responsible user (ad-username)
+          examples:
+          - jo12doe
+        type:
+          type: string
+          description: Type of measure
+          examples:
+          - INTERVENTION
+          minLength: 1
+        plannedStart:
+          type: string
+          format: date-time
+          description: Planned start date
+          examples:
+          - 2021-09-01T12:00:00Z
+        plannedComplete:
+          type: string
+          format: date-time
+          description: Planned completion date
+          examples:
+          - 2021-10-01T12:00:00Z
+        executed:
+          type: string
+          format: date-time
+          description: Execution date
+          examples:
+          - 2021-09-15T12:00:00Z
+        addedByUser:
+          type: string
+          description: User who added the measure
+          examples:
+          - jo12doe
+          minLength: 1
+        addedByRole:
+          type: string
+          description: Role of the user who added the measure
+          examples:
+          - MANAGER
+          minLength: 1
+        goal:
+          type: string
+          description: Goal of the measure
+          examples:
+          - Improve response time
+        description:
+          type: string
+          description: Description of the measure
+          examples:
+          - Detailed description of the measure
+        accept:
+          type:
+          - string
+          - "null"
+          description: Accept status
+          examples:
+          - "TRUE"
+        acceptMotivation:
+          type: string
+          description: Motivation for the accept decision
+          examples:
+          - The measure is approved
+        reworkGoal:
+          type: string
+          description: Rework goal
+          examples:
+          - Updated goal after rework
+        reworkDescription:
+          type: string
+          description: Rework description
+          examples:
+          - Detailed description of the rework
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the measure was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the measure was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+      required:
+      - addedByRole
+      - addedByUser
+      - type
     Notification:
       type: object
       properties:
@@ -11886,6 +12746,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Role"
+        measureTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MeasureType"
         contactReasons:
           type: array
           items:

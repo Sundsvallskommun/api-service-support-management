@@ -136,5 +136,6 @@
 	"created": "2022-03-01T12:00:00+01:00",
 	"touched": "${json-unit.any-string}",
 	"modified": "${json-unit.any-string}",
-	"version": 1
+	"version": 1,
+	"measures": []
 }

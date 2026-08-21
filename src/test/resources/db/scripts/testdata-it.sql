@@ -608,3 +608,18 @@ VALUES ('bbccddee-0000-0000-0000-000000000003', 0, 'UPDATE', 'ATTACHMENT');
 INSERT INTO subscriber_notification(id, created, modified, identifier_type, identifier_value, municipality_id, namespace, errand_id, errand_number, expires, acknowledged)
 VALUES ('a1b2c3d4-0000-0000-0000-000000000001', '2023-12-31 23:59:59.999', null, 'adAccount', 'joe01doe', '2281', 'NAMESPACE-1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'KC-23020001', '2099-12-31 23:59:59.999', null),
        ('a1b2c3d4-0000-0000-0000-000000000002', '2023-12-31 23:59:59.999', null, 'adAccount', 'joe01doe', '2281', 'NAMESPACE-1', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KC-23020002', '2099-12-31 23:59:59.999', null);
+
+-- -----------------------------------
+-- MeasureType
+-- -----------------------------------
+INSERT INTO measure_type(id, name, display_name, measure_group, sort_order, deprecated, namespace, municipality_id, created, modified)
+VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 'GROUP-A', 1, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
+       ('dd000000-0000-0000-0000-000000000101', 'MEASURE-2', 'Display Measure 2', 'GROUP-A', 2, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
+       ('dd000000-0000-0000-0000-000000000102', 'MEASURE-3', 'Display Measure 3', 'GROUP-B', 3, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null);
+
+-- -----------------------------------
+-- Measure (errand measures)
+-- -----------------------------------
+INSERT INTO measure(id, errand_id, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, rework_goal, rework_description, created, modified)
+VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, null, null, '2024-01-10 12:00:00.000', null),
+       ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', null, null, '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');

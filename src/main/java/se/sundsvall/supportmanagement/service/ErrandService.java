@@ -5,6 +5,7 @@ import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -23,10 +24,12 @@ import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationTyp
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -66,12 +69,14 @@ public class ErrandService {
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandService.class);
 
 	private static final String BAD_CONTACT_REASON = "'%s' is not a valid contact reason for namespace '%s' and municipality with id '%s'";
+	private static final String BAD_MEASURE_TYPE = "'%s' is not a valid measure type for namespace '%s' and municipality with id '%s'";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
+	private final MeasureTypeRepository measureTypeRepository;
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
@@ -90,6 +95,7 @@ public class ErrandService {
 	public ErrandService(
 		final ErrandsRepository repository,
 		final ContactReasonRepository contactReasonRepository,
+		final MeasureTypeRepository measureTypeRepository,
 		final CommunicationService communicationService,
 		final AttachmentRepository attachmentRepository,
 		final RevisionService revisionService,
@@ -107,6 +113,7 @@ public class ErrandService {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
+		this.measureTypeRepository = measureTypeRepository;
 		this.communicationService = communicationService;
 		this.attachmentRepository = attachmentRepository;
 		this.revisionService = revisionService;
@@ -136,6 +143,8 @@ public class ErrandService {
 				.withContactReason(contactReason)
 				.withContactReasonDescription(errand.getContactReasonDescription());
 		});
+
+		validateMeasureTypes(errand.getMeasures(), namespace, municipalityId);
 
 		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
 		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errandEntity.getStatus());
@@ -212,6 +221,8 @@ public class ErrandService {
 			errandEntity.withContactReason(contactReason);
 		});
 
+		validateMeasureTypes(errand.getMeasures(), namespace, municipalityId);
+
 		if (errand.getLabels() != null) {
 			computeAndSetAccessLabels(errandEntity);
 		}
@@ -286,6 +297,17 @@ public class ErrandService {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);
+	}
+
+	private void validateMeasureTypes(final List<Measure> measures, final String namespace, final String municipalityId) {
+		ofNullable(measures).orElse(emptyList()).stream()
+			.map(Measure::getType)
+			.filter(Objects::nonNull)
+			.forEach(type -> {
+				if (!measureTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, type)) {
+					throw Problem.valueOf(BAD_REQUEST, BAD_MEASURE_TYPE.formatted(type, namespace, municipalityId));
+				}
+			});
 	}
 
 	private void computeAndSetAccessLabels(final ErrandEntity errandEntity) {

@@ -304,6 +304,41 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table measure (
+        created datetime(6),
+        executed datetime(6),
+        modified datetime(6),
+        planned_complete datetime(6),
+        planned_start datetime(6),
+        description varchar(1000),
+        rework_description varchar(1000),
+        accept_motivation varchar(255),
+        added_by_role varchar(255),
+        added_by_user varchar(255),
+        errand_id varchar(255) not null,
+        goal varchar(255),
+        id varchar(255) not null,
+        responsible_user varchar(255),
+        rework_goal varchar(255),
+        type varchar(255),
+        accept enum ('FALSE','REWORK','TRUE'),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table measure_type (
+        deprecated bit not null,
+        sort_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        measure_group varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table message_exchange_integration_config (
         created datetime(6),
         id bigint not null auto_increment,
@@ -811,6 +846,15 @@
     create index idx_json_parameter_key 
        on json_parameter (parameter_key);
 
+    create index idx_measure_errand_id
+       on measure (errand_id);
+
+    create index idx_measure_type_namespace_municipality_id
+       on measure_type (namespace, municipality_id);
+
+    alter table if exists measure_type
+       add constraint uq_measure_type_namespace_municipality_id_name unique (namespace, municipality_id, name);
+
     create index idx_mex_integration_config_namespace_municipality_id 
        on message_exchange_integration_config (namespace, municipality_id);
 
@@ -1072,6 +1116,11 @@
     alter table if exists json_parameter 
        add constraint fk_json_parameter_errand_id 
        foreign key (errand_id) 
+       references errand (id);
+
+    alter table if exists measure
+       add constraint fk_measure_errand_id
+       foreign key (errand_id)
        references errand (id);
 
     alter table if exists metadata_label 

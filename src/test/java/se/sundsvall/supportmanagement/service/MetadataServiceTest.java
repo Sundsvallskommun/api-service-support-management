@@ -14,6 +14,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
@@ -21,6 +22,7 @@ import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
+import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
@@ -29,6 +31,7 @@ import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
@@ -61,6 +64,9 @@ class MetadataServiceTest {
 
 	@Mock
 	private ExternalIdTypeRepository externalIdTypeRepositoryMock;
+
+	@Mock
+	private MeasureTypeRepository measureTypeRepositoryMock;
 
 	@Mock
 	private MetadataLabelRepository metadataLabelRepositoryMock;
@@ -1402,6 +1408,7 @@ class MetadataServiceTest {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(any(), any())).thenReturn(metadataLabelEntity);
 		when(statusRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(statusEntityList);
 		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(roleEntityList);
+		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(emptyList());
 		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(contactReasonEntityList);
 		when(phaseRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any())).thenReturn(emptyList());
 
@@ -1415,11 +1422,13 @@ class MetadataServiceTest {
 		assertThat(result.getExternalIdTypes()).hasSize(2).extracting(ExternalIdType::getName).containsExactlyInAnyOrder("EXTERNALIDTYPE-1", "EXTERNALIDTYPE-2");
 		assertThat(result.getLabels().getLabelStructure()).hasSize(1).extracting(Label::getResourceName).containsExactly("LABEL-1");
 		assertThat(result.getRoles()).hasSize(3).extracting(Role::getName).containsExactlyInAnyOrder("ROLE-1", "ROLE-2", "ROLE-3");
+		assertThat(result.getMeasureTypes()).isEmpty();
 		assertThat(result.getStatuses()).hasSize(3).extracting(Status::getName).containsExactlyInAnyOrder("STATUS-1", "STATUS-2", "STATUS-3");
 		assertThat(result.getContactReasons()).hasSize(2).extracting(ContactReason::getReason).containsExactlyInAnyOrder("CONTACTREASON-1", "CONTACTREASON-2");
 
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
 		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(contactReasonRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
@@ -1692,5 +1701,205 @@ class MetadataServiceTest {
 		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(java.util.Optional.empty());
 
 		assertThrows(ThrowableProblem.class, () -> metadataService.deletePhaseTransition("namespace", "municipalityId", "phaseId", "transitionId"));
+	}
+
+	// =================================================================
+	// MeasureType tests
+	// =================================================================
+
+	@Test
+	void createMeasureType() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "INTERVENTION";
+		final var id = "generated-id";
+
+		// Mock
+		when(measureTypeRepositoryMock.save(any())).thenReturn(MeasureTypeEntity.create().withId(id).withName(name).withMeasureGroup("MANAGERS"));
+
+		// Call
+		final var result = metadataService.createMeasureType(namespace, municipalityId, MeasureType.create().withName(name).withMeasureGroup("MANAGERS"));
+
+		// Verifications
+		assertThat(result).isEqualTo(id);
+		verify(measureTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(measureTypeRepositoryMock).save(any());
+	}
+
+	@Test
+	void createMeasureTypeDuplicate() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "INTERVENTION";
+
+		// Mock
+		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
+
+		// Call
+		final var measureType = MeasureType.create().withName(name).withMeasureGroup("MANAGERS");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.createMeasureType(namespace, municipalityId, measureType));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		verify(measureTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(measureTypeRepositoryMock);
+	}
+
+	@Test
+	void getMeasureType() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroup("group"));
+
+		// Call
+		final var result = metadataService.getMeasureType(namespace, municipalityId, id);
+
+		// Verifications
+		assertThat(result).isNotNull();
+		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(measureTypeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(measureTypeRepositoryMock);
+	}
+
+	@Test
+	void getMeasureTypeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.getMeasureType(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(measureTypeRepositoryMock);
+	}
+
+	@Test
+	void findMeasureTypes() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var measureTypeEntityList = List.of(
+			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroup("GROUP-1"),
+			MeasureTypeEntity.create().withName("TYPE-2").withMeasureGroup("GROUP-2"));
+
+		// Mock
+		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(measureTypeEntityList);
+
+		// Call
+		final var result = metadataService.findMeasureTypes(namespace, municipalityId, null, Sort.unsorted());
+
+		// Verifications
+		assertThat(result).hasSize(2).extracting(MeasureType::getName).containsExactlyInAnyOrder("TYPE-1", "TYPE-2");
+		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+	}
+
+	@Test
+	void findMeasureTypesByGroup() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var measureGroup = "GROUP-1";
+		final var measureTypeEntityList = List.of(
+			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroup(measureGroup));
+
+		// Mock
+		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityIdAndMeasureGroup(any(), any(), any(), any(Sort.class))).thenReturn(measureTypeEntityList);
+
+		// Call
+		final var result = metadataService.findMeasureTypes(namespace, municipalityId, measureGroup, Sort.unsorted());
+
+		// Verifications
+		assertThat(result).hasSize(1).extracting(MeasureType::getName).containsExactly("TYPE-1");
+		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityIdAndMeasureGroup(namespace, municipalityId, measureGroup, Sort.by(DEFAULT_SORT));
+	}
+
+	@Test
+	void deleteMeasureType() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+
+		// Call
+		metadataService.deleteMeasureType(namespace, municipalityId, id);
+
+		// Verifications
+		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(measureTypeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	@Test
+	void deleteMeasureTypeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteMeasureType(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(measureTypeRepositoryMock);
+	}
+
+	@Test
+	void updateMeasureType() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroup("group");
+		final var measureType = MeasureType.create().withName("newName").withMeasureGroup("newGroup");
+
+		// Mock
+		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(measureTypeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateMeasureType(namespace, municipalityId, id, measureType);
+
+		// Verifications
+		assertThat(result).isNotNull();
+		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(measureTypeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(measureTypeRepositoryMock).save(entity);
+		verifyNoMoreInteractions(measureTypeRepositoryMock);
+	}
+
+	@Test
+	void updateMeasureTypeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
+
+		// Call
+		final var measureType = MeasureType.create().withName("name").withMeasureGroup("group");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateMeasureType(namespace, municipalityId, id, measureType));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(measureTypeRepositoryMock);
 	}
 }
