@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
+import java.time.Duration;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,17 +21,22 @@ public class AttachmentHashWorker {
 	private final AttachmentRepository attachmentRepository;
 	private final TransactionTemplate transactionTemplate;
 	private final int batchSize;
+	private final Duration maxExecutionTime;
 
 	public AttachmentHashWorker(final AttachmentRepository attachmentRepository,
 		final PlatformTransactionManager transactionManager,
-		@Value("${scheduler.attachment-hash.batch-size:250}") final int batchSize) {
+		@Value("${scheduler.attachment-hash.batch-size:250}") final int batchSize,
+		@Value("${scheduler.attachment-hash.maximum-execution-time:PT5M}") final Duration maxExecutionTime) {
 		this.attachmentRepository = attachmentRepository;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
 		this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+		this.transactionTemplate.setTimeout(30);
 		this.batchSize = batchSize;
+		this.maxExecutionTime = maxExecutionTime;
 	}
 
 	public void computeHashForAttachmentsWithoutHash() {
+		final var startTime = Instant.now();
 		final var attachmentIds = attachmentRepository.findIdsByHashIsNull(Pageable.ofSize(batchSize));
 
 		if (attachmentIds.isEmpty()) {
@@ -43,8 +50,8 @@ public class AttachmentHashWorker {
 		var totalFailed = 0;
 
 		for (final var attachmentId : attachmentIds) {
-			if (Thread.currentThread().isInterrupted()) {
-				LOG.info("Thread interrupted, stopping early. Processed {} attachments successfully, {} failed", totalProcessed, totalFailed);
+			if (Thread.currentThread().isInterrupted() || Duration.between(startTime, Instant.now()).compareTo(maxExecutionTime) >= 0) {
+				LOG.info("Time limit reached, stopping. Processed {} attachments successfully, {} failed", totalProcessed, totalFailed);
 				return;
 			}
 			if (processAttachment(attachmentId)) {

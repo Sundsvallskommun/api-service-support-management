@@ -53,7 +53,7 @@ class AttachmentHashBatchProcessorPersistenceTest {
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void computedHashIsPersisted() {
 		final var txTemplate = new TransactionTemplate(transactionManager);
-		final var worker = new AttachmentHashWorker(attachmentRepository, transactionManager, ATTACHMENT_IDS.size());
+		final var worker = new AttachmentHashWorker(attachmentRepository, transactionManager, ATTACHMENT_IDS.size(), java.time.Duration.ofMinutes(5));
 
 		// Precondition: hashes are null, and capture the expected hash computed from each blob (each in its own tx
 		// so the lazily loaded blob has an open session).
