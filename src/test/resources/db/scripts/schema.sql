@@ -384,11 +384,8 @@
     ) engine=InnoDB;
 
     create table notification_dispatch (
-        dead_letter bit default 0 not null,
-        retry_count integer default 0 not null,
         created datetime(3) not null,
         municipality_id varchar(8) not null,
-        next_retry_at datetime(3),
         namespace varchar(32) not null,
         errand_id varchar(36) not null,
         event_id varchar(36),
@@ -863,9 +860,6 @@
     create index idx_dispatch_errand_id
        on notification_dispatch (errand_id);
 
-    create index idx_dispatch_dead_letter_retry
-       on notification_dispatch (dead_letter, next_retry_at);
-
     create index idx_phase_municipality_id_namespace
        on phase (municipality_id, namespace);
 
@@ -922,9 +916,6 @@
 
     create index idx_sub_notif_errand
        on subscriber_notification (errand_id);
-
-    alter table if exists subscriber_notification
-       add constraint uq_sub_notif_errand_identifier unique (municipality_id, namespace, errand_id, identifier_type, identifier_value);
 
     create index idx_subscription_errand_id
        on subscription (errand_id);

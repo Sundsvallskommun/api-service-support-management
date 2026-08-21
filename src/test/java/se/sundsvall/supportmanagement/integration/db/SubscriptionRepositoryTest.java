@@ -16,6 +16,8 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
@@ -271,6 +273,101 @@ class SubscriptionRepositoryTest {
 
 		// Act
 		final var result = subscriptionRepository.countBySubscriberIdIn(List.of("does-not-exist-1", "does-not-exist-2"));
+
+		// Assert
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void findAllActiveForErrandReturnsErrandAndNamespaceTargets() {
+
+		// Act — subscriber-id-1 has an ERRAND subscription on ERRAND_ID-1 and a NAMESPACE subscription,
+		// subscriber-id-2 is only subscribed to ERRAND_ID-2
+		final var result = subscriptionRepository.findAllActiveForErrand("2281", "namespace-1", "ERRAND_ID-1", now(systemDefault()));
+
+		// Assert
+		assertThat(result)
+			.extracting(SubscriptionEntity::getId)
+			.containsExactlyInAnyOrder("subscription-id-1", "subscription-id-2");
+	}
+
+	@Test
+	void findAllActiveForErrandReturnsOnlyNamespaceTargetsForUnrelatedErrand() {
+
+		// Act — nobody has an ERRAND subscription on ERRAND_ID-3, so only the namespace-wide one matches
+		final var result = subscriptionRepository.findAllActiveForErrand("2281", "namespace-1", "ERRAND_ID-3", now(systemDefault()));
+
+		// Assert
+		assertThat(result)
+			.extracting(SubscriptionEntity::getId)
+			.containsExactly("subscription-id-2");
+	}
+
+	@Test
+	void findAllActiveForErrandIsScopedToMunicipalityAndNamespace() {
+
+		// Act + Assert — same errand, other tenants
+		assertThat(subscriptionRepository.findAllActiveForErrand("2282", "namespace-1", "ERRAND_ID-1", now(systemDefault()))).isEmpty();
+		assertThat(subscriptionRepository.findAllActiveForErrand("2281", "namespace-2", "ERRAND_ID-1", now(systemDefault()))).isEmpty();
+	}
+
+	@Test
+	void findAllActiveForErrandExcludesExpiredSubscriptions() {
+
+		// Arrange
+		final var subscription = subscriptionRepository.findById("subscription-id-1").orElseThrow();
+		subscriptionRepository.saveAndFlush(subscription.withExpiresAt(now(systemDefault()).minusMinutes(1)));
+
+		// Act
+		final var result = subscriptionRepository.findAllActiveForErrand("2281", "namespace-1", "ERRAND_ID-1", now(systemDefault()));
+
+		// Assert
+		assertThat(result)
+			.extracting(SubscriptionEntity::getId)
+			.containsExactly("subscription-id-2");
+	}
+
+	@Test
+	void findAllActiveForErrandExcludesPausedSubscribers() {
+
+		// Arrange — pause subscriber-id-1, which owns both subscriptions matching ERRAND_ID-1
+		final var subscriber = subscriberRepository.findById("subscriber-id-1").orElseThrow();
+		subscriberRepository.saveAndFlush(subscriber
+			.withPausedFrom(now(systemDefault()).minusDays(1))
+			.withPausedUntil(now(systemDefault()).plusDays(1)));
+
+		// Act
+		final var result = subscriptionRepository.findAllActiveForErrand("2281", "namespace-1", "ERRAND_ID-1", now(systemDefault()));
+
+		// Assert
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void findAllActiveForErrandIncludesSubscribersWhosePauseHasEnded() {
+
+		// Arrange
+		final var subscriber = subscriberRepository.findById("subscriber-id-1").orElseThrow();
+		subscriberRepository.saveAndFlush(subscriber
+			.withPausedFrom(now(systemDefault()).minusDays(2))
+			.withPausedUntil(now(systemDefault()).minusDays(1)));
+
+		// Act
+		final var result = subscriptionRepository.findAllActiveForErrand("2281", "namespace-1", "ERRAND_ID-1", now(systemDefault()));
+
+		// Assert
+		assertThat(result).hasSize(2);
+	}
+
+	@Test
+	void findAllActiveForErrandExcludesIndefinitelyPausedSubscribers() {
+
+		// Arrange — pausedFrom in the past without pausedUntil means paused until further notice
+		final var subscriber = subscriberRepository.findById("subscriber-id-1").orElseThrow();
+		subscriberRepository.saveAndFlush(subscriber.withPausedFrom(now(systemDefault()).minusDays(1)));
+
+		// Act
+		final var result = subscriptionRepository.findAllActiveForErrand("2281", "namespace-1", "ERRAND_ID-1", now(systemDefault()));
 
 		// Assert
 		assertThat(result).isEmpty();

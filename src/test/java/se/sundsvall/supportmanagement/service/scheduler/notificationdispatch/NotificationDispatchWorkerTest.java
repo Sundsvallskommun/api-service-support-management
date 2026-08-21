@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -10,19 +11,25 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
-import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,7 +49,7 @@ class NotificationDispatchWorkerTest {
 	private NotificationDispatchRepository dispatchRepositoryMock;
 
 	@Mock
-	private SubscriberRepository subscriberRepositoryMock;
+	private SubscriptionRepository subscriptionRepositoryMock;
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -54,12 +61,12 @@ class NotificationDispatchWorkerTest {
 	private NotificationDispatchWorker worker;
 
 	@Captor
-	private ArgumentCaptor<NotificationDispatchEntity> entityCaptor;
+	private ArgumentCaptor<List<NotificationDispatchEntity>> eventsCaptor;
 
 	@Captor
 	private ArgumentCaptor<OffsetDateTime> offsetDateTimeCaptor;
 
-	private NotificationDispatchEntity buildEntry(final String executingUserId) {
+	private static NotificationDispatchEntity buildEntry(final String executingUserId) {
 		return NotificationDispatchEntity.create()
 			.withId("dispatch-id")
 			.withErrandId(ERRAND_ID)
@@ -71,127 +78,278 @@ class NotificationDispatchWorkerTest {
 			.withExecutingUserId(executingUserId);
 	}
 
-	private SubscriberEntity buildSubscriber(final String identifierValue, final String... eventFilterTypes) {
-		final var filters = List.of(eventFilterTypes).stream()
-			.map(t -> EventFilterEmbeddable.create().withType(t))
-			.toList();
+	private static SubscriberEntity buildSubscriber(final String identifierValue, final List<EventFilterEmbeddable> eventFilters) {
 		return SubscriberEntity.create()
 			.withId("subscriber-id")
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue(identifierValue))
 			.withChannels(List.of(NotificationChannelEmbeddable.create()))
-			.withEventFilters(filters);
+			.withEventFilters(eventFilters);
+	}
+
+	private static SubscriptionEntity buildSubscription(final SubscriberEntity subscriber, final List<EventFilterEmbeddable> eventFilters) {
+		return SubscriptionEntity.create()
+			.withId("subscription-id")
+			.withSubscriber(subscriber)
+			.withTargetType(DbSubscriptionTargetType.ERRAND)
+			.withEventFilters(eventFilters);
+	}
+
+	private static EventFilterEmbeddable filter(final String type, final String subtype) {
+		return EventFilterEmbeddable.create().withType(type).withSubtype(subtype);
+	}
+
+	private void mockDispatchOf(final SubscriptionEntity... subscriptions) {
+		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
+		when(subscriptionRepositoryMock.findAllActiveForErrand(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), any())).thenReturn(List.of(subscriptions));
 	}
 
 	@Test
-	void processGroup_successfulSend_deletesEntries() {
+	void processGroupSendsEventsAndDeletesEntries() {
+
+		// Arrange
 		final var entry = buildEntry("other-user");
-		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
-		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		when(channelDispatcherMock.send(any(), any(), any(), any(), any(), any())).thenReturn(true);
+		final var subscriber = buildSubscriber("joe01doe", List.of(filter(EVENT_TYPE, null)));
+		mockDispatchOf(buildSubscription(subscriber, null));
 
+		// Act
 		worker.processGroup(List.of(entry));
 
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
-		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
-		verify(dispatchRepositoryMock, never()).save(any());
-	}
-
-	@Test
-	void processGroup_executingUserFiltered_entriesDeleted() {
-		final var entry = buildEntry("joe01doe");
-		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
-		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-
-		worker.processGroup(List.of(entry));
-
-		verify(channelDispatcherMock, never()).send(any(), any(), any(), any(), any(), any());
-		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
-	}
-
-	@Test
-	void processGroup_subscriberEventFilterMismatch_entriesDeleted() {
-		final var entry = buildEntry("other-user");
-		final var subscriber = buildSubscriber("joe01doe", "OTHER_TYPE");
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
-		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-
-		worker.processGroup(List.of(entry));
-
-		verify(channelDispatcherMock, never()).send(any(), any(), any(), any(), any(), any());
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(entry));
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
 	@Test
-	void processGroup_channelFails_incrementsRetryCount() {
-		final var entry = buildEntry("other-user");
-		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
-		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		when(channelDispatcherMock.send(any(), any(), any(), any(), any(), any())).thenReturn(false);
+	void processGroupSendsEveryEventTheSubscriberWantsInOneCall() {
 
+		// Arrange
+		final var created = buildEntry("other-user").withId("entry-1");
+		final var updated = buildEntry("other-user").withId("entry-2").withEventType("UPDATE");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(created, updated));
+
+		// Assert — one delivery carrying both events, not one delivery per event
+		verify(channelDispatcherMock).send(eq(ERRAND_ID), eq(ERRAND_NUMBER), eq(subscriber), eventsCaptor.capture());
+		assertThat(eventsCaptor.getValue()).containsExactly(created, updated);
+	}
+
+	@Test
+	void processGroupSkipsEventsCausedByTheSubscriberThemselves() {
+
+		// Arrange
+		final var bySelf = buildEntry("joe01doe").withId("entry-1");
+		final var byOther = buildEntry("other-user").withId("entry-2");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(bySelf, byOther));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(byOther));
+		verify(dispatchRepositoryMock).deleteAll(List.of(bySelf, byOther));
+	}
+
+	@Test
+	void processGroupWithoutAnyWantedEventSendsNothing() {
+
+		// Arrange
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", List.of(filter("OTHER_TYPE", null)));
+		mockDispatchOf(buildSubscription(subscriber, null));
+
+		// Act
 		worker.processGroup(List.of(entry));
 
+		// Assert
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
+	}
+
+	@Test
+	void processGroupWithoutSubscriptionsDeletesEntries() {
+
+		// Arrange
+		final var entry = buildEntry("other-user");
+		mockDispatchOf();
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
+	}
+
+	@Test
+	void processGroupWithoutFiltersSendsEverything() {
+
+		// Arrange
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", List.of());
+		mockDispatchOf(buildSubscription(subscriber, List.of()));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(entry));
+	}
+
+	@Test
+	void processGroupLetsSubscriptionFiltersOverrideSubscriberFilters() {
+
+		// Arrange — the subscriber-level filter would reject the event, the subscription-level one accepts it
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", List.of(filter("OTHER_TYPE", null)));
+		mockDispatchOf(buildSubscription(subscriber, List.of(filter(EVENT_TYPE, SUB_TYPE))));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(entry));
+	}
+
+	@Test
+	void processGroupMatchesSubtypeWhenFilterDeclaresOne() {
+
+		// Arrange — same event type, but the filter is narrowed to another subtype
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", List.of(filter(EVENT_TYPE, "OTHER_SUB_TYPE")));
+		mockDispatchOf(buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+	}
+
+	@Test
+	void processGroupSendsOnceToSubscriberCoveredByMultipleSubscriptions() {
+
+		// Arrange — the same subscriber reaches this errand through both a namespace and an errand subscription
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		final var namespaceSubscription = buildSubscription(subscriber, null)
+			.withId("subscription-namespace")
+			.withTargetType(DbSubscriptionTargetType.NAMESPACE);
+		mockDispatchOf(namespaceSubscription, buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(entry));
+	}
+
+	@Test
+	void processGroupUnionsFiltersAcrossSubscriptions() {
+
+		// Arrange — each subscription accepts one of the two events
+		final var created = buildEntry("other-user").withId("entry-1");
+		final var updated = buildEntry("other-user").withId("entry-2").withEventType("UPDATE");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		final var namespaceSubscription = buildSubscription(subscriber, List.of(filter("UPDATE", null)))
+			.withId("subscription-namespace")
+			.withTargetType(DbSubscriptionTargetType.NAMESPACE);
+		mockDispatchOf(namespaceSubscription, buildSubscription(subscriber, List.of(filter(EVENT_TYPE, null))));
+
+		// Act
+		worker.processGroup(List.of(created, updated));
+
+		// Assert
+		verify(channelDispatcherMock).send(eq(ERRAND_ID), eq(ERRAND_NUMBER), eq(subscriber), eventsCaptor.capture());
+		assertThat(eventsCaptor.getValue()).containsExactly(created, updated);
+	}
+
+	@Test
+	void processGroupSkipsEntriesOlderThanMaxAge() {
+
+		// Arrange
+		ReflectionTestUtils.setField(worker, "maxAge", Duration.ofDays(30));
+		final var stale = buildEntry("other-user").withId("entry-1").withCreated(now().minusDays(31));
+		final var fresh = buildEntry("other-user").withId("entry-2").withCreated(now().minusDays(29));
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(stale, fresh));
+
+		// Assert — the stale entry is never sent, but is still cleaned up with the rest of the group
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(fresh));
+		verify(dispatchRepositoryMock).deleteAll(List.of(stale, fresh));
+	}
+
+	@Test
+	void processGroupWithOnlyStaleEntriesSendsNothingAndDeletesThem() {
+
+		// Arrange
+		ReflectionTestUtils.setField(worker, "maxAge", Duration.ofDays(30));
+		final var stale = buildEntry("other-user").withCreated(now().minusDays(31));
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(stale));
+
+		// Assert
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		verify(dispatchRepositoryMock).deleteAll(List.of(stale));
+	}
+
+	@Test
+	void processGroupWithUnknownErrandSendsWithoutErrandNumber() {
+
+		// Arrange
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.empty());
+		when(subscriptionRepositoryMock.findAllActiveForErrand(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq(ERRAND_ID), any()))
+			.thenReturn(List.of(buildSubscription(subscriber, null)));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, null, subscriber, List.of(entry));
+	}
+
+	@Test
+	void processGroupPropagatesFailureAndKeepsEntries() {
+
+		// Arrange
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildSubscription(subscriber, null));
+		doThrow(new RuntimeException("boom")).when(channelDispatcherMock).send(any(), any(), any(), any());
+
+		// Act + Assert — the failure must reach the caller so the transaction rolls back and the group is retried later
+		assertThatThrownBy(() -> worker.processGroup(List.of(entry)))
+			.isInstanceOf(RuntimeException.class)
+			.hasMessage("boom");
 		verify(dispatchRepositoryMock, never()).deleteAll(any());
-		verify(dispatchRepositoryMock).save(entityCaptor.capture());
-		assertThat(entityCaptor.getValue().getRetryCount()).isEqualTo(1);
-		assertThat(entityCaptor.getValue().getNextRetryAt()).isNotNull();
-		assertThat(entityCaptor.getValue().isDeadLetter()).isFalse();
 	}
 
 	@Test
-	void processGroup_channelFailsMaxRetries_marksAsDeadLetter() {
-		final var entry = buildEntry("other-user").withRetryCount(2);
-		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
-		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		when(channelDispatcherMock.send(any(), any(), any(), any(), any(), any())).thenReturn(false);
+	void fetchProcessableAppliesTransactionBuffer() {
 
-		worker.processGroup(List.of(entry));
+		// Arrange
+		ReflectionTestUtils.setField(worker, "transactionBuffer", Duration.ofSeconds(30));
+		final var before = now().minusSeconds(30);
 
-		verify(dispatchRepositoryMock).save(entityCaptor.capture());
-		assertThat(entityCaptor.getValue().isDeadLetter()).isTrue();
-		assertThat(entityCaptor.getValue().getRetryCount()).isEqualTo(3);
-	}
+		// Act
+		worker.fetchProcessable();
 
-	@Test
-	void processGroup_noSubscribers_deletesEntries() {
-		final var entry = buildEntry("other-user");
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
-		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
-
-		worker.processGroup(List.of(entry));
-
-		verify(channelDispatcherMock, never()).send(any(), any(), any(), any(), any(), any());
-		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
-	}
-
-	@Test
-	void processGroup_groupWithMultipleEntries_differentExecutingUsers_sendsOnce() {
-		final var entryBySelf = buildEntry("joe01doe").withId("entry-1");
-		final var entryByOther = buildEntry("other-user").withId("entry-2");
-		final var subscriber = buildSubscriber("joe01doe", EVENT_TYPE);
-		when(errandsRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(ErrandEntity.create().withErrandNumber(ERRAND_NUMBER)));
-		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(subscriber));
-		when(channelDispatcherMock.send(any(), any(), any(), any(), any(), any())).thenReturn(true);
-
-		worker.processGroup(List.of(entryBySelf, entryByOther));
-
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
-		verify(dispatchRepositoryMock).deleteAll(List.of(entryBySelf, entryByOther));
-	}
-
-	@Test
-	void cleanUpDeadLetters_deletesDeadLettersOlderThanRetentionPeriod() {
-		final var before = now().minusDays(7);
-
-		worker.cleanUpDeadLetters();
-
-		final var after = now().minusDays(7);
-		verify(dispatchRepositoryMock).deleteByDeadLetterTrueAndCreatedBefore(offsetDateTimeCaptor.capture());
+		// Assert
+		final var after = now().minusSeconds(30);
+		verify(dispatchRepositoryMock).findProcessable(offsetDateTimeCaptor.capture());
 		assertThat(offsetDateTimeCaptor.getValue()).isBetween(before, after);
 	}
 }

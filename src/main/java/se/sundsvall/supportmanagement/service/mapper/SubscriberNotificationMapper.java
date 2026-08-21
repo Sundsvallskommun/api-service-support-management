@@ -1,15 +1,18 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotification;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotificationEvent;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEventEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
 import static java.time.OffsetDateTime.now;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 
 public final class SubscriberNotificationMapper {
 
@@ -27,11 +30,20 @@ public final class SubscriberNotificationMapper {
 			.withEvents(events);
 	}
 
-	public static SubscriberNotificationEventEntity toEventEntity(final String eventType, final String description, final String subType) {
+	/**
+	 * Returns a mutable list, since it is handed to a {@code @OneToMany} collection that Hibernate manages.
+	 */
+	public static List<SubscriberNotificationEventEntity> toEventEntities(final List<NotificationDispatchEntity> events) {
+		return ofNullable(events).orElseGet(List::of).stream()
+			.map(SubscriberNotificationMapper::toEventEntity)
+			.collect(toCollection(ArrayList::new));
+	}
+
+	public static SubscriberNotificationEventEntity toEventEntity(final NotificationDispatchEntity event) {
 		return SubscriberNotificationEventEntity.create()
-			.withEventType(eventType)
-			.withDescription(description)
-			.withSubType(subType);
+			.withEventType(event.getEventType())
+			.withDescription(event.getDescription())
+			.withSubType(event.getSubType());
 	}
 
 	public static SubscriberNotification toModel(final SubscriberNotificationEntity entity) {

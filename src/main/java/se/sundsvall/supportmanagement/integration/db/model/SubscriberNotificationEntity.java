@@ -11,7 +11,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -24,14 +23,13 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
+// Deliberately without a unique constraint on errand + identifier: every dispatch creates its own notification, so a
+// subscriber can hold several notifications for the same errand.
 @Table(name = "subscriber_notification",
 	indexes = {
 		@Index(name = "idx_sub_notif_identifier", columnList = "municipality_id, namespace, identifier_type, identifier_value"),
 		@Index(name = "idx_sub_notif_errand", columnList = "errand_id")
-	},
-	uniqueConstraints = @UniqueConstraint(name = "uq_sub_notif_errand_identifier", columnNames = {
-		"municipality_id", "namespace", "errand_id", "identifier_type", "identifier_value"
-	}))
+	})
 public class SubscriberNotificationEntity {
 
 	@Id

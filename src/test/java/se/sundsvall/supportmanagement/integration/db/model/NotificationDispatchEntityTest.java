@@ -46,9 +46,6 @@ class NotificationDispatchEntityTest {
 		final var description = "Bilaga har skapats";
 		final var subType = "ATTACHMENT";
 		final var executingUserId = "joe01doe";
-		final var retryCount = 2;
-		final var nextRetryAt = now().plusMinutes(4);
-		final var deadLetter = true;
 
 		final var bean = NotificationDispatchEntity.create()
 			.withEventId(eventId)
@@ -59,10 +56,7 @@ class NotificationDispatchEntityTest {
 			.withEventType(eventType)
 			.withDescription(description)
 			.withSubType(subType)
-			.withExecutingUserId(executingUserId)
-			.withRetryCount(retryCount)
-			.withNextRetryAt(nextRetryAt)
-			.withDeadLetter(deadLetter);
+			.withExecutingUserId(executingUserId);
 
 		assertThat(bean.getEventId()).isEqualTo(eventId);
 		assertThat(bean.getRequestGroupId()).isEqualTo(requestGroupId);
@@ -73,15 +67,12 @@ class NotificationDispatchEntityTest {
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getSubType()).isEqualTo(subType);
 		assertThat(bean.getExecutingUserId()).isEqualTo(executingUserId);
-		assertThat(bean.getRetryCount()).isEqualTo(retryCount);
-		assertThat(bean.getNextRetryAt()).isEqualTo(nextRetryAt);
-		assertThat(bean.isDeadLetter()).isEqualTo(deadLetter);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NotificationDispatchEntity.create()).hasAllNullFieldsOrPropertiesExcept("retryCount", "deadLetter");
-		assertThat(new NotificationDispatchEntity()).hasAllNullFieldsOrPropertiesExcept("retryCount", "deadLetter");
+		assertThat(NotificationDispatchEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new NotificationDispatchEntity()).hasAllNullFieldsOrProperties();
 	}
 
 	@Test

@@ -11,25 +11,20 @@ import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchE
 @CircuitBreaker(name = "notificationDispatchRepository")
 public interface NotificationDispatchRepository extends JpaRepository<NotificationDispatchEntity, String> {
 
+	/**
+	 * Finds all entries except those belonging to a request group that may still be growing: a group is held back until
+	 * nothing has been added to it since {@code transactionBufferCutoff}. An entry without a request group has no
+	 * siblings to wait for and is returned immediately.
+	 */
 	@Query("""
 		SELECT d FROM NotificationDispatchEntity d
-		WHERE d.deadLetter = false
-		AND (d.nextRetryAt IS NULL OR d.nextRetryAt <= :now)
-		AND (
-		    (d.requestGroupId IS NULL AND d.created < :cutoff)
-		    OR
-		    (d.requestGroupId IS NOT NULL AND d.requestGroupId IN (
-		        SELECT d2.requestGroupId FROM NotificationDispatchEntity d2
-		        WHERE d2.deadLetter = false
-		        GROUP BY d2.requestGroupId
-		        HAVING MAX(d2.created) < :cutoff
-		    ))
+		WHERE d.requestGroupId IS NULL
+		OR d.requestGroupId IN (
+		    SELECT d2.requestGroupId FROM NotificationDispatchEntity d2
+		    GROUP BY d2.requestGroupId
+		    HAVING MAX(d2.created) < :transactionBufferCutoff
 		)
 		ORDER BY d.errandId, d.requestGroupId
 		""")
-	List<NotificationDispatchEntity> findProcessable(
-		@Param("cutoff") OffsetDateTime cutoff,
-		@Param("now") OffsetDateTime now);
-
-	void deleteByDeadLetterTrueAndCreatedBefore(OffsetDateTime cutoff);
+	List<NotificationDispatchEntity> findProcessable(@Param("transactionBufferCutoff") OffsetDateTime transactionBufferCutoff);
 }
