@@ -1451,16 +1451,54 @@ följer:
 2. **Driftsätt inte modellen mot skarpa ärenden innan dess.** En avslutad process avslutar ärendets
    processliv (§7.4), så ett ärende som fått springa igenom skelettet kan aldrig få en riktig process.
 
-### 9.2 Sex krav på hur processerna modelleras
+### 9.2 Sju krav på hur processerna modelleras
 
 Det här är inte råd. Håller inte modellerna sig till dem faller delar av designen.
 
 1. **Ett väntläge måste läsa om ärendet när det går in i väntan** och avgöra om det den väntar på redan har hänt. En väckning som sväljs som `MismatchingMessageCorrelation` kan mycket väl vara äkta — den kom bara medan processen råkade befinna sig mellan två väntlägen. Att det ändå är ofarligt vilar helt på den här punkten. **Tydligast blir det med beslutet** (§7.5): skrivs det medan processen arbetar och väntläget inte läser om, står ärendet stilla för alltid med ett fattat beslut i databasen.
 2. **Manuella grindar modelleras som namngivna väntlägen** (§5.9). Ska handläggaren avgöra när processen går vidare räcker det inte att villkoret är uppfyllt — väntläget ska lyssna på ett *namngivet* meddelande, till exempel `granskning-godkand`. Finns flera vägar framåt används en event-based gateway med ett catch event per alternativ, så att handläggarens val också blir processens vägval. Sätt en tidsgräns på grindar som kan glömmas bort: ett väntläge som ingen någonsin klickar på står kvar för alltid.
-3. **Inga parallella grenar som ändrar ärendet** (§6.4).
-4. **Inga processvariabler för att hålla reda på vad som redan gjorts eller för att signalera.** Skälet står i den kod som nu tas bort: *"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."* Behåll resonemanget även när metoden är borta — det är det första någon återinför nästa gång ett dubblettproblem dyker upp.
-5. **Processens slut måste rapporteras.** SM får bara veta att en process är klar genom en rapport, och rapporter kommer från arbetssteg. Slutar en gren utan att ett arbetssteg kört sist står SM:s rad kvar som `RUNNING` för alltid medan instansen är borta ur Operaton — och då kan ärendet varken gå vidare eller få en ny process. Antingen är sista steget före varje slutevent ett arbetssteg som rapporterar `completed()`, eller så hängs en execution listener på sluteventet som gör det. P6 stämmer av det som ändå glider isär.
-6. **Inga call activities eller delade subprocesser** tills vidare. Kommande processer kan se helt annorlunda ut, och då är det lättare att ha hållit dem isär.
+3. **Inga user tasks.** Det är lätt att tro att ett väntläge på en människa ska vara en user task — det är BPMN-lärobokens svar. Här är det fel: handläggaren arbetar i SM och loggar aldrig in i Operaton. En user task skulle skapa en uppgiftslista som ingen tittar i, och grinden skulle aldrig öppnas. Manuella grindar är meddelandehändelser, ingenting annat.
+4. **Inga parallella grenar som ändrar ärendet** (§6.4).
+5. **Inga processvariabler för att hålla reda på vad som redan gjorts eller för att signalera.** Skälet står i den kod som nu tas bort: *"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."* Behåll resonemanget även när metoden är borta — det är det första någon återinför nästa gång ett dubblettproblem dyker upp.
+6. **Processens slut måste rapporteras.** SM får bara veta att en process är klar genom en rapport, och rapporter kommer från arbetssteg. Slutar en gren utan att ett arbetssteg kört sist står SM:s rad kvar som `RUNNING` för alltid medan instansen är borta ur Operaton — och då kan ärendet varken gå vidare eller få en ny process. Antingen är sista steget före varje slutevent ett arbetssteg som rapporterar `completed()`, eller så hängs en execution listener på sluteventet som gör det. P6 stämmer av det som ändå glider isär.
+7. **Inga call activities eller delade subprocesser** tills vidare. Kommande processer kan se helt annorlunda ut, och då är det lättare att ha hållit dem isär.
+
+#### Så ser en fas ut som uppfyller kraven
+
+Kraven ovan hänger ihop, och det är lättare att se hur i en bild än i löptext. Varje fas följer samma form:
+
+```
+start_<fas>
+    |
+    v
+[arbetssteg]         external task med topic. pw kor det och rapporterar RUNNING,
+    |                aktiviteter och till sist vad steget kom fram till
+    v
+[kontroll]           external task som LASER OM arendet och avgor om fasen ar klar
+    |
+    v
+ <gateway: klar?> -- ja --> end_<fas>
+    |
+   nej
+    |
+    v
+(vantlage)           manuell grind:  message catch "granskning-godkand"
+    |                automatisk:     message catch "errandUpdated"
+    |                + boundary timer for paminnelse eller eskalering
+    +--> tillbaka till [kontroll]
+```
+
+Det viktiga är **slingan tillbaka från väntläget till kontrollsteget**. Varje väckning leder till en
+omläsning av ärendet, aldrig till ett antagande om att villkoret nu är uppfyllt — det är krav 1, ritat.
+Kommer väckningen för tidigt, eller kommer den två gånger, gör kontrollen samma sak som förra gången och
+processen står kvar där den ska.
+
+Formen bär också krav 2 och 3: väntläget är en meddelandehändelse med ett namn, inte en user task. Är
+namnet ett signalnamn som handläggaren kan skicka (§5.9) är grinden manuell; är det `errandUpdated` går
+fasen vidare av sig själv så snart kontrollen säger att den är klar.
+
+Krav 6 gäller processens sista fas: steget före `end_process` ska vara ett arbetssteg som rapporterar
+`completed()`, annars får SM aldrig veta att processen är slut.
 
 ### 9.3 Starta, fortsätta och radera
 
@@ -1766,7 +1804,7 @@ Schemalagd kontroll som skriver `FAILED` + `error` till SM när Operaton rest en
 Samma kontroll stämmer av instanser som **försvunnit ur Operatons runtime utan att någon rapporterat ett
 slut**: står SM:s rad kvar som levande medan varken runtime eller historik visar en pågående instans, ska
 den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. Utan den avstämningen kan
-ärendet varken gå vidare eller få en ny process (§9.2 punkt 5).
+ärendet varken gå vidare eller få en ny process (§9.2 punkt 6).
 
 ---
 
