@@ -1423,7 +1423,35 @@ Alltså `alkt-ansokan.bpmn` och `alkt-tillsyn.bpmn` var för sig. `TenantAwareAu
 
 Processens `id` i filen måste stämma med `Constants.PROCESS_KEY_*`. Och tänk på att **`ProcessWithoutDeviationIT.setup` väntar på `getDeployments(...).size() == 1`** — det villkoret måste ändras när den andra filen läggs till.
 
-### 9.2 Fem krav på hur processerna modelleras
+**Modellen är i dag ett skelett, och det får konsekvenser.** `alkt-ansokan.bpmn` innehåller sex tomma
+subprocesser på rad — Registrera, Granska, Utreda, Beslut, Uppföljning, Avsluta — med bara ett start- och
+ett slutevent i varje. Inga arbetssteg, inga väntlägen, inga meddelanden, inga gateways. Kontrollerat i
+filen, inte antaget.
+
+Startas den modellen som den ser ut nu händer följande:
+
+```
+pw startar instansen  ->  POST .../processes {RUNNING}  ->  SM: raden lever
+Operaton kor rakt igenom alla sex tomma subprocesser  ->  instansen ar slut pa millisekunder
+ingen external task finns  ->  ingen rapporterar COMPLETED  ->  SM star kvar pa RUNNING
+
+nasta handelse for arendet:
+  pw: findProcessInstances -> tom (instansen ar borta ur runtime)
+  pw: har SM en COMPLETED instans? -> nej, SM sager RUNNING
+  pw: startar en NY instans -> POST -> 409 (raden lever redan) -> pw avbryter den
+  ... och sa for varje handelse, i all evighet
+```
+
+Ärendet fastnar alltså i ett läge där ingenting går framåt och ingenting går sönder synligt. Två saker
+följer:
+
+1. **Ett minimum av modellarbete hör ihop med P2.** Varje fas behöver minst ett väntläge som håller
+   processen vid liv tills det fasen väntar på har hänt — annars finns det heller ingenting för
+   `correlateMessage` att träffa, och hela eventkedjan saknar mottagare.
+2. **Driftsätt inte modellen mot skarpa ärenden innan dess.** En avslutad process avslutar ärendets
+   processliv (§7.4), så ett ärende som fått springa igenom skelettet kan aldrig få en riktig process.
+
+### 9.2 Sex krav på hur processerna modelleras
 
 Det här är inte råd. Håller inte modellerna sig till dem faller delar av designen.
 
@@ -1431,7 +1459,8 @@ Det här är inte råd. Håller inte modellerna sig till dem faller delar av des
 2. **Manuella grindar modelleras som namngivna väntlägen** (§5.9). Ska handläggaren avgöra när processen går vidare räcker det inte att villkoret är uppfyllt — väntläget ska lyssna på ett *namngivet* meddelande, till exempel `granskning-godkand`. Finns flera vägar framåt används en event-based gateway med ett catch event per alternativ, så att handläggarens val också blir processens vägval. Sätt en tidsgräns på grindar som kan glömmas bort: ett väntläge som ingen någonsin klickar på står kvar för alltid.
 3. **Inga parallella grenar som ändrar ärendet** (§6.4).
 4. **Inga processvariabler för att hålla reda på vad som redan gjorts eller för att signalera.** Skälet står i den kod som nu tas bort: *"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."* Behåll resonemanget även när metoden är borta — det är det första någon återinför nästa gång ett dubblettproblem dyker upp.
-5. **Inga call activities eller delade subprocesser** tills vidare. Kommande processer kan se helt annorlunda ut, och då är det lättare att ha hållit dem isär.
+5. **Processens slut måste rapporteras.** SM får bara veta att en process är klar genom en rapport, och rapporter kommer från arbetssteg. Slutar en gren utan att ett arbetssteg kört sist står SM:s rad kvar som `RUNNING` för alltid medan instansen är borta ur Operaton — och då kan ärendet varken gå vidare eller få en ny process. Antingen är sista steget före varje slutevent ett arbetssteg som rapporterar `completed()`, eller så hängs en execution listener på sluteventet som gör det. P6 stämmer av det som ändå glider isär.
+6. **Inga call activities eller delade subprocesser** tills vidare. Kommande processer kan se helt annorlunda ut, och då är det lättare att ha hållit dem isär.
 
 ### 9.3 Starta, fortsätta och radera
 
@@ -1734,6 +1763,11 @@ Utan detta test är loop-skyddet en hypotes.
 
 Schemalagd kontroll som skriver `FAILED` + `error` till SM när Operaton rest en incident.
 
+Samma kontroll stämmer av instanser som **försvunnit ur Operatons runtime utan att någon rapporterat ett
+slut**: står SM:s rad kvar som levande medan varken runtime eller historik visar en pågående instans, ska
+den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. Utan den avstämningen kan
+ärendet varken gå vidare eller få en ny process (§9.2 punkt 5).
+
 ---
 
 ## 11. Vad som kan gå fel, och vad vi gör åt det
@@ -1752,6 +1786,8 @@ Schemalagd kontroll som skriver `FAILED` + `error` till SM när Operaton rest en
 | **`DECISION` saknas i `PROCESS_TRIGGER`** | Processen vaknar aldrig av beslutet och står i `WAITING` för alltid. Validering av triggervärden och ett IT-fall i T9 |
 | **Personuppgifter i beslutets motivering** | `justification` innehåller nästan alltid personuppgifter. Får aldrig loggas (§8.1), aldrig kopieras till aktivitetsloggen och aldrig läggas i outboxens nyttolast — den bär medvetet ingen ärendedata alls (§5.4). Beslutet kaskaderas bort med ärendet |
 | **Automatiskt beslut felstämplat som manuellt, eller tvärtom** | `method` valideras mot identiteten vid systemgränsen och räknas i `decision.written` (§8.1). Utan bådadera går frågan "vilka beslut fattades av en maskin?" inte att svara på i efterhand — och det är en fråga som kommer att ställas |
+| **Instans som försvinner utan slutrapport** | SM står kvar på `RUNNING` medan instansen är borta ur Operaton, och ärendet kan varken gå vidare eller få en ny process. Modelleringskravet i §9.2 punkt 5 ska hindra det; P6:s schemalagda kontroll stämmer av det som ändå glider isär |
+| **Skelettmodellen driftsatt för tidigt** | Sex tomma subprocesser springer igenom på millisekunder. Startas den mot ett skarpt ärende är ärendets processliv förbrukat (§9.1). Driftsätt inte förrän väntlägena finns |
 | **Manuell grind som ingen klickar på** | Processen står i `WAITING` för alltid. Modelleringsregeln i §9.2 punkt 2 kräver en tidsgräns på grindar som kan glömmas bort, och `process.signal_sent` visar vilka grindar som faktiskt används |
 | **Knapp som inte längre gäller** | Handläggaren ser en signal processen hunnit lämna. Skrivningen ger `409` och räknas i `process.signal_rejected` — gränssnittet ska läsa om ärendet, inte försöka igen |
 | **Beslut på ärende helt utan process** | Tillåtet och olåst: det finns ingen `COMPLETED` process att låsa mot. Spårbarheten bärs då av revisionen, inte av spärren (§7.5) |
