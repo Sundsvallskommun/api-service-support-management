@@ -304,6 +304,41 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table measure (
+        created datetime(6),
+        executed datetime(6),
+        modified datetime(6),
+        planned_complete datetime(6),
+        planned_start datetime(6),
+        description varchar(1000),
+        rework_description varchar(1000),
+        accept_motivation varchar(255),
+        added_by_role varchar(255),
+        added_by_user varchar(255),
+        errand_id varchar(255) not null,
+        goal varchar(255),
+        id varchar(255) not null,
+        responsible_user varchar(255),
+        rework_goal varchar(255),
+        type varchar(255),
+        accept enum ('FALSE','REWORK','TRUE'),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table measure_type (
+        deprecated bit not null,
+        sort_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        measure_group varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table message_exchange_integration_config (
         created datetime(6),
         id bigint not null auto_increment,
@@ -353,6 +388,14 @@
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
         primary key (id)
+    ) engine=InnoDB;
+
+    create table namespace_config_access_grant (
+        namespace_config_id bigint not null,
+        access_level varchar(255),
+        `scope` varchar(255) not null,
+        `type` varchar(255) not null check ((`type` in ('FIELD','RESOURCE'))),
+        `value` text not null
     ) engine=InnoDB;
 
     create table namespace_config_value (
@@ -638,532 +681,557 @@
         family_id varchar(255)
     ) engine=InnoDB;
 
-    create index idx_action_config_municipality_id_namespace
+    create index idx_action_config_municipality_id_namespace 
        on action_config (municipality_id, namespace);
 
-    create index idx_attachment_file_name
+    create index idx_attachment_file_name 
        on attachment (file_name);
 
-    create index idx_attachment_municipality_id
+    create index idx_attachment_municipality_id 
        on attachment (municipality_id);
 
-    create index idx_attachment_namespace
+    create index idx_attachment_namespace 
        on attachment (namespace);
 
-    alter table if exists attachment
+    alter table if exists attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on category (namespace, municipality_id);
 
-    alter table if exists category
+    alter table if exists category 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_errand_number
+    create index idx_errand_number 
        on communication (errand_number);
 
-    create index idx_communication_namespace
+    create index idx_communication_namespace 
        on communication (namespace);
 
-    create index idx_communication_municipality_id
+    create index idx_communication_municipality_id 
        on communication (municipality_id);
 
-    create index idx_communication_attachment_municipality_id
+    create index idx_communication_attachment_municipality_id 
        on communication_attachment (municipality_id);
 
-    create index idx_communication_attachment_namespace
+    create index idx_communication_attachment_namespace 
        on communication_attachment (namespace);
 
-    alter table if exists communication_attachment
+    alter table if exists communication_attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
-    create index idx_contact_channel_type_value
+    create index idx_contact_channel_type_value 
        on contact_channel (type, value);
 
-    create index idx_contact_channel_value
+    create index idx_contact_channel_value 
        on contact_channel (value);
 
-    create index idx_municipality_id_namespace_errand_id
+    create index idx_municipality_id_namespace_errand_id 
        on conversation (municipality_id, namespace, errand_id);
 
-    create index idx_message_exchange_id
+    create index idx_message_exchange_id 
        on conversation (message_exchange_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on email_worker_config (namespace, municipality_id);
 
-    alter table if exists email_worker_config
+    alter table if exists email_worker_config 
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
-    create index idx_errand_id
+    create index idx_errand_id 
        on errand (id);
 
-    create index idx_errand_namespace
+    create index idx_errand_namespace 
        on errand (namespace);
 
-    create index idx_errand_municipality_id
+    create index idx_errand_municipality_id 
        on errand (municipality_id);
 
-    create index idx_errand_municipality_id_namespace_status
+    create index idx_errand_municipality_id_namespace_status 
        on errand (municipality_id, namespace, status);
 
-    create index idx_errand_municipality_id_namespace_category
+    create index idx_errand_municipality_id_namespace_category 
        on errand (municipality_id, namespace, category);
 
-    create index idx_errand_municipality_id_namespace_type
+    create index idx_errand_municipality_id_namespace_type 
        on errand (municipality_id, namespace, type);
 
-    create index idx_errand_municipality_id_namespace_assigned_user_id
+    create index idx_errand_municipality_id_namespace_assigned_user_id 
        on errand (municipality_id, namespace, assigned_user_id);
 
-    create index idx_errand_municipality_id_namespace_reporter_user_id
+    create index idx_errand_municipality_id_namespace_reporter_user_id 
        on errand (municipality_id, namespace, reporter_user_id);
 
-    create index idx_errand_errand_number
+    create index idx_errand_errand_number 
        on errand (errand_number);
 
-    create index idx_errand_municipality_id_namespace_status_created
+    create index idx_errand_municipality_id_namespace_status_created 
        on errand (municipality_id, namespace, status, created);
 
-    create index idx_errand_suspended_to
+    create index idx_errand_suspended_to 
        on errand (suspended_to);
 
-    create index idx_errand_channel
+    create index idx_errand_channel 
        on errand (channel);
 
-    create index idx_errand_municipality_id_namespace_status_touched
+    create index idx_errand_municipality_id_namespace_status_touched 
        on errand (municipality_id, namespace, status, touched);
 
-    create index idx_errand_municipality_id_namespace_status_modified
+    create index idx_errand_municipality_id_namespace_status_modified 
        on errand (municipality_id, namespace, status, modified);
 
-    create index idx_errand_municipality_id_namespace_created
+    create index idx_errand_municipality_id_namespace_created 
        on errand (municipality_id, namespace, created);
 
-    create index idx_errand_municipality_id_namespace_touched
+    create index idx_errand_municipality_id_namespace_touched 
        on errand (municipality_id, namespace, touched);
 
-    alter table if exists errand
+    alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
-    create index idx_errand_access_labels_errand_id_metadata_label_id
+    create index idx_errand_access_labels_errand_id_metadata_label_id 
        on errand_access_labels (errand_id, metadata_label_id);
 
-    create index idx_errand_access_labels_metadata_label_id_errand_id
+    create index idx_errand_access_labels_metadata_label_id_errand_id 
        on errand_access_labels (metadata_label_id, errand_id);
 
-    create index idx_errand_access_labels_errand_id
+    create index idx_errand_access_labels_errand_id 
        on errand_access_labels (errand_id);
 
-    create index idx_errand_access_labels_metadata_label_id
+    create index idx_errand_access_labels_metadata_label_id 
        on errand_access_labels (metadata_label_id);
 
-    create index idx_errand_action_errand_id
+    create index idx_errand_action_errand_id 
        on errand_action (errand_id);
 
-    create index idx_errand_action_execute_after
+    create index idx_errand_action_execute_after 
        on errand_action (execute_after);
 
-    create index idx_errand_id_metadata_label_id
+    create index idx_errand_id_metadata_label_id 
        on errand_labels (errand_id, metadata_label_id);
 
-    create index idx_metadata_label_id_errand_id
+    create index idx_metadata_label_id_errand_id 
        on errand_labels (metadata_label_id, errand_id);
 
-    create index idx_errand_id
+    create index idx_errand_id 
        on errand_labels (errand_id);
 
-    create index idx_metadata_label_id
+    create index idx_metadata_label_id 
        on errand_labels (metadata_label_id);
 
-    create index idx_errand_number_sequence_namespace_municipality_id
+    create index idx_errand_number_sequence_namespace_municipality_id 
        on errand_number_sequence (namespace, municipality_id);
 
-    create index idx_errand_phase_errand_id
+    create index idx_errand_phase_errand_id 
        on errand_phase (errand_id);
 
-    create index idx_errand_phase_phase_id
+    create index idx_errand_phase_phase_id 
        on errand_phase (phase_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);
 
-    alter table if exists external_id_type
+    alter table if exists external_id_type 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_external_tag_errand_id
+    create index idx_external_tag_errand_id 
        on external_tag (errand_id);
 
-    create index idx_external_tag_key
+    create index idx_external_tag_key 
        on external_tag (`key`);
 
-    create index idx_external_tag_value
+    create index idx_external_tag_value 
        on external_tag (`value`);
 
-    alter table if exists external_tag
+    alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    alter table if exists handover_idempotency
+    alter table if exists handover_idempotency 
        add constraint uq_handover_source_target unique (source_errand_id, target_namespace, target_municipality_id);
 
-    create index idx_json_parameter_errand_id
+    create index idx_json_parameter_errand_id 
        on json_parameter (errand_id);
 
-    create index idx_json_parameter_key
+    create index idx_json_parameter_key 
        on json_parameter (parameter_key);
 
-    alter table if exists json_parameter
+    alter table if exists json_parameter 
        add constraint uq_json_parameter_errand_id_key unique (errand_id, parameter_key);
 
-    create index idx_mex_integration_config_namespace_municipality_id
+    create index idx_measure_errand_id 
+       on measure (errand_id);
+
+    create index idx_measure_type_namespace_municipality_id 
+       on measure_type (namespace, municipality_id);
+
+    alter table if exists measure_type 
+       add constraint uq_measure_type_namespace_municipality_id_name unique (namespace, municipality_id, name);
+
+    create index idx_mex_integration_config_namespace_municipality_id 
        on message_exchange_integration_config (namespace, municipality_id);
 
-    alter table if exists message_exchange_integration_config
+    alter table if exists message_exchange_integration_config 
        add constraint uq_mex_integration_config_namespace_municipality_id unique (namespace, municipality_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on metadata_label (namespace, municipality_id);
 
-    create index idx_resource_path
+    create index idx_resource_path 
        on metadata_label (resource_path);
 
-    alter table if exists metadata_label
+    alter table if exists metadata_label 
        add constraint uq_namespace_municipality_id_resource_path unique (namespace, municipality_id, resource_path);
 
-    create index idx_metadata_label_attribute_label_id_key
+    create index idx_metadata_label_attribute_label_id_key 
        on metadata_label_attribute (metadata_label_id, `key`);
 
-    alter table if exists metadata_label_attribute
+    alter table if exists metadata_label_attribute 
        add constraint uk_metadata_label_attribute_label_id_key unique (metadata_label_id, `key`);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on namespace_config (namespace, municipality_id);
 
-    create index idx_municipality_id
+    create index idx_municipality_id 
        on namespace_config (municipality_id);
 
-    alter table if exists namespace_config
+    alter table if exists namespace_config 
        add constraint uq_namespace_municipality_id unique (namespace, municipality_id);
 
-    create index idx_namespace_config_value_namespace_config_id_key
+    create index idx_namespace_config_access_grant_namespace_config_id_scope 
+       on namespace_config_access_grant (namespace_config_id, `scope`);
+
+    alter table if exists namespace_config_access_grant 
+       add constraint uk_namespace_config_id_scope_type_value unique (namespace_config_id, `scope`, `type`, `value`);
+
+    create index idx_namespace_config_value_namespace_config_id_key 
        on namespace_config_value (namespace_config_id, `key`);
 
-    alter table if exists namespace_config_value
+    alter table if exists namespace_config_value 
        add constraint uk_namespace_config_id_key_value unique (namespace_config_id, `key`, `value`);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on notification (namespace, municipality_id);
 
-    create index idx_notification_municipality_id_namespace_owner_id
+    create index idx_notification_municipality_id_namespace_owner_id 
        on notification (municipality_id, namespace, owner_id);
 
-    create index idx_dispatch_errand_id
+    create index idx_dispatch_errand_id 
        on notification_dispatch (errand_id);
 
-    create index idx_phase_municipality_id_namespace
+    create index idx_phase_municipality_id_namespace 
        on phase (municipality_id, namespace);
 
-    alter table if exists phase
+    alter table if exists phase 
        add constraint uq_phase_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_phase_allowed_status_phase_id
+    create index idx_phase_allowed_status_phase_id 
        on phase_allowed_status (phase_id);
 
-    create index idx_phase_transition_phase_id
+    create index idx_phase_transition_phase_id 
        on phase_transition (phase_id);
 
-    create index revision_entity_id_index
+    create index revision_entity_id_index 
        on revision (entity_id);
 
-    create index revision_entity_type_index
+    create index revision_entity_type_index 
        on revision (entity_type);
 
-    create index revision_municipality_id_index
+    create index revision_municipality_id_index 
        on revision (municipality_id);
 
-    create index revision_namespace_index
+    create index revision_namespace_index 
        on revision (namespace);
 
-    alter table if exists revision
+    alter table if exists revision 
        add constraint uq_entity_id_version unique (entity_id, version);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on role (namespace, municipality_id);
 
-    alter table if exists role
+    alter table if exists role 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_stakeholder_external_id_role_errand_id
+    create index idx_stakeholder_external_id_role_errand_id 
        on stakeholder (external_id, `role`, errand_id);
 
-    create index idx_namespace_municipality_id
+    create index idx_namespace_municipality_id 
        on status (namespace, municipality_id);
 
-    alter table if exists status
+    alter table if exists status 
        add constraint uq_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
-    create index idx_subscriber_municipality_id_namespace
+    create index idx_subscriber_municipality_id_namespace 
        on subscriber (municipality_id, namespace);
 
-    create index idx_subscriber_municipality_id_namespace_identifier
+    create index idx_subscriber_municipality_id_namespace_identifier 
        on subscriber (municipality_id, namespace, identifier_type, identifier_value);
 
-    alter table if exists subscriber
+    alter table if exists subscriber 
        add constraint uq_subscriber_municipality_namespace_identifier_name unique (municipality_id, namespace, identifier_type, identifier_value, name);
 
-    create index idx_sub_notif_identifier
+    create index idx_sub_notif_identifier 
        on subscriber_notification (municipality_id, namespace, identifier_type, identifier_value);
 
-    create index idx_sub_notif_errand
+    create index idx_sub_notif_errand 
        on subscriber_notification (errand_id);
 
-    create index idx_subscription_errand_id
+    create index idx_subscription_errand_id 
        on subscription (errand_id);
 
-    create index idx_subscription_subscriber_target
+    create index idx_subscription_subscriber_target 
        on subscription (subscriber_id, target_type, errand_id);
 
-    alter table if exists `type`
+    alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);
 
-    create index idx_namespace_municipality_id_type
+    create index idx_namespace_municipality_id_type 
        on validation (namespace, municipality_id, type);
 
-    alter table if exists validation
+    alter table if exists validation 
        add constraint uq_namespace_municipality_id_type unique (namespace, municipality_id, type);
 
-    alter table if exists web_message_collect
+    alter table if exists web_message_collect 
        add constraint uq_namespace_municipality_id_instance_family_id unique (namespace, municipality_id, instance);
 
-    alter table if exists action_config_condition
-       add constraint fk_action_config_condition_action_config_id
-       foreign key (action_config_id)
+    alter table if exists action_config_condition 
+       add constraint fk_action_config_condition_action_config_id 
+       foreign key (action_config_id) 
        references action_config (id);
 
-    alter table if exists action_config_condition_values
-       add constraint fk_action_config_condition_values_condition_id
-       foreign key (action_config_condition_id)
+    alter table if exists action_config_condition_values 
+       add constraint fk_action_config_condition_values_condition_id 
+       foreign key (action_config_condition_id) 
        references action_config_condition (id);
 
-    alter table if exists action_config_parameter
-       add constraint fk_action_config_parameter_action_config_id
-       foreign key (action_config_id)
+    alter table if exists action_config_parameter 
+       add constraint fk_action_config_parameter_action_config_id 
+       foreign key (action_config_id) 
        references action_config (id);
 
-    alter table if exists action_config_parameter_values
-       add constraint fk_action_config_parameter_values_parameter_id
-       foreign key (action_config_parameter_id)
+    alter table if exists action_config_parameter_values 
+       add constraint fk_action_config_parameter_values_parameter_id 
+       foreign key (action_config_parameter_id) 
        references action_config_parameter (id);
 
-    alter table if exists attachment
-       add constraint fk_attachment_data_attachment
-       foreign key (attachment_data_id)
+    alter table if exists attachment 
+       add constraint fk_attachment_data_attachment 
+       foreign key (attachment_data_id) 
        references attachment_data (id);
 
-    alter table if exists attachment
-       add constraint fk_errand_attachment_errand_id
-       foreign key (errand_id)
+    alter table if exists attachment 
+       add constraint fk_errand_attachment_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists communication_attachment
-       add constraint fk_communication_attachment_attachment_data
-       foreign key (attachment_data_id)
+    alter table if exists communication_attachment 
+       add constraint fk_communication_attachment_attachment_data 
+       foreign key (attachment_data_id) 
        references attachment_data (id);
 
-    alter table if exists communication_attachment
-       add constraint fk_communication_attachment_communication_id
-       foreign key (communication_id)
+    alter table if exists communication_attachment 
+       add constraint fk_communication_attachment_communication_id 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_cc_recipients
-       add constraint fk_communication_cc_recipients_communication_id
-       foreign key (communication_id)
+    alter table if exists communication_cc_recipients 
+       add constraint fk_communication_cc_recipients_communication_id 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_email_header
-       add constraint fk_email_header_email_id
-       foreign key (communication_id)
+    alter table if exists communication_email_header 
+       add constraint fk_email_header_email_id 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_email_header_value
-       add constraint fk_header_value_header_id
-       foreign key (header_id)
+    alter table if exists communication_email_header_value 
+       add constraint fk_header_value_header_id 
+       foreign key (header_id) 
        references communication_email_header (id);
 
-    alter table if exists communication_errand_attachment
-       add constraint FKhedy3oimyh7w729ih0ng5etop
-       foreign key (errand_attachment_id)
+    alter table if exists communication_errand_attachment 
+       add constraint FKhedy3oimyh7w729ih0ng5etop 
+       foreign key (errand_attachment_id) 
        references attachment (id);
 
-    alter table if exists communication_errand_attachment
-       add constraint FKl9pe6hofx8h94egfys403g7n8
-       foreign key (communication_id)
+    alter table if exists communication_errand_attachment 
+       add constraint FKl9pe6hofx8h94egfys403g7n8 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists communication_recipients
-       add constraint fk_communication_recipients_message_id
-       foreign key (communication_id)
+    alter table if exists communication_recipients 
+       add constraint fk_communication_recipients_message_id 
+       foreign key (communication_id) 
        references communication (id);
 
-    alter table if exists contact_channel
-       add constraint fk_stakeholder_contact_channel_stakeholder_id
-       foreign key (stakeholder_id)
+    alter table if exists contact_channel 
+       add constraint fk_stakeholder_contact_channel_stakeholder_id 
+       foreign key (stakeholder_id) 
        references stakeholder (id);
 
-    alter table if exists conversation_relation_id
-       add constraint fk_conversation_relation_conversation_id
-       foreign key (conversation_id)
+    alter table if exists conversation_relation_id 
+       add constraint fk_conversation_relation_conversation_id 
+       foreign key (conversation_id) 
        references conversation (id);
 
-    alter table if exists errand
-       add constraint fk_errand_contact_reason_id
-       foreign key (contact_reason_id)
+    alter table if exists errand 
+       add constraint fk_errand_contact_reason_id 
+       foreign key (contact_reason_id) 
        references contact_reason (id);
 
-    alter table if exists errand_access_labels
-       add constraint fk_errand_access_labels_errand_id
-       foreign key (errand_id)
+    alter table if exists errand_access_labels 
+       add constraint fk_errand_access_labels_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists errand_action
-       add constraint fk_errand_action_action_config_id
-       foreign key (action_config_id)
+    alter table if exists errand_action 
+       add constraint fk_errand_action_action_config_id 
+       foreign key (action_config_id) 
        references action_config (id);
 
-    alter table if exists errand_action
-       add constraint fk_errand_action_errand_id
-       foreign key (errand_id)
-       references errand (id)
+    alter table if exists errand_action 
+       add constraint fk_errand_action_errand_id 
+       foreign key (errand_id) 
+       references errand (id) 
        on delete cascade;
 
-    alter table if exists errand_labels
-       add constraint fk_errand_labels_metadata_label_id
-       foreign key (metadata_label_id)
+    alter table if exists errand_labels 
+       add constraint fk_errand_labels_metadata_label_id 
+       foreign key (metadata_label_id) 
        references metadata_label (id);
 
-    alter table if exists errand_labels
-       add constraint fk_errand_labels_errand_id
-       foreign key (errand_id)
+    alter table if exists errand_labels 
+       add constraint fk_errand_labels_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists errand_phase
-       add constraint fk_errand_phase_errand_id
-       foreign key (errand_id)
+    alter table if exists errand_phase 
+       add constraint fk_errand_phase_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists errand_phase
-       add constraint fk_errand_phase_phase_id
-       foreign key (phase_id)
+    alter table if exists errand_phase 
+       add constraint fk_errand_phase_phase_id 
+       foreign key (phase_id) 
        references phase (id);
 
-    alter table if exists external_tag
-       add constraint fk_errand_external_tag_errand_id
-       foreign key (errand_id)
+    alter table if exists external_tag 
+       add constraint fk_errand_external_tag_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists json_parameter
-       add constraint fk_json_parameter_errand_id
-       foreign key (errand_id)
+    alter table if exists json_parameter 
+       add constraint fk_json_parameter_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists metadata_label
-       add constraint fk_metadata_label_id
-       foreign key (parent_id)
+    alter table if exists measure 
+       add constraint fk_measure_errand_id 
+       foreign key (errand_id) 
+       references errand (id);
+
+    alter table if exists metadata_label 
+       add constraint fk_metadata_label_id 
+       foreign key (parent_id) 
        references metadata_label (id);
 
-    alter table if exists metadata_label_attribute
-       add constraint fk_metadata_label_attribute_metadata_label
-       foreign key (metadata_label_id)
+    alter table if exists metadata_label_attribute 
+       add constraint fk_metadata_label_attribute_metadata_label 
+       foreign key (metadata_label_id) 
        references metadata_label (id);
 
-    alter table if exists namespace_config_value
-       add constraint fk_namespace_config_value_namespace_config
-       foreign key (namespace_config_id)
+    alter table if exists namespace_config_access_grant 
+       add constraint fk_namespace_config_access_grant_namespace_config 
+       foreign key (namespace_config_id) 
        references namespace_config (id);
 
-    alter table if exists notification
-       add constraint fk_notification_errand_id
-       foreign key (errand_id)
+    alter table if exists namespace_config_value 
+       add constraint fk_namespace_config_value_namespace_config 
+       foreign key (namespace_config_id) 
+       references namespace_config (id);
+
+    alter table if exists notification 
+       add constraint fk_notification_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists parameter
-       add constraint fk_parameter_errand_id
-       foreign key (errand_id)
+    alter table if exists parameter 
+       add constraint fk_parameter_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists parameter_values
-       add constraint fk_parameter_values_parameter_id
-       foreign key (parameter_id)
+    alter table if exists parameter_values 
+       add constraint fk_parameter_values_parameter_id 
+       foreign key (parameter_id) 
        references parameter (id);
 
-    alter table if exists phase_allowed_status
-       add constraint fk_phase_allowed_status_phase_id
-       foreign key (phase_id)
+    alter table if exists phase_allowed_status 
+       add constraint fk_phase_allowed_status_phase_id 
+       foreign key (phase_id) 
        references phase (id);
 
-    alter table if exists phase_transition
-       add constraint fk_phase_transition_phase_id
-       foreign key (phase_id)
+    alter table if exists phase_transition 
+       add constraint fk_phase_transition_phase_id 
+       foreign key (phase_id) 
        references phase (id);
 
-    alter table if exists stakeholder
-       add constraint fk_errand_stakeholder_errand_id
-       foreign key (errand_id)
+    alter table if exists stakeholder 
+       add constraint fk_errand_stakeholder_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists stakeholder_parameter
-       add constraint fk_stakeholder_parameter_stakeholder_id
-       foreign key (stakeholder_id)
+    alter table if exists stakeholder_parameter 
+       add constraint fk_stakeholder_parameter_stakeholder_id 
+       foreign key (stakeholder_id) 
        references stakeholder (id);
 
-    alter table if exists stakeholder_parameter_values
-       add constraint fk_stakeholder_parameter_values_stakeholder_parameter_id
-       foreign key (stakeholder_parameter_id)
+    alter table if exists stakeholder_parameter_values 
+       add constraint fk_stakeholder_parameter_values_stakeholder_parameter_id 
+       foreign key (stakeholder_parameter_id) 
        references stakeholder_parameter (id);
 
-    alter table if exists subscriber_channel
-       add constraint fk_subscriber_channel_subscriber_id
-       foreign key (subscriber_id)
+    alter table if exists subscriber_channel 
+       add constraint fk_subscriber_channel_subscriber_id 
+       foreign key (subscriber_id) 
        references subscriber (id);
 
-    alter table if exists subscriber_event_filter
-       add constraint fk_subscriber_event_filter_subscriber_id
-       foreign key (subscriber_id)
+    alter table if exists subscriber_event_filter 
+       add constraint fk_subscriber_event_filter_subscriber_id 
+       foreign key (subscriber_id) 
        references subscriber (id);
 
-    alter table if exists subscriber_notification_event
-       add constraint FK9o94wu44495ht25u34j60shie
-       foreign key (notification_id)
+    alter table if exists subscriber_notification_event 
+       add constraint FK9o94wu44495ht25u34j60shie 
+       foreign key (notification_id) 
        references subscriber_notification (id);
 
-    alter table if exists subscription
-       add constraint fk_subscription_errand_id
-       foreign key (errand_id)
-       references errand (id)
+    alter table if exists subscription 
+       add constraint fk_subscription_errand_id 
+       foreign key (errand_id) 
+       references errand (id) 
        on delete cascade;
 
-    alter table if exists subscription
-       add constraint fk_subscription_subscriber_id
-       foreign key (subscriber_id)
-       references subscriber (id)
+    alter table if exists subscription 
+       add constraint fk_subscription_subscriber_id 
+       foreign key (subscriber_id) 
+       references subscriber (id) 
        on delete cascade;
 
-    alter table if exists subscription_event_filter
-       add constraint fk_subscription_event_filter_subscription_id
-       foreign key (subscription_id)
+    alter table if exists subscription_event_filter 
+       add constraint fk_subscription_event_filter_subscription_id 
+       foreign key (subscription_id) 
        references subscription (id);
 
-    alter table if exists time_measurement
-       add constraint fk_errand_time_measure_errand_id
-       foreign key (errand_id)
+    alter table if exists time_measurement 
+       add constraint fk_errand_time_measure_errand_id 
+       foreign key (errand_id) 
        references errand (id);
 
-    alter table if exists `type`
-       add constraint fk_category_id
-       foreign key (category_id)
+    alter table if exists `type` 
+       add constraint fk_category_id 
+       foreign key (category_id) 
        references category (id);
 
-    alter table if exists web_message_collect_family_ids
-       add constraint fk_web_message_collect_family_ids_web_message_collect_id
-       foreign key (web_message_collect_id)
+    alter table if exists web_message_collect_family_ids 
+       add constraint fk_web_message_collect_family_ids_web_message_collect_id 
+       foreign key (web_message_collect_id) 
        references web_message_collect (id);

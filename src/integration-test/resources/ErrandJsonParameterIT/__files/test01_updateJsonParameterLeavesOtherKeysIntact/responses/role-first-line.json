@@ -1,0 +1,15 @@
+[
+	{
+		"accessByType": [
+			{
+				"type": "role",
+				"access": [
+					{
+						"pattern": "FIRST_LINE",
+						"accessLevel": "R"
+					}
+				]
+			}
+		]
+	}
+]

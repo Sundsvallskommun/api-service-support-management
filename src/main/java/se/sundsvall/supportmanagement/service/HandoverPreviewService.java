@@ -25,10 +25,10 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
@@ -120,7 +120,7 @@ public class HandoverPreviewService {
 		// Verify the caller is authorized to hand over the source errand (404 if missing, 401 if the user lacks access).
 		// Full read access (R or RW) is required; limited-read (LR) is intentionally excluded since a handover concerns
 		// the whole errand. Executing the actual handover (separate story) may instead require write access (RW).
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.ERRAND, R);
 
 		// The target namespace must be configured to be a valid handover destination
 		if (!namespaceConfigRepository.existsByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId)) {

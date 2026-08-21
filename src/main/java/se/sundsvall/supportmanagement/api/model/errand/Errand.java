@@ -159,6 +159,9 @@ public class Errand {
 	})
 	private List<ErrandAction> actions;
 
+	@Schema(description = "List of measures for the errand")
+	private List<Measure> measures;
+
 	@Schema(description = "Timestamp when errand was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	@Null(groups = {
@@ -567,6 +570,19 @@ public class Errand {
 		return this;
 	}
 
+	public List<Measure> getMeasures() {
+		return measures;
+	}
+
+	public void setMeasures(final List<Measure> measures) {
+		this.measures = measures;
+	}
+
+	public Errand withMeasures(final List<Measure> measures) {
+		this.measures = measures;
+		return this;
+	}
+
 	public Suspension getSuspension() {
 		return suspension;
 	}
@@ -583,7 +599,7 @@ public class Errand {
 	@Override
 	public int hashCode() {
 		return Objects.hash(activePhaseId, actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters,
-			labels, activeNotifications, modified,
+			labels, measures, activeNotifications, modified,
 			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched, version);
 	}
 
@@ -599,7 +615,8 @@ public class Errand {
 			&& Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(classification, other.classification) && Objects.equals(contactReason, other.contactReason)
 			&& Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
 			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(jsonParameters, other.jsonParameters) && Objects.equals(labels, other.labels)
-			&& Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && Objects.equals(phases, other.phases) && Objects.equals(priority, other.priority)
+			&& Objects.equals(measures, other.measures) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && Objects.equals(phases, other.phases)
+			&& Objects.equals(priority, other.priority)
 			&& Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status)
 			&& Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(version, other.version);
 	}
@@ -633,6 +650,7 @@ public class Errand {
 			", phases=" + phases +
 			", activePhaseId='" + activePhaseId + '\'' +
 			", activeNotifications=" + activeNotifications +
+			", measures=" + measures +
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +

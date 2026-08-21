@@ -22,6 +22,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.UUID.fromString;
 import static org.apache.commons.lang3.Strings.CI;
@@ -81,6 +82,25 @@ public class ServiceUtil {
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
 			.map(Identifier::getValue)
 			.orElse(null);
+	}
+
+	/**
+	 * Signals if sent in identifier belongs to the user making the request, which is what ownership of a subscriber, a
+	 * subscription or a notification is decided on. The access mapper says nothing about ownership - being allowed to
+	 * reach an errand does not make someone the owner of another user's settings for it.
+	 * <p>
+	 * Identifiers are stored in their wire form ("adAccount"), which is {@link Identifier#getTypeString()} rather than
+	 * the {@link Identifier.Type} enum. A request without an identifier owns nothing.
+	 *
+	 * @param  identifierType  type of the stored identifier, in wire form
+	 * @param  identifierValue value of the stored identifier
+	 * @return                 true if the stored identifier is the requesting user
+	 */
+	public static boolean isRequestingUser(final String identifierType, final String identifierValue) {
+		final var user = Identifier.get();
+		return nonNull(user)
+			&& Objects.equals(identifierType, user.getTypeString())
+			&& Objects.equals(identifierValue, user.getValue());
 	}
 
 	public static Identifier getExecutingUser() {

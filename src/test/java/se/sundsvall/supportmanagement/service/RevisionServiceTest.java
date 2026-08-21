@@ -26,12 +26,12 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.time.Instant.ofEpochMilli;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -62,6 +62,9 @@ class RevisionServiceTest {
 
 	@Mock
 	private NotesClient notesClientMock;
+
+	@Mock
+	private ErrandNoteService errandNoteServiceMock;
 
 	@InjectMocks
 	private RevisionService service;
@@ -216,7 +219,7 @@ class RevisionServiceTest {
 		// Call
 		final var result = service.getErrandRevisions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.REVISION, LR);
 		verify(revisionRepositoryMock).findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		assertThat(result).hasSize(3);
@@ -296,7 +299,7 @@ class RevisionServiceTest {
 		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion, targetVersion));
 
 		// Assertions and verifications
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.REVISION, LR);
 		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion);
 		verify(revisionRepositoryMock, never()).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, targetVersion);
 
@@ -317,7 +320,7 @@ class RevisionServiceTest {
 		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion, targetVersion));
 
 		// Assertions and verifications
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.REVISION, LR);
 		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion);
 		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, targetVersion);
 
@@ -338,7 +341,7 @@ class RevisionServiceTest {
 		final var result = service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion, sourceVersion);
 
 		// Assertions and verifications
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.REVISION, LR);
 		verify(revisionRepositoryMock, times(2)).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion);
 
 		assertThat(result.getOperations()).isEmpty();
@@ -358,7 +361,7 @@ class RevisionServiceTest {
 		final var result = service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion, targetVersion);
 
 		// Assertions and verifications
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.REVISION, LR);
 		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion);
 		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, targetVersion);
 
@@ -389,7 +392,7 @@ class RevisionServiceTest {
 		final var e = assertThrows(ThrowableProblem.class, () -> service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion, targetVersion));
 
 		// Assertions and verifications
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.REVISION, LR);
 		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion);
 		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, targetVersion);
 
@@ -410,7 +413,7 @@ class RevisionServiceTest {
 		final var result = service.getNoteRevisions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, noteId);
 
 		// Assertions and verifications
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.NOTE_REVISION, LR);
 		verify(notesClientMock).findAllNoteRevisions(MUNICIPALITY_ID, noteId);
 
 		assertThat(result).hasSize(1);
@@ -430,7 +433,7 @@ class RevisionServiceTest {
 		final var result = service.compareNoteRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, noteId, sourceVersion, targetVersion);
 
 		// Assertions and verifications
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.NOTE_REVISION, LR);
 		verify(notesClientMock).compareNoteRevisions(MUNICIPALITY_ID, noteId, sourceVersion, targetVersion);
 
 		assertThat(result).isNotNull();

@@ -2,6 +2,8 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -12,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
@@ -29,14 +32,26 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriberNotificationServiceTest {
+
+	@BeforeEach
+	void setUpIdentity() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue(IDENTIFIER_VALUE));
+	}
+
+	@AfterEach
+	void clearIdentity() {
+		Identifier.remove();
+	}
 
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "NAMESPACE-1";
@@ -87,7 +102,8 @@ class SubscriberNotificationServiceTest {
 
 	@Test
 	void deleteNotification() {
-		final var entity = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID);
+		final var entity = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID)
+			.withIdentifierType(IDENTIFIER_TYPE).withIdentifierValue(IDENTIFIER_VALUE);
 		when(repositoryMock.findByIdAndMunicipalityIdAndNamespace(NOTIFICATION_ID, MUNICIPALITY_ID, NAMESPACE)).thenReturn(Optional.of(entity));
 
 		service.deleteNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID);
@@ -109,7 +125,8 @@ class SubscriberNotificationServiceTest {
 
 	@Test
 	void acknowledgeNotification() {
-		final var entity = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID);
+		final var entity = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID)
+			.withIdentifierType(IDENTIFIER_TYPE).withIdentifierValue(IDENTIFIER_VALUE);
 		when(repositoryMock.findByIdAndMunicipalityIdAndNamespace(NOTIFICATION_ID, MUNICIPALITY_ID, NAMESPACE)).thenReturn(Optional.of(entity));
 
 		service.acknowledgeNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID);
@@ -204,5 +221,42 @@ class SubscriberNotificationServiceTest {
 				.withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS)
 				.withType(INTEGER)
 				.withValue("30"));
+	}
+
+	@Test
+	void readingAnotherIdentitysNotificationsIsRefused() {
+		assertThatThrownBy(() -> service.getNotifications(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, "someone-else", Pageable.unpaged()))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(UNAUTHORIZED);
+
+		verifyNoInteractions(repositoryMock);
+	}
+
+	@Test
+	void acknowledgingAnotherIdentitysNotificationIsRefused() {
+		final var entity = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID)
+			.withIdentifierType(IDENTIFIER_TYPE).withIdentifierValue("someone-else");
+		when(repositoryMock.findByIdAndMunicipalityIdAndNamespace(NOTIFICATION_ID, MUNICIPALITY_ID, NAMESPACE)).thenReturn(Optional.of(entity));
+
+		assertThatThrownBy(() -> service.acknowledgeNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(UNAUTHORIZED);
+
+		assertThat(entity.getAcknowledged()).isNull();
+		verify(repositoryMock, never()).save(any());
+	}
+
+	@Test
+	void deletingWithoutAnIdentityIsRefused() {
+		Identifier.remove();
+		final var entity = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID)
+			.withIdentifierType(IDENTIFIER_TYPE).withIdentifierValue(IDENTIFIER_VALUE);
+		when(repositoryMock.findByIdAndMunicipalityIdAndNamespace(NOTIFICATION_ID, MUNICIPALITY_ID, NAMESPACE)).thenReturn(Optional.of(entity));
+
+		assertThatThrownBy(() -> service.deleteNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(UNAUTHORIZED);
+
+		verify(repositoryMock, never()).delete(any());
 	}
 }

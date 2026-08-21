@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.accessmapper.configuration;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -15,6 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.integration.accessmapper.configuration.AccessMapperConfiguration.CLIENT_ID;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,7 +61,9 @@ class AccessMapperConfigurationTest {
 			verify(feignMultiCustomizerSpy).withRequestTimeoutsInSeconds(1, 2);
 			verify(feignMultiCustomizerSpy).composeCustomizersToOne();
 
-			assertThat(errorDecoderCaptor.getValue()).hasFieldOrPropertyWithValue("integrationName", CLIENT_ID);
+			assertThat(errorDecoderCaptor.getValue()).hasFieldOrPropertyWithValue("integrationName", CLIENT_ID)
+				// A user unknown to the access mapper answers 404, which means "no grants" and must not become a 502.
+				.hasFieldOrPropertyWithValue("bypassResponseCodes", List.of(NOT_FOUND.value()));
 			assertThat(customizer).isSameAs(feignBuilderCustomizerMock);
 		}
 	}

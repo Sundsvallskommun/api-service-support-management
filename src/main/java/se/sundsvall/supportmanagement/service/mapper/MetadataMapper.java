@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
+import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
@@ -22,6 +23,7 @@ import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
@@ -541,6 +543,54 @@ public class MetadataMapper {
 		ofNullable(contactReason.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(contactReason.getSortOrder()).ifPresent(entity::setSortOrder);
 		ofNullable(contactReason.getDeprecated()).ifPresent(entity::setDeprecated);
+
+		return entity;
+	}
+
+	// =================================================================
+	// MeasureType operations
+	// =================================================================
+
+	public static MeasureType toMeasureType(final MeasureTypeEntity entity) {
+		return ofNullable(entity)
+			.map(e -> MeasureType.create()
+				.withId(e.getId())
+				.withCreated(e.getCreated())
+				.withModified(e.getModified())
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName())
+				.withMeasureGroup(e.getMeasureGroup())
+				.withDeprecated(e.isDeprecated())
+				.withSortOrder(e.getSortOrder()))
+			.orElse(null);
+	}
+
+	public static MeasureTypeEntity toMeasureTypeEntity(final String namespace, final String municipalityId, final MeasureType measureType) {
+		if (anyNull(namespace, municipalityId, measureType)) {
+			return null;
+		}
+
+		final var entity = MeasureTypeEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(measureType.getName())
+			.withDisplayName(measureType.getDisplayName())
+			.withMeasureGroup(measureType.getMeasureGroup())
+			.withSortOrder(measureType.getSortOrder())
+			.withNamespace(namespace);
+		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
+	}
+
+	public static MeasureTypeEntity updateMeasureTypeEntity(final MeasureTypeEntity entity, final MeasureType measureType) {
+		if (isNull(measureType)) {
+			return entity;
+		}
+
+		ofNullable(measureType.getName()).ifPresent(entity::setName);
+		ofNullable(measureType.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(measureType.getMeasureGroup()).ifPresent(entity::setMeasureGroup);
+		ofNullable(measureType.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}

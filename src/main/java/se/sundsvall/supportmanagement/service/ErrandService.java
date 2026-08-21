@@ -1,11 +1,13 @@
 package se.sundsvall.supportmanagement.service;
 
-import generated.se.sundsvall.accessmapper.Access;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,19 +22,28 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Relation;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Measure;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
@@ -44,7 +55,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
@@ -59,12 +69,14 @@ public class ErrandService {
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandService.class);
 
 	private static final String BAD_CONTACT_REASON = "'%s' is not a valid contact reason for namespace '%s' and municipality with id '%s'";
+	private static final String BAD_MEASURE_TYPE = "'%s' is not a valid measure type for namespace '%s' and municipality with id '%s'";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
+	private final MeasureTypeRepository measureTypeRepository;
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
@@ -83,6 +95,7 @@ public class ErrandService {
 	public ErrandService(
 		final ErrandsRepository repository,
 		final ContactReasonRepository contactReasonRepository,
+		final MeasureTypeRepository measureTypeRepository,
 		final CommunicationService communicationService,
 		final AttachmentRepository attachmentRepository,
 		final RevisionService revisionService,
@@ -100,6 +113,7 @@ public class ErrandService {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
+		this.measureTypeRepository = measureTypeRepository;
 		this.communicationService = communicationService;
 		this.attachmentRepository = attachmentRepository;
 		this.revisionService = revisionService;
@@ -130,6 +144,8 @@ public class ErrandService {
 				.withContactReasonDescription(errand.getContactReasonDescription());
 		});
 
+		validateMeasureTypes(errand.getMeasures(), namespace, municipalityId);
+
 		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
 		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errandEntity.getStatus());
 
@@ -158,24 +174,34 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
-		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get()));
+		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		final var matches = repository.findAll(fullFilter, pageable);
-		final var limitedMapping = accessControlService.limitedMappingPredicateByLabel(namespace, municipalityId, Identifier.get());
+		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
 
-		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), limitedMapping), pageable, matches.getTotalElements());
+		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver), pageable, matches.getTotalElements());
 	}
 
 	@Transactional(readOnly = true)
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false);
-		final var limitedMapping = accessControlService.limitedMappingPredicateByLabel(namespace, municipalityId, Identifier.get());
-		return toErrandWithAccessControl(errandEntity, limitedMapping);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.ERRAND, LR);
+		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
+		return toErrandWithAccessControl(errandEntity, fieldResolver);
 	}
 
 	@Transactional
 	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final String ifMatch, final Errand errand) {
-		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
+		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
+
+		// Resolved before the errand is touched, so that patching it does not flush mid transaction, and so that the
+		// response is mapped by the same grants a plain read of the errand would be.
+		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
+		final var accessibleKey = accessControlService.readableKeyResolver(namespace, municipalityId, Identifier.get(), errandEntityToUpdate);
+
+		// A key the caller cannot read is a key they cannot write, whichever endpoint they write it through.
+		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.PARAMETERS), keysOf(errand.getParameters(), Parameter::getKey));
+		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.JSON_PARAMETERS), keysOf(errand.getJsonParameters(), JsonParameter::getKey));
+		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.EXTERNAL_TAGS), keysOf(errand.getExternalTags(), ExternalTag::getKey));
 
 		if (ifMatch == null) {
 			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
@@ -183,7 +209,7 @@ public class ErrandService {
 		validateIfMatch(ifMatch, errandEntityToUpdate.getVersion());
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		final var errandEntity = updateEntity(errandEntityToUpdate, errand);
+		final var errandEntity = updateEntity(errandEntityToUpdate, errand, accessibleKey);
 
 		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
 		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errand.getStatus());
@@ -194,6 +220,8 @@ public class ErrandService {
 
 			errandEntity.withContactReason(contactReason);
 		});
+
+		validateMeasureTypes(errand.getMeasures(), namespace, municipalityId);
 
 		if (errand.getLabels() != null) {
 			computeAndSetAccessLabels(errandEntity);
@@ -211,12 +239,21 @@ public class ErrandService {
 			}
 		}
 
-		return toErrand(entity);
+		return toErrandWithAccessControl(entity, fieldResolver);
+	}
+
+	/**
+	 * Keys of a keyed collection of a patch, or null when the patch leaves the collection alone.
+	 */
+	private static <T> List<String> keysOf(final List<T> values, final Function<T, String> keyExtractor) {
+		return ofNullable(values)
+			.map(list -> list.stream().map(keyExtractor).toList())
+			.orElse(null);
 	}
 
 	@Transactional
 	public void deleteErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
-		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, Access.AccessLevelEnum.RW);
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
 		if (ifMatch == null) {
 			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
@@ -230,7 +267,7 @@ public class ErrandService {
 			LOG.warn("Failed to delete conversations for errand {}: {}", sanitizedId, e.getMessage());
 		}
 
-		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber());
+		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber(), entity.getNamespace(), entity.getMunicipalityId());
 		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)
 			.forEach(attachment -> attachmentRepository.deleteById(attachment.getId()));
 
@@ -257,9 +294,20 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
-		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get()));
+		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);
+	}
+
+	private void validateMeasureTypes(final List<Measure> measures, final String namespace, final String municipalityId) {
+		ofNullable(measures).orElse(emptyList()).stream()
+			.map(Measure::getType)
+			.filter(Objects::nonNull)
+			.forEach(type -> {
+				if (!measureTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, type)) {
+					throw Problem.valueOf(BAD_REQUEST, BAD_MEASURE_TYPE.formatted(type, namespace, municipalityId));
+				}
+			});
 	}
 
 	private void computeAndSetAccessLabels(final ErrandEntity errandEntity) {

@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
@@ -92,10 +93,115 @@ class AccessMapperServiceTest {
 	}
 
 	private List<AccessGroup> createAccessGroup() {
+		return createAccessGroup("label");
+	}
+
+	private List<AccessGroup> createAccessGroup(final String type) {
 		final var accessRead = new Access().accessLevel(R).pattern(ACCESS_PATTERN_R);
 		final var accessReadWrite = new Access().accessLevel(RW).pattern(ACCESS_PATTERN_RW);
 		final var accessLimitedRead = new Access().accessLevel(LR).pattern(ACCESS_PATTERN_LR);
-		final var accessType = new AccessType().access(List.of(accessRead, accessReadWrite, accessLimitedRead));
+		final var accessType = new AccessType().type(type).access(List.of(accessRead, accessReadWrite, accessLimitedRead));
 		return List.of(new AccessGroup().accessByType(List.of(accessType)));
+	}
+
+	@Test
+	void getAccessibleLabelsIgnoresOtherTypes() {
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(createAccessGroup("role"))));
+		when(metadataServiceMock.patternToLabels(any(), any(), any())).thenReturn(Set.of());
+
+		accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(RW, R, LR));
+
+		verify(metadataServiceMock).patternToLabels(NAMESPACE, MUNICIPALITY_ID, List.of());
+	}
+
+	@Test
+	void getAccessibleRolesSuccessful() {
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(createAccessGroup("role"))));
+
+		final var roles = accessMapperService.getAccessibleRoles(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER);
+
+		assertThat(roles).containsExactlyInAnyOrder(ACCESS_PATTERN_R.toUpperCase(), ACCESS_PATTERN_RW.toUpperCase(), ACCESS_PATTERN_LR.toUpperCase());
+		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, AD_USER, "role");
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void getAccessibleRolesIgnoresOtherTypes() {
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(createAccessGroup("label"))));
+
+		assertThat(accessMapperService.getAccessibleRoles(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).isEmpty();
+	}
+
+	@Test
+	void getAccessibleResourcesMatchesPatternsAgainstResourcePaths() {
+		final var accessType = new AccessType().type("resource").access(List.of(
+			new Access().accessLevel(R).pattern("errand/**"),
+			new Access().accessLevel(RW).pattern("errand/communication/**")));
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(List.of(new AccessGroup().accessByType(List.of(accessType))))));
+
+		final var resources = accessMapperService.getAccessibleResources(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER);
+
+		// "errand/**" covers the errand itself along with everything below it, and the more specific communication
+		// pattern raises those two to RW. Resources belonging to the namespace rather than to an errand are not covered.
+		assertThat(resources).containsEntry(ProtectedResource.ERRAND, R)
+			.containsEntry(ProtectedResource.NOTE, R)
+			.containsEntry(ProtectedResource.COMMUNICATION, RW)
+			.containsEntry(ProtectedResource.COMMUNICATION_ATTACHMENT, RW)
+			.doesNotContainKeys(ProtectedResource.NAMESPACE_CONFIG, ProtectedResource.METADATA_LABEL);
+		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, AD_USER, "resource");
+	}
+
+	@Test
+	void getAccessibleResourcesKeepsTheMostPermissiveLevel() {
+		final var accessType = new AccessType().type("resource").access(List.of(
+			new Access().accessLevel(LR).pattern("errand/note"),
+			new Access().accessLevel(RW).pattern("errand/note"),
+			new Access().accessLevel(R).pattern("errand/note")));
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(List.of(new AccessGroup().accessByType(List.of(accessType))))));
+
+		assertThat(accessMapperService.getAccessibleResources(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).containsEntry(ProtectedResource.NOTE, RW);
+	}
+
+	@Test
+	void getAccessibleResourcesIgnoresOtherTypes() {
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(createAccessGroup("label"))));
+
+		assertThat(accessMapperService.getAccessibleResources(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).isEmpty();
+	}
+
+	@Test
+	void getAccessibleResourcesFail() {
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.badRequest().build());
+
+		assertThat(accessMapperService.getAccessibleResources(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).isEmpty();
+	}
+
+	@Test
+	void getAccessibleResourcesForNonAdIdentifier() {
+		assertThat(accessMapperService.getAccessibleResources(MUNICIPALITY_ID, NAMESPACE, Identifier.create().withType(Identifier.Type.PARTY_ID).withValue(AD_USER))).isEmpty();
+		verifyNoInteractions(accessMapperClientMock);
+	}
+
+	@Test
+	void getAccessibleRolesFail() {
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.badRequest().build());
+
+		assertThat(accessMapperService.getAccessibleRoles(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).isEmpty();
+	}
+
+	@Test
+	void getAccessibleRolesForNonAdIdentifier() {
+		assertThat(accessMapperService.getAccessibleRoles(MUNICIPALITY_ID, NAMESPACE, Identifier.create().withType(Identifier.Type.PARTY_ID).withValue(AD_USER))).isEmpty();
+		verifyNoInteractions(accessMapperClientMock);
+	}
+
+	@Test
+	void notFoundFromAccessMapperYieldsNoAccessRatherThanFailure() {
+		// The client bypasses 404, so an unknown user arrives here as a non-2xx response and must resolve to "no grants".
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any(), any())).thenReturn(ResponseEntity.notFound().build());
+
+		assertThat(accessMapperService.getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER, List.of(R))).isEmpty();
+		assertThat(accessMapperService.getAccessibleRoles(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).isEmpty();
+		assertThat(accessMapperService.getAccessibleResources(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER)).isEmpty();
 	}
 }

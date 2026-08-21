@@ -163,7 +163,7 @@ VALUES ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', '
         '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'AP-23020002', false, 'STATUS-2',
         'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000'),
        ('2506', '58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
-        null, 'NAMESPACE-2506', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-2506', 'E-service', 'TYPE-2506',
+        null, 'NAMESPACE-2506', 'LOW', 'rob01rep', 'STATUS-2506', 'E-service', 'TYPE-2506',
         '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'AP-23020003', false, 'STATUS-2',
         'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000');
 -- -----------------------------------
@@ -399,26 +399,63 @@ VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
        (1, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
        (1, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (1, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (1, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (1, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (2, 'DISPLAY_NAME', 'Kontaktcenter', 'STRING'),
        (2, 'SHORT_CODE', 'KC', 'STRING'),
        (2, 'NOTIFICATION_TTL_IN_DAYS', '20', 'INTEGER'),
        (2, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (2, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (2, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (2, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (3, 'DISPLAY_NAME', 'Namespace 3', 'STRING'),
        (3, 'SHORT_CODE', 'NS3', 'STRING'),
        (3, 'NOTIFICATION_TTL_IN_DAYS', '30', 'INTEGER'),
        (3, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (3, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (3, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (3, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (4, 'DISPLAY_NAME', 'Kontaktcenter', 'STRING'),
        (4, 'SHORT_CODE', 'KC', 'STRING'),
        (4, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
        (4, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (4, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (4, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (4, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (5, 'DISPLAY_NAME', 'Namespace 2506', 'STRING'),
        (5, 'SHORT_CODE', 'AP', 'STRING'),
        (5, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
        (5, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
-       (5, 'NOTIFY_REPORTER', 'true', 'BOOLEAN');
+       (5, 'NOTIFY_REPORTER', 'true', 'BOOLEAN'),
+       (5, 'ROLE_BASED_MAPPING', 'true', 'BOOLEAN'),
+       (5, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN');
+
+INSERT INTO namespace_config_access_grant(namespace_config_id, `scope`, `type`, `value`, access_level)
+VALUES (5, 'LIMITED', 'RESOURCE', 'COMMUNICATION', null),
+       (5, 'LIMITED', 'FIELD', 'ID', null),
+       (5, 'LIMITED', 'FIELD', 'ERRAND_NUMBER', null),
+       (5, 'LIMITED', 'FIELD', 'TITLE', null),
+       (5, 'LIMITED', 'FIELD', 'STATUS', null),
+       (5, 'LIMITED', 'FIELD', 'RESOLUTION', null),
+       (5, 'LIMITED', 'FIELD', 'CHANNEL', null),
+       (5, 'LIMITED', 'FIELD', 'CREATED', null),
+       (5, 'LIMITED', 'FIELD', 'MODIFIED', null),
+       (5, 'LIMITED', 'FIELD', 'TOUCHED', null),
+       (5, 'REPORTER', 'RESOURCE', 'ERRAND', 'R'),
+       (5, 'REPORTER', 'RESOURCE', 'COMMUNICATION', 'R'),
+       (5, 'REPORTER', 'RESOURCE', 'PARAMETER', 'R'),
+       (5, 'REPORTER', 'FIELD', 'ID', null),
+       (5, 'REPORTER', 'FIELD', 'ERRAND_NUMBER', null),
+       (5, 'REPORTER', 'FIELD', 'TITLE', null),
+       (5, 'REPORTER', 'FIELD', 'STATUS', null),
+       (5, 'REPORTER', 'FIELD', 'PARAMETERS:granted-key', null),
+       -- A case officer role restricted to one parameter key and one json parameter key. Holders can write, unlike the
+       -- reporter, which is what makes it possible to test that a wholesale update cannot drop the keys they cannot see.
+       (5, 'FIRST_LINE', 'FIELD', 'ID', null),
+       (5, 'FIRST_LINE', 'FIELD', 'ERRAND_NUMBER', null),
+       (5, 'FIRST_LINE', 'FIELD', 'TITLE', null),
+       (5, 'FIRST_LINE', 'FIELD', 'PARAMETERS:granted-key', null),
+       (5, 'FIRST_LINE', 'FIELD', 'JSON_PARAMETERS:granted-json', null);
        
 -- -----------------------------------
 -- Time measurement
@@ -435,7 +472,16 @@ INSERT INTO parameter(errand_id, id, parameters_key, display_name, parameter_gro
 VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', '45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'key1', 'Displayname 1', 'A'),
        ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2', 'key2', 'Displayname 2', 'A'),
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'cb638956-0823-402b-ab2a-ae947c0ba006', 'keyA', 'Displayname A', null),
-       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB', 'Displayname B', null);
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB', 'Displayname B', null),
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'e1b9a0d3-6a7c-4f4a-9d0e-1a2b3c4d5e6f', 'granted-key', 'Granted', null),
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'f2c8b1e4-7b8d-4a5b-8e1f-2b3c4d5e6f70', 'hidden-key', 'Hidden', null);
+
+-- -----------------------------------
+-- Json parameters
+-- -----------------------------------
+INSERT INTO json_parameter(errand_id, id, parameter_key, schema_id, value)
+VALUES ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'a9c1d2e3-0000-0000-0000-00000000000a', 'granted-json', 'test-schema-1.0', '{"visible": true}'),
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'b8d2e3f4-0000-0000-0000-00000000000b', 'hidden-json', 'test-schema-1.0', '{"secret": "must survive"}');
 
 INSERT INTO parameter_values(parameter_id, value, value_order)
 VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),
@@ -568,3 +614,18 @@ VALUES ('bbccddee-0000-0000-0000-000000000003', 0, 'UPDATE', 'ATTACHMENT');
 INSERT INTO subscriber_notification(id, created, modified, identifier_type, identifier_value, municipality_id, namespace, errand_id, errand_number, expires, acknowledged)
 VALUES ('a1b2c3d4-0000-0000-0000-000000000001', '2023-12-31 23:59:59.999', null, 'adAccount', 'joe01doe', '2281', 'NAMESPACE-1', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'KC-23020001', '2099-12-31 23:59:59.999', null),
        ('a1b2c3d4-0000-0000-0000-000000000002', '2023-12-31 23:59:59.999', null, 'adAccount', 'joe01doe', '2281', 'NAMESPACE-1', 'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'KC-23020002', '2099-12-31 23:59:59.999', null);
+
+-- -----------------------------------
+-- MeasureType
+-- -----------------------------------
+INSERT INTO measure_type(id, name, display_name, measure_group, sort_order, deprecated, namespace, municipality_id, created, modified)
+VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 'GROUP-A', 1, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
+       ('dd000000-0000-0000-0000-000000000101', 'MEASURE-2', 'Display Measure 2', 'GROUP-A', 2, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
+       ('dd000000-0000-0000-0000-000000000102', 'MEASURE-3', 'Display Measure 3', 'GROUP-B', 3, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null);
+
+-- -----------------------------------
+-- Measure (errand measures)
+-- -----------------------------------
+INSERT INTO measure(id, errand_id, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, rework_goal, rework_description, created, modified)
+VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, null, null, '2024-01-10 12:00:00.000', null),
+       ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', null, null, '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');

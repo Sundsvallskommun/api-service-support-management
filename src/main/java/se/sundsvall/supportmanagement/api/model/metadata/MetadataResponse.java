@@ -25,6 +25,9 @@ public class MetadataResponse {
 	@ArraySchema(schema = @Schema(implementation = Role.class))
 	private List<Role> roles;
 
+	@ArraySchema(schema = @Schema(implementation = MeasureType.class))
+	private List<MeasureType> measureTypes;
+
 	@ArraySchema(schema = @Schema(implementation = ContactReason.class))
 	private List<ContactReason> contactReasons;
 
@@ -126,6 +129,19 @@ public class MetadataResponse {
 		return this;
 	}
 
+	public List<MeasureType> getMeasureTypes() {
+		return measureTypes;
+	}
+
+	public void setMeasureTypes(final List<MeasureType> measureTypes) {
+		this.measureTypes = measureTypes;
+	}
+
+	public MetadataResponse withMeasureTypes(final List<MeasureType> measureTypes) {
+		this.measureTypes = measureTypes;
+		return this;
+	}
+
 	@Override
 	public String toString() {
 		return "MetadataResponse{" +
@@ -134,6 +150,7 @@ public class MetadataResponse {
 			", labels=" + labels +
 			", statuses=" + statuses +
 			", roles=" + roles +
+			", measureTypes=" + measureTypes +
 			", contactReasons=" + contactReasons +
 			", phases=" + phases +
 			'}';
@@ -146,12 +163,12 @@ public class MetadataResponse {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final MetadataResponse that = (MetadataResponse) o;
-		return Objects.equals(categories, that.categories) && Objects.equals(externalIdTypes, that.externalIdTypes) && Objects.equals(labels, that.labels) && Objects.equals(statuses, that.statuses) && Objects.equals(roles, that.roles) && Objects.equals(
-			contactReasons, that.contactReasons) && Objects.equals(phases, that.phases);
+		return Objects.equals(categories, that.categories) && Objects.equals(externalIdTypes, that.externalIdTypes) && Objects.equals(labels, that.labels) && Objects.equals(statuses, that.statuses) && Objects.equals(roles, that.roles)
+			&& Objects.equals(measureTypes, that.measureTypes) && Objects.equals(contactReasons, that.contactReasons) && Objects.equals(phases, that.phases);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(categories, externalIdTypes, labels, phases, statuses, roles, contactReasons);
+		return Objects.hash(categories, externalIdTypes, labels, measureTypes, phases, statuses, roles, contactReasons);
 	}
 }

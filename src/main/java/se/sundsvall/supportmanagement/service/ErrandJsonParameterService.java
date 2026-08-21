@@ -11,12 +11,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -46,21 +49,26 @@ public class ErrandJsonParameterService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readJsonParameters(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.JSON_PARAMETER, LR);
+		final var readableKey = accessControlService.readableKeyPredicate(namespace, municipalityId, Identifier.get(), errand, ErrandField.JSON_PARAMETERS);
+
 		return ofNullable(errand.getJsonParameters()).orElse(emptyList()).stream()
+			.filter(entity -> readableKey.test(entity.getKey()))
 			.map(entity -> toJsonParameter(entity))
 			.toList();
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readJsonParameter(final String namespace, final String municipalityId, final String errandId, final String key) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.JSON_PARAMETER, LR);
+		accessControlService.verifyAccessibleKey(namespace, municipalityId, errand, ErrandField.JSON_PARAMETERS, key);
 		return toJsonParameter(findJsonParameterEntityOrElseThrow(errand, key));
 	}
 
 	@Transactional
 	public UpsertResult updateJsonParameter(final String namespace, final String municipalityId, final String errandId, final String key, final String ifMatch, final JsonParameter jsonParameter) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.JSON_PARAMETER, RW);
+		accessControlService.verifyAccessibleKey(namespace, municipalityId, errandEntity, ErrandField.JSON_PARAMETERS, key);
 
 		final var existing = Optional.ofNullable(errandEntity.getJsonParameters())
 			.flatMap(list -> list.stream().filter(e -> Objects.equals(e.getKey(), key)).findFirst());
@@ -101,7 +109,8 @@ public class ErrandJsonParameterService {
 
 	@Transactional
 	public void deleteJsonParameter(final String namespace, final String municipalityId, final String errandId, final String key, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.JSON_PARAMETER, RW);
+		accessControlService.verifyAccessibleKey(namespace, municipalityId, errandEntity, ErrandField.JSON_PARAMETERS, key);
 
 		final var entityToRemove = findJsonParameterEntityOrElseThrow(errandEntity, key);
 

@@ -24,7 +24,7 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<ErrandEntity> findWithLockingById(String id);
 
-	Optional<ErrandEntity> findByErrandNumberAndNamespace(String errandNumber, String namespace);
+	Optional<ErrandEntity> findByErrandNumberAndNamespaceAndMunicipalityId(String errandNumber, String namespace, String municipalityId);
 
 	Optional<ErrandEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
