@@ -1,14 +1,18 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
@@ -19,14 +23,13 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
+// Deliberately without a unique constraint on errand + identifier: every dispatch creates its own notification, so a
+// subscriber can hold several notifications for the same errand.
 @Table(name = "subscriber_notification",
 	indexes = {
 		@Index(name = "idx_sub_notif_identifier", columnList = "municipality_id, namespace, identifier_type, identifier_value"),
 		@Index(name = "idx_sub_notif_errand", columnList = "errand_id")
-	},
-	uniqueConstraints = @UniqueConstraint(name = "uq_sub_notif_errand_identifier", columnNames = {
-		"municipality_id", "namespace", "errand_id", "identifier_type", "identifier_value"
-	}))
+	})
 public class SubscriberNotificationEntity {
 
 	@Id
@@ -68,14 +71,9 @@ public class SubscriberNotificationEntity {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime acknowledged;
 
-	@Column(name = "event_type", length = 64)
-	private String eventType;
-
-	@Column(name = "description")
-	private String description;
-
-	@Column(name = "sub_type", length = 64)
-	private String subType;
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+	@JoinColumn(name = "notification_id", nullable = false)
+	private List<SubscriberNotificationEventEntity> events;
 
 	public static SubscriberNotificationEntity create() {
 		return new SubscriberNotificationEntity();
@@ -234,48 +232,22 @@ public class SubscriberNotificationEntity {
 		return this;
 	}
 
-	public String getEventType() {
-		return eventType;
+	public List<SubscriberNotificationEventEntity> getEvents() {
+		return events;
 	}
 
-	public void setEventType(final String eventType) {
-		this.eventType = eventType;
+	public void setEvents(final List<SubscriberNotificationEventEntity> events) {
+		this.events = events;
 	}
 
-	public SubscriberNotificationEntity withEventType(final String eventType) {
-		this.eventType = eventType;
-		return this;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(final String description) {
-		this.description = description;
-	}
-
-	public SubscriberNotificationEntity withDescription(final String description) {
-		this.description = description;
-		return this;
-	}
-
-	public String getSubType() {
-		return subType;
-	}
-
-	public void setSubType(final String subType) {
-		this.subType = subType;
-	}
-
-	public SubscriberNotificationEntity withSubType(final String subType) {
-		this.subType = subType;
+	public SubscriberNotificationEntity withEvents(final List<SubscriberNotificationEventEntity> events) {
+		this.events = events;
 		return this;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, created, modified, identifierType, identifierValue, municipalityId, namespace, errandId, errandNumber, expires, acknowledged, eventType, description, subType);
+		return Objects.hash(id, created, modified, identifierType, identifierValue, municipalityId, namespace, errandId, errandNumber, expires, acknowledged, events);
 	}
 
 	@Override
@@ -296,9 +268,7 @@ public class SubscriberNotificationEntity {
 			&& Objects.equals(errandNumber, other.errandNumber)
 			&& Objects.equals(expires, other.expires)
 			&& Objects.equals(acknowledged, other.acknowledged)
-			&& Objects.equals(eventType, other.eventType)
-			&& Objects.equals(description, other.description)
-			&& Objects.equals(subType, other.subType);
+			&& Objects.equals(events, other.events);
 	}
 
 	@Override
@@ -315,9 +285,7 @@ public class SubscriberNotificationEntity {
 			", errandNumber='" + errandNumber + '\'' +
 			", expires=" + expires +
 			", acknowledged=" + acknowledged +
-			", eventType='" + eventType + '\'' +
-			", description='" + description + '\'' +
-			", subType='" + subType + '\'' +
+			", events=" + events +
 			'}';
 	}
 }

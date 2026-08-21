@@ -1,8 +1,10 @@
 package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 
@@ -17,19 +19,20 @@ public class NotificationChannelDispatcher {
 		this.subscriberNotificationService = subscriberNotificationService;
 	}
 
-	public boolean send(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final String eventType, final String description, final String subType) {
-		var allSucceeded = true;
+	/**
+	 * Delivers the events a subscriber should be notified about on each of the subscriber's channels.
+	 * <p>
+	 * Failures are propagated so the caller can roll back and reschedule the whole group, rather than leaving some
+	 * subscribers notified and others not.
+	 */
+	public void send(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final List<NotificationDispatchEntity> events) {
 		for (final var channel : subscriber.getChannels()) {
-			try {
-				switch (channel.getType()) {
-					case INTERNAL -> subscriberNotificationService.upsert(errandId, errandNumber, subscriber, eventType, description, subType);
-					case SMS, EMAIL -> throw new UnsupportedOperationException("Channel type %s is not yet implemented".formatted(channel.getType()));
-				}
-			} catch (final Exception e) {
-				LOG.warn("Failed to send notification for errand: {} subscriber: {} channel: {}", errandId, subscriber.getId(), channel.getType(), e);
-				allSucceeded = false;
+			switch (channel.getType()) {
+				case INTERNAL -> subscriberNotificationService.create(errandId, errandNumber, subscriber, events);
+				// When this is implemented, store in a table that will be processed in it own transaction, rollback can occur here, and
+				// we don't want duplicate SMS/EMAIL.
+				case SMS, EMAIL -> LOG.warn("Channel type: {} is not yet implemented, skipping delivery for errand: {} subscriber: {}", channel.getType(), errandId, subscriber.getId());
 			}
 		}
-		return allSucceeded;
 	}
 }

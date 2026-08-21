@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.CoreMatchers.allOf;
 
-class NotificationDispatchEntityTest {
+class SubscriberNotificationEventEntityTest {
 
 	@BeforeAll
 	static void setup() {
@@ -27,7 +27,7 @@ class NotificationDispatchEntityTest {
 
 	@Test
 	void testBean() {
-		MatcherAssert.assertThat(NotificationDispatchEntity.class, allOf(
+		MatcherAssert.assertThat(SubscriberNotificationEventEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -37,48 +37,37 @@ class NotificationDispatchEntityTest {
 
 	@Test
 	void testBuilderMethods() {
-		final var eventId = "event-id";
-		final var requestGroupId = "request-group-id";
-		final var errandId = "errand-id";
-		final var municipalityId = "2281";
-		final var namespace = "NAMESPACE-1";
-		final var eventType = "CREATE";
+		final var id = "event-id";
+		final var created = now();
+		final var eventType = "UPDATE";
 		final var description = "Bilaga har skapats";
 		final var subType = "ATTACHMENT";
-		final var executingUserId = "joe01doe";
 
-		final var bean = NotificationDispatchEntity.create()
-			.withEventId(eventId)
-			.withRequestGroupId(requestGroupId)
-			.withErrandId(errandId)
-			.withMunicipalityId(municipalityId)
-			.withNamespace(namespace)
+		final var bean = SubscriberNotificationEventEntity.create()
+			.withId(id)
+			.withCreated(created)
 			.withEventType(eventType)
 			.withDescription(description)
-			.withSubType(subType)
-			.withExecutingUserId(executingUserId);
+			.withSubType(subType);
 
-		assertThat(bean.getEventId()).isEqualTo(eventId);
-		assertThat(bean.getRequestGroupId()).isEqualTo(requestGroupId);
-		assertThat(bean.getErrandId()).isEqualTo(errandId);
-		assertThat(bean.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(bean.getNamespace()).isEqualTo(namespace);
+		assertThat(bean.getId()).isEqualTo(id);
+		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getEventType()).isEqualTo(eventType);
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getSubType()).isEqualTo(subType);
-		assertThat(bean.getExecutingUserId()).isEqualTo(executingUserId);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NotificationDispatchEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new NotificationDispatchEntity()).hasAllNullFieldsOrProperties();
+		assertThat(SubscriberNotificationEventEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new SubscriberNotificationEventEntity()).hasAllNullFieldsOrProperties();
 	}
 
 	@Test
 	void testPrePersistSetsCreated() {
-		final var bean = NotificationDispatchEntity.create();
+		final var bean = SubscriberNotificationEventEntity.create();
 		bean.onCreate();
 		assertThat(bean.getCreated()).isCloseTo(now(), within(2, SECONDS));
+		assertThat(bean).hasAllNullFieldsOrPropertiesExcept("created");
 	}
 }

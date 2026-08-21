@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 
 @Service
 public class NotificationDispatchScheduler {
@@ -30,25 +31,19 @@ public class NotificationDispatchScheduler {
 		lockAtMostFor = "${scheduler.notification-dispatch.shedlock-lock-at-most-for}",
 		maximumExecutionTime = "${scheduler.notification-dispatch.maximum-execution-time}")
 	public void processDispatch() {
-		healthUtility.setHealthIndicatorHealthy(jobName);
+		// Grouped per errand, so a subscriber gets a single notification covering everything that happened to it.
+		// A fetch failure is deliberately left to bubble up to the Dept44Scheduled aspect.
+		final var groups = worker.fetchProcessable().stream()
+			.collect(Collectors.groupingBy(NotificationDispatchEntity::getErrandId));
 
-		try {
-			final var groups = worker.fetchProcessable().stream()
-				.collect(Collectors.groupingBy(e -> e.getErrandId()));
-
-			groups.forEach((errandId, group) -> {
-				try {
-					worker.processGroup(group);
-				} catch (final Exception e) {
-					LOG.error("Error processing notification dispatch for errand: {}", errandId, e);
-					healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing notification dispatch: " + e.getMessage());
-				}
-			});
-
-			worker.cleanUpDeadLetters();
-		} catch (final Exception e) {
-			LOG.error("Error fetching processable notification dispatches", e);
-			healthUtility.setHealthIndicatorUnhealthy(jobName, "Error fetching processable notification dispatches: " + e.getMessage());
-		}
+		// A failing errand is rolled back in its entirety and left in place for the next run, without holding up the rest
+		groups.forEach((errandId, group) -> {
+			try {
+				worker.processGroup(group);
+			} catch (final Exception e) {
+				LOG.error("Error processing notification dispatch for errand: {}", errandId, e);
+				healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing notification dispatch: " + e.getMessage());
+			}
+		});
 	}
 }

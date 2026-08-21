@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.time.ZoneId;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -9,15 +10,16 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotification;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 
 import static java.time.OffsetDateTime.now;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEntity;
+import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEventEntities;
 
 @Service
 public class SubscriberNotificationService {
@@ -49,28 +51,20 @@ public class SubscriberNotificationService {
 		repository.save(entity);
 	}
 
-	@Transactional(propagation = REQUIRES_NEW)
-	public void upsert(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final String eventType, final String description, final String subType) {
+	/**
+	 * Creates a new notification holding every event the subscriber should be told about for this errand. Each dispatch
+	 * results in its own notification, so an already acknowledged one is never resurrected.
+	 * <p>
+	 * Deliberately joins the caller's transaction, so a failure further down the dispatch rolls this notification back
+	 * together with the rest of the group.
+	 */
+	@Transactional
+	public void create(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final List<NotificationDispatchEntity> events) {
 		final var namespaceConfig = namespaceConfigRepository.findByNamespaceAndMunicipalityId(subscriber.getNamespace(), subscriber.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "Namespace with name:'%s' and municipalityId '%s' not found!".formatted(subscriber.getNamespace(), subscriber.getMunicipalityId())));
 		final var ttlInDays = ConfigPropertyExtractor.<Integer>getValue(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS);
 
-		repository.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
-			subscriber.getMunicipalityId(),
-			subscriber.getNamespace(),
-			errandId,
-			subscriber.getIdentifier().getType(),
-			subscriber.getIdentifier().getValue())
-			.ifPresentOrElse(
-				existing -> {
-					existing.setErrandNumber(errandNumber);
-					existing.setAcknowledged(null);
-					existing.setEventType(eventType);
-					existing.setDescription(description);
-					existing.setSubType(subType);
-					repository.save(existing);
-				},
-				() -> repository.save(toEntity(errandId, errandNumber, subscriber, ttlInDays, eventType, description, subType)));
+		repository.save(toEntity(errandId, errandNumber, subscriber, ttlInDays, toEventEntities(events)));
 	}
 
 	private SubscriberNotificationEntity findOrThrow(final String notificationId, final String municipalityId, final String namespace) {

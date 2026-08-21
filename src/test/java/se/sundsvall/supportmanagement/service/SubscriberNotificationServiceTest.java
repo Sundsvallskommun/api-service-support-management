@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -14,15 +16,20 @@ import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEventEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
@@ -50,6 +57,9 @@ class SubscriberNotificationServiceTest {
 
 	@InjectMocks
 	private SubscriberNotificationService service;
+
+	@Captor
+	private ArgumentCaptor<SubscriberNotificationEntity> entityCaptor;
 
 	@Test
 	void getNotifications() {
@@ -120,35 +130,63 @@ class SubscriberNotificationServiceTest {
 	}
 
 	@Test
-	void upsert_existingNotification_resetsAcknowledgedAndUpdatesFields() {
+	void create_persistsNewNotificationWithAllEvents() {
 		final var subscriber = buildSubscriber();
-		final var existing = SubscriberNotificationEntity.create().withId(NOTIFICATION_ID);
 		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(buildNamespaceConfig()));
-		when(repositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
-			MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, IDENTIFIER_TYPE, IDENTIFIER_VALUE)).thenReturn(Optional.of(existing));
 
-		service.upsert(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
+		service.create(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(
+			buildDispatchEntity(EVENT_TYPE, DESCRIPTION, SUB_TYPE),
+			buildDispatchEntity("CREATE", "Ärende har skapats", null)));
 
-		assertThat(existing.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
-		assertThat(existing.getAcknowledged()).isNull();
-		assertThat(existing.getEventType()).isEqualTo(EVENT_TYPE);
-		assertThat(existing.getDescription()).isEqualTo(DESCRIPTION);
-		assertThat(existing.getSubType()).isEqualTo(SUB_TYPE);
-		verify(repositoryMock).save(existing);
+		verify(repositoryMock).save(entityCaptor.capture());
+		final var saved = entityCaptor.getValue();
+		assertThat(saved.getErrandId()).isEqualTo(ERRAND_ID);
+		assertThat(saved.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+		assertThat(saved.getIdentifierType()).isEqualTo(IDENTIFIER_TYPE);
+		assertThat(saved.getIdentifierValue()).isEqualTo(IDENTIFIER_VALUE);
+		assertThat(saved.getExpires()).isNotNull();
+		assertThat(saved.getAcknowledged()).isNull();
+		assertThat(saved.getEvents())
+			.extracting(SubscriberNotificationEventEntity::getEventType, SubscriberNotificationEventEntity::getDescription, SubscriberNotificationEventEntity::getSubType)
+			.containsExactly(
+				tuple(EVENT_TYPE, DESCRIPTION, SUB_TYPE),
+				tuple("CREATE", "Ärende har skapats", null));
 	}
 
 	@Test
-	void upsert_newNotification_setsExpiry() {
+	void create_eachCallResultsInItsOwnNotification() {
 		final var subscriber = buildSubscriber();
 		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(buildNamespaceConfig()));
-		when(repositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
-			MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, IDENTIFIER_TYPE, IDENTIFIER_VALUE)).thenReturn(Optional.empty());
+		final var events = List.of(buildDispatchEntity(EVENT_TYPE, DESCRIPTION, SUB_TYPE));
 
-		service.upsert(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENT_TYPE, DESCRIPTION, SUB_TYPE);
+		service.create(ERRAND_ID, ERRAND_NUMBER, subscriber, events);
+		service.create(ERRAND_ID, ERRAND_NUMBER, subscriber, events);
 
-		verify(repositoryMock).save(any(SubscriberNotificationEntity.class));
+		// No lookup of an existing notification, just two independent inserts
+		verify(repositoryMock, times(2)).save(any(SubscriberNotificationEntity.class));
+		verifyNoMoreInteractions(repositoryMock);
+	}
+
+	@Test
+	void create_unknownNamespaceConfig_throws() {
+		final var subscriber = buildSubscriber();
+		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		final var events = List.of(buildDispatchEntity(EVENT_TYPE, DESCRIPTION, SUB_TYPE));
+
+		assertThatThrownBy(() -> service.create(ERRAND_ID, ERRAND_NUMBER, subscriber, events))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining(NOT_FOUND.getReasonPhrase());
+
+		verify(repositoryMock, never()).save(any());
+	}
+
+	private NotificationDispatchEntity buildDispatchEntity(final String eventType, final String description, final String subType) {
+		return NotificationDispatchEntity.create()
+			.withEventType(eventType)
+			.withDescription(description)
+			.withSubType(subType);
 	}
 
 	private SubscriberEntity buildSubscriber() {
