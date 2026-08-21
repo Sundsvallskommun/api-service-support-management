@@ -11,8 +11,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -44,15 +46,13 @@ class NotificationDispatchSchedulerTest {
 
 		scheduler.processDispatch();
 
-		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
 		verify(workerMock).fetchProcessable();
 		verify(workerMock).processGroup(List.of(entry));
-		verify(workerMock).cleanUpDeadLetters();
 		verifyNoMoreInteractions(workerMock, healthUtilityMock);
 	}
 
 	@Test
-	void processDispatch_groupsEntriesByErrandIdAndRequestGroupId() {
+	void processDispatch_groupsEntriesByErrandIdRegardlessOfRequestGroupId() {
 		final var entry1 = NotificationDispatchEntity.create().withId("id-1").withErrandId("errand-A").withRequestGroupId("group-1");
 		final var entry2 = NotificationDispatchEntity.create().withId("id-2").withErrandId("errand-A").withRequestGroupId("group-1");
 		final var entry3 = NotificationDispatchEntity.create().withId("id-3").withErrandId("errand-A").withRequestGroupId("group-2");
@@ -61,39 +61,37 @@ class NotificationDispatchSchedulerTest {
 
 		scheduler.processDispatch();
 
-		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
-		verify(workerMock).processGroup(List.of(entry1, entry2));
-		verify(workerMock).processGroup(List.of(entry3));
+		verify(workerMock).processGroup(List.of(entry1, entry2, entry3));
 		verify(workerMock).processGroup(List.of(entry4));
-		verify(workerMock).cleanUpDeadLetters();
 		verifyNoMoreInteractions(workerMock, healthUtilityMock);
 	}
 
 	@Test
-	void processDispatch_processGroupThrows_setsUnhealthyAndContinuesToCleanUp() {
-		final var entry = NotificationDispatchEntity.create().withId("some-id").withErrandId("errand-1");
-		when(workerMock.fetchProcessable()).thenReturn(List.of(entry));
-		doThrow(new RuntimeException("channel error")).when(workerMock).processGroup(any());
+	void processDispatch_processGroupThrows_setsUnhealthyAndContinuesWithOtherErrands() {
+		final var failing = NotificationDispatchEntity.create().withId("id-1").withErrandId("errand-1");
+		final var succeeding = NotificationDispatchEntity.create().withId("id-2").withErrandId("errand-2");
+		when(workerMock.fetchProcessable()).thenReturn(List.of(failing, succeeding));
+		doThrow(new RuntimeException("channel error")).when(workerMock).processGroup(List.of(failing));
+		doNothing().when(workerMock).processGroup(List.of(succeeding));
 
 		scheduler.processDispatch();
 
-		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
 		verify(workerMock).fetchProcessable();
-		verify(workerMock).processGroup(any());
+		verify(workerMock).processGroup(List.of(failing));
+		verify(workerMock).processGroup(List.of(succeeding));
 		verify(healthUtilityMock).setHealthIndicatorUnhealthy(eq(JOB_NAME), any(String.class));
-		verify(workerMock).cleanUpDeadLetters();
 		verifyNoMoreInteractions(workerMock, healthUtilityMock);
 	}
 
 	@Test
-	void processDispatch_fetchProcessableThrows_setsUnhealthyAndSkipsCleanUp() {
+	void processDispatch_fetchProcessableThrows_bubblesUpToTheSchedulingAspect() {
 		doThrow(new RuntimeException("db error")).when(workerMock).fetchProcessable();
 
-		scheduler.processDispatch();
+		assertThatThrownBy(() -> scheduler.processDispatch())
+			.isInstanceOf(RuntimeException.class)
+			.hasMessage("db error");
 
-		verify(healthUtilityMock).setHealthIndicatorHealthy(JOB_NAME);
 		verify(workerMock).fetchProcessable();
-		verify(healthUtilityMock).setHealthIndicatorUnhealthy(eq(JOB_NAME), any(String.class));
 		verifyNoMoreInteractions(workerMock, healthUtilityMock);
 	}
 }

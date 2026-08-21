@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.SubscriberNotificationEventEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
@@ -10,6 +11,8 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 
 class SubscriberNotificationMapperTest {
@@ -53,13 +56,41 @@ class SubscriberNotificationMapperTest {
 
 	@Test
 	void testToEventEntity() {
-		final var result = SubscriberNotificationMapper.toEventEntity(EVENT_TYPE, DESCRIPTION, SUB_TYPE);
+		final var result = SubscriberNotificationMapper.toEventEntity(NotificationDispatchEntity.create()
+			.withEventType(EVENT_TYPE)
+			.withDescription(DESCRIPTION)
+			.withSubType(SUB_TYPE));
 
 		assertThat(result.getEventType()).isEqualTo(EVENT_TYPE);
 		assertThat(result.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(result.getSubType()).isEqualTo(SUB_TYPE);
 		assertThat(result.getId()).isNull();
 		assertThat(result.getCreated()).isNull();
+	}
+
+	@Test
+	void testToEventEntities() {
+		final var result = SubscriberNotificationMapper.toEventEntities(List.of(
+			NotificationDispatchEntity.create().withEventType(EVENT_TYPE).withDescription(DESCRIPTION).withSubType(SUB_TYPE),
+			NotificationDispatchEntity.create().withEventType("CREATE")));
+
+		assertThat(result)
+			.extracting(SubscriberNotificationEventEntity::getEventType, SubscriberNotificationEventEntity::getDescription, SubscriberNotificationEventEntity::getSubType)
+			.containsExactly(
+				tuple(EVENT_TYPE, DESCRIPTION, SUB_TYPE),
+				tuple("CREATE", null, null));
+	}
+
+	@Test
+	void testToEventEntitiesReturnsMutableListForHibernate() {
+		final var result = SubscriberNotificationMapper.toEventEntities(List.of(NotificationDispatchEntity.create().withEventType(EVENT_TYPE)));
+
+		assertThatCode(() -> result.add(SubscriberNotificationEventEntity.create())).doesNotThrowAnyException();
+	}
+
+	@Test
+	void testToEventEntitiesWithNull() {
+		assertThat(SubscriberNotificationMapper.toEventEntities(null)).isEmpty();
 	}
 
 	@Test

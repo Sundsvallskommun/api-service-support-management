@@ -8,7 +8,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -19,10 +18,7 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
 @Table(name = "notification_dispatch",
-	indexes = {
-		@Index(name = "idx_dispatch_errand_id", columnList = "errand_id"),
-		@Index(name = "idx_dispatch_dead_letter_retry", columnList = "dead_letter, next_retry_at")
-	})
+	indexes = @Index(name = "idx_dispatch_errand_id", columnList = "errand_id"))
 public class NotificationDispatchEntity {
 
 	@Id
@@ -60,18 +56,6 @@ public class NotificationDispatchEntity {
 	@Column(name = "created", nullable = false, columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
-
-	@Column(name = "retry_count", nullable = false)
-	@ColumnDefault("0")
-	private int retryCount;
-
-	@Column(name = "next_retry_at", columnDefinition = "datetime(3)")
-	@TimeZoneStorage(NORMALIZE)
-	private OffsetDateTime nextRetryAt;
-
-	@Column(name = "dead_letter", nullable = false)
-	@ColumnDefault("0")
-	private boolean deadLetter;
 
 	public static NotificationDispatchEntity create() {
 		return new NotificationDispatchEntity();
@@ -225,48 +209,9 @@ public class NotificationDispatchEntity {
 		return this;
 	}
 
-	public int getRetryCount() {
-		return retryCount;
-	}
-
-	public void setRetryCount(final int retryCount) {
-		this.retryCount = retryCount;
-	}
-
-	public NotificationDispatchEntity withRetryCount(final int retryCount) {
-		this.retryCount = retryCount;
-		return this;
-	}
-
-	public OffsetDateTime getNextRetryAt() {
-		return nextRetryAt;
-	}
-
-	public void setNextRetryAt(final OffsetDateTime nextRetryAt) {
-		this.nextRetryAt = nextRetryAt;
-	}
-
-	public NotificationDispatchEntity withNextRetryAt(final OffsetDateTime nextRetryAt) {
-		this.nextRetryAt = nextRetryAt;
-		return this;
-	}
-
-	public boolean isDeadLetter() {
-		return deadLetter;
-	}
-
-	public void setDeadLetter(final boolean deadLetter) {
-		this.deadLetter = deadLetter;
-	}
-
-	public NotificationDispatchEntity withDeadLetter(final boolean deadLetter) {
-		this.deadLetter = deadLetter;
-		return this;
-	}
-
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, eventId, requestGroupId, errandId, municipalityId, namespace, eventType, description, subType, executingUserId, created, retryCount, nextRetryAt, deadLetter);
+		return Objects.hash(id, eventId, requestGroupId, errandId, municipalityId, namespace, eventType, description, subType, executingUserId, created);
 	}
 
 	@Override
@@ -278,9 +223,7 @@ public class NotificationDispatchEntity {
 			return false;
 		}
 		final NotificationDispatchEntity other = (NotificationDispatchEntity) obj;
-		return retryCount == other.retryCount
-			&& deadLetter == other.deadLetter
-			&& Objects.equals(id, other.id)
+		return Objects.equals(id, other.id)
 			&& Objects.equals(eventId, other.eventId)
 			&& Objects.equals(requestGroupId, other.requestGroupId)
 			&& Objects.equals(errandId, other.errandId)
@@ -290,8 +233,7 @@ public class NotificationDispatchEntity {
 			&& Objects.equals(description, other.description)
 			&& Objects.equals(subType, other.subType)
 			&& Objects.equals(executingUserId, other.executingUserId)
-			&& Objects.equals(created, other.created)
-			&& Objects.equals(nextRetryAt, other.nextRetryAt);
+			&& Objects.equals(created, other.created);
 	}
 
 	@Override
@@ -308,9 +250,6 @@ public class NotificationDispatchEntity {
 			", subType='" + subType + '\'' +
 			", executingUserId='" + executingUserId + '\'' +
 			", created=" + created +
-			", retryCount=" + retryCount +
-			", nextRetryAt=" + nextRetryAt +
-			", deadLetter=" + deadLetter +
 			'}';
 	}
 }

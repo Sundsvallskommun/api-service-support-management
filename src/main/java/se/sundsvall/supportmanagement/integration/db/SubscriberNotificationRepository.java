@@ -31,7 +31,4 @@ public interface SubscriberNotificationRepository extends JpaRepository<Subscrib
 
 	Optional<SubscriberNotificationEntity> findByIdAndMunicipalityIdAndNamespace(
 		String id, String municipalityId, String namespace);
-
-	Optional<SubscriberNotificationEntity> findByMunicipalityIdAndNamespaceAndErrandIdAndIdentifierTypeAndIdentifierValue(
-		String municipalityId, String namespace, String errandId, String identifierType, String identifierValue);
 }

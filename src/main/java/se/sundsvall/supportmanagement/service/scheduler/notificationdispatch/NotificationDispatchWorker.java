@@ -1,110 +1,113 @@
 package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 
+import java.time.Duration;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
-import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 
 import static java.time.OffsetDateTime.now;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
 @Component
 public class NotificationDispatchWorker {
 
-	private static final Logger LOG = LoggerFactory.getLogger(NotificationDispatchWorker.class);
-	private static final long TRANSACTION_BUFFER_SECONDS = 10;
+	/**
+	 * How long a request group must be quiet before it is considered complete and eligible for dispatch.
+	 */
+	@Value("${scheduler.notification-dispatch.transaction-buffer:PT10S}")
+	private Duration transactionBuffer = Duration.ofSeconds(10);
 
-	@Value("${scheduler.notification-dispatch.max-retries:3}")
-	private int maxRetries = 3;
-
-	@Value("${scheduler.notification-dispatch.dead-letter-retention-days:7}")
-	private int deadLetterRetentionDays = 7;
+	/**
+	 * How old an entry may get before it is considered too stale to notify about. Since a failed dispatch is retried
+	 * indefinitely, this is what stops an entry that can never succeed from being sent long after the fact.
+	 */
+	@Value("${scheduler.notification-dispatch.max-age:P30D}")
+	private Duration maxAge = Duration.ofDays(30);
 
 	private final NotificationDispatchRepository dispatchRepository;
-	private final SubscriberRepository subscriberRepository;
+	private final SubscriptionRepository subscriptionRepository;
 	private final ErrandsRepository errandsRepository;
 	private final NotificationChannelDispatcher channelDispatcher;
 
 	public NotificationDispatchWorker(
 		final NotificationDispatchRepository dispatchRepository,
-		final SubscriberRepository subscriberRepository,
+		final SubscriptionRepository subscriptionRepository,
 		final ErrandsRepository errandsRepository,
 		final NotificationChannelDispatcher channelDispatcher) {
 		this.dispatchRepository = dispatchRepository;
-		this.subscriberRepository = subscriberRepository;
+		this.subscriptionRepository = subscriptionRepository;
 		this.errandsRepository = errandsRepository;
 		this.channelDispatcher = channelDispatcher;
 	}
 
-	@Transactional
-	public void cleanUpDeadLetters() {
-		dispatchRepository.deleteByDeadLetterTrueAndCreatedBefore(now(ZoneId.systemDefault()).minusDays(deadLetterRetentionDays));
-	}
-
 	@Transactional(readOnly = true)
 	public List<NotificationDispatchEntity> fetchProcessable() {
-		final var cutoff = now(ZoneId.systemDefault()).minusSeconds(TRANSACTION_BUFFER_SECONDS);
-		return dispatchRepository.findProcessable(cutoff, now(ZoneId.systemDefault()));
+		return dispatchRepository.findProcessable(now(ZoneId.systemDefault()).minus(transactionBuffer));
 	}
 
+	/**
+	 * Dispatches one group of entries, all belonging to the same errand.
+	 * <p>
+	 * Every subscriber matched by an active subscription receives at most one delivery per group, carrying the subset of
+	 * the group's events that the subscriber's filters accept.
+	 * <p>
+	 * Deleting the group here is what marks it as done: delivery and deletion share one transaction, so a failure
+	 * anywhere rolls back every delivery and leaves the whole group in place, which is what makes the next scheduler run
+	 * pick it up again. An entry therefore survives until it has been dispatched successfully, or until it ages past
+	 * {@code maxAge} and is dropped undelivered.
+	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	public void processGroup(final List<NotificationDispatchEntity> group) {
 		final var first = group.getFirst();
 		final var errandId = first.getErrandId();
-		final var municipalityId = first.getMunicipalityId();
-		final var namespace = first.getNamespace();
 
 		final var errandNumber = errandsRepository.findById(errandId)
 			.map(ErrandEntity::getErrandNumber)
 			.orElse(null);
 
-		final var subscribers = subscriberRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId);
-		var allSucceeded = true;
+		subscriptionRepository.findAllActiveForErrand(first.getMunicipalityId(), first.getNamespace(), errandId, now(ZoneId.systemDefault()))
+			.stream()
+			// A subscriber may cover the same errand through both a NAMESPACE and an ERRAND subscription
+			.collect(groupingBy(subscription -> subscription.getSubscriber().getId(), LinkedHashMap::new, toList()))
+			.values()
+			.forEach(subscriptions -> dispatch(errandId, errandNumber, group, subscriptions));
 
-		for (final var subscriber : subscribers) {
-			final var relevantEntries = group.stream()
-				.filter(e -> !isExecutingUser(subscriber, e))
-				.filter(e -> subscriberWantsEventType(subscriber, e))
-				.toList();
+		dispatchRepository.deleteAll(group);
+	}
 
-			if (relevantEntries.isEmpty()) {
-				continue;
-			}
+	private void dispatch(final String errandId, final String errandNumber, final List<NotificationDispatchEntity> group, final List<SubscriptionEntity> subscriptions) {
+		final var subscriber = subscriptions.getFirst().getSubscriber();
 
-			for (final var entry : relevantEntries) {
-				if (!channelDispatcher.send(errandId, errandNumber, subscriber, entry.getEventType(), entry.getDescription(), entry.getSubType())) {
-					allSucceeded = false;
-				}
-			}
-		}
+		final var events = group.stream()
+			.filter(this::isWithinMaxAge)
+			.filter(entry -> !isExecutingUser(subscriber, entry))
+			.filter(entry -> subscriptions.stream().anyMatch(subscription -> wantsEvent(subscription, entry)))
+			.toList();
 
-		if (allSucceeded) {
-			dispatchRepository.deleteAll(group);
-		} else {
-			group.forEach(this::handleFailure);
+		if (!events.isEmpty()) {
+			channelDispatcher.send(errandId, errandNumber, subscriber, events);
 		}
 	}
 
-	private void handleFailure(final NotificationDispatchEntity entry) {
-		entry.setRetryCount(entry.getRetryCount() + 1);
-		if (entry.getRetryCount() >= maxRetries) {
-			LOG.error("Notification dispatch id: {} has reached max retries, marking as dead-letter", entry.getId());
-			entry.setDeadLetter(true);
-		} else {
-			final long delayMinutes = (long) Math.pow(2, entry.getRetryCount() - 1.0);
-			entry.setNextRetryAt(now(ZoneId.systemDefault()).plusMinutes(delayMinutes));
-			LOG.info("Notification dispatch id: {} scheduled for retry in {} minute(s)", entry.getId(), delayMinutes);
-		}
-		dispatchRepository.save(entry);
+	/**
+	 * Stale entries are left out of the delivery but still deleted along with the rest of the group.
+	 */
+	private boolean isWithinMaxAge(final NotificationDispatchEntity entry) {
+		return entry.getCreated() == null || entry.getCreated().isAfter(now(ZoneId.systemDefault()).minus(maxAge));
 	}
 
 	private boolean isExecutingUser(final SubscriberEntity subscriber, final NotificationDispatchEntity entry) {
@@ -113,11 +116,20 @@ public class NotificationDispatchWorker {
 			&& entry.getExecutingUserId().equals(subscriber.getIdentifier().getValue());
 	}
 
-	private boolean subscriberWantsEventType(final SubscriberEntity subscriber, final NotificationDispatchEntity entry) {
-		final var filters = subscriber.getEventFilters();
+	/**
+	 * Subscription level filters override the subscriber's global ones, as documented on the subscription API model. No
+	 * filters at either level means everything is wanted.
+	 */
+	private boolean wantsEvent(final SubscriptionEntity subscription, final NotificationDispatchEntity entry) {
+		var filters = subscription.getEventFilters();
 		if (filters == null || filters.isEmpty()) {
-			return true;
+			filters = subscription.getSubscriber().getEventFilters();
 		}
-		return filters.stream().anyMatch(filter -> entry.getEventType().equals(filter.getType()));
+		return filters == null || filters.isEmpty() || filters.stream().anyMatch(filter -> matches(filter, entry));
+	}
+
+	private boolean matches(final EventFilterEmbeddable filter, final NotificationDispatchEntity entry) {
+		return Objects.equals(filter.getType(), entry.getEventType())
+			&& (filter.getSubtype() == null || Objects.equals(filter.getSubtype(), entry.getSubType()));
 	}
 }
