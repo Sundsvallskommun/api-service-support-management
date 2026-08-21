@@ -5,7 +5,7 @@ samarbeta när ALKT-namespacets myndighetsprocess körs i Operaton. Dokumentet g
 API:erna, hur handläggarens och processens ändringar hålls isär, hur vi hindrar att de två tjänsterna
 väcker varandra i all oändlighet — och sist en uppdelning i uppgifter som går att bygga en i taget.
 
-**Jira:** DRAKEN-4733 (story) med DRAKEN-4734…4748 som deluppgifter. Avsnittsnumren nedan refereras från
+**Jira:** DRAKEN-4733 (story) med DRAKEN-4734…4750 som deluppgifter. Avsnittsnumren nedan refereras från
 respektive deluppgift, och kopplingen mellan uppgifterna i §10 och Jira-nycklarna står i tabellen där.
 
 **Öppen fråga:** när RabbitMQ blir produktionsklar (§2.4). Den blockerar inte T1–T8.
@@ -44,6 +44,8 @@ respektive deluppgift, och kopplingen mellan uppgifterna i §10 och Jira-nycklar
 | 26 | `processKey` hämtas från instansen först och från etiketterna i andra hand; `DELETE` skickas även utan nyckel | Att alltid läsa nyckeln ur etiketterna | En borttagen etikett skulle annars lämna en processinstans kvar i Operaton för ett ärende som inte längre finns — §2.2 |
 | 27 | **Resursen heter `processes` och modellen `ErrandProcess`** | `process-instances`; `process-info` | Modellen ska kunna bära även processer som inte körs i Operaton, och kodbasens övriga subresurser heter något i plural. `process-info` går inte att böja i plural och hade dessutom låst oss vid en rad per ärende |
 | 28 | **`GET /process-labels` byggs inte** | En egen endpoint som visar vilken etikett som startar vilken process | `GET /metadata/labels` lämnar redan tillbaka `attributes` med `id` och `resourcePath`. Den fråga man faktiskt ställer i drift gäller dessutom ett enskilt ärende och besvaras av aktivitetsloggen — §5.2. Indexet `idx_metadata_label_attribute_key` behövs därmed inte heller |
+| 29 | **Manuell stegning sker med namngivna signaler, och valet manuellt eller automatiskt ligger i processmodellen** | En inställning per namespace; att handläggaren sätter processens läge direkt | En inställning i SM kan säga en sak medan modellen gör en annan. Signalen är dessutom en begäran, inte ett kommando — processen avgör, så lagstadgade steg går inte att kliva förbi (§5.9) |
+| 30 | **Signalen bär bara ett namn, ingen fritext** | Ett kommentarsfält på signalen | Aktivitetsloggen gallras efter 365 dagar medan ärendet lever längre, och `message` får inte innehålla personuppgifter. Motiveringen hör hemma i ärendeanteckningar (§5.9) |
 
 ---
 
@@ -67,7 +69,7 @@ Allt i det här avsnittet är efterkontrollerat i kodbasen, inte antaget. Resten
 
 **Revisioner skapas bara på fem ställen** — `ErrandService.createErrand/updateErrand`, `ErrandAttachmentService.createErrandAttachmentInternal/deleteErrandAttachment/createErrandAttachment(AttachmentEntity, …)`. Intaget (`EmailReaderWorker.processErrand`, `MessageExchangeSyncService.applyStatusChange`) sparar direkt via repository. Därför kan trigger-filtret inte bygga på revisionsdiff.
 
-`EventSubType` (befintlig enum): `ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, SYSTEM, SUSPENSION`. `EventType` kommer från eventlog-specen.
+`EventSubType` (befintlig enum): `ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, SYSTEM, SUSPENSION`. `EventType` kommer från eventlog-specen. Enumet utökas med `SIGNAL` för manuell stegning (§5.9) — ett rent tillägg som inte rör befintliga värden.
 
 ### 1.2 Halva leveransmaskineriet finns redan
 
@@ -283,9 +285,10 @@ DLQ-djup och nodstatus — samt en dokumenterad väg tillbaka när något gått 
 
 ### 3.1 Tabellerna
 
-Fyra nya tabeller i två migreringar: `V1_47__add_process_integration_tables.sql` med de tre första (byggs i
-T1) och `V1_48__add_errand_decision.sql` med beslutet (byggs i T9). De ligger i var sin fil eftersom Flyway
-jämför checksumma — en migrering som redan körts går inte att fylla på i efterhand.
+Fem nya tabeller i tre migreringar: `V1_47__add_process_integration_tables.sql` med de tre första (byggs i
+T1), `V1_48__add_errand_decision.sql` med beslutet (T9) och `V1_49__add_errand_process_signal.sql` med de
+väntade signalerna (T11). De ligger i var sin fil eftersom Flyway jämför checksumma — en migrering som
+redan körts går inte att fylla på i efterhand.
 
 ```sql
 -- 1. Outbox. Medvetet UTAN FK mot errand: ett DELETE-event maste overleva att arendet raderas.
@@ -399,6 +402,23 @@ create table if not exists errand_decision (
     constraint fk_ed_errand  foreign key (errand_id)         references errand (id) on delete cascade,
     constraint fk_ed_process foreign key (errand_process_id) references errand_process (id) on delete set null
 ) engine=InnoDB;
+
+-- V1_49: vad processen just nu vantar pa fran handlaggaren (5.9). Ersatts i sin helhet vid
+-- varje rapport. Tom mangd = processen vantar inte pa nagon manniska.
+create table if not exists errand_process_signal (
+    id                varchar(36)  not null,
+    errand_process_id varchar(36)  not null,
+    name              varchar(128) not null,   -- meddelandenamnet i BPMN, t.ex. 'granskning-godkand'
+    label             varchar(255),            -- visningstext, t.ex. 'Godkann granskning'
+    sort_order        int          default 0 not null,
+    created           datetime(3)  not null,
+    primary key (id),
+    constraint uq_eps_process_name unique (errand_process_id, name),
+    constraint fk_eps_process foreign key (errand_process_id)
+        references errand_process (id) on delete cascade
+) engine=InnoDB;
+
+create index if not exists idx_eps_process on errand_process_signal (errand_process_id);
 ```
 
 ### 3.2 Hur tabellerna hänger ihop
@@ -410,6 +430,7 @@ create table if not exists errand_decision (
 | `errand_process_activity` → `errand_process` | `ON DELETE CASCADE`, **nullbar** | Poster utan instans måste kunna skrivas (§4.2) |
 | `errand_process_activity` → `errand` | `ON DELETE CASCADE` | Krävs när instans-FK:n är nullbar — annars överlever instanslösa poster ärendet. InnoDB tillåter båda kaskadvägarna parallellt |
 | `errand_decision` → `errand` | `ON DELETE CASCADE`, **med JPA-relation på `ErrandEntity`** | Motsatt val mot raderna ovan, och avsiktligt. Beslutet ska ligga i ärendets aggregat och därmed i revisionssnapshotten (§7.5). Det skrivs en handfull gånger per ärendes livstid, inte per arbetssteg — inget revisionsbrus |
+| `errand_process_signal` → `errand_process` | `ON DELETE CASCADE` | Signalerna är processens tillstånd, inte ärendedata. Försvinner processraden ska de följa med |
 | `errand_decision` → `errand_process` | `ON DELETE SET NULL`, **nullbar** | Spårbarhet till processen som fattade beslutet. Nullbar för manuella beslut och för ärenden helt utan process; `SET NULL` för att beslutet inte får försvinna med processraden |
 
 **Retention:** aktiviteter röjs på `created` (default 365 d); outbox-rader röjs när `delivered_at` är äldre än **max(loop-guard-fönstret × 6, 24 h)**; dead letters enligt §8.3. Beslutet röjs aldrig separat — det följer ärendet.
@@ -604,6 +625,9 @@ Content-Type: application/json
 }
 ```
 
+Rapporten kan också bära `awaitingSignals` — vad processen väntar på från handläggaren. Det hör till den
+manuella stegningen och beskrivs i §5.9.
+
 `errandVersion` är frivillig och talar om vilken version av ärendet arbetssteget läste. Är den med och
 ärendet hunnit ändras svarar SM `412` och skriver ingenting alls — se §6.3. Ett arbetssteg som ändå
 skriver tillbaka till ärendet behöver den inte, för då gör `If-Match` på själva PATCH-anropet samma jobb.
@@ -714,8 +738,15 @@ public class ErrandProcess {
     private OffsetDateTime ended;
     private ProcessError error;
     @Schema(accessMode = WRITE_ONLY) private List<ProcessActivity> activities;  // lases via egen endpoint
+    private List<ProcessSignal> awaitingSignals;    // vad processen vantar pa fran handlaggaren (5.9)
     @Schema(accessMode = READ_ONLY)  private OffsetDateTime created;
     @Schema(accessMode = READ_ONLY)  private OffsetDateTime modified;
+}
+
+/** Ett val handlaggaren kan gora for att stega processen vidare. Namnen kommer ur BPMN, SM tolkar dem inte. */
+public class ProcessSignal {
+    @NotBlank private String name;     // meddelandenamnet i modellen, 'granskning-godkand'
+    private String label;              // visningstext, 'Godkann granskning'
 }
 
 public class ProcessActivity {
@@ -788,6 +819,10 @@ Det ställer ett krav på hur fältet fylls i: frågan är "senaste raden per ä
 finns i MariaDB 10.6) eller en join mot `max(created)` — men det ska fortfarande bli **en** fråga, inte en
 per ärende. `decision` hämtas i samma sväng och är en rak join på `errand_id`, eftersom det bara finns ett
 beslut att välja på (§7.5).
+
+`awaitingSignals` är en barnsamling och går inte att hämta i samma fråga utan att multiplicera raderna.
+Hämta dem i **en** extra fråga för hela sidan, nycklad på de processrader man redan har — två frågor
+totalt, inte en per ärende.
 
 ### 5.4 Det SM skickar till pw-alkt
 
@@ -864,6 +899,8 @@ namespacets `PROCESS_CONSUMER`, utpekad med `X-Sent-By` — den bär processens 
 | `409` | Annan levande instans för ärendet **med ett annat `processInstanceId`**; ärendet har redan en `COMPLETED` instans (§7.4); instans med annat `process_key` än ärendets befintliga. Samma `processInstanceId` är aldrig `409` — se §5.1 |
 | `412` | `errandVersion` i rapporten matchar inte ärendets aktuella version (§6.3) |
 
+Statuskoderna för `.../signals` står i §5.9.
+
 **`.../decision`**
 
 | Kod | När |
@@ -901,6 +938,92 @@ och just den skillnaden har både handläggaren och den sökande rätt att se.
 `POST /process/start/{errandId}` och `POST /process/update/{processInstanceId}` **tas bort** i samma steg som `errand-events` införs. Med dem försvinner även: `ProcessService.updateProcess`, `StartProcessResponse` + test, `AbstractTaskWorker.clearUpdateAvailable` (död kod), `Constants.PROCESS_VARIABLE_UPDATE_AVAILABLE`, `Constants.FALSE`, `OperatonClient.setProcessInstanceVariable(s)`, `AbstractTaskWorker.setProcessInstanceVariable`.
 
 Vi förlorar ingen nödutgång på kuppen: behöver någon starta en process för hand går det utmärkt att posta ett `errand-events` — samma kod som i skarp drift.
+
+### 5.9 Manuell stegning — signaler
+
+I ALKT ska de flesta övergångar styras av handläggaren, inte ske av sig själva. Andra processmodeller, och
+andra namespace, kan vilja tvärtom. Båda ryms i samma maskineri, och **valet görs i processmodellen** —
+inte i konfigurationen.
+
+Ett väntläge som bara går vidare på ett *namngivet* meddelande är en manuell grind. Ett väntläge som går
+vidare så snart villkoret är uppfyllt är automatiskt. En modell utan namngivna väntlägen beter sig precis
+som innan det här avsnittet fanns, så automatiskt förblir default.
+
+Att valet ligger i modellen och inte i `namespace_config` är avsiktligt: en inställning i SM skulle kunna
+säga en sak medan modellen gör en annan, och då finns ingen instans som har rätt.
+
+#### Processen berättar vad den väntar på
+
+Rapporten (§5.1) utökas med `awaitingSignals`. Den fylls när processen går in i ett väntläge:
+
+```json
+{ "processStatus": "WAITING",
+  "currentActivityId": "review_phase",
+  "currentActivityName": "Granskning",
+  "awaitingSignals": [
+    { "name": "granskning-godkand", "label": "Godkänn granskning" },
+    { "name": "granskning-avvisad", "label": "Skicka tillbaka för komplettering" }
+  ] }
+```
+
+SM tolkar inte namnen. De kommer ur BPMN-modellen och relayas tillbaka precis som de kom, på samma sätt som
+`activityType` (§4.2). Därmed finns ingen lista i SM som kan hamna ur synk med modellen — läggs en grind
+till i BPMN dyker den upp i gränssnittet utan att någon rör SM.
+
+Listan ersätts i sin helhet vid varje rapport. Ett tomt `awaitingSignals` betyder "processen väntar inte på
+dig", vilket är det normala för ett automatiskt väntläge.
+
+#### Handläggaren svarar
+
+```http
+POST /{municipalityId}/{namespace}/errands/{errandId}/processes/{processInstanceId}/signals
+```
+
+```json
+{ "signal": "granskning-godkand" }
+```
+
+Svar `202 Accepted`: SM har registrerat avsikten och publicerat händelsen. Vad processen sedan gör avgör
+processen.
+
+| Kod | När |
+|---|---|
+| `202` | Signalen är registrerad och publicerad |
+| `400` | `signal` saknas eller är tom |
+| `404` | Ärendet finns inte, eller har ingen levande processinstans |
+| `409` | Signalen finns inte bland de väntade, eller processen är avslutad |
+
+**Signalen tvingar ingenting.** Den är en begäran, och väntläget avgör om den betyder något i sitt
+nuvarande läge. Ett steg som lagen kräver går inte att kliva förbi genom att posta rätt sträng — och det
+är hela skälet till att handläggaren inte får sätta processens läge direkt.
+
+`409` när signalen inte står bland de väntade är dessutom ett naturligt dubbelklicksskydd: har processen
+redan gått vidare rapporterar den en ny uppsättning signaler, och den gamla knappen slutar fungera.
+
+#### Vad skrivningen gör
+
+1. **En aktivitetspost** med `activityType = SIGNAL`, `activityId` = signalens namn, `severity = INFO` och
+   en text som namnger avsändaren. Det är den posten som i efterhand svarar på frågan *vem stegade
+   processen förbi granskningen, och när*.
+2. **En händelse med subtypen `SIGNAL`**, som blir en outbox-rad och når pw. Det kräver att `SIGNAL` ligger
+   i `PROCESS_TRIGGER` för namespacet (§7.1) — utan den publiceras ingenting och knappen blir en attrapp.
+3. Loop-skyddets första lager släpper igenom, eftersom avsändaren är en handläggare och inte namespacets
+   `PROCESS_CONSUMER` (§6.5).
+
+pw korrelerar på signalens namn i stället för det generiska `errandUpdated` när subtypen är `SIGNAL`
+(§9.3).
+
+#### Ingen fritext på signalen
+
+Signalen bär bara ett namn. Handläggaren kan alltså inte skicka med en motivering, och det är medvetet:
+
+- Aktivitetsloggen **gallras efter 365 dagar** medan ärendet lever längre. Dokumentation av varför ett steg
+  hoppades över får inte försvinna före ärendet.
+- `message` i aktivitetsloggen får enligt §11 inte innehålla personuppgifter, och en anteckning som *"kom
+  per telefon från sökandens ombud"* är precis det.
+
+Behöver handläggaren dokumentera varför finns ärendeanteckningar, som har rätt gallring och rätt
+behörighet. Spårbarheten över *att* signalen skickades, av vem och när, skriver SM ändå automatiskt.
 
 ---
 
@@ -1020,7 +1143,7 @@ Två nycklar i den befintliga `namespace_config` styr allt: vem som kör process
 | Nyckel | Typ | Antal | Värde |
 |---|---|---|---|
 | `PROCESS_CONSUMER` | STRING | 1 | `pw-alkt` |
-| `PROCESS_TRIGGER` | STRING | N | `ERRAND`, `MESSAGE`, `ATTACHMENT`, `DECISION` |
+| `PROCESS_TRIGGER` | STRING | N | `ERRAND`, `MESSAGE`, `ATTACHMENT`, `DECISION`, `SIGNAL` |
 
 ```java
 // ConfigPropertyExtractor - nya konstanter
@@ -1039,7 +1162,8 @@ insert into namespace_config_value (namespace_config_id, `key`, `value`, `type`)
   (42, 'PROCESS_TRIGGER',  'ERRAND',     'STRING'),
   (42, 'PROCESS_TRIGGER',  'MESSAGE',    'STRING'),
   (42, 'PROCESS_TRIGGER',  'ATTACHMENT', 'STRING'),
-  (42, 'PROCESS_TRIGGER',  'DECISION',   'STRING');
+  (42, 'PROCESS_TRIGGER',  'DECISION',   'STRING'),
+  (42, 'PROCESS_TRIGGER',  'SIGNAL',     'STRING');
 ```
 
 **`ERRAND` måste vara med.** Utan den startar aldrig ett ärende som får sin etikett först i ett andra
@@ -1050,6 +1174,10 @@ Se §9.3.
 **`DECISION` är lika obligatorisk.** Beslutet skrivs till `.../errands/{errandId}/decision` (§7.5) och
 processen väntar på det. Saknas triggern publiceras ingen outbox-rad för den skrivningen, processen får
 aldrig veta att beslutet är fattat, och instansen står kvar i `WAITING` för alltid.
+
+**`SIGNAL` behövs så snart modellen har manuella grindar** (§5.9). Utan den publiceras handläggarens
+knapptryck aldrig, och knappen blir en attrapp som ser ut att fungera. Ett namespace vars processer stegar
+helt automatiskt behöver den inte.
 
 ### 7.2 `application.yml`
 
@@ -1246,6 +1374,8 @@ först när någon hör av sig.
 | `process.concurrent_task_detected` | Brott mot modelleringsregeln i §6.4 |
 | `process.start_failed` | Feltaggade etiketter |
 | `decision.written{method=MANUAL\|AUTOMATIC}` | Hur många beslut som fattas av maskin respektive människa. Krävs för att kunna svara på frågan i efterhand (§7.5), och en oväntad rörelse i `AUTOMATIC` är den tidigaste signalen på att en process fattar beslut den inte borde |
+| `process.signal_sent{signal=...}` | Hur ofta handläggaren stegar processen manuellt, och vid vilken grind. Står en grind still trots att ärenden köar där, är det ofta gränssnittet som inte visar knappen |
+| `process.signal_rejected{reason=UNKNOWN\|TERMINAL}` | Signaler som avvisats med `409`. En återkommande `UNKNOWN` betyder att gränssnittet visar en knapp processen inte längre väntar på |
 | `decision.rejected{reason=METHOD\|LOCKED}` | Avvisade beslutsskrivningar: fel `method` för identiteten (`403`) eller låst av `COMPLETED` process (`409`) |
 
 Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id` — dubbelleveranser blir då spårbara i efterhand. **Logga aldrig `justification`** — den innehåller personuppgifter (§11).
@@ -1255,6 +1385,8 @@ Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id`
 | Fråga | Svar |
 |---|---|
 | Varför startade ingen process för ärendet? | `GET .../processes` tom + `errand.process` null. Läs `GET .../process-activities` — tvetydig etikett och nödbroms ligger där som `CONFIG`/`ERROR`-poster. Kontrollera sedan etikettens `processKey`-attribut via `GET /{municipalityId}/{namespace}/metadata/labels`, och att `PROCESS_CONSUMER` finns för namespacet |
+| Varför går processen inte vidare fast handläggaren tryckt på knappen? | Kontrollera att `SIGNAL` ligger i `PROCESS_TRIGGER` (§7.1), att signalen står bland `errand.process.awaitingSignals`, och att väntläget i modellen lyssnar på just det namnet. Se `process.signal_rejected` |
+| Varför syns ingen knapp för att gå vidare? | `errand.process.awaitingSignals` är tom. Antingen är väntläget automatiskt, eller så rapporterar pw inte in signalerna (§9.3) |
 | Varför avslutas inte processen fast beslutet är fattat? | Kontrollera att `DECISION` ligger i `PROCESS_TRIGGER` (§7.1), att outbox-raden finns för beslutsskrivningen, och att väntläget läser om ärendet när det går in i väntan (§9.2 punkt 1) |
 | Vem fattade beslutet på ärendet? | `errand.decision.method` och `.decidedBy`. `AUTOMATIC` betyder att processen fattade det; `processId` pekar ut vilken processrad |
 | Varför kör processen om samma steg gång på gång? | Handläggaren ändrar ärendet mitt i steget ⇒ `412` (§6.2). Se `process.errand_conflict` och aktivitetsloggen |
@@ -1291,14 +1423,15 @@ Alltså `alkt-ansokan.bpmn` och `alkt-tillsyn.bpmn` var för sig. `TenantAwareAu
 
 Processens `id` i filen måste stämma med `Constants.PROCESS_KEY_*`. Och tänk på att **`ProcessWithoutDeviationIT.setup` väntar på `getDeployments(...).size() == 1`** — det villkoret måste ändras när den andra filen läggs till.
 
-### 9.2 Fyra krav på hur processerna modelleras
+### 9.2 Fem krav på hur processerna modelleras
 
 Det här är inte råd. Håller inte modellerna sig till dem faller delar av designen.
 
 1. **Ett väntläge måste läsa om ärendet när det går in i väntan** och avgöra om det den väntar på redan har hänt. En väckning som sväljs som `MismatchingMessageCorrelation` kan mycket väl vara äkta — den kom bara medan processen råkade befinna sig mellan två väntlägen. Att det ändå är ofarligt vilar helt på den här punkten. **Tydligast blir det med beslutet** (§7.5): skrivs det medan processen arbetar och väntläget inte läser om, står ärendet stilla för alltid med ett fattat beslut i databasen.
-2. **Inga parallella grenar som ändrar ärendet** (§6.4).
-3. **Inga processvariabler för att hålla reda på vad som redan gjorts eller för att signalera.** Skälet står i den kod som nu tas bort: *"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."* Behåll resonemanget även när metoden är borta — det är det första någon återinför nästa gång ett dubblettproblem dyker upp.
-4. **Inga call activities eller delade subprocesser** tills vidare. Kommande processer kan se helt annorlunda ut, och då är det lättare att ha hållit dem isär.
+2. **Manuella grindar modelleras som namngivna väntlägen** (§5.9). Ska handläggaren avgöra när processen går vidare räcker det inte att villkoret är uppfyllt — väntläget ska lyssna på ett *namngivet* meddelande, till exempel `granskning-godkand`. Finns flera vägar framåt används en event-based gateway med ett catch event per alternativ, så att handläggarens val också blir processens vägval. Sätt en tidsgräns på grindar som kan glömmas bort: ett väntläge som ingen någonsin klickar på står kvar för alltid.
+3. **Inga parallella grenar som ändrar ärendet** (§6.4).
+4. **Inga processvariabler för att hålla reda på vad som redan gjorts eller för att signalera.** Skälet står i den kod som nu tas bort: *"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."* Behåll resonemanget även när metoden är borta — det är det första någon återinför nästa gång ett dubblettproblem dyker upp.
+5. **Inga call activities eller delade subprocesser** tills vidare. Kommande processer kan se helt annorlunda ut, och då är det lättare att ha hållit dem isär.
 
 ### 9.3 Starta, fortsätta och radera
 
@@ -1319,7 +1452,8 @@ handleErrandEvent(municipalityId, namespace, event):
                                                        // 409 = avslutad eller annan levande
                                                        //       instans -> avbryt den nystartade
     annars:
-        correlateMessage(messageName = "errandUpdated", businessKey = errandId, tenantId = "ALKT")
+        messageName = (event.eventSubType == SIGNAL) ? event.signal : "errandUpdated"
+        correlateMessage(messageName, businessKey = errandId, tenantId = "ALKT")
 ```
 
 **`findProcessInstances` ser bara det som kör just nu.** En avslutad process finns inte där utan ligger i
@@ -1339,6 +1473,16 @@ Annars fylls kön av misslyckade leveranser med händelser som var helt normala.
 
 **Glöm inte `DELETE`.** Utan den lever processinstansen vidare i Operaton för ett ärende som inte längre
 finns — och SM har inget spår kvar av den, eftersom `errand_process` städats bort med ärendet.
+
+**Signaler korrelerar på sitt eget namn.** Är händelsens subtyp `SIGNAL` är det handläggaren som stegar
+processen vidare (§5.9), och då är det signalens namn som ska korreleras — inte det generiska
+`errandUpdated`. Matchar namnet inget väntläge är det samma sak som vilken missad korrelation som helst:
+en informationsrad och `202`.
+
+**Rapportera tillbaka vad processen väntar på.** När pw har startat eller väckt en instans, och när ett
+arbetssteg är klart, ska nästa rapport innehålla `awaitingSignals` för det väntläge processen hamnat i.
+Namnen behöver inte underhållas för hand — Operaton vet vilka meddelanden en instans prenumererar på just
+nu, så pw kan fråga och rapportera vidare. Tomt fält betyder att processen inte väntar på någon människa.
 
 `OperatonClient` behöver: `correlateMessage`, `findProcessInstances(businessKey, processDefinitionKey, tenantIdIn)`, `deleteProcessInstance`, och `businessKey` i `OperatonMapper.toStartProcessInstanceDto`.
 
@@ -1406,13 +1550,15 @@ pw-alkt) följer tjänst i stället för ordning.
 | 6 | DRAKEN-4739 | T6 — Relay och leverans |
 | 7 | DRAKEN-4740 | T7 — Skyddsräcken |
 | 8 | DRAKEN-4741 | T9 — Beslutet: modell, endpoint och spårbarhet |
-| 9 | DRAKEN-4742 | P1 — Operaton-klienten |
-| 10 | DRAKEN-4743 | P2 — Event-endpoint och borttagning |
-| 11 | DRAKEN-4744 | P3 — SM-klienten |
-| 12 | DRAKEN-4745 | P4 — Workerstruktur |
-| 13 | DRAKEN-4746 | T8 — `ProcessLoopGuardIT` |
-| 14 | DRAKEN-4747 | P5 — Tillsynsprocessen |
-| 15 | DRAKEN-4748 | P6 — Incidentåterkoppling |
+| 9 | DRAKEN-4749 | T11 — Manuell stegning med signaler |
+| 10 | DRAKEN-4742 | P1 — Operaton-klienten |
+| 11 | DRAKEN-4743 | P2 — Event-endpoint och borttagning |
+| 12 | DRAKEN-4744 | P3 — SM-klienten |
+| 13 | DRAKEN-4745 | P4 — Workerstruktur |
+| 14 | DRAKEN-4750 | P7 — Manuella grindar och väntade signaler |
+| 15 | DRAKEN-4746 | T8 — `ProcessLoopGuardIT` |
+| 16 | DRAKEN-4747 | P5 — Tillsynsprocessen |
+| 17 | DRAKEN-4748 | P6 — Incidentåterkoppling |
 
 ### T1 — Datamodell och domänenums (SM)
 
@@ -1437,7 +1583,7 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T3 — Process-API (SM)
 
-**Bygg:** `ErrandProcessResource` (`PUT`, `POST`, `GET` under `.../errands/{errandId}/processes`) och ärendescopad `GET .../process-activities` med valfritt `processInstanceId`-filter (§5.2); `ErrandProcessService`; API-modellerna (§5.3); `Errand.process` + batchberikning i `readErrand`/`findErrands`; regenerera `openapi.yaml`.
+**Bygg:** `ErrandProcessResource` (`PUT`, `POST`, `GET` under `.../errands/{errandId}/processes`) och ärendescopad `GET .../process-activities` med valfritt `processInstanceId`-filter (§5.2); `ErrandProcessService`; API-modellerna (§5.3); `Errand.process` + batchberikning i `readErrand`/`findErrands`; regenerera `openapi.yaml`. Fältet `awaitingSignals` på samma modell hör till T11 — bygg det inte här.
 
 **Acceptans:**
 - `PUT` två gånger ⇒ `revision`-tabellen oförändrad (skyddar mot framtida `@OneToMany` på `ErrandEntity`).
@@ -1528,6 +1674,20 @@ Utan detta test är loop-skyddet en hypotes.
 - Enhetstest som verifierar att beslutsskrivning från namespacets `PROCESS_CONSUMER` **inte** ger en outbox-rad — origin-filtret gäller även här.
 - `justification` förekommer inte i någon loggrad (§8.1).
 
+### T11 — Manuell stegning med signaler (SM)
+
+**Bygg:** `V1_49`-migreringen med `errand_process_signal` (§3.1), entitet och repository; `ProcessSignal` i API:et och `awaitingSignals` på `ErrandProcess` (§5.3); `POST .../processes/{processInstanceId}/signals` (§5.9); aktivitetspost med `activityType = SIGNAL`; värdet `SIGNAL` i `EventSubType` och i `PROCESS_TRIGGER` för ALKT; mätvärdena `process.signal_sent` och `process.signal_rejected`; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
+
+**Acceptans:**
+- En rapport med `awaitingSignals` ersätter tidigare rader helt — tas en signal bort ur rapporten försvinner den ur `errand.process`.
+- Tomt `awaitingSignals` tömmer listan, och betyder att processen inte väntar på någon människa.
+- Signal som står bland de väntade ⇒ `202`, aktivitetspost och outbox-rad med subtyp `SIGNAL`.
+- Signal som **inte** står bland de väntade ⇒ `409`, och ingenting skrivs. Det är samtidigt dubbelklicksskyddet.
+- Signal mot ärende utan levande process ⇒ `404`; mot avslutad process ⇒ `409`.
+- Aktivitetsposten namnger avsändaren, så att "vem stegade processen förbi granskningen" går att besvara i efterhand.
+- **Utan `SIGNAL` i `PROCESS_TRIGGER` publiceras ingen outbox-rad** — täck det med ett test, annars upptäcks felkonfigurationen först i drift.
+- Berikningen av `awaitingSignals` gör **en** extra fråga för hela sidan, verifierat med frågeräkning.
+
 ### P1 — Operaton-klienten (pw)
 
 `correlateMessage`, `findProcessInstances`, `deleteProcessInstance`; `businessKey` i mappern; nya konstanter. **Acceptans:** `ProcessWithoutDeviationIT` fortsatt grön.
@@ -1555,6 +1715,17 @@ Utan detta test är loop-skyddet en hypotes.
 
 **Acceptans:** IT verifierar ordningen `RUNNING` → PATCH → terminal rapport; ett fall där `executeBusinessLogic` kastar kontrollerar att `RETRYING` rapporterats; ett fall där SM svarar `412` på PATCH kontrollerar att steget körs om och att andra försöket läser om ärendet.
 
+### P7 — Manuella grindar och väntade signaler (pw)
+
+**Bygg:** korrelation på signalens namn när händelsens subtyp är `SIGNAL` (§9.3); rapportering av `awaitingSignals` när processen går in i ett väntläge, hämtat från Operatons event subscriptions om API:et tillåter det; manuella grindar i modellen enligt §9.2 punkt 2.
+
+**Acceptans:**
+- Händelse med subtyp `SIGNAL` korreleras på signalens namn; alla andra subtyper på `errandUpdated`.
+- Signal som inte matchar något väntläge ⇒ informationsrad och `202`, ingen ny leverans.
+- Efter varje avslutat arbetssteg innehåller rapporten de signaler instansen nu väntar på — och en tom lista när väntläget är automatiskt.
+- **Verifierat och dokumenterat om Operatons REST-API kan lista event subscriptions.** Kan det inte det: vald väg för att få fram namnen är beskriven i uppgiften. Ta reda på det innan resten byggs.
+- IT som kör hela varvet: process i manuell grind, signal från SM, processen går vidare och rapporterar nästa väntläge.
+
 ### P5 — Tillsynsprocessen (pw)
 
 `alkt-tillsyn.bpmn`; justera väntevillkoret i `ProcessWithoutDeviationIT.setup` till 2; egen `ProcessPathway`.
@@ -1581,6 +1752,8 @@ Schemalagd kontroll som skriver `FAILED` + `error` till SM när Operaton rest en
 | **`DECISION` saknas i `PROCESS_TRIGGER`** | Processen vaknar aldrig av beslutet och står i `WAITING` för alltid. Validering av triggervärden och ett IT-fall i T9 |
 | **Personuppgifter i beslutets motivering** | `justification` innehåller nästan alltid personuppgifter. Får aldrig loggas (§8.1), aldrig kopieras till aktivitetsloggen och aldrig läggas i outboxens nyttolast — den bär medvetet ingen ärendedata alls (§5.4). Beslutet kaskaderas bort med ärendet |
 | **Automatiskt beslut felstämplat som manuellt, eller tvärtom** | `method` valideras mot identiteten vid systemgränsen och räknas i `decision.written` (§8.1). Utan bådadera går frågan "vilka beslut fattades av en maskin?" inte att svara på i efterhand — och det är en fråga som kommer att ställas |
+| **Manuell grind som ingen klickar på** | Processen står i `WAITING` för alltid. Modelleringsregeln i §9.2 punkt 2 kräver en tidsgräns på grindar som kan glömmas bort, och `process.signal_sent` visar vilka grindar som faktiskt används |
+| **Knapp som inte längre gäller** | Handläggaren ser en signal processen hunnit lämna. Skrivningen ger `409` och räknas i `process.signal_rejected` — gränssnittet ska läsa om ärendet, inte försöka igen |
 | **Beslut på ärende helt utan process** | Tillåtet och olåst: det finns ingen `COMPLETED` process att låsa mot. Spårbarheten bärs då av revisionen, inte av spärren (§7.5) |
 | **Föräldralös processinstans efter radering** | `DELETE` publiceras även utan `processKey` (§2.2), och pw raderar på `businessKey` (§9.3). Restrisk kvarstår om leveransen dead-letteras — därför retention och redrive före röjning (§8.3) |
 | **Etikettändring utanför API:t** | `AddLabelAction.executeAction` körs schemalagt och lägger till etiketter utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar — T7:s kontroll måste ligga även där |
