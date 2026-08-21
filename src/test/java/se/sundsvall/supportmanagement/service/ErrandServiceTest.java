@@ -37,12 +37,14 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -101,6 +103,9 @@ class ErrandServiceTest {
 
 	@Mock
 	private ContactReasonRepository contactReasonRepositoryMock;
+
+	@Mock
+	private MeasureTypeRepository measureTypeRepositoryMock;
 
 	@Mock
 	private RevisionService revisionServiceMock;
@@ -441,6 +446,42 @@ class ErrandServiceTest {
 	}
 
 	@Test
+	void createErrandWithInvalidMeasureType() {
+		final var errand = buildErrand().withMeasures(List.of(Measure.create().withType("INVALID_TYPE")));
+
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any()))
+			.thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
+		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE")).thenReturn(false);
+
+		assertThatThrownBy(() -> service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null))
+			.hasMessage("Bad Request: 'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'");
+
+		verify(measureTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE");
+	}
+
+	@Test
+	void updateErrandWithInvalidMeasureType() {
+		final var entity = buildErrandEntity();
+		final var errand = buildErrand().withMeasures(List.of(Measure.create().withType("INVALID_TYPE")));
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
+		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE")).thenReturn(false);
+
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
+			.hasMessage("Bad Request: 'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'");
+
+		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
+		verify(measureTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE");
+	}
+
+	@Test
 	void deleteExistingErrand() {
 		final var entity = buildErrandEntity();
 		final var errandAttachment = ErrandAttachment.create().withId("id");
@@ -546,6 +587,6 @@ class ErrandServiceTest {
 
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
-		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock, errandPhaseServiceMock);
+		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock, errandPhaseServiceMock, measureTypeRepositoryMock);
 	}
 }

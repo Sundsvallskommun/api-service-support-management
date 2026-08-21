@@ -29,6 +29,7 @@ public enum ErrandField {
 	ESCALATION_EMAIL(false),
 	LABELS(false),
 	STAKEHOLDERS(false),
+	MEASURES(false),
 	ACTIVE_NOTIFICATIONS(false),
 	VERSION(false),
 	PARAMETERS(true),

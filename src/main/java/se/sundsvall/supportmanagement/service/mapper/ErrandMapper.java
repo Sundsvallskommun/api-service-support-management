@@ -21,6 +21,7 @@ import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandPhase;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
@@ -35,6 +36,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
@@ -96,7 +98,8 @@ public final class ErrandMapper {
 			.withBusinessRelated(errand.getBusinessRelated())
 			.withParameters(toErrandParameterEntityList(errand.getParameters(), errandEntity))
 			.withJsonParameters(toJsonParameterEntities(errand.getJsonParameters(), errandEntity))
-			.withLabels(toErrandLabelEmbeddables(errand.getLabels()));
+			.withLabels(toErrandLabelEmbeddables(errand.getLabels()))
+			.withMeasures(toMeasureEntities(errand.getMeasures(), errandEntity));
 	}
 
 	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand) {
@@ -143,6 +146,7 @@ public final class ErrandMapper {
 		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value, accessibleKey.apply(ErrandField.PARAMETERS)));
 		ofNullable(errand.getJsonParameters()).ifPresent(value -> updateJsonParameters(entity, value, accessibleKey.apply(ErrandField.JSON_PARAMETERS)));
 		ofNullable(errand.getLabels()).ifPresent(value -> entity.setLabels(toErrandLabelEmbeddables(value)));
+		ofNullable(errand.getMeasures()).ifPresent(value -> entity.setMeasures(toMeasureEntities(value, entity)));
 		return entity;
 	}
 
@@ -254,6 +258,7 @@ public final class ErrandMapper {
 		entry(ErrandField.ESCALATION_EMAIL, (errand, e, _) -> errand.setEscalationEmail(e.getEscalationEmail())),
 		entry(ErrandField.LABELS, (errand, e, _) -> errand.setLabels(toErrandLabels(e.getLabels()))),
 		entry(ErrandField.STAKEHOLDERS, (errand, e, _) -> errand.setStakeholders(toStakeholders(e.getStakeholders()))),
+		entry(ErrandField.MEASURES, (errand, e, _) -> errand.setMeasures(toMeasures(e.getMeasures()))),
 		entry(ErrandField.ACTIVE_NOTIFICATIONS, (errand, e, _) -> errand.setActiveNotifications(toActiveNotifications(e.getNotifications()))),
 		entry(ErrandField.VERSION, (errand, e, _) -> errand.setVersion(e.getVersion())),
 		entry(ErrandField.PARAMETERS, (errand, e, keys) -> errand.setParameters(filterByKey(toParameterList(e.getParameters()), Parameter::getKey, keys))),
@@ -442,6 +447,16 @@ public final class ErrandMapper {
 					.withEnded(entity.getEnded());
 			})
 			.toList();
+	}
+
+	private static List<MeasureEntity> toMeasureEntities(final List<Measure> measures, final ErrandEntity errandEntity) {
+		return ofNullable(measures).orElse(emptyList()).stream()
+			.map(measure -> ErrandMeasureMapper.toMeasureEntity(measure, errandEntity))
+			.toList();
+	}
+
+	private static List<Measure> toMeasures(final List<MeasureEntity> entities) {
+		return ErrandMeasureMapper.toMeasures(entities);
 	}
 
 	private static List<ErrandAction> toErrandActions(final List<ErrandActionEntity> entities) {

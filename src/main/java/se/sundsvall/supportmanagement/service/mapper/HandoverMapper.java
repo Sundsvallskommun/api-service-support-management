@@ -65,6 +65,7 @@ public final class HandoverMapper {
 		errand.setErrandNumber(null);
 		errand.setResolution(null);
 		errand.setSuspension(null);
+		errand.setMeasures(null);
 
 		return errand;
 	}

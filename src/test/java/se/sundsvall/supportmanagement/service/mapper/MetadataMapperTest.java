@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
+import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
@@ -21,6 +22,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
@@ -705,5 +707,90 @@ class MetadataMapperTest {
 			Arguments.of(phaseEntity, null, true),
 			Arguments.of(null, null, true),
 			Arguments.of(phaseEntity, transition, false));
+	}
+
+	// =================================================================
+	// MeasureType tests
+	// =================================================================
+
+	@Test
+	void toMeasureType() {
+		final var created = OffsetDateTime.now().minusDays(1);
+		final var modified = OffsetDateTime.now();
+		final var name = "measureTypeName";
+		final var displayName = "displayName";
+		final var measureGroup = "MANAGERS";
+
+		final var entity = MeasureTypeEntity.create()
+			.withCreated(created)
+			.withModified(modified)
+			.withName(name)
+			.withDisplayName(displayName)
+			.withMeasureGroup(measureGroup);
+
+		final var bean = MetadataMapper.toMeasureType(entity);
+
+		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.getModified()).isEqualTo(modified);
+		assertThat(bean.getName()).isEqualTo(name);
+		assertThat(bean.getDisplayName()).isEqualTo(displayName);
+		assertThat(bean.getMeasureGroup()).isEqualTo(measureGroup);
+	}
+
+	@Test
+	void toMeasureTypeForEmptyEntity() {
+		assertThat(MetadataMapper.toMeasureType(MeasureTypeEntity.create())).hasAllNullFieldsOrPropertiesExcept("deprecated");
+	}
+
+	@Test
+	void toMeasureTypeForNull() {
+		assertThat(MetadataMapper.toMeasureType(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toMeasureTypeEntityArguments")
+	void toMeasureTypeEntity(final String namespace, final String municipalityId, final MeasureType measureType, final MeasureTypeEntity expectedResult) {
+		assertThat(MetadataMapper.toMeasureTypeEntity(namespace, municipalityId, measureType)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toMeasureTypeEntityArguments() {
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, MeasureType.create().withName("name").withMeasureGroup("group"), null),
+			Arguments.of(null, "municipalityId", MeasureType.create().withName("name").withMeasureGroup("group"), null),
+			Arguments.of("namespace", "municipalityId", MeasureType.create().withName("name").withMeasureGroup("group"),
+				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withMeasureGroup("group")),
+			Arguments.of("namespace", "municipalityId", MeasureType.create().withName("name").withDisplayName("displayName").withMeasureGroup("group"),
+				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName").withMeasureGroup("group")));
+	}
+
+	@Test
+	void testUpdateMeasureTypeEntity() {
+		final var entity = MeasureTypeEntity.create()
+			.withName("oldName")
+			.withDisplayName("oldDisplayName")
+			.withMeasureGroup("oldGroup")
+			.withSortOrder(1);
+
+		final var measureType = MeasureType.create()
+			.withName("newName")
+			.withDisplayName("newDisplayName")
+			.withMeasureGroup("newGroup")
+			.withSortOrder(2)
+			.withDeprecated(true);
+
+		final var result = MetadataMapper.updateMeasureTypeEntity(entity, measureType);
+
+		assertThat(result.getName()).isEqualTo("newName");
+		assertThat(result.getDisplayName()).isEqualTo("newDisplayName");
+		assertThat(result.getMeasureGroup()).isEqualTo("newGroup");
+		assertThat(result.getSortOrder()).isEqualTo(2);
+		assertThat(result.isDeprecated()).isTrue();
+	}
+
+	@Test
+	void testUpdateMeasureTypeEntityWithNull() {
+		final var entity = MeasureTypeEntity.create().withName("name");
+		assertThat(MetadataMapper.updateMeasureTypeEntity(entity, null)).isEqualTo(entity);
 	}
 }

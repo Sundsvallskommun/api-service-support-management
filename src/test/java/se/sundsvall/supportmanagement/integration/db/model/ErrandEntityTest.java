@@ -67,6 +67,7 @@ class ErrandEntityTest {
 		final var contactReasonDescription = "contactReasonDescription";
 		final var previousStatus = "previousStatus";
 		final var timeMeasure = List.of(TimeMeasurementEntity.create().withStartTime(now).withStopTime(now).withDescription("description").withAdministrator("administrator"));
+		final var measures = List.of(MeasureEntity.create().withId("measure-id").withResponsibleUser("responsibleUser"));
 		final var tempPreviousStatus = "tempPreviousStatus";
 		final var labels = List.of(ErrandLabelEmbeddable.create());
 		final var accessLabels = List.of(AccessLabelEmbeddable.create().withMetadataLabelId("label-id"));
@@ -107,6 +108,7 @@ class ErrandEntityTest {
 			.withSuspendedTo(now)
 			.withPreviousStatus(previousStatus)
 			.withTimeMeasures(timeMeasure)
+			.withMeasures(measures)
 			.withTempPreviousStatus(tempPreviousStatus)
 			.withNotifications(notifications)
 			.withActions(actions)
@@ -145,6 +147,7 @@ class ErrandEntityTest {
 			ErrandEntity::getCreated).allSatisfy(date -> assertThat(date).isEqualTo(now));
 		assertThat(errandEntity.getPreviousStatus()).isEqualTo(previousStatus);
 		assertThat(errandEntity.getTimeMeasures()).isSameAs(timeMeasure);
+		assertThat(errandEntity.getMeasures()).isSameAs(measures);
 		assertThat(errandEntity.getTempPreviousStatus()).isEqualTo(tempPreviousStatus);
 		assertThat(errandEntity.getLabels()).isEqualTo(labels);
 		assertThat(errandEntity.getAccessLabels()).isEqualTo(accessLabels);
