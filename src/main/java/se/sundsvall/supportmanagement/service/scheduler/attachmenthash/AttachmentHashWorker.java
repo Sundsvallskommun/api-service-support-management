@@ -1,58 +1,94 @@
 package se.sundsvall.supportmanagement.service.scheduler.attachmenthash;
 
+import java.time.Duration;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
+import se.sundsvall.supportmanagement.service.util.ServiceUtil;
 
 @Component
 public class AttachmentHashWorker {
 
-	private static final int PAGE_SIZE = 100;
 	private static final Logger LOG = LoggerFactory.getLogger(AttachmentHashWorker.class);
 
 	private final AttachmentRepository attachmentRepository;
-	private final AttachmentHashBatchProcessor batchProcessor;
+	private final TransactionTemplate transactionTemplate;
+	private final int batchSize;
+	private final Duration maxExecutionTime;
 
-	public AttachmentHashWorker(final AttachmentRepository attachmentRepository, final AttachmentHashBatchProcessor batchProcessor) {
+	public AttachmentHashWorker(final AttachmentRepository attachmentRepository,
+		final PlatformTransactionManager transactionManager,
+		@Value("${scheduler.attachment-hash.batch-size:250}") final int batchSize,
+		@Value("${scheduler.attachment-hash.maximum-execution-time:PT5M}") final Duration maxExecutionTime) {
 		this.attachmentRepository = attachmentRepository;
-		this.batchProcessor = batchProcessor;
+		this.transactionTemplate = new TransactionTemplate(transactionManager);
+		this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+		this.transactionTemplate.setTimeout(30);
+		this.batchSize = batchSize;
+		this.maxExecutionTime = maxExecutionTime;
 	}
 
 	public void computeHashForAttachmentsWithoutHash() {
-		var totalProcessed = 0;
-		var page = attachmentRepository.findByHashIsNull(PageRequest.of(0, PAGE_SIZE));
+		final var startTime = Instant.now();
+		final var attachmentIds = attachmentRepository.findByHashIsNull(Pageable.ofSize(batchSize)).stream()
+			.map(IdProjection::getId)
+			.toList();
 
-		if (page.isEmpty()) {
+		if (attachmentIds.isEmpty()) {
 			LOG.info("No attachments without hash found");
 			return;
 		}
 
-		final var totalElements = page.getTotalElements();
-		final var maxIterations = (totalElements + PAGE_SIZE - 1) / PAGE_SIZE;
-		var iteration = 0;
+		LOG.info("Found {} attachments without hash, starting hash computation", attachmentIds.size());
 
-		LOG.info("Found {} attachments without hash, starting hash computation", totalElements);
+		var totalProcessed = 0;
+		var totalFailed = 0;
 
-		while (!page.isEmpty()) {
-			final var ids = page.getContent().stream()
-				.map(AttachmentEntity::getId)
-				.toList();
-
-			totalProcessed += batchProcessor.processBatch(ids);
-			iteration++;
-
-			LOG.info("Processed page {} of {}, {} attachments processed so far", iteration, maxIterations, totalProcessed);
-
-			if (iteration >= maxIterations) {
-				break;
+		for (final var attachmentId : attachmentIds) {
+			if (Thread.currentThread().isInterrupted() || Duration.between(startTime, Instant.now()).compareTo(maxExecutionTime) >= 0) {
+				LOG.info("Time limit reached, stopping. Processed {} attachments successfully, {} failed", totalProcessed, totalFailed);
+				return;
 			}
-
-			page = attachmentRepository.findByHashIsNull(PageRequest.of(0, PAGE_SIZE));
+			if (processAttachment(attachmentId)) {
+				totalProcessed++;
+			} else {
+				totalFailed++;
+			}
 		}
 
-		LOG.info("Hash computation completed. Processed {} attachments", totalProcessed);
+		LOG.info("Hash computation completed. Processed {} attachments successfully, {} failed", totalProcessed, totalFailed);
+	}
+
+	private boolean processAttachment(final String attachmentId) {
+		try {
+			return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+				final var attachment = attachmentRepository.findById(attachmentId).orElse(null);
+				if (attachment == null) {
+					LOG.warn("Attachment with id: {} no longer exists, skipping", attachmentId);
+					return false;
+				}
+				try {
+					final var blob = attachment.getAttachmentData().getFile();
+					final var hash = ServiceUtil.computeSha256Hex(blob.getBinaryStream());
+					attachment.setHash(hash);
+					attachmentRepository.saveAndFlush(attachment);
+					return true;
+				} catch (final Exception e) {
+					LOG.warn("Failed to compute hash for attachment with id: {}", attachmentId, e);
+					return false;
+				}
+			}));
+		} catch (final Exception e) {
+			LOG.warn("Failed to process attachment with id: {}", attachmentId, e);
+			return false;
+		}
 	}
 }
