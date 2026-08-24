@@ -918,17 +918,27 @@ public record ProcessStateReport(
         String currentActivityName,
         Long errandVersion,
         ProcessError error,
-        List<ProcessActivity> activities) {
+        List<ProcessActivity> activities,
+        /** Resultatvarden som skrivs nar steget slutfors. Tom map = inga. Se 9.2 punkt 5. */
+        Map<String, Object> variables) {
 
     public static ProcessStateReport running(String activityId, String activityName) { ... }
     public static ProcessStateReport waiting(String activityId, String activityName) { ... }
     public static ProcessStateReport completed() { ... }
     public static ProcessStateReport failed(String code, String message) { ... }
     public static ProcessStateReport retrying(String code, String message) { ... }
+
+    /** Kopia med resultatvarden. Basklassen skickar dem till complete(task, variables). */
+    public ProcessStateReport withVariables(Map<String, Object> variables) { ... }
 }
 ```
 
 Fabriksmetoderna finns just för att den som skriver ett arbetssteg inte ska behöva hålla reda på vilka statusar som räknas som avslutade.
+
+**`variables` är den enda vägen ut för ett resultatvärde.** Ett arbetssteg kan inte anropa
+`complete(task, variables)` självt, eftersom det är basklassen som slutför task:en (§9.4). Utan fältet
+skulle ingen gateway i modellen kunna läsa något — och kontrollen framför varje väntläge bygger på just
+det (§9.2 punkt 5). Fältet går aldrig vidare till SM: det hör till Operaton, inte till ärendet.
 
 ### 5.6 Vilka svar SM ger
 
@@ -1712,13 +1722,19 @@ följer:
 Det här är inte råd. Håller inte modellerna sig till dem faller delar av designen.
 
 1. **Ett väntläge måste läsa om ärendet när det går in i väntan** och avgöra om det den väntar på redan har hänt. En väckning som sväljs som `MismatchingMessageCorrelation` kan mycket väl vara äkta — den kom bara medan processen råkade befinna sig mellan två väntlägen. Att det ändå är ofarligt vilar helt på den här punkten. **Tydligast blir det med beslutet** (§7.5): skrivs det medan processen arbetar och väntläget inte läser om, står ärendet stilla för alltid med ett fattat beslut i databasen.
-2. **Manuella grindar modelleras som namngivna väntlägen** (§5.9). Ska handläggaren avgöra när processen går vidare räcker det inte att villkoret är uppfyllt — väntläget ska lyssna på ett *namngivet* meddelande, till exempel `granskning-godkand`. Finns flera vägar framåt används en event-based gateway med ett catch event per alternativ, så att handläggarens val också blir processens vägval. Sätt en tidsgräns på grindar som kan glömmas bort: ett väntläge som ingen någonsin klickar på står kvar för alltid.
+2. **Manuella grindar modelleras som namngivna väntlägen** (§5.9). Ska handläggaren avgöra när processen går vidare räcker det inte att villkoret är uppfyllt — väntläget ska lyssna på ett *namngivet* meddelande, till exempel `granskning-godkand`. Finns flera vägar framåt används en event-based gateway med ett catch event per alternativ, så att handläggarens val också blir processens vägval.
+
+    **Tidsgränsen läggs som ett timer catch event i samma event-based gateway** — inte som en boundary timer på väntläget. En boundary event fäster bara på en *aktivitet* (`BoundaryEvent.attachedToRef` pekar på `Activity`), och ett intermediate catch event är ingen aktivitet. Vill man ändå ha en boundary timer får väntläget modelleras som en **receive task**, som är en aktivitet. Kontrollerat mot Operatons dokumentation: en event-based gateway får bara följas av intermediate catch events, måste ha minst två utgående flöden, och message plus timer som alternativ är det dokumenterade exemplet. Ett väntläge som ingen någonsin klickar på står annars kvar för alltid.
 3. **Inga user tasks.** Det är lätt att tro att ett väntläge på en människa ska vara en user task — det är BPMN-lärobokens svar. Här är det fel: handläggaren arbetar i SM och loggar aldrig in i Operaton. En user task skulle skapa en uppgiftslista som ingen tittar i, och grinden skulle aldrig öppnas. Manuella grindar är meddelandehändelser, ingenting annat.
 4. **Inga parallella grenar som ändrar ärendet** (§6.4).
 5. **Inga processvariabler som minne mellan väckningar.** Tillståndet bor i ärendet, och kontrollen läser om det varje gång — annars börjar processen tro saker som inte längre är sanna. Skälet står i den kod som nu tas bort: *"Clearing process variable has to be a blocking operation. Using ExternalTaskService.setVariables() will not work without creating race conditions."* Behåll resonemanget även när metoden är borta; det är det första någon återinför nästa gång ett dubblettproblem dyker upp.
 
     Ett **resultatvärde** är något annat och fullt tillåtet: det som ett arbetssteg sätter när det slutförs, `complete(task, variables)`, och som nästa gateway läser. Det skrivs atomiskt med slutförandet och har ingen kapplöpning i sig. Utan det gick det inte att ha gateways över huvud taget. Skillnaden är alltså: *resultat i ett steg är i sin ordning, minne mellan väckningar är det inte.*
-6. **Processens slut måste rapporteras.** SM får bara veta att en process är klar genom en rapport, och rapporter kommer från arbetssteg. Slutar en gren utan att ett arbetssteg kört sist står SM:s rad kvar som `RUNNING` för alltid medan instansen är borta ur Operaton — och då kan ärendet varken gå vidare eller få en ny process. Antingen är sista steget före varje slutevent ett arbetssteg som rapporterar `completed()`, eller så hängs en execution listener på sluteventet som gör det. P6 stämmer av det som ändå glider isär.
+
+    Vägen dit går genom `ProcessStateReport.variables` (§5.5). Arbetssteget slutför inte task:en självt — det gör basklassen (§9.4) — så värdet måste följa med rapporten tillbaka.
+6. **Steget före varje slutevent är ett arbetssteg som rapporterar `completed()`.** SM får bara veta att en process är klar genom en rapport, och rapporter kommer från arbetssteg. Slutar en gren utan att ett arbetssteg kört sist står SM:s rad kvar som `RUNNING` för alltid medan instansen är borta ur Operaton — och då kan ärendet varken gå vidare eller få en ny process.
+
+    Kravet är **ovillkorligt**, och det är värt att säga varför: en execution listener på sluteventet vore det naturliga alternativet, men den kan inte användas här. Operaton kör som en **separat server** som pw pollar via external task-klienten, så pw:s klasser finns inte i motorn — en `camunda:executionListener` med `class` eller `delegateExpression` har ingenting att peka på. Kvar vore ett inline-skript som gör ett HTTP-anrop inifrån motorn, och det bygger vi inte. P6 stämmer av det som ändå glider isär.
 7. **Inga call activities eller delade subprocesser** tills vidare. Kommande processer kan se helt annorlunda ut, och då är det lättare att ha hållit dem isär.
 
 #### Så ser en fas ut som uppfyller kraven
@@ -1741,10 +1757,18 @@ start_<fas>
    nej                       |
     |                        |
     v                        |
-(vantlage) -- vackt ---------+   manuell grind: message catch "granskning-godkand"
-                                 automatisk:    message catch "errandUpdated"
-                                 + boundary timer for paminnelse eller eskalering
+<event-based gateway>        |
+    |                        |
+    +--> (message catch) ----+   manuell grind: "granskning-godkand"
+    |                        |   automatiskt vantlage: "errandUpdated"
+    |                        |
+    +--> (timer catch) ------+   paminnelse eller eskalering, t.ex. PT14D
 ```
+
+**Tidsgränsen är en gren i gatewayen, inte en boundary timer.** Boundary events fäster bara på
+aktiviteter, och ett catch event är ingen aktivitet — se krav 2. Båda grenarna leder tillbaka till
+kontrollen, som gör om sin bedömning: väcktes processen av handläggaren är fasen kanske klar, väcktes den
+av timern är den det förmodligen inte, och då är det påminnelsen som är arbetet.
 
 **Slingan tillbaka är det bärande.** Varje väckning leder till en omläsning av ärendet, aldrig till ett
 antagande om att villkoret nu är uppfyllt — det är krav 1, ritat. Kommer väckningen för tidigt, eller kommer
@@ -1779,7 +1803,8 @@ Krav 6 gäller processens sista fas: steget före `end_process` ska vara ett arb
 handleErrandEvent(municipalityId, namespace, event):
     om event.eventType == DELETE:
         instans = findProcessInstances(businessKey = errandId, tenantIdIn = ALKT)
-        finns -> deleteProcessInstance(id, reason = "errand deleted in SM")
+        finns -> deleteProcessInstance(id, failIfNotExists = false,
+                                       reason = "errand deleted in SM")
         202                                        // arendet ar borta i SM; ingen rapport tillbaka
 
     instans = findProcessInstances(errandId, event.processKey, "ALKT")
@@ -1793,7 +1818,8 @@ handleErrandEvent(municipalityId, namespace, event):
                                                        //       instans -> avbryt den nystartade
     annars:
         messageName = (event.eventSubType == SIGNAL) ? event.signal : "errandUpdated"
-        correlateMessage(messageName, businessKey = errandId, tenantId = "ALKT")
+        correlateMessage(messageName, businessKey = errandId, tenantId = "ALKT",
+                         all = false)
 ```
 
 **`findProcessInstances` ser bara det som kör just nu.** En avslutad process finns inte där utan ligger i
@@ -1811,6 +1837,15 @@ Startade vi bara på `CREATE` skulle det ärendet aldrig få någon process, och
 **Ett `MismatchingMessageCorrelationException` (400) ska ge en INFO-rad och `202`, inte en ny leverans.**
 Annars fylls kön av misslyckade leveranser med händelser som var helt normala.
 
+`POST /message` svarar `400` av två skilda skäl, och de betyder helt olika saker. *Ingen* träff är
+normalfallet ovan. *Flera* träffar — vilket `all = false` också gör till ett `400` — betyder att
+modelleringsregeln om parallella grenar i §6.4 har brutits. Behåll därför `all = false`: då blir brottet
+ett synligt fel i stället för en tyst fan-out, och felposten ska skilja de två fallen åt.
+
+`failIfNotExists = false` på raderingen gör `DELETE`-vägen idempotent. Kommer samma händelse två gånger
+(§8.3) är instansen redan borta vid andra försöket, och utan flaggan hade det blivit ett fel av något som
+gick precis som det skulle.
+
 **Glöm inte `DELETE`.** Utan den lever processinstansen vidare i Operaton för ett ärende som inte längre
 finns — och SM har inget spår kvar av den, eftersom `errand_process` städats bort med ärendet.
 
@@ -1824,7 +1859,7 @@ arbetssteg är klart, ska nästa rapport innehålla `awaitingSignals` för det v
 Namnen behöver inte underhållas för hand — Operaton vet vilka meddelanden en instans prenumererar på just
 nu, så pw kan fråga och rapportera vidare. Tomt fält betyder att processen inte väntar på någon människa.
 
-`OperatonClient` behöver: `correlateMessage`, `findProcessInstances(businessKey, processDefinitionKey, tenantIdIn)`, `deleteProcessInstance`, och `businessKey` i `OperatonMapper.toStartProcessInstanceDto`.
+`OperatonClient` behöver: `correlateMessage`, `findProcessInstances(businessKey, processDefinitionKey, tenantIdIn)`, `deleteProcessInstance(id, failIfNotExists)`, och `businessKey` i `OperatonMapper.toStartProcessInstanceDto`. Den befintliga `getEventSubscriptions()` behöver dessutom parametrar — den hämtar i dag hela motorn (§9.5).
 
 ### 9.4 Hur arbetsstegen är byggda
 
@@ -1840,7 +1875,7 @@ public abstract class AbstractTaskWorker implements ExternalTaskHandler {
             supportManagement.report(task, ProcessStateReport.running(activityId(task), activityName(task)));
             final var report = executeBusinessLogic(task, service);
             supportManagement.report(task, report);
-            service.complete(task);
+            service.complete(task, report.variables());   // resultatvarden, 9.2 punkt 5
         } catch (final Exception e) {
             logException(task, e);
             failureHandler.handleException(service, task, e.getMessage());   // rapporterar RETRYING/FAILED
@@ -1869,6 +1904,28 @@ processvariabel. Rapporten handlar om processens tillstånd, medan beslutet är 
 livslängd, egen behörighet och egen revision (§7.5). `processId` fyller SM i själv, så steget behöver inte
 veta något om sin egen rad där. Kommer beslutet i stället från en handläggare gör steget ingenting alls —
 processen väcks av `DECISION`-händelsen och läser beslutet ur `errand.decision`.
+
+### 9.5 Var `awaitingSignals` kommer ifrån
+
+Namnen finns i Operaton. `GET /event-subscription` filtrerat på `processInstanceId` och
+`eventType = message` lämnar tillbaka en rad per meddelande instansen prenumererar på just nu, med
+`eventName` — meddelandets namn i modellen — och `activityId`. Ingen lista behöver alltså underhållas för
+hand, vare sig i SM eller i pw. Läggs en grind till i BPMN dyker den upp av sig själv.
+
+**Etiketten finns däremot inte där.** `EventSubscriptionDto` bär `eventName`, `eventType`, `activityId`,
+`executionId`, `processInstanceId` och `tenantId` — ingen läsbar text. `ProcessSignal.label`, alltså
+*"Godkänn granskning"*, måste hämtas ur modellen: `GET /process-definition/{id}/xml` och en uppslagning av
+elementets `name` på `activityId`.
+
+Två saker gör det ofarligt att göra så:
+
+- **Svaret cachas per processdefinition.** En definition är oföränderlig — en ändrad modell ger en ny
+  version med ett nytt id — så cachen kan aldrig bli inaktuell.
+- **Ett `activityId` som inte hittas ger namnet som etikett.** Gränssnittet får då en knapp som heter
+  `granskning-godkand` i stället för ingen knapp alls, och rapporten går igenom.
+
+Alternativet — en map i pw från meddelandenamn till etikett — vore samma fel som designen undviker på
+SM-sidan: en lista som glider isär från modellen utan att någon märker det.
 
 ---
 
@@ -2041,7 +2098,20 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### P1 — Operaton-klienten (pw)
 
-`correlateMessage`, `findProcessInstances`, `deleteProcessInstance`; `businessKey` i mappern; nya konstanter. **Acceptans:** `ProcessWithoutDeviationIT` fortsatt grön.
+**Bygg:** `correlateMessage` (`POST /message`, `all = false`), `findProcessInstances` (`GET /process-instance` med `businessKey`, `processDefinitionKey`, `tenantIdIn`), `deleteProcessInstance` (`DELETE /process-instance/{id}` med `failIfNotExists = false`); parametrar på befintliga `getEventSubscriptions` (`processInstanceId`, `eventType`); `getProcessDefinitionXml` för etiketterna i §9.5; `businessKey` i `OperatonMapper.toStartProcessInstanceDto`; nya konstanter.
+
+**Byt också ut `src/main/resources/integrations/operaton-openapi.json`.** Filen heter operaton men *är*
+Camunda Platform REST API `7.19.4-ee` — den innehåller 1057 förekomster av "camunda" och noll av
+"operaton". DTO:erna i bygget genereras alltså ur fel spec. Skillnaden är i praktiken liten, men den finns:
+en jämförelse mot Operaton REST API `2.1.3` ger 305 paths mot 304, där Operaton *lägger till*
+`/process-instance/{id}/comment/{commentId}`, och `CorrelationMessageDto` har fått
+`processVariablesToTriggeredScope`. Inget pw anropar saknas. Hämta den riktiga från
+`docs.operaton.org/reference/latest/rest-api/operaton-rest-api.json`.
+
+**Acceptans:**
+- `ProcessWithoutDeviationIT` fortsatt grön efter specbytet.
+- `info.title` i den incheckade specen säger `Operaton REST API`.
+- Radering av en instans som inte finns ger inget fel.
 
 ### P2 — Event-endpoint och borttagning (pw)
 
@@ -2068,13 +2138,14 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### P7 — Manuella grindar och väntade signaler (pw)
 
-**Bygg:** korrelation på signalens namn när händelsens subtyp är `SIGNAL` (§9.3); rapportering av `awaitingSignals` när processen går in i ett väntläge, hämtat från Operatons event subscriptions om API:et tillåter det; manuella grindar i modellen enligt §9.2 punkt 2.
+**Bygg:** korrelation på signalens namn när händelsens subtyp är `SIGNAL` (§9.3); rapportering av `awaitingSignals` när processen går in i ett väntläge, hämtat ur Operatons event subscriptions (§9.5); manuella grindar i modellen enligt §9.2 punkt 2.
 
 **Acceptans:**
 - Händelse med subtyp `SIGNAL` korreleras på signalens namn; alla andra subtyper på `errandUpdated`.
 - Signal som inte matchar något väntläge ⇒ informationsrad och `202`, ingen ny leverans.
 - Efter varje avslutat arbetssteg innehåller rapporten de signaler instansen nu väntar på — och en tom lista när väntläget är automatiskt.
-- **Verifierat och dokumenterat om Operatons REST-API kan lista event subscriptions.** Kan det inte det: vald väg för att få fram namnen är beskriven i uppgiften. Ta reda på det innan resten byggs.
+- `awaitingSignals` fylls ur `GET /event-subscription` filtrerat på instansen och `eventType = message`, och etiketten slås upp ur modellen enligt §9.5 — inte ur en lista i pw.
+- Etikettuppslagningen cachas per processdefinition, och ett okänt `activityId` ger namnet som etikett i stället för att spränga rapporten.
 - IT som kör hela varvet: process i manuell grind, signal från SM, processen går vidare och rapporterar nästa väntläge.
 
 ### P5 — Tillsynsprocessen (pw)
