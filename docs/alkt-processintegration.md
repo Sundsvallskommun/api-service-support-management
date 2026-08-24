@@ -48,6 +48,8 @@ respektive deluppgift, och kopplingen mellan uppgifterna i §10 och Jira-nycklar
 | 30 | **Ingen retry-räknare och ingen dead letter. Raden ligger kvar tills den gått igenom** | Egen backoff med `retry_count`/`next_retry_at`/`dead_letter`, som `notification_dispatch` hade före `V1_48__simplify_notification_dispatch` | Leverans och radering i samma transaktion ger samma sak utan bokföring, och den bokföringen har kodbasen medvetet gjort sig av med. Kvar blir `delivered_at`, som nödbromsen behöver — §8.3 |
 | 31 | **Outbox-raden bär sitt eget mål i `process_service`, satt vid publicering** | Att relayet slår upp `PROCESS_CONSUMER` på nytt vid leverans | Ett namespace har exakt en processkonsument, men konfigurationen kan ändras mellan publicering och leverans. Raden ska gå dit den var adresserad. Kolumnen är dessutom det relayet grupperar på för att en långsam konsument inte ska svälta de andra — §7.6 |
 | 32 | **`process` och `decision` är `ErrandField`-värden** | Att låta dem stå utanför den rollbaserade fältfiltreringen | `justification` är fritext med personuppgifter, och alla andra känsliga fält på ärendet går genom `roleBasedFieldResolver`. Att ALKT kör utan åtkomstkontroll döljer bara problemet till nästa namespace — §5.3 |
+| 33 | **AoT använder inte AccessMapper, och ett namespace med `PROCESS_CONSUMER` får inte ha aktiv `access_control`** | Att lita på att ingen slår på den; att låta `AccessControlService` gå förbi kontrollen för konsumenten utpekad med `X-Sent-By` | AccessMapper svarar bara på AD-konton, och pw är ingen människa. Slås kontrollen på får pw `401` på allt, och det syns som ärenden som står stilla. En header som anroparen sätter själv duger inte som behörighetsgrund — §7.1 |
+| 34 | **Tre nya `ProtectedResource`: `PROCESS`, `PROCESS_ACTIVITY`, `DECISION`** | Att återanvända `ERRAND` | `getErrand` och `verifyExistingErrandAndAuthorization` kräver en resurs, så valet går inte att skjuta upp. `ERRAND` hade gett processens rapporter samma behörighet som ärendet självt — §5.6 |
 
 ---
 
@@ -148,7 +150,13 @@ När pw skriver blir den `null` och notisen till handläggaren står utan avsän
 `NotificationService` kollar med `hasText` först — men fältet blir tomt, och det är lätt gjort att låta det
 falla tillbaka på identitetens värde i stället (T3).
 
-ALKT-namespacet körs utan etikettbaserad åtkomstkontroll, så pw:s identitet filtreras inte mot AccessMapper.
+**ALKT använder inte AccessMapper.** Det är ett beslut för hela AoT-området, och det är också en
+förutsättning för att pw ska komma åt ärendena över huvud taget: `AccessMapperService.getAccessibleLabels`,
+`.getAccessibleRoles` och `.getAccessibleResources` filtrerar alla på `Identifier.Type.AD_ACCOUNT` och
+lämnar tillbaka tomt för allt annat. pw är ingen människa och har inget AD-konto. Slås åtkomstkontrollen på
+för namespacet får pw därför `401` på `getErrand`, `patchErrand`, processrapporten och beslutsskrivningen —
+och det syns inte som ett fel i processen, utan som ett ärende som står stilla. Motmedlet är spärren
+i §7.1.
 
 ---
 
@@ -813,6 +821,11 @@ private Decision decision;
 beslutsmotivering är fritext med personuppgifter, och den får inte vara det enda känsliga fältet på
 ärendet som står utanför fältfiltreringen.
 
+För ALKT gör det ingen skillnad — namespacet använder inte AccessMapper (§1.8), så resolvern vänder direkt.
+Tillägget finns för nästa namespace. Designen är byggd för att bäras av fler (§7.6), och ett fält som
+smiter förbi fältfiltreringen är svårt att upptäcka i efterhand just för att det fungerar i det första
+namespacet som tar den i bruk.
+
 Beteendet följer av hur resolvern redan fungerar, kontrollerat i koden:
 
 | Läge | Utfall |
@@ -923,6 +936,30 @@ De två skrivvägarna släpps in på olika sätt, och det är med flit. **Proces
 namespacets `PROCESS_CONSUMER`, utpekad med `X-Sent-By` — den bär processens tillstånd och inget
 ärendeinnehåll. Det är den enda plats vid sidan av beslutets `method` där `X-Sent-By` styr ett utfall;
 loop-skyddet läser den inte (§6.5). **Beslutet** går den vanliga vägen för ärendeskrivningar, eftersom det *är* ärendedata.
+
+#### Vilken `ProtectedResource` varje väg skyddas av
+
+`AccessControlService.getErrand(...)` och `.verifyExistingErrandAndAuthorization(...)` **kräver** en
+`ProtectedResource` och en lägsta nivå — det finns ingen överlagring utan. Varje ny endpoint måste alltså
+peka ut en, och `ERRAND` är fel svar: den skulle ge processens rapporter samma behörighet som ärendet
+självt. Tre nya värden tillkommer, alla under `errand/`-subträdet så att ett mönster som `errand/**`
+täcker dem:
+
+| Väg | `ProtectedResource` | Nivå |
+|---|---|---|
+| `GET .../processes` | `PROCESS` — `errand/process` | `R, RW` |
+| `PUT`/`POST .../processes` | `PROCESS` | `RW` |
+| `POST .../processes/{id}/signals` | `PROCESS` | `RW` |
+| `GET .../process-activities` | `PROCESS_ACTIVITY` — `errand/process-activity` | `R, RW` |
+| `GET .../decision` | `DECISION` — `errand/decision` | `R, RW` |
+| `PUT`/`DELETE .../decision` | `DECISION` | `RW` |
+
+Nivåerna följer regeln i §1.3: skrivvägar skickar `RW` ensamt, läsvägar `R, RW`. Signalen kunde ha varit en
+egen resurs — att stega processen är något man kan vilja dela ut separat — men den ligger under `PROCESS`
+tills behovet visar sig.
+
+`verifyNamespaceAuthorization` används **inte** av de här vägarna. Den gäller resurser som hör till
+namespacet självt, som konfiguration och metadata; våra ligger alla under ett ärende.
 
 **`.../processes`**
 
@@ -1260,6 +1297,21 @@ aldrig veta att beslutet är fattat, och instansen står kvar i `WAITING` för a
 **`SIGNAL` behövs så snart modellen har manuella grindar** (§5.9). Utan den publiceras handläggarens
 knapptryck aldrig, och knappen blir en attrapp som ser ut att fungera. Ett namespace vars processer stegar
 helt automatiskt behöver den inte.
+
+#### Processmotor och åtkomstkontroll utesluter varandra
+
+**Ett namespace får inte ha både `PROCESS_CONSUMER` och aktiv `access_control`.** Skrivningen avvisas med
+`400`, åt båda hållen: att sätta konsumenten på ett namespace med åtkomstkontroll, och att slå på
+åtkomstkontroll för ett namespace som har en konsument.
+
+Spärren är ingen policy utan en inkodad teknisk begränsning. AccessMapper svarar bara på AD-konton (§1.8),
+och en processmotor har inget. Utan spärren blir följden att pw får `401` på allt — och det upptäcks inte
+som ett behörighetsfel någonstans, utan som ärenden som slutar röra sig. Felmeddelandet ska därför säga
+*varför*, inte bara *att*: en processkonsument kan inte beviljas åtkomst av AccessMapper, eftersom den inte
+är ett AD-konto.
+
+Den dag AccessMapper kan bevilja åtkomst till maskinidentiteter är spärren det enda som behöver lyftas.
+Tills dess är den skillnaden mellan ett högljutt konfigurationsfel och en tyst driftstörning.
 
 ### 7.2 `application.yml`
 
@@ -2075,6 +2127,7 @@ den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. U
 | **Nödbromsen tolkar ett leveransavbrott som en loop** | Skulle förvandla en fördröjning till permanent händelseförlust. Bromsen räknar därför bara rader med `delivered_at` satt (§6.5) |
 | **Hälsoindikatorn på existens i stället för ålder** | Tjänsten står unhealthy under normal drift och indikatorn slutar betyda något. Villkoret är `unhealthy-after` (§8.3) |
 | **`justification` utanför fältfiltreringen** | Beslutsmotiveringen är fritext med personuppgifter. `PROCESS` och `DECISION` är `ErrandField`-värden och stängda som utgångsläge för begränsade användare (§5.3). Att ALKT saknar åtkomstkontroll döljer bara felet till nästa namespace |
+| **Åtkomstkontroll påslagen för ett namespace med processmotor** | pw får `401` på allt, och felet visar sig som ärenden som står stilla — inte som ett behörighetsfel. AccessMapper svarar bara på AD-konton (§1.8). Spärren i §7.1 gör det till ett konfigurationsfel i stället, och lyfts först när AccessMapper kan bevilja maskinidentiteter |
 | **Personuppgifter i aktivitetsloggen** | `message` är fri text som kommer från processen. **pw måste instrueras att inte skriva personuppgifter där** — det är en regel, inte en spärr |
 | **Dubbla processinstanser** | ShedLock-serialiserad leverans + businessKey-kontroll + `409` + DB-constraint. Restrisk i Operaton, som saknar unikhet på business key — men SM kan inte registrera resultatet |
 | **Delas Operaton-tenanten `ALKT`?** | Påverkar `getDeployments`-assertions och `historyTimeToLive`. Bekräfta mot driftmiljön |
