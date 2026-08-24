@@ -11,6 +11,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.util.ServiceUtil;
 
 @Component
@@ -37,7 +38,9 @@ public class AttachmentHashWorker {
 
 	public void computeHashForAttachmentsWithoutHash() {
 		final var startTime = Instant.now();
-		final var attachmentIds = attachmentRepository.findIdsByHashIsNull(Pageable.ofSize(batchSize));
+		final var attachmentIds = attachmentRepository.findByHashIsNull(Pageable.ofSize(batchSize)).stream()
+			.map(IdProjection::getId)
+			.toList();
 
 		if (attachmentIds.isEmpty()) {
 			LOG.info("No attachments without hash found");

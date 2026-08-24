@@ -18,6 +18,7 @@ import org.springframework.transaction.TransactionStatus;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -62,13 +63,13 @@ class AttachmentHashWorkerTest {
 	void computeHashWhenNoAttachmentsWithoutHash() {
 
 		// Arrange
-		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(Collections.emptyList());
+		when(attachmentRepositoryMock.findByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(Collections.emptyList());
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
 		// Verify
-		verify(attachmentRepositoryMock).findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE));
+		verify(attachmentRepositoryMock).findByHashIsNull(any(Pageable.class));
 		verifyNoMoreInteractions(attachmentRepositoryMock);
 	}
 
@@ -78,7 +79,7 @@ class AttachmentHashWorkerTest {
 		// Arrange
 		final var content = "test content".getBytes();
 		when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
-		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1));
+		when(attachmentRepositoryMock.findByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(projection(ATTACHMENT_ID_1)));
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID_1)).thenReturn(Optional.of(attachmentEntityMock));
 		when(attachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
@@ -97,7 +98,7 @@ class AttachmentHashWorkerTest {
 
 		// Arrange
 		when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
-		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1));
+		when(attachmentRepositoryMock.findByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(projection(ATTACHMENT_ID_1)));
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID_1)).thenReturn(Optional.empty());
 
 		// Act
@@ -112,7 +113,7 @@ class AttachmentHashWorkerTest {
 
 		// Arrange
 		when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
-		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+		when(attachmentRepositoryMock.findByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(projection(ATTACHMENT_ID_1), projection(ATTACHMENT_ID_2)));
 		when(attachmentRepositoryMock.findById(ATTACHMENT_ID_1)).thenReturn(Optional.of(attachmentEntityMock));
 		when(attachmentEntityMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
@@ -132,7 +133,7 @@ class AttachmentHashWorkerTest {
 	void computeHashStopsWhenThreadIsInterrupted() {
 
 		// Arrange
-		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+		when(attachmentRepositoryMock.findByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(projection(ATTACHMENT_ID_1), projection(ATTACHMENT_ID_2)));
 		Thread.currentThread().interrupt();
 
 		// Act
@@ -150,12 +151,26 @@ class AttachmentHashWorkerTest {
 
 		// Arrange - use zero duration to trigger immediate timeout
 		attachmentHashWorker = new AttachmentHashWorker(attachmentRepositoryMock, transactionManagerMock, BATCH_SIZE, Duration.ZERO);
-		when(attachmentRepositoryMock.findIdsByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(ATTACHMENT_ID_1, ATTACHMENT_ID_2));
+		when(attachmentRepositoryMock.findByHashIsNull(Pageable.ofSize(BATCH_SIZE))).thenReturn(List.of(projection(ATTACHMENT_ID_1), projection(ATTACHMENT_ID_2)));
 
 		// Act
 		attachmentHashWorker.computeHashForAttachmentsWithoutHash();
 
 		// Verify - should stop before processing any attachment
 		verify(attachmentRepositoryMock, never()).findById(any());
+	}
+
+	private static IdProjection projection(final String id) {
+		return new IdProjection() {
+			@Override
+			public String getId() {
+				return id;
+			}
+
+			@Override
+			public void setId(final String id) {
+				// Not needed for read-only test projection
+			}
+		};
 	}
 }
