@@ -1,0 +1,19 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/smo02key",
+		"queryParameters": {
+			"type": {
+				"equalTo": "label"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test36_patchErrandKeepsKeysTheUserMayNotSee/responses/label-rw.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-label-smo02key"
+}

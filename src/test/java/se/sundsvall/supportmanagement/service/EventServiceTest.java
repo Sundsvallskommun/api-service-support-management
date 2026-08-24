@@ -25,8 +25,10 @@ import se.sundsvall.supportmanagement.integration.db.NotificationDispatchReposit
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.eventlog.ExecutingUser.TypeEnum.AD_USER;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -57,6 +59,9 @@ class EventServiceTest {
 
 	@Mock
 	private NotificationDispatchRepository notificationDispatchRepositoryMock;
+
+	@Mock
+	private AccessControlService accessControlServiceMock;
 
 	@Mock
 	private PageEvent pageEventMock;
@@ -329,6 +334,7 @@ class EventServiceTest {
 
 	@Test
 	void readEvents() {
+		final var namespace = "namespace";
 		final var municipalityId = "2281";
 		final var errandId = randomUUID().toString();
 		final var pageable = Pageable.unpaged();
@@ -338,8 +344,9 @@ class EventServiceTest {
 		when(pageEventMock.getTotalElements()).thenReturn(3L);
 		when(eventMock.getType()).thenReturn(EventType.CREATE, EventType.UPDATE, EventType.DELETE);
 
-		final var pagedEvents = service.readEvents(municipalityId, errandId, pageable);
+		final var pagedEvents = service.readEvents(namespace, municipalityId, errandId, pageable);
 
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.EVENT, LR);
 		verify(eventMock, times(3)).getType();
 		verify(pageEventMock).getTotalElements();
 
@@ -355,6 +362,7 @@ class EventServiceTest {
 	@Test
 	void readUnknownEvents() {
 
+		final var namespace = "namespace";
 		final var errandId = randomUUID().toString();
 		final var pageable = Pageable.unpaged();
 		final var municipalityId = "2281";
@@ -364,8 +372,9 @@ class EventServiceTest {
 		when(pageEventMock.getTotalElements()).thenReturn(6L);
 		when(eventMock.getType()).thenReturn(EventType.ACCESS, EventType.CANCEL, EventType.DROP, EventType.EXECUTE, EventType.READ, null);
 
-		final var pagedEvents = service.readEvents(municipalityId, errandId, pageable);
+		final var pagedEvents = service.readEvents(namespace, municipalityId, errandId, pageable);
 
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.EVENT, LR);
 		verify(eventMock, times(6)).getType();
 		verify(pageEventMock).getTotalElements();
 

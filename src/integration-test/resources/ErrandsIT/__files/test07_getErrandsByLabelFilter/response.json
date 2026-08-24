@@ -85,7 +85,8 @@
 			"assignedUserId": "jane11dane",
 			"suspension": {},
 			"status": "STATUS-1",
-			"version": 0
+			"version": 0,
+			"measures": []
 		}
 	],
 	"totalElements": 1,

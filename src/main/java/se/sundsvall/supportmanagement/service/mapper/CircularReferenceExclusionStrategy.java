@@ -10,6 +10,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
@@ -38,6 +39,7 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		Map.entry(NotificationEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(ErrandPhaseEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(PhaseTransitionEntity.class, Set.of(PHASE_ENTITY)),
+		Map.entry(MeasureEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)));
 
 	public static CircularReferenceExclusionStrategy create() {

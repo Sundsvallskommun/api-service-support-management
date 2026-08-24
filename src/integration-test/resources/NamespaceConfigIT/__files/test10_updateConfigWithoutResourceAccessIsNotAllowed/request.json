@@ -1,0 +1,7 @@
+{
+	"displayName": "Updated displayname",
+	"shortCode": "NS2506",
+	"notificationTTLInDays": 30,
+	"accessControl": false,
+	"notifyReporter": true
+}

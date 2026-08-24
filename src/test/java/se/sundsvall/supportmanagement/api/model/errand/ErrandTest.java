@@ -72,6 +72,7 @@ class ErrandTest {
 		final var activePhaseId = "activePhaseId";
 		final var activeNotifications = List.of(Notification.create());
 		final var actions = List.of(ErrandAction.create().withId("action-id").withActionName("ADD_LABEL"));
+		final var measures = List.of(Measure.create().withId("measure-id").withResponsibleUser("responsibleUser"));
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -103,6 +104,7 @@ class ErrandTest {
 			.withActivePhaseId(activePhaseId)
 			.withActiveNotifications(activeNotifications)
 			.withActions(actions)
+			.withMeasures(measures)
 			.withVersion(1L);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
@@ -136,6 +138,7 @@ class ErrandTest {
 		assertThat(bean.getActivePhaseId()).isEqualTo(activePhaseId);
 		assertThat(bean.getActiveNotifications()).isEqualTo(activeNotifications);
 		assertThat(bean.getActions()).isEqualTo(actions);
+		assertThat(bean.getMeasures()).isEqualTo(measures);
 	}
 
 	@Test

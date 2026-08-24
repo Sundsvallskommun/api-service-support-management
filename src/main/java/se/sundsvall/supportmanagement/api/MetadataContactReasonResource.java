@@ -29,8 +29,11 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -54,9 +57,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class MetadataContactReasonResource {
 
 	private final MetadataService metadataService;
+	private final AccessControlService accessControlService;
 
-	MetadataContactReasonResource(final MetadataService metadataService) {
+	MetadataContactReasonResource(final MetadataService metadataService, final AccessControlService accessControlService) {
 		this.metadataService = metadataService;
+		this.accessControlService = accessControlService;
 	}
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -68,6 +73,8 @@ class MetadataContactReasonResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE, groups = OnCreate.class) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnCreate.class) @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final ContactReason contactReason) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_CONTACT_REASON, RW);
 
 		return created(fromPath("/{municipalityId}/{namespace}/metadata/contactreasons/{contactReasonId}")
 			.buildAndExpand(municipalityId, namespace, metadataService.createContactReason(namespace, municipalityId, contactReason)).toUri())
@@ -110,6 +117,8 @@ class MetadataContactReasonResource {
 		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String contactReasonId,
 		@Valid @NotNull @RequestBody final ContactReason body) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_CONTACT_REASON, RW);
+
 		return ok(metadataService.patchContactReason(contactReasonId, namespace, municipalityId, body));
 	}
 
@@ -122,6 +131,8 @@ class MetadataContactReasonResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "contactReasonId", description = "ContactReason ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String contactReasonId) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_CONTACT_REASON, RW);
 
 		metadataService.deleteContactReason(contactReasonId, namespace, municipalityId);
 		return noContent()

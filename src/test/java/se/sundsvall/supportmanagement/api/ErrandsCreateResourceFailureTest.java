@@ -21,6 +21,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
@@ -735,6 +736,38 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, schemaId, jsonValue);
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	/**
+	 * Measures reaching the service as part of the errand are validated exactly as one posted to the measure resource is.
+	 * Without cascading into them an unknown accept value would reach the mapper and surface as a 500, and a measure
+	 * missing its required fields would be persisted blank.
+	 */
+	@Test
+	void createErrandWithInvalidMeasure() {
+
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withMeasures(List.of(Measure.create().withAccept("MAYBE"))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("measures[0].accept", "must be one of: [TRUE, FALSE, REWORK]"),
+				tuple("measures[0].type", "must not be blank"),
+				tuple("measures[0].addedByUser", "must not be blank"),
+				tuple("measures[0].addedByRole", "must not be blank"));
+
 		verifyNoInteractions(errandServiceMock);
 	}
 }

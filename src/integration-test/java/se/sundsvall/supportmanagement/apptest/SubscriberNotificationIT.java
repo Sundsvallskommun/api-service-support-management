@@ -13,6 +13,8 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+
+import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
 
 @WireMockAppTestSuite(files = "classpath:/SubscriberNotificationIT/", classes = Application.class)
@@ -36,6 +38,7 @@ class SubscriberNotificationIT extends AbstractAppTest {
 	void test01_getNotifications() {
 		setupCall()
 			.withServicePath(BASE_PATH + "/adAccount/joe01doe")
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
@@ -51,6 +54,7 @@ class SubscriberNotificationIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(BASE_PATH + "/" + NOTIFICATION_ID_1 + "/acknowledge")
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
 			.withHttpMethod(PUT)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
@@ -68,6 +72,7 @@ class SubscriberNotificationIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(BASE_PATH + "/" + NOTIFICATION_ID_2)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()

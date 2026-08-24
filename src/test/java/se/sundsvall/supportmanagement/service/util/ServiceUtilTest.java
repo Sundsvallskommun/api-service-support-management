@@ -17,6 +17,7 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
@@ -34,6 +35,7 @@ class ServiceUtilTest {
 	@AfterEach
 	void clearRequestGroupId() {
 		ServiceUtil.clearRequestGroupId();
+		Identifier.remove();
 	}
 
 	private static final String IMG_FILE_NAME = "image.jpg";
@@ -209,5 +211,42 @@ class ServiceUtilTest {
 		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create().withKey("username").withValues(emptyList()))))).isEmpty();
 		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create().withKey("username").withValues(List.of("")))))).isEmpty();
 		assertThat(ServiceUtil.retrieveUsername(StakeholderEntity.create().withParameters(List.of(StakeholderParameterEntity.create().withKey("username").withValues(List.of(" ")))))).isEmpty();
+	}
+
+	@Test
+	void isRequestingUserMatchesTheStoredIdentifier() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("jo12doe"));
+
+		assertThat(ServiceUtil.isRequestingUser("adAccount", "jo12doe")).isTrue();
+	}
+
+	/**
+	 * Ad account names are not case sensitive and nothing normalises the value on the way in, so a subscriber stored in a
+	 * different case than they later send must still be recognised as the owner of their own settings.
+	 */
+	@Test
+	void isRequestingUserIgnoresCase() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("jo12doe"));
+
+		assertThat(ServiceUtil.isRequestingUser("ADACCOUNT", "JO12DOE")).isTrue();
+	}
+
+	@Test
+	void isRequestingUserRejectsAnotherUser() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("jo12doe"));
+
+		assertThat(ServiceUtil.isRequestingUser("adAccount", "ja11dane")).isFalse();
+	}
+
+	@Test
+	void isRequestingUserRejectsAnotherIdentifierType() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.PARTY_ID).withValue("jo12doe"));
+
+		assertThat(ServiceUtil.isRequestingUser("adAccount", "jo12doe")).isFalse();
+	}
+
+	@Test
+	void isRequestingUserOwnsNothingWithoutAnIdentifier() {
+		assertThat(ServiceUtil.isRequestingUser("adAccount", "jo12doe")).isFalse();
 	}
 }

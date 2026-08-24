@@ -41,6 +41,8 @@ import static se.sundsvall.supportmanagement.integration.db.specification.Errand
 @Transactional
 class ErrandsRepositoryTest {
 
+	private static final String MUNICIPALITY_ID = "2281";
+
 	@Autowired
 	private ErrandsRepository errandsRepository;
 
@@ -203,7 +205,7 @@ class ErrandsRepositoryTest {
 
 	@Test
 	void findByErrandNumberAndNamespace() {
-		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-23020001", "NAMESPACE.1");
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespaceAndMunicipalityId("KC-23020001", "NAMESPACE.1", MUNICIPALITY_ID);
 		assertThat(errandEntities).isNotNull();
 		errandEntities.ifPresentOrElse(
 			errandEntity -> assertThat(errandEntity.getId()).isEqualTo("ERRAND_ID-1"),
@@ -212,13 +214,13 @@ class ErrandsRepositoryTest {
 
 	@Test
 	void findByErrandNumberAndNamespaceMissmatchOnNamespace() {
-		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-23020001", "NAMESPACE.2");
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespaceAndMunicipalityId("KC-23020001", "NAMESPACE.2", MUNICIPALITY_ID);
 		assertThat(errandEntities).isEmpty();
 	}
 
 	@Test
 	void findByErrandNumberAndNamespaceNotFound() {
-		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-22020002", "NAMESPACE.1");
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespaceAndMunicipalityId("KC-22020002", "NAMESPACE.1", MUNICIPALITY_ID);
 		assertThat(errandEntities).isEmpty();
 	}
 

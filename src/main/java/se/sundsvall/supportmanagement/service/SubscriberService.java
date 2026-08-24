@@ -23,14 +23,19 @@ import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriberMapper;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.isRequestingUser;
 
 @Service
 public class SubscriberService {
 
+	private static final String SUBSCRIBER_NOT_OWNED = "Subscriber '%s' not accessible by user '%s'";
 	private static final String SUBSCRIBER_NOT_FOUND = "Subscriber with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 	private static final String SUBSCRIBER_CONFLICT = "Subscriber with identifier (type:'%s', value:'%s') and name:'%s' already exists in namespace:'%s' for municipality with id:'%s'";
 	private static final String IDENTIFIER_FILTER_INCOMPLETE = "Both identifierType and identifierValue must be provided together";
@@ -86,6 +91,7 @@ public class SubscriberService {
 	@Transactional
 	public Subscriber updateSubscriber(final String municipalityId, final String namespace, final String subscriberId, final Subscriber patch) {
 		final var entity = findEntity(municipalityId, namespace, subscriberId);
+		verifyOwnedByRequestingUser(entity);
 		SubscriberMapper.applyPatch(entity, patch);
 		validatePauseWindow(entity);
 		final var saved = persistOrThrowConflict(entity);
@@ -95,6 +101,7 @@ public class SubscriberService {
 	@Transactional
 	public void deleteSubscriber(final String municipalityId, final String namespace, final String subscriberId) {
 		final var entity = findEntity(municipalityId, namespace, subscriberId);
+		verifyOwnedByRequestingUser(entity);
 		subscriberRepository.delete(entity);
 	}
 
@@ -114,6 +121,18 @@ public class SubscriberService {
 			.withChannels(new ArrayList<>(List.of(
 				NotificationChannelEmbeddable.create()
 					.withType(NotificationChannelType.INTERNAL)))));
+	}
+
+	/**
+	 * A subscriber describes how one user is notified, so only that user may change or remove it. Listing, reading and
+	 * creating stay open: finding a colleague's subscriber id is what makes subscribing a colleague possible, and that
+	 * workflow would break without it.
+	 */
+	private void verifyOwnedByRequestingUser(final SubscriberEntity subscriber) {
+		final var owner = subscriber.getIdentifier();
+		if (isNull(owner) || !isRequestingUser(owner.getType(), owner.getValue())) {
+			throw Problem.valueOf(UNAUTHORIZED, SUBSCRIBER_NOT_OWNED.formatted(subscriber.getId(), getAdUser()));
+		}
 	}
 
 	private List<SubscriberEntity> loadSubscribers(final String municipalityId, final String namespace, final String identifierType, final String identifierValue) {
