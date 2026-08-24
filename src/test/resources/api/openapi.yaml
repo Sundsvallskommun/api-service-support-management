@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "15.1"
 servers:
-- url: http://localhost:37135
+- url: http://localhost:46181
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -11328,7 +11328,6 @@ components:
           description: Type of measure
           examples:
           - INTERVENTION
-          minLength: 1
         plannedStart:
           type: string
           format: date-time
@@ -11352,13 +11351,11 @@ components:
           description: User who added the measure
           examples:
           - jo12doe
-          minLength: 1
         addedByRole:
           type: string
           description: Role of the user who added the measure
           examples:
           - MANAGER
-          minLength: 1
         goal:
           type: string
           description: Goal of the measure
@@ -11405,10 +11402,6 @@ components:
           examples:
           - 2000-10-31T01:30:00.000+02:00
           readOnly: true
-      required:
-      - addedByRole
-      - addedByUser
-      - type
     Notification:
       type: object
       properties:

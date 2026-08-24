@@ -146,7 +146,7 @@ public final class ErrandMapper {
 		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value, accessibleKey.apply(ErrandField.PARAMETERS)));
 		ofNullable(errand.getJsonParameters()).ifPresent(value -> updateJsonParameters(entity, value, accessibleKey.apply(ErrandField.JSON_PARAMETERS)));
 		ofNullable(errand.getLabels()).ifPresent(value -> entity.setLabels(toErrandLabelEmbeddables(value)));
-		ofNullable(errand.getMeasures()).ifPresent(value -> entity.setMeasures(toMeasureEntities(value, entity)));
+		ofNullable(errand.getMeasures()).ifPresent(value -> ErrandMeasureMapper.mergeMeasures(entity, value));
 		return entity;
 	}
 
@@ -449,10 +449,15 @@ public final class ErrandMapper {
 			.toList();
 	}
 
+	/**
+	 * Collects into a mutable list, which Hibernate requires to manage the measures of the errand. The measures are also
+	 * added to and removed from one at a time through ErrandMeasureService, and an immutable list from Stream.toList
+	 * would fail those with an UnsupportedOperationException, which dept44 translates to 501.
+	 */
 	private static List<MeasureEntity> toMeasureEntities(final List<Measure> measures, final ErrandEntity errandEntity) {
 		return ofNullable(measures).orElse(emptyList()).stream()
 			.map(measure -> ErrandMeasureMapper.toMeasureEntity(measure, errandEntity))
-			.toList();
+			.collect(toCollection(ArrayList::new));
 	}
 
 	private static List<Measure> toMeasures(final List<MeasureEntity> entities) {

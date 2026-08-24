@@ -22,6 +22,7 @@ import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 
 /**
  * Errand Measures IT tests.
@@ -115,5 +116,37 @@ class ErrandMeasuresIT extends AbstractAppTest {
 
 		final var updatedErrand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_2281).orElseThrow();
 		assertThat(updatedErrand.getMeasures()).hasSize(1);
+	}
+
+	/**
+	 * Patching the errand with the measures it was just served must leave them exactly where they were. They are
+	 * addressable in their own right, so regenerating their ids would break every Location handed out by a create.
+	 */
+	@Test
+	void test06_patchErrandKeepsMeasureIds() {
+		final var measuresBefore = errandsRepository.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_2281).orElseThrow().getMeasures();
+		assertThat(measuresBefore).hasSize(2);
+		final var createdBefore = measuresBefore.stream().filter(measure -> MEASURE_ID.equals(measure.getId())).findFirst().orElseThrow().getCreated();
+
+		setupCall()
+			.withServicePath("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/errands/" + ERRAND_ID)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		final var measuresAfter = errandsRepository.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_2281).orElseThrow().getMeasures();
+		assertThat(measuresAfter)
+			.extracting(MeasureEntity::getId)
+			.containsExactlyInAnyOrder(MEASURE_ID, "ee000000-0000-0000-0000-000000000101");
+		assertThat(measuresAfter.stream().filter(measure -> MEASURE_ID.equals(measure.getId())).findFirst().orElseThrow().getCreated()).isEqualTo(createdBefore);
+
+		// The id previously handed out still resolves
+		setupCall()
+			.withServicePath(PATH + "/" + MEASURE_ID)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 }

@@ -44,7 +44,6 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -78,6 +77,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
@@ -105,7 +105,7 @@ class ErrandServiceTest {
 	private ContactReasonRepository contactReasonRepositoryMock;
 
 	@Mock
-	private MeasureTypeRepository measureTypeRepositoryMock;
+	private MeasureValidator measureValidatorMock;
 
 	@Mock
 	private RevisionService revisionServiceMock;
@@ -452,12 +452,13 @@ class ErrandServiceTest {
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any()))
 			.thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE")).thenReturn(false);
+		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'"))
+			.when(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
 
 		assertThatThrownBy(() -> service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null))
 			.hasMessage("Bad Request: 'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'");
 
-		verify(measureTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE");
+		verify(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
@@ -471,14 +472,15 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE")).thenReturn(false);
+		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'"))
+			.when(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
 
 		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
 			.hasMessage("Bad Request: 'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'");
 
 		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
-		verify(measureTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE");
+		verify(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
@@ -585,8 +587,11 @@ class ErrandServiceTest {
 			argumentSet("valid input", "REFERRED_FROM|someIdentifier;case;someService;someNamespace|", true, null));
 	}
 
+	// measureValidatorMock is deliberately left out - create and update consult it unconditionally, so every test would
+	// have to verify it. That it is consulted on both paths is asserted by createErrandWithInvalidMeasureType and
+	// updateErrandWithInvalidMeasureType, and what it accepts is MeasureValidatorTest's business.
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
-		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock, errandPhaseServiceMock, measureTypeRepositoryMock);
+		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, metadataLabelRepositoryMock, errandPhaseServiceMock);
 	}
 }

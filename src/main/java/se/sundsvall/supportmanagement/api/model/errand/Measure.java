@@ -2,14 +2,27 @@ package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
+/**
+ * The required fields are demanded of every measure that is not being patched on its own resource.
+ * <p>
+ * Patching a single measure says nothing about the fields it leaves out, so the OnUpdate group deliberately omits them.
+ * Everywhere else - creating a measure, and carrying measures on the errand - a measure is expected to be complete,
+ * which
+ * is what stops one from being persisted blank. The accept value is checked wherever it is supplied, since an unknown
+ * one
+ * would otherwise reach the mapper and surface as a 500 rather than the bad request it is.
+ */
 @Schema(description = "Measure model")
 public class Measure {
 
@@ -20,7 +33,9 @@ public class Measure {
 	private String responsibleUser;
 
 	@Schema(description = "Type of measure", examples = "INTERVENTION")
-	@NotBlank
+	@NotBlank(groups = {
+		Default.class, OnCreate.class
+	})
 	private String type;
 
 	@Schema(description = "Planned start date", examples = "2021-09-01T12:00:00Z")
@@ -36,11 +51,15 @@ public class Measure {
 	private OffsetDateTime executed;
 
 	@Schema(description = "User who added the measure", examples = "jo12doe")
-	@NotBlank
+	@NotBlank(groups = {
+		Default.class, OnCreate.class
+	})
 	private String addedByUser;
 
 	@Schema(description = "Role of the user who added the measure", examples = "MANAGER")
-	@NotBlank
+	@NotBlank(groups = {
+		Default.class, OnCreate.class
+	})
 	private String addedByRole;
 
 	@Schema(description = "Goal of the measure", examples = "Improve response time")
@@ -52,7 +71,9 @@ public class Measure {
 	@Schema(description = "Accept status", examples = "TRUE", nullable = true)
 	@OneOf(value = {
 		"TRUE", "FALSE", "REWORK"
-	}, nullable = true)
+	}, nullable = true, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
 	private String accept;
 
 	@Schema(description = "Motivation for the accept decision", examples = "The measure is approved")

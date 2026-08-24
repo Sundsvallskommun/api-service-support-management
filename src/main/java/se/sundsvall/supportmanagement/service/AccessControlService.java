@@ -136,14 +136,17 @@ public class AccessControlService {
 				return null;
 			}
 
-			if (isReporter(adAccount, errandEntity)) {
-				applicable.addAll(ofNullable(config.getReporterAccess()).map(ReporterAccess::getFields).orElse(emptyList()));
-			}
-
 			// An errand that is limited for the user is never returned in full. Nothing resolving here means the namespace
 			// has not said what limited read exposes, and the safe reading of limited is the minimum rather than everything.
+			// Resolved before the reporter fields are merged in, so that the minimum is a floor the reporter widens rather
+			// than something their own field set replaces - otherwise a namespace granting the reporter a single field
+			// would show them less of their own errand than any other limited read user sees.
 			if (limited && applicable.isEmpty()) {
 				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
+			}
+
+			if (isReporter(adAccount, errandEntity)) {
+				applicable.addAll(ofNullable(config.getReporterAccess()).map(ReporterAccess::getFields).orElse(emptyList()));
 			}
 
 			return applicable.stream().collect(Collectors.toMap(

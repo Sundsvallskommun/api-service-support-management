@@ -20,7 +20,7 @@ class CacheOverrideConfigPropertiesTest {
 		assertThat(properties).isNotNull();
 		assertThat(properties.getSpecOverrides()).hasSize(1).satisfiesExactly(cacheSetting -> {
 			assertThat(cacheSetting.getCacheName()).isEqualTo("accessibleLabelsCache");
-			assertThat(cacheSetting.getSpec()).isEqualTo("maximumSize=500, expireAfterWrite=60m");
+			assertThat(cacheSetting.getSpec()).isEqualTo("maximumSize=1000, expireAfterWrite=15m");
 		});
 	}
 }

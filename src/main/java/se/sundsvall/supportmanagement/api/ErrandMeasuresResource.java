@@ -26,6 +26,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import se.sundsvall.supportmanagement.service.ErrandMeasureService;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -109,7 +110,7 @@ class ErrandMeasuresResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "measureId", description = "Measure id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String measureId,
-		@NotNull @RequestBody final Measure measure) {
+		@Validated(OnUpdate.class) @NotNull @RequestBody final Measure measure) {
 
 		return ok(service.updateErrandMeasure(namespace, municipalityId, errandId, measureId, measure));
 	}

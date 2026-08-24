@@ -50,6 +50,7 @@ import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotification;
@@ -636,6 +637,20 @@ class ErrandMapperTest {
 			.containsExactly(
 				null,
 				null);
+	}
+
+	/**
+	 * Measures are added to and removed from one at a time through ErrandMeasureService, so the list Hibernate ends up
+	 * managing has to be mutable. Stream.toList would make every later create or delete of a measure fail with an
+	 * UnsupportedOperationException, which dept44 reports as 501.
+	 */
+	@Test
+	void testToErrandEntityGivesAMutableMeasureList() {
+		final var entity = toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand());
+
+		assertThat(entity.getMeasures()).isNotEmpty();
+		assertThatCode(() -> entity.getMeasures().add(MeasureEntity.create())).doesNotThrowAnyException();
+		assertThatCode(() -> entity.getMeasures().removeFirst()).doesNotThrowAnyException();
 	}
 
 	@Test

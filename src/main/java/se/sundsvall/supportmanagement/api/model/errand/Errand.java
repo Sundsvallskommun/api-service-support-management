@@ -159,6 +159,7 @@ public class Errand {
 	})
 	private List<ErrandAction> actions;
 
+	@Valid
 	@Schema(description = "List of measures for the errand")
 	private List<Measure> measures;
 

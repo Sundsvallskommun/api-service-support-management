@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.config;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import org.apache.commons.lang3.EnumUtils;
@@ -14,6 +15,7 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
@@ -36,6 +38,7 @@ public class NamespaceConfigService {
 	private static final String ROLE_OCCURS_MORE_THAN_ONCE = "Role '%s' occurs more than once in role access";
 	private static final String ROLE_NAME_IS_RESERVED = "Role '%s' is reserved and may not be used in role access";
 	private static final String KEYS_NOT_ALLOWED = "Keys may not be set for field '%s' of '%s' as the field holds no keyed collection";
+	private static final String DUPLICATE_GRANT = "'%s' occurs more than once as %s in '%s'";
 
 	private final NamespaceConfigRepository configRepository;
 	private final NamespaceConfigMapper mapper;
@@ -55,7 +58,9 @@ public class NamespaceConfigService {
 			throw Problem.valueOf(BAD_REQUEST, CONFIG_ENTITY_ALREADY_EXISTS.formatted(namespace, municipalityId));
 		}
 		validateAccessConfiguration(request);
-		configRepository.save(mapper.toEntity(request, namespace, municipalityId));
+		final var config = mapper.toEntity(request, namespace, municipalityId);
+		validateNoDuplicateGrants(config);
+		configRepository.save(config);
 	}
 
 	/**
@@ -92,6 +97,27 @@ public class NamespaceConfigService {
 	}
 
 	/**
+	 * Rejects any grant the namespace would store twice.
+	 * <p>
+	 * Checked on the mapped rows rather than on the request, because that is the shape the unique constraint applies to
+	 * and every way of writing the same grant collapses into it: a resource listed twice, the same resource listed at two
+	 * levels, two field entries naming the same field, or a key repeated within one field. The level is deliberately left
+	 * out of the comparison, exactly as it is left out of the constraint, since a resource granted at two levels is a
+	 * contradiction rather than two grants. Without this the database refuses the write and the caller is told 500 for
+	 * what is plainly a bad request.
+	 */
+	private void validateNoDuplicateGrants(NamespaceConfigEntity config) {
+		final var seen = new HashSet<String>();
+
+		ofNullable(config.getAccessGrants()).orElse(emptyList()).stream()
+			.filter(grant -> !seen.add(grant.getScope() + "|" + grant.getType() + "|" + grant.getValue()))
+			.findFirst()
+			.ifPresent(grant -> {
+				throw Problem.valueOf(BAD_REQUEST, DUPLICATE_GRANT.formatted(grant.getValue(), grant.getType(), grant.getScope()));
+			});
+	}
+
+	/**
 	 * Keys expose single entries of a collection, so they only make sense for a field holding one.
 	 */
 	private void validateFields(List<FieldAccess> fields, String scope) {
@@ -118,6 +144,7 @@ public class NamespaceConfigService {
 			.withId(entity.getId())
 			.withCreated(entity.getCreated());
 
+		validateNoDuplicateGrants(replacement);
 		configRepository.save(replacement);
 	}
 

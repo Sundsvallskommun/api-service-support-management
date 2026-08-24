@@ -103,9 +103,26 @@ class AccessControlServiceTest {
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
-		assertThat(result).containsOnlyKeys(ErrandField.TITLE, ErrandField.PARAMETERS);
+		// The namespace says nothing about limited read, so its minimum applies and the reporter fields widen it
+		assertThat(result).containsOnlyKeys(ErrandField.ID, ErrandField.ERRAND_NUMBER, ErrandField.TITLE, ErrandField.STATUS, ErrandField.PARAMETERS);
 		assertThat(result.get(ErrandField.TITLE)).isEmpty();
 		assertThat(result.get(ErrandField.PARAMETERS)).containsExactly("key-1");
+	}
+
+	/**
+	 * Reporting an errand may never show someone less of it than a limited read user who did not report it. The minimum
+	 * is therefore resolved before the reporter fields are merged in, so it acts as a floor rather than as something the
+	 * reporter's own field set replaces.
+	 */
+	@Test
+	void roleBasedFieldResolverKeepsTheLimitedReadMinimumForAReporter() {
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(
+			FieldAccess.create().withField(ErrandField.DESCRIPTION))));
+
+		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
+
+		assertThat(result).containsOnlyKeys(ErrandField.ID, ErrandField.ERRAND_NUMBER, ErrandField.TITLE, ErrandField.STATUS, ErrandField.DESCRIPTION);
 	}
 
 	@Test
@@ -734,7 +751,7 @@ class AccessControlServiceTest {
 	}
 
 	@Test
-	void roleBasedFieldResolverPrefersReporterFieldsOverTheMinimum() {
+	void roleBasedFieldResolverKeepsTheMinimumUnderReporterFields() {
 		final var errand = ErrandEntity.create()
 			.withReporterUserId(AD_ACCOUNT)
 			.withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId("label-id-1")));
@@ -746,8 +763,8 @@ class AccessControlServiceTest {
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
-		// Something resolved, so the minimum does not widen it.
-		assertThat(result).containsOnlyKeys(ErrandField.TITLE);
+		// The minimum is a floor for every limited read user, reporter or not, and the reporter fields add to it
+		assertThat(result).containsOnlyKeys(ErrandField.ID, ErrandField.ERRAND_NUMBER, ErrandField.TITLE, ErrandField.STATUS);
 	}
 
 	@Test

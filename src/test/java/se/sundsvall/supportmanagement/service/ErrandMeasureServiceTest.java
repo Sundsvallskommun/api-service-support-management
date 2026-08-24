@@ -13,8 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
-import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
@@ -26,9 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandMeasureServiceTest {
@@ -42,10 +42,7 @@ class ErrandMeasureServiceTest {
 	private ErrandsRepository errandsRepositoryMock;
 
 	@Mock
-	private MeasureTypeRepository measureTypeRepositoryMock;
-
-	@Mock
-	private RoleRepository roleRepositoryMock;
+	private MeasureValidator measureValidatorMock;
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
@@ -63,8 +60,6 @@ class ErrandMeasureServiceTest {
 		final var errandEntity = ErrandEntity.create().withId(ERRAND_ID).withMeasures(new ArrayList<>());
 		final var measure = new Measure().withType("INTERVENTION").withAddedByRole("MANAGER").withGoal("goal");
 
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INTERVENTION")).thenReturn(true);
-		when(roleRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "MANAGER")).thenReturn(true);
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntity);
 		when(errandsRepositoryMock.save(any())).thenReturn(errandEntity);
 
@@ -72,8 +67,6 @@ class ErrandMeasureServiceTest {
 		service.createErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, measure);
 
 		// Assert
-		verify(measureTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INTERVENTION");
-		verify(roleRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "MANAGER");
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW);
 		verify(entityManagerMock).lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 		verify(entityManagerMock).persist(errandEntity.getMeasures().getFirst());
@@ -83,36 +76,24 @@ class ErrandMeasureServiceTest {
 		assertThat(errandEntity.getMeasures().getFirst().getGoal()).isEqualTo("goal");
 	}
 
+	/**
+	 * What the validator accepts is MeasureValidatorTest's business. What matters here is that it is consulted, and that
+	 * its rejection stops the request before the errand is even loaded.
+	 */
 	@Test
-	void createErrandMeasureWithInvalidType() {
+	void createErrandMeasureRejectedByValidator() {
 
 		// Arrange
 		final var measure = new Measure().withType("INVALID_TYPE").withAddedByRole("MANAGER");
 
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE")).thenReturn(false);
+		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type")).when(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
 
 		// Act & Assert
 		assertThatThrownBy(() -> service.createErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, measure))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("not a valid measure type");
 
-		verifyNoInteractions(accessControlServiceMock, errandsRepositoryMock, entityManagerMock);
-	}
-
-	@Test
-	void createErrandMeasureWithInvalidRole() {
-
-		// Arrange
-		final var measure = new Measure().withType("INTERVENTION").withAddedByRole("INVALID_ROLE");
-
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INTERVENTION")).thenReturn(true);
-		when(roleRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_ROLE")).thenReturn(false);
-
-		// Act & Assert
-		assertThatThrownBy(() -> service.createErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, measure))
-			.isInstanceOf(Problem.class)
-			.hasMessageContaining("not a valid role");
-
+		verify(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(accessControlServiceMock, errandsRepositoryMock, entityManagerMock);
 	}
 
@@ -231,7 +212,6 @@ class ErrandMeasureServiceTest {
 		final var errandEntity = ErrandEntity.create().withId(ERRAND_ID).withMeasures(new ArrayList<>(List.of(measureEntity)));
 		final var measure = new Measure().withType("SUPPORT");
 
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "SUPPORT")).thenReturn(true);
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntity);
 		when(errandsRepositoryMock.save(any())).thenReturn(errandEntity);
 
@@ -239,40 +219,24 @@ class ErrandMeasureServiceTest {
 		final var result = service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, measure);
 
 		// Assert
-		verify(measureTypeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "SUPPORT");
 		assertThat(result).isNotNull();
 		assertThat(result.getType()).isEqualTo("SUPPORT");
 	}
 
 	@Test
-	void updateErrandMeasureWithInvalidType() {
+	void updateErrandMeasureRejectedByValidator() {
 
 		// Arrange
 		final var measure = new Measure().withType("INVALID_TYPE");
 
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_TYPE")).thenReturn(false);
+		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type")).when(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
 
 		// Act & Assert
 		assertThatThrownBy(() -> service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, measure))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("not a valid measure type");
 
-		verifyNoInteractions(accessControlServiceMock, errandsRepositoryMock, entityManagerMock);
-	}
-
-	@Test
-	void updateErrandMeasureWithInvalidRole() {
-
-		// Arrange
-		final var measure = new Measure().withAddedByRole("INVALID_ROLE");
-
-		when(roleRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INVALID_ROLE")).thenReturn(false);
-
-		// Act & Assert
-		assertThatThrownBy(() -> service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, measure))
-			.isInstanceOf(Problem.class)
-			.hasMessageContaining("not a valid role");
-
+		verify(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(accessControlServiceMock, errandsRepositoryMock, entityManagerMock);
 	}
 

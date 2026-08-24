@@ -225,4 +225,32 @@ class ErrandMeasuresResourceFailureTest {
 
 		verifyNoInteractions(serviceMock);
 	}
+
+	/**
+	 * The patch body is validated exactly as the create body is. Without that, an unknown accept value reaches the mapper
+	 * and comes back as a 500 rather than the bad request it is.
+	 */
+	@Test
+	void updateErrandMeasureWithInvalidAccept() {
+
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH_WITH_ID).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "measureId", randomUUID().toString())))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(new Measure().withAccept("MAYBE"))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		// Only accept - a patch says nothing about the fields it omits, so the create time requirements do not apply
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("accept", "must be one of: [TRUE, FALSE, REWORK]"));
+
+		verifyNoInteractions(serviceMock);
+	}
 }

@@ -91,6 +91,10 @@ public class ServiceUtil {
 	 * <p>
 	 * Identifiers are stored in their wire form ("adAccount"), which is {@link Identifier#getTypeString()} rather than
 	 * the {@link Identifier.Type} enum. A request without an identifier owns nothing.
+	 * <p>
+	 * Compared without regard to case, matching how a reporter is recognised in AccessControlService. Ad account names
+	 * are not case sensitive and nothing normalises the value on the way in, so a subscriber stored as JO12DOE would
+	 * otherwise be locked out of their own settings the moment they arrive as jo12doe.
 	 *
 	 * @param  identifierType  type of the stored identifier, in wire form
 	 * @param  identifierValue value of the stored identifier
@@ -99,8 +103,8 @@ public class ServiceUtil {
 	public static boolean isRequestingUser(final String identifierType, final String identifierValue) {
 		final var user = Identifier.get();
 		return nonNull(user)
-			&& Objects.equals(identifierType, user.getTypeString())
-			&& Objects.equals(identifierValue, user.getValue());
+			&& StringUtils.equalsIgnoreCase(identifierType, user.getTypeString())
+			&& StringUtils.equalsIgnoreCase(identifierValue, user.getValue());
 	}
 
 	public static Identifier getExecutingUser() {

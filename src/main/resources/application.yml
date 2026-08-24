@@ -114,9 +114,9 @@ spring:
       # default setting used if no override has been defined
       spec: maximumSize=200, expireAfterWrite=10m
       # overriding of default setting for specific caches
-      spec-overrides: 
+      spec-overrides:
         - cache-name: accessibleLabelsCache
-          spec: maximumSize=500, expireAfterWrite=60m
+          spec: maximumSize=1000, expireAfterWrite=15m
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
   flyway:

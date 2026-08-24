@@ -40,6 +40,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.PARAMETERS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.TITLE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.COMMUNICATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.ERRAND;
 
 @ExtendWith(MockitoExtension.class)
@@ -281,8 +282,80 @@ class NamespaceConfigServiceTest {
 				.withFields(List.of(FieldAccess.create().withField(PARAMETERS).withKeys(List.of("key-1")))))
 			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE))));
 
+		when(mapperMock.toEntity(request, "namespace", "municipalityId")).thenReturn(NamespaceConfigEntity.create());
+
 		configService.create(request, "namespace", "municipalityId");
 
 		verify(configRepositoryMock).save(any());
+	}
+
+	/**
+	 * The duplicate checks run against the mapped rows, so they are exercised through the real mapper - a request shape
+	 * only collides once it has been flattened into grants, and reproducing that flattening in the test would let the two
+	 * drift apart.
+	 */
+	private NamespaceConfigService serviceWithRealMapper() {
+		return new NamespaceConfigService(configRepositoryMock, new NamespaceConfigMapper());
+	}
+
+	@Test
+	void createWithSameResourceGrantedAtTwoLevels() {
+		final var request = NamespaceConfig.create()
+			.withReporterAccess(ReporterAccess.create().withResources(List.of(
+				ResourceAccess.create().withResource(COMMUNICATION).withLevel(AccessLevel.R),
+				ResourceAccess.create().withResource(COMMUNICATION).withLevel(AccessLevel.RW))));
+
+		final var service = serviceWithRealMapper();
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: 'COMMUNICATION' occurs more than once as RESOURCE in 'REPORTER'");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithSameFieldGrantedTwice() {
+		final var request = NamespaceConfig.create()
+			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(
+				FieldAccess.create().withField(TITLE),
+				FieldAccess.create().withField(TITLE))));
+
+		final var service = serviceWithRealMapper();
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: 'TITLE' occurs more than once as FIELD in 'LIMITED'");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithRepeatedKeyInsideOneField() {
+		final var request = NamespaceConfig.create()
+			.withReporterAccess(ReporterAccess.create().withFields(List.of(
+				FieldAccess.create().withField(PARAMETERS).withKeys(List.of("key-1", "key-1")))));
+
+		final var service = serviceWithRealMapper();
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: 'PARAMETERS:key-1' occurs more than once as FIELD in 'REPORTER'");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void replaceWithDuplicateGrantIsRejected() {
+		final var request = NamespaceConfig.create()
+			.withReporterAccess(ReporterAccess.create().withResources(List.of(
+				ResourceAccess.create().withResource(COMMUNICATION).withLevel(AccessLevel.R),
+				ResourceAccess.create().withResource(COMMUNICATION).withLevel(AccessLevel.R))));
+
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId"))
+			.thenReturn(Optional.of(NamespaceConfigEntity.create().withId(1L)));
+
+		final var service = serviceWithRealMapper();
+		final var exception = assertThrows(ThrowableProblem.class, () -> service.replace(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		verify(configRepositoryMock, never()).save(any());
 	}
 }

@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
@@ -199,5 +200,88 @@ class ErrandMeasureMapperTest {
 
 		// Assert
 		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void testMergeMeasuresKeepsIdAndUpdatesInPlace() {
+
+		// Arrange
+		final var created = OffsetDateTime.now().minusDays(3);
+		final var existing = MeasureEntity.create()
+			.withId("measure-id")
+			.withGoal("Original goal")
+			.withDescription("Original description")
+			.withCreated(created);
+		final var errandEntity = ErrandEntity.create().withId("errand-id").withMeasures(new ArrayList<>(List.of(existing)));
+
+		// Act - the round trip a client makes, reading the errand and patching it back with one field changed
+		ErrandMeasureMapper.mergeMeasures(errandEntity, List.of(new Measure().withId("measure-id").withGoal("Changed goal")));
+
+		// Assert - same row, same id, same created, so every Location previously handed out still resolves
+		assertThat(errandEntity.getMeasures()).containsExactly(existing);
+		assertThat(existing.getId()).isEqualTo("measure-id");
+		assertThat(existing.getCreated()).isEqualTo(created);
+		assertThat(existing.getGoal()).isEqualTo("Changed goal");
+		assertThat(existing.getDescription()).isEqualTo("Original description");
+	}
+
+	@Test
+	void testMergeMeasuresRemovesOmittedOnes() {
+
+		// Arrange
+		final var retained = MeasureEntity.create().withId("retained-id");
+		final var omitted = MeasureEntity.create().withId("omitted-id");
+		final var errandEntity = ErrandEntity.create().withMeasures(new ArrayList<>(List.of(retained, omitted)));
+
+		// Act
+		ErrandMeasureMapper.mergeMeasures(errandEntity, List.of(new Measure().withId("retained-id")));
+
+		// Assert
+		assertThat(errandEntity.getMeasures()).containsExactly(retained);
+	}
+
+	@Test
+	void testMergeMeasuresAddsMeasureWithoutId() {
+
+		// Arrange
+		final var errandEntity = ErrandEntity.create().withMeasures(new ArrayList<>());
+
+		// Act
+		ErrandMeasureMapper.mergeMeasures(errandEntity, List.of(new Measure().withGoal("New goal")));
+
+		// Assert - the id is left for the generator to assign on persist
+		assertThat(errandEntity.getMeasures()).hasSize(1);
+		assertThat(errandEntity.getMeasures().getFirst().getId()).isNull();
+		assertThat(errandEntity.getMeasures().getFirst().getGoal()).isEqualTo("New goal");
+		assertThat(errandEntity.getMeasures().getFirst().getErrandEntity()).isEqualTo(errandEntity);
+	}
+
+	@Test
+	void testMergeMeasuresTreatsForeignIdAsNew() {
+
+		// Arrange - an id belonging to another errand must never reach across to this one
+		final var errandEntity = ErrandEntity.create().withMeasures(new ArrayList<>());
+
+		// Act
+		ErrandMeasureMapper.mergeMeasures(errandEntity, List.of(new Measure().withId("id-of-another-errands-measure").withGoal("New goal")));
+
+		// Assert
+		assertThat(errandEntity.getMeasures()).hasSize(1);
+		assertThat(errandEntity.getMeasures().getFirst().getId()).isNull();
+		assertThat(errandEntity.getMeasures().getFirst().getGoal()).isEqualTo("New goal");
+	}
+
+	@Test
+	void testMergeMeasuresHandlesNullList() {
+
+		// Arrange
+		final var existing = MeasureEntity.create().withId("measure-id");
+		final var errandEntity = ErrandEntity.create().withMeasures(new ArrayList<>(List.of(existing)));
+
+		// Act
+		ErrandMeasureMapper.mergeMeasures(errandEntity, null);
+
+		// Assert
+		assertThat(errandEntity.getMeasures()).isEmpty();
 	}
 }
