@@ -14,6 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -488,5 +489,44 @@ class MessagingMapperTest {
 	void toUuidOrNullReturnsUuidForValidValue() {
 		final var uuid = randomUUID();
 		assertThat(MessagingMapper.toUuidOrNull(uuid.toString())).isEqualTo(uuid);
+	}
+
+	@Test
+	void toEmailBatchRequestFromBulkEmailRequest() {
+		final var recipients = List.of("a@example.com", "b@example.com");
+		final var request = BulkEmailRequest.create()
+			.withSender(SENDER_EMAIL)
+			.withSenderName(SENDER_NAME)
+			.withRecipients(recipients)
+			.withSubject(SUBJECT)
+			.withMessage(MESSAGE)
+			.withHtmlMessage(HTML_MESSAGE_IN_BASE64)
+			.withAttachments(List.of(EmailAttachment.create().withBase64EncodedString(FILE_CONTENT).withFileName(FILE_NAME)));
+		final var errandEntity = createErrandEntity();
+
+		final var result = MessagingMapper.toEmailBatchRequest(request, errandEntity, List.of());
+
+		assertThat(result.getParties()).hasSize(2)
+			.extracting("emailAddress").containsExactlyInAnyOrder("a@example.com", "b@example.com");
+		assertThat(result.getSubject()).isEqualTo(SUBJECT);
+		assertThat(result.getMessage()).isEqualTo(MESSAGE);
+		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
+		assertThat(result.getSender().getName()).isEqualTo(SENDER_NAME);
+		assertThat(result.getAttachments()).hasSize(1);
+	}
+
+	@Test
+	void toEmailBatchRequestFromBulkEmailRequestWithNoSenderName() {
+		final var request = BulkEmailRequest.create()
+			.withSender(SENDER_EMAIL)
+			.withRecipients(List.of("a@example.com"))
+			.withSubject(SUBJECT)
+			.withMessage(MESSAGE)
+			.withHtmlMessage(HTML_MESSAGE_IN_BASE64);
+
+		final var result = MessagingMapper.toEmailBatchRequest(request, createErrandEntity(), List.of());
+
+		assertThat(result.getSender().getName()).isEqualTo(SENDER_EMAIL);
+		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
 	}
 }

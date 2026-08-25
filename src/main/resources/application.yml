@@ -41,6 +41,11 @@ scheduler:
     cron: 0 0 2 * * *
     shedlock-lock-at-most-for: PT2H40M
     maximum-execution-time: PT2H30M
+  messaging-outbox:
+    name: process_messaging_outbox
+    cron: 0 */1 * * * *
+    shedlock-lock-at-most-for: PT4M
+    maximum-execution-time: PT2M
 integration:
   accessmapper:
     connectTimeout: 5

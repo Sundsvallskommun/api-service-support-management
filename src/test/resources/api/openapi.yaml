@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "15.0"
 servers:
-- url: http://localhost:52015
+- url: http://localhost:49335
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -974,74 +974,6 @@ paths:
           description: Successful operation
         "404":
           description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/json-parameters:
-    get:
-      tags:
-      - Errand JSON Parameters
-      summary: Read all JSON parameters
-      description: Fetches all JSON parameters for the provided errand id
-      operationId: readJsonParameters
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      responses:
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/JsonParameter"
-        "404":
-          description: Not Found
           content:
             application/problem+json:
               schema:
@@ -3764,6 +3696,69 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/EmailRequest"
+        required: true
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/email/batch:
+    post:
+      tags:
+      - Errand communication
+      summary: Send email to multiple recipients in context of an errand
+      description: Sends a single email message to all recipients specified in the
+        request via a delivery outbox
+      operationId: sendBulkEmail
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkEmailRequest"
         required: true
       responses:
         "204":
@@ -7745,6 +7740,74 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/json-parameters:
+    get:
+      tags:
+      - Errand JSON Parameters
+      summary: Read all JSON parameters
+      description: Fetches all JSON parameters for the provided errand id
+      operationId: readJsonParameters
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JsonParameter"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/events:
     get:
       tags:
@@ -11145,6 +11208,74 @@ components:
       - recipient
       - sender
       - subject
+    BulkEmailRequest:
+      type: object
+      description: BulkEmailRequest model
+      properties:
+        sender:
+          type: string
+          format: email
+          description: Email address for sender
+          example: sender@sender.se
+        senderName:
+          type: string
+          description: "Optional display name of sender on email. If left out, email\
+            \ will be displayed as sender name."
+          example: Firstname Lastname
+        recipients:
+          type: array
+          items:
+            type: string
+            format: email
+            description: Email addresses for recipients
+            example: recipient@recipient.se
+          minItems: 1
+        subject:
+          type: string
+          description: Subject
+          example: Subject
+          minLength: 1
+        htmlMessage:
+          type: string
+          description: Message in html (optionally in BASE64 encoded format)
+          example: <html>HTML-formatted message</html>
+          minLength: 1
+        message:
+          type: string
+          description: Message in plain text
+          example: Message in plain text
+          minLength: 1
+        emailHeaders:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Headers for keeping track of email conversations
+          example:
+            IN_REPLY_TO:
+            - reply-to@example.com
+            REFERENCES:
+            - reference1
+            - reference2
+            MESSAGE_ID:
+            - "123456789"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAttachment"
+            description: List with Base64 encoded email attachments
+        attachmentIds:
+          type: array
+          items:
+            type: string
+            description: List with attachment ids
+      required:
+      - htmlMessage
+      - message
+      - recipients
+      - sender
+      - subject
     ConversationRequest:
       type: object
       description: ConversationRequest model
@@ -11363,17 +11494,6 @@ components:
         totalElements:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11384,6 +11504,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         empty:
           type: boolean
     PageableObject:
@@ -11470,9 +11601,9 @@ components:
           type: array
           description: Events that have occurred on the errand since the notification
             was last acknowledged
-          readOnly: true
           items:
             $ref: "#/components/schemas/SubscriberNotificationEvent"
+          readOnly: true
     SubscriberNotificationEvent:
       type: object
       properties:
@@ -11610,17 +11741,6 @@ components:
         totalElements:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11631,6 +11751,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         empty:
           type: boolean
     Revision:
@@ -11875,17 +12006,6 @@ components:
         totalElements:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -11896,6 +12016,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         empty:
           type: boolean
     Communication:
@@ -12113,17 +12244,6 @@ components:
         totalElements:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        first:
-          type: boolean
-        last:
-          type: boolean
-        numberOfElements:
-          type: integer
-          format: int32
-        pageable:
-          $ref: "#/components/schemas/PageableObject"
         size:
           type: integer
           format: int32
@@ -12134,6 +12254,17 @@ components:
         number:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
         empty:
           type: boolean
     ReadBy:

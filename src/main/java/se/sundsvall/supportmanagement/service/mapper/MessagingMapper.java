@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import generated.se.sundsvall.messaging.Email;
 import generated.se.sundsvall.messaging.EmailAttachment;
+import generated.se.sundsvall.messaging.EmailBatchRequest;
 import generated.se.sundsvall.messaging.EmailRequest;
 import generated.se.sundsvall.messaging.EmailRequestParty;
 import generated.se.sundsvall.messaging.EmailSender;
@@ -9,6 +10,7 @@ import generated.se.sundsvall.messaging.ExternalReference;
 import generated.se.sundsvall.messaging.MessageParty;
 import generated.se.sundsvall.messaging.MessageRequest;
 import generated.se.sundsvall.messaging.MessageSender;
+import generated.se.sundsvall.messaging.Party;
 import generated.se.sundsvall.messaging.Sms;
 import generated.se.sundsvall.messaging.SmsRequest;
 import generated.se.sundsvall.messaging.SmsRequestParty;
@@ -257,6 +259,48 @@ public class MessagingMapper {
 		} catch (final Exception _) {
 			return BASE64_ENCODER.encodeToString(message.getBytes(UTF_8));
 		}
+	}
+
+	public static EmailBatchRequest toEmailBatchRequest(final se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest request, final ErrandEntity errandEntity, final List<EmailAttachment> attachments) {
+		return new EmailBatchRequest()
+			.parties(request.getRecipients().stream()
+				.map(Party::new)
+				.toList())
+			.subject(request.getSubject())
+			.message(request.getMessage())
+			.htmlMessage(addBase64Encoding(request.getHtmlMessage()))
+			.attachments(Stream.of(attachments, toAttachments(request.getAttachments()))
+				.flatMap(List::stream)
+				.toList())
+			.sender(toEmailSender(request))
+			.headers(toEmailHeaders(request.getEmailHeaders()));
+	}
+
+	private static EmailSender toEmailSender(final se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest request) {
+		return new EmailSender()
+			.name(ofNullable(request.getSenderName()).orElse(request.getSender()))
+			.address(request.getSender());
+	}
+
+	public static EmailBatchRequest toEmailBatchRequest(final ErrandEntity errandEntity, final StakeholderEntity stakeholder, final List<String> emailAddresses, final MessagingSettings messagingSettings) {
+		final var subject = SUBJECT_TEMPLATE.formatted(errandEntity.getErrandNumber());
+		final var message = ofNullable(messagingSettings.reporterSupportText())
+			.map(text -> text.formatted(
+				ofNullable(stakeholder).map(StakeholderEntity::getFirstName).orElse(""),
+				errandEntity.getErrandNumber(),
+				messagingSettings.katlaUrl(),
+				errandEntity.getErrandNumber()))
+			.orElse("");
+
+		return new EmailBatchRequest()
+			.parties(emailAddresses.stream()
+				.map(Party::new)
+				.toList())
+			.subject(subject)
+			.message(message)
+			.sender(new EmailSender()
+				.name(ofNullable(messagingSettings.contactInformationEmailName()).orElse(messagingSettings.contactInformationEmail()))
+				.address(messagingSettings.contactInformationEmail()));
 	}
 
 	public static MessageRequest toMessagingMessageRequest(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {

@@ -38,6 +38,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -147,6 +148,22 @@ class ErrandCommunicationResource {
 		@Valid @NotNull @RequestBody final EmailRequest request) {
 
 		communicationService.sendEmail(namespace, municipalityId, errandId, request);
+		return noContent()
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
+	}
+
+	@PostMapping(path = "/email/batch", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
+	@Operation(summary = "Send email to multiple recipients in context of an errand", description = "Sends a single email message to all recipients specified in the request via a delivery outbox", responses = {
+		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
+	})
+	ResponseEntity<Void> sendBulkEmail(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
+		@Valid @NotNull @RequestBody final BulkEmailRequest request) {
+
+		communicationService.sendBulkEmail(namespace, municipalityId, errandId, request);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();

@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-messaging/2281/email/batch"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"body": "{\"batchId\":null,\"messages\":[]}",
+		"status": 200
+	},
+	"name": "api-messaging-send-email-batch"
+}

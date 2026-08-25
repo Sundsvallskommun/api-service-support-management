@@ -22,6 +22,7 @@ import org.springframework.util.StreamUtils;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Identifier.Type;
+import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -54,8 +55,8 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.EMAIL;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.ESERVICE;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.createReporterEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailBatchRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMessagingMessageRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
@@ -81,6 +82,7 @@ public class CommunicationService {
 	private final EmployeeService employeeService;
 	private final CitizenIntegration citizenIntegration;
 	private final MessagingSettingsIntegration messagingSettingsIntegration;
+	private final se.sundsvall.supportmanagement.service.scheduler.messagingoutbox.MessagingOutboxWorker messagingOutboxWorker;
 
 	public CommunicationService(
 		final AccessControlService accessControlService,
@@ -91,7 +93,9 @@ public class CommunicationService {
 		final ErrandAttachmentService errandAttachmentService,
 		final Semaphore semaphore,
 		final EmployeeService employeeService,
-		final CitizenIntegration citizenIntegration, final MessagingSettingsIntegration messagingSettingsIntegration) {
+		final CitizenIntegration citizenIntegration,
+		final MessagingSettingsIntegration messagingSettingsIntegration,
+		final se.sundsvall.supportmanagement.service.scheduler.messagingoutbox.MessagingOutboxWorker messagingOutboxWorker) {
 
 		this.accessControlService = accessControlService;
 		this.messagingClient = messagingClient;
@@ -103,6 +107,7 @@ public class CommunicationService {
 		this.employeeService = employeeService;
 		this.citizenIntegration = citizenIntegration;
 		this.messagingSettingsIntegration = messagingSettingsIntegration;
+		this.messagingOutboxWorker = messagingOutboxWorker;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -191,6 +196,36 @@ public class CommunicationService {
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, errandEntity);
 
+	}
+
+	public void sendBulkEmail(final String namespace, final String municipalityId, final String id, final BulkEmailRequest request) {
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
+		final var batchRequest = toEmailBatchRequest(request, errandEntity, toEmailAttachments(errandAttachments));
+
+		messagingOutboxWorker.enqueue(municipalityId, batchRequest);
+
+		request.getRecipients().forEach(recipient -> {
+			final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, toSingleEmailRequest(request, recipient))
+				.withErrandAttachments(errandAttachments)
+				.withViewed(true)
+				.withErrandNumber(errandEntity.getErrandNumber());
+			saveCommunication(communicationEntity);
+			saveAttachment(communicationEntity, errandEntity);
+		});
+	}
+
+	private static EmailRequest toSingleEmailRequest(final BulkEmailRequest bulk, final String recipient) {
+		return EmailRequest.create()
+			.withSender(bulk.getSender())
+			.withSenderName(bulk.getSenderName())
+			.withRecipient(recipient)
+			.withSubject(bulk.getSubject())
+			.withMessage(bulk.getMessage())
+			.withHtmlMessage(bulk.getHtmlMessage())
+			.withEmailHeaders(bulk.getEmailHeaders())
+			.withAttachments(bulk.getAttachments())
+			.withAttachmentIds(bulk.getAttachmentIds());
 	}
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
@@ -307,17 +342,17 @@ public class CommunicationService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
 		final var stakeholder = getStakeholderMatchingRole(errandEntity, "REPORTER");
 
-		// Create a notification and send email if logic determins that mail should be sent
 		if (isStakeholderEligibleForEmailNotification(stakeholder)) {
-			ofNullable(stakeholder.getContactChannels()).orElse(emptyList()).stream()
+			final var emailAddresses = ofNullable(stakeholder.getContactChannels()).orElse(emptyList()).stream()
 				.filter(contactChannel -> Strings.CI.equals("EMAIL", contactChannel.getType()))
 				.map(ContactChannelEntity::getValue)
-				.findFirst()
-				.ifPresent(emailDestination -> {
-					LOGGER.info("Stakeholder with reporter role found on errrand number {}, sending email notification to {}.", errandEntity.getErrandNumber(), emailDestination);
-					final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
-					sendEmail(errandEntity, createReporterEmailRequest(errandEntity, stakeholder, emailDestination, messagingSettings));
-				});
+				.toList();
+
+			if (!emailAddresses.isEmpty()) {
+				LOGGER.info("Stakeholder with reporter role found on errand number {}, queuing email notification to {} address(es).", errandEntity.getErrandNumber(), emailAddresses.size());
+				final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
+				messagingOutboxWorker.enqueue(municipalityId, toEmailBatchRequest(errandEntity, stakeholder, emailAddresses, messagingSettings));
+			}
 		}
 	}
 

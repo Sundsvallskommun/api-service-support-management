@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-messaging/2281/email/batch"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"body": "{\"title\":\"Internal Server Error\",\"status\":500}",
+		"status": 500
+	},
+	"name": "api-messaging-send-email-batch-error"
+}

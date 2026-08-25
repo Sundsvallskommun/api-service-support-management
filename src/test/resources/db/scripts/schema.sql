@@ -325,6 +325,18 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table messaging_outbox (
+        dead_letter bit not null,
+        retry_count integer not null,
+        created datetime(3) not null,
+        municipality_id varchar(8) not null,
+        next_retry_at datetime(3),
+        message_type varchar(16) not null,
+        id varchar(36) not null,
+        payload text not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table metadata_label (
         deprecated bit not null,
         created datetime(6),
@@ -820,6 +832,9 @@
 
     alter table if exists message_exchange_integration_config
        add constraint uq_mex_integration_config_namespace_municipality_id unique (namespace, municipality_id);
+
+    create index idx_outbox_dead_letter_retry
+       on messaging_outbox (dead_letter, next_retry_at);
 
     create index idx_namespace_municipality_id
        on metadata_label (namespace, municipality_id);
