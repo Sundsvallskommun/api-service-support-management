@@ -316,8 +316,7 @@ public class MetadataLabelEntity {
 			return;
 		}
 
-		this.resourcePath = Stream.iterate(this, current -> current.parent)
-			.takeWhile(Objects::nonNull)
+		this.resourcePath = Stream.iterate(this, Objects::nonNull, MetadataLabelEntity::getParent)
 			.map(MetadataLabelEntity::getResourceName)
 			.filter(StringUtils::hasText)
 			.collect(collectingAndThen(
