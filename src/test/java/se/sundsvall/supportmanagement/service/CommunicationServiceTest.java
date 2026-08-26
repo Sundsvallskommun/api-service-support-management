@@ -178,9 +178,6 @@ class CommunicationServiceTest {
 	@Mock
 	private MessagingSettingsIntegration messagingSettingsIntegrationMock;
 
-	@Mock
-	private se.sundsvall.supportmanagement.service.scheduler.messagingoutbox.MessagingOutboxWorker messagingOutboxWorkerMock;
-
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.MessageRequest> messageRequestCaptor;
 
@@ -496,7 +493,7 @@ class CommunicationServiceTest {
 		// Verifications
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
-		verify(messagingOutboxWorkerMock).enqueue(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
+		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
 		verify(communicationMapperMock, org.mockito.Mockito.times(2)).toCommunicationEntity(anyString(), anyString(), any(EmailRequest.class));
 		verify(communicationRepositoryMock, org.mockito.Mockito.times(2)).saveAndFlush(any(CommunicationEntity.class));
 
@@ -853,9 +850,8 @@ class CommunicationServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(errandEntityMock).getStakeholders();
 		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
-		verify(messagingOutboxWorkerMock).enqueue(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
-		verifyNoMoreInteractions(accessControlServiceMock, messagingSettingsIntegrationMock, messagingOutboxWorkerMock);
-		verifyNoInteractions(messagingClientMock);
+		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
+		verifyNoMoreInteractions(accessControlServiceMock, messagingSettingsIntegrationMock, messagingClientMock);
 
 		assertThat(emailBatchRequestCaptor.getValue()).satisfies(batchRequest -> {
 			assertThat(batchRequest.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s".formatted(errandNumber));

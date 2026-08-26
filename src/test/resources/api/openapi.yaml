@@ -3720,7 +3720,7 @@ paths:
       - Errand communication
       summary: Send email to multiple recipients in context of an errand
       description: Sends a single email message to all recipients specified in the
-        request via a delivery outbox
+        request
       operationId: sendBulkEmail
       parameters:
       - name: namespace

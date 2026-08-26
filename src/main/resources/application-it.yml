@@ -39,8 +39,7 @@ scheduler:
     cron: "-"
   attachment-hash:
     cron: "-"
-  messaging-outbox:
-    cron: "*/1 * * * * *"
+
 spring:
   cache:
     type: none

@@ -136,5 +136,4 @@ scheduler:
     cron: "-"
   attachment-hash:
     cron: "-"
-  messaging-outbox:
-    cron: "-"
+

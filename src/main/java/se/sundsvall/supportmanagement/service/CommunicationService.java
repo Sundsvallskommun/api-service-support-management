@@ -82,7 +82,6 @@ public class CommunicationService {
 	private final EmployeeService employeeService;
 	private final CitizenIntegration citizenIntegration;
 	private final MessagingSettingsIntegration messagingSettingsIntegration;
-	private final se.sundsvall.supportmanagement.service.scheduler.messagingoutbox.MessagingOutboxWorker messagingOutboxWorker;
 
 	public CommunicationService(
 		final AccessControlService accessControlService,
@@ -94,8 +93,7 @@ public class CommunicationService {
 		final Semaphore semaphore,
 		final EmployeeService employeeService,
 		final CitizenIntegration citizenIntegration,
-		final MessagingSettingsIntegration messagingSettingsIntegration,
-		final se.sundsvall.supportmanagement.service.scheduler.messagingoutbox.MessagingOutboxWorker messagingOutboxWorker) {
+		final MessagingSettingsIntegration messagingSettingsIntegration) {
 
 		this.accessControlService = accessControlService;
 		this.messagingClient = messagingClient;
@@ -107,7 +105,6 @@ public class CommunicationService {
 		this.employeeService = employeeService;
 		this.citizenIntegration = citizenIntegration;
 		this.messagingSettingsIntegration = messagingSettingsIntegration;
-		this.messagingOutboxWorker = messagingOutboxWorker;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -203,7 +200,7 @@ public class CommunicationService {
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
 		final var batchRequest = toEmailBatchRequest(request, errandEntity, toEmailAttachments(errandAttachments));
 
-		messagingOutboxWorker.enqueue(municipalityId, batchRequest);
+		messagingClient.sendEmailBatch(municipalityId, batchRequest);
 
 		request.getRecipients().forEach(recipient -> {
 			final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, toSingleEmailRequest(request, recipient))
@@ -349,9 +346,9 @@ public class CommunicationService {
 				.toList();
 
 			if (!emailAddresses.isEmpty()) {
-				LOGGER.info("Stakeholder with reporter role found on errand number {}, queuing email notification to {} address(es).", errandEntity.getErrandNumber(), emailAddresses.size());
+				LOGGER.info("Stakeholder with reporter role found on errand number {}, sending email notification to {} address(es).", errandEntity.getErrandNumber(), emailAddresses.size());
 				final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
-				messagingOutboxWorker.enqueue(municipalityId, toEmailBatchRequest(errandEntity, stakeholder, emailAddresses, messagingSettings));
+				messagingClient.sendEmailBatch(municipalityId, toEmailBatchRequest(errandEntity, stakeholder, emailAddresses, messagingSettings));
 			}
 		}
 	}

@@ -154,7 +154,7 @@ class ErrandCommunicationResource {
 	}
 
 	@PostMapping(path = "/email/batch", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Send email to multiple recipients in context of an errand", description = "Sends a single email message to all recipients specified in the request via a delivery outbox", responses = {
+	@Operation(summary = "Send email to multiple recipients in context of an errand", description = "Sends a single email message to all recipients specified in the request", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true)
 	})
 	ResponseEntity<Void> sendBulkEmail(

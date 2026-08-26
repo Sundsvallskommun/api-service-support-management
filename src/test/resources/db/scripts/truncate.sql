@@ -60,5 +60,4 @@ TRUNCATE table subscriber;
 TRUNCATE table notification_dispatch;
 TRUNCATE table subscriber_notification_event;
 TRUNCATE table subscriber_notification;
-TRUNCATE table messaging_outbox;
 SET FOREIGN_KEY_CHECKS = 1;
