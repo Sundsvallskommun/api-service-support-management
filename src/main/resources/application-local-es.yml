@@ -1,64 +1,16 @@
+# Profile used by the Elasticsearch PoC harness (tools/elasticsearch-poc/docker-compose.yml).
+# Datasource url/credentials, spring.elasticsearch.uris and elasticsearch.reindex.on-startup are provided
+# as environment variables by the compose stack. All integration URLs and oauth2 registrations are dummies
+# (same as the junit profile) so that the context can boot without any surrounding services.
 elasticsearch:
-  enabled: false
+  enabled: true
   reindex:
     on-startup: false
-integration:
-  accessmapper:
-    url: https//accessmapper.url
-  emailreader:
-    url: http://emailreader.url
-    municipality-id: 1234
-    namespace: namespace
-    errand-closed-email-template: |
-      Ditt ärende är nu stängt på grund av saknad återkoppling. Vänligen återkom per telefon eller via e-post för att skapa nytt ärende.
-      Detta e-postmeddelande går ej att svara på.
-    errand-closed-email-sender: noreply@sundsvall.se
-  employee:
-    url: http://employee.url
-  eventlog:
-    url: http://eventlog.url
-  messaging:
-    url: http://messaging.url
-  messageexchange:
-    url: http://messageexchange.url
-  messaging-settings:
-    url: http://messaging-settings.url
-  notes:
-    url: http://notes.url
-  web-message-collector:
-    url: http://web-message-collector.url
-  citizen:
-    url: http://citizen.url
-  relation:
-    url: http://relation.url
-  json-schema:
-    url: http://json-schema.url
 spring:
-  cache:
-    type: none
-  datasource:
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    # TC_TMPFS keeps the container data directory in RAM. The test setup is DDL heavy (truncate + testdata
-    # before every test method), which makes this worth roughly 25% of total build time.
-    url: jdbc:tc:mariadb:10.6:///junittest?TC_TMPFS=/var/lib/mysql:rw
-  jpa:
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
-        hbm2ddl:
-          schema-generation:
-            script:
-              append: false
-      jakarta:
-        persistence:
-          schema-generation:
-            create-source: metadata
-            database:
-              action: update
-            scripts:
-              action: create
-              create-target: target/database/generated-schema.sql
+  elasticsearch:
+    uris: http://localhost:9200
+  flyway:
+    enabled: true
   security:
     oauth2:
       client:
@@ -96,7 +48,7 @@ spring:
             client-secret: the-client-secret
           employee:
             client-id: the-client-id
-            client-secret: the-client
+            client-secret: the-client-secret
           eventlog:
             client-id: the-client-id
             client-secret: the-client-secret
@@ -108,7 +60,7 @@ spring:
             client-secret: the-client-secret
           messaging-settings:
             client-id: the-client-id
-            client-secret: the-client
+            client-secret: the-client-secret
           notes:
             client-id: the-client-id
             client-secret: the-client-secret
@@ -124,6 +76,37 @@ spring:
           json-schema:
             client-id: the-client-id
             client-secret: the-client-secret
+integration:
+  accessmapper:
+    url: http://accessmapper.url
+  emailreader:
+    url: http://emailreader.url
+    municipality-id: 1234
+    namespace: namespace
+    errand-closed-email-template: |
+      Ditt ärende är nu stängt på grund av saknad återkoppling. Vänligen återkom per telefon eller via e-post för att skapa nytt ärende.
+      Detta e-postmeddelande går ej att svara på.
+    errand-closed-email-sender: noreply@sundsvall.se
+  employee:
+    url: http://employee.url
+  eventlog:
+    url: http://eventlog.url
+  messaging:
+    url: http://messaging.url
+  messageexchange:
+    url: http://messageexchange.url
+  messaging-settings:
+    url: http://messaging-settings.url
+  notes:
+    url: http://notes.url
+  web-message-collector:
+    url: http://web-message-collector.url
+  citizen:
+    url: http://citizen.url
+  relation:
+    url: http://relation.url
+  json-schema:
+    url: http://json-schema.url
 scheduler:
   emailreader:
     cron: "-"

@@ -50,6 +50,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
+import se.sundsvall.supportmanagement.integration.elasticsearch.ElasticsearchIndexService;
+import se.sundsvall.supportmanagement.integration.elasticsearch.ElasticsearchSearchService;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
@@ -151,6 +153,12 @@ class ErrandServiceTest {
 
 	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
+
+	@Mock
+	private ElasticsearchSearchService elasticsearchSearchServiceMock;
+
+	@Mock
+	private ElasticsearchIndexService elasticsearchIndexServiceMock;
 
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
@@ -286,7 +294,7 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
 		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> limited ? Map.of(ErrandField.ID, Set.<String>of()) : null);
 
-		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, null, pageable);
 
 		assertThat(matches.getContent()).isNotEmpty().hasSize(2).extracting("priority").containsOnly(limited ? null : Priority.HIGH);
 		assertThat(matches.getNumberOfElements()).isEqualTo(2);
@@ -312,7 +320,7 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(emptyList()));
 		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
 
-		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable);
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, null, pageable);
 
 		assertThat(matches.getContent()).isEmpty();
 		assertThat(matches.getNumberOfElements()).isZero();
@@ -559,12 +567,179 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
 		when(errandRepositoryMock.count(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(42L);
 
-		final var count = service.countErrands(NAMESPACE, MUNICIPALITY_ID, filter);
+		final var count = service.countErrands(NAMESPACE, MUNICIPALITY_ID, filter, null);
 
 		assertThat(count).isEqualTo(42L);
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, LR);
 		verify(errandRepositoryMock).count(ArgumentMatchers.<Specification<ErrandEntity>>any());
+	}
+
+	@Test
+	void findErrandsWithJsonParameterFilterMatches() {
+		final Pageable pageable = PageRequest.of(0, 20);
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(elasticsearchSearchServiceMock.query(NAMESPACE, MUNICIPALITY_ID, "\"FAC-0001\"")).thenReturn(List.of("id-1", "id-2"));
+		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(List.of(buildErrandEntity()), pageable, 1L));
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
+
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, null, "\"FAC-0001\"", pageable);
+
+		assertThat(matches.getContent()).hasSize(1);
+		verify(elasticsearchSearchServiceMock).query(NAMESPACE, MUNICIPALITY_ID, "\"FAC-0001\"");
+		verify(errandRepositoryMock).findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+	}
+
+	@Test
+	void findErrandsWithJsonParameterFilterWithoutMatches() {
+		final Pageable pageable = PageRequest.of(0, 20);
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(elasticsearchSearchServiceMock.query(NAMESPACE, MUNICIPALITY_ID, "\"nothing\"")).thenReturn(emptyList());
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
+
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, null, "\"nothing\"", pageable);
+
+		assertThat(matches.getContent()).isEmpty();
+		assertThat(matches.getTotalElements()).isZero();
+		verify(elasticsearchSearchServiceMock).query(NAMESPACE, MUNICIPALITY_ID, "\"nothing\"");
+		verify(errandRepositoryMock, never()).findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), any(Pageable.class));
+	}
+
+	@Test
+	@DisplayName("Verification that the search degrades to a plain database query when Elasticsearch throws")
+	void findErrandsWithJsonParameterFilterWhenElasticsearchFails() {
+		final Pageable pageable = PageRequest.of(0, 20);
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(elasticsearchSearchServiceMock.query(any(), any(), any())).thenThrow(new RuntimeException("Elasticsearch down"));
+		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(emptyList()));
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
+
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, null, "\"FAC-0001\"", pageable);
+
+		assertThat(matches.getContent()).isEmpty();
+		verify(elasticsearchSearchServiceMock).query(NAMESPACE, MUNICIPALITY_ID, "\"FAC-0001\"");
+		verify(errandRepositoryMock).findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+	}
+
+	@Test
+	void findErrandsWithBlankJsonParameterFilter() {
+		final Pageable pageable = PageRequest.of(0, 20);
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(emptyList()));
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
+
+		service.findErrands(NAMESPACE, MUNICIPALITY_ID, null, " ", pageable);
+
+		verifyNoInteractions(elasticsearchSearchServiceMock);
+		verify(errandRepositoryMock).findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+	}
+
+	@Test
+	@DisplayName("Verification that the search runs as a plain database query when Elasticsearch is disabled (null services)")
+	void findErrandsWithJsonParameterFilterWhenElasticsearchDisabled() {
+		final Pageable pageable = PageRequest.of(0, 20);
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var serviceWithoutElasticsearch = new ErrandService(errandRepositoryMock, contactReasonRepositoryMock, measureValidatorMock, communicationServiceMock, attachmentRepositoryMock,
+			revisionServiceMock, eventServiceMock, stringGeneratorServiceMock, errandAttachmentServiceMock, conversationServiceMock, notesClientMock, accessControlServiceMock,
+			relationClientMock, metadataLabelRepositoryMock, errandActionServiceMock, errandPhaseServiceMock, entityManagerMock, null, null);
+
+		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable))).thenReturn(new PageImpl<>(emptyList()));
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
+
+		serviceWithoutElasticsearch.findErrands(NAMESPACE, MUNICIPALITY_ID, null, "\"FAC-0001\"", pageable);
+
+		verifyNoInteractions(elasticsearchSearchServiceMock);
+		verify(errandRepositoryMock).findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+	}
+
+	@Test
+	void countErrandsWithJsonParameterFilterMatches() {
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+
+		when(elasticsearchSearchServiceMock.query(NAMESPACE, MUNICIPALITY_ID, "\"FAC-0001\"")).thenReturn(List.of("id-1"));
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
+		when(errandRepositoryMock.count(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(1L);
+
+		final var count = service.countErrands(NAMESPACE, MUNICIPALITY_ID, null, "\"FAC-0001\"");
+
+		assertThat(count).isEqualTo(1L);
+		verify(elasticsearchSearchServiceMock).query(NAMESPACE, MUNICIPALITY_ID, "\"FAC-0001\"");
+		verify(errandRepositoryMock).count(ArgumentMatchers.<Specification<ErrandEntity>>any());
+	}
+
+	@Test
+	void countErrandsWithJsonParameterFilterWithoutMatches() {
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+
+		when(elasticsearchSearchServiceMock.query(NAMESPACE, MUNICIPALITY_ID, "\"nothing\"")).thenReturn(emptyList());
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
+
+		final var count = service.countErrands(NAMESPACE, MUNICIPALITY_ID, null, "\"nothing\"");
+
+		assertThat(count).isZero();
+		verify(elasticsearchSearchServiceMock).query(NAMESPACE, MUNICIPALITY_ID, "\"nothing\"");
+		verify(errandRepositoryMock, never()).count(ArgumentMatchers.<Specification<ErrandEntity>>any());
+	}
+
+	@Test
+	@DisplayName("Verification that create/update/delete keep the Elasticsearch index in sync")
+	void elasticsearchIndexIsMaintainedOnWrites() {
+		final var errand = buildErrand();
+		final var persistedEntity = ErrandEntity.create().withId(ERRAND_ID);
+
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(persistedEntity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
+
+		service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null);
+
+		verify(elasticsearchIndexServiceMock).index(same(persistedEntity));
+		verify(errandPhaseServiceMock).processPhaseChange(any(ErrandEntity.class), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(any(ErrandEntity.class), any());
+		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+	}
+
+	@Test
+	@DisplayName("Verification that delete removes the errand from the Elasticsearch index")
+	void elasticsearchIndexIsMaintainedOnDelete() {
+		final var entity = buildErrandEntity();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
+		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
+			.thenReturn(new FindNotesResponse().notes(emptyList()));
+
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		verify(elasticsearchIndexServiceMock).delete(ERRAND_ID);
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
+		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 	}
 
 	@ParameterizedTest

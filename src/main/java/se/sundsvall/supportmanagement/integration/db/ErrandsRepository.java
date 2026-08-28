@@ -6,6 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -33,5 +35,7 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	boolean existsByLabelsMetadataLabelIdIn(Collection<String> labelIds);
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
+
+	Page<ErrandEntity> findAllByJsonParametersIsNotEmpty(Pageable pageable);
 
 }

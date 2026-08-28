@@ -1,3 +1,7 @@
+elasticsearch:
+  enabled: false
+  reindex:
+    on-startup: false
 integration:
   accessmapper:
     url: http://localhost:${wiremock.server.port:}/api-accessmapper

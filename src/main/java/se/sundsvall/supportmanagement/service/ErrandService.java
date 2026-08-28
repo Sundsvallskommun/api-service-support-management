@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
@@ -35,6 +36,8 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
+import se.sundsvall.supportmanagement.integration.elasticsearch.ElasticsearchIndexService;
+import se.sundsvall.supportmanagement.integration.elasticsearch.ElasticsearchSearchService;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
@@ -48,6 +51,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -57,6 +61,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withIds;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -87,6 +92,8 @@ public class ErrandService {
 	private final ErrandActionService errandActionService;
 	private final ErrandPhaseService errandPhaseService;
 	private final EntityManager entityManager;
+	private final ElasticsearchSearchService elasticsearchSearchService;
+	private final ElasticsearchIndexService elasticsearchIndexService;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -105,7 +112,9 @@ public class ErrandService {
 		final MetadataLabelRepository metadataLabelRepository,
 		final ErrandActionService errandActionService,
 		final ErrandPhaseService errandPhaseService,
-		final EntityManager entityManager) {
+		final EntityManager entityManager,
+		@Nullable final ElasticsearchSearchService elasticsearchSearchService,
+		@Nullable final ElasticsearchIndexService elasticsearchIndexService) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -124,6 +133,8 @@ public class ErrandService {
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
 		this.entityManager = entityManager;
+		this.elasticsearchSearchService = elasticsearchSearchService;
+		this.elasticsearchIndexService = elasticsearchIndexService;
 	}
 
 	@Transactional
@@ -147,6 +158,7 @@ public class ErrandService {
 
 		computeAndSetAccessLabels(errandEntity);
 		final var persistedEntity = repository.save(errandEntity);
+		ofNullable(elasticsearchIndexService).ifPresent(indexService -> indexService.index(persistedEntity));
 		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
@@ -169,13 +181,39 @@ public class ErrandService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
+	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final String jsonParameterFilter, final Pageable pageable) {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
-		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
+		var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
+
+		final var matchingIds = queryJsonParameterIndex(namespace, municipalityId, jsonParameterFilter);
+		if (matchingIds.isPresent()) {
+			if (matchingIds.get().isEmpty()) {
+				return Page.empty(pageable);
+			}
+			fullFilter = fullFilter.and(withIds(matchingIds.get()));
+		}
+
 		final var matches = repository.findAll(fullFilter, pageable);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
 
 		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver), pageable, matches.getTotalElements());
+	}
+
+	/**
+	 * Queries the Elasticsearch json parameter index when a jsonParameterFilter is present and Elasticsearch is enabled.
+	 * An empty Optional means the filter does not apply (no filter sent in, Elasticsearch disabled, or the query failed —
+	 * failures are logged and never propagated). A present but empty list means no errands match.
+	 */
+	private Optional<List<String>> queryJsonParameterIndex(final String namespace, final String municipalityId, final String jsonParameterFilter) {
+		if (isBlank(jsonParameterFilter) || isNull(elasticsearchSearchService)) {
+			return Optional.empty();
+		}
+		try {
+			return Optional.of(elasticsearchSearchService.query(namespace, municipalityId, jsonParameterFilter));
+		} catch (final Exception e) {
+			LOG.warn("Elasticsearch query failed, jsonParameterFilter is ignored: {}", e.getMessage());
+			return Optional.empty();
+		}
 	}
 
 	@Transactional(readOnly = true)
@@ -223,6 +261,7 @@ public class ErrandService {
 			computeAndSetAccessLabels(errandEntity);
 		}
 		final var entity = repository.saveAndFlush(errandEntity);
+		ofNullable(elasticsearchIndexService).ifPresent(indexService -> indexService.index(entity));
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
@@ -277,6 +316,7 @@ public class ErrandService {
 
 		// Delete errand
 		repository.deleteById(id);
+		ofNullable(elasticsearchIndexService).ifPresent(indexService -> indexService.delete(id));
 
 		// Create a log event
 		final var latestRevision = revisionService.getLatestErrandRevision(entity);
@@ -289,9 +329,18 @@ public class ErrandService {
 	}
 
 	@Transactional(readOnly = true)
-	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
+	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final String jsonParameterFilter) {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
-		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
+		var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
+
+		final var matchingIds = queryJsonParameterIndex(namespace, municipalityId, jsonParameterFilter);
+		if (matchingIds.isPresent()) {
+			if (matchingIds.get().isEmpty()) {
+				return 0L;
+			}
+			fullFilter = fullFilter.and(withIds(matchingIds.get()));
+		}
+
 		return repository.count(fullFilter);
 	}
 

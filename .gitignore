@@ -80,3 +80,6 @@ build/
 *.puml
 RELATIONS.md
 /CLAUDE.md
+
+# Elasticsearch PoC test data dump (836 MB - never commit)
+/tools/db_scripts/sm-test-dump.sql

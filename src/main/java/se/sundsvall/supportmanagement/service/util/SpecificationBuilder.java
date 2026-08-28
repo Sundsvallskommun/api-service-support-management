@@ -4,6 +4,7 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.data.jpa.domain.Specification;
@@ -32,6 +33,16 @@ public class SpecificationBuilder<T> {
 
 	public static Specification<ErrandEntity> withId(String id) {
 		return ERRAND_ENTITY_BUILDER.buildEqualFilter("id", id);
+	}
+
+	/**
+	 * Matches errands whose id is among sent in ids.
+	 *
+	 * @param  ids ids to match against
+	 * @return     specification matching errands with any of sent in ids
+	 */
+	public static Specification<ErrandEntity> withIds(Collection<String> ids) {
+		return (root, _, _) -> root.get(ID_ATTRIBUTE).in(ids);
 	}
 
 	/**

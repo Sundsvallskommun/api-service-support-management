@@ -17,6 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.elasticsearch.ElasticsearchIndexService;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -49,6 +50,9 @@ class ErrandJsonParameterServiceTest {
 
 	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
+
+	@Mock
+	private ElasticsearchIndexService elasticsearchIndexServiceMock;
 
 	@Captor
 	private ArgumentCaptor<ErrandEntity> errandEntityCaptor;
@@ -141,6 +145,7 @@ class ErrandJsonParameterServiceTest {
 		verify(accessControlServiceMock).verifyAccessibleKey(NAMESPACE, MUNICIPALITY_ID, entity, ErrandField.JSON_PARAMETERS, KEY);
 		verify(entityManagerMock).lock(same(entity), eq(OPTIMISTIC_FORCE_INCREMENT));
 		verify(errandsRepositoryMock).saveAndFlush(entity);
+		verify(elasticsearchIndexServiceMock).index(same(entity));
 		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock);
 	}
 
@@ -192,6 +197,7 @@ class ErrandJsonParameterServiceTest {
 		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
 		assertThat(errandEntityCaptor.getValue().getJsonParameters()).isEmpty();
 		verify(entityManagerMock).lock(same(entity), eq(OPTIMISTIC_FORCE_INCREMENT));
+		verify(elasticsearchIndexServiceMock).index(same(entity));
 	}
 
 	@Test

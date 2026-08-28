@@ -1,0 +1,82 @@
+services:
+  supportmanagement:
+    build:
+      context: ../../
+      dockerfile: docker/Dockerfile
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=local-es
+      - spring.datasource.url=jdbc:mariadb://mariadb:3306/supportmanagement
+      - spring.datasource.username=root
+      - spring.datasource.password=root
+      - spring.elasticsearch.uris=http://elasticsearch:9200
+      - elasticsearch.reindex.on-startup=true
+    ports:
+      - "8080:8080"
+    # Cap the container so MaxRAMPercentage=75 sizes the JVM against this limit instead of the whole VM
+    mem_limit: 1536m
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/api-docs"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  mariadb:
+    image: mariadb:10.6
+    # swedish_ci matches the production dump's collation — without it, migrations applied on top of the
+    # dump create tables with the container default collation and foreign keys across the two fail (errno 150)
+    command: --max-allowed-packet=256M --innodb-buffer-pool-size=512M --innodb-log-file-size=256M --character-set-server=utf8mb4 --collation-server=utf8mb4_swedish_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: supportmanagement
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9200/_cluster/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.0.0
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    ports:
+      - "5601:5601"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5601/api/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mariadb-data:
+  es-data:

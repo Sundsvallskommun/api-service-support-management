@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "15.1"
 servers:
-- url: http://localhost:46181
+- url: http://localhost:58375
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -3091,6 +3091,19 @@ paths:
           type: string
         example: categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1'
           and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'
+      - name: jsonParameterFilter
+        in: query
+        description: "Optional Elasticsearch query_string (Lucene syntax) filter applied\
+          \ to errand jsonParameters. Quote values containing hyphens or special characters\
+          \ for exact matching. Field-specific search: jsonParameters.facility.data.facilityId:\"\
+          FAC-0001\". Without field prefix the value is matched across all jsonParameter\
+          \ fields. Requires Elasticsearch to be enabled — the filter is ignored otherwise."
+        required: false
+        schema:
+          type:
+          - string
+          - "null"
+        example: FAC-0001
       - name: page
         in: query
         description: Zero-based page index (0..N)
@@ -9210,6 +9223,19 @@ paths:
           type: string
         example: categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1'
           and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'
+      - name: jsonParameterFilter
+        in: query
+        description: "Optional Elasticsearch query_string (Lucene syntax) filter applied\
+          \ to errand jsonParameters. Quote values containing hyphens or special characters\
+          \ for exact matching. Field-specific search: jsonParameters.facility.data.facilityId:\"\
+          FAC-0001\". Without field prefix the value is matched across all jsonParameter\
+          \ fields. Requires Elasticsearch to be enabled — the filter is ignored otherwise."
+        required: false
+        schema:
+          type:
+          - string
+          - "null"
+        example: FAC-0001
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -9518,16 +9544,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        detail:
-          type: string
-        title:
-          type: string
         status:
           type: integer
           format: int32
@@ -9546,13 +9572,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        instance:
-          type: string
-          format: uri
         detail:
           type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        instance:
+          type: string
+          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -10036,21 +10062,31 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
         container:
           type: boolean
         number:
           type: boolean
-        floatingPointNumber:
+        nodeType:
+          type: string
+          enum:
+          - ARRAY
+          - BINARY
+          - BOOLEAN
+          - MISSING
+          - "NULL"
+          - NUMBER
+          - OBJECT
+          - POJO
+          - STRING
+        string:
+          type: boolean
+        integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
+        pojo:
           type: boolean
         short:
           type: boolean
@@ -10071,27 +10107,17 @@ components:
           type: boolean
         binary:
           type: boolean
-        valueNode:
+        floatingPointNumber:
           type: boolean
-        missingNode:
+        empty:
           type: boolean
-        nodeType:
-          type: string
-          enum:
-          - ARRAY
-          - BINARY
-          - BOOLEAN
-          - MISSING
-          - "NULL"
-          - NUMBER
-          - OBJECT
-          - POJO
-          - STRING
-        string:
+        array:
           type: boolean
-        integralNumber:
+        "null":
           type: boolean
-        pojo:
+        object:
+          type: boolean
+        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -12640,9 +12666,8 @@ components:
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -12651,18 +12676,19 @@ components:
         pageSize:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
-          type: boolean
         sorted:
           type: boolean
         unsorted:
+          type: boolean
+        empty:
           type: boolean
     SubscriberNotification:
       type: object

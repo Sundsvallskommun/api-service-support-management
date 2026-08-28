@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.elasticsearch.ElasticsearchIndexService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -40,11 +42,14 @@ public class ErrandJsonParameterService {
 	private final ErrandsRepository errandsRepository;
 	private final AccessControlService accessControlService;
 	private final EntityManager entityManager;
+	private final ElasticsearchIndexService elasticsearchIndexService;
 
-	ErrandJsonParameterService(final ErrandsRepository errandsRepository, final AccessControlService accessControlService, final EntityManager entityManager) {
+	ErrandJsonParameterService(final ErrandsRepository errandsRepository, final AccessControlService accessControlService, final EntityManager entityManager,
+		@Nullable final ElasticsearchIndexService elasticsearchIndexService) {
 		this.errandsRepository = errandsRepository;
 		this.accessControlService = accessControlService;
 		this.entityManager = entityManager;
+		this.elasticsearchIndexService = elasticsearchIndexService;
 	}
 
 	@Transactional(readOnly = true)
@@ -100,6 +105,7 @@ public class ErrandJsonParameterService {
 		}
 
 		final var savedErrand = errandsRepository.saveAndFlush(errandEntity);
+		ofNullable(elasticsearchIndexService).ifPresent(indexService -> indexService.index(savedErrand));
 		final var savedEntity = savedErrand.getJsonParameters().stream()
 			.filter(e -> Objects.equals(e.getKey(), key))
 			.findFirst()
@@ -121,7 +127,8 @@ public class ErrandJsonParameterService {
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		errandEntity.getJsonParameters().remove(entityToRemove);
-		errandsRepository.save(errandEntity);
+		final var savedErrand = errandsRepository.save(errandEntity);
+		ofNullable(elasticsearchIndexService).ifPresent(indexService -> indexService.index(savedErrand));
 	}
 
 	JsonParameterEntity findJsonParameterEntityOrElseThrow(final ErrandEntity errandEntity, final String key) {

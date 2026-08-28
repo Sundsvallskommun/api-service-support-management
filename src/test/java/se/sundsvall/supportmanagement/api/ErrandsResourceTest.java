@@ -215,7 +215,7 @@ class ErrandsResourceTest {
 		final var matches = new RestResponsePage<>(List.of(Errand.create()), pageable, 1);
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any())).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any(), any())).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get()
@@ -230,7 +230,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -245,7 +245,7 @@ class ErrandsResourceTest {
 		final var filter = "categoryTag:'SUPPORT_CASE' and reporterUserId:'joe01doe'";
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get()
@@ -264,7 +264,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -282,7 +282,7 @@ class ErrandsResourceTest {
 		final var filter = "created > '" + from + "' and created < '" + to + "'";
 
 		// Mock
-		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable))).thenReturn(matches);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), any(), eq(pageable))).thenReturn(matches);
 
 		// Call
 		final var response = webTestClient.get().uri(builder -> builder.path(PATH)
@@ -300,7 +300,37 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), eq(pageable));
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.any(), any(), eq(pageable));
+		assertThat(response).isNotNull();
+		assertThat(response.getContent()).hasSize(1);
+	}
+
+	@Test
+	void findErrandsWithJsonParameterFilter() {
+		// Parameter values
+		final var pageable = PageRequest.of(0, 20);
+		final var matches = new RestResponsePage<>(List.of(Errand.create()), pageable, 1);
+		final var jsonParameterFilter = "\"FAC-0001\"";
+
+		// Mock
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any(), any())).thenReturn(matches);
+
+		// Call
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH)
+				.queryParam("jsonParameterFilter", jsonParameterFilter)
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(new ParameterizedTypeReference<Page<Errand>>() {
+
+			})
+			.returnResult()
+			.getResponseBody();
+
+		// Verification
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), eq(jsonParameterFilter), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
 	}
@@ -430,7 +460,7 @@ class ErrandsResourceTest {
 		final var countResponse = new CountResponse(count);
 
 		// Mock
-		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(count);
+		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), any())).thenReturn(count);
 
 		// Call
 		webTestClient.get()
@@ -442,7 +472,32 @@ class ErrandsResourceTest {
 			.isEqualTo(countResponse);
 
 		// Verification
-		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any());
+		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), any());
+	}
+
+	@Test
+	void countErrandsWithJsonParameterFilter() {
+		// Parameter values
+		final var count = 7L;
+		final var countResponse = new CountResponse(count);
+		final var jsonParameterFilter = "\"FAC-0001\"";
+
+		// Mock
+		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), any())).thenReturn(count);
+
+		// Call
+		webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/count")
+				.queryParam("jsonParameterFilter", jsonParameterFilter)
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(CountResponse.class)
+			.isEqualTo(countResponse);
+
+		// Verification
+		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(jsonParameterFilter));
 	}
 
 	// Helper implementation of Page

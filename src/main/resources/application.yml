@@ -43,6 +43,10 @@ scheduler:
     shedlock-lock-at-most-for: PT15M
     maximum-execution-time: PT5M
     batch-size: 250
+elasticsearch:
+  enabled: false
+  reindex:
+    on-startup: false
 integration:
   accessmapper:
     connectTimeout: 5
@@ -90,6 +94,10 @@ logbook:
 logging:
   level:
     root: INFO
+management:
+  health:
+    elasticsearch:
+      enabled: false
 openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}
@@ -110,6 +118,11 @@ resilience4j:
 spring:
   application:
     name: support-management
+  data:
+    elasticsearch:
+      # Repository bootstrap (index creation) is activated explicitly by ElasticsearchConfiguration when elasticsearch.enabled=true
+      repositories:
+        enabled: false
   cache:
     cache-names: namespaceConfigCache, accessibleLabelsCache
     caffeine:

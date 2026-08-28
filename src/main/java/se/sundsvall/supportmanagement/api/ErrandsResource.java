@@ -122,9 +122,14 @@ class ErrandsResource {
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
 			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
 			schema = @Schema(implementation = String.class)) @Nullable @Filter final Specification<ErrandEntity> filter,
+		@Parameter(name = "jsonParameterFilter",
+			description = "Optional Elasticsearch query_string (Lucene syntax) filter applied to errand jsonParameters. Quote values containing hyphens or special characters for exact matching. "
+				+ "Field-specific search: jsonParameters.facility.data.facilityId:\"FAC-0001\". Without field prefix the value is matched across all jsonParameter fields. "
+				+ "Requires Elasticsearch to be enabled — the filter is ignored otherwise.",
+			example = "\"FAC-0001\"") @RequestParam(required = false) @Nullable final String jsonParameterFilter,
 		@ParameterObject final Pageable pageable) {
 
-		return ok(service.findErrands(namespace, municipalityId, filter, pageable));
+		return ok(service.findErrands(namespace, municipalityId, filter, jsonParameterFilter, pageable));
 	}
 
 	@PatchMapping(path = "/{errandId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
@@ -188,7 +193,12 @@ class ErrandsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
 			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
-			schema = @Schema(implementation = String.class)) @Nullable @Filter final Specification<ErrandEntity> filter) {
-		return ok(new CountResponse(service.countErrands(namespace, municipalityId, filter)));
+			schema = @Schema(implementation = String.class)) @Nullable @Filter final Specification<ErrandEntity> filter,
+		@Parameter(name = "jsonParameterFilter",
+			description = "Optional Elasticsearch query_string (Lucene syntax) filter applied to errand jsonParameters. Quote values containing hyphens or special characters for exact matching. "
+				+ "Field-specific search: jsonParameters.facility.data.facilityId:\"FAC-0001\". Without field prefix the value is matched across all jsonParameter fields. "
+				+ "Requires Elasticsearch to be enabled — the filter is ignored otherwise.",
+			example = "\"FAC-0001\"") @RequestParam(required = false) @Nullable final String jsonParameterFilter) {
+		return ok(new CountResponse(service.countErrands(namespace, municipalityId, filter, jsonParameterFilter)));
 	}
 }
