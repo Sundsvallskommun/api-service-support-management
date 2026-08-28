@@ -282,24 +282,6 @@
         `value` varchar(255)
     ) engine=InnoDB;
 
-    create table job (
-        progress integer,
-        processed integer,
-        total integer,
-        created datetime(6),
-        modified datetime(6),
-        municipality_id varchar(8) not null,
-        namespace varchar(32) not null,
-        id varchar(255) not null,
-        message varchar(255),
-        status varchar(255) not null,
-        type varchar(255) not null,
-        primary key (id)
-    ) engine=InnoDB;
-
-    create index idx_job_namespace_municipality_id_status
-        on job (namespace, municipality_id, status);
-
     create table handover_idempotency (
         target_municipality_id varchar(16) not null,
         id varchar(36) not null,
@@ -309,6 +291,21 @@
         relation_id varchar(255),
         target_namespace varchar(255) not null,
         warnings longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table job (
+        processed integer,
+        progress integer,
+        total integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        id varchar(255) not null,
+        message text,
+        status enum ('COMPLETED','FAILED','PENDING','RUNNING') not null,
+        type enum ('MOVE_LABEL') not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -864,8 +861,11 @@
     alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    alter table if exists handover_idempotency 
+    alter table if exists handover_idempotency
        add constraint uq_handover_source_target unique (source_errand_id, target_namespace, target_municipality_id);
+
+    create index idx_job_namespace_municipality_id_status
+        on job (namespace, municipality_id, status);
 
     create index idx_json_parameter_errand_id 
        on json_parameter (errand_id);

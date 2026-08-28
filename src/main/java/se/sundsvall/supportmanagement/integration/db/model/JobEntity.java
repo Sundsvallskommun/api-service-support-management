@@ -56,7 +56,7 @@ public class JobEntity {
 	@Column(name = "processed")
 	private Integer processed;
 
-	@Column(name = "message")
+	@Column(name = "message", columnDefinition = "text")
 	private String message;
 
 	@Column(name = "created", updatable = false)

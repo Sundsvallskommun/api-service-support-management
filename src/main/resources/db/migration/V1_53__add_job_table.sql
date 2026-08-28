@@ -7,7 +7,7 @@ create table job (
     municipality_id varchar(8) not null,
     namespace varchar(32) not null,
     id varchar(255) not null,
-    message varchar(255),
+    message text,
     status varchar(255) not null,
     type varchar(255) not null,
     primary key (id)
