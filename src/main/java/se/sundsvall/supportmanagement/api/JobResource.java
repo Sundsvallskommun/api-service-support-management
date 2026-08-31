@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
@@ -49,7 +50,7 @@ class JobResource {
 	ResponseEntity<JobResponse> getJob(
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "jobId", description = "Job id") @PathVariable final String jobId) {
+		@Parameter(name = "jobId", description = "Job id") @ValidUuid @PathVariable final String jobId) {
 
 		return ok(jobService.get(namespace, municipalityId, jobId));
 	}

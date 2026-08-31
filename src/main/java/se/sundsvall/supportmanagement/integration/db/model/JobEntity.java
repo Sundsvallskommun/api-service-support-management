@@ -217,9 +217,15 @@ public class JobEntity {
 	@PrePersist
 	void onCreate() {
 		created = now(systemDefault()).truncatedTo(MILLIS);
-		status = JobStatus.PENDING;
-		progress = 0;
-		processed = 0;
+		if (status == null) {
+			status = JobStatus.PENDING;
+		}
+		if (progress == null) {
+			progress = 0;
+		}
+		if (processed == null) {
+			processed = 0;
+		}
 	}
 
 	@PreUpdate
