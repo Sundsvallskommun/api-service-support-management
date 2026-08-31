@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.1"
+  version: "15.1-opensearch-poc"
 servers:
 - url: http://localhost:58375
   description: Generated server url

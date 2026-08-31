@@ -40,25 +40,24 @@ curl -s http://localhost:9200/_cluster/health?pretty
 
 Expect `"distribution" : "opensearch"` and cluster status green/yellow.
 
-## 2. Build and transfer the application image
+## 2. Get the application image
 
-On the Mac (branch `opensearch-poc`) — build the jar and ship jar + Dockerfile; the image itself is
-built on the box so no large image transfer is needed:
-
-```bash
-mvn package -DskipTests
-scp target/api-service-support-management-*.jar <user>@<rhel-host>:~/poc/
-scp docker/Dockerfile <user>@<rhel-host>:~/poc/
-```
-
-On the RHEL box:
+No scp needed — the "Call Build and Push Image" GitHub Actions workflow builds the branch and pushes a
+multi-arch image to GHCR, publicly pullable. Dispatch it from the `opensearch-poc` branch (GitHub UI:
+Actions → Call Build and Push Image → Run workflow → branch `opensearch-poc`, or locally):
 
 ```bash
-cd ~/poc && mkdir -p target && mv api-service-support-management-*.jar target/ \
-  && docker build -t support-management-opensearch-poc -f Dockerfile .
+gh workflow run build-and-push.yml --ref opensearch-poc
 ```
 
-(The Dockerfile copies `target/*.jar`, hence the target/ directory.)
+The branch's Maven version is `15.1-opensearch-poc`, which becomes the image tag — deliberately distinct
+from main's so the PoC image can never clobber a production tag.
+
+On the RHEL box (no registry login needed, the package is public):
+
+```bash
+docker pull ghcr.io/sundsvallskommun/api-service-support-management:15.1-opensearch-poc
+```
 
 ## 3. Run the application
 
@@ -73,7 +72,7 @@ docker run -d --name support-management --network poc \
   -e SPRING_DATASOURCE_PASSWORD='<password>' \
   -e OPENSEARCH_URIS=http://opensearch:9200 \
   -e ELASTICSEARCH_REINDEX_ONSTARTUP=true \
-  support-management-opensearch-poc
+  ghcr.io/sundsvallskommun/api-service-support-management:15.1-opensearch-poc
 docker logs -f support-management
 ```
 
