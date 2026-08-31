@@ -110,8 +110,10 @@ TOTAL_JP=$(docker exec "$MARIADB_CONTAINER" mariadb -uroot -proot -N -e "SELECT 
 ok "Data ready: $TOTAL_ERRANDS errands, $TOTAL_JP jsonParameters (${SEED_TIME}s)"
 
 # --- Step 5: Start the app (Flyway validates existing schema, reindex runs with full data) ---
+# --build is essential: without it compose reuses the app image from a previous run even though
+# the JAR was just rebuilt
 step "Starting application (Flyway validate + reindex $TOTAL_ERRANDS errands)..."
-$COMPOSE up -d supportmanagement 2>&1 | tail -5
+$COMPOSE up -d --build supportmanagement 2>&1 | tail -5
 
 REINDEX_START=$(date +%s)
 step "Waiting for application to start..."

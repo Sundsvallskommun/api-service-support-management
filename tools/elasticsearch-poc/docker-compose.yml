@@ -13,7 +13,7 @@ services:
       - spring.datasource.url=jdbc:mariadb://mariadb:3306/supportmanagement
       - spring.datasource.username=root
       - spring.datasource.password=root
-      - spring.elasticsearch.uris=http://elasticsearch:9200
+      - OPENSEARCH_URIS=http://elasticsearch:9200
       - elasticsearch.reindex.on-startup=true
     ports:
       - "8080:8080"
@@ -44,17 +44,24 @@ services:
       timeout: 3s
       retries: 10
 
+  # Service keeps the name "elasticsearch" so run-poc.sh and the app config work unchanged,
+  # but runs OpenSearch (same 9200 API surface, security plugin disabled for the PoC)
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
+    image: opensearchproject/opensearch:3.2.0
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
-      - xpack.security.http.ssl.enabled=false
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - DISABLE_SECURITY_PLUGIN=true
+      # The performance analyzer agent is a second JVM inside the container and costs several
+      # hundred MB - not needed for the PoC
+      - DISABLE_PERFORMANCE_ANALYZER_AGENT_CLI=true
+      # 512m heap is plenty for ~70k small documents; the full OpenSearch plugin bundle needs the
+      # rest of the limit as native/plugin overhead (1g heap got the container cgroup-OOM-killed)
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    mem_limit: 2g
     ports:
       - "9200:9200"
     volumes:
-      - es-data:/usr/share/elasticsearch/data
+      - es-data:/usr/share/opensearch/data
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9200/_cluster/health"]
       interval: 10s
@@ -62,13 +69,14 @@ services:
       retries: 20
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:9.0.0
+    image: opensearchproject/opensearch-dashboards:3.2.0
     depends_on:
       elasticsearch:
         condition: service_healthy
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - xpack.security.enabled=false
+      - OPENSEARCH_HOSTS=["http://elasticsearch:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    mem_limit: 384m
     ports:
       - "5601:5601"
     healthcheck:

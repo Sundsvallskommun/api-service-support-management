@@ -14,6 +14,8 @@
 	<name>api-service-support-management</name>
 	<properties>
 		<spring-filter.version>4.0.6</spring-filter.version>
+		<spring-data-opensearch.version>3.1.2</spring-data-opensearch.version>
+		<opensearch-java.version>3.9.0</opensearch-java.version>
 		<tika-core.version>4.0.0</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<commons-validator.version>1.11.0</commons-validator.version>
@@ -48,8 +50,26 @@
 			<artifactId>spring-boot-starter-cache</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+			<!-- Drop-in replacement for spring-boot-starter-data-elasticsearch backed by the OpenSearch
+				client - the official elasticsearch-java client refuses to talk to OpenSearch servers -->
+			<groupId>org.opensearch.client</groupId>
+			<artifactId>spring-data-opensearch-starter</artifactId>
+			<version>${spring-data-opensearch.version}</version>
+			<exclusions>
+				<exclusion>
+					<!-- The legacy high-level client autoconfiguration collides with the modern
+						opensearch-java client (both register a bean named opensearchClient) -->
+					<groupId>org.opensearch.client</groupId>
+					<artifactId>opensearch-rest-high-level-client</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<!-- Modern OpenSearch java client backing the osc templates (NativeQuery) - the starter only
+				pulls the legacy REST clients transitively -->
+			<groupId>org.opensearch.client</groupId>
+			<artifactId>opensearch-java</artifactId>
+			<version>${opensearch-java.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.ben-manes.caffeine</groupId>

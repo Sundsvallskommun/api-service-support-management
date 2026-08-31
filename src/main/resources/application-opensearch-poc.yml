@@ -1,7 +1,8 @@
-# Profile used by the OpenSearch PoC harness (tools/elasticsearch-poc/docker-compose.yml).
-# Datasource url/credentials, opensearch.uris and elasticsearch.reindex.on-startup are provided
-# as environment variables by the compose stack. All integration URLs and oauth2 registrations are dummies
-# (same as the junit profile) so that the context can boot without any surrounding services.
+# Profile for the OpenSearch PoC on the RHEL lab box: local OpenSearch on the same host, MariaDB in the
+# shared test cluster. Flyway is DISABLED - the test database schema is owned and migrated by the deployed
+# service, this PoC instance must never touch it. Datasource url/credentials and opensearch.uris come from
+# environment variables. All integration URLs and oauth2 registrations are dummies (same as the junit
+# profile) so that the context can boot without any surrounding services.
 elasticsearch:
   enabled: true
   reindex:
@@ -10,7 +11,7 @@ opensearch:
   uris: http://localhost:9200
 spring:
   flyway:
-    enabled: true
+    enabled: false
   security:
     oauth2:
       client:

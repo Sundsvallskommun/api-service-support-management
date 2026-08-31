@@ -94,10 +94,6 @@ logbook:
 logging:
   level:
     root: INFO
-management:
-  health:
-    elasticsearch:
-      enabled: false
 openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}
@@ -120,7 +116,9 @@ spring:
     name: support-management
   data:
     elasticsearch:
-      # Repository bootstrap (index creation) is activated explicitly by ElasticsearchConfiguration when elasticsearch.enabled=true
+      # Boot's elastic repositories autoconfiguration comes transitively via spring-data-opensearch-starter.
+      # Repository bootstrap (index creation) is activated explicitly by ElasticsearchConfiguration when
+      # elasticsearch.enabled=true
       repositories:
         enabled: false
   cache:

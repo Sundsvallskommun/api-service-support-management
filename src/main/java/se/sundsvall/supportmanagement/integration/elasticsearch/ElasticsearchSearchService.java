@@ -1,8 +1,9 @@
 package se.sundsvall.supportmanagement.integration.elasticsearch;
 
 import java.util.List;
+import org.opensearch.client.opensearch._types.FieldValue;
+import org.opensearch.data.client.osc.NativeQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.stereotype.Service;
@@ -43,8 +44,8 @@ public class ElasticsearchSearchService {
 					.query(queryString)
 					.defaultField(DEFAULT_FIELD)
 					.lenient(true)))
-				.filter(filter -> filter.term(term -> term.field(NAMESPACE_FIELD).value(namespace)))
-				.filter(filter -> filter.term(term -> term.field(MUNICIPALITY_ID_FIELD).value(municipalityId)))))
+				.filter(filter -> filter.term(term -> term.field(NAMESPACE_FIELD).value(FieldValue.of(namespace))))
+				.filter(filter -> filter.term(term -> term.field(MUNICIPALITY_ID_FIELD).value(FieldValue.of(municipalityId))))))
 			.withMaxResults(MAX_RESULTS)
 			.build();
 
