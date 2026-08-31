@@ -3,9 +3,11 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -137,6 +139,7 @@ public class ErrandService {
 		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
 		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errandEntity.getStatus());
 
+		expandLabelsToAncestorChain(errandEntity);
 		computeAndSetAccessLabels(errandEntity);
 		final var persistedEntity = repository.save(errandEntity);
 		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
@@ -212,6 +215,7 @@ public class ErrandService {
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
 
 		if (errand.getLabels() != null) {
+			expandLabelsToAncestorChain(errandEntity);
 			computeAndSetAccessLabels(errandEntity);
 		}
 		final var entity = repository.saveAndFlush(errandEntity);
@@ -329,6 +333,54 @@ public class ErrandService {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);
+	}
+
+	void expandLabelsToAncestorChain(final ErrandEntity errandEntity) {
+		var currentIds = ofNullable(errandEntity.getLabels()).orElse(emptyList()).stream()
+			.map(ErrandLabelEmbeddable::getMetadataLabelId)
+			.collect(Collectors.toSet());
+
+		if (currentIds.isEmpty()) {
+			return;
+		}
+
+		var ancestorPaths = metadataLabelRepository.findAllById(currentIds).stream()
+			.map(MetadataLabelEntity::getResourcePath)
+			.flatMap(path -> ancestorResourcePaths(path).stream())
+			.collect(Collectors.toSet());
+
+		if (ancestorPaths.isEmpty()) {
+			return;
+		}
+
+		var missingAncestors = metadataLabelRepository
+			.findByNamespaceAndMunicipalityIdAndResourcePathIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ancestorPaths)
+			.stream()
+			.filter(a -> !currentIds.contains(a.getId()))
+			.map(a -> ErrandLabelEmbeddable.create().withMetadataLabelId(a.getId()))
+			.toList();
+
+		if (missingAncestors.isEmpty()) {
+			return;
+		}
+
+		var expanded = new ArrayList<>(errandEntity.getLabels());
+		expanded.addAll(missingAncestors);
+		errandEntity.setLabels(expanded);
+	}
+
+	private static Set<String> ancestorResourcePaths(final String resourcePath) {
+		var parts = resourcePath.split("/");
+		var paths = new HashSet<String>();
+		var sb = new StringBuilder();
+		for (int i = 0; i < parts.length - 1; i++) {
+			if (i > 0) {
+				sb.append("/");
+			}
+			sb.append(parts[i]);
+			paths.add(sb.toString());
+		}
+		return paths;
 	}
 
 	private void computeAndSetAccessLabels(final ErrandEntity errandEntity) {
