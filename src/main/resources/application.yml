@@ -43,6 +43,10 @@ scheduler:
     shedlock-lock-at-most-for: PT15M
     maximum-execution-time: PT5M
     batch-size: 250
+errand:
+  purge:
+    # Floor for how recent a purge cutoff may be. Guards against a mistyped timestamp emptying a namespace.
+    minimum-age: P2Y
 integration:
   accessmapper:
     connectTimeout: 5
