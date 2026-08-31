@@ -47,6 +47,8 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -565,6 +567,113 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, LR);
 		verify(errandRepositoryMock).count(ArgumentMatchers.<Specification<ErrandEntity>>any());
+	}
+
+	@Test
+	void expandLabelsToAncestorChain_leafExpandsToFullChain() {
+		final var leafId = "leaf-id";
+		final var parentId = "parent-id";
+		final var childId = "child-id";
+
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(leafId)))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
+
+		service.expandLabelsToAncestorChain(errandEntity);
+
+		assertThat(errandEntity.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactlyInAnyOrder(leafId, parentId, childId);
+
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(leafId));
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
+	}
+
+	@Test
+	void expandLabelsToAncestorChain_partialChainExpandsCorrectly() {
+		final var leafId = "leaf-id";
+		final var parentId = "parent-id";
+		final var childId = "child-id";
+
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(
+				ErrandLabelEmbeddable.create().withMetadataLabelId(parentId),
+				ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(parentId, leafId)))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
+
+		service.expandLabelsToAncestorChain(errandEntity);
+
+		assertThat(errandEntity.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactlyInAnyOrder(parentId, leafId, childId);
+
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, leafId));
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
+	}
+
+	@Test
+	void expandLabelsToAncestorChain_emptyLabels_noRepoInteraction() {
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of());
+
+		service.expandLabelsToAncestorChain(errandEntity);
+
+		assertThat(errandEntity.getLabels()).isEmpty();
+		verifyNoInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	void expandLabelsToAncestorChain_alreadyFullChain_noLabelsAdded() {
+		final var leafId = "leaf-id";
+		final var parentId = "parent-id";
+		final var childId = "child-id";
+
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(
+				ErrandLabelEmbeddable.create().withMetadataLabelId(parentId),
+				ErrandLabelEmbeddable.create().withMetadataLabelId(childId),
+				ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(parentId, childId, leafId)))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child"),
+				MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
+
+		service.expandLabelsToAncestorChain(errandEntity);
+
+		assertThat(errandEntity.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactlyInAnyOrder(parentId, childId, leafId);
+
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, childId, leafId));
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
 	}
 
 	@ParameterizedTest
