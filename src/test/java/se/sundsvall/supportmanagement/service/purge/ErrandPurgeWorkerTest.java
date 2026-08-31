@@ -171,12 +171,12 @@ class ErrandPurgeWorkerTest {
 	@Test
 	@DisplayName("Verification that a run leaving the job as running is ended, so that nothing is left reading as under way for as long as the row lives")
 	void runThatLeavesTheJobRunning() {
-		final var worker = worker();
+		final var purgeWorker = worker();
 		final var purgeRun = run(false, null);
 		doThrow(new StackOverflowError()).when(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
 
 		// Only the run itself is left inside the lambda, so the assertion cannot be met by anything else throwing.
-		assertThatThrownBy(() -> worker.run(purgeRun)).isInstanceOf(StackOverflowError.class);
+		assertThatThrownBy(() -> purgeWorker.run(purgeRun)).isInstanceOf(StackOverflowError.class);
 
 		verify(jobServiceMock).fail(JOB_ID, "Purge ended without reaching a result of its own");
 	}
