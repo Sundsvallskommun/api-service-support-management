@@ -82,8 +82,13 @@ drop `ELASTICSEARCH_REINDEX_ONSTARTUP=true` — the index is maintained incremen
 Watch for these log lines:
 
 - `Found 1 Elasticsearch repository interface` — repository activation OK
-- `Starting Elasticsearch reindex of errands with json parameters`
+- `Starting Elasticsearch reindex of M errands with json parameters`
+- `Elasticsearch reindex progress: N of M errands indexed` — one line per batch of 500
 - `Elasticsearch reindex finished: N of M errands indexed, 0 failed batches`
+
+The reindex runs on a background thread, so the application is ready and serving immediately — a large
+reindex no longer holds the readiness probe down. Until it finishes, `jsonParameterFilter` simply matches
+whatever has been indexed so far.
 
 ## 4. Verify
 

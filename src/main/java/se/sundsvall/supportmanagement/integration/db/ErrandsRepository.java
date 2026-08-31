@@ -6,8 +6,7 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -36,6 +35,11 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
-	Page<ErrandEntity> findAllByJsonParametersIsNotEmpty(Pageable pageable);
+	long countByJsonParametersIsNotEmpty();
+
+	// Keyset pagination for the Elasticsearch reindex: walks the primary key index from the last processed id, which
+	// keeps every batch cheap regardless of how far into the table it has come. Offset paging would degrade linearly
+	// and force a repeated count over the whole table.
+	List<ErrandEntity> findByJsonParametersIsNotEmptyAndIdGreaterThanOrderByIdAsc(String id, Limit limit);
 
 }
