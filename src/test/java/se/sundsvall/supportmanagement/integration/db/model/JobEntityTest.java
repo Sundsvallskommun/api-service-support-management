@@ -91,11 +91,14 @@ class JobEntityTest {
 		final var entity = JobEntity.create();
 		entity.onCreate();
 
-		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity.getStatus()).isEqualTo(JobStatus.PENDING);
-		assertThat(entity.getProgress()).isZero();
-		assertThat(entity.getProcessed()).isZero();
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "status", "progress", "processed");
+		assertThat(entity)
+			.hasAllNullFieldsOrPropertiesExcept("created", "status", "progress", "processed")
+			.satisfies(e -> {
+				assertThat(e.getCreated()).isCloseTo(now(), within(1, SECONDS));
+				assertThat(e.getStatus()).isEqualTo(JobStatus.PENDING);
+				assertThat(e.getProgress()).isZero();
+				assertThat(e.getProcessed()).isZero();
+			});
 	}
 
 	@Test
@@ -103,8 +106,9 @@ class JobEntityTest {
 		final var entity = JobEntity.create();
 		entity.onUpdate();
 
-		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+		assertThat(entity)
+			.hasAllNullFieldsOrPropertiesExcept("modified")
+			.satisfies(e -> assertThat(e.getModified()).isCloseTo(now(), within(1, SECONDS)));
 	}
 
 	@Test
