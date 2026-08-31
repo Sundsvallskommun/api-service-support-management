@@ -17,6 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.JobService;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.Collections.emptyList;
 import static java.util.UUID.randomUUID;
@@ -56,11 +57,14 @@ class ErrandPurgeWorkerTest {
 	@Mock
 	private JobService jobServiceMock;
 
+	@Mock
+	private NamespaceConfigService namespaceConfigServiceMock;
+
 	private ErrandPurgeWorker worker;
 
 	private ErrandPurgeWorker worker() {
 		if (worker == null) {
-			worker = new ErrandPurgeWorker(errandsRepositoryMock, errandServiceMock, jobServiceMock,
+			worker = new ErrandPurgeWorker(errandsRepositoryMock, errandServiceMock, jobServiceMock, namespaceConfigServiceMock,
 				new ErrandPurgeProperties(Period.ofYears(2), BATCH_SIZE, Duration.ofHours(24), 2));
 		}
 		return worker;
@@ -167,11 +171,29 @@ class ErrandPurgeWorkerTest {
 	@Test
 	@DisplayName("Verification that a run leaving the job as running is ended, so that nothing is left reading as under way for as long as the row lives")
 	void runThatLeavesTheJobRunning() {
+		final var worker = worker();
+		final var purgeRun = run(false, null);
 		doThrow(new StackOverflowError()).when(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
 
-		assertThatThrownBy(() -> worker().run(run(false, null))).isInstanceOf(StackOverflowError.class);
+		// Only the run itself is left inside the lambda, so the assertion cannot be met by anything else throwing.
+		assertThatThrownBy(() -> worker.run(purgeRun)).isInstanceOf(StackOverflowError.class);
 
 		verify(jobServiceMock).fail(JOB_ID, "Purge ended without reaching a result of its own");
+	}
+
+	@Test
+	@DisplayName("Verification that a namespace put under access control while a run is under way stops the run, rather than having it keep removing errands past a guard raised after it started")
+	void runWhenAccessControlIsSwitchedOnMidRun() {
+		batches(ids("a", "b"), ids("c", "d"));
+		stillRunning();
+		when(errandServiceMock.purgeErrand(any(), any(), any())).thenReturn(true);
+		when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+
+		worker().run(run(false, null));
+
+		verify(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
+		verify(jobServiceMock).fail(JOB_ID, "Purge ended after removing 2 errands: access control was switched on for the namespace while it was running");
+		verify(jobServiceMock, never()).complete(any(), any());
 	}
 
 	/**

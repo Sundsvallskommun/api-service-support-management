@@ -13,8 +13,10 @@ import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
 
+import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
@@ -24,6 +26,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
 public class JobService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(JobService.class);
+	private static final int MAX_MESSAGE_LENGTH = 1024;
 	private static final String JOB_NOT_FOUND = "Job with id '%s' not found in namespace '%s' for municipality with id '%s'";
 
 	private final JobRepository jobRepository;
@@ -83,7 +86,7 @@ public class JobService {
 		jobRepository.findById(jobId).ifPresentOrElse(job -> {
 			job.setStatus(COMPLETED);
 			job.setProgress(100);
-			job.setMessage(message);
+			job.setMessage(toStoredMessage(message));
 			jobRepository.save(job);
 		}, () -> LOG.warn("complete called with unknown jobId '{}'", jobId));
 	}
@@ -123,9 +126,25 @@ public class JobService {
 	public void fail(final String jobId, final String message) {
 		jobRepository.findById(jobId).ifPresentOrElse(job -> {
 			job.setStatus(FAILED);
-			job.setMessage(message);
+			job.setMessage(toStoredMessage(message));
 			jobRepository.save(job);
 		}, () -> LOG.warn("fail called with unknown jobId '{}'", jobId));
+	}
+
+	/**
+	 * What a job is allowed to keep as its message.
+	 * <p>
+	 * A reason is often built from the message of an exception, which can carry whatever a caller sent in, and what is
+	 * stored here is read back through the API and written to a log by whoever reads it. Line breaks and control
+	 * characters are taken out at this point, so that no producer has to remember to.
+	 * <p>
+	 * The length is bounded for the same reason: the column holds a sentence for a person to read, and a message that
+	 * arrives carrying a whole stack trace should be cut rather than fill the row.
+	 */
+	private static String toStoredMessage(final String message) {
+		return ofNullable(sanitizeForLogging(message))
+			.map(sanitized -> sanitized.length() > MAX_MESSAGE_LENGTH ? sanitized.substring(0, MAX_MESSAGE_LENGTH) + "..." : sanitized)
+			.orElse(null);
 	}
 
 	public boolean hasActiveJob(final String namespace, final String municipalityId) {

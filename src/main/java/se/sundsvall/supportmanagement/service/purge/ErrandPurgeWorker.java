@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.JobService;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
@@ -49,21 +50,25 @@ public class ErrandPurgeWorker {
 	private static final String DRY_RUN_SUMMARY = "Dry run over %d errands, none of which were removed";
 	private static final String RUN_SUMMARY = "Removed %d of %d errands reached, %d could not be removed";
 	private static final String ENDED_WITHOUT_RESULT = "Purge ended without reaching a result of its own";
+	private static final String ACCESS_CONTROL_SWITCHED_ON = "Purge ended after removing %d errands: access control was switched on for the namespace while it was running";
 
 	private final ErrandsRepository errandsRepository;
 	private final ErrandService errandService;
 	private final JobService jobService;
+	private final NamespaceConfigService namespaceConfigService;
 	private final int batchSize;
 
 	public ErrandPurgeWorker(
 		final ErrandsRepository errandsRepository,
 		final ErrandService errandService,
 		final JobService jobService,
+		final NamespaceConfigService namespaceConfigService,
 		final ErrandPurgeProperties properties) {
 
 		this.errandsRepository = errandsRepository;
 		this.errandService = errandService;
 		this.jobService = jobService;
+		this.namespaceConfigService = namespaceConfigService;
 		this.batchSize = properties.batchSize();
 	}
 
@@ -146,6 +151,16 @@ public class ErrandPurgeWorker {
 			// from wherever the request happens to land.
 			if (isStopped(run)) {
 				LOG.info("Purge {} stopped after {} errands", run.jobId(), counters.processed);
+				return true;
+			}
+
+			// Asked again for every batch rather than only when the run was accepted. A run lasts hours, and a namespace
+			// that has been put under access control in the meantime must not keep having its errands removed by a run
+			// that started before the guard went up.
+			if (namespaceConfigService.isAccessControlActive(run.namespace(), run.municipalityId())) {
+				LOG.warn("Purge {} of namespace {} in municipality {} ended after {} errands: access control was switched on while it was running",
+					run.jobId(), sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), counters.processed);
+				jobService.fail(run.jobId(), ACCESS_CONTROL_SWITCHED_ON.formatted(counters.deleted));
 				return true;
 			}
 		}

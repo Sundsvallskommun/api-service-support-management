@@ -194,6 +194,28 @@ class JobServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that what a job keeps as its message carries no line breaks, since a reason is often built from an exception carrying whatever a caller sent in")
+	void failSanitizesTheMessage() {
+		final var entity = jobEntity(RUNNING);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.fail(JOB_ID, "Purge aborted: broken\r\n2026-08-31 INFO Everything is fine");
+
+		assertThat(entity.getMessage()).isEqualTo("Purge aborted: broken  2026-08-31 INFO Everything is fine");
+	}
+
+	@Test
+	@DisplayName("Verification that a message arriving with a whole stack trace in it is cut rather than left to fill the row")
+	void failBoundsTheMessageLength() {
+		final var entity = jobEntity(RUNNING);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.fail(JOB_ID, "x".repeat(5000));
+
+		assertThat(entity.getMessage()).hasSize(1027).endsWith("...");
+	}
+
+	@Test
 	void statusOf() {
 		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(jobEntity(RUNNING)));
 
