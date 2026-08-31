@@ -1,46 +1,50 @@
 package se.sundsvall.supportmanagement.service.purge;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.Period;
-import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.config.ErrandPurgeProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.JobService;
 
 import static java.util.Collections.emptyList;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.api.model.errand.purge.PurgeState.COMPLETED;
-import static se.sundsvall.supportmanagement.api.model.errand.purge.PurgeState.FAILED;
-import static se.sundsvall.supportmanagement.api.model.errand.purge.PurgeState.STOPPED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
 
+/**
+ * The walk itself is what these tests pin down: how far it goes, what it counts and what it tells the job it reports
+ * against. Which errands the batches hold is settled by a specification handed to the database, so that the predicate
+ * behind it belongs to a test with a database rather than to this one.
+ */
 @ExtendWith(MockitoExtension.class)
 class ErrandPurgeWorkerTest {
 
+	private static final String JOB_ID = randomUUID().toString();
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final OffsetDateTime OLDER_THAN = OffsetDateTime.parse("2020-08-28T00:00:00+02:00");
 	private static final String STARTED_BY = "joe01doe";
-	private static final OffsetDateTime STARTED = OffsetDateTime.parse("2026-08-28T10:00:00+02:00");
-	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-28T12:00:00Z"), ZoneId.of("UTC"));
 	private static final int BATCH_SIZE = 2;
 
 	@Mock
@@ -49,176 +53,161 @@ class ErrandPurgeWorkerTest {
 	@Mock
 	private ErrandService errandServiceMock;
 
-	@Captor
-	private ArgumentCaptor<String> cursorCaptor;
-
-	@Captor
-	private ArgumentCaptor<Pageable> pageableCaptor;
+	@Mock
+	private JobService jobServiceMock;
 
 	private ErrandPurgeWorker worker;
 
-	private static ErrandPurgeProperties properties() {
-		return new ErrandPurgeProperties(Period.ofYears(2), BATCH_SIZE, Duration.ofHours(24), 2);
-	}
-
 	private ErrandPurgeWorker worker() {
 		if (worker == null) {
-			worker = new ErrandPurgeWorker(errandsRepositoryMock, errandServiceMock, CLOCK, properties());
+			worker = new ErrandPurgeWorker(errandsRepositoryMock, errandServiceMock, jobServiceMock,
+				new ErrandPurgeProperties(Period.ofYears(2), BATCH_SIZE, Duration.ofHours(24), 2));
 		}
 		return worker;
 	}
 
 	@Test
+	@DisplayName("Verification that the number a job reports progress against is the number of errands the run would reach")
+	void countErrandsToPurge() {
+		when(errandsRepositoryMock.count(any(Specification.class))).thenReturn(4711L);
+
+		assertThat(worker().countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).isEqualTo(4711);
+	}
+
+	@Test
 	@DisplayName("Verification that a namespace with nothing old enough completes without touching an errand")
 	void runWithNothingToPurge() {
-		final var job = job(false, null);
+		batches(emptyList());
 
-		when(errandsRepositoryMock.findIdsToPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(OLDER_THAN), anyString(), any(Pageable.class)))
-			.thenReturn(emptyList());
+		worker().run(run(false, null));
 
-		worker().run(job);
-
-		final var status = job.toStatus();
-		assertThat(status.getState()).isEqualTo(COMPLETED);
-		assertThat(status.getProcessed()).isZero();
-		assertThat(status.getFinished()).isEqualTo(OffsetDateTime.now(CLOCK));
+		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(jobServiceMock).complete(JOB_ID, "Removed 0 of 0 errands reached, 0 could not be removed");
 		verifyNoInteractions(errandServiceMock);
 	}
 
 	@Test
-	@DisplayName("Verification that the walk moves the keyset forward past every batch, including past an errand it could not remove")
-	void runWalksEveryBatchAndCarriesTheCursorForward() {
-		final var job = job(false, null);
-
-		when(errandsRepositoryMock.findIdsToPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(OLDER_THAN), cursorCaptor.capture(), any(Pageable.class)))
-			.thenReturn(List.of("a", "b"), List.of("c"), emptyList());
+	@DisplayName("Verification that the walk carries on past an errand it could not remove, and reports what it managed")
+	void runWalksEveryBatch() {
+		batches(ids("a", "b"), ids("c"), emptyList());
+		stillRunning();
 		when(errandServiceMock.purgeErrand(NAMESPACE, MUNICIPALITY_ID, "a")).thenReturn(true);
 		when(errandServiceMock.purgeErrand(NAMESPACE, MUNICIPALITY_ID, "b")).thenThrow(new RuntimeException("Constraint violation"));
 		when(errandServiceMock.purgeErrand(NAMESPACE, MUNICIPALITY_ID, "c")).thenReturn(true);
 
-		worker().run(job);
+		worker().run(run(false, null));
 
-		assertThat(cursorCaptor.getAllValues()).containsExactly("", "b", "c");
-
-		final var status = job.toStatus();
-		assertThat(status.getState()).isEqualTo(COMPLETED);
-		assertThat(status.getProcessed()).isEqualTo(3);
-		assertThat(status.getDeleted()).isEqualTo(2);
-		assertThat(status.getFailed()).isEqualTo(1);
-		assertThat(status.getMessage()).isNull();
+		verify(jobServiceMock).updateProgress(JOB_ID, 2);
+		verify(jobServiceMock).updateProgress(JOB_ID, 3);
+		verify(jobServiceMock).complete(JOB_ID, "Removed 2 of 3 errands reached, 1 could not be removed");
 	}
 
 	@Test
 	@DisplayName("Verification that a dry run counts every errand it reaches and removes none of them")
 	void runAsDryRun() {
-		final var job = job(true, null);
+		batches(ids("a", "b"), emptyList());
+		stillRunning();
 
-		when(errandsRepositoryMock.findIdsToPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(OLDER_THAN), cursorCaptor.capture(), any(Pageable.class)))
-			.thenReturn(List.of("a", "b"), emptyList());
+		worker().run(run(true, null));
 
-		worker().run(job);
-
-		assertThat(cursorCaptor.getAllValues()).containsExactly("", "b");
-
-		final var status = job.toStatus();
-		assertThat(status.getState()).isEqualTo(COMPLETED);
-		assertThat(status.getProcessed()).isEqualTo(2);
-		assertThat(status.getDeleted()).isZero();
-		assertThat(status.getFailed()).isZero();
+		verify(jobServiceMock).complete(JOB_ID, "Dry run over 2 errands, none of which were removed");
 		verifyNoInteractions(errandServiceMock);
 	}
 
 	@Test
 	@DisplayName("Verification that an errand gone before the run reached it counts as reached but not as removed by this run")
 	void runWhenErrandIsAlreadyGone() {
-		final var job = job(false, null);
-
-		when(errandsRepositoryMock.findIdsToPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(OLDER_THAN), anyString(), any(Pageable.class)))
-			.thenReturn(List.of("a"), emptyList());
+		batches(ids("a"), emptyList());
+		stillRunning();
 		when(errandServiceMock.purgeErrand(NAMESPACE, MUNICIPALITY_ID, "a")).thenReturn(false);
 
-		worker().run(job);
+		worker().run(run(false, null));
 
-		final var status = job.toStatus();
-		assertThat(status.getState()).isEqualTo(COMPLETED);
-		assertThat(status.getProcessed()).isEqualTo(1);
-		assertThat(status.getDeleted()).isZero();
-		assertThat(status.getFailed()).isZero();
+		verify(jobServiceMock).complete(JOB_ID, "Removed 0 of 1 errands reached, 0 could not be removed");
 	}
 
 	@Test
-	@DisplayName("Verification that the limit of a run caps the batch it asks for and stops it once reached")
+	@DisplayName("Verification that a run stops once it reaches the limit it was started with, without reading a further batch")
 	void runStopsWhenTheLimitIsReached() {
-		final var job = job(false, 3);
+		batches(ids("a", "b"));
+		stillRunning();
+		when(errandServiceMock.purgeErrand(any(), any(), any())).thenReturn(true);
 
-		when(errandsRepositoryMock.findIdsToPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(OLDER_THAN), anyString(), pageableCaptor.capture()))
-			.thenReturn(List.of("a", "b"), List.of("c"));
-		when(errandServiceMock.purgeErrand(eq(NAMESPACE), eq(MUNICIPALITY_ID), anyString())).thenReturn(true);
+		worker().run(run(false, 2));
 
-		worker().run(job);
-
-		// Two of the batch size, then only what is left of the limit.
-		assertThat(pageableCaptor.getAllValues()).extracting(Pageable::getPageSize).containsExactly(2, 1);
-
-		final var status = job.toStatus();
-		assertThat(status.getState()).isEqualTo(STOPPED);
-		assertThat(status.getProcessed()).isEqualTo(3);
-		assertThat(status.getDeleted()).isEqualTo(3);
-		assertThat(status.getMessage()).isEqualTo("Stopped after reaching the limit of errands set for the run");
+		verify(errandsRepositoryMock).findBy(any(Specification.class), any());
+		verify(jobServiceMock).complete(JOB_ID, "Removed 2 of 2 errands reached, 0 could not be removed");
 	}
 
 	@Test
-	@DisplayName("Verification that a run asked to stop finishes the errand it is on and stops there")
-	void runStopsWhenAskedTo() {
-		final var job = job(false, null);
+	@DisplayName("Verification that a run asked to stop finishes the batch it is on and stops there, leaving the job as it was stopped")
+	void runStopsWhenTheJobSaysSo() {
+		batches(ids("a", "b"), ids("c", "d"));
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(STOPPED));
+		when(errandServiceMock.purgeErrand(any(), any(), any())).thenReturn(true);
 
-		when(errandsRepositoryMock.findIdsToPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(OLDER_THAN), anyString(), any(Pageable.class)))
-			.thenReturn(List.of("a", "b"));
-		when(errandServiceMock.purgeErrand(NAMESPACE, MUNICIPALITY_ID, "a")).thenAnswer(_ -> {
-			job.requestStop();
-			return true;
-		});
+		worker().run(run(false, null));
 
-		worker().run(job);
-
-		verify(errandServiceMock).purgeErrand(NAMESPACE, MUNICIPALITY_ID, "a");
-
-		final var status = job.toStatus();
-		assertThat(status.getState()).isEqualTo(STOPPED);
-		assertThat(status.getProcessed()).isEqualTo(1);
-		assertThat(status.getDeleted()).isEqualTo(1);
-		assertThat(status.getFinished()).isEqualTo(OffsetDateTime.now(CLOCK));
+		verify(errandsRepositoryMock).findBy(any(Specification.class), any());
+		verify(jobServiceMock).updateProgress(JOB_ID, 2);
+		verify(jobServiceMock, never()).complete(any(), any());
+		verify(jobServiceMock, never()).fail(any(), any());
 	}
 
 	@Test
-	@DisplayName("Verification that a run already asked to stop never reads a batch at all")
-	void runThatIsStoppedBeforeItStarts() {
-		final var job = job(false, null);
-		job.requestStop();
-
-		worker().run(job);
-
-		assertThat(job.toStatus().getState()).isEqualTo(STOPPED);
-		verifyNoInteractions(errandsRepositoryMock, errandServiceMock);
-	}
-
-	@Test
-	@DisplayName("Verification that a database that cannot be read ends the run as failed with the reason, rather than throwing on a thread with nobody to catch it")
+	@DisplayName("Verification that a database that cannot be read ends the job as failed with the reason, rather than throwing on a thread with nobody to catch it")
 	void runWhenReadingErrandsFails() {
-		final var job = job(false, null);
+		doThrow(new RuntimeException("Database is unreachable")).when(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
 
-		when(errandsRepositoryMock.findIdsToPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(OLDER_THAN), anyString(), any(Pageable.class)))
-			.thenThrow(new RuntimeException("Database is unreachable"));
+		worker().run(run(false, null));
 
-		worker().run(job);
-
-		final var status = job.toStatus();
-		assertThat(status.getState()).isEqualTo(FAILED);
-		assertThat(status.getMessage()).isEqualTo("Purge aborted: Database is unreachable");
-		assertThat(status.getFinished()).isEqualTo(OffsetDateTime.now(CLOCK));
+		verify(jobServiceMock).fail(JOB_ID, "Purge aborted: Database is unreachable");
 	}
 
-	private static PurgeJob job(final boolean dryRun, final Integer maxErrands) {
-		return new PurgeJob(randomUUID().toString(), NAMESPACE, MUNICIPALITY_ID, new PurgeSettings(OLDER_THAN, dryRun, maxErrands), STARTED_BY, STARTED);
+	@Test
+	@DisplayName("Verification that a run leaving the job as running is ended, so that nothing is left reading as under way for as long as the row lives")
+	void runThatLeavesTheJobRunning() {
+		doThrow(new StackOverflowError()).when(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
+
+		assertThatThrownBy(() -> worker().run(run(false, null))).isInstanceOf(StackOverflowError.class);
+
+		verify(jobServiceMock).fail(JOB_ID, "Purge ended without reaching a result of its own");
+	}
+
+	/**
+	 * The job as a run under way sees it, which is what makes the walk carry on to its own end rather than stop.
+	 */
+	private void stillRunning() {
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
+	}
+
+	@SafeVarargs
+	private void batches(final List<IdProjection>... batches) {
+		var stubbing = doReturn(batches[0]);
+		for (var index = 1; index < batches.length; index++) {
+			stubbing = stubbing.doReturn(batches[index]);
+		}
+		stubbing.when(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
+	}
+
+	private static List<IdProjection> ids(final String... ids) {
+		return List.of(ids).stream()
+			.map(id -> (IdProjection) new IdProjection() {
+
+				@Override
+				public String getId() {
+					return id;
+				}
+
+				@Override
+				public void setId(final String value) {
+					// Nothing reads a value set here.
+				}
+			})
+			.toList();
+	}
+
+	private static PurgeRun run(final boolean dryRun, final Integer maxErrands) {
+		return new PurgeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, STARTED_BY, new PurgeSettings(OLDER_THAN, dryRun, maxErrands));
 	}
 }

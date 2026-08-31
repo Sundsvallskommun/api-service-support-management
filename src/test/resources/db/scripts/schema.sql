@@ -304,8 +304,8 @@
         namespace varchar(32) not null,
         id varchar(255) not null,
         message text,
-        status enum ('COMPLETED','FAILED','PENDING','RUNNING') not null,
-        type enum ('MOVE_LABEL') not null,
+        status enum ('COMPLETED','FAILED','PENDING','RUNNING','STOPPED') not null,
+        type enum ('ERRAND_PURGE','MOVE_LABEL') not null,
         primary key (id)
     ) engine=InnoDB;
 
