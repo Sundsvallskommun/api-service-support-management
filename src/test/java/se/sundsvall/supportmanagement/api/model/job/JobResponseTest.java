@@ -38,9 +38,10 @@ class JobResponseTest {
 		final var bean2 = JobResponse.create().withJobId("id-1").withType(JobType.MOVE_LABEL);
 		final var bean3 = JobResponse.create().withJobId("id-2").withType(JobType.MOVE_LABEL);
 
-		assertThat(bean1).isEqualTo(bean2);
-		assertThat(bean1).hasSameHashCodeAs(bean2);
-		assertThat(bean1).isNotEqualTo(bean3);
+		assertThat(bean1)
+			.isEqualTo(bean2)
+			.hasSameHashCodeAs(bean2)
+			.isNotEqualTo(bean3);
 	}
 
 	@Test
@@ -66,16 +67,20 @@ class JobResponseTest {
 			.withCreated(created)
 			.withModified(modified);
 
-		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
-		assertThat(bean.getJobId()).isEqualTo(jobId);
-		assertThat(bean.getType()).isEqualTo(type);
-		assertThat(bean.getStatus()).isEqualTo(status);
-		assertThat(bean.getProgress()).isEqualTo(progress);
-		assertThat(bean.getTotal()).isEqualTo(total);
-		assertThat(bean.getProcessed()).isEqualTo(processed);
-		assertThat(bean.getMessage()).isEqualTo(message);
-		assertThat(bean.getCreated()).isEqualTo(created);
-		assertThat(bean.getModified()).isEqualTo(modified);
+		assertThat(bean)
+			.isNotNull()
+			.hasNoNullFieldsOrProperties()
+			.satisfies(b -> {
+				assertThat(b.getJobId()).isEqualTo(jobId);
+				assertThat(b.getType()).isEqualTo(type);
+				assertThat(b.getStatus()).isEqualTo(status);
+				assertThat(b.getProgress()).isEqualTo(progress);
+				assertThat(b.getTotal()).isEqualTo(total);
+				assertThat(b.getProcessed()).isEqualTo(processed);
+				assertThat(b.getMessage()).isEqualTo(message);
+				assertThat(b.getCreated()).isEqualTo(created);
+				assertThat(b.getModified()).isEqualTo(modified);
+			});
 	}
 
 	@Test
