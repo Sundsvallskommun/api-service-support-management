@@ -124,8 +124,10 @@ public class ErrandPurgeService {
 			jobIdByScope.remove(scope, job.getJobId());
 			jobs.remove(job.getJobId());
 
+			// The reason is sanitized along with the rest: a refusal carries the namespace and municipality it was asked
+			// for, so what a caller sent reaches the log through the message as well.
 			LOG.info("Purge {} was not started for namespace {} in municipality {} requested by {}: {}", job.getJobId(),
-				sanitizeForLogging(namespace), sanitizeForLogging(municipalityId), sanitizeForLogging(job.getStartedBy()), e.getMessage());
+				sanitizeForLogging(namespace), sanitizeForLogging(municipalityId), sanitizeForLogging(job.getStartedBy()), sanitizeForLogging(e.getMessage()));
 
 			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START.formatted(e.getMessage()));
 		}
@@ -157,7 +159,7 @@ public class ErrandPurgeService {
 		final var job = jobOf(namespace, municipalityId, jobId);
 		job.requestStop();
 
-		LOG.info("Purge {} asked to stop for namespace {} in municipality {}", jobId, sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
+		LOG.info("Purge {} asked to stop for namespace {} in municipality {}", sanitizeForLogging(jobId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 
 		return job.toStatus();
 	}
