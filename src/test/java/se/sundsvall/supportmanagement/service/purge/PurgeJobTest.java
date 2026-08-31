@@ -143,6 +143,6 @@ class PurgeJobTest {
 	}
 
 	private static PurgeJob job(final Integer maxErrands) {
-		return new PurgeJob(JOB_ID, NAMESPACE, MUNICIPALITY_ID, OLDER_THAN, false, maxErrands, STARTED_BY, STARTED);
+		return new PurgeJob(JOB_ID, NAMESPACE, MUNICIPALITY_ID, new PurgeSettings(OLDER_THAN, false, maxErrands), STARTED_BY, STARTED);
 	}
 }

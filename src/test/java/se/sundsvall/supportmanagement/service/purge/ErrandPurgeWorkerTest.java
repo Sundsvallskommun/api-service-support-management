@@ -219,6 +219,6 @@ class ErrandPurgeWorkerTest {
 	}
 
 	private static PurgeJob job(final boolean dryRun, final Integer maxErrands) {
-		return new PurgeJob(randomUUID().toString(), NAMESPACE, MUNICIPALITY_ID, OLDER_THAN, dryRun, maxErrands, STARTED_BY, STARTED);
+		return new PurgeJob(randomUUID().toString(), NAMESPACE, MUNICIPALITY_ID, new PurgeSettings(OLDER_THAN, dryRun, maxErrands), STARTED_BY, STARTED);
 	}
 }

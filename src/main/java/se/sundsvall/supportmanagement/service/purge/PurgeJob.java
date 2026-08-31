@@ -26,8 +26,7 @@ public class PurgeJob {
 	private final String jobId;
 	private final String namespace;
 	private final String municipalityId;
-	private final OffsetDateTime olderThan;
-	private final boolean dryRun;
+	private final PurgeSettings settings;
 	private final long maxErrands;
 	private final String startedBy;
 	private final OffsetDateTime started;
@@ -41,15 +40,14 @@ public class PurgeJob {
 	private volatile OffsetDateTime finished;
 	private volatile String message;
 
-	public PurgeJob(final String jobId, final String namespace, final String municipalityId, final OffsetDateTime olderThan,
-		final boolean dryRun, final Integer maxErrands, final String startedBy, final OffsetDateTime started) {
+	public PurgeJob(final String jobId, final String namespace, final String municipalityId, final PurgeSettings settings,
+		final String startedBy, final OffsetDateTime started) {
 
 		this.jobId = jobId;
 		this.namespace = namespace;
 		this.municipalityId = municipalityId;
-		this.olderThan = olderThan;
-		this.dryRun = dryRun;
-		this.maxErrands = isNull(maxErrands) ? UNLIMITED : maxErrands;
+		this.settings = settings;
+		this.maxErrands = isNull(settings.maxErrands()) ? UNLIMITED : settings.maxErrands();
 		this.startedBy = startedBy;
 		this.started = started;
 	}
@@ -67,11 +65,11 @@ public class PurgeJob {
 	}
 
 	public OffsetDateTime getOlderThan() {
-		return olderThan;
+		return settings.olderThan();
 	}
 
 	public boolean isDryRun() {
-		return dryRun;
+		return settings.dryRun();
 	}
 
 	/**
@@ -156,8 +154,8 @@ public class PurgeJob {
 			.withJobId(jobId)
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
-			.withOlderThan(olderThan)
-			.withDryRun(dryRun)
+			.withOlderThan(settings.olderThan())
+			.withDryRun(settings.dryRun())
 			.withState(state)
 			.withStartedBy(startedBy)
 			.withStarted(started)

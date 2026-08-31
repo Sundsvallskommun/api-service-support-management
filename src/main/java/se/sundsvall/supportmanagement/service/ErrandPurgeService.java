@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.config.ErrandPurgeProperties;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker;
 import se.sundsvall.supportmanagement.service.purge.PurgeJob;
+import se.sundsvall.supportmanagement.service.purge.PurgeSettings;
 
 import static java.lang.Boolean.TRUE;
 import static java.time.OffsetDateTime.now;
@@ -94,8 +95,8 @@ public class ErrandPurgeService {
 		evictExpiredJobs();
 
 		final var scope = scopeOf(namespace, municipalityId);
-		final var job = new PurgeJob(randomUUID().toString(), namespace, municipalityId, request.getOlderThan(),
-			TRUE.equals(request.getDryRun()), request.getMaxErrands(), startedBy(), now(clock));
+		final var settings = new PurgeSettings(request.getOlderThan(), TRUE.equals(request.getDryRun()), request.getMaxErrands());
+		final var job = new PurgeJob(randomUUID().toString(), namespace, municipalityId, settings, startedBy(), now(clock));
 
 		if (nonNull(jobIdByScope.putIfAbsent(scope, job.getJobId()))) {
 			throw Problem.valueOf(CONFLICT, ALREADY_RUNNING.formatted(namespace, municipalityId));
@@ -106,8 +107,12 @@ public class ErrandPurgeService {
 		// is told 202 has no reason to look at the state it was given.
 		try {
 			// Settled before a single errand is removed rather than partway through the walk. A purge carries no caller to
-			// authorize, so it must not become the way around a namespace that restricts who may reach its errands.
+			// authorize, so it must not become the way around a namespace that restricts who may reach its errands. Worth a
+			// line of its own in the log: an attempt to empty a protected namespace is what an audit would come looking for.
 			if (namespaceConfigService.isAccessControlActive(namespace, municipalityId)) {
+				LOG.info("Purge of namespace {} in municipality {} requested by {} was refused: access control is active",
+					sanitizeForLogging(namespace), sanitizeForLogging(municipalityId), sanitizeForLogging(job.getStartedBy()));
+
 				throw Problem.valueOf(CONFLICT, ACCESS_CONTROL_ACTIVE.formatted(namespace, municipalityId));
 			}
 
@@ -121,13 +126,10 @@ public class ErrandPurgeService {
 				}
 			});
 		} catch (final Exception e) {
+			// Cleanup only. What went wrong is carried by the problem thrown from here and reported once, where every other
+			// failed request is reported.
 			jobIdByScope.remove(scope, job.getJobId());
 			jobs.remove(job.getJobId());
-
-			// The reason is sanitized along with the rest: a refusal carries the namespace and municipality it was asked
-			// for, so what a caller sent reaches the log through the message as well.
-			LOG.info("Purge {} was not started for namespace {} in municipality {} requested by {}: {}", job.getJobId(),
-				sanitizeForLogging(namespace), sanitizeForLogging(municipalityId), sanitizeForLogging(job.getStartedBy()), sanitizeForLogging(e.getMessage()));
 
 			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START.formatted(e.getMessage()));
 		}
