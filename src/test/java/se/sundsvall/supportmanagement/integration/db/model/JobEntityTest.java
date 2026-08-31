@@ -40,9 +40,10 @@ class JobEntityTest {
 		final var entity2 = JobEntity.create().withId("id-1").withNamespace("ns").withMunicipalityId("2281");
 		final var entity3 = JobEntity.create().withId("id-2").withNamespace("ns").withMunicipalityId("2281");
 
-		assertThat(entity1).isEqualTo(entity2);
-		assertThat(entity1).hasSameHashCodeAs(entity2);
-		assertThat(entity1).isNotEqualTo(entity3);
+		assertThat(entity1)
+			.isEqualTo(entity2)
+			.hasSameHashCodeAs(entity2)
+			.isNotEqualTo(entity3);
 	}
 
 	@Test
@@ -72,18 +73,21 @@ class JobEntityTest {
 			.withTotal(total)
 			.withType(type);
 
-		assertThat(entity).hasNoNullFieldsOrProperties();
-		assertThat(entity.getCreated()).isEqualTo(created);
-		assertThat(entity.getId()).isEqualTo(id);
-		assertThat(entity.getMessage()).isEqualTo(message);
-		assertThat(entity.getModified()).isEqualTo(modified);
-		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(entity.getNamespace()).isEqualTo(namespace);
-		assertThat(entity.getProcessed()).isEqualTo(processed);
-		assertThat(entity.getProgress()).isEqualTo(progress);
-		assertThat(entity.getStatus()).isEqualTo(status);
-		assertThat(entity.getTotal()).isEqualTo(total);
-		assertThat(entity.getType()).isEqualTo(type);
+		assertThat(entity)
+			.hasNoNullFieldsOrProperties()
+			.satisfies(e -> {
+				assertThat(e.getCreated()).isEqualTo(created);
+				assertThat(e.getId()).isEqualTo(id);
+				assertThat(e.getMessage()).isEqualTo(message);
+				assertThat(e.getModified()).isEqualTo(modified);
+				assertThat(e.getMunicipalityId()).isEqualTo(municipalityId);
+				assertThat(e.getNamespace()).isEqualTo(namespace);
+				assertThat(e.getProcessed()).isEqualTo(processed);
+				assertThat(e.getProgress()).isEqualTo(progress);
+				assertThat(e.getStatus()).isEqualTo(status);
+				assertThat(e.getTotal()).isEqualTo(total);
+				assertThat(e.getType()).isEqualTo(type);
+			});
 	}
 
 	@Test
