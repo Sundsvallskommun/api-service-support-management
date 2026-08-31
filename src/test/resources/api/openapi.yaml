@@ -18,6 +18,8 @@ tags:
   description: Configuration for message-exchange scheduled syncing job
 - name: Metadata for phases
   description: Phase metadata operations
+- name: Jobs
+  description: Job operations
 - name: Metadata for labels
   description: Label metadata operations
 - name: Errand events
@@ -8246,6 +8248,71 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/jobs/{jobId}:
+    get:
+      tags:
+      - Jobs
+      summary: Get job status
+      description: Get status and progress for a background job
+      operationId: getJob
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: jobId
+        in: path
+        description: Job id
+        required: true
+        schema:
+          type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/revisions:
     get:
       tags:
@@ -10413,6 +10480,49 @@ components:
           type: boolean
         embeddedValue:
           type: boolean
+    JobResponse:
+      type: object
+      description: Job response
+      properties:
+        jobId:
+          type: string
+          description: Job ID
+        type:
+          type: string
+          description: Job type
+          enum:
+          - MOVE_LABEL
+        status:
+          type: string
+          description: Job status
+          enum:
+          - PENDING
+          - RUNNING
+          - COMPLETED
+          - FAILED
+        progress:
+          type: integer
+          format: int32
+          description: Progress percentage (0-100)
+        total:
+          type: integer
+          format: int32
+          description: Total number of items to process
+        processed:
+          type: integer
+          format: int32
+          description: Number of items processed so far
+        message:
+          type: string
+          description: "Error message, populated on FAILED status"
+        created:
+          type: string
+          format: date-time
+          description: When the job was created
+        modified:
+          type: string
+          format: date-time
+          description: When the job was last updated
     JsonParameter:
       type: object
       description: JSON Parameter model

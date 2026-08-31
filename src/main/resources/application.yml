@@ -111,6 +111,7 @@ resilience4j:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
       json-schema:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
+
 spring:
   application:
     name: support-management
