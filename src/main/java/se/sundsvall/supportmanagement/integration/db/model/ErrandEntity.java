@@ -46,7 +46,10 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 		@Index(name = "idx_errand_municipality_id_namespace_status_touched", columnList = "municipality_id,namespace,status,touched"),
 		@Index(name = "idx_errand_municipality_id_namespace_status_modified", columnList = "municipality_id,namespace,status,modified"),
 		@Index(name = "idx_errand_municipality_id_namespace_created", columnList = "municipality_id,namespace,created"),
-		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched")
+		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched"),
+		// Carries the retention purge, which walks a namespace in id order a batch at a time and would otherwise have to
+		// work through the whole namespace to find where the previous batch ended.
+		@Index(name = "idx_errand_municipality_id_namespace_id", columnList = "municipality_id,namespace,id")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {

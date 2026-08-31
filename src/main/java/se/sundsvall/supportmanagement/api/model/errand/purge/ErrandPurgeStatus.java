@@ -36,6 +36,9 @@ public class ErrandPurgeStatus {
 	@Schema(description = "State of the run", accessMode = READ_ONLY)
 	private PurgeState state;
 
+	@Schema(description = "Who asked for the run", examples = "joe01doe", accessMode = READ_ONLY)
+	private String startedBy;
+
 	@Schema(description = "Timestamp when the run started", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime started;
@@ -146,6 +149,19 @@ public class ErrandPurgeStatus {
 		this.started = started;
 	}
 
+	public String getStartedBy() {
+		return startedBy;
+	}
+
+	public void setStartedBy(final String startedBy) {
+		this.startedBy = startedBy;
+	}
+
+	public ErrandPurgeStatus withStartedBy(final String startedBy) {
+		this.startedBy = startedBy;
+		return this;
+	}
+
 	public ErrandPurgeStatus withStarted(final OffsetDateTime started) {
 		this.started = started;
 		return this;
@@ -218,7 +234,7 @@ public class ErrandPurgeStatus {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(jobId, namespace, municipalityId, olderThan, dryRun, state, started, finished, processed, deleted, failed, message);
+		return Objects.hash(jobId, namespace, municipalityId, olderThan, dryRun, state, startedBy, started, finished, processed, deleted, failed, message);
 	}
 
 	@Override
@@ -239,6 +255,7 @@ public class ErrandPurgeStatus {
 			&& Objects.equals(municipalityId, that.municipalityId)
 			&& Objects.equals(olderThan, that.olderThan)
 			&& state == that.state
+			&& Objects.equals(startedBy, that.startedBy)
 			&& Objects.equals(started, that.started)
 			&& Objects.equals(finished, that.finished)
 			&& Objects.equals(message, that.message);
@@ -253,6 +270,7 @@ public class ErrandPurgeStatus {
 			", olderThan=" + olderThan +
 			", dryRun=" + dryRun +
 			", state=" + state +
+			", startedBy='" + startedBy + '\'' +
 			", started=" + started +
 			", finished=" + finished +
 			", processed=" + processed +

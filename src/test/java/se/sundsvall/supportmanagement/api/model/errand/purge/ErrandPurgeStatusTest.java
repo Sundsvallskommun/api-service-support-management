@@ -42,12 +42,13 @@ class ErrandPurgeStatusTest {
 		final var municipalityId = "2281";
 		final var olderThan = OffsetDateTime.parse("2024-08-28T00:00:00+02:00");
 		final var dryRun = true;
+		final var startedBy = "joe01doe";
 		final var started = OffsetDateTime.parse("2026-08-28T09:00:00+02:00");
 		final var finished = OffsetDateTime.parse("2026-08-28T11:00:00+02:00");
 		final var processed = 250L;
 		final var deleted = 248L;
 		final var failed = 2L;
-		final var message = "Access control is active for the namespace";
+		final var message = "Stopped on request";
 
 		final var bean = ErrandPurgeStatus.create()
 			.withJobId(jobId)
@@ -56,6 +57,7 @@ class ErrandPurgeStatusTest {
 			.withOlderThan(olderThan)
 			.withDryRun(dryRun)
 			.withState(COMPLETED)
+			.withStartedBy(startedBy)
 			.withStarted(started)
 			.withFinished(finished)
 			.withProcessed(processed)
@@ -70,6 +72,7 @@ class ErrandPurgeStatusTest {
 		Assertions.assertThat(bean.getOlderThan()).isEqualTo(olderThan);
 		Assertions.assertThat(bean.isDryRun()).isEqualTo(dryRun);
 		Assertions.assertThat(bean.getState()).isEqualTo(COMPLETED);
+		Assertions.assertThat(bean.getStartedBy()).isEqualTo(startedBy);
 		Assertions.assertThat(bean.getStarted()).isEqualTo(started);
 		Assertions.assertThat(bean.getFinished()).isEqualTo(finished);
 		Assertions.assertThat(bean.getProcessed()).isEqualTo(processed);

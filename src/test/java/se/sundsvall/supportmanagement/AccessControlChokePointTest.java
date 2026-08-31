@@ -51,6 +51,11 @@ class AccessControlChokePointTest {
 		se.sundsvall.supportmanagement.service.scheduler.webmessagecollector.WebMessageCollectorWorker.class,
 		se.sundsvall.supportmanagement.service.MessageExchangeSyncService.class,
 
+		// The retention purge runs on a cutoff rather than on behalf of a caller, so there is no user to authorize.
+		// It reaches errands without an access check by design, which is why ErrandPurgeService refuses to start a run
+		// at all in a namespace that has access control switched on.
+		se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker.class,
+
 		// MetadataService only reads errands to check whether metadata is referenced. It cannot inject
 		// AccessControlService without creating a circular dependency
 		// (metadataService -> accessControlService -> accessMapperService -> metadataService), which is why the

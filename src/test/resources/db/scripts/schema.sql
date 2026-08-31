@@ -783,10 +783,13 @@
     create index idx_errand_municipality_id_namespace_created 
        on errand (municipality_id, namespace, created);
 
-    create index idx_errand_municipality_id_namespace_touched 
+    create index idx_errand_municipality_id_namespace_touched
        on errand (municipality_id, namespace, touched);
 
-    alter table if exists errand 
+    create index idx_errand_municipality_id_namespace_id
+       on errand (municipality_id, namespace, id);
+
+    alter table if exists errand
        add constraint uq_errand_number unique (errand_number);
 
     create index idx_errand_access_labels_errand_id_metadata_label_id 

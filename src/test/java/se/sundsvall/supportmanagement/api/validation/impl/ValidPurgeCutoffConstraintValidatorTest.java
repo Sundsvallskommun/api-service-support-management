@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
+import java.time.Duration;
 import java.time.Period;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import se.sundsvall.supportmanagement.config.ErrandPurgeProperties;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
@@ -33,7 +35,7 @@ class ValidPurgeCutoffConstraintValidatorTest {
 
 	@BeforeEach
 	void setup() {
-		ReflectionTestUtils.setField(validator, "minimumAge", Period.parse("P2Y"));
+		ReflectionTestUtils.setField(validator, "properties", new ErrandPurgeProperties(Period.parse("P2Y"), 250, Duration.ofHours(24), 2));
 	}
 
 	@Test
@@ -75,7 +77,7 @@ class ValidPurgeCutoffConstraintValidatorTest {
 
 	@Test
 	void configuredPeriodIsReflectedInTheMessage() {
-		ReflectionTestUtils.setField(validator, "minimumAge", Period.parse("P6M"));
+		ReflectionTestUtils.setField(validator, "properties", new ErrandPurgeProperties(Period.parse("P6M"), 250, Duration.ofHours(24), 2));
 		when(constraintValidatorContextMock.buildConstraintViolationWithTemplate(any())).thenReturn(constraintViolationBuilderMock);
 
 		assertThat(validator.isValid(now(systemDefault()).minusMonths(1), constraintValidatorContextMock)).isFalse();

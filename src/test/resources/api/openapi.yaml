@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.1"
+  version: "15.2"
 servers:
 - url: http://localhost:46181
   description: Generated server url
@@ -133,7 +133,8 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "409":
-          description: Conflict — a purge is already running for the namespace
+          description: Conflict — a purge is already running for the namespace, or its
+            errands are under access control and cannot be purged
           content:
             application/problem+json:
               schema:
@@ -9790,6 +9791,12 @@ components:
           - COMPLETED
           - STOPPED
           - FAILED
+          readOnly: true
+        startedBy:
+          type: string
+          description: Who asked for the run
+          examples:
+          - joe01doe
           readOnly: true
         started:
           type: string
