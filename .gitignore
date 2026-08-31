@@ -83,3 +83,7 @@ RELATIONS.md
 
 # Elasticsearch PoC test data dump (836 MB - never commit)
 /tools/db_scripts/sm-test-dump.sql
+
+# Deployment repo copy (contains secrets) and pipeline task copies - never commit
+/tools/support-management-elastic-poc-deployment/
+/tools/common-pipeline-master-tasks/

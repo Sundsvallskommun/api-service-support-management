@@ -94,6 +94,12 @@ logbook:
 logging:
   level:
     root: INFO
+management:
+  health:
+    # Boot's Elastic health indicator rides along transitively via spring-data-opensearch-starter and
+    # probes spring.elasticsearch.uris' default localhost:9200 - it must never fail readiness
+    elasticsearch:
+      enabled: false
 openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}
