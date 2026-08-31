@@ -32,6 +32,10 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	boolean existsByLabelsMetadataLabelIdIn(Collection<String> labelIds);
 
+	long countByLabelsMetadataLabelId(String metadataLabelId);
+
+	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);
+
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
 }
