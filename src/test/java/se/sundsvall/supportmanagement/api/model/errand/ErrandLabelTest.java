@@ -31,13 +31,15 @@ class ErrandLabelTest {
 		final var id = "id";
 		final var resourceName = "resourceName";
 		final var resourcePath = "resourcePath";
+		final var version = 1L;
 
 		final var bean = ErrandLabel.create()
 			.withClassification(classification)
 			.withDisplayName(displayName)
 			.withId(id)
 			.withResourceName(resourceName)
-			.withResourcePath(resourcePath);
+			.withResourcePath(resourcePath)
+			.withVersion(version);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getClassification()).isEqualTo(classification);
@@ -45,6 +47,7 @@ class ErrandLabelTest {
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getResourceName()).isEqualTo(resourceName);
 		assertThat(bean.getResourcePath()).isEqualTo(resourcePath);
+		assertThat(bean.getVersion()).isEqualTo(version);
 	}
 
 	@Test

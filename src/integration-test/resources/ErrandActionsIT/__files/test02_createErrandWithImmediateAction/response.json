@@ -15,7 +15,8 @@
 			"classification": "DEEPSUBTYPE",
 			"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
 			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2",
-			"resourceName": "DEEPSUBTYPE-2"
+			"resourceName": "DEEPSUBTYPE-2",
+			"version": 0
 		}
 	],
 	"actions": [],

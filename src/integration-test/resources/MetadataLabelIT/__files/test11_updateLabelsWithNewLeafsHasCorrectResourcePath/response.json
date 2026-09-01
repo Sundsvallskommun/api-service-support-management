@@ -2,6 +2,7 @@
 	"labelStructure": [
 		{
 			"id": "dd11aa01-0000-0000-0000-000000000005",
+			"version": "${json-unit.any-number}",
 			"classification": "CLASS",
 			"displayName": "ROOT-DISPLAY-NAME",
 			"resourcePath": "ROOT",
@@ -10,6 +11,7 @@
 			"labels": [
 				{
 					"id": "dd11aa01-0000-0000-0000-000000000004",
+					"version": "${json-unit.any-number}",
 					"classification": "CLASS",
 					"displayName": "LEVELONE_1-DISPLAY-NAME",
 					"resourcePath": "ROOT/LEVELONE_1",
@@ -18,6 +20,7 @@
 					"labels": [
 						{
 							"id": "dd11aa01-0000-0000-0000-000000000001",
+							"version": "${json-unit.any-number}",
 							"classification": "CLASS",
 							"displayName": "LEVELTWO_1-DISPLAY-NAME",
 							"resourcePath": "ROOT/LEVELONE_1/LEVELTWO_1",
@@ -26,6 +29,7 @@
 							"labels": [
 								{
 									"id": "${json-unit.any-string}",
+									"version": "${json-unit.any-number}",
 									"classification": "CLASS",
 									"displayName": "NEW-LEAF-A-DISPLAY-NAME",
 									"resourcePath": "ROOT/LEVELONE_1/LEVELTWO_1/NEW_LEAF_A",
@@ -35,6 +39,7 @@
 								},
 								{
 									"id": "${json-unit.any-string}",
+									"version": "${json-unit.any-number}",
 									"classification": "CLASS",
 									"displayName": "NEW-LEAF-B-DISPLAY-NAME",
 									"resourcePath": "ROOT/LEVELONE_1/LEVELTWO_1/NEW_LEAF_B",
@@ -46,6 +51,7 @@
 						},
 						{
 							"id": "dd11aa01-0000-0000-0000-000000000002",
+							"version": "${json-unit.any-number}",
 							"classification": "CLASS",
 							"displayName": "LEVELTWO_2-DISPLAY-NAME",
 							"resourcePath": "ROOT/LEVELONE_1/LEVELTWO_2",
@@ -57,6 +63,7 @@
 				},
 				{
 					"id": "dd11aa01-0000-0000-0000-000000000003",
+					"version": "${json-unit.any-number}",
 					"classification": "CLASS",
 					"displayName": "LEVELONE_2-DISPLAY-NAME",
 					"resourcePath": "ROOT/LEVELONE_2",

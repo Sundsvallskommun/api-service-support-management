@@ -1,0 +1,2 @@
+ALTER TABLE metadata_label
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;

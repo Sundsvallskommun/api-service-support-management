@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.1"
+  version: "15.2"
 servers:
 - url: http://localhost:46181
   description: Generated server url
@@ -10318,6 +10318,11 @@ components:
           description: Label ID
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        version:
+          type: integer
+          format: int64
+          description: Label version for optimistic concurrency control
+          readOnly: true
         classification:
           type: string
           description: Label classification
@@ -11666,6 +11671,12 @@ components:
           description: Label ID
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        version:
+          type: integer
+          format: int64
+          description: "Label version for optimistic concurrency control. When set,\
+            \ validated against the current version in DB on errand create/update\
+            \ — mismatch yields 412."
         classification:
           type: string
           description: Label classification

@@ -34,14 +34,16 @@
 					"classification": "CATEGORY",
 					"displayName": "SOME_CATEGORY_1",
 					"resourcePath": "LABEL-1",
-					"resourceName": "CATEGORY-1"
+					"resourceName": "CATEGORY-1",
+					"version": 0
 				},
 				{
 					"id": "13a6abf3-b5ed-4edc-b582-6cf58fa667e3",
 					"classification": "CATEGORY",
 					"displayName": "SOME_CATEGORY_2",
 					"resourcePath": "LABEL-2",
-					"resourceName": "CATEGORY-2"
+					"resourceName": "CATEGORY-2",
+					"version": 0
 				}
 			],
 			"activeNotifications": [],

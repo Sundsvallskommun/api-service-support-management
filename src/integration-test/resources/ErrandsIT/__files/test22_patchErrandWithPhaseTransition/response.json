@@ -59,14 +59,16 @@
 			"classification": "SUBTYPE",
 			"displayName": "SUBTYPE-DISPLAY-NAME-3",
 			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3",
-			"resourceName": "SUBTYPE-3"
+			"resourceName": "SUBTYPE-3",
+			"version": 0
 		},
 		{
 			"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
 			"classification": "SUBTYPE",
 			"displayName": "SUBTYPE-DISPLAY-NAME-4",
 			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4",
-			"resourceName": "SUBTYPE-4"
+			"resourceName": "SUBTYPE-4",
+			"version": 0
 		}
 	],
 	"activeNotifications": "${json-unit.ignore}",

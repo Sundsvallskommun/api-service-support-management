@@ -312,6 +312,7 @@ public class MetadataMapper {
 
 		var label = Label.create()
 			.withId(entity.getId())
+			.withVersion(entity.getVersion())
 			.withClassification(entity.getClassification())
 			.withDisplayName(entity.getDisplayName())
 			.withResourceName(entity.getResourceName())

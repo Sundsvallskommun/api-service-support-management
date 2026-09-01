@@ -13,6 +13,9 @@ public class ErrandLabel {
 	@ValidUuid
 	private String id;
 
+	@Schema(description = "Label version for optimistic concurrency control. When set, validated against the current version in DB on errand create/update — mismatch yields 412.")
+	private Long version;
+
 	@Schema(description = "Label classification", examples = "subtype", accessMode = READ_ONLY)
 	private String classification;
 
@@ -39,6 +42,19 @@ public class ErrandLabel {
 
 	public ErrandLabel withId(String id) {
 		this.id = id;
+		return this;
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
+	}
+
+	public ErrandLabel withVersion(Long version) {
+		this.version = version;
 		return this;
 	}
 
@@ -96,7 +112,7 @@ public class ErrandLabel {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, displayName, id, resourceName, resourcePath);
+		return Objects.hash(classification, displayName, id, resourceName, resourcePath, version);
 	}
 
 	@Override
@@ -111,11 +127,12 @@ public class ErrandLabel {
 			return false;
 		}
 		ErrandLabel other = (ErrandLabel) obj;
-		return Objects.equals(classification, other.classification) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
+		return Objects.equals(classification, other.classification) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(resourceName, other.resourceName)
+			&& Objects.equals(resourcePath, other.resourcePath) && Objects.equals(version, other.version);
 	}
 
 	@Override
 	public String toString() {
-		return "ErrandLabel [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + "]";
+		return "ErrandLabel [id=" + id + ", version=" + version + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + "]";
 	}
 }
