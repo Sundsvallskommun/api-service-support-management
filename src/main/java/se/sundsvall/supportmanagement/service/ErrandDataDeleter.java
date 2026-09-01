@@ -20,9 +20,15 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
  * Shared by the single errand delete and by the retention purge so that the two cannot drift apart: whatever one of
  * them cleans up the other cleans up too, and a table added here is covered by both from the moment it is added.
  * <p>
- * The parts that live in neighbouring services - conversations and notes - are each guarded on their own. An errand
- * must not survive because another service is down, so a failure there is logged and the errand is removed regardless.
- * An orphaned note is a smaller problem than an errand that cannot be deleted at all.
+ * Notes live in a neighbouring service and are guarded here. An errand must not survive because that service is down,
+ * so a failure there is logged and the errand is removed regardless: an orphaned note is a smaller problem than an
+ * errand that cannot be deleted at all.
+ * <p>
+ * Conversations are not guarded here, even though they too reach a neighbouring service. Every call that leaves the
+ * service is already caught inside {@link ConversationService#deleteByErrandId(ErrandEntity)}, one conversation and
+ * one relation at a time. What can still reach this class is therefore a write to the local database, and by then the
+ * transaction the removal runs in is already marked for rollback. Catching it would not let the errand go. It would
+ * only hide why it stayed, and leave a caller with a delete that answered success while removing nothing.
  */
 @Component
 public class ErrandDataDeleter {
@@ -72,7 +78,7 @@ public class ErrandDataDeleter {
 		final var errandId = entity.getId();
 		final var municipalityId = entity.getMunicipalityId();
 
-		deleteConversations(entity);
+		conversationService.deleteByErrandId(entity);
 
 		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber(), entity.getNamespace(), municipalityId);
 
@@ -91,14 +97,6 @@ public class ErrandDataDeleter {
 
 		// A handover is recorded against both ends, and the errand being removed may be either of them.
 		handoverIdempotencyRepository.deleteAllBySourceErrandIdOrNewErrandId(errandId, errandId);
-	}
-
-	private void deleteConversations(final ErrandEntity entity) {
-		try {
-			conversationService.deleteByErrandId(entity);
-		} catch (final Exception e) {
-			LOG.warn("Failed to delete conversations for errand {}: {}", sanitizeForLogging(entity.getId()), e.getMessage());
-		}
 	}
 
 	/**

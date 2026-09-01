@@ -18,7 +18,10 @@ class ExceptionHandlerConfigTest {
 
 	@Test
 	void badFilterSyntaxExceptionIsParsedCorrectly() {
-		final var response = controllerExceptionHandler.handleInvalidSyntaxException(new InvalidSyntaxException("test exception"));
+		// The single argument constructor is deprecated
+		final var exception = new InvalidSyntaxException("test exception", 1, 7, "(", null);
+
+		final var response = controllerExceptionHandler.handleInvalidSyntaxException(exception);
 
 		assertThat(response).isNotNull();
 		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);

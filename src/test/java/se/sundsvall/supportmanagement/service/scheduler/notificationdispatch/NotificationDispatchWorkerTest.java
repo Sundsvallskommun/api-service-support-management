@@ -119,7 +119,7 @@ class NotificationDispatchWorkerTest {
 	}
 
 	private void mockErrandReachable(final boolean reachable) {
-		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn((root, query, cb) -> cb.conjunction());
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn((_, _, cb) -> cb.conjunction());
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any()))
 			.thenReturn(reachable ? Optional.of(ErrandEntity.create()) : Optional.empty());
 	}

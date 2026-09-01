@@ -41,6 +41,12 @@ scheduler:
     cron: "-"
   attachment-hash:
     cron: "-"
+  job:
+    cron: "-"
+errand:
+  purge:
+    # Small enough that a run over the purge test data walks several batches, which is what moves the cursor
+    batch-size: 2
 spring:
   cache:
     type: none
