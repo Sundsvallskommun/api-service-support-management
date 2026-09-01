@@ -102,3 +102,4 @@ VALUES ('2281', 100, 'PURGE-NAMESPACE', 'INTERNAL', 'aaaa7777-0000-0000-0000-000
 
 INSERT INTO conversation_relation_id(conversation_id, relation_id)
 VALUES ('aaaa7777-0000-0000-0000-000000000001', 'PURGE-RELATION-1');
+
