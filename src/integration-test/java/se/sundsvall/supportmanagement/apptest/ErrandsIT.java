@@ -143,7 +143,8 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(errandsRepository.existsById(id)).isFalse();
-		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id)).hasSize(1);
+		// The revisions go with the errand, since each of them holds a full snapshot of it
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id)).isEmpty();
 	}
 
 	@Test

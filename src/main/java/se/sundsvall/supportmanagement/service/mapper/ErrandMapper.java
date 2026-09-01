@@ -177,7 +177,7 @@ public final class ErrandMapper {
 			entity.setJsonParameters(new ArrayList<>());
 		}
 		final var existing = entity.getJsonParameters();
-		final var incomingByKey = jsonParameters.stream().collect(toMap(JsonParameter::getKey, identity(), (a, b) -> b));
+		final var incomingByKey = jsonParameters.stream().collect(toMap(JsonParameter::getKey, identity(), (_, b) -> b));
 		final var existingByKey = existing.stream().collect(toMap(JsonParameterEntity::getKey, identity()));
 
 		existing.removeIf(e -> accessibleKey.test(e.getKey()) && !incomingByKey.containsKey(e.getKey()));

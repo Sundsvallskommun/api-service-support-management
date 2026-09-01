@@ -22,7 +22,7 @@ public class ValidationMapper {
 	 */
 	public List<Validation> toValidations(final List<ValidationEntity> entities) {
 		final var entityByType = ofNullable(entities).orElse(emptyList()).stream()
-			.collect(toMap(ValidationEntity::getType, Function.identity(), (first, second) -> first));
+			.collect(toMap(ValidationEntity::getType, Function.identity(), (first, _) -> first));
 
 		return stream(EntityType.values())
 			.map(type -> toValidation(type, entityByType))

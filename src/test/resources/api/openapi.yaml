@@ -7,11 +7,9 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "15.2"
 servers:
-- url: http://localhost:46181
+- url: http://localhost:65503
   description: Generated server url
 tags:
-- name: Errand purge
-  description: Bulk removal of errands past their retention period
 - name: Configuration for namespace
   description: Namespace configuration operations
 - name: Configuration message-exchange sync
@@ -24,6 +22,8 @@ tags:
   description: Label metadata operations
 - name: Errand events
   description: Errand event operations
+- name: Errand purge
+  description: Bulk removal of errands past their retention period
 - name: User notifications
   description: User notifications operations
 - name: Handover
@@ -75,209 +75,6 @@ tags:
 - name: Subscriber notifications
   description: Subscriber notification operations
 paths:
-  /{municipalityId}/{namespace}/errands/purge:
-    post:
-      tags:
-      - Errand purge
-      summary: Start errand purge
-      description: Starts an asynchronous run that deletes every errand in the namespace
-        last touched before the provided cutoff
-      operationId: startPurge
-      parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ErrandPurgeRequest"
-        required: true
-      responses:
-        "202":
-          description: Successful operation
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrandPurgeStatus"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "409":
-          description: Conflict — a purge is already running for the namespace
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/purge/{jobId}:
-    get:
-      tags:
-      - Errand purge
-      summary: Read purge status
-      description: Reads the progress of the purge run that matches the provided id
-      operationId: readPurgeStatus
-      parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: jobId
-        in: path
-        description: Purge job id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrandPurgeStatus"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    delete:
-      tags:
-      - Errand purge
-      summary: Stop errand purge
-      description: Asks the purge run that matches the provided id to stop. The run
-        finishes the errand it is currently handling before stopping.
-      operationId: stopPurge
-      parameters:
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: jobId
-        in: path
-        description: Purge job id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      responses:
-        "202":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrandPurgeStatus"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/notifications/{notificationId}/acknowledge:
     put:
       tags:
@@ -4725,6 +4522,78 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/purge:
+    post:
+      tags:
+      - Errand purge
+      summary: Start errand purge
+      description: Starts an asynchronous run that deletes every errand in the namespace
+        last touched before the provided cutoff
+      operationId: startPurge
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrandPurgeRequest"
+        required: true
+      responses:
+        "202":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "409":
+          description: "Conflict — a purge is already running for the namespace, or\
+            \ its errands are under access control and cannot be purged"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/message-exchange-sync-config:
     get:
       tags:
@@ -8190,64 +8059,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/time-measure:
-    get:
-      tags:
-      - Time measures
-      summary: Get errand time measures
-      description: Get time measures for an errand
-      operationId: getErrandTimeMeasure
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json: {}
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/jobs/{jobId}:
     get:
       tags:
@@ -8307,6 +8118,64 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/time-measure:
+    get:
+      tags:
+      - Time measures
+      summary: Get errand time measures
+      description: Get time measures for an errand
+      operationId: getErrandTimeMeasure
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json: {}
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -9785,121 +9654,75 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/purge/{jobId}:
+    delete:
+      tags:
+      - Errand purge
+      summary: Stop errand purge
+      description: Asks the purge run that matches the provided id to stop. The run
+        finishes the errand it is currently handling before stopping.
+      operationId: stopPurge
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: jobId
+        in: path
+        description: Purge job id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "202":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
 components:
   schemas:
-    ErrandPurgeRequest:
-      type: object
-      description: Errand purge request model
-      properties:
-        olderThan:
-          type: string
-          format: date-time
-          description: Errands last touched before this point in time are purged
-          examples:
-          - 2024-08-28T00:00:00.000+02:00
-        dryRun:
-          type: boolean
-          description: "When true, the run only counts the errands that would be purged\
-            \ and deletes nothing"
-          examples:
-          - true
-        maxErrands:
-          type: integer
-          format: int32
-          description: Highest number of errands to handle in this run. Unlimited
-            when omitted.
-          examples:
-          - 1000
-          minimum: 1
-      required:
-      - dryRun
-      - olderThan
-    ErrandPurgeStatus:
-      type: object
-      description: Errand purge status model
-      properties:
-        jobId:
-          type: string
-          description: Id of the purge job
-          examples:
-          - b82bd8ac-1507-4d9a-958d-369261eecc15
-          readOnly: true
-        namespace:
-          type: string
-          description: Namespace being purged
-          examples:
-          - CONTACTCENTER
-          readOnly: true
-        municipalityId:
-          type: string
-          description: Id of the municipality being purged
-          examples:
-          - "2281"
-          readOnly: true
-        olderThan:
-          type: string
-          format: date-time
-          description: Cutoff the run was started with
-          examples:
-          - 2024-08-28T00:00:00.000+02:00
-          readOnly: true
-        dryRun:
-          type: boolean
-          description: Whether the run only counts errands instead of deleting them
-          examples:
-          - true
-          readOnly: true
-        state:
-          type: string
-          description: State of the run
-          enum:
-          - RUNNING
-          - COMPLETED
-          - STOPPED
-          - FAILED
-          readOnly: true
-        started:
-          type: string
-          format: date-time
-          description: Timestamp when the run started
-          examples:
-          - 2000-10-31T01:30:00.000+02:00
-          readOnly: true
-        finished:
-          type: string
-          format: date-time
-          description: Timestamp when the run finished. Null while it is still running.
-          examples:
-          - 2000-10-31T01:30:00.000+02:00
-          readOnly: true
-        processed:
-          type: integer
-          format: int64
-          description: "Number of errands handled so far, successfully or not"
-          examples:
-          - 1000
-          readOnly: true
-        deleted:
-          type: integer
-          format: int64
-          description: Number of errands deleted so far. Stays at zero for a dry run.
-          examples:
-          - 998
-          readOnly: true
-        failed:
-          type: integer
-          format: int64
-          description: Number of errands that could not be deleted. The log holds
-            their ids.
-          examples:
-          - 2
-          readOnly: true
-        message:
-          type: string
-          description: Reason the run aborted. Null unless the state is FAILED.
-          examples:
-          - Access control is active for the namespace
-          readOnly: true
     Problem:
       type: object
       properties:
@@ -9909,9 +9732,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -9934,10 +9757,10 @@ components:
         instance:
           type: string
           format: uri
-        detail:
-          type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -10436,34 +10259,11 @@ components:
           type: boolean
         float:
           type: boolean
-        container:
-          type: boolean
-        number:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
-        valueNode:
+        integralNumber:
           type: boolean
         missingNode:
+          type: boolean
+        valueNode:
           type: boolean
         nodeType:
           type: string
@@ -10477,57 +10277,37 @@ components:
           - OBJECT
           - POJO
           - STRING
+        floatingPointNumber:
+          type: boolean
+        bigInteger:
+          type: boolean
+        bigDecimal:
+          type: boolean
         string:
           type: boolean
-        integralNumber:
+        boolean:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        binary:
           type: boolean
         pojo:
           type: boolean
+        double:
+          type: boolean
+        short:
+          type: boolean
+        long:
+          type: boolean
+        int:
+          type: boolean
+        number:
+          type: boolean
+        container:
+          type: boolean
         embeddedValue:
           type: boolean
-    JobResponse:
-      type: object
-      description: Job response
-      properties:
-        jobId:
-          type: string
-          description: Job ID
-        type:
-          type: string
-          description: Job type
-          enum:
-          - MOVE_LABEL
-        status:
-          type: string
-          description: Job status
-          enum:
-          - PENDING
-          - RUNNING
-          - COMPLETED
-          - FAILED
-        progress:
-          type: integer
-          format: int32
-          description: Progress percentage (0-100)
-        total:
-          type: integer
-          format: int32
-          description: Total number of items to process
-        processed:
-          type: integer
-          format: int32
-          description: Number of items processed so far
-        message:
-          type: string
-          description: "Error message, populated on FAILED status"
-        created:
-          type: string
-          format: date-time
-          description: When the job was created
-        modified:
-          type: string
-          format: date-time
-          description: When the job was last updated
     JsonParameter:
       type: object
       description: JSON Parameter model
@@ -12881,6 +12661,78 @@ components:
           minItems: 1
       required:
       - messageIds
+    ErrandPurgeRequest:
+      type: object
+      description: Errand purge request model
+      properties:
+        olderThan:
+          type: string
+          format: date-time
+          description: Errands last touched before this point in time are purged
+          examples:
+          - 2024-08-28T00:00:00.000+02:00
+        dryRun:
+          type: boolean
+          description: "When true, the run only counts the errands that would be purged\
+            \ and deletes nothing"
+          examples:
+          - true
+        maxErrands:
+          type: integer
+          format: int32
+          description: Highest number of errands to handle in this run. Unlimited
+            when omitted.
+          examples:
+          - 1000
+          minimum: 1
+      required:
+      - dryRun
+      - olderThan
+    JobResponse:
+      type: object
+      description: Job response
+      properties:
+        jobId:
+          type: string
+          description: Job ID
+        type:
+          type: string
+          description: Job type
+          enum:
+          - MOVE_LABEL
+          - ERRAND_PURGE
+        status:
+          type: string
+          description: Job status
+          enum:
+          - PENDING
+          - RUNNING
+          - COMPLETED
+          - STOPPED
+          - FAILED
+        progress:
+          type: integer
+          format: int32
+          description: Progress percentage (0-100)
+        total:
+          type: integer
+          format: int32
+          description: Total number of items to process
+        processed:
+          type: integer
+          format: int32
+          description: Number of items processed so far
+        message:
+          type: string
+          description: "Error message, populated on FAILED status"
+        created:
+          type: string
+          format: date-time
+          description: When the job was created
+        modified:
+          type: string
+          format: date-time
+          description: When the job was last updated
     Validation:
       type: object
       description: Validation model
@@ -13082,18 +12934,18 @@ components:
         offset:
           type: integer
           format: int64
+        unpaged:
+          type: boolean
         paged:
           type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
-        unpaged:
-          type: boolean
     SortObject:
       type: object
       properties:
