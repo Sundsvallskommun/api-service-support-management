@@ -23,6 +23,7 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @AutoConfigureWebTestClient
@@ -171,19 +172,12 @@ class ErrandPurgeResourceFailureTest {
 	}
 
 	@Test
-	void readPurgeStatusWithInvalidJobId() {
-		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_WITH_ID).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "jobId", INVALID)))
+	@DisplayName("Verification that the progress of a run is not read here, since a purge reports against a job like every other long running piece of work")
+	void readPurgeStatusIsNotServedHere() {
+		webTestClient.get()
+			.uri(builder -> builder.path(PATH_WITH_ID).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "jobId", JOB_ID)))
 			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("readPurgeStatus.jobId", "not a valid UUID"));
+			.expectStatus().isEqualTo(METHOD_NOT_ALLOWED);
 
 		verifyNoInteractions(serviceMock);
 	}

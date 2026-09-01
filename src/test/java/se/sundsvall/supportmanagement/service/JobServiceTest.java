@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,12 +16,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.PENDING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
 
 @ExtendWith(MockitoExtension.class)
@@ -140,6 +144,89 @@ class JobServiceTest {
 		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(false);
 
 		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).isFalse();
+	}
+
+	@Test
+	@DisplayName("Verification that a job of one kind being under way says nothing about another kind, so that two unrelated jobs do not rule each other out")
+	void hasActiveJobOfType() {
+		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), any())).thenReturn(true);
+
+		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE)).isTrue();
+	}
+
+	@Test
+	@DisplayName("Verification that completing a job with a summary keeps the summary with it")
+	void completeWithMessage() {
+		final var entity = jobEntity(RUNNING);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.complete(JOB_ID, "Removed 248 of 250 errands reached, 2 could not be removed");
+
+		assertThat(entity.getStatus()).isEqualTo(COMPLETED);
+		assertThat(entity.getProgress()).isEqualTo(100);
+		assertThat(entity.getMessage()).isEqualTo("Removed 248 of 250 errands reached, 2 could not be removed");
+		verify(jobRepositoryMock).save(entity);
+	}
+
+	@Test
+	@DisplayName("Verification that a job under way is marked as stopped, which is what the work itself reads to know it is no longer wanted")
+	void stop() {
+		final var entity = jobEntity(RUNNING);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		final var response = jobService.stop(NAMESPACE, MUNICIPALITY_ID, JOB_ID);
+
+		assertThat(response.getStatus()).isEqualTo(STOPPED);
+		assertThat(entity.getStatus()).isEqualTo(STOPPED);
+		verify(jobRepositoryMock).save(entity);
+	}
+
+	@Test
+	@DisplayName("Verification that a job which has already ended keeps the outcome it reached, rather than having it rewritten by a late stop")
+	void stopJobThatHasAlreadyEnded() {
+		final var entity = jobEntity(COMPLETED);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		final var response = jobService.stop(NAMESPACE, MUNICIPALITY_ID, JOB_ID);
+
+		assertThat(response.getStatus()).isEqualTo(COMPLETED);
+		verify(jobRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that what a job keeps as its message carries no line breaks, since a reason is often built from an exception carrying whatever a caller sent in")
+	void failSanitizesTheMessage() {
+		final var entity = jobEntity(RUNNING);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.fail(JOB_ID, "Purge aborted: broken\r\n2026-08-31 INFO Everything is fine");
+
+		assertThat(entity.getMessage()).isEqualTo("Purge aborted: broken  2026-08-31 INFO Everything is fine");
+	}
+
+	@Test
+	@DisplayName("Verification that a message arriving with a whole stack trace in it is cut rather than left to fill the row")
+	void failBoundsTheMessageLength() {
+		final var entity = jobEntity(RUNNING);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.fail(JOB_ID, "x".repeat(5000));
+
+		assertThat(entity.getMessage()).hasSize(1027).endsWith("...");
+	}
+
+	@Test
+	void statusOf() {
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(jobEntity(RUNNING)));
+
+		assertThat(jobService.statusOf(JOB_ID)).contains(RUNNING);
+	}
+
+	@Test
+	void statusOfUnknownJob() {
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.empty());
+
+		assertThat(jobService.statusOf(JOB_ID)).isEmpty();
 	}
 
 	private static JobEntity jobEntity(final JobStatus status) {

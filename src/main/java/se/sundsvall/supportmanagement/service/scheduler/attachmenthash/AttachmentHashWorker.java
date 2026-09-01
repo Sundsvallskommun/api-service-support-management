@@ -69,7 +69,7 @@ public class AttachmentHashWorker {
 
 	private boolean processAttachment(final String attachmentId) {
 		try {
-			return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+			return Boolean.TRUE.equals(transactionTemplate.execute(_ -> {
 				final var attachment = attachmentRepository.findById(attachmentId).orElse(null);
 				if (attachment == null) {
 					LOG.warn("Attachment with id: {} no longer exists, skipping", attachmentId);

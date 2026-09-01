@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mariadb.jdbc.MariaDbBlob;
@@ -40,6 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -470,5 +472,16 @@ class RevisionServiceTest {
 			.withId("revisionId")
 			.withSerializedSnapshot("{}")
 			.withVersion(0);
+	}
+
+	@Test
+	@DisplayName("Verification that a removal takes the revisions with it, since each holds a full snapshot of the errand it is removing")
+	void deleteErrandRevisions() {
+		when(revisionRepositoryMock.deleteAllByNamespaceAndMunicipalityIdAndEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(2L);
+
+		service.deleteErrandRevisions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		verify(revisionRepositoryMock).deleteAllByNamespaceAndMunicipalityIdAndEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verifyNoInteractions(accessControlServiceMock);
 	}
 }

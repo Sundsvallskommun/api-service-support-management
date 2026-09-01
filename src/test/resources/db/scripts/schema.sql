@@ -304,8 +304,8 @@
         namespace varchar(32) not null,
         id varchar(255) not null,
         message text,
-        status enum ('COMPLETED','FAILED','PENDING','RUNNING') not null,
-        type enum ('MOVE_LABEL') not null,
+        status enum ('COMPLETED','FAILED','PENDING','RUNNING','STOPPED') not null,
+        type enum ('ERRAND_PURGE','MOVE_LABEL') not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -798,10 +798,13 @@
     create index idx_errand_municipality_id_namespace_created 
        on errand (municipality_id, namespace, created);
 
-    create index idx_errand_municipality_id_namespace_touched 
+    create index idx_errand_municipality_id_namespace_touched
        on errand (municipality_id, namespace, touched);
 
-    alter table if exists errand 
+    create index idx_errand_municipality_id_namespace_id
+       on errand (municipality_id, namespace, id);
+
+    alter table if exists errand
        add constraint uq_errand_number unique (errand_number);
 
     create index idx_errand_access_labels_errand_id_metadata_label_id 

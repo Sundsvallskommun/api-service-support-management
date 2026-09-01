@@ -44,9 +44,12 @@ scheduler:
     maximum-execution-time: PT5M
     batch-size: 250
 errand:
+  # Settings for the retention purge. Documented in ErrandPurgeProperties, which is where the defaults live.
   purge:
-    # Floor for how recent a purge cutoff may be. Guards against a mistyped timestamp emptying a namespace.
     minimum-age: P2Y
+    batch-size: 250
+    job-retention: PT24H
+    max-concurrent-runs: 2
 integration:
   accessmapper:
     connectTimeout: 5

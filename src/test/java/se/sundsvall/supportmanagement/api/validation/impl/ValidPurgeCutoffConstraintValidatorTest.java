@@ -2,14 +2,13 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
+import java.time.Duration;
 import java.time.Period;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import se.sundsvall.supportmanagement.config.ErrandPurgeProperties;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
@@ -28,12 +27,10 @@ class ValidPurgeCutoffConstraintValidatorTest {
 	@Mock
 	private ConstraintViolationBuilder constraintViolationBuilderMock;
 
-	@InjectMocks
-	private ValidPurgeCutoffConstraintValidator validator;
+	private final ValidPurgeCutoffConstraintValidator validator = validator("P2Y");
 
-	@BeforeEach
-	void setup() {
-		ReflectionTestUtils.setField(validator, "minimumAge", Period.parse("P2Y"));
+	private static ValidPurgeCutoffConstraintValidator validator(final String minimumAge) {
+		return new ValidPurgeCutoffConstraintValidator(new ErrandPurgeProperties(Period.parse(minimumAge), 250, Duration.ofHours(24), 2));
 	}
 
 	@Test
@@ -75,10 +72,10 @@ class ValidPurgeCutoffConstraintValidatorTest {
 
 	@Test
 	void configuredPeriodIsReflectedInTheMessage() {
-		ReflectionTestUtils.setField(validator, "minimumAge", Period.parse("P6M"));
+		final var sixMonths = validator("P6M");
 		when(constraintValidatorContextMock.buildConstraintViolationWithTemplate(any())).thenReturn(constraintViolationBuilderMock);
 
-		assertThat(validator.isValid(now(systemDefault()).minusMonths(1), constraintValidatorContextMock)).isFalse();
+		assertThat(sixMonths.isValid(now(systemDefault()).minusMonths(1), constraintValidatorContextMock)).isFalse();
 
 		verify(constraintValidatorContextMock).buildConstraintViolationWithTemplate("must be at least P6M before the current time");
 	}

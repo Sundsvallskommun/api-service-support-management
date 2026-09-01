@@ -11,8 +11,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
-import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeStatus;
-import se.sundsvall.supportmanagement.api.model.errand.purge.PurgeState;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
 import se.sundsvall.supportmanagement.service.ErrandPurgeService;
 
 import static java.time.OffsetDateTime.now;
@@ -26,9 +26,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static se.sundsvall.supportmanagement.api.model.errand.purge.PurgeState.COMPLETED;
-import static se.sundsvall.supportmanagement.api.model.errand.purge.PurgeState.RUNNING;
-import static se.sundsvall.supportmanagement.api.model.errand.purge.PurgeState.STOPPED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
 
 @AutoConfigureWebTestClient
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -58,7 +58,7 @@ class ErrandPurgeResourceTest {
 			.withMaxErrands(1000);
 
 		when(serviceMock.startPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(ErrandPurgeRequest.class)))
-			.thenReturn(status(RUNNING).withStarted(now(systemDefault())));
+			.thenReturn(job(RUNNING));
 
 		// Act
 		final var response = webTestClient.post()
@@ -67,78 +67,52 @@ class ErrandPurgeResourceTest {
 			.bodyValue(request)
 			.exchange()
 			.expectStatus().isAccepted()
-			.expectBody(ErrandPurgeStatus.class)
-			.returnResult();
-
-		// Verify
-		verify(serviceMock).startPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(ErrandPurgeRequest.class));
-		verifyNoMoreInteractions(serviceMock);
-
-		assertThat(response.getResponseHeaders().getLocation()).isNotNull();
-		assertThat(response.getResponseHeaders().getLocation().getPath())
-			.isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/purge/" + JOB_ID);
-		assertThat(response.getResponseBody()).isNotNull();
-		assertThat(response.getResponseBody().getJobId()).isEqualTo(JOB_ID);
-		assertThat(response.getResponseBody().getState()).isEqualTo(RUNNING);
-	}
-
-	@Test
-	void readPurgeStatus() {
-
-		// Arrange
-		when(serviceMock.readPurgeStatus(NAMESPACE, MUNICIPALITY_ID, JOB_ID))
-			.thenReturn(status(COMPLETED).withProcessed(250).withDeleted(248).withFailed(2));
-
-		// Act
-		final var response = webTestClient.get()
-			.uri(builder -> builder.path(PATH_WITH_ID).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "jobId", JOB_ID)))
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody(ErrandPurgeStatus.class)
+			.expectHeader().valueEquals("Location", "/%s/%s/jobs/%s".formatted(MUNICIPALITY_ID, NAMESPACE, JOB_ID))
+			.expectBody(JobResponse.class)
 			.returnResult()
 			.getResponseBody();
 
-		// Verify
-		verify(serviceMock).readPurgeStatus(NAMESPACE, MUNICIPALITY_ID, JOB_ID);
-		verifyNoMoreInteractions(serviceMock);
-
+		// Assert
 		assertThat(response).isNotNull();
-		assertThat(response.getState()).isEqualTo(COMPLETED);
-		assertThat(response.getProcessed()).isEqualTo(250);
-		assertThat(response.getDeleted()).isEqualTo(248);
-		assertThat(response.getFailed()).isEqualTo(2);
+		assertThat(response.getJobId()).isEqualTo(JOB_ID);
+		assertThat(response.getStatus()).isEqualTo(RUNNING);
+		assertThat(response.getType()).isEqualTo(ERRAND_PURGE);
+
+		verify(serviceMock).startPurge(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(ErrandPurgeRequest.class));
+		verifyNoMoreInteractions(serviceMock);
 	}
 
 	@Test
 	void stopPurge() {
 
 		// Arrange
-		when(serviceMock.stopPurge(NAMESPACE, MUNICIPALITY_ID, JOB_ID)).thenReturn(status(STOPPED));
+		when(serviceMock.stopPurge(NAMESPACE, MUNICIPALITY_ID, JOB_ID)).thenReturn(job(STOPPED));
 
 		// Act
-		final var response = webTestClient.delete()
+		final var response = webTestClient.method(org.springframework.http.HttpMethod.DELETE)
 			.uri(builder -> builder.path(PATH_WITH_ID).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "jobId", JOB_ID)))
 			.exchange()
 			.expectStatus().isAccepted()
-			.expectBody(ErrandPurgeStatus.class)
+			.expectBody(JobResponse.class)
 			.returnResult()
 			.getResponseBody();
 
-		// Verify
+		// Assert
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(STOPPED);
+
 		verify(serviceMock).stopPurge(NAMESPACE, MUNICIPALITY_ID, JOB_ID);
 		verifyNoMoreInteractions(serviceMock);
-
-		assertThat(response).isNotNull();
-		assertThat(response.getState()).isEqualTo(STOPPED);
 	}
 
-	private static ErrandPurgeStatus status(final PurgeState state) {
-		return ErrandPurgeStatus.create()
+	private static JobResponse job(final JobStatus status) {
+		return JobResponse.create()
 			.withJobId(JOB_ID)
-			.withNamespace(NAMESPACE)
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withOlderThan(OffsetDateTime.parse("2024-08-28T00:00:00+02:00"))
-			.withDryRun(true)
-			.withState(state);
+			.withType(ERRAND_PURGE)
+			.withStatus(status)
+			.withTotal(1000)
+			.withProcessed(0)
+			.withProgress(0)
+			.withCreated(OffsetDateTime.now(systemDefault()));
 	}
 }
