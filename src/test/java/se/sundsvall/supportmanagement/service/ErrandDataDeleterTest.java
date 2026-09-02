@@ -21,6 +21,7 @@ import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -87,20 +89,21 @@ class ErrandDataDeleterTest {
 	}
 
 	@Test
-	@DisplayName("Verification that an unreachable conversation service does not keep the rest of the errand in place")
-	void deleteRelatedDataWhenConversationServiceFails() {
+	@DisplayName("Verification that a failing conversation removal is reported rather than swallowed, since what reaches here is a database write that has already doomed the transaction the removal runs in")
+	void deleteRelatedDataWhenConversationRemovalFails() {
 		final var entity = errandEntity();
+		final var attachmentIds = List.of("attachmentId");
 
-		doThrow(new RuntimeException("Conversation service down")).when(conversationServiceMock).deleteByErrandId(any());
-		when(notesClientMock.findNotes(anyString(), any(), any(), anyString(), any(), any(), anyInt(), anyInt()))
-			.thenReturn(new FindNotesResponse().notes(emptyList()));
+		doThrow(new RuntimeException("Could not remove conversations")).when(conversationServiceMock).deleteByErrandId(any());
 
-		assertThatNoException().isThrownBy(() -> deleter.deleteRelatedData(entity, List.of("attachmentId")));
+		assertThatThrownBy(() -> deleter.deleteRelatedData(entity, attachmentIds))
+			.isInstanceOf(RuntimeException.class)
+			.hasMessage("Could not remove conversations");
 
-		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(ERRAND_NUMBER, NAMESPACE, MUNICIPALITY_ID);
-		verify(attachmentRepositoryMock).deleteById("attachmentId");
-		verify(subscriberNotificationRepositoryMock).deleteAllByErrandId(ERRAND_ID);
-		verify(handoverIdempotencyRepositoryMock).deleteAllBySourceErrandIdOrNewErrandId(ERRAND_ID, ERRAND_ID);
+		// Carrying on would remove the rest of the errand for a transaction that cannot commit, and answer the caller
+		// with a removal that never happened.
+		verifyNoInteractions(communicationServiceMock, attachmentRepositoryMock, notesClientMock,
+			subscriberNotificationRepositoryMock, handoverIdempotencyRepositoryMock);
 	}
 
 	@Test

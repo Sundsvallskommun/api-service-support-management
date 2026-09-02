@@ -1,0 +1,28 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-notes/2281/notes",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"meta": {
+				"page": 1,
+				"limit": 100,
+				"count": 0,
+				"totalRecords": 0,
+				"totalPages": 0
+			},
+			"notes": []
+		},
+		"status": 200
+	},
+	"name": "api-notes-findNotes"
+}

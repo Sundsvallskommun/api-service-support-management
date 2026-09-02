@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Errands in namespace 'NAMESPACE-2506' for municipality with id '2506' are under access control and cannot be purged"
+}

@@ -43,13 +43,23 @@ scheduler:
     shedlock-lock-at-most-for: PT15M
     maximum-execution-time: PT5M
     batch-size: 250
+  job:
+    name: maintain_jobs
+    # Hourly. What the sweep looks for is a job that has been quiet for days, so asking more often than that finds the
+    # same nothing over and over - and an hour is neither here nor there next to the patience it is measured against.
+    cron: 0 0 * * * *
+    shedlock-lock-at-most-for: PT4M
+    maximum-execution-time: PT2M
 errand:
   # Settings for the retention purge. Documented in ErrandPurgeProperties, which is where the defaults live.
   purge:
     minimum-age: P2Y
     batch-size: 250
-    job-retention: PT24H
     max-concurrent-runs: 2
+job:
+  # Settings for the job table every long running piece of work reports against. Documented in JobProperties, which is
+  # where the defaults live. Jobs are kept: a purge leaves one row behind, and that row is the lasting record of it.
+  stale-after: P3D
 integration:
   accessmapper:
     connectTimeout: 5
