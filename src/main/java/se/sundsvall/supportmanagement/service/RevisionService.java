@@ -33,6 +33,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
@@ -135,6 +136,24 @@ public class RevisionService {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.REVISION, LR);
 
 		return RevisionMapper.toRevisions(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(namespace, municipalityId, errandId));
+	}
+
+	/**
+	 * Removes every revision of an errand.
+	 * <p>
+	 * A revision holds a full serialized snapshot of the errand it belongs to, so a removal that left them behind would
+	 * keep a complete copy of everything it set out to remove. No access check is made here: the callers are the errand
+	 * delete, which has already authorized its caller, and the purge, which runs on a cutoff with no caller at all.
+	 *
+	 * @param namespace      namespace of the errand.
+	 * @param municipalityId id of the municipality of the errand.
+	 * @param errandId       id of the errand to remove the revisions of.
+	 */
+	@Transactional
+	public void deleteErrandRevisions(final String namespace, final String municipalityId, final String errandId) {
+		final var removed = revisionRepository.deleteAllByNamespaceAndMunicipalityIdAndEntityId(namespace, municipalityId, errandId);
+
+		LOG.debug("Removed {} revisions for errand {} in namespace {} for municipality {}", removed, sanitizeForLogging(errandId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 	}
 
 	/**

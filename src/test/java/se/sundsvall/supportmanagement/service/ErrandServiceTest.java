@@ -1,8 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
-import generated.se.sundsvall.notes.FindNotesResponse;
-import generated.se.sundsvall.notes.Note;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.List;
@@ -41,16 +39,17 @@ import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
@@ -71,6 +70,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -120,19 +120,10 @@ class ErrandServiceTest {
 	private EventService eventServiceMock;
 
 	@Mock
-	private CommunicationService communicationServiceMock;
-
-	@Mock
 	private ErrandAttachmentService errandAttachmentServiceMock;
 
 	@Mock
-	private NotesClient notesClientMock;
-
-	@Mock
-	private ConversationService conversationServiceMock;
-
-	@Mock
-	private AttachmentRepository attachmentRepositoryMock;
+	private ErrandDataDeleter errandDataDeleterMock;
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
@@ -493,60 +484,104 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
 		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(List.of(errandAttachment));
-		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
-			.thenReturn(new FindNotesResponse().notes(List.of(new Note().id("id"))));
 
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
-		verify(conversationServiceMock).deleteByErrandId(same(entity));
-		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000);
-		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "id");
-		verify(errandRepositoryMock).deleteById(ERRAND_ID);
-		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(entity.getErrandNumber(), entity.getNamespace(), entity.getMunicipalityId());
 		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
-		verify(attachmentRepositoryMock).deleteById(errandAttachment.getId());
+		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(List.of("id")));
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 	}
 
 	@Test
-	@DisplayName("Verification that delete still proceeds when notesClient cleanup throws — errand row must be removed")
-	void deleteErrand_whenNotesClientFails_errandIsStillDeleted() {
+	@DisplayName("Verification that a delete removes the revisions of the errand, and reads the latest one first since the event it writes points at it")
+	void deleteErrandRemovesRevisions() {
 		final var entity = buildErrandEntity();
-		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
-		Identifier.set(user);
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
 		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
-		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
-			.thenThrow(new RuntimeException("Notes service down"));
 
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
-		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		final var inOrder = inOrder(revisionServiceMock, errandRepositoryMock);
+		inOrder.verify(revisionServiceMock).getLatestErrandRevision(same(entity));
+		inOrder.verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		inOrder.verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 	}
 
 	@Test
-	@DisplayName("Verification that delete still proceeds when conversation-cleanup throws — errand row must be removed")
-	void deleteErrand_whenConversationServiceFails_errandIsStillDeleted() {
+	@DisplayName("Verification that delete still removes the errand row when the event log is unreachable")
+	void deleteErrandWhenEventLogFailsErrandIsStillDeleted() {
 		final var entity = buildErrandEntity();
-		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
-		Identifier.set(user);
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
 		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
-		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 1000))
-			.thenReturn(new FindNotesResponse().notes(emptyList()));
-		doThrow(new RuntimeException("Conversation service down")).when(conversationServiceMock).deleteByErrandId(any());
+		doThrow(new RuntimeException("Event log down")).when(eventServiceMock)
+			.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
+		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(emptyList()));
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that a purge removes the errand, everything belonging to it and its revisions, without an access check and without an event")
+	void purgeErrand() {
+		final var entity = buildErrandEntity();
+
+		when(errandRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		final var removed = service.purgeErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThat(removed).isTrue();
+		verify(errandRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(emptyList()));
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verifyNoInteractions(eventServiceMock, accessControlServiceMock, errandAttachmentServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a purge passes the attachments of the errand on without reading them through the access check")
+	void purgeErrandWithAttachments() {
+		final var entity = buildErrandEntity()
+			.withAttachments(List.of(AttachmentEntity.create().withId("attachmentId")));
+
+		when(errandRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		final var removed = service.purgeErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThat(removed).isTrue();
+		verify(errandRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(List.of("attachmentId")));
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an errand already gone is left alone rather than treated as an error, since that is the outcome the purge wanted")
+	void purgeErrandThatIsAlreadyGone() {
+		when(errandRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		final var removed = service.purgeErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThat(removed).isFalse();
+		verify(errandRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock, never()).deleteById(any());
+		verifyNoInteractions(errandDataDeleterMock, revisionServiceMock, eventServiceMock, accessControlServiceMock);
 	}
 
 	@Test
@@ -565,6 +600,113 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, LR);
 		verify(errandRepositoryMock).count(ArgumentMatchers.<Specification<ErrandEntity>>any());
+	}
+
+	@Test
+	void expandLabelsToAncestorChain_leafExpandsToFullChain() {
+		final var leafId = "leaf-id";
+		final var parentId = "parent-id";
+		final var childId = "child-id";
+
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(leafId)))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
+
+		service.expandLabelsToAncestorChain(errandEntity);
+
+		assertThat(errandEntity.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactlyInAnyOrder(leafId, parentId, childId);
+
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(leafId));
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
+	}
+
+	@Test
+	void expandLabelsToAncestorChain_partialChainExpandsCorrectly() {
+		final var leafId = "leaf-id";
+		final var parentId = "parent-id";
+		final var childId = "child-id";
+
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(
+				ErrandLabelEmbeddable.create().withMetadataLabelId(parentId),
+				ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(parentId, leafId)))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
+
+		service.expandLabelsToAncestorChain(errandEntity);
+
+		assertThat(errandEntity.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactlyInAnyOrder(parentId, leafId, childId);
+
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, leafId));
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
+	}
+
+	@Test
+	void expandLabelsToAncestorChain_emptyLabels_noRepoInteraction() {
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of());
+
+		service.expandLabelsToAncestorChain(errandEntity);
+
+		assertThat(errandEntity.getLabels()).isEmpty();
+		verifyNoInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	void expandLabelsToAncestorChain_alreadyFullChain_noLabelsAdded() {
+		final var leafId = "leaf-id";
+		final var parentId = "parent-id";
+		final var childId = "child-id";
+
+		final var errandEntity = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(
+				ErrandLabelEmbeddable.create().withMetadataLabelId(parentId),
+				ErrandLabelEmbeddable.create().withMetadataLabelId(childId),
+				ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(parentId, childId, leafId)))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child"),
+				MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
+
+		service.expandLabelsToAncestorChain(errandEntity);
+
+		assertThat(errandEntity.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactlyInAnyOrder(parentId, childId, leafId);
+
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, childId, leafId));
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
 	}
 
 	@ParameterizedTest

@@ -103,8 +103,8 @@ public class ServiceUtil {
 	public static boolean isRequestingUser(final String identifierType, final String identifierValue) {
 		final var user = Identifier.get();
 		return nonNull(user)
-			&& StringUtils.equalsIgnoreCase(identifierType, user.getTypeString())
-			&& StringUtils.equalsIgnoreCase(identifierValue, user.getValue());
+			&& Strings.CI.equals(identifierType, user.getTypeString())
+			&& Strings.CI.equals(identifierValue, user.getValue());
 	}
 
 	public static Identifier getExecutingUser() {

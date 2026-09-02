@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -19,7 +20,8 @@ class StakeholderEntityTest {
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
-			hasValidBeanEquals()));
+			hasValidBeanEquals(),
+			hasValidBeanToStringExcluding("errandEntity")));
 	}
 
 	@Test

@@ -33,4 +33,14 @@ public interface RevisionRepository extends JpaRepository<RevisionEntity, String
 	 * @return          a list of RevisionEntity objects.
 	 */
 	List<RevisionEntity> findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(String namespace, String municipalityId, String entityId);
+
+	/**
+	 * Removes every revision of an errand.
+	 *
+	 * @param  namespace      namespace of the errand.
+	 * @param  municipalityId id of the municipality of the errand.
+	 * @param  entityId       id of the errand.
+	 * @return                the number of removed revisions.
+	 */
+	long deleteAllByNamespaceAndMunicipalityIdAndEntityId(String namespace, String municipalityId, String entityId);
 }

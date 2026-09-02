@@ -3,9 +3,11 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -19,23 +21,23 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Relation;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
-import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
-import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
 
@@ -50,6 +52,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
@@ -77,10 +80,7 @@ public class ErrandService {
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
 	private final ErrandAttachmentService errandAttachmentService;
-	private final CommunicationService communicationService;
-	private final AttachmentRepository attachmentRepository;
-	private final ConversationService conversationService;
-	private final NotesClient notesClient;
+	private final ErrandDataDeleter errandDataDeleter;
 	private final AccessControlService accessControlService;
 	private final RelationClient relationClient;
 	private final MetadataLabelRepository metadataLabelRepository;
@@ -92,14 +92,11 @@ public class ErrandService {
 		final ErrandsRepository repository,
 		final ContactReasonRepository contactReasonRepository,
 		final MeasureValidator measureValidator,
-		final CommunicationService communicationService,
-		final AttachmentRepository attachmentRepository,
 		final RevisionService revisionService,
 		final EventService eventService,
 		final ErrandNumberGeneratorService errandNumberGeneratorService,
 		final ErrandAttachmentService errandAttachmentService,
-		final ConversationService conversationService,
-		final NotesClient notesClient,
+		final ErrandDataDeleter errandDataDeleter,
 		final AccessControlService accessControlService,
 		final RelationClient relationClient,
 		final MetadataLabelRepository metadataLabelRepository,
@@ -110,14 +107,11 @@ public class ErrandService {
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
 		this.measureValidator = measureValidator;
-		this.communicationService = communicationService;
-		this.attachmentRepository = attachmentRepository;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.errandNumberGeneratorService = errandNumberGeneratorService;
 		this.errandAttachmentService = errandAttachmentService;
-		this.conversationService = conversationService;
-		this.notesClient = notesClient;
+		this.errandDataDeleter = errandDataDeleter;
 		this.accessControlService = accessControlService;
 		this.relationClient = relationClient;
 		this.metadataLabelRepository = metadataLabelRepository;
@@ -145,6 +139,7 @@ public class ErrandService {
 		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
 		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errandEntity.getStatus());
 
+		expandLabelsToAncestorChain(errandEntity);
 		computeAndSetAccessLabels(errandEntity);
 		final var persistedEntity = repository.save(errandEntity);
 		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
@@ -220,6 +215,7 @@ public class ErrandService {
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
 
 		if (errand.getLabels() != null) {
+			expandLabelsToAncestorChain(errandEntity);
 			computeAndSetAccessLabels(errandEntity);
 		}
 		final var entity = repository.saveAndFlush(errandEntity);
@@ -256,30 +252,17 @@ public class ErrandService {
 		}
 		validateIfMatch(ifMatch, entity.getVersion());
 
-		try {
-			conversationService.deleteByErrandId(entity);
-		} catch (final Exception e) {
-			final var sanitizedId = sanitizeForLogging(id);
-			LOG.warn("Failed to delete conversations for errand {}: {}", sanitizedId, e.getMessage());
-		}
-
-		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber(), entity.getNamespace(), entity.getMunicipalityId());
-		errandAttachmentService.readErrandAttachments(namespace, municipalityId, id)
-			.forEach(attachment -> attachmentRepository.deleteById(attachment.getId()));
-
-		try {
-			final var notes = notesClient.findNotes(municipalityId, null, null, id, null, null, 1, 1000);
-			notes.getNotes().forEach(note -> notesClient.deleteNoteById(municipalityId, note.getId()));
-		} catch (final Exception e) {
-			final var sanitizedId = sanitizeForLogging(id);
-			LOG.warn("Failed to delete notes for errand {}: {}", sanitizedId, e.getMessage());
-		}
-
-		// Delete errand
-		repository.deleteById(id);
-
-		// Create a log event
+		// Read before the removal, which takes the revisions with it, since the event written at the end of this method
+		// points at the latest one. The event outlives the revision it names, which is the accepted cost of not keeping a
+		// full snapshot of a deleted errand.
 		final var latestRevision = revisionService.getLatestErrandRevision(entity);
+
+		// Attachments are read through the attachment service rather than off the entity, so that the access check
+		// guarding them applies to a caller deleting them along with the errand.
+		removeErrand(entity, errandAttachmentService.readErrandAttachments(namespace, municipalityId, id).stream()
+			.map(ErrandAttachment::getId)
+			.toList());
+
 		try {
 			eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 		} catch (final Exception e) {
@@ -288,11 +271,116 @@ public class ErrandService {
 		}
 	}
 
+	/**
+	 * Removes an errand that has passed its retention period, along with everything belonging to it.
+	 * <p>
+	 * Called by the purge, which runs on a cutoff rather than on behalf of a caller, and therefore differs from
+	 * {@link #deleteErrand(String, String, String, String)} on two points. There is no user to authorize, so no access
+	 * check is made. And no event is written: an event per removed errand would cost a remote call for every one of them
+	 * and would leave behind a record of the very errand the purge exists to remove. What is removed is the same in both
+	 * cases, and is held in {@link #removeErrand(ErrandEntity, List)}.
+	 * <p>
+	 * Runs in a transaction of its own, so that an errand that cannot be removed neither rolls back the errands already
+	 * removed nor stops the run. An errand that is already gone is not an error - it is the outcome the purge wanted -
+	 * but it was not this call that removed it, which is what the answer distinguishes. That matters for the counters of
+	 * a run: an errand deleted by a caller, or by a second purge on another instance, between the batch being read and
+	 * this call must not be counted as removed twice.
+	 *
+	 * @param  namespace      namespace of the errand.
+	 * @param  municipalityId id of the municipality of the errand.
+	 * @param  id             id of the errand to remove.
+	 * @return                true if the errand was there to be removed, false if it was already gone.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	public boolean purgeErrand(final String namespace, final String municipalityId, final String id) {
+		final var entity = repository.findByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId).orElse(null);
+
+		if (isNull(entity)) {
+			return false;
+		}
+
+		// Taken straight off the entity, since a purge runs with no caller to authorize.
+		removeErrand(entity, ofNullable(entity.getAttachments()).orElse(emptyList()).stream()
+			.map(AttachmentEntity::getId)
+			.toList());
+
+		return true;
+	}
+
+	/**
+	 * Removes an errand: everything hanging off it, its revisions and the errand row itself.
+	 * <p>
+	 * Shared by the single errand delete and by the retention purge. The two differ on what surrounds a removal - who is
+	 * authorized, what is logged, which transaction it runs in and where the attachment ids come from - but not on what
+	 * is removed, and holding that in one place is what keeps them from drifting apart.
+	 * <p>
+	 * The revisions go with the errand in both cases, since each of them holds a full serialized snapshot of it and
+	 * leaving them behind would keep a complete copy of what the removal set out to remove.
+	 *
+	 * @param entity        the errand to remove.
+	 * @param attachmentIds ids of the attachments to remove along with it.
+	 */
+	private void removeErrand(final ErrandEntity entity, final List<String> attachmentIds) {
+		errandDataDeleter.deleteRelatedData(entity, attachmentIds);
+
+		revisionService.deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+
+		repository.deleteById(entity.getId());
+	}
+
 	@Transactional(readOnly = true)
 	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);
+	}
+
+	void expandLabelsToAncestorChain(final ErrandEntity errandEntity) {
+		var currentIds = ofNullable(errandEntity.getLabels()).orElse(emptyList()).stream()
+			.map(ErrandLabelEmbeddable::getMetadataLabelId)
+			.collect(Collectors.toSet());
+
+		if (currentIds.isEmpty()) {
+			return;
+		}
+
+		var ancestorPaths = metadataLabelRepository.findAllById(currentIds).stream()
+			.map(MetadataLabelEntity::getResourcePath)
+			.flatMap(path -> ancestorResourcePaths(path).stream())
+			.collect(Collectors.toSet());
+
+		if (ancestorPaths.isEmpty()) {
+			return;
+		}
+
+		var missingAncestors = metadataLabelRepository
+			.findByNamespaceAndMunicipalityIdAndResourcePathIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ancestorPaths)
+			.stream()
+			.filter(a -> !currentIds.contains(a.getId()))
+			.map(a -> ErrandLabelEmbeddable.create().withMetadataLabelId(a.getId()))
+			.toList();
+
+		if (missingAncestors.isEmpty()) {
+			return;
+		}
+
+		var expanded = new ArrayList<>(errandEntity.getLabels());
+		expanded.addAll(missingAncestors);
+		errandEntity.setLabels(expanded);
+	}
+
+	private static Set<String> ancestorResourcePaths(final String resourcePath) {
+		var parts = resourcePath.split("/");
+		var paths = new HashSet<String>();
+		var sb = new StringBuilder();
+		for (int i = 0; i < parts.length - 1; i++) {
+			if (i > 0) {
+				sb.append("/");
+			}
+			sb.append(parts[i]);
+			paths.add(sb.toString());
+		}
+		return paths;
 	}
 
 	private void computeAndSetAccessLabels(final ErrandEntity errandEntity) {
