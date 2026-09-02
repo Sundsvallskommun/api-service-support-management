@@ -75,6 +75,7 @@ class MetadataLabelEntityTest {
 		final var resourceName = "resourceName";
 		final var resourcePath = "resourcePath";
 		final var deprecated = true;
+		final var version = 1L;
 
 		final var entity = MetadataLabelEntity.create()
 			.withClassification(classification)
@@ -88,7 +89,8 @@ class MetadataLabelEntityTest {
 			.withNamespace(namespace)
 			.withParent(parent)
 			.withResourceName(resourceName)
-			.withResourcePath(resourcePath);
+			.withResourcePath(resourcePath)
+			.withVersion(version);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getClassification()).isEqualTo(classification);
@@ -103,6 +105,7 @@ class MetadataLabelEntityTest {
 		assertThat(entity.getParent()).isEqualTo(parent);
 		assertThat(entity.getResourceName()).isEqualTo(resourceName);
 		assertThat(entity.getResourcePath()).isEqualTo(resourcePath);
+		assertThat(entity.getVersion()).isEqualTo(version);
 	}
 
 	@Test

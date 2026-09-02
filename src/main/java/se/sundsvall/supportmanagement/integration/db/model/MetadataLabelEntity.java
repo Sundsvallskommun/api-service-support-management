@@ -14,6 +14,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -53,6 +54,10 @@ public class MetadataLabelEntity {
 	@UuidGenerator
 	@Column(name = "id")
 	private String id;
+
+	@Version
+	@Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+	private Long version;
 
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
@@ -117,6 +122,19 @@ public class MetadataLabelEntity {
 
 	public MetadataLabelEntity withId(String id) {
 		this.id = id;
+		return this;
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
+	}
+
+	public MetadataLabelEntity withVersion(Long version) {
+		this.version = version;
 		return this;
 	}
 
@@ -370,8 +388,8 @@ public class MetadataLabelEntity {
 
 	@Override
 	public String toString() {
-		return "MetadataLabelEntity [id=" + id + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", classification=" + classification + ", displayName=" + displayName + ", deprecated=" + deprecated + ", resourceName=" + resourceName
-			+ ", resourcePath=" + resourcePath
+		return "MetadataLabelEntity [id=" + id + ", version=" + version + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", classification=" + classification + ", displayName=" + displayName + ", deprecated=" + deprecated
+			+ ", resourceName=" + resourceName + ", resourcePath=" + resourcePath
 			+ ", created=" + created + ", modified=" + modified + ", parent.id=" + (parent != null ? parent.id : null) + ", metadataLabels=" + metadataLabels + "]";
 	}
 }

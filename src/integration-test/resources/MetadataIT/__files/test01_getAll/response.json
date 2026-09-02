@@ -102,7 +102,8 @@
 				"resourcePath": "LABEL-2",
 				"resourceName": "CATEGORY-2",
 				"labels": [],
-				"deprecated": false
+				"deprecated": false,
+				"version": 0
 			},
 			{
 				"id": "5940c8c8-d84a-4144-b650-313356ad1333",
@@ -111,7 +112,8 @@
 				"resourcePath": "LABEL-1",
 				"resourceName": "CATEGORY-1",
 				"labels": [],
-				"deprecated": false
+				"deprecated": false,
+				"version": 0
 			},
 			{
 				"id": "a8fe832f-77a7-4906-9a97-ac5cbd73dbe7",
@@ -144,7 +146,8 @@
 								"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3",
 								"resourceName": "SUBTYPE-3",
 								"labels": [],
-								"deprecated": false
+								"deprecated": false,
+								"version": 0
 							},
 							{
 								"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
@@ -160,7 +163,8 @@
 										"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2",
 										"resourceName": "DEEPSUBTYPE-2",
 										"labels": [],
-										"deprecated": false
+										"deprecated": false,
+										"version": 0
 									},
 									{
 										"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907",
@@ -169,13 +173,16 @@
 										"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1",
 										"resourceName": "DEEPSUBTYPE-1",
 										"labels": [],
-										"deprecated": false
+										"deprecated": false,
+										"version": 0
 									}
 								],
-								"deprecated": false
+								"deprecated": false,
+								"version": 0
 							}
 						],
-						"deprecated": false
+						"deprecated": false,
+						"version": 0
 					},
 					{
 						"id": "cd99569f-6b6d-4d7a-b04c-9ae528be8258",
@@ -191,7 +198,8 @@
 								"resourcePath": "CATEGORY-1/TYPE-1/SUBTYPE-2",
 								"resourceName": "SUBTYPE-2",
 								"labels": [],
-								"deprecated": false
+								"deprecated": false,
+								"version": 0
 							},
 							{
 								"id": "8d0ac81c-9c56-43b7-95cd-fa3c3592666d",
@@ -200,13 +208,16 @@
 								"resourcePath": "CATEGORY-1/TYPE-1/SUBTYPE-1",
 								"resourceName": "SUBTYPE-1",
 								"labels": [],
-								"deprecated": false
+								"deprecated": false,
+								"version": 0
 							}
 						],
-						"deprecated": false
+						"deprecated": false,
+						"version": 0
 					}
 				],
-				"deprecated": false
+				"deprecated": false,
+				"version": 0
 			}
 		]
 	},

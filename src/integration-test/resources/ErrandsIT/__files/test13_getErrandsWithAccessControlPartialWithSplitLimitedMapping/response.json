@@ -35,7 +35,8 @@
 					"classification": "CLASS",
 					"displayName": "LEVELTWO-1-DISPLAY-NAME",
 					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-1",
-					"resourceName": "LEVELTWO-1"
+					"resourceName": "LEVELTWO-1",
+					"version": 0
 				}
 			],
 			"activeNotifications": [],

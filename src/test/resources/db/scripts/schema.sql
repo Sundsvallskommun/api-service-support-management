@@ -380,6 +380,7 @@
         created datetime(6),
         modified datetime(6),
         municipality_id varchar(8) not null,
+        version bigint default 0 not null,
         namespace varchar(32) not null,
         classification varchar(255),
         display_name varchar(255),

@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.2"
+  version: "15.3"
 servers:
 - url: http://localhost:65503
   description: Generated server url
@@ -3210,6 +3210,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "412":
+          description: "Precondition Failed — label version mismatch"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -10141,6 +10147,11 @@ components:
           description: Label ID
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        version:
+          type: integer
+          format: int64
+          description: Label version for optimistic concurrency control
+          readOnly: true
         classification:
           type: string
           description: Label classification
@@ -11446,6 +11457,12 @@ components:
           description: Label ID
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        version:
+          type: integer
+          format: int64
+          description: "Label version for optimistic concurrency control. When set,\
+            \ validated against the current version in DB on errand create/update\
+            \ — mismatch yields 412."
         classification:
           type: string
           description: Label classification

@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import se.sundsvall.dept44.support.Relation;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
@@ -52,6 +54,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
@@ -139,6 +142,7 @@ public class ErrandService {
 		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
 		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errandEntity.getStatus());
 
+		validateLabelVersions(errand.getLabels());
 		expandLabelsToAncestorChain(errandEntity);
 		computeAndSetAccessLabels(errandEntity);
 		final var persistedEntity = repository.save(errandEntity);
@@ -215,6 +219,7 @@ public class ErrandService {
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
 
 		if (errand.getLabels() != null) {
+			validateLabelVersions(errand.getLabels());
 			expandLabelsToAncestorChain(errandEntity);
 			computeAndSetAccessLabels(errandEntity);
 		}
@@ -333,6 +338,32 @@ public class ErrandService {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);
+	}
+
+	void validateLabelVersions(final List<ErrandLabel> labels) {
+		var labelsWithVersion = ofNullable(labels).orElse(emptyList()).stream()
+			.filter(label -> label.getVersion() != null)
+			.toList();
+
+		if (labelsWithVersion.isEmpty()) {
+			return;
+		}
+
+		var labelIds = labelsWithVersion.stream().map(ErrandLabel::getId).toList();
+		var currentVersionById = metadataLabelRepository.findAllById(labelIds).stream()
+			.collect(HashMap::new, (m, e) -> m.put(e.getId(), e.getVersion()), HashMap::putAll);
+
+		labelsWithVersion.stream()
+			.filter(label -> {
+				var current = currentVersionById.get(label.getId());
+				return current != null && !current.equals(label.getVersion());
+			})
+			.findFirst()
+			.ifPresent(label -> {
+				throw Problem.valueOf(PRECONDITION_FAILED,
+					"Label with id '%s' has been modified — expected version %d but current version is %d"
+						.formatted(label.getId(), label.getVersion(), currentVersionById.get(label.getId())));
+			});
 	}
 
 	void expandLabelsToAncestorChain(final ErrandEntity errandEntity) {
