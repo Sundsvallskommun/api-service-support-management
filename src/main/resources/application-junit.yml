@@ -138,3 +138,5 @@ scheduler:
     cron: "-"
   attachment-hash:
     cron: "-"
+  job:
+    cron: "-"

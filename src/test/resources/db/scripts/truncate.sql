@@ -63,4 +63,5 @@ TRUNCATE table subscriber_notification_event;
 TRUNCATE table subscriber_notification;
 TRUNCATE table measure;
 TRUNCATE table measure_type;
+TRUNCATE table job;
 SET FOREIGN_KEY_CHECKS = 1;

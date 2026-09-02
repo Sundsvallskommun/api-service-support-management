@@ -58,7 +58,7 @@ class AttachmentHashBatchProcessorPersistenceTest {
 		// Precondition: hashes are null, and capture the expected hash computed from each blob (each in its own tx
 		// so the lazily loaded blob has an open session).
 		final Map<String, String> expectedHashes = new HashMap<>();
-		ATTACHMENT_IDS.forEach(id -> txTemplate.executeWithoutResult(status -> {
+		ATTACHMENT_IDS.forEach(id -> txTemplate.executeWithoutResult(_ -> {
 			final var attachment = attachmentRepository.findById(id).orElseThrow();
 			assertThat(attachment.getHash()).as("precondition: hash should be null for %s", id).isNull();
 			try {
@@ -72,7 +72,7 @@ class AttachmentHashBatchProcessorPersistenceTest {
 		worker.computeHashForAttachmentsWithoutHash();
 
 		// Assert - hash is committed, well-formed and matches the content hash.
-		ATTACHMENT_IDS.forEach(id -> txTemplate.executeWithoutResult(status -> {
+		ATTACHMENT_IDS.forEach(id -> txTemplate.executeWithoutResult(_ -> {
 			final var attachment = attachmentRepository.findById(id).orElseThrow();
 			assertThat(attachment.getHash())
 				.as("persisted hash for %s", id)

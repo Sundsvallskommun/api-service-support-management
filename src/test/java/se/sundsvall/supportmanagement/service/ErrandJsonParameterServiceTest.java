@@ -60,7 +60,7 @@ class ErrandJsonParameterServiceTest {
 	void readJsonParameters() {
 		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"test\"}");
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(key -> true);
+		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(_ -> true);
 
 		final var result = service.readJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
@@ -76,7 +76,7 @@ class ErrandJsonParameterServiceTest {
 	void readJsonParametersEmptyList() {
 		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(new ArrayList<>());
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(key -> true);
+		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(_ -> true);
 
 		final var result = service.readJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
@@ -90,7 +90,7 @@ class ErrandJsonParameterServiceTest {
 	void readJsonParametersNullList() {
 		final var entity = ErrandEntity.create().withId(ERRAND_ID).withJsonParameters(null);
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(key -> true);
+		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(_ -> true);
 
 		final var result = service.readJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
