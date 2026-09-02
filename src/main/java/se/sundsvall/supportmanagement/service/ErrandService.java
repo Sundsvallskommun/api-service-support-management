@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -350,7 +351,7 @@ public class ErrandService {
 
 		var labelIds = labelsWithVersion.stream().map(ErrandLabel::getId).toList();
 		var currentVersionById = metadataLabelRepository.findAllById(labelIds).stream()
-			.collect(Collectors.toMap(MetadataLabelEntity::getId, MetadataLabelEntity::getVersion));
+			.collect(HashMap::new, (m, e) -> m.put(e.getId(), e.getVersion()), HashMap::putAll);
 
 		labelsWithVersion.stream()
 			.filter(label -> {
