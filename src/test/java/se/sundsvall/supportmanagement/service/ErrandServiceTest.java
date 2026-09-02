@@ -35,6 +35,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -61,6 +62,7 @@ import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
@@ -707,6 +709,61 @@ class ErrandServiceTest {
 
 		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, childId, leafId));
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
+	}
+
+	@Test
+	void validateLabelVersions_noVersions_noRepoInteraction() {
+		var labels = List.of(
+			new ErrandLabel().withId("id-1"),
+			new ErrandLabel().withId("id-2"));
+
+		service.validateLabelVersions(labels);
+
+		verifyNoInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	void validateLabelVersions_nullLabels_noRepoInteraction() {
+		service.validateLabelVersions(null);
+
+		verifyNoInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	void validateLabelVersions_versionsMatch_noException() {
+		var labelId = "label-id-1";
+		when(metadataLabelRepositoryMock.findAllById(List.of(labelId)))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(labelId).withVersion(3L)));
+
+		service.validateLabelVersions(List.of(new ErrandLabel().withId(labelId).withVersion(3L)));
+
+		verify(metadataLabelRepositoryMock).findAllById(List.of(labelId));
+	}
+
+	@Test
+	void validateLabelVersions_versionMismatch_throws412() {
+		var labelId = "label-id-1";
+		when(metadataLabelRepositoryMock.findAllById(List.of(labelId)))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(labelId).withVersion(5L)));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.validateLabelVersions(List.of(new ErrandLabel().withId(labelId).withVersion(3L))))
+			.withMessageContaining(labelId)
+			.withMessageContaining("3")
+			.withMessageContaining("5");
+
+		verify(metadataLabelRepositoryMock).findAllById(List.of(labelId));
+	}
+
+	@Test
+	void validateLabelVersions_nullVersionInDb_noException() {
+		var labelId = "label-id-1";
+		when(metadataLabelRepositoryMock.findAllById(List.of(labelId)))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(labelId)));
+
+		service.validateLabelVersions(List.of(new ErrandLabel().withId(labelId).withVersion(1L)));
+
+		verify(metadataLabelRepositoryMock).findAllById(List.of(labelId));
 	}
 
 	@ParameterizedTest
