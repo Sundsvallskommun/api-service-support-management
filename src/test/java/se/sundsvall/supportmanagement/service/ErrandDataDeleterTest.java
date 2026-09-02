@@ -92,10 +92,11 @@ class ErrandDataDeleterTest {
 	@DisplayName("Verification that a failing conversation removal is reported rather than swallowed, since what reaches here is a database write that has already doomed the transaction the removal runs in")
 	void deleteRelatedDataWhenConversationRemovalFails() {
 		final var entity = errandEntity();
+		final var attachmentIds = List.of("attachmentId");
 
 		doThrow(new RuntimeException("Could not remove conversations")).when(conversationServiceMock).deleteByErrandId(any());
 
-		assertThatThrownBy(() -> deleter.deleteRelatedData(entity, List.of("attachmentId")))
+		assertThatThrownBy(() -> deleter.deleteRelatedData(entity, attachmentIds))
 			.isInstanceOf(RuntimeException.class)
 			.hasMessage("Could not remove conversations");
 
