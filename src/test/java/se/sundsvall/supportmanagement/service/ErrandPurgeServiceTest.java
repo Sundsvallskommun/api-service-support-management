@@ -99,6 +99,28 @@ class ErrandPurgeServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that the caller is read on the request thread, which is the only thread carrying one")
+	void startPurgeReadsTheCallerBeforeHandingTheRunOver() {
+		final var handled = new ArrayList<PurgeRun>();
+		final var waiting = new ArrayList<Runnable>();
+		// Takes the run and holds it, the way a pool does with a thread that is not the one the request arrived on.
+		final var service = service(waiting::add);
+		acceptsRuns();
+		doAnswer(invocation -> handled.add(invocation.getArgument(0))).when(workerMock).run(any(PurgeRun.class));
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+
+		service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(false, null));
+
+		// The request is over and its thread carries no identifier any more. Whatever the run is recorded as was settled
+		// while the request was still there to be read - the run itself has nothing left to read.
+		Identifier.remove();
+		waiting.forEach(Runnable::run);
+
+		assertThat(handled).hasSize(1);
+		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
+	}
+
+	@Test
 	@DisplayName("Verification that a run started without an identifier is recorded as such rather than as nobody")
 	void startPurgeWithoutAnIdentifier() {
 		final var handled = new ArrayList<PurgeRun>();
@@ -163,11 +185,11 @@ class ErrandPurgeServiceTest {
 	void stopPurge() {
 		final var service = service(NEVER_RUNS);
 		final var stopped = JobResponse.create().withJobId(JOB_ID);
-		when(jobServiceMock.stop(NAMESPACE, MUNICIPALITY_ID, JOB_ID)).thenReturn(stopped);
+		when(jobServiceMock.stop(NAMESPACE, MUNICIPALITY_ID, JOB_ID, ERRAND_PURGE)).thenReturn(stopped);
 
 		assertThat(service.stopPurge(NAMESPACE, MUNICIPALITY_ID, JOB_ID)).isSameAs(stopped);
 
-		verify(jobServiceMock).stop(NAMESPACE, MUNICIPALITY_ID, JOB_ID);
+		verify(jobServiceMock).stop(NAMESPACE, MUNICIPALITY_ID, JOB_ID, ERRAND_PURGE);
 	}
 
 	/**

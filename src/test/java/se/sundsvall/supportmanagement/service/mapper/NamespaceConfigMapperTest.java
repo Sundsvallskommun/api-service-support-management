@@ -20,7 +20,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 import se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.FIELD;

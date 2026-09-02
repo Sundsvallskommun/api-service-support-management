@@ -1,19 +1,19 @@
 package se.sundsvall.supportmanagement.service.purge;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.config.ErrandPurgeProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.JobService;
@@ -65,7 +65,7 @@ class ErrandPurgeWorkerTest {
 	private ErrandPurgeWorker worker() {
 		if (worker == null) {
 			worker = new ErrandPurgeWorker(errandsRepositoryMock, errandServiceMock, jobServiceMock, namespaceConfigServiceMock,
-				new ErrandPurgeProperties(Period.ofYears(2), BATCH_SIZE, Duration.ofHours(24), 2));
+				new ErrandPurgeProperties(Period.ofYears(2), BATCH_SIZE, 2));
 		}
 		return worker;
 	}
@@ -73,7 +73,7 @@ class ErrandPurgeWorkerTest {
 	@Test
 	@DisplayName("Verification that the number a job reports progress against is the number of errands the run would reach")
 	void countErrandsToPurge() {
-		when(errandsRepositoryMock.count(any(Specification.class))).thenReturn(4711L);
+		when(errandsRepositoryMock.count(anySpecification())).thenReturn(4711L);
 
 		assertThat(worker().countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).isEqualTo(4711);
 	}
@@ -139,7 +139,7 @@ class ErrandPurgeWorkerTest {
 
 		worker().run(run(false, 2));
 
-		verify(errandsRepositoryMock).findBy(any(Specification.class), any());
+		verify(errandsRepositoryMock).findBy(anySpecification(), any());
 		verify(jobServiceMock).complete(JOB_ID, "Removed 2 of 2 errands reached, 0 could not be removed");
 	}
 
@@ -152,7 +152,7 @@ class ErrandPurgeWorkerTest {
 
 		worker().run(run(false, null));
 
-		verify(errandsRepositoryMock).findBy(any(Specification.class), any());
+		verify(errandsRepositoryMock).findBy(anySpecification(), any());
 		verify(jobServiceMock).updateProgress(JOB_ID, 2);
 		verify(jobServiceMock, never()).complete(any(), any());
 		verify(jobServiceMock, never()).fail(any(), any());
@@ -161,7 +161,7 @@ class ErrandPurgeWorkerTest {
 	@Test
 	@DisplayName("Verification that a database that cannot be read ends the job as failed with the reason, rather than throwing on a thread with nobody to catch it")
 	void runWhenReadingErrandsFails() {
-		doThrow(new RuntimeException("Database is unreachable")).when(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
+		doThrow(new RuntimeException("Database is unreachable")).when(errandsRepositoryMock).findBy(anySpecification(), any());
 
 		worker().run(run(false, null));
 
@@ -173,7 +173,7 @@ class ErrandPurgeWorkerTest {
 	void runThatLeavesTheJobRunning() {
 		final var purgeWorker = worker();
 		final var purgeRun = run(false, null);
-		doThrow(new StackOverflowError()).when(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
+		doThrow(new StackOverflowError()).when(errandsRepositoryMock).findBy(anySpecification(), any());
 
 		// Only the run itself is left inside the lambda, so the assertion cannot be met by anything else throwing.
 		assertThatThrownBy(() -> purgeWorker.run(purgeRun)).isInstanceOf(StackOverflowError.class);
@@ -191,7 +191,7 @@ class ErrandPurgeWorkerTest {
 
 		worker().run(run(false, null));
 
-		verify(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
+		verify(errandsRepositoryMock).findBy(anySpecification(), any());
 		verify(jobServiceMock).fail(JOB_ID, "Purge ended after removing 2 errands: access control was switched on for the namespace while it was running");
 		verify(jobServiceMock, never()).complete(any(), any());
 	}
@@ -209,7 +209,7 @@ class ErrandPurgeWorkerTest {
 		for (var index = 1; index < batches.length; index++) {
 			stubbing = stubbing.doReturn(batches[index]);
 		}
-		stubbing.when(errandsRepositoryMock).findBy(any(Specification.class), any(Function.class));
+		stubbing.when(errandsRepositoryMock).findBy(anySpecification(), any());
 	}
 
 	private static List<IdProjection> ids(final String... ids) {
@@ -231,5 +231,13 @@ class ErrandPurgeWorkerTest {
 
 	private static PurgeRun run(final boolean dryRun, final Integer maxErrands) {
 		return new PurgeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, STARTED_BY, new PurgeSettings(OLDER_THAN, dryRun, maxErrands));
+	}
+
+	/**
+	 * Typed rather than raw, since the repository carries several counts and findBys and a matcher has to say which one
+	 * is meant.
+	 */
+	private static Specification<ErrandEntity> anySpecification() {
+		return ArgumentMatchers.any();
 	}
 }
