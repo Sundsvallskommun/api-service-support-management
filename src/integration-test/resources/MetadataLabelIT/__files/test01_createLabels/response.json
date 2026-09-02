@@ -2,7 +2,7 @@
 	"labelStructure": [
 		{
 			"id": "${json-unit.any-string}",
-			"version": "${json-unit.any-number}",
+			"version": 0,
 			"classification": "TOP-LEVEL",
 			"displayName": "Nivå 1",
 			"resourcePath": "RES_1",
@@ -20,7 +20,7 @@
 			"labels": [
 				{
 					"id": "${json-unit.any-string}",
-					"version": "${json-unit.any-number}",
+					"version": 0,
 					"classification": "MIDDLE-LEVEL",
 					"displayName": "Nivå 1.1",
 					"resourcePath": "RES_1/RES_1_1",
@@ -28,7 +28,7 @@
 					"labels": [
 						{
 							"id": "${json-unit.any-string}",
-							"version": "${json-unit.any-number}",
+							"version": 0,
 							"classification": "LOWEST-LEVEL",
 							"displayName": "Nivå 1.1.1",
 							"resourcePath": "RES_1/RES_1_1/RES_1_1_1",
@@ -44,7 +44,7 @@
 						},
 						{
 							"id": "${json-unit.any-string}",
-							"version": "${json-unit.any-number}",
+							"version": 0,
 							"classification": "LOWEST-LEVEL",
 							"displayName": "Nivå 1.1.2",
 							"resourcePath": "RES_1/RES_1_1/RES_1_1_2",

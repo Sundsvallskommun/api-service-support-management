@@ -2,7 +2,7 @@
 	"labelStructure": [
 		{
 			"id": "${json-unit.any-string}",
-			"version": "${json-unit.any-number}",
+			"version": 0,
 			"classification": "CATEGORY",
 			"displayName": "Root A",
 			"resourcePath": "ROOT_A",
@@ -10,7 +10,7 @@
 			"labels": [
 				{
 					"id": "${json-unit.any-string}",
-					"version": "${json-unit.any-number}",
+					"version": 0,
 					"classification": "TYPE",
 					"displayName": "Child A2",
 					"resourcePath": "ROOT_A/CHILD_A2",
@@ -23,7 +23,7 @@
 		},
 		{
 			"id": "${json-unit.any-string}",
-			"version": "${json-unit.any-number}",
+			"version": 0,
 			"classification": "CATEGORY",
 			"displayName": "Root B",
 			"resourcePath": "ROOT_B",

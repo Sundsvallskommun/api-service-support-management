@@ -2,7 +2,7 @@
 	"labelStructure": [
 		{
 			"id": "b1a2c3d4-e5f6-7890-abcd-ef1234567890",
-			"version": "${json-unit.any-number}",
+			"version": 1,
 			"classification": "CATEGORY_A",
 			"displayName": "Updated Label A",
 			"resourcePath": "LABEL_A",
@@ -10,7 +10,7 @@
 			"labels": [
 				{
 					"id": "c2b3d4e5-f6a7-8901-bcde-f12345678901",
-					"version": "${json-unit.any-number}",
+					"version": 1,
 					"classification": "SUB_CLASS_X",
 					"displayName": "Updated Child A1",
 					"resourcePath": "LABEL_A/CHILD_A1",
@@ -20,7 +20,7 @@
 				},
 				{
 					"id": "d3c4e5f6-a7b8-9012-cdef-123456789012",
-					"version": "${json-unit.any-number}",
+					"version": 1,
 					"classification": "SUB_CLASS_Y",
 					"displayName": "Updated Child A2",
 					"resourcePath": "LABEL_A/CHILD_A2",
@@ -33,7 +33,7 @@
 		},
 		{
 			"id": "e4d5f6a7-b8c9-0123-defa-234567890123",
-			"version": "${json-unit.any-number}",
+			"version": 1,
 			"classification": "CATEGORY_B",
 			"displayName": "Updated Label B",
 			"resourcePath": "LABEL_B",
