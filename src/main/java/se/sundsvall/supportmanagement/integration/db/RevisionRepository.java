@@ -4,6 +4,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
 @CircuitBreaker(name = "revisionRepository")
@@ -35,12 +36,16 @@ public interface RevisionRepository extends JpaRepository<RevisionEntity, String
 	List<RevisionEntity> findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(String namespace, String municipalityId, String entityId);
 
 	/**
-	 * Removes every revision of an errand.
+	 * Find the ids of every revision of an errand.
+	 * <p>
+	 * Only the ids are read, and that is the point of the method. A revision holds a full serialized snapshot of the
+	 * errand, so a removal that reads whole revisions before removing any would hold every snapshot of the errand at
+	 * once - which for a long lived errand is more than the heap has to spare.
 	 *
 	 * @param  namespace      namespace of the errand.
 	 * @param  municipalityId id of the municipality of the errand.
 	 * @param  entityId       id of the errand.
-	 * @return                the number of removed revisions.
+	 * @return                the ids of every revision of the errand.
 	 */
-	long deleteAllByNamespaceAndMunicipalityIdAndEntityId(String namespace, String municipalityId, String entityId);
+	List<IdProjection> findIdsByNamespaceAndMunicipalityIdAndEntityId(String namespace, String municipalityId, String entityId);
 }

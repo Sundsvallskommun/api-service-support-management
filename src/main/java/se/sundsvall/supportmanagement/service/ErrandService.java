@@ -262,11 +262,19 @@ public class ErrandService {
 		// full snapshot of a deleted errand.
 		final var latestRevision = revisionService.getLatestErrandRevision(entity);
 
+		// Read for the same reason and at the same moment as the revision above. The removal empties the persistence
+		// context to keep what it reads from filling the heap, which leaves the errand detached, and the event below is
+		// built from its external tags - a collection that can no longer be loaded by then. Held here and put back, so
+		// that a removal which happened is answered for rather than lost to a lazy collection.
+		final var externalTags = List.copyOf(ofNullable(entity.getExternalTags()).orElse(emptyList()));
+
 		// Attachments are read through the attachment service rather than off the entity, so that the access check
 		// guarding them applies to a caller deleting them along with the errand.
 		removeErrand(entity, errandAttachmentService.readErrandAttachments(namespace, municipalityId, id).stream()
 			.map(ErrandAttachment::getId)
 			.toList());
+
+		entity.setExternalTags(externalTags);
 
 		try {
 			eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
