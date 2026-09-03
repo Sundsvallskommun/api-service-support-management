@@ -2,11 +2,14 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.accessmapper.AccessGroup;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -86,13 +89,17 @@ public class AccessMapperService {
 	/**
 	 * Resolves the labels the user reaches at each level. Kept apart per level rather than unioned, since which level a
 	 * label is granted at is what separates an errand the user reads fully from one they only have limited read for.
+	 * <p>
+	 * The levels are resolved together in one read, so that they cannot be answered from three different states of the
+	 * label table - the same reason the three types come out of one answer of the access mapper.
 	 */
 	private Map<Access.AccessLevelEnum, Set<MetadataLabelEntity>> toLabelsByLevel(String namespace, String municipalityId, List<AccessGroup> accessGroups) {
-		final Map<Access.AccessLevelEnum, Set<MetadataLabelEntity>> labelsByLevel = new EnumMap<>(Access.AccessLevelEnum.class);
+		final Map<Access.AccessLevelEnum, List<String>> patternsByLevel = new EnumMap<>(Access.AccessLevelEnum.class);
+		LEVEL_ORDER.forEach(level -> patternsByLevel.put(level, new ArrayList<>()));
 
-		LEVEL_ORDER.forEach(level -> labelsByLevel.put(level, metadataService.patternToLabels(namespace, municipalityId, toPatterns(accessGroups, LABEL_TYPE, List.of(level)))));
+		accessOf(accessGroups, LABEL_TYPE).forEach(access -> patternsByLevel.get(access.getAccessLevel()).add(access.getPattern()));
 
-		return labelsByLevel;
+		return metadataService.patternToLabels(namespace, municipalityId, patternsByLevel);
 	}
 
 	/**
@@ -101,8 +108,9 @@ public class AccessMapperService {
 	 * errands per role.
 	 */
 	private Set<String> toRoles(List<AccessGroup> accessGroups) {
-		return toPatterns(accessGroups, ROLE_TYPE, Arrays.asList(Access.AccessLevelEnum.values())).stream()
-			.map(String::toUpperCase)
+		return accessOf(accessGroups, ROLE_TYPE)
+			.map(Access::getPattern)
+			.map(pattern -> pattern.toUpperCase(Locale.ROOT))
 			.collect(toSet());
 	}
 
@@ -114,11 +122,7 @@ public class AccessMapperService {
 	private Map<ProtectedResource, Access.AccessLevelEnum> toResourceLevels(List<AccessGroup> accessGroups) {
 		final Map<ProtectedResource, Access.AccessLevelEnum> levels = new EnumMap<>(ProtectedResource.class);
 
-		ofNullable(accessGroups).orElse(emptyList()).stream()
-			.flatMap(accessGroup -> ofNullable(accessGroup.getAccessByType()).orElse(emptyList()).stream())
-			.filter(accessType -> RESOURCE_TYPE.equalsIgnoreCase(accessType.getType()))
-			.flatMap(accessType -> ofNullable(accessType.getAccess()).orElse(emptyList()).stream())
-			.filter(access -> nonNull(access.getPattern()) && nonNull(access.getAccessLevel()))
+		accessOf(accessGroups, RESOURCE_TYPE)
 			.forEach(access -> Arrays.stream(ProtectedResource.values())
 				.filter(errandResource -> pathMatcher.match(access.getPattern(), errandResource.getPath()))
 				.forEach(errandResource -> levels.merge(errandResource, access.getAccessLevel(), AccessMapperService::mostPermissive)));
@@ -133,13 +137,18 @@ public class AccessMapperService {
 		return LEVEL_ORDER.indexOf(left) >= LEVEL_ORDER.indexOf(right) ? left : right;
 	}
 
-	private List<String> toPatterns(List<AccessGroup> accessGroups, String type, List<Access.AccessLevelEnum> filter) {
+	/**
+	 * The access entries of sent in type.
+	 * <p>
+	 * Since the request no longer asks the access mapper for one type, this filter is the only thing keeping labels,
+	 * roles and resources apart - a label pattern read as a role would grant access the access mapper never gave.
+	 * Entries carrying no level or no pattern are dropped, as neither can be matched against anything.
+	 */
+	private static Stream<Access> accessOf(List<AccessGroup> accessGroups, String type) {
 		return ofNullable(accessGroups).orElse(emptyList()).stream()
 			.flatMap(accessGroup -> ofNullable(accessGroup.getAccessByType()).orElse(emptyList()).stream())
 			.filter(accessType -> type.equalsIgnoreCase(accessType.getType()))
 			.flatMap(accessType -> ofNullable(accessType.getAccess()).orElse(emptyList()).stream())
-			.filter(access -> filter.contains(access.getAccessLevel()))
-			.map(Access::getPattern)
-			.toList();
+			.filter(access -> nonNull(access.getAccessLevel()) && nonNull(access.getPattern()));
 	}
 }

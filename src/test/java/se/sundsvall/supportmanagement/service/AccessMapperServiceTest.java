@@ -4,6 +4,7 @@ import generated.se.sundsvall.accessmapper.Access;
 import generated.se.sundsvall.accessmapper.AccessGroup;
 import generated.se.sundsvall.accessmapper.AccessType;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -22,9 +23,10 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 
@@ -50,17 +52,41 @@ class AccessMapperServiceTest {
 	private AccessMapperService accessMapperService;
 
 	@Test
-	void getAccessSnapshotResolvesLabelsPerLevel() {
+	void getAccessSnapshotResolvesLabelsPerLevelInOneRead() {
 		when(accessMapperClientMock.getAccessDetails(any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(createAccessGroup())));
-		when(metadataServiceMock.patternToLabels(any(), any(), any())).thenReturn(Set.of(METADATA_LABEL_ENTITY));
+		when(metadataServiceMock.patternToLabels(any(), any(), anyMap())).thenReturn(Map.of(LR, Set.of(METADATA_LABEL_ENTITY), R, Set.of(), RW, Set.of()));
 
 		final var snapshot = accessMapperService.getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER);
 
-		// Kept apart per level, so that a label granted at limited read is not mistaken for one granted at full read.
-		assertThat(snapshot.labelsByLevel()).containsOnlyKeys(LR, R, RW);
-		verify(metadataServiceMock).patternToLabels(NAMESPACE, MUNICIPALITY_ID, List.of(ACCESS_PATTERN_LR));
-		verify(metadataServiceMock).patternToLabels(NAMESPACE, MUNICIPALITY_ID, List.of(ACCESS_PATTERN_R));
-		verify(metadataServiceMock).patternToLabels(NAMESPACE, MUNICIPALITY_ID, List.of(ACCESS_PATTERN_RW));
+		// Kept apart per level, so that a label granted at limited read is not mistaken for one granted at full read,
+		// but resolved together so that the levels cannot be answered from different states of the label table.
+		assertThat(snapshot.labels(List.of(LR))).containsExactly(METADATA_LABEL_ENTITY);
+		assertThat(snapshot.labels(List.of(R, RW))).isEmpty();
+		verify(metadataServiceMock).patternToLabels(NAMESPACE, MUNICIPALITY_ID, Map.of(
+			LR, List.of(ACCESS_PATTERN_LR),
+			R, List.of(ACCESS_PATTERN_R),
+			RW, List.of(ACCESS_PATTERN_RW)));
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void getAccessSnapshotDropsAccessCarryingNoLevelOrNoPattern() {
+		final var accessGroups = List.of(new AccessGroup().accessByType(List.of(
+			new AccessType().type("label").access(List.of(new Access().pattern("no-level"), new Access().accessLevel(R).pattern(ACCESS_PATTERN_R))),
+			new AccessType().type("role").access(List.of(new Access().accessLevel(R), new Access().accessLevel(R).pattern("case_officer"))),
+			new AccessType().type("resource").access(List.of(new Access().pattern("errand"))))));
+		when(accessMapperClientMock.getAccessDetails(any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(accessGroups)));
+		when(metadataServiceMock.patternToLabels(any(), any(), anyMap())).thenReturn(Map.of(LR, Set.of(), R, Set.of(METADATA_LABEL_ENTITY), RW, Set.of()));
+
+		final var snapshot = accessMapperService.getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER);
+
+		// Neither can be matched against anything, and one of them would take the whole snapshot down with it.
+		assertThat(snapshot.roles()).containsExactly("CASE_OFFICER");
+		assertThat(snapshot.resources()).isEmpty();
+		verify(metadataServiceMock).patternToLabels(NAMESPACE, MUNICIPALITY_ID, Map.of(
+			LR, List.of(),
+			R, List.of(ACCESS_PATTERN_R),
+			RW, List.of()));
 	}
 
 	@Test
@@ -70,7 +96,7 @@ class AccessMapperServiceTest {
 			new AccessType().type("role").access(List.of(new Access().accessLevel(R).pattern("case_officer"))),
 			new AccessType().type("resource").access(List.of(new Access().accessLevel(R).pattern("errand"))))));
 		when(accessMapperClientMock.getAccessDetails(any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(accessGroups)));
-		when(metadataServiceMock.patternToLabels(any(), any(), any())).thenReturn(Set.of(METADATA_LABEL_ENTITY));
+		when(metadataServiceMock.patternToLabels(any(), any(), anyMap())).thenReturn(Map.of(LR, Set.of(), R, Set.of(METADATA_LABEL_ENTITY), RW, Set.of()));
 
 		final var snapshot = accessMapperService.getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER);
 
@@ -84,14 +110,14 @@ class AccessMapperServiceTest {
 	@Test
 	void getAccessSnapshotSeparatesLabelsFromRoles() {
 		when(accessMapperClientMock.getAccessDetails(any(), any(), any())).thenReturn(ResponseEntity.of(Optional.of(createAccessGroup("role"))));
-		when(metadataServiceMock.patternToLabels(any(), any(), any())).thenReturn(Set.of());
+		when(metadataServiceMock.patternToLabels(any(), any(), anyMap())).thenReturn(Map.of(LR, Set.of(), R, Set.of(), RW, Set.of()));
 
 		final var snapshot = accessMapperService.getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER);
 
 		assertThat(snapshot.labels(List.of(LR, R, RW))).isEmpty();
 		assertThat(snapshot.roles()).containsExactlyInAnyOrder(ACCESS_PATTERN_R.toUpperCase(), ACCESS_PATTERN_RW.toUpperCase(), ACCESS_PATTERN_LR.toUpperCase());
 		assertThat(snapshot.resources()).isEmpty();
-		verify(metadataServiceMock, times(3)).patternToLabels(NAMESPACE, MUNICIPALITY_ID, List.of());
+		verify(metadataServiceMock).patternToLabels(NAMESPACE, MUNICIPALITY_ID, Map.of(LR, List.of(), R, List.of(), RW, List.of()));
 	}
 
 	@Test

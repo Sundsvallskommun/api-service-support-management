@@ -13,7 +13,8 @@ public class ReporterAccess {
 	private List<ResourceAccess> resources;
 
 	@Valid
-	@Schema(description = "Fields of the errand exposed to its reporter. These widen whatever else applies, whether or not the namespace maps errands per role, since reporting an errand may never reduce what its reporter sees")
+	@Schema(
+		description = "Fields of the errand exposed to its reporter. These are unioned with whatever the labels of the reporter grant them for that errand, whether or not the namespace maps errands per role, so that holding limited read never shows a reporter less. On an errand no label of theirs reaches, these fields are all they see, and may be kept narrower than limitedReadAccess")
 	private List<FieldAccess> fields;
 
 	public static ReporterAccess create() {
