@@ -22,6 +22,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -90,7 +91,7 @@ class AccessMapperServiceTest {
 		assertThat(snapshot.labels(List.of(LR, R, RW))).isEmpty();
 		assertThat(snapshot.roles()).containsExactlyInAnyOrder(ACCESS_PATTERN_R.toUpperCase(), ACCESS_PATTERN_RW.toUpperCase(), ACCESS_PATTERN_LR.toUpperCase());
 		assertThat(snapshot.resources()).isEmpty();
-		verify(metadataServiceMock, org.mockito.Mockito.times(3)).patternToLabels(NAMESPACE, MUNICIPALITY_ID, List.of());
+		verify(metadataServiceMock, times(3)).patternToLabels(NAMESPACE, MUNICIPALITY_ID, List.of());
 	}
 
 	@Test

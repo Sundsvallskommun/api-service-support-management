@@ -119,43 +119,13 @@ public class AccessControlService {
 		final var namespaceRoles = config.isRoleBasedMapping() ? access.roles() : Set.<String>of();
 
 		return errandEntity -> {
-			final var applicable = new ArrayList<FieldAccess>();
 			final var reporter = isReporter(adAccount, errandEntity);
-			final var fullyCovered = covers(fullReadLabelIds, errandEntity);
-
-			// Anyone but the reporter holding an errand their labels do not cover fully was granted limited read for it,
-			// since nothing else would have returned it to them at all. The reporter reaches their own errand either way,
-			// so only there do the labels have to be asked whether limited read is what actually applies.
-			final var limited = !fullyCovered && (!reporter || covers(readableLabelIds, errandEntity));
-
-			// What is left is the reporter of an errand no label of theirs reaches, held to the reporter fields alone.
-			final var reporterOnly = !fullyCovered && !limited;
-
-			var restricted = limited || reporterOnly;
-
-			if (limited) {
-				applicable.addAll(ofNullable(config.getLimitedReadAccess()).map(LimitedReadAccess::getFields).orElse(emptyList()));
-			} else if (!reporterOnly) {
-				final var matchedRestrictions = ofNullable(config.getRoleFieldRestrictions()).orElse(emptyList()).stream()
-					.filter(restriction -> nonNull(restriction.getRole()) && namespaceRoles.contains(restriction.getRole().toUpperCase()))
-					.toList();
-
-				restricted = !matchedRestrictions.isEmpty();
-				matchedRestrictions.forEach(restriction -> applicable.addAll(ofNullable(restriction.getFields()).orElse(emptyList())));
-			}
+			final var coverage = coverageOf(fullReadLabelIds, readableLabelIds, errandEntity, reporter);
+			final var applicable = restrictedFields(config, coverage, namespaceRoles);
 
 			// Reporter fields widen a restriction, they never introduce one.
-			if (!restricted) {
+			if (isNull(applicable)) {
 				return null;
-			}
-
-			// An errand that is limited for the user is never returned in full. Nothing resolving here means the namespace
-			// has not said what limited read exposes, and the safe reading of limited is the minimum rather than everything.
-			// Resolved before the reporter fields are merged in, so that the minimum is a floor the reporter widens rather
-			// than something their own field set replaces - otherwise a namespace granting the reporter a single field
-			// would show them less of their own errand than any other limited read user sees.
-			if (limited && applicable.isEmpty()) {
-				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
 			}
 
 			if (reporter) {
@@ -165,16 +135,95 @@ public class AccessControlService {
 			// Here the reporter fields stand on their own rather than on top of a limited read, so the minimum is applied
 			// after them instead of before: a namespace saying what its reporters see may keep that narrower than limited
 			// read, while one saying nothing at all falls back to the minimum rather than to an errand carrying no fields.
-			if (reporterOnly && applicable.isEmpty()) {
+			if (Coverage.REPORTER_ONLY == coverage && applicable.isEmpty()) {
 				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
 			}
 
-			return applicable.stream().collect(Collectors.toMap(
-				FieldAccess::getField,
-				fieldAccess -> new LinkedHashSet<>(ofNullable(fieldAccess.getKeys()).orElse(emptyList())),
-				AccessControlService::mergeKeys,
-				LinkedHashMap::new));
+			return toFields(applicable);
 		};
+	}
+
+	/**
+	 * The three ways a user may hold an errand, since each of them answers with a field set of its own.
+	 */
+	private enum Coverage {
+		/** The labels of the user cover the errand at read or read/write. */
+		FULL,
+		/** Their labels reach the errand, but only at limited read. */
+		LIMITED,
+		/** No label of theirs reaches the errand, which leaves its reporter holding it as its reporter alone. */
+		REPORTER_ONLY
+	}
+
+	/**
+	 * Settles how the user holds sent in errand.
+	 * <p>
+	 * Anyone but the reporter holding an errand their labels do not cover fully was granted limited read for it, since
+	 * nothing else would have returned it to them at all. The reporter reaches their own errand either way, so only there
+	 * do the labels have to be asked whether limited read is what actually applies.
+	 */
+	private static Coverage coverageOf(Set<String> fullReadLabelIds, Set<String> readableLabelIds, ErrandEntity errandEntity, boolean reporter) {
+		if (covers(fullReadLabelIds, errandEntity)) {
+			return Coverage.FULL;
+		}
+
+		return !reporter || covers(readableLabelIds, errandEntity) ? Coverage.LIMITED : Coverage.REPORTER_ONLY;
+	}
+
+	/**
+	 * The fields sent in coverage restricts the errand to, before any reporter fields widen them. Null means nothing
+	 * restricts the user, and an empty list that the restriction is carried by the reporter fields alone.
+	 *
+	 * @param  config         namespace configuration
+	 * @param  coverage       how the user holds the errand
+	 * @param  namespaceRoles roles the user holds, empty unless the namespace maps errands per role
+	 * @return                fields to restrict to, or null when the errand is not restricted at all
+	 */
+	private static List<FieldAccess> restrictedFields(NamespaceConfig config, Coverage coverage, Set<String> namespaceRoles) {
+		final var applicable = new ArrayList<FieldAccess>();
+
+		switch (coverage) {
+			case REPORTER_ONLY -> {
+				// Limited read was never granted here, so it has nothing to add and the reporter fields stand alone.
+			}
+			case LIMITED -> {
+				applicable.addAll(ofNullable(config.getLimitedReadAccess()).map(LimitedReadAccess::getFields).orElse(emptyList()));
+
+				// An errand that is limited for the user is never returned in full. Nothing resolving here means the
+				// namespace has not said what limited read exposes, and the safe reading of limited is the minimum rather
+				// than everything. Resolved before the reporter fields are merged in, so that the minimum is a floor the
+				// reporter widens rather than something their own field set replaces - otherwise a namespace granting the
+				// reporter a single field would show them less of their own errand than any other limited read user sees.
+				if (applicable.isEmpty()) {
+					applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
+				}
+			}
+			case FULL -> {
+				final var matchedRestrictions = ofNullable(config.getRoleFieldRestrictions()).orElse(emptyList()).stream()
+					.filter(restriction -> nonNull(restriction.getRole()) && namespaceRoles.contains(restriction.getRole().toUpperCase()))
+					.toList();
+
+				if (matchedRestrictions.isEmpty()) {
+					return null;
+				}
+
+				matchedRestrictions.forEach(restriction -> applicable.addAll(ofNullable(restriction.getFields()).orElse(emptyList())));
+			}
+		}
+
+		return applicable;
+	}
+
+	/**
+	 * Collects resolved field grants into the keys readable per field, merging the keys granted for a field more than
+	 * once.
+	 */
+	private static Map<ErrandField, Set<String>> toFields(List<FieldAccess> applicable) {
+		return applicable.stream().collect(Collectors.toMap(
+			FieldAccess::getField,
+			fieldAccess -> new LinkedHashSet<>(ofNullable(fieldAccess.getKeys()).orElse(emptyList())),
+			AccessControlService::mergeKeys,
+			LinkedHashMap::new));
 	}
 
 	/**
