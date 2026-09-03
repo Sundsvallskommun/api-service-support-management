@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+import se.sundsvall.supportmanagement.service.model.AccessSnapshot;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
@@ -83,7 +84,9 @@ public class AccessControlService {
 	 * Fields given to the reporter of an errand union on top of whatever restriction applies, so someone who both reported
 	 * an errand and handles it keeps the fuller view. They never restrict a user nothing else restricts, since reporting an
 	 * errand may not
-	 * reduce what its reporter sees.
+	 * reduce what its reporter sees. A reporter no label of theirs reaches the errand through is held to the reporter
+	 * fields alone, since limited read was never granted to them and so has nothing to add: the two grants are independent,
+	 * and either may be the narrower one.
 	 * <p>
 	 * A null result means no restriction applies at all and the errand is mapped in full, which is what an unrestricted
 	 * role yields. An empty result, in contrast, is a restriction resolving to no fields whatsoever. A limited read never
@@ -104,25 +107,35 @@ public class AccessControlService {
 		}
 
 		final var adAccount = adAccountOf(user);
+		final var access = accessMapperService.getAccessSnapshot(municipalityId, namespace, user);
 
 		// R/RW has precedence over LR, so an errand fully covered by them is not limited for this user.
-		final var fullReadLabelIds = accessMapperService.getAccessibleLabels(municipalityId, namespace, user, List.of(R, RW)).stream()
-			.map(MetadataLabelEntity::getId)
-			.collect(Collectors.toSet());
+		final var fullReadLabelIds = labelIds(access, List.of(R, RW));
 
-		// Roles only select fields, so they are resolved solely for a namespace mapping errands per role.
-		final var namespaceRoles = config.isRoleBasedMapping()
-			? accessMapperService.getAccessibleRoles(municipalityId, namespace, user)
-			: Set.<String>of();
+		// The labels reaching an errand at any level, which is what tells a limited read apart from no label access at all.
+		final var readableLabelIds = labelIds(access, List.of(LR, R, RW));
+
+		// Roles only select fields, so they are consulted solely for a namespace mapping errands per role.
+		final var namespaceRoles = config.isRoleBasedMapping() ? access.roles() : Set.<String>of();
 
 		return errandEntity -> {
 			final var applicable = new ArrayList<FieldAccess>();
-			final var limited = isLimited(fullReadLabelIds, errandEntity);
-			var restricted = limited;
+			final var reporter = isReporter(adAccount, errandEntity);
+			final var fullyCovered = covers(fullReadLabelIds, errandEntity);
+
+			// Anyone but the reporter holding an errand their labels do not cover fully was granted limited read for it,
+			// since nothing else would have returned it to them at all. The reporter reaches their own errand either way,
+			// so only there do the labels have to be asked whether limited read is what actually applies.
+			final var limited = !fullyCovered && (!reporter || covers(readableLabelIds, errandEntity));
+
+			// What is left is the reporter of an errand no label of theirs reaches, held to the reporter fields alone.
+			final var reporterOnly = !fullyCovered && !limited;
+
+			var restricted = limited || reporterOnly;
 
 			if (limited) {
 				applicable.addAll(ofNullable(config.getLimitedReadAccess()).map(LimitedReadAccess::getFields).orElse(emptyList()));
-			} else {
+			} else if (!reporterOnly) {
 				final var matchedRestrictions = ofNullable(config.getRoleFieldRestrictions()).orElse(emptyList()).stream()
 					.filter(restriction -> nonNull(restriction.getRole()) && namespaceRoles.contains(restriction.getRole().toUpperCase()))
 					.toList();
@@ -145,8 +158,15 @@ public class AccessControlService {
 				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
 			}
 
-			if (isReporter(adAccount, errandEntity)) {
+			if (reporter) {
 				applicable.addAll(ofNullable(config.getReporterAccess()).map(ReporterAccess::getFields).orElse(emptyList()));
+			}
+
+			// Here the reporter fields stand on their own rather than on top of a limited read, so the minimum is applied
+			// after them instead of before: a namespace saying what its reporters see may keep that narrower than limited
+			// read, while one saying nothing at all falls back to the minimum rather than to an errand carrying no fields.
+			if (reporterOnly && applicable.isEmpty()) {
+				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
 			}
 
 			return applicable.stream().collect(Collectors.toMap(
@@ -158,13 +178,22 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Signals if the labels of the user fail to cover the errand fully, meaning the access mapper granted them limited read
-	 * for it.
+	 * Signals if sent in labels cover every label of the errand, which is the same question the specification guarding the
+	 * errand asks of the labels at a given level.
 	 */
-	private static boolean isLimited(Set<String> fullReadLabelIds, ErrandEntity errandEntity) {
-		return !fullReadLabelIds.containsAll(ofNullable(errandEntity.getAccessLabels()).orElse(emptyList()).stream()
+	private static boolean covers(Set<String> labelIds, ErrandEntity errandEntity) {
+		return labelIds.containsAll(ofNullable(errandEntity.getAccessLabels()).orElse(emptyList()).stream()
 			.map(AccessLabelEmbeddable::getMetadataLabelId)
 			.collect(Collectors.toSet()));
+	}
+
+	/**
+	 * Ids of the labels sent in access reaches at any of sent in levels.
+	 */
+	private static Set<String> labelIds(AccessSnapshot access, List<Access.AccessLevelEnum> levels) {
+		return access.labels(levels).stream()
+			.map(MetadataLabelEntity::getId)
+			.collect(Collectors.toSet());
 	}
 
 	private static boolean isReporter(String adAccount, ErrandEntity errandEntity) {
@@ -303,7 +332,7 @@ public class AccessControlService {
 			// monotonic, so the stricter clause can never match a row the looser one does not.
 			final var lowestLevel = grantsLimitedReadAccess(config, resource, required) ? LR : fullAccessLevel(required);
 
-			clauses.add(hasAllowedMetadataLabels(accessMapperService.getAccessibleLabels(municipalityId, namespace, user, levelsAtOrAbove(lowestLevel))));
+			clauses.add(hasAllowedMetadataLabels(accessMapperService.getAccessSnapshot(municipalityId, namespace, user).labels(levelsAtOrAbove(lowestLevel))));
 		}
 
 		// Errands reported by the user, which their labels may say nothing at all about.
@@ -339,7 +368,7 @@ public class AccessControlService {
 		if (!config.isResourceAccessControl()) {
 			return true;
 		}
-		return ofNullable(accessMapperService.getAccessibleResources(municipalityId, namespace, user).get(resource))
+		return ofNullable(accessMapperService.getAccessSnapshot(municipalityId, namespace, user).resources().get(resource))
 			.filter(granted -> satisfies(granted, required))
 			.isPresent();
 	}
@@ -435,7 +464,7 @@ public class AccessControlService {
 			return;
 		}
 
-		final var granted = accessMapperService.getAccessibleResources(municipalityId, namespace, Identifier.get()).get(resource);
+		final var granted = accessMapperService.getAccessSnapshot(municipalityId, namespace, Identifier.get()).resources().get(resource);
 
 		if (isNull(granted) || !satisfies(granted, required)) {
 			throw Problem.valueOf(UNAUTHORIZED, RESOURCE_NOT_ACCESSIBLE.formatted(resource, Optional.ofNullable(Identifier.get())
