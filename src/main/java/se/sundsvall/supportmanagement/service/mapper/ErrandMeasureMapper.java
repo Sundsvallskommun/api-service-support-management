@@ -53,7 +53,6 @@ public final class ErrandMeasureMapper {
 		if (measure.hasField(Measure.Field.EXECUTED)) {
 			entity.setExecuted(measure.getExecuted());
 		}
-
 		if (measure.hasField(Measure.Field.GOAL)) {
 			entity.setGoal(measure.getGoal());
 		}

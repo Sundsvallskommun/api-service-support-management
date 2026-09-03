@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import java.util.ArrayList;
 import java.util.List;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
@@ -40,12 +41,25 @@ class OpenApiConfig {
 			for (final var model : List.of(Measure.class, CreateMeasureRequest.class)) {
 				final Schema<?> schema = openApi.getComponents().getSchemas().get(model.getSimpleName());
 				if (schema != null) {
-					final Schema<?> accept = schema.getProperties().get("accept");
-					if (!accept.getEnum().contains(null)) {
-						accept.addEnumItemObject(null);
-					}
+					allowNull(schema.getProperties().get("accept"));
 				}
 			}
 		};
+	}
+
+	/**
+	 * Adds null to the enum of the schema. The enum list springdoc hands over is unmodifiable, so it is replaced rather
+	 * than appended to.
+	 */
+	@SuppressWarnings("unchecked")
+	private static void allowNull(final Schema<?> schema) {
+		final List<Object> values = new ArrayList<>();
+		if (schema.getEnum() != null) {
+			values.addAll(schema.getEnum());
+		}
+		if (!values.contains(null)) {
+			values.add(null);
+			((Schema<Object>) schema).setEnum(values);
+		}
 	}
 }

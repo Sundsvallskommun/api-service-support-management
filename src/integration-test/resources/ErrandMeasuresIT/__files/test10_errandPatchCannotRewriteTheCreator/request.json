@@ -1,0 +1,10 @@
+{
+	"measures": [
+		{
+			"id": "ee000000-0000-0000-0000-000000000100",
+			"type": "MEASURE-1",
+			"addedByUser": "someone-else",
+			"addedByRole": "ROLE-1"
+		}
+	]
+}

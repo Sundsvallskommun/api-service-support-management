@@ -7,10 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
@@ -50,6 +48,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
 
@@ -1840,8 +1839,8 @@ class MetadataServiceTest {
 		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("id", "namespace", "2281")).thenReturn(Optional.of(entity));
 		when(errandsRepositoryMock.existsByNamespaceAndMunicipalityIdAndMeasuresType("namespace", "2281", "TYPE")).thenReturn(true);
 		final var error = assertThrows(ThrowableProblem.class, () -> metadataService.deleteMeasureType("namespace", "2281", "id"));
-		assertThat(error.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-		verify(measureTypeRepositoryMock, Mockito.never()).delete(any(MeasureTypeEntity.class));
+		assertThat(error.getStatus()).isEqualTo(CONFLICT);
+		verify(measureTypeRepositoryMock, never()).delete(any(MeasureTypeEntity.class));
 	}
 
 	@Test
@@ -1862,13 +1861,23 @@ class MetadataServiceTest {
 	}
 
 	@Test
+	void updateMeasureTypeWithoutNameKeepsTheKey() {
+		final var entity = MeasureTypeEntity.create().withId("id").withName("TYPE").withMeasureGroup("GROUP");
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("id", "namespace", "2281")).thenReturn(Optional.of(entity));
+		when(measureTypeRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		final var result = metadataService.updateMeasureType("namespace", "2281", "id", MeasureType.create().withDisplayName("New label"));
+		assertThat(result.getName()).isEqualTo("TYPE");
+		assertThat(result.getDisplayName()).isEqualTo("New label");
+	}
+
+	@Test
 	void cannotRenameMeasureTypeKey() {
 		final var entity = MeasureTypeEntity.create().withId("id").withName("TYPE");
 		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("id", "namespace", "2281")).thenReturn(Optional.of(entity));
 		final var error = assertThrows(ThrowableProblem.class, () -> metadataService.updateMeasureType("namespace", "2281", "id", MeasureType.create().withName("NEW")));
-		assertThat(error.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(error.getStatus()).isEqualTo(CONFLICT);
 		assertThat(entity.getName()).isEqualTo("TYPE");
-		verify(measureTypeRepositoryMock, Mockito.never()).save(any(MeasureTypeEntity.class));
+		verify(measureTypeRepositoryMock, never()).save(any(MeasureTypeEntity.class));
 	}
 
 	@Test

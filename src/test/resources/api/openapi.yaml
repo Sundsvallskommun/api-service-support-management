@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.3"
+  version: "15.4"
 servers:
 - url: http://localhost:65503
   description: Generated server url
@@ -2669,7 +2669,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MeasureType"
+              $ref: "#/components/schemas/CreateMeasureTypeRequest"
         required: true
       responses:
         "201":
@@ -5865,7 +5865,8 @@ paths:
       tags:
       - Metadata for measure types
       summary: Update measure type
-      description: "Update measure type matching namespace, municipality and id"
+      description: "Update measure type matching namespace, municipality and id. Omitted\
+        \ fields are left unchanged, the name cannot be changed"
       operationId: updateMeasureType
       parameters:
       - name: namespace
@@ -11030,9 +11031,10 @@ components:
           - true
       required:
       - targetPhaseId
-    MeasureType:
+    CreateMeasureTypeRequest:
       type: object
-      description: MeasureType model
+      description: Create a measure type. The name is the immutable key measures refer
+        to
       properties:
         id:
           type: string
@@ -11042,11 +11044,11 @@ components:
           readOnly: true
         name:
           type: string
-          description: Immutable key referenced by Measure.type. Change displayName
-            to rename the label
+          description: "Immutable key referenced by Measure.type. Required when creating.\
+            \ May be omitted or repeated, but not changed, when updating. Change displayName\
+            \ to rename the label"
           examples:
           - INTERVENTION
-          minLength: 1
         displayName:
           type:
           - string
@@ -11056,10 +11058,9 @@ components:
           - Intervention
         measureGroup:
           type: string
-          description: Group that this measure type belongs to
+          description: Group that this measure type belongs to. Required when creating
           examples:
           - MANAGERS
-          minLength: 1
         sortOrder:
           type:
           - integer
@@ -11091,6 +11092,63 @@ components:
       required:
       - measureGroup
       - name
+    MeasureType:
+      type: object
+      description: MeasureType model
+      properties:
+        id:
+          type: string
+          description: MeasureType ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        name:
+          type: string
+          description: "Immutable key referenced by Measure.type. Required when creating.\
+            \ May be omitted or repeated, but not changed, when updating. Change displayName\
+            \ to rename the label"
+          examples:
+          - INTERVENTION
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the measure type
+          examples:
+          - Intervention
+        measureGroup:
+          type: string
+          description: Group that this measure type belongs to. Required when creating
+          examples:
+          - MANAGERS
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the measure type
+          examples:
+          - 1
+        deprecated:
+          type: boolean
+          default: false
+          description: Indicates if the measure type is deprecated
+          examples:
+          - true
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the measure type was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the measure type was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
     ExternalIdType:
       type: object
       description: ExternalIdType model

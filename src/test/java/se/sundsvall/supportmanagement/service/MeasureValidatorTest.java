@@ -42,7 +42,7 @@ class MeasureValidatorTest {
 
 		// Arrange
 		final var measure = Measure.create().withType("INTERVENTION").withAddedByRole("MANAGER");
-		when(measureTypeRepositoryMock.findWithLockingByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INTERVENTION")).thenReturn(Optional.of(MeasureTypeEntity.create().withName("INTERVENTION")));
+		when(measureTypeRepositoryMock.findWithSharedLockByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INTERVENTION")).thenReturn(Optional.of(MeasureTypeEntity.create().withName("INTERVENTION")));
 		when(roleRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "MANAGER")).thenReturn(true);
 
 		// Act & Assert
@@ -54,7 +54,7 @@ class MeasureValidatorTest {
 
 		// Arrange
 		final var measure = Measure.create().withType("NOT_A_TYPE");
-		when(measureTypeRepositoryMock.findWithLockingByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "NOT_A_TYPE")).thenReturn(Optional.empty());
+		when(measureTypeRepositoryMock.findWithSharedLockByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "NOT_A_TYPE")).thenReturn(Optional.empty());
 
 		// Act & Assert
 		assertThatThrownBy(() -> validator.validate(measure, NAMESPACE, MUNICIPALITY_ID))
@@ -117,7 +117,7 @@ class MeasureValidatorTest {
 
 	@Test
 	void rejectsDeprecatedTypeForNewMeasures() {
-		when(measureTypeRepositoryMock.findWithLockingByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "OLD"))
+		when(measureTypeRepositoryMock.findWithSharedLockByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "OLD"))
 			.thenReturn(Optional.of(MeasureTypeEntity.create().withName("OLD").withDeprecated(true)));
 		assertThatThrownBy(() -> validator.validate(Measure.create().withType("OLD"), NAMESPACE, MUNICIPALITY_ID))
 			.hasMessageContaining("deprecated");
@@ -127,7 +127,7 @@ class MeasureValidatorTest {
 	void retainsDeprecatedTypeAndOriginalAttribution() {
 		final var existing = MeasureEntity.create().withId("id").withType("OLD").withAddedByUser("creator").withAddedByRole("OLD_ROLE");
 		final var input = Measure.create().withId("id").withType("OLD").withAddedByUser("creator").withAddedByRole("OLD_ROLE").withGoal("Updated");
-		when(measureTypeRepositoryMock.findWithLockingByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "OLD"))
+		when(measureTypeRepositoryMock.findWithSharedLockByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "OLD"))
 			.thenReturn(Optional.of(MeasureTypeEntity.create().withName("OLD").withDeprecated(true)));
 		assertThatCode(() -> validator.validate(List.of(input), List.of(existing), NAMESPACE, MUNICIPALITY_ID)).doesNotThrowAnyException();
 		verifyNoInteractions(roleRepositoryMock, accessControlServiceMock);
@@ -135,7 +135,7 @@ class MeasureValidatorTest {
 
 	@Test
 	void cannotSwitchAnExistingMeasureToADeprecatedType() {
-		when(measureTypeRepositoryMock.findWithLockingByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "OLD"))
+		when(measureTypeRepositoryMock.findWithSharedLockByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "OLD"))
 			.thenReturn(Optional.of(MeasureTypeEntity.create().withName("OLD").withDeprecated(true)));
 		assertThatThrownBy(() -> validator.validate(Measure.create().withType("OLD"), MeasureEntity.create().withType("ACTIVE"), NAMESPACE, MUNICIPALITY_ID))
 			.hasMessageContaining("deprecated");

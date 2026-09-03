@@ -3,10 +3,13 @@ package se.sundsvall.supportmanagement.api.model.metadata;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -16,8 +19,10 @@ public class MeasureType {
 	@Schema(description = "MeasureType ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
 	private String id;
 
-	@Schema(description = "Immutable key referenced by Measure.type. Change displayName to rename the label", examples = "INTERVENTION")
-	@NotBlank
+	@Schema(description = "Immutable key referenced by Measure.type. Required when creating. May be omitted or repeated, but not changed, when updating. Change displayName to rename the label", examples = "INTERVENTION")
+	@NotBlank(groups = {
+		Default.class, OnCreate.class
+	})
 	private String name;
 
 	@Schema(description = "Display name for the measure type", examples = "Intervention", types = {
@@ -25,8 +30,10 @@ public class MeasureType {
 	})
 	private String displayName;
 
-	@Schema(description = "Group that this measure type belongs to", examples = "MANAGERS")
-	@NotBlank
+	@Schema(description = "Group that this measure type belongs to. Required when creating", examples = "MANAGERS")
+	@NotBlank(groups = {
+		Default.class, OnCreate.class
+	})
 	private String measureGroup;
 
 	@Schema(description = "Sort order for the measure type", examples = "1", types = {
@@ -39,12 +46,16 @@ public class MeasureType {
 
 	@Schema(description = "Timestamp when the measure type was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null
+	@Null(groups = {
+		Default.class, OnUpdate.class
+	})
 	private OffsetDateTime created;
 
 	@Schema(description = "Timestamp when the measure type was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null
+	@Null(groups = {
+		Default.class, OnUpdate.class
+	})
 	private OffsetDateTime modified;
 
 	public static MeasureType create() {

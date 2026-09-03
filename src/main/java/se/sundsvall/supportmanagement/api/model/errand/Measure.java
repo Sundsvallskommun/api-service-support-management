@@ -12,7 +12,6 @@ import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -21,20 +20,24 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
  * <p>
  * Patching a single measure says nothing about the fields it leaves out, so the OnUpdate group deliberately omits them.
  * Everywhere else - creating a measure, and carrying measures on the errand - a measure is expected to be complete,
- * which
- * is what stops one from being persisted blank. The accept value is checked wherever it is supplied, since an unknown
- * one
- * would otherwise reach the mapper and surface as a 500 rather than the bad request it is.
+ * which is what stops one from being persisted blank. The accept value is checked wherever it is supplied, since an
+ * unknown one would otherwise reach the mapper and surface as a 500 rather than the bad request it is.
  */
 @Schema(description = "Measure model")
 public class Measure {
 
-	/** Fields supplied by a write, including explicit nulls. Never part of the JSON representation. */
+	/** The fields a write can supply. */
 	public enum Field {
 		RESPONSIBLE_USER, TYPE, PLANNED_START, PLANNED_COMPLETE, EXECUTED, ADDED_BY_USER, ADDED_BY_ROLE,
 		GOAL, DESCRIPTION, ACCEPT, ACCEPT_MOTIVATION, REWORK_GOAL, REWORK_DESCRIPTION
 	}
 
+	/**
+	 * The fields a write supplied, including the ones it set to null, which is what lets a patch clear a field rather
+	 * than leave it alone. Every setter records its field, and Jackson calls the setter for an explicit null. Never part
+	 * of the JSON representation, and deliberately left out of equals, hashCode and toString: two measures with the same
+	 * values compare equal whether a field was sent as null or left out.
+	 */
 	@JsonIgnore
 	private final EnumSet<Field> suppliedFields = EnumSet.noneOf(Field.class);
 
@@ -87,7 +90,9 @@ public class Measure {
 	@Schema(description = "Description of the measure", examples = "Detailed description of the measure", nullable = true)
 	private String description;
 
-	@Schema(description = "Accept decision. Explicit null on PATCH clears the decision", implementation = Accept.class, nullable = true)
+	@Schema(description = "Accept decision. Explicit null on PATCH clears the decision", allowableValues = {
+		"TRUE", "FALSE", "REWORK"
+	}, nullable = true)
 	@OneOf(value = {
 		"TRUE", "FALSE", "REWORK"
 	}, nullable = true, groups = {

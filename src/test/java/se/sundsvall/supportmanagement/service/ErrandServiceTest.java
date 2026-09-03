@@ -472,6 +472,25 @@ class ErrandServiceTest {
 		verify(measureValidatorMock).validate(eq(errand.getMeasures()), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 	}
 
+	/**
+	 * Measures are a protected resource of their own. Carrying them on the errand must not let a caller with write access
+	 * to the errand past the measure write check they would meet on the measure resource.
+	 */
+	@Test
+	void updateErrandWithMeasuresRequiresMeasureWriteAccess() {
+		final var errand = buildErrand().withMeasures(List.of(Measure.create().withType("TYPE")));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(buildErrandEntity());
+		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
+		doThrow(Problem.valueOf(UNAUTHORIZED, "Errand is not accessible"))
+			.when(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.MEASURE, RW);
+
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"0\"", errand))
+			.hasMessage("Unauthorized: Errand is not accessible");
+
+		verifyNoInteractions(measureValidatorMock, errandRepositoryMock);
+	}
+
 	@Test
 	void deleteExistingErrand() {
 		final var entity = buildErrandEntity();

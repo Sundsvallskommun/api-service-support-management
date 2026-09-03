@@ -1,0 +1,12 @@
+{
+	"measures": [
+		{
+			"id": "ee000000-0000-0000-0000-000000000100",
+			"type": "MEASURE-1",
+			"addedByUser": "joe01doe",
+			"addedByRole": "ROLE-1",
+			"goal": "Changed through the errand",
+			"version": 999
+		}
+	]
+}

@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -12,6 +7,7 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -27,6 +23,7 @@ import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 
 /**
  * MeasureType Metadata IT tests.
@@ -144,29 +141,52 @@ class MetadataMeasureTypeIT extends AbstractAppTest {
 
 	@Test
 	void test08_cannotDeleteReferencedType() {
-		final var id = "dd000000-0000-0000-0000-000000000100";
-		final var response = restTemplate.exchange(PATH + "/" + id, DELETE, null, String.class);
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-		assertThat(measureTypeRepository.existsById(id)).isTrue();
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+
+		setupCall()
+			.withServicePath(PATH + "/" + measureTypeId)
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(measureTypeRepository.existsById(measureTypeId)).isTrue();
 	}
 
 	@Test
 	void test09_cannotRenameTheReferenceKey() {
-		final var id = "dd000000-0000-0000-0000-000000000100";
-		final var headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		final var response = restTemplate.exchange(PATH + "/" + id, PATCH,
-			new HttpEntity<>("{\"name\":\"NEW-NAME\",\"measureGroup\":\"GROUP-A\"}", headers), String.class);
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-		assertThat(measureTypeRepository.findById(id).orElseThrow().getName()).isEqualTo("MEASURE-1");
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+
+		setupCall()
+			.withServicePath(PATH + "/" + measureTypeId)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(measureTypeRepository.findById(measureTypeId).orElseThrow().getName()).isEqualTo("MEASURE-1");
 	}
 
+	/**
+	 * MEASURE-1 is referenced in NAMESPACE-1. A type of the same name in another namespace is a different type and must
+	 * remain deletable.
+	 */
 	@Test
 	void test10_referenceChecksAreScopedToTheNamespace() {
-		final var type = measureTypeRepository.save(MeasureTypeEntity.create()
-			.withNamespace("OTHER").withMunicipalityId(MUNICIPALITY_2281).withName("MEASURE-1").withMeasureGroup("GROUP-A"));
-		final var response = restTemplate.exchange("/2281/OTHER/metadata/measuretypes/" + type.getId(), DELETE, null, String.class);
-		assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
-		assertThat(measureTypeRepository.existsById(type.getId())).isFalse();
+		final var measureType = measureTypeRepository.save(MeasureTypeEntity.create()
+			.withNamespace("OTHER")
+			.withMunicipalityId(MUNICIPALITY_2281)
+			.withName("MEASURE-1")
+			.withMeasureGroup("GROUP-A"));
+
+		setupCall()
+			.withServicePath("/" + MUNICIPALITY_2281 + "/OTHER/metadata/measuretypes/" + measureType.getId())
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		assertThat(measureTypeRepository.existsById(measureType.getId())).isFalse();
 	}
 }

@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Measure type 'MEASURE-1' is in use; deprecate it instead of deleting it"
+}
