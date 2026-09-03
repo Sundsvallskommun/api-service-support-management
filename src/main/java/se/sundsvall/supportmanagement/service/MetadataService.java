@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
@@ -624,20 +625,24 @@ public class MetadataService {
 			.toList();
 	}
 
+	@Transactional
 	public void deleteMeasureType(final String namespace, final String municipalityId, final String id) {
-		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
+		final var entity = measureTypeRepository.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId)));
+		if (errandsRepository.existsByNamespaceAndMunicipalityIdAndMeasuresType(namespace, municipalityId, entity.getName())) {
+			throw Problem.valueOf(HttpStatus.CONFLICT, "Measure type '%s' is in use; deprecate it instead of deleting it".formatted(entity.getName()));
 		}
-
-		measureTypeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		measureTypeRepository.delete(entity);
 	}
 
+	@Transactional
 	public MeasureType updateMeasureType(final String namespace, final String municipalityId, final String id, final MeasureType measureType) {
-		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
+		final var entity = measureTypeRepository.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId)));
+		if (!Objects.equals(entity.getName(), measureType.getName())) {
+			throw Problem.valueOf(HttpStatus.CONFLICT, "Measure type names are immutable; change displayName or create a new type instead");
 		}
-		final var entity = updateMeasureTypeEntity(measureTypeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), measureType);
-		return toMeasureType(measureTypeRepository.save(entity));
+		return toMeasureType(measureTypeRepository.saveAndFlush(updateMeasureTypeEntity(entity, measureType)));
 	}
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {

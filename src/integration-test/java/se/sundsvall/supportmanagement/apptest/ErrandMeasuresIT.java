@@ -1,5 +1,10 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import se.sundsvall.supportmanagement.service.util.ETagUtil;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -22,6 +27,7 @@ import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 
 /**
@@ -46,11 +52,15 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	@Autowired
 	private ErrandsRepository errandsRepository;
 
+	@Autowired
+	private MeasureTypeRepository measureTypeRepository;
+
 	@Test
 	void test01_createErrandMeasure() {
 		setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(POST)
+			.withHeader("If-Match", currentErrandEtag())
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(PATH + "/" + UUID_PATTERN))
@@ -95,6 +105,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(PATH + "/" + MEASURE_ID)
 			.withHttpMethod(PATCH)
+			.withHeader("If-Match", currentErrandEtag())
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
@@ -110,6 +121,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(PATH + "/" + MEASURE_ID)
 			.withHttpMethod(DELETE)
+			.withHeader("If-Match", currentErrandEtag())
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
@@ -131,6 +143,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/errands/" + ERRAND_ID)
 			.withHttpMethod(PATCH)
+			.withHeader("If-Match", currentErrandEtag())
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(OK)
 			.sendRequest();
@@ -148,5 +161,86 @@ class ErrandMeasuresIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	private String currentErrandEtag() {
+		return ETagUtil.format(errandsRepository.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_2281).orElseThrow().getVersion());
+	}
+
+	@Test
+	void test07_clearDecisionAndDates() {
+		final var id = "ee000000-0000-0000-0000-000000000101";
+		final var response = restTemplate.exchange(PATH + "/" + id, PATCH,
+			measureRequest("{\"executed\":null,\"accept\":null,\"plannedComplete\":null}", currentErrandEtag()), String.class);
+		assertThat(response.getStatusCode()).isEqualTo(OK);
+		final var measure = storedMeasure(id);
+		assertThat(measure.getExecuted()).isNull();
+		assertThat(measure.getAccept()).isNull();
+		assertThat(measure.getPlannedComplete()).isNull();
+		assertThat(measure.getPlannedStart()).isNotNull();
+		assertThat(measure.getGoal()).isEqualTo("Follow up on progress");
+	}
+
+	@Test
+	void test08_rejectStaleWritesAndMissingPreconditions() {
+		final var originalEtag = currentErrandEtag();
+		assertThat(restTemplate.exchange(PATH + "/" + MEASURE_ID, PATCH, measureRequest("{\"goal\":\"Fresh goal\"}", originalEtag), String.class).getStatusCode()).isEqualTo(OK);
+		assertThat(currentErrandEtag()).isNotEqualTo(originalEtag);
+		assertThat(restTemplate.exchange(PATH + "/" + MEASURE_ID, PATCH, measureRequest("{\"goal\":\"Stale goal\"}", originalEtag), String.class).getStatusCode())
+			.isEqualTo(HttpStatus.PRECONDITION_FAILED);
+		assertThat(restTemplate.exchange(PATH + "/" + MEASURE_ID, DELETE, measureRequest(null, originalEtag), String.class).getStatusCode())
+			.isEqualTo(HttpStatus.PRECONDITION_FAILED);
+		assertThat(restTemplate.exchange(PATH + "/" + MEASURE_ID, DELETE, measureRequest(null, null), String.class).getStatusCode())
+			.isEqualTo(HttpStatus.PRECONDITION_REQUIRED);
+		assertThat(storedMeasure(MEASURE_ID).getGoal()).isEqualTo("Fresh goal");
+	}
+
+	@Test
+	void test09_deprecatedTypesRemainEditableButCannotBeSelected() {
+		final var type = measureTypeRepository.findById("dd000000-0000-0000-0000-000000000100").orElseThrow();
+		type.setDeprecated(true);
+		measureTypeRepository.save(type);
+		assertThat(restTemplate.exchange(PATH + "/" + MEASURE_ID, PATCH, measureRequest("{\"type\":\"MEASURE-1\",\"goal\":\"Updated\"}", currentErrandEtag()), String.class).getStatusCode()).isEqualTo(OK);
+		assertThat(restTemplate.exchange(PATH, POST, measureRequest("{\"type\":\"MEASURE-1\",\"addedByUser\":\"joe01doe\",\"addedByRole\":\"ROLE-1\"}", currentErrandEtag()), String.class).getStatusCode())
+			.isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(restTemplate.exchange(PATH + "/ee000000-0000-0000-0000-000000000101", PATCH, measureRequest("{\"type\":\"MEASURE-1\"}", currentErrandEtag()), String.class).getStatusCode())
+			.isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(storedMeasure(MEASURE_ID).getGoal()).isEqualTo("Updated");
+	}
+
+	@Test
+	void test10_errandPatchCannotRewriteTheCreator() {
+		final var body = "{\"measures\":[{\"id\":\"" + MEASURE_ID + "\",\"type\":\"MEASURE-1\",\"addedByUser\":\"someone-else\",\"addedByRole\":\"ROLE-1\"}]}";
+		final var response = restTemplate.exchange(PATH.substring(0, PATH.length() - "/measures".length()), PATCH, measureRequest(body, currentErrandEtag()), String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(storedMeasure(MEASURE_ID).getAddedByUser()).isEqualTo("joe01doe");
+		assertThat(errandsRepository.findById(ERRAND_ID).orElseThrow().getMeasures()).hasSize(2);
+	}
+
+	@Test
+	void test11_typeCannotBeCleared() {
+		assertThat(restTemplate.exchange(PATH + "/" + MEASURE_ID, PATCH, measureRequest("{\"type\":null}", currentErrandEtag()), String.class).getStatusCode())
+			.isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(storedMeasure(MEASURE_ID).getType()).isEqualTo("MEASURE-1");
+	}
+
+	private MeasureEntity storedMeasure(final String id) {
+		return errandsRepository.findById(ERRAND_ID).orElseThrow().getMeasures().stream().filter(measure -> id.equals(measure.getId())).findFirst().orElseThrow();
+	}
+
+	private HttpEntity<String> measureRequest(final String body, final String etag) {
+		final var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		if (etag != null) {
+			headers.setIfMatch(etag);
+		}
+		return new HttpEntity<>(body, headers);
+	}
+
+	@Test
+	void test12_errandPatchCannotRemoveMeasuresWithoutAVersion() {
+		final var response = restTemplate.exchange(PATH.substring(0, PATH.length() - "/measures".length()), PATCH, measureRequest("{\"measures\":[]}", null), String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PRECONDITION_REQUIRED);
+		assertThat(errandsRepository.findById(ERRAND_ID).orElseThrow().getMeasures()).hasSize(2);
 	}
 }

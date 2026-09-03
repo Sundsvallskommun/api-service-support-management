@@ -463,17 +463,13 @@ class ErrandServiceTest {
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
-		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
 		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'"))
-			.when(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
+			.when(measureValidatorMock).validate(eq(errand.getMeasures()), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 
-		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"0\"", errand))
 			.hasMessage("Bad Request: 'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'");
 
-		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
-		verify(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
+		verify(measureValidatorMock).validate(eq(errand.getMeasures()), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 	}
 
 	@Test

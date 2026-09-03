@@ -781,7 +781,7 @@ class MetadataMapperTest {
 
 		final var result = MetadataMapper.updateMeasureTypeEntity(entity, measureType);
 
-		assertThat(result.getName()).isEqualTo("newName");
+		assertThat(result.getName()).isEqualTo("oldName");
 		assertThat(result.getDisplayName()).isEqualTo("newDisplayName");
 		assertThat(result.getMeasureGroup()).isEqualTo("newGroup");
 		assertThat(result.getSortOrder()).isEqualTo(2);

@@ -64,7 +64,7 @@ class ErrandMeasureServiceTest {
 		when(errandsRepositoryMock.save(any())).thenReturn(errandEntity);
 
 		// Act
-		service.createErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, measure);
+		service.createErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"0\"", measure);
 
 		// Assert
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW);
@@ -78,7 +78,7 @@ class ErrandMeasureServiceTest {
 
 	/**
 	 * What the validator accepts is MeasureValidatorTest's business. What matters here is that it is consulted, and that
-	 * its rejection stops the request before the errand is even loaded.
+	 * its rejection prevents the measure from being saved.
 	 */
 	@Test
 	void createErrandMeasureRejectedByValidator() {
@@ -86,15 +86,19 @@ class ErrandMeasureServiceTest {
 		// Arrange
 		final var measure = new Measure().withType("INVALID_TYPE").withAddedByRole("MANAGER");
 
+		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
+		final var errandEntity = ErrandEntity.create().withMeasures(new ArrayList<>(List.of(measureEntity)));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW)).thenReturn(errandEntity);
+
 		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type")).when(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.createErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, measure))
+		assertThatThrownBy(() -> service.createErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"0\"", measure))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("not a valid measure type");
 
 		verify(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(accessControlServiceMock, errandsRepositoryMock, entityManagerMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
@@ -189,7 +193,7 @@ class ErrandMeasureServiceTest {
 		when(errandsRepositoryMock.save(any())).thenReturn(errandEntity);
 
 		// Act
-		final var result = service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, measure);
+		final var result = service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, "\"0\"", measure);
 
 		// Assert
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW);
@@ -216,7 +220,7 @@ class ErrandMeasureServiceTest {
 		when(errandsRepositoryMock.save(any())).thenReturn(errandEntity);
 
 		// Act
-		final var result = service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, measure);
+		final var result = service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, "\"0\"", measure);
 
 		// Assert
 		assertThat(result).isNotNull();
@@ -229,15 +233,19 @@ class ErrandMeasureServiceTest {
 		// Arrange
 		final var measure = new Measure().withType("INVALID_TYPE");
 
-		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type")).when(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
+		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
+		final var errandEntity = ErrandEntity.create().withMeasures(new ArrayList<>(List.of(measureEntity)));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW)).thenReturn(errandEntity);
+
+		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type")).when(measureValidatorMock).validate(measure, measureEntity, NAMESPACE, MUNICIPALITY_ID);
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, measure))
+		assertThatThrownBy(() -> service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, "\"0\"", measure))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("not a valid measure type");
 
-		verify(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(accessControlServiceMock, errandsRepositoryMock, entityManagerMock);
+		verify(measureValidatorMock).validate(measure, measureEntity, NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
@@ -249,7 +257,7 @@ class ErrandMeasureServiceTest {
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntity);
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, new Measure()))
+		assertThatThrownBy(() -> service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, "\"0\"", new Measure()))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("could not be found");
 	}
@@ -265,7 +273,7 @@ class ErrandMeasureServiceTest {
 		when(errandsRepositoryMock.save(any())).thenReturn(errandEntity);
 
 		// Act
-		service.deleteErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID);
+		service.deleteErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, "\"0\"");
 
 		// Assert
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW);
@@ -283,8 +291,30 @@ class ErrandMeasureServiceTest {
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntity);
 
 		// Act & Assert
-		assertThatThrownBy(() -> service.deleteErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID))
+		assertThatThrownBy(() -> service.deleteErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, "\"0\""))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("could not be found");
+	}
+
+	@Test
+	void staleUpdateDoesNotChangeTheMeasure() {
+		final var measure = MeasureEntity.create().withId(MEASURE_ID).withGoal("Current goal");
+		final var errand = ErrandEntity.create().withVersion(3L).withMeasures(List.of(measure));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW)).thenReturn(errand);
+		assertThatThrownBy(() -> service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, "\"2\"", Measure.create().withGoal("Stale goal")))
+			.hasMessageContaining("Precondition Failed");
+		assertThat(measure.getGoal()).isEqualTo("Current goal");
+		verifyNoInteractions(errandsRepositoryMock, measureValidatorMock);
+	}
+
+	@Test
+	void cannotDeleteWithoutAVersion() {
+		final var measure = MeasureEntity.create().withId(MEASURE_ID);
+		final var errand = ErrandEntity.create().withVersion(3L).withMeasures(List.of(measure));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW)).thenReturn(errand);
+		assertThatThrownBy(() -> service.deleteErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, null))
+			.hasMessageContaining("Precondition Required");
+		assertThat(errand.getMeasures()).containsExactly(measure);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 }

@@ -52,11 +52,12 @@ class ErrandMeasuresResourceTest {
 			.withAddedByRole("MANAGER")
 			.withGoal("Improve response time");
 
-		when(serviceMock.createErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(Measure.class))).thenReturn(MEASURE_ID);
+		when(serviceMock.createErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq("\"0\""), any(Measure.class))).thenReturn(MEASURE_ID);
 
 		// Act
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.header("If-Match", "\"0\"")
 			.contentType(APPLICATION_JSON)
 			.bodyValue(measure)
 			.exchange()
@@ -64,7 +65,7 @@ class ErrandMeasuresResourceTest {
 			.returnResult(Void.class);
 
 		// Verify
-		verify(serviceMock).createErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(Measure.class));
+		verify(serviceMock).createErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq("\"0\""), any(Measure.class));
 		assertThat(response.getResponseHeaders().getLocation()).isNotNull();
 		assertThat(response.getResponseHeaders().getLocation().getPath()).isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/measures/" + MEASURE_ID);
 	}
@@ -136,11 +137,12 @@ class ErrandMeasuresResourceTest {
 			.withType("UPDATED_TYPE")
 			.withGoal("Updated goal");
 
-		when(serviceMock.updateErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any(Measure.class))).thenReturn(updatedMeasure);
+		when(serviceMock.updateErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), eq("\"0\""), any(Measure.class))).thenReturn(updatedMeasure);
 
 		// Act
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH_WITH_ID).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "measureId", MEASURE_ID)))
+			.header("If-Match", "\"0\"")
 			.contentType(APPLICATION_JSON)
 			.bodyValue(measure)
 			.exchange()
@@ -151,7 +153,7 @@ class ErrandMeasuresResourceTest {
 			.getResponseBody();
 
 		// Verify
-		verify(serviceMock).updateErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any(Measure.class));
+		verify(serviceMock).updateErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), eq("\"0\""), any(Measure.class));
 		assertThat(response).isNotNull();
 		assertThat(response.getId()).isEqualTo(MEASURE_ID);
 	}
@@ -162,10 +164,11 @@ class ErrandMeasuresResourceTest {
 		// Act
 		webTestClient.delete()
 			.uri(builder -> builder.path(PATH_WITH_ID).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "measureId", MEASURE_ID)))
+			.header("If-Match", "\"0\"")
 			.exchange()
 			.expectStatus().isNoContent();
 
 		// Verify
-		verify(serviceMock).deleteErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID);
+		verify(serviceMock).deleteErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, "\"0\"");
 	}
 }

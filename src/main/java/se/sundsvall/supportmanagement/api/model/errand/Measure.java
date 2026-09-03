@@ -1,15 +1,18 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
+import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -26,27 +29,40 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Measure model")
 public class Measure {
 
+	/** Fields supplied by a write, including explicit nulls. Never part of the JSON representation. */
+	public enum Field {
+		RESPONSIBLE_USER, TYPE, PLANNED_START, PLANNED_COMPLETE, EXECUTED, ADDED_BY_USER, ADDED_BY_ROLE,
+		GOAL, DESCRIPTION, ACCEPT, ACCEPT_MOTIVATION, REWORK_GOAL, REWORK_DESCRIPTION
+	}
+
+	@JsonIgnore
+	private final EnumSet<Field> suppliedFields = EnumSet.noneOf(Field.class);
+
+	public boolean hasField(final Field field) {
+		return suppliedFields.contains(field);
+	}
+
 	@Schema(description = "Measure ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
 	private String id;
 
-	@Schema(description = "Responsible user (ad-username)", examples = "jo12doe")
+	@Schema(description = "Responsible user (ad-username)", examples = "jo12doe", nullable = true)
 	private String responsibleUser;
 
-	@Schema(description = "Type of measure", examples = "INTERVENTION")
+	@Schema(description = "Immutable MeasureType.name key, resolved within the errand municipality and namespace", examples = "INTERVENTION")
 	@NotBlank(groups = {
 		Default.class, OnCreate.class
 	})
 	private String type;
 
-	@Schema(description = "Planned start date", examples = "2021-09-01T12:00:00Z")
+	@Schema(description = "Planned start date", examples = "2021-09-01T12:00:00Z", nullable = true)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime plannedStart;
 
-	@Schema(description = "Planned completion date", examples = "2021-10-01T12:00:00Z")
+	@Schema(description = "Planned completion date", examples = "2021-10-01T12:00:00Z", nullable = true)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime plannedComplete;
 
-	@Schema(description = "Execution date", examples = "2021-09-15T12:00:00Z")
+	@Schema(description = "Execution date", examples = "2021-09-15T12:00:00Z", nullable = true)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime executed;
 
@@ -62,13 +78,13 @@ public class Measure {
 	})
 	private String addedByRole;
 
-	@Schema(description = "Goal of the measure", examples = "Improve response time")
+	@Schema(description = "Goal of the measure", examples = "Improve response time", nullable = true)
 	private String goal;
 
-	@Schema(description = "Description of the measure", examples = "Detailed description of the measure")
+	@Schema(description = "Description of the measure", examples = "Detailed description of the measure", nullable = true)
 	private String description;
 
-	@Schema(description = "Accept status", examples = "TRUE", nullable = true)
+	@Schema(description = "Accept decision. Explicit null on PATCH clears the decision", implementation = Accept.class, nullable = true)
 	@OneOf(value = {
 		"TRUE", "FALSE", "REWORK"
 	}, nullable = true, groups = {
@@ -76,13 +92,13 @@ public class Measure {
 	})
 	private String accept;
 
-	@Schema(description = "Motivation for the accept decision", examples = "The measure is approved")
+	@Schema(description = "Motivation for the accept decision", examples = "The measure is approved", nullable = true)
 	private String acceptMotivation;
 
-	@Schema(description = "Rework goal", examples = "Updated goal after rework")
+	@Schema(description = "Rework goal", examples = "Updated goal after rework", nullable = true)
 	private String reworkGoal;
 
-	@Schema(description = "Rework description", examples = "Detailed description of the rework")
+	@Schema(description = "Rework description", examples = "Detailed description of the rework", nullable = true)
 	private String reworkDescription;
 
 	@Schema(description = "Timestamp when the measure was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
@@ -116,10 +132,11 @@ public class Measure {
 
 	public void setResponsibleUser(final String responsibleUser) {
 		this.responsibleUser = responsibleUser;
+		suppliedFields.add(Field.RESPONSIBLE_USER);
 	}
 
 	public Measure withResponsibleUser(final String responsibleUser) {
-		this.responsibleUser = responsibleUser;
+		setResponsibleUser(responsibleUser);
 		return this;
 	}
 
@@ -129,10 +146,11 @@ public class Measure {
 
 	public void setType(final String type) {
 		this.type = type;
+		suppliedFields.add(Field.TYPE);
 	}
 
 	public Measure withType(final String type) {
-		this.type = type;
+		setType(type);
 		return this;
 	}
 
@@ -142,10 +160,11 @@ public class Measure {
 
 	public void setPlannedStart(final OffsetDateTime plannedStart) {
 		this.plannedStart = plannedStart;
+		suppliedFields.add(Field.PLANNED_START);
 	}
 
 	public Measure withPlannedStart(final OffsetDateTime plannedStart) {
-		this.plannedStart = plannedStart;
+		setPlannedStart(plannedStart);
 		return this;
 	}
 
@@ -155,10 +174,11 @@ public class Measure {
 
 	public void setPlannedComplete(final OffsetDateTime plannedComplete) {
 		this.plannedComplete = plannedComplete;
+		suppliedFields.add(Field.PLANNED_COMPLETE);
 	}
 
 	public Measure withPlannedComplete(final OffsetDateTime plannedComplete) {
-		this.plannedComplete = plannedComplete;
+		setPlannedComplete(plannedComplete);
 		return this;
 	}
 
@@ -168,10 +188,11 @@ public class Measure {
 
 	public void setExecuted(final OffsetDateTime executed) {
 		this.executed = executed;
+		suppliedFields.add(Field.EXECUTED);
 	}
 
 	public Measure withExecuted(final OffsetDateTime executed) {
-		this.executed = executed;
+		setExecuted(executed);
 		return this;
 	}
 
@@ -181,10 +202,11 @@ public class Measure {
 
 	public void setAddedByUser(final String addedByUser) {
 		this.addedByUser = addedByUser;
+		suppliedFields.add(Field.ADDED_BY_USER);
 	}
 
 	public Measure withAddedByUser(final String addedByUser) {
-		this.addedByUser = addedByUser;
+		setAddedByUser(addedByUser);
 		return this;
 	}
 
@@ -194,10 +216,11 @@ public class Measure {
 
 	public void setAddedByRole(final String addedByRole) {
 		this.addedByRole = addedByRole;
+		suppliedFields.add(Field.ADDED_BY_ROLE);
 	}
 
 	public Measure withAddedByRole(final String addedByRole) {
-		this.addedByRole = addedByRole;
+		setAddedByRole(addedByRole);
 		return this;
 	}
 
@@ -207,10 +230,11 @@ public class Measure {
 
 	public void setGoal(final String goal) {
 		this.goal = goal;
+		suppliedFields.add(Field.GOAL);
 	}
 
 	public Measure withGoal(final String goal) {
-		this.goal = goal;
+		setGoal(goal);
 		return this;
 	}
 
@@ -220,10 +244,11 @@ public class Measure {
 
 	public void setDescription(final String description) {
 		this.description = description;
+		suppliedFields.add(Field.DESCRIPTION);
 	}
 
 	public Measure withDescription(final String description) {
-		this.description = description;
+		setDescription(description);
 		return this;
 	}
 
@@ -233,10 +258,11 @@ public class Measure {
 
 	public void setAccept(final String accept) {
 		this.accept = accept;
+		suppliedFields.add(Field.ACCEPT);
 	}
 
 	public Measure withAccept(final String accept) {
-		this.accept = accept;
+		setAccept(accept);
 		return this;
 	}
 
@@ -246,10 +272,11 @@ public class Measure {
 
 	public void setAcceptMotivation(final String acceptMotivation) {
 		this.acceptMotivation = acceptMotivation;
+		suppliedFields.add(Field.ACCEPT_MOTIVATION);
 	}
 
 	public Measure withAcceptMotivation(final String acceptMotivation) {
-		this.acceptMotivation = acceptMotivation;
+		setAcceptMotivation(acceptMotivation);
 		return this;
 	}
 
@@ -259,10 +286,11 @@ public class Measure {
 
 	public void setReworkGoal(final String reworkGoal) {
 		this.reworkGoal = reworkGoal;
+		suppliedFields.add(Field.REWORK_GOAL);
 	}
 
 	public Measure withReworkGoal(final String reworkGoal) {
-		this.reworkGoal = reworkGoal;
+		setReworkGoal(reworkGoal);
 		return this;
 	}
 
@@ -272,10 +300,11 @@ public class Measure {
 
 	public void setReworkDescription(final String reworkDescription) {
 		this.reworkDescription = reworkDescription;
+		suppliedFields.add(Field.REWORK_DESCRIPTION);
 	}
 
 	public Measure withReworkDescription(final String reworkDescription) {
-		this.reworkDescription = reworkDescription;
+		setReworkDescription(reworkDescription);
 		return this;
 	}
 

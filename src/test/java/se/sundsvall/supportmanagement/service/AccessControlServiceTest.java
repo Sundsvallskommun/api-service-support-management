@@ -860,4 +860,27 @@ class AccessControlServiceTest {
 
 		verifyNoInteractions(accessMapperService);
 	}
+
+	@Test
+	void measureCreatorMustBeTheRequestingUserWithTheClaimedRole() {
+		final var user = adUser();
+		Identifier.set(user);
+		try {
+			when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+			when(accessMapperService.getAccessibleRoles(MUNICIPALITY_ID, NAMESPACE, user)).thenReturn(Set.of("MANAGER"));
+			assertThatNoException().isThrownBy(() -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, AD_ACCOUNT, "manager"));
+			assertThat(assertThrows(ThrowableProblem.class, () -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, "someone-else", "MANAGER")).getStatus()).isEqualTo(UNAUTHORIZED);
+			assertThat(assertThrows(ThrowableProblem.class, () -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, AD_ACCOUNT, "OTHER")).getStatus()).isEqualTo(UNAUTHORIZED);
+		} finally {
+			Identifier.remove();
+		}
+	}
+
+	@Test
+	void measureCreatorRequiresAnAdAccountWhenAccessControlIsActive() {
+		Identifier.remove();
+		when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		assertThat(assertThrows(ThrowableProblem.class, () -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, AD_ACCOUNT, "MANAGER")).getStatus()).isEqualTo(UNAUTHORIZED);
+		verifyNoInteractions(accessMapperService);
+	}
 }

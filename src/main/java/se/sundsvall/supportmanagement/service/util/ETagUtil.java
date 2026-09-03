@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service.util;
 
+import org.springframework.http.HttpStatus;
+
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static se.sundsvall.dept44.problem.Problem.valueOf;
 
@@ -9,6 +11,17 @@ public final class ETagUtil {
 
 	public static String format(final long version) {
 		return "\"" + version + "\"";
+	}
+
+	/** Writes that must protect against stale clients require an explicit version, not a wildcard. */
+	public static void validateRequiredIfMatch(final String ifMatch, final Long currentVersion) {
+		if (ifMatch == null || ifMatch.isBlank()) {
+			throw valueOf(HttpStatus.PRECONDITION_REQUIRED, "If-Match with the current errand ETag is required");
+		}
+		if ("*".equals(ifMatch.strip())) {
+			throw valueOf(PRECONDITION_FAILED, "If-Match must specify the current errand version, not a wildcard");
+		}
+		validateIfMatch(ifMatch, currentVersion);
 	}
 
 	/**

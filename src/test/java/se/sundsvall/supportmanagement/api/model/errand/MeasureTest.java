@@ -95,8 +95,8 @@ class MeasureTest {
 
 	@Test
 	void noDirtOnCreatedBean() {
-		assertThat(Measure.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Measure()).hasAllNullFieldsOrProperties();
+		assertThat(Measure.create()).hasAllNullFieldsOrPropertiesExcept("suppliedFields");
+		assertThat(new Measure()).hasAllNullFieldsOrPropertiesExcept("suppliedFields");
 	}
 
 }

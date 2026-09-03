@@ -16,7 +16,7 @@ public class MeasureType {
 	@Schema(description = "MeasureType ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
 	private String id;
 
-	@Schema(description = "Name for the measure type. Used as key", examples = "INTERVENTION")
+	@Schema(description = "Immutable key referenced by Measure.type. Change displayName to rename the label", examples = "INTERVENTION")
 	@NotBlank
 	private String name;
 

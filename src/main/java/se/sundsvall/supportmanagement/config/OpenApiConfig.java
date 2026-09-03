@@ -1,12 +1,17 @@
 package se.sundsvall.supportmanagement.config;
 
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import java.util.List;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.HandlerMethod;
+import se.sundsvall.supportmanagement.api.model.errand.CreateMeasureRequest;
+import se.sundsvall.supportmanagement.api.model.errand.Measure;
 
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.REQUEST_GROUP_ID_HEADER;
 
@@ -24,6 +29,23 @@ class OpenApiConfig {
 				.example("f47ac10b-58cc-4372-a567-0e02b2c3d479")
 				.schema(new StringSchema().format("uuid")));
 			return operation;
+		};
+	}
+
+	@Bean
+	OpenApiCustomizer measureDecisionSchemaCustomizer() {
+		return openApi -> {
+			// In OpenAPI 3.1, allowing the null type is not enough: enum must also contain null.
+			// Swagger's nullable enum annotation currently emits only the non-null enum values.
+			for (final var model : List.of(Measure.class, CreateMeasureRequest.class)) {
+				final Schema<?> schema = openApi.getComponents().getSchemas().get(model.getSimpleName());
+				if (schema != null) {
+					final Schema<?> accept = schema.getProperties().get("accept");
+					if (!accept.getEnum().contains(null)) {
+						accept.addEnumItemObject(null);
+					}
+				}
+			}
 		};
 	}
 }

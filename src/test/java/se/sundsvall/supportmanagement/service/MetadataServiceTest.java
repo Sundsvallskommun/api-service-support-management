@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
@@ -1525,7 +1527,7 @@ class MetadataServiceTest {
 	void getPhase() {
 		final var phaseEntity = se.sundsvall.supportmanagement.integration.db.model.PhaseEntity.create()
 			.withId("phase-id").withName("PHASE").withDisplayName("Fas").withNamespace("namespace").withMunicipalityId("municipalityId");
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(java.util.Optional.of(phaseEntity));
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.of(phaseEntity));
 
 		final var result = metadataService.getPhase("namespace", "municipalityId", "phase-id");
 
@@ -1536,7 +1538,7 @@ class MetadataServiceTest {
 
 	@Test
 	void getPhaseNotFound() {
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(java.util.Optional.empty());
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.empty());
 
 		assertThrows(ThrowableProblem.class, () -> metadataService.getPhase("namespace", "municipalityId", "phaseId"));
 	}
@@ -1565,7 +1567,7 @@ class MetadataServiceTest {
 	void patchPhase() {
 		final var phaseEntity = se.sundsvall.supportmanagement.integration.db.model.PhaseEntity.create()
 			.withId("phase-id").withName("PHASE").withNamespace("namespace").withMunicipalityId("municipalityId");
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(java.util.Optional.of(phaseEntity));
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.of(phaseEntity));
 		when(phaseRepositoryMock.save(any())).thenReturn(phaseEntity);
 
 		final var patch = new se.sundsvall.supportmanagement.api.model.metadata.Phase();
@@ -1578,7 +1580,7 @@ class MetadataServiceTest {
 
 	@Test
 	void patchPhaseNotFound() {
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(java.util.Optional.empty());
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.empty());
 
 		assertThrows(ThrowableProblem.class, () -> metadataService.patchPhase("phaseId", "namespace", "municipalityId", new se.sundsvall.supportmanagement.api.model.metadata.Phase()));
 	}
@@ -1620,7 +1622,7 @@ class MetadataServiceTest {
 	void createPhaseTransition() {
 		final var phaseEntity = se.sundsvall.supportmanagement.integration.db.model.PhaseEntity.create()
 			.withId("phase-id").withName("PHASE").withNamespace("namespace").withMunicipalityId("municipalityId");
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(java.util.Optional.of(phaseEntity));
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(Optional.of(phaseEntity));
 		when(phaseRepositoryMock.existsByIdAndNamespaceAndMunicipalityId("target-id", "namespace", "municipalityId")).thenReturn(true);
 		when(phaseRepositoryMock.save(any())).thenReturn(phaseEntity);
 
@@ -1634,7 +1636,7 @@ class MetadataServiceTest {
 
 	@Test
 	void createPhaseTransitionPhaseNotFound() {
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(java.util.Optional.empty());
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.empty());
 
 		assertThrows(ThrowableProblem.class, () -> metadataService.createPhaseTransition("namespace", "municipalityId", "phaseId", new se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition()));
 	}
@@ -1642,7 +1644,7 @@ class MetadataServiceTest {
 	@Test
 	void createPhaseTransitionTargetNotFound() {
 		final var phaseEntity = se.sundsvall.supportmanagement.integration.db.model.PhaseEntity.create().withId("phase-id");
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(java.util.Optional.of(phaseEntity));
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(Optional.of(phaseEntity));
 		when(phaseRepositoryMock.existsByIdAndNamespaceAndMunicipalityId("bad-target", "namespace", "municipalityId")).thenReturn(false);
 
 		final var transition = new se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition();
@@ -1657,8 +1659,8 @@ class MetadataServiceTest {
 			.withId("phase-id").withName("PHASE");
 		final var transitionEntity = se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity.create()
 			.withId("t-id").withTargetPhaseId("target-id").withPhaseEntity(phaseEntity);
-		phaseEntity.setTransitions(new java.util.ArrayList<>(List.of(transitionEntity)));
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(java.util.Optional.of(phaseEntity));
+		phaseEntity.setTransitions(new ArrayList<>(List.of(transitionEntity)));
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(Optional.of(phaseEntity));
 
 		final var result = metadataService.findPhaseTransitions("namespace", "municipalityId", "phase-id");
 
@@ -1668,7 +1670,7 @@ class MetadataServiceTest {
 
 	@Test
 	void findPhaseTransitionsPhaseNotFound() {
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(java.util.Optional.empty());
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.empty());
 
 		assertThrows(ThrowableProblem.class, () -> metadataService.findPhaseTransitions("namespace", "municipalityId", "phaseId"));
 	}
@@ -1678,8 +1680,8 @@ class MetadataServiceTest {
 		final var phaseEntity = se.sundsvall.supportmanagement.integration.db.model.PhaseEntity.create().withId("phase-id");
 		final var transitionEntity = se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity.create()
 			.withId("t-id").withTargetPhaseId("target-id").withPhaseEntity(phaseEntity);
-		phaseEntity.setTransitions(new java.util.ArrayList<>(List.of(transitionEntity)));
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(java.util.Optional.of(phaseEntity));
+		phaseEntity.setTransitions(new ArrayList<>(List.of(transitionEntity)));
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(Optional.of(phaseEntity));
 		when(phaseRepositoryMock.save(any())).thenReturn(phaseEntity);
 
 		metadataService.deletePhaseTransition("namespace", "municipalityId", "phase-id", "t-id");
@@ -1690,15 +1692,15 @@ class MetadataServiceTest {
 	@Test
 	void deletePhaseTransitionNotFound() {
 		final var phaseEntity = se.sundsvall.supportmanagement.integration.db.model.PhaseEntity.create().withId("phase-id");
-		phaseEntity.setTransitions(new java.util.ArrayList<>());
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(java.util.Optional.of(phaseEntity));
+		phaseEntity.setTransitions(new ArrayList<>());
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId("phase-id", "namespace", "municipalityId")).thenReturn(Optional.of(phaseEntity));
 
 		assertThrows(ThrowableProblem.class, () -> metadataService.deletePhaseTransition("namespace", "municipalityId", "phase-id", "nonexistent"));
 	}
 
 	@Test
 	void deletePhaseTransitionPhaseNotFound() {
-		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(java.util.Optional.empty());
+		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.empty());
 
 		assertThrows(ThrowableProblem.class, () -> metadataService.deletePhaseTransition("namespace", "municipalityId", "phaseId", "transitionId"));
 	}
@@ -1825,81 +1827,53 @@ class MetadataServiceTest {
 	}
 
 	@Test
-	void deleteMeasureType() {
-		// Setup
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var id = "id";
+	void deleteUnusedMeasureType() {
+		final var entity = MeasureTypeEntity.create().withId("id").withName("TYPE");
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("id", "namespace", "2281")).thenReturn(Optional.of(entity));
+		metadataService.deleteMeasureType("namespace", "2281", "id");
+		verify(measureTypeRepositoryMock).delete(entity);
+	}
 
-		// Mock
-		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
-
-		// Call
-		metadataService.deleteMeasureType(namespace, municipalityId, id);
-
-		// Verifications
-		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		verify(measureTypeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	@Test
+	void cannotDeleteReferencedMeasureType() {
+		final var entity = MeasureTypeEntity.create().withId("id").withName("TYPE");
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("id", "namespace", "2281")).thenReturn(Optional.of(entity));
+		when(errandsRepositoryMock.existsByNamespaceAndMunicipalityIdAndMeasuresType("namespace", "2281", "TYPE")).thenReturn(true);
+		final var error = assertThrows(ThrowableProblem.class, () -> metadataService.deleteMeasureType("namespace", "2281", "id"));
+		assertThat(error.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+		verify(measureTypeRepositoryMock, Mockito.never()).delete(any(MeasureTypeEntity.class));
 	}
 
 	@Test
 	void deleteMeasureTypeNotFound() {
-		// Setup
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var id = "id";
-
-		// Call
-		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteMeasureType(namespace, municipalityId, id));
-
-		// Verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		verifyNoMoreInteractions(measureTypeRepositoryMock);
+		final var error = assertThrows(ThrowableProblem.class, () -> metadataService.deleteMeasureType("namespace", "2281", "missing"));
+		assertThat(error.getStatus()).isEqualTo(NOT_FOUND);
 	}
 
 	@Test
-	void updateMeasureType() {
-		// Setup
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var id = "id";
-		final var entity = MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroup("group");
-		final var measureType = MeasureType.create().withName("newName").withMeasureGroup("newGroup");
+	void updateMeasureTypeDisplayNameAndDeprecation() {
+		final var entity = MeasureTypeEntity.create().withId("id").withName("TYPE").withMeasureGroup("GROUP");
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("id", "namespace", "2281")).thenReturn(Optional.of(entity));
+		when(measureTypeRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		final var result = metadataService.updateMeasureType("namespace", "2281", "id", MeasureType.create().withName("TYPE").withDisplayName("New label").withDeprecated(true));
+		assertThat(result.getName()).isEqualTo("TYPE");
+		assertThat(result.getDisplayName()).isEqualTo("New label");
+		assertThat(result.getDeprecated()).isTrue();
+	}
 
-		// Mock
-		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
-		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
-		when(measureTypeRepositoryMock.save(entity)).thenReturn(entity);
-
-		// Call
-		final var result = metadataService.updateMeasureType(namespace, municipalityId, id, measureType);
-
-		// Verifications
-		assertThat(result).isNotNull();
-		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		verify(measureTypeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		verify(measureTypeRepositoryMock).save(entity);
-		verifyNoMoreInteractions(measureTypeRepositoryMock);
+	@Test
+	void cannotRenameMeasureTypeKey() {
+		final var entity = MeasureTypeEntity.create().withId("id").withName("TYPE");
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("id", "namespace", "2281")).thenReturn(Optional.of(entity));
+		final var error = assertThrows(ThrowableProblem.class, () -> metadataService.updateMeasureType("namespace", "2281", "id", MeasureType.create().withName("NEW")));
+		assertThat(error.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(entity.getName()).isEqualTo("TYPE");
+		verify(measureTypeRepositoryMock, Mockito.never()).save(any(MeasureTypeEntity.class));
 	}
 
 	@Test
 	void updateMeasureTypeNotFound() {
-		// Setup
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var id = "id";
-
-		// Mock
-		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
-
-		// Call
-		final var measureType = MeasureType.create().withName("name").withMeasureGroup("group");
-		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateMeasureType(namespace, municipalityId, id, measureType));
-
-		// Verifications
-		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		verifyNoMoreInteractions(measureTypeRepositoryMock);
+		final var error = assertThrows(ThrowableProblem.class, () -> metadataService.updateMeasureType("namespace", "2281", "missing", MeasureType.create().withName("TYPE")));
+		assertThat(error.getStatus()).isEqualTo(NOT_FOUND);
 	}
 }

@@ -3211,7 +3211,7 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "412":
-          description: "Precondition Failed — label version mismatch"
+          description: Precondition Failed — label version mismatch
           content:
             application/problem+json:
               schema:
@@ -3573,6 +3573,13 @@ paths:
       description: Creates a new measure for the errand
       operationId: createErrandMeasure
       parameters:
+      - name: If-Match
+        in: header
+        description: "Required current ETag from GET /errands/{errandId}. Fetch the\
+          \ errand again after a successful write"
+        required: true
+        schema:
+          type: string
       - name: namespace
         in: path
         description: Namespace
@@ -3608,9 +3615,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Measure"
+              $ref: "#/components/schemas/CreateMeasureRequest"
         required: true
       responses:
+        "412":
+          description: If-Match does not match the current errand version
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "428":
+          description: If-Match is required for writes
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "201":
           description: Successful operation
           headers:
@@ -5822,6 +5841,12 @@ paths:
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
+        "409":
+          description: The measure type is in use; deprecate it instead
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
         "400":
@@ -5889,6 +5914,12 @@ paths:
               $ref: "#/components/schemas/MeasureType"
         required: true
       responses:
+        "409":
+          description: The measure type name is immutable
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -6673,7 +6704,8 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       - name: If-Match
         in: header
-        description: Optional ETag for optimistic locking — omit to skip version check
+        description: ETag for optimistic locking. Required when measures are supplied;
+          optional for other fields
         required: false
         schema:
           type: string
@@ -6693,6 +6725,12 @@ paths:
               $ref: "#/components/schemas/Errand"
         required: true
       responses:
+        "428":
+          description: If-Match is required when measures are supplied
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -7456,6 +7494,13 @@ paths:
         id
       operationId: deleteErrandMeasure
       parameters:
+      - name: If-Match
+        in: header
+        description: "Required current ETag from GET /errands/{errandId}. Fetch the\
+          \ errand again after a successful write"
+        required: true
+        schema:
+          type: string
       - name: namespace
         in: path
         description: Namespace
@@ -7495,6 +7540,18 @@ paths:
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
+        "412":
+          description: If-Match does not match the current errand version
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "428":
+          description: If-Match is required for writes
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "204":
           description: Successful operation
         "404":
@@ -7525,6 +7582,13 @@ paths:
         id
       operationId: updateErrandMeasure
       parameters:
+      - name: If-Match
+        in: header
+        description: "Required current ETag from GET /errands/{errandId}. Fetch the\
+          \ errand again after a successful write"
+        required: true
+        schema:
+          type: string
       - name: namespace
         in: path
         description: Namespace
@@ -7570,6 +7634,18 @@ paths:
               $ref: "#/components/schemas/Measure"
         required: true
       responses:
+        "412":
+          description: If-Match does not match the current errand version
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "428":
+          description: If-Match is required for writes
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -9732,16 +9808,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        title:
-          type: string
-        detail:
-          type: string
         status:
           type: integer
           format: int32
@@ -9760,13 +9836,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        detail:
+          type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
-        detail:
-          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -10255,21 +10331,7 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
-        integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
+        number:
           type: boolean
         nodeType:
           type: string
@@ -10283,34 +10345,48 @@ components:
           - OBJECT
           - POJO
           - STRING
-        floatingPointNumber:
+        string:
           type: boolean
-        bigInteger:
+        integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
+        pojo:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
           type: boolean
         bigDecimal:
           type: boolean
-        string:
-          type: boolean
-        boolean:
+        bigInteger:
           type: boolean
         textual:
           type: boolean
           deprecated: true
+        boolean:
+          type: boolean
         binary:
           type: boolean
-        pojo:
-          type: boolean
-        double:
-          type: boolean
-        short:
-          type: boolean
-        long:
-          type: boolean
-        int:
-          type: boolean
-        number:
+        floatingPointNumber:
           type: boolean
         container:
+          type: boolean
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -10968,7 +11044,8 @@ components:
           readOnly: true
         name:
           type: string
-          description: Name for the measure type. Used as key
+          description: Immutable key referenced by Measure.type. Change displayName
+            to rename the label
           examples:
           - INTERVENTION
           minLength: 1
@@ -11544,29 +11621,38 @@ components:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
           readOnly: true
         responsibleUser:
-          type: string
+          type:
+          - string
+          - "null"
           description: Responsible user (ad-username)
           examples:
           - jo12doe
         type:
           type: string
-          description: Type of measure
+          description: "Immutable MeasureType.name key, resolved within the errand\
+            \ municipality and namespace"
           examples:
           - INTERVENTION
         plannedStart:
-          type: string
+          type:
+          - string
+          - "null"
           format: date-time
           description: Planned start date
           examples:
           - 2021-09-01T12:00:00Z
         plannedComplete:
-          type: string
+          type:
+          - string
+          - "null"
           format: date-time
           description: Planned completion date
           examples:
           - 2021-10-01T12:00:00Z
         executed:
-          type: string
+          type:
+          - string
+          - "null"
           format: date-time
           description: Execution date
           examples:
@@ -11582,12 +11668,16 @@ components:
           examples:
           - MANAGER
         goal:
-          type: string
+          type:
+          - string
+          - "null"
           description: Goal of the measure
           examples:
           - Improve response time
         description:
-          type: string
+          type:
+          - string
+          - "null"
           description: Description of the measure
           examples:
           - Detailed description of the measure
@@ -11595,21 +11685,30 @@ components:
           type:
           - string
           - "null"
-          description: Accept status
-          examples:
+          description: Accept decision. Explicit null on PATCH clears the decision
+          enum:
           - "TRUE"
+          - "FALSE"
+          - REWORK
+          - null
         acceptMotivation:
-          type: string
+          type:
+          - string
+          - "null"
           description: Motivation for the accept decision
           examples:
           - The measure is approved
         reworkGoal:
-          type: string
+          type:
+          - string
+          - "null"
           description: Rework goal
           examples:
           - Updated goal after rework
         reworkDescription:
-          type: string
+          type:
+          - string
+          - "null"
           description: Rework description
           examples:
           - Detailed description of the rework
@@ -11891,6 +11990,126 @@ components:
       - createdBy
       - role
       - subject
+    CreateMeasureRequest:
+      type: object
+      description: Create a measure. The type and role must exist in the errand namespace
+      properties:
+        id:
+          type: string
+          description: Measure ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        responsibleUser:
+          type:
+          - string
+          - "null"
+          description: Responsible user (ad-username)
+          examples:
+          - jo12doe
+        type:
+          type: string
+          description: "Immutable MeasureType.name key, resolved within the errand\
+            \ municipality and namespace"
+          examples:
+          - INTERVENTION
+        plannedStart:
+          type:
+          - string
+          - "null"
+          format: date-time
+          description: Planned start date
+          examples:
+          - 2021-09-01T12:00:00Z
+        plannedComplete:
+          type:
+          - string
+          - "null"
+          format: date-time
+          description: Planned completion date
+          examples:
+          - 2021-10-01T12:00:00Z
+        executed:
+          type:
+          - string
+          - "null"
+          format: date-time
+          description: Execution date
+          examples:
+          - 2021-09-15T12:00:00Z
+        addedByUser:
+          type: string
+          description: User who added the measure
+          examples:
+          - jo12doe
+        addedByRole:
+          type: string
+          description: Role of the user who added the measure
+          examples:
+          - MANAGER
+        goal:
+          type:
+          - string
+          - "null"
+          description: Goal of the measure
+          examples:
+          - Improve response time
+        description:
+          type:
+          - string
+          - "null"
+          description: Description of the measure
+          examples:
+          - Detailed description of the measure
+        accept:
+          type:
+          - string
+          - "null"
+          description: Accept decision. Explicit null on PATCH clears the decision
+          enum:
+          - "TRUE"
+          - "FALSE"
+          - REWORK
+          - null
+        acceptMotivation:
+          type:
+          - string
+          - "null"
+          description: Motivation for the accept decision
+          examples:
+          - The measure is approved
+        reworkGoal:
+          type:
+          - string
+          - "null"
+          description: Rework goal
+          examples:
+          - Updated goal after rework
+        reworkDescription:
+          type:
+          - string
+          - "null"
+          description: Rework description
+          examples:
+          - Detailed description of the rework
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the measure was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the measure was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+      required:
+      - addedByRole
+      - addedByUser
+      - type
     HandoverPreviewRequest:
       type: object
       description: Request describing which namespace a source errand should be previewed
@@ -12937,29 +13156,29 @@ components:
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
         unpaged:
           type: boolean
         paged:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
+        unsorted:
           type: boolean
         sorted:
           type: boolean
-        unsorted:
+        empty:
           type: boolean
     SubscriberNotification:
       type: object

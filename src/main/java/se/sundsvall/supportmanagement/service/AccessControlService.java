@@ -444,6 +444,21 @@ public class AccessControlService {
 		}
 	}
 
+	/** Verifies creation attribution using the namespace's existing access-control policy and request identifier. */
+	public void verifyMeasureCreator(final String namespace, final String municipalityId, final String addedByUser, final String addedByRole) {
+		if (!namespaceConfigService.isAccessControlActive(namespace, municipalityId)) {
+			return;
+		}
+		final var user = Identifier.get();
+		final var account = adAccountOf(user);
+		if (account == null || !account.equalsIgnoreCase(addedByUser)) {
+			throw Problem.valueOf(UNAUTHORIZED, "Measure addedByUser must match the requesting AD account");
+		}
+		if (addedByRole == null || accessMapperService.getAccessibleRoles(municipalityId, namespace, user).stream().noneMatch(addedByRole::equalsIgnoreCase)) {
+			throw Problem.valueOf(UNAUTHORIZED, "The requesting user does not hold the measure's addedByRole");
+		}
+	}
+
 	/**
 	 * Fetches ErrandEntity and checks user access, if enabled in namespace.
 	 *

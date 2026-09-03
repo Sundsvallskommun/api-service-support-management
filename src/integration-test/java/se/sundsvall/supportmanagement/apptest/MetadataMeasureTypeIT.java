@@ -1,5 +1,10 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -108,7 +113,7 @@ class MetadataMeasureTypeIT extends AbstractAppTest {
 
 	@Test
 	void test06_deleteMeasureType() {
-		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000102";
 
 		assertThat(measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(measureTypeId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(measureTypeRepository.count()).isEqualTo(3);
@@ -135,5 +140,33 @@ class MetadataMeasureTypeIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_cannotDeleteReferencedType() {
+		final var id = "dd000000-0000-0000-0000-000000000100";
+		final var response = restTemplate.exchange(PATH + "/" + id, DELETE, null, String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(measureTypeRepository.existsById(id)).isTrue();
+	}
+
+	@Test
+	void test09_cannotRenameTheReferenceKey() {
+		final var id = "dd000000-0000-0000-0000-000000000100";
+		final var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		final var response = restTemplate.exchange(PATH + "/" + id, PATCH,
+			new HttpEntity<>("{\"name\":\"NEW-NAME\",\"measureGroup\":\"GROUP-A\"}", headers), String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(measureTypeRepository.findById(id).orElseThrow().getName()).isEqualTo("MEASURE-1");
+	}
+
+	@Test
+	void test10_referenceChecksAreScopedToTheNamespace() {
+		final var type = measureTypeRepository.save(MeasureTypeEntity.create()
+			.withNamespace("OTHER").withMunicipalityId(MUNICIPALITY_2281).withName("MEASURE-1").withMeasureGroup("GROUP-A"));
+		final var response = restTemplate.exchange("/2281/OTHER/metadata/measuretypes/" + type.getId(), DELETE, null, String.class);
+		assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
+		assertThat(measureTypeRepository.existsById(type.getId())).isFalse();
 	}
 }

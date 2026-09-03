@@ -117,6 +117,7 @@ class MetadataMeasureTypeResource {
 
 	@PatchMapping(path = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update measure type", description = "Update measure type matching namespace, municipality and id", responses = {
+		@ApiResponse(responseCode = "409", description = "The measure type name is immutable", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -137,6 +138,7 @@ class MetadataMeasureTypeResource {
 
 	@DeleteMapping(path = "/{id}", produces = ALL_VALUE)
 	@Operation(summary = "Delete measure type", description = "Delete measure type matching namespace, municipality and id", responses = {
+		@ApiResponse(responseCode = "409", description = "The measure type is in use; deprecate it instead", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
