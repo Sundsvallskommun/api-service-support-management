@@ -115,6 +115,7 @@ public final class ErrandMeasureMapper {
 	public static Measure toMeasure(final MeasureEntity entity) {
 		return Measure.create()
 			.withId(entity.getId())
+			.withVersion(entity.getVersion())
 			.withResponsibleUser(entity.getResponsibleUser())
 			.withType(entity.getType())
 			.withPlannedStart(entity.getPlannedStart())

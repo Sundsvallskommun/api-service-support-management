@@ -63,7 +63,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
-import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateRequiredIfMatch;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -202,11 +201,9 @@ public class ErrandService {
 		if (ifMatch == null) {
 			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
+		validateIfMatch(ifMatch, errandEntityToUpdate.getVersion());
 		if (errand.getMeasures() != null) {
-			validateRequiredIfMatch(ifMatch, errandEntityToUpdate.getVersion());
 			accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.MEASURE, RW);
-		} else {
-			validateIfMatch(ifMatch, errandEntityToUpdate.getVersion());
 		}
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 

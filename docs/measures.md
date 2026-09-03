@@ -22,18 +22,29 @@ For PATCH, an omitted field keeps its current value. Explicit null clears nullab
 
 ## Concurrency and access
 
-Before POST, PATCH or DELETE on measures, read the parent errand and send its current ETag in `If-Match`. A successful write changes the parent version, so read it again before the next write.
+Each measure has its own database version, exposed as a read-only `version` property. POST returns the new measure's ETag together with its Location. GET and PATCH of a single measure return its current ETag; PATCH flushes the update before building the response so that the returned version can be used for the next write.
 
-- Missing or blank `If-Match`: `428 Precondition Required`.
-- Stale, weak or wildcard ETag: `412 Precondition Failed`.
-- The generic errand PATCH also requires a version and measure write access whenever `measures` is supplied, including an empty list.
+For PATCH or DELETE of a single measure, send that measure's ETag in `If-Match` to protect against stale edits. This header is optional, matching parameters and JSON parameters:
 
-This strengthens the existing API contract: clients previously omitting `If-Match` must start sending it. No database migration is required. Rolling back the code restores the previous API behavior without reversing stored data.
+- Omitting `If-Match` skips the client version check.
+- A stale or weak ETag returns `412 Precondition Failed`.
+- `If-Match: *` accepts an existing measure without checking a specific version.
+- POST creates a new measure without requiring an ETag from the parent errand.
+
+Creating, changing or deleting a measure also increments the parent errand's version in the same transaction. Other errand fields and other measures do not invalidate this measure's ETag. The existing optimistic lock on the parent remains, so transactions that overlap in time can still conflict (`409 Conflict`).
+
+The generic errand PATCH continues to use the errand's optional `If-Match`, including when replacing the measure list. Clients should send it to protect the whole list against lost additions or removals. Whenever `measures` is supplied, including an empty list, the endpoint also checks measure write access. Updates through this path increment the versions of changed measures; the mapper never copies a version supplied in the request into the database.
+
+## Migration and client compatibility
+
+Migration `V1_56__add_measure_version.sql` adds `measure.version` as a non-null bigint with default 0. Existing measures start at version 0 and retain their IDs and content. A rollback of the application behavior should retain the column and the applied migration in the release history.
+
+Clients can continue omitting `If-Match`. Clients opting into concurrency protection use the single measure's ETag for its PATCH and DELETE endpoints, and the errand's ETag for the generic errand PATCH. Nullable fields sent as null are cleared; omit fields that should retain their current values.
 
 ## Validation
 
 The reference and attribution rules live in `MeasureValidator`, used before mutation by both write paths. `MetadataService` owns catalogue changes. `AccessControlService` owns authorization, and `ErrandMeasureMapper` owns applying supplied fields.
 
-Run unit tests with `mvn test`. Run the HTTP/database and OpenAPI checks with `mvn -Dit.test=ErrandMeasuresIT,MetadataMeasureTypeIT,OpenApiSpecificationIT integration-test failsafe:verify`.
+Run unit tests with `mvn test`. Run the HTTP/database and OpenAPI checks with `mvn -Dit.test=ErrandMeasuresIT,ErrandsIT,ErrandTimeMeasurementsIT,MetadataMeasureTypeIT,OpenApiSpecificationIT integration-test failsafe:verify`.
 
-Tests cover preserving historical references, rejecting new deprecated selections, scoped deletion, immutable keys and creator fields, explicit-null clearing, stale writes, and the generated OpenAPI contract.
+Tests cover preserving historical references, rejecting new deprecated selections, scoped deletion, immutable keys and creator fields, explicit-null clearing, stale measure and parent writes, optional preconditions, independent measure versions, parent propagation, and the generated OpenAPI contract. `MeasureEntity` owns the version; the existing `ETagUtil` owns header matching.

@@ -52,20 +52,20 @@ class ErrandMeasuresResourceTest {
 			.withAddedByRole("MANAGER")
 			.withGoal("Improve response time");
 
-		when(serviceMock.createErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq("\"0\""), any(Measure.class))).thenReturn(MEASURE_ID);
+		when(serviceMock.createErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(Measure.class))).thenReturn(Measure.create().withId(MEASURE_ID).withVersion(0L));
 
 		// Act
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
-			.header("If-Match", "\"0\"")
 			.contentType(APPLICATION_JSON)
 			.bodyValue(measure)
 			.exchange()
 			.expectStatus().isCreated()
+			.expectHeader().valueEquals("ETag", "\"0\"")
 			.returnResult(Void.class);
 
 		// Verify
-		verify(serviceMock).createErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq("\"0\""), any(Measure.class));
+		verify(serviceMock).createErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(Measure.class));
 		assertThat(response.getResponseHeaders().getLocation()).isNotNull();
 		assertThat(response.getResponseHeaders().getLocation().getPath()).isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/measures/" + MEASURE_ID);
 	}
@@ -76,6 +76,7 @@ class ErrandMeasuresResourceTest {
 		// Arrange
 		final var measure = new Measure()
 			.withId(MEASURE_ID)
+			.withVersion(1L)
 			.withType("INTERVENTION")
 			.withResponsibleUser("jo12doe")
 			.withCreated(OffsetDateTime.now())
@@ -89,6 +90,7 @@ class ErrandMeasuresResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
+			.expectHeader().valueEquals("ETag", "\"1\"")
 			.expectBody(Measure.class)
 			.returnResult()
 			.getResponseBody();
@@ -134,6 +136,7 @@ class ErrandMeasuresResourceTest {
 
 		final var updatedMeasure = new Measure()
 			.withId(MEASURE_ID)
+			.withVersion(1L)
 			.withType("UPDATED_TYPE")
 			.withGoal("Updated goal");
 
@@ -148,6 +151,7 @@ class ErrandMeasuresResourceTest {
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)
+			.expectHeader().valueEquals("ETag", "\"1\"")
 			.expectBody(Measure.class)
 			.returnResult()
 			.getResponseBody();

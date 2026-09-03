@@ -45,6 +45,9 @@ public class Measure {
 	@Schema(description = "Measure ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
 	private String id;
 
+	@Schema(description = "Optimistic locking version of the measure. Use its ETag in If-Match when updating or deleting", accessMode = READ_ONLY)
+	private Long version;
+
 	@Schema(description = "Responsible user (ad-username)", examples = "jo12doe", nullable = true)
 	private String responsibleUser;
 
@@ -111,6 +114,19 @@ public class Measure {
 
 	public static Measure create() {
 		return new Measure();
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public Measure withVersion(final Long version) {
+		this.version = version;
+		return this;
 	}
 
 	public String getId() {
@@ -336,7 +352,7 @@ public class Measure {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, responsibleUser, type, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, description, accept, acceptMotivation, reworkGoal, reworkDescription, created, modified);
+		return Objects.hash(id, responsibleUser, type, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, description, accept, acceptMotivation, reworkGoal, reworkDescription, created, modified, version);
 	}
 
 	@Override
@@ -363,7 +379,8 @@ public class Measure {
 			&& Objects.equals(reworkGoal, that.reworkGoal)
 			&& Objects.equals(reworkDescription, that.reworkDescription)
 			&& Objects.equals(created, that.created)
-			&& Objects.equals(modified, that.modified);
+			&& Objects.equals(modified, that.modified)
+			&& Objects.equals(version, that.version);
 	}
 
 	@Override
@@ -385,6 +402,7 @@ public class Measure {
 			", reworkDescription='" + reworkDescription + '\'' +
 			", created=" + created +
 			", modified=" + modified +
+			", version=" + version +
 			'}';
 	}
 }

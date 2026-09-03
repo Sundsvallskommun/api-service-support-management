@@ -3573,13 +3573,6 @@ paths:
       description: Creates a new measure for the errand
       operationId: createErrandMeasure
       parameters:
-      - name: If-Match
-        in: header
-        description: "Required current ETag from GET /errands/{errandId}. Fetch the\
-          \ errand again after a successful write"
-        required: true
-        schema:
-          type: string
       - name: namespace
         in: path
         description: Namespace
@@ -3618,25 +3611,24 @@ paths:
               $ref: "#/components/schemas/CreateMeasureRequest"
         required: true
       responses:
-        "412":
-          description: If-Match does not match the current errand version
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "428":
-          description: If-Match is required for writes
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "201":
           description: Successful operation
           headers:
+            ETag:
+              description: ETag of the created measure
+              style: simple
+              schema:
+                type: string
             Location:
               style: simple
               schema:
                 type: string
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
           content:
@@ -6704,8 +6696,8 @@ paths:
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
       - name: If-Match
         in: header
-        description: ETag for optimistic locking. Required when measures are supplied;
-          optional for other fields
+        description: "Optional ETag of the errand for optimistic locking, including\
+          \ changes to measures. Omit to skip version check"
         required: false
         schema:
           type: string
@@ -6725,12 +6717,6 @@ paths:
               $ref: "#/components/schemas/Errand"
         required: true
       responses:
-        "428":
-          description: If-Match is required when measures are supplied
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
           content:
@@ -7462,6 +7448,12 @@ paths:
       responses:
         "200":
           description: Successful operation
+          headers:
+            ETag:
+              description: ETag of the measure
+              style: simple
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -7496,9 +7488,9 @@ paths:
       parameters:
       - name: If-Match
         in: header
-        description: "Required current ETag from GET /errands/{errandId}. Fetch the\
-          \ errand again after a successful write"
-        required: true
+        description: Optional ETag of the measure for optimistic locking — omit to
+          skip version check
+        required: false
         schema:
           type: string
       - name: namespace
@@ -7541,13 +7533,13 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       responses:
         "412":
-          description: If-Match does not match the current errand version
+          description: If-Match does not match the current measure version
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "428":
-          description: If-Match is required for writes
+        "409":
+          description: Conflict — resource modified concurrently
           content:
             application/problem+json:
               schema:
@@ -7584,9 +7576,9 @@ paths:
       parameters:
       - name: If-Match
         in: header
-        description: "Required current ETag from GET /errands/{errandId}. Fetch the\
-          \ errand again after a successful write"
-        required: true
+        description: Optional ETag of the measure for optimistic locking — omit to
+          skip version check
+        required: false
         schema:
           type: string
       - name: namespace
@@ -7635,19 +7627,25 @@ paths:
         required: true
       responses:
         "412":
-          description: If-Match does not match the current errand version
+          description: If-Match does not match the current measure version
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "428":
-          description: If-Match is required for writes
+        "409":
+          description: Conflict — resource modified concurrently
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
         "200":
           description: Successful operation
+          headers:
+            ETag:
+              description: ETag of the updated measure
+              style: simple
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -9836,10 +9834,10 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        detail:
-          type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
         instance:
           type: string
           format: uri
@@ -11620,6 +11618,12 @@ components:
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
           readOnly: true
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the measure. Use its ETag in
+            If-Match when updating or deleting
+          readOnly: true
         responsibleUser:
           type:
           - string
@@ -11999,6 +12003,12 @@ components:
           description: Measure ID
           examples:
           - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the measure. Use its ETag in
+            If-Match when updating or deleting
           readOnly: true
         responsibleUser:
           type:

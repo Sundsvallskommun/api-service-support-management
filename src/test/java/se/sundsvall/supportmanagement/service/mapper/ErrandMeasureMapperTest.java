@@ -138,7 +138,8 @@ class ErrandMeasureMapperTest {
 			.withReworkGoal("rework goal")
 			.withReworkDescription("rework description")
 			.withCreated(now)
-			.withModified(now.plusHours(1));
+			.withModified(now.plusHours(1))
+			.withVersion(3L);
 
 		// Act
 		final var result = toMeasure(entity);
@@ -161,6 +162,7 @@ class ErrandMeasureMapperTest {
 		assertThat(result.getReworkDescription()).isEqualTo("rework description");
 		assertThat(result.getCreated()).isEqualTo(now);
 		assertThat(result.getModified()).isEqualTo(now.plusHours(1));
+		assertThat(result.getVersion()).isEqualTo(3L);
 	}
 
 	@Test
