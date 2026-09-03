@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.3"
+  version: "15.4"
 servers:
 - url: http://localhost:65503
   description: Generated server url
@@ -480,6 +480,85 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/labels/{labelId}/move:
+    put:
+      tags:
+      - Metadata for labels
+      summary: Move label (dry-run)
+      description: Validates a label move and returns the number of affected errands
+        and actions. No changes are made.
+      operationId: moveLabel
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: labelId
+        in: path
+        description: Label ID to move
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelMoveRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelMoveDryRunResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — path collision at destination
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -10138,6 +10217,22 @@ components:
       - conditions
       - name
       - parameters
+    AffectedAction:
+      type: object
+      description: An action that references labels affected by a label move
+      properties:
+        id:
+          type: string
+          description: Action ID
+          example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        name:
+          type: string
+          description: Action name
+          example: SEND_EMAIL
+        displayValue:
+          type: string
+          description: Human-readable display value for the action
+          example: Send email to assignee
     Label:
       type: object
       description: Label model
@@ -13109,6 +13204,34 @@ components:
           description: Display name for the value
           examples:
           - Category 1
+    LabelMoveDryRunResponse:
+      type: object
+      description: Result of a label move dry-run — no changes are made
+      properties:
+        affectedErrandCount:
+          type: integer
+          format: int64
+          description: Number of errands that reference the label or any of its descendants
+        affectedActions:
+          type: array
+          description: Actions that have hasLabel conditions referencing the moved label
+            or its descendants
+          items:
+            $ref: "#/components/schemas/AffectedAction"
+    LabelMoveRequest:
+      type: object
+      description: Request for moving a label to a new parent
+      properties:
+        newParentId:
+          type:
+          - string
+          - "null"
+          description: "ID of the new parent label. Null means move to root."
+          example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        dryRun:
+          type: boolean
+          description: If true, return affected counts without making any changes.
+          default: false
     Labels:
       type: object
       description: Labels model

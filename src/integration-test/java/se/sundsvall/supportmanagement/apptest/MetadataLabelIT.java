@@ -17,6 +17,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
@@ -251,6 +252,45 @@ class MetadataLabelIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test12_moveLabelDryRunToRoot_givesCorrectCount() {
+		// ffe5f120 is DEEPSUBTYPE-1 (under SUBTYPE-4 under TYPE-2 under CATEGORY-1, municipality 2281)
+		// It is referenced by errand 147d355f — so affectedErrandCount should be 1
+		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/ffe5f120-6a3b-4404-ace8-8ea87b559907/move";
+
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test13_moveLabelDryRunDoesNotMutate() {
+		// Same dry-run as test12 — verify afterwards that the label structure is unchanged
+		final var movePath = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/ffe5f120-6a3b-4404-ace8-8ea87b559907/move";
+		final var labelsPath = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels";
+
+		setupCall()
+			.withServicePath(movePath)
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		// GET full label structure — should be unchanged
+		setupCall()
+			.withServicePath(labelsPath)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("labels-unchanged.json")
 			.sendRequestAndVerifyResponse();
 	}
 

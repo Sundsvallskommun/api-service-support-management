@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -13,18 +14,27 @@ import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTest
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @AutoConfigureWebTestClient
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -197,7 +207,124 @@ class MetadataLabelResourceFailureTest {
 			Arguments.of("invalid,namespace", "2281", tuple("deleteLabels.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
 	}
 
+	@ParameterizedTest
+	@MethodSource("moveLabelArguments")
+	void moveLabelWithInvalidArguments(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request, final Tuple... expectedViolations) {
+
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", namespace, "municipalityId", municipalityId, "labelId", labelId)))
+			.contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(expectedViolations);
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	private static Stream<Arguments> moveLabelArguments() {
+		final var validId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var validRequest = LabelMoveRequest.create().withDryRun(true);
+		return Stream.of(
+			Arguments.of("MY_NAMESPACE", "666", validId, validRequest, tuples(tuple("moveLabel.municipalityId", "not a valid municipality ID"))),
+			Arguments.of("invalid,namespace", "2281", validId, validRequest, tuples(tuple("moveLabel.namespace", "can only contain A-Z, a-z, 0-9, - and _"))),
+			Arguments.of("MY_NAMESPACE", "2281", "not-a-uuid", validRequest, tuples(tuple("moveLabel.labelId", "not a valid UUID"))),
+			Arguments.of("MY_NAMESPACE", "2281", validId,
+				LabelMoveRequest.create().withNewParentId("not-a-uuid").withDryRun(true),
+				tuples(tuple("newParentId", "not a valid UUID"))));
+	}
+
 	private static Tuple[] tuples(Tuple... tuples) {
 		return tuples;
+	}
+
+	@Test
+	void moveLabel_labelNotFound_returns404() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(NOT_FOUND, "Label not found"));
+
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMoveRequest.create().withDryRun(true))
+			.exchange()
+			.expectStatus().isNotFound();
+
+		verify(metadataServiceMock).moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
+	}
+
+	@Test
+	void moveLabel_newParentNotFound_returns400() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var newParentId = "6e89b919-1f4c-5096-a0ce-1e12c3d413b8";
+		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(BAD_REQUEST, "New parent not found"));
+
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMoveRequest.create().withNewParentId(newParentId).withDryRun(true))
+			.exchange()
+			.expectStatus().isBadRequest();
+
+		verify(metadataServiceMock).moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
+	}
+
+	@Test
+	void moveLabel_noOp_returns400() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(BAD_REQUEST, "Move is a no-op"));
+
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMoveRequest.create().withDryRun(true))
+			.exchange()
+			.expectStatus().isBadRequest();
+
+		verify(metadataServiceMock).moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
+	}
+
+	@Test
+	void moveLabel_cycle_returns400() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var newParentId = "6e89b919-1f4c-5096-a0ce-1e12c3d413b8";
+		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(BAD_REQUEST, "Cycle detected"));
+
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMoveRequest.create().withNewParentId(newParentId).withDryRun(true))
+			.exchange()
+			.expectStatus().isBadRequest();
+
+		verify(metadataServiceMock).moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
+	}
+
+	@Test
+	void moveLabel_pathCollision_returns409() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var newParentId = "6e89b919-1f4c-5096-a0ce-1e12c3d413b8";
+		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(CONFLICT, "Path collision"));
+
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMoveRequest.create().withNewParentId(newParentId).withDryRun(true))
+			.exchange()
+			.expectStatus().isEqualTo(CONFLICT);
+
+		verify(metadataServiceMock).moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
 	}
 }
