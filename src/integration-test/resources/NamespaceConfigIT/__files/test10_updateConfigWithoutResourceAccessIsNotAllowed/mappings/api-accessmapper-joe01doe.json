@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/joe01doe"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test10_updateConfigWithoutResourceAccessIsNotAllowed/responses/api-accessmapper-joe01doe.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-joe01doe"
+}

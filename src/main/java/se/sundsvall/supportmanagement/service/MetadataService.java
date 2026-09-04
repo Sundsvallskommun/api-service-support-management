@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
@@ -353,17 +355,37 @@ public class MetadataService {
 			.forEach(metadataLabelRepository::deleteById);
 	}
 
+	/**
+	 * Resolves the labels of the namespace matching each group of resource path patterns.
+	 * <p>
+	 * The labels are read once for every group rather than once per group, so that the groups are answered from a single
+	 * state of the label table and a caller resolving several of them pays one read.
+	 *
+	 * @param  namespace            namespace
+	 * @param  municipalityId       municipality id
+	 * @param  resourcePathPatterns patterns to match, per group
+	 * @return                      labels matching the patterns of each group, empty for a group carrying no patterns
+	 */
 	@Transactional(readOnly = true)
-	public Set<MetadataLabelEntity> patternToLabels(
+	public <K> Map<K, Set<MetadataLabelEntity>> patternToLabels(
 		final String namespace,
 		final String municipalityId,
-		final List<String> resourcePathPatterns) {
+		final Map<K, List<String>> resourcePathPatterns) {
 
-		if (isEmpty(resourcePathPatterns)) {
-			return Set.of();
+		if (resourcePathPatterns.values().stream().allMatch(CollectionUtils::isEmpty)) {
+			return resourcePathPatterns.keySet().stream().collect(Collectors.toMap(key -> key, _ -> Set.of()));
 		}
 
 		final var potentialMatches = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
+
+		return resourcePathPatterns.entrySet().stream()
+			.collect(Collectors.toMap(Map.Entry::getKey, entry -> matching(potentialMatches, entry.getValue())));
+	}
+
+	private Set<MetadataLabelEntity> matching(final List<MetadataLabelEntity> potentialMatches, final List<String> resourcePathPatterns) {
+		if (isEmpty(resourcePathPatterns)) {
+			return Set.of();
+		}
 
 		return potentialMatches.stream()
 			.filter(entity -> entity.getResourcePath() != null)
