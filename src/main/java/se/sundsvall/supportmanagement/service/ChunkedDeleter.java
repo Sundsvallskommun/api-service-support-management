@@ -43,7 +43,7 @@ public class ChunkedDeleter {
 	 * @param ids    ids of the rows to remove.
 	 * @param delete how a chunk of ids is removed.
 	 */
-	public void deleteInChunks(final List<String> ids, final Consumer<List<String>> delete) {
+	public <T> void deleteInChunks(final List<T> ids, final Consumer<List<T>> delete) {
 		for (var start = 0; start < ids.size(); start += CHUNK_SIZE) {
 			delete.accept(ids.subList(start, Math.min(start + CHUNK_SIZE, ids.size())));
 
