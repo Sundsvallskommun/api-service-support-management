@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSettersExcluding;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +21,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 
 class AttachmentEntityTest {
+
+	// The id of the data row is mapped for reading only - the association to the data is what writes that column - so it
+	// is the one property with a getter and no setter, and the one a builder leaves for the database to fill in. The
+	// bean matchers reach a property through its setter, so it is left out of each of them rather than tested through
+	// one it does not have.
+	private static final String READ_ONLY_PROPERTY = "attachmentDataId";
 
 	@BeforeAll
 	static void setup() {
@@ -31,10 +37,10 @@ class AttachmentEntityTest {
 	void testBean() {
 		assertThat(AttachmentEntity.class, allOf(
 			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToStringExcluding("errandEntity")));
+			hasValidGettersAndSettersExcluding(READ_ONLY_PROPERTY),
+			hasValidBeanHashCodeExcluding(READ_ONLY_PROPERTY),
+			hasValidBeanEqualsExcluding(READ_ONLY_PROPERTY),
+			hasValidBeanToStringExcluding("errandEntity", READ_ONLY_PROPERTY)));
 	}
 
 	@Test
@@ -65,7 +71,7 @@ class AttachmentEntityTest {
 			.withFileSize(fileSize)
 			.withHash(hash);
 
-		assertThat(attachmentEntity).hasNoNullFieldsOrProperties();
+		assertThat(attachmentEntity).hasNoNullFieldsOrPropertiesExcept(READ_ONLY_PROPERTY);
 		assertThat(attachmentEntity.getId()).isEqualTo(id);
 		assertThat(attachmentEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(attachmentEntity.getMunicipalityId()).isEqualTo(municipalityId);
