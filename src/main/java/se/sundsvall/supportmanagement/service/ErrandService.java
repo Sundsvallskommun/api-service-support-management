@@ -221,9 +221,8 @@ public class ErrandService {
 		if (errand.getLabels() != null) {
 			validateLabelVersions(errand.getLabels());
 			expandLabelsToAncestorChain(errandEntity);
-			computeAndSetAccessLabels(errandEntity);
 		}
-		final var entity = repository.saveAndFlush(errandEntity);
+		final var entity = persistLabelUpdate(errandEntity);
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
@@ -412,6 +411,11 @@ public class ErrandService {
 			paths.add(sb.toString());
 		}
 		return paths;
+	}
+
+	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
+		computeAndSetAccessLabels(entity);
+		return repository.saveAndFlush(entity);
 	}
 
 	private void computeAndSetAccessLabels(final ErrandEntity errandEntity) {

@@ -56,6 +56,10 @@ class AccessControlChokePointTest {
 		// at all in a namespace that has access control switched on.
 		se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker.class,
 
+		// LabelMoveWorker re-computes errand label sets after a label tree re-parenting. It is triggered by a system
+		// operation (move-label job), not a user request, so there is no caller to authorize.
+		se.sundsvall.supportmanagement.service.LabelMoveWorker.class,
+
 		// MetadataService only reads errands to check whether metadata is referenced. It cannot inject
 		// AccessControlService without creating a circular dependency
 		// (metadataService -> accessControlService -> accessMapperService -> metadataService), which is why the
