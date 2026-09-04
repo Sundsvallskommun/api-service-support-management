@@ -35,9 +35,13 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
  * The batch query is keyed on the id of the last errand reached rather than on an offset, which is what lets the walk
  * pass an errand that failed instead of meeting it again on the next batch.
  * <p>
- * Progress is written to the job between batches rather than after every errand, and the same moment is used to read
- * whether the job has been asked to stop. A run therefore stops on a batch boundary, and it does so wherever the stop
- * was asked for, since the answer comes from the job table rather than from this instance.
+ * Progress is written to the job at every batch boundary, and from inside a batch that outlasts the interval a run
+ * reports on. A job that has gone quiet is taken to have ended with the instance carrying it out, so a run that is only
+ * slow has to keep saying so - a batch is quick only while the services a removal reaches into are.
+ * <p>
+ * Whether the job has been asked to stop is read at the batch boundary alone. A run therefore stops on a batch
+ * boundary, and it does so wherever the stop was asked for, since the answer comes from the job table rather than from
+ * this instance.
  */
 @Service
 public class ErrandPurgeWorker {
@@ -57,6 +61,7 @@ public class ErrandPurgeWorker {
 	private final JobService jobService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final int batchSize;
+	private final long progressIntervalNanos;
 
 	public ErrandPurgeWorker(
 		final ErrandsRepository errandsRepository,
@@ -70,6 +75,7 @@ public class ErrandPurgeWorker {
 		this.jobService = jobService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.batchSize = properties.batchSize();
+		this.progressIntervalNanos = properties.progressInterval().toNanos();
 	}
 
 	/**
@@ -123,6 +129,7 @@ public class ErrandPurgeWorker {
 	 */
 	private boolean walk(final PurgeRun run, final Counters counters) {
 		String cursor = null;
+		var lastReport = System.nanoTime();
 
 		while (true) {
 			final var budget = remainingBudget(run, counters);
@@ -143,9 +150,19 @@ public class ErrandPurgeWorker {
 				// again on the next batch.
 				cursor = id;
 				handle(run, id, counters);
+
+				// Reported from inside the batch as well, and not only when it ends. A batch is quick only while the
+				// services a removal reaches into are, and a job that goes quiet for long enough is ended as abandoned.
+				// Without this the quiet stretch is a whole batch rather than a single errand, which is what would let a
+				// slow run be taken for one whose instance is gone.
+				if (System.nanoTime() - lastReport >= progressIntervalNanos) {
+					jobService.updateProgress(run.jobId(), counters.processed);
+					lastReport = System.nanoTime();
+				}
 			}
 
 			jobService.updateProgress(run.jobId(), counters.processed);
+			lastReport = System.nanoTime();
 
 			// Asked between batches, and answered by the job rather than by this instance, so that a run can be stopped
 			// from wherever the request happens to land.

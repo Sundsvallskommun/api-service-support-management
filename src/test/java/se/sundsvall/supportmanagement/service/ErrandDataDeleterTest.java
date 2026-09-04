@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
+import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -19,7 +20,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 
 import static java.util.Collections.emptyList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -64,6 +65,9 @@ class ErrandDataDeleterTest {
 
 	@Mock
 	private HandoverIdempotencyRepository handoverIdempotencyRepositoryMock;
+
+	@Mock
+	private EntityManager entityManagerMock;
 
 	@InjectMocks
 	private ErrandDataDeleter deleter;
@@ -138,8 +142,8 @@ class ErrandDataDeleterTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a removed attachment is taken out of the errand as well, since one left behind is written back by the cascade with its data reference nulled")
-	void deleteRelatedDataTakesAttachmentsOutOfTheErrand() {
+	@DisplayName("Verification that the attachments are removed after the communications and with the errand out of the persistence context, which is what keeps a shared blob and the cascade from undoing the removal")
+	void deleteRelatedDataRemovesAttachmentsWithTheErrandDetached() {
 		final var removed = AttachmentEntity.create().withId("attachmentId");
 		final var kept = AttachmentEntity.create().withId("otherAttachmentId");
 		final var entity = errandEntity().withAttachments(new ArrayList<>(List.of(removed, kept)));
@@ -149,8 +153,15 @@ class ErrandDataDeleterTest {
 
 		deleter.deleteRelatedData(entity, List.of("attachmentId"));
 
-		assertThat(entity.getAttachments()).containsExactly(kept);
-		verify(attachmentRepositoryMock).deleteById("attachmentId");
+		// The communications first: one can arrive carrying an attachment whose blob the copy kept on the errand points
+		// at too, and removing the errand's copy takes that blob with it. Then the errand out of the context, since an
+		// attachment left in the collection of a managed errand is written back by the cascade with its data reference
+		// nulled. Only then the rows.
+		final var inOrder = inOrder(communicationServiceMock, entityManagerMock, attachmentRepositoryMock);
+		inOrder.verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(ERRAND_NUMBER, NAMESPACE, MUNICIPALITY_ID);
+		inOrder.verify(entityManagerMock).detach(entity);
+		inOrder.verify(attachmentRepositoryMock).deleteById("attachmentId");
+
 		verify(attachmentRepositoryMock, never()).deleteById("otherAttachmentId");
 	}
 

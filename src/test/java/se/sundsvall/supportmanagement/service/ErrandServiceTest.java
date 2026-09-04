@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +46,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
@@ -71,6 +73,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -515,6 +518,33 @@ class ErrandServiceTest {
 		inOrder.verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		inOrder.verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that the errand still carries its external tags into the delete event, since the removal empties the persistence context and a detached errand can no longer load them")
+	void deleteErrandKeepsExternalTagsForTheEvent() {
+		final var tag = DbExternalTag.create().withKey("caseId").withValue("case-4711");
+		final var entity = buildErrandEntity().withExternalTags(new ArrayList<>(List.of(tag)));
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
+		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+
+		// Stands in for the removal emptying the persistence context: what a caller is left holding is an errand whose
+		// collections are no longer there to be read.
+		doAnswer(invocation -> {
+			invocation.<ErrandEntity>getArgument(0).setExternalTags(null);
+			return null;
+		}).when(errandDataDeleterMock).deleteRelatedData(any(), any());
+
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+		assertThat(entity.getExternalTags()).containsExactly(tag);
 	}
 
 	@Test

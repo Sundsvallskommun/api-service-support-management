@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -38,6 +40,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -67,6 +72,9 @@ class RevisionServiceTest {
 
 	@Mock
 	private ErrandNoteService errandNoteServiceMock;
+
+	@Mock
+	private ChunkedDeleter chunkedDeleterMock;
 
 	@InjectMocks
 	private RevisionService service;
@@ -475,13 +483,42 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a removal takes the revisions with it, since each holds a full snapshot of the errand it is removing")
+	@DisplayName("Verification that a removal takes the revisions with it a chunk at a time, reading only their ids, since a revision holds a full snapshot of the errand being removed")
 	void deleteErrandRevisions() {
-		when(revisionRepositoryMock.deleteAllByNamespaceAndMunicipalityIdAndEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(2L);
+		when(revisionRepositoryMock.findIdsByNamespaceAndMunicipalityIdAndEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(List.of(idProjection("first"), idProjection("second")));
+		runChunksImmediately();
 
 		service.deleteErrandRevisions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
-		verify(revisionRepositoryMock).deleteAllByNamespaceAndMunicipalityIdAndEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(chunkedDeleterMock).deleteInChunks(eq(List.of("first", "second")), any());
+		verify(revisionRepositoryMock).deleteAllById(List.of("first", "second"));
+		verify(revisionRepositoryMock, never()).findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(any(), any(), any());
 		verifyNoInteractions(accessControlServiceMock);
+	}
+
+	/**
+	 * Hands every chunk straight back to what the caller passed, so that a test sees the removal the deleter would have
+	 * carried out rather than only the call asking for it.
+	 */
+	private void runChunksImmediately() {
+		doAnswer(invocation -> {
+			invocation.<Consumer<List<String>>>getArgument(1).accept(invocation.getArgument(0));
+			return null;
+		}).when(chunkedDeleterMock).deleteInChunks(anyList(), any());
+	}
+
+	private static IdProjection idProjection(final String id) {
+		return new IdProjection() {
+
+			@Override
+			public String getId() {
+				return id;
+			}
+
+			@Override
+			public void setId(final String value) {
+				// Nothing reads a value set here.
+			}
+		};
 	}
 }
