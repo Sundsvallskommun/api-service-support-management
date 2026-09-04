@@ -1,11 +1,13 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.accessmapper.Access;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Predicate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -31,6 +33,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+import se.sundsvall.supportmanagement.service.model.AccessSnapshot;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
@@ -39,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -74,6 +78,15 @@ class AccessControlServiceTest {
 
 	private static final String AD_ACCOUNT = "joe01doe";
 
+	/**
+	 * The access mapper grants nothing unless a test says otherwise, which is what it answers for a user held in no
+	 * access group at all.
+	 */
+	@BeforeEach
+	void setUp() {
+		lenient().when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(AccessSnapshot.empty());
+	}
+
 	private static Identifier adUser() {
 		return Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue(AD_ACCOUNT);
 	}
@@ -83,6 +96,43 @@ class AccessControlServiceTest {
 	 */
 	private static ErrandEntity limitedErrand() {
 		return ErrandEntity.create().withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId("label-id-1")));
+	}
+
+	private static final MetadataLabelEntity LIMITED_READ_LABEL = MetadataLabelEntity.create().withId("limited-read-label-id");
+	private static final MetadataLabelEntity READ_LABEL = MetadataLabelEntity.create().withId("read-label-id");
+	private static final MetadataLabelEntity WRITE_LABEL = MetadataLabelEntity.create().withId("write-label-id");
+
+	/**
+	 * What the access mapper says about a user granted sent in labels at every level.
+	 */
+	private static AccessSnapshot snapshotOf(final Set<MetadataLabelEntity> labels) {
+		return snapshotOf(labels, Set.of(), Map.of());
+	}
+
+	private static AccessSnapshot snapshotOf(final Set<MetadataLabelEntity> labels, final Set<String> roles) {
+		return snapshotOf(labels, roles, Map.of());
+	}
+
+	private static AccessSnapshot snapshotOfResources(final Map<ProtectedResource, Access.AccessLevelEnum> resources) {
+		return snapshotOf(Set.of(), Set.of(), resources);
+	}
+
+	private static AccessSnapshot snapshotOf(final Set<MetadataLabelEntity> labels, final Set<String> roles, final Map<ProtectedResource, Access.AccessLevelEnum> resources) {
+		return new AccessSnapshot(Map.of(LR, labels, R, labels, RW, labels), roles, resources);
+	}
+
+	/**
+	 * A label granted at one level each, so that the clause built for an operation shows which levels it reaches.
+	 */
+	private static AccessSnapshot snapshotWithALabelPerLevel() {
+		return new AccessSnapshot(Map.of(LR, Set.of(LIMITED_READ_LABEL), R, Set.of(READ_LABEL), RW, Set.of(WRITE_LABEL)), Set.of(), Map.of());
+	}
+
+	/**
+	 * What the access mapper says about a user granted limited read, and nothing beyond it, for {@link #limitedErrand()}.
+	 */
+	private static AccessSnapshot limitedReadSnapshot() {
+		return new AccessSnapshot(Map.of(LR, Set.of(MetadataLabelEntity.create().withId("label-id-1")), R, Set.of(), RW, Set.of()), Set.of(), Map.of());
 	}
 
 	private static NamespaceConfig configWithReporterAccess(final List<ResourceAccess> resources, final List<FieldAccess> fields) {
@@ -103,26 +153,61 @@ class AccessControlServiceTest {
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
-		// The namespace says nothing about limited read, so its minimum applies and the reporter fields widen it
-		assertThat(result).containsOnlyKeys(ErrandField.ID, ErrandField.ERRAND_NUMBER, ErrandField.TITLE, ErrandField.STATUS, ErrandField.PARAMETERS);
+		// No label of theirs reaches the errand, so they hold it as its reporter and see the reporter fields alone.
+		assertThat(result).containsOnlyKeys(ErrandField.TITLE, ErrandField.PARAMETERS);
 		assertThat(result.get(ErrandField.TITLE)).isEmpty();
 		assertThat(result.get(ErrandField.PARAMETERS)).containsExactly("key-1");
 	}
 
 	/**
-	 * Reporting an errand may never show someone less of it than a limited read user who did not report it. The minimum
-	 * is therefore resolved before the reporter fields are merged in, so it acts as a floor rather than as something the
-	 * reporter's own field set replaces.
+	 * The reporter of an errand no label of theirs reaches was never granted limited read for it, so limited read has
+	 * nothing to add and the reporter fields may be narrower than it. The two are independent grants.
 	 */
 	@Test
-	void roleBasedFieldResolverKeepsTheLimitedReadMinimumForAReporter() {
+	void roleBasedFieldResolverHoldsAReporterOutsideTheirLabelsToTheReporterFields() {
 		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(
-			FieldAccess.create().withField(ErrandField.DESCRIPTION))));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withRoleBasedMapping(true)
+			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.CHANNEL))))
+			.withReporterAccess(ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.DESCRIPTION)))));
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
-		assertThat(result).containsOnlyKeys(ErrandField.ID, ErrandField.ERRAND_NUMBER, ErrandField.TITLE, ErrandField.STATUS, ErrandField.DESCRIPTION);
+		assertThat(result).containsOnlyKeys(ErrandField.DESCRIPTION);
+	}
+
+	/**
+	 * A reporter their labels do reach the errand through keeps everything limited read shows them, since reporting an
+	 * errand may never show someone less of it than a limited read user who did not report it.
+	 */
+	@Test
+	void roleBasedFieldResolverUnionsReporterOnTopOfLimitedRead() {
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withRoleBasedMapping(true)
+			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.CHANNEL))))
+			.withReporterAccess(ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.DESCRIPTION)))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(limitedReadSnapshot());
+
+		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
+
+		assertThat(result).containsOnlyKeys(ErrandField.CHANNEL, ErrandField.DESCRIPTION);
+	}
+
+	/**
+	 * A namespace granting the reporter its errands without saying what of them they see falls back to the minimum,
+	 * rather than to an errand carrying no fields whatsoever.
+	 */
+	@Test
+	void roleBasedFieldResolverFallsBackToTheMinimumForAReporterWithoutConfiguredFields() {
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, null));
+
+		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
+
+		assertThat(result).containsOnlyKeys(ErrandField.ID, ErrandField.ERRAND_NUMBER, ErrandField.TITLE, ErrandField.STATUS);
 	}
 
 	@Test
@@ -166,12 +251,12 @@ class AccessControlServiceTest {
 			.withAccessControl(true)
 			.withRoleBasedMapping(true)
 			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE)))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of()));
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
 		assertThat(result).containsOnlyKeys(ErrandField.TITLE);
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, adUser(), List.of(R, RW));
+		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, adUser());
 	}
 
 	@Test
@@ -181,7 +266,7 @@ class AccessControlServiceTest {
 			.withAccessControl(true)
 			.withRoleBasedMapping(true)
 			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE)))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of(MetadataLabelEntity.create().withId("label-id-1")));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(MetadataLabelEntity.create().withId("label-id-1"))));
 
 		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
 	}
@@ -193,8 +278,7 @@ class AccessControlServiceTest {
 			.withAccessControl(true)
 			.withRoleBasedMapping(true)
 			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("case_officer").withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE))))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
-		when(accessMapperService.getAccessibleRoles(any(), any(), any())).thenReturn(Set.of("CASE_OFFICER"));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(), Set.of("CASE_OFFICER")));
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
@@ -211,8 +295,7 @@ class AccessControlServiceTest {
 			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(
 				FieldAccess.create().withField(ErrandField.TITLE),
 				FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-2")))))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
-		when(accessMapperService.getAccessibleRoles(any(), any(), any())).thenReturn(Set.of("CASE_OFFICER"));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(), Set.of("CASE_OFFICER")));
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
@@ -228,8 +311,7 @@ class AccessControlServiceTest {
 			.withRoleBasedMapping(true)
 			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.STATUS))))
 			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(FieldAccess.create().withField(ErrandField.DESCRIPTION))))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
-		when(accessMapperService.getAccessibleRoles(any(), any(), any())).thenReturn(Set.of("CASE_OFFICER"));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(), Set.of("CASE_OFFICER")));
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
@@ -245,8 +327,7 @@ class AccessControlServiceTest {
 			.withRoleBasedMapping(true)
 			.withReporterAccess(ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")))))
 			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS))))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
-		when(accessMapperService.getAccessibleRoles(any(), any(), any())).thenReturn(Set.of("CASE_OFFICER"));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(), Set.of("CASE_OFFICER")));
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
@@ -257,20 +338,18 @@ class AccessControlServiceTest {
 	void withAccessControlIgnoresAccessMapperResourcesWhenGateIsOff() {
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.COMMUNICATION, R);
 
 		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
-		verify(accessMapperService, never()).getAccessibleResources(any(), any(), any());
 	}
 
 	@Test
 	void withAccessControlKeepsLabelClauseWhenResourceIsGranted() {
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withResourceAccessControl(true));
-		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.COMMUNICATION, RW));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels, Set.of(), Map.of(ProtectedResource.COMMUNICATION, RW)));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.COMMUNICATION, R);
 
@@ -279,22 +358,20 @@ class AccessControlServiceTest {
 
 	@Test
 	void withAccessControlAcceptsAResourceGrantedAtLimitedReadForALimitedReadOperation() {
-		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withResourceAccessControl(true));
-		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.ERRAND, LR));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
+			Map.of(LR, Set.of(LIMITED_READ_LABEL), R, Set.of(READ_LABEL), RW, Set.of(WRITE_LABEL)), Set.of(), Map.of(ProtectedResource.ERRAND, LR)));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, LR);
 
 		// An explicitly granted limited read resource may not behave the same as no grant at all.
-		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, adUser(), List.of(LR, R, RW));
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(LIMITED_READ_LABEL, READ_LABEL, WRITE_LABEL)));
 	}
 
 	@Test
 	void withAccessControlDeniesAResourceGrantedAtLimitedReadForAFullRead() {
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withResourceAccessControl(true));
-		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.COMMUNICATION, LR));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOfResources(Map.of(ProtectedResource.COMMUNICATION, LR)));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.COMMUNICATION, R);
 
@@ -304,18 +381,17 @@ class AccessControlServiceTest {
 	@Test
 	void withAccessControlDeniesWhenResourceIsNotGranted() {
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withResourceAccessControl(true));
-		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.ERRAND, RW));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOfResources(Map.of(ProtectedResource.ERRAND, RW)));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.COMMUNICATION, R);
 
 		assertThat(matches(specification)).isFalse();
-		verify(accessMapperService, never()).getAccessibleLabels(any(), any(), any(), any());
 	}
 
 	@Test
 	void withAccessControlDeniesWhenGrantedResourceLevelIsTooLow() {
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withResourceAccessControl(true));
-		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.COMMUNICATION, R));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOfResources(Map.of(ProtectedResource.COMMUNICATION, R)));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.COMMUNICATION, RW);
 
@@ -338,7 +414,7 @@ class AccessControlServiceTest {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.R)), null));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, R);
 
@@ -350,7 +426,7 @@ class AccessControlServiceTest {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(AccessLevel.R)), null));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, R);
 
@@ -362,7 +438,7 @@ class AccessControlServiceTest {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.R)), null));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, RW);
 
@@ -374,7 +450,7 @@ class AccessControlServiceTest {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.CONVERSATION_MESSAGE).withLevel(AccessLevel.RW)), null));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.CONVERSATION_MESSAGE, RW);
 
@@ -409,7 +485,7 @@ class AccessControlServiceTest {
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 
 		// Act
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, LR);
@@ -417,7 +493,7 @@ class AccessControlServiceTest {
 		// Verify - one clause, at limited read since that is the lowest level reaching an errand.
 		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 	}
 
 	@Test
@@ -431,7 +507,7 @@ class AccessControlServiceTest {
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
 
@@ -441,7 +517,7 @@ class AccessControlServiceTest {
 		// Verify
 		assertThat(result).isSameAs(entity);
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
@@ -458,7 +534,7 @@ class AccessControlServiceTest {
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
 
@@ -468,7 +544,7 @@ class AccessControlServiceTest {
 		// Verify
 		assertThat(result).isSameAs(entity);
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
@@ -501,7 +577,7 @@ class AccessControlServiceTest {
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
 
@@ -513,7 +589,7 @@ class AccessControlServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
@@ -529,7 +605,7 @@ class AccessControlServiceTest {
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.exists(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(true);
 
@@ -538,7 +614,7 @@ class AccessControlServiceTest {
 
 		// Verify
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).exists(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
@@ -571,7 +647,7 @@ class AccessControlServiceTest {
 
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.exists(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(false);
 
@@ -583,7 +659,7 @@ class AccessControlServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, user, List.of(LR, R, RW));
+		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).exists(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
@@ -673,63 +749,56 @@ class AccessControlServiceTest {
 
 	@Test
 	void withAccessControlReachesTheErrandOnLimitedReadWithoutConfiguration() {
-		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotWithALabelPerLevel());
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, LR);
 
-		// Limited read always reaches the errand, so the clause is resolved at that level.
-		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, adUser(), List.of(LR, R, RW));
+		// Limited read always reaches the errand, so the clause carries the labels granted at that level too.
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(LIMITED_READ_LABEL, READ_LABEL, WRITE_LABEL)));
 	}
 
 	@Test
 	void withAccessControlKeepsLimitedReadOffOtherResourcesWithoutConfiguration() {
-		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotWithALabelPerLevel());
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.NOTE, LR);
 
 		// Only the full access clause, so labels giving limited read reach no note.
-		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, adUser(), List.of(R, RW));
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(READ_LABEL, WRITE_LABEL)));
 	}
 
 	@Test
 	void withAccessControlExtendsLimitedReadToAConfiguredResource() {
-		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
 			.withAccessControl(true)
 			.withLimitedReadAccess(LimitedReadAccess.create().withResources(List.of(ProtectedResource.NOTE))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotWithALabelPerLevel());
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.NOTE, LR);
 
-		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, adUser(), List.of(LR, R, RW));
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(LIMITED_READ_LABEL, READ_LABEL, WRITE_LABEL)));
 	}
 
 	@Test
 	void withAccessControlNeverExtendsLimitedReadToAWrite() {
-		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
 			.withAccessControl(true)
 			.withLimitedReadAccess(LimitedReadAccess.create().withResources(List.of(ProtectedResource.NOTE))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotWithALabelPerLevel());
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.NOTE, RW);
 
-		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
-		verify(accessMapperService).getAccessibleLabels(MUNICIPALITY_ID, NAMESPACE, adUser(), List.of(RW));
+		// A write is satisfied by read/write labels alone, so neither the read nor the limited read ones are in the clause.
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(WRITE_LABEL)));
 	}
 
 	@Test
 	void withAccessControlNeverExtendsLimitedReadToAnErrandWrite() {
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(allowedLabels);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
 
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, RW);
 
@@ -742,7 +811,7 @@ class AccessControlServiceTest {
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
 			.withAccessControl(true)
 			.withRoleBasedMapping(true));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of()));
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
@@ -752,18 +821,17 @@ class AccessControlServiceTest {
 
 	@Test
 	void roleBasedFieldResolverKeepsTheMinimumUnderReporterFields() {
-		final var errand = ErrandEntity.create()
-			.withReporterUserId(AD_ACCOUNT)
-			.withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId("label-id-1")));
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
 			.withAccessControl(true)
 			.withRoleBasedMapping(true)
 			.withReporterAccess(ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE)))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(limitedReadSnapshot());
 
+		// The namespace says nothing about limited read, and its minimum is a floor for every limited read user,
+		// reporter or not, which the reporter fields add to.
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
-		// The minimum is a floor for every limited read user, reporter or not, and the reporter fields add to it
 		assertThat(result).containsOnlyKeys(ErrandField.ID, ErrandField.ERRAND_NUMBER, ErrandField.TITLE, ErrandField.STATUS);
 	}
 
@@ -775,12 +843,12 @@ class AccessControlServiceTest {
 			.withAccessControl(true)
 			.withRoleBasedMapping(false)
 			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE)))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(), Set.of("CASE_OFFICER")));
 
 		final var result = accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand);
 
+		// The role held is left out of it, since the namespace does not map errands per role.
 		assertThat(result).containsOnlyKeys(ErrandField.TITLE);
-		verify(accessMapperService, never()).getAccessibleRoles(any(), any(), any());
 	}
 
 	@Test
@@ -790,10 +858,9 @@ class AccessControlServiceTest {
 			.withAccessControl(true)
 			.withRoleBasedMapping(false)
 			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE))))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(), Set.of("CASE_OFFICER")));
 
 		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
-		verify(accessMapperService, never()).getAccessibleRoles(any(), any(), any());
 	}
 
 	@Test
@@ -803,8 +870,7 @@ class AccessControlServiceTest {
 			.withAccessControl(true)
 			.withRoleBasedMapping(true)
 			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("OTHER_ROLE").withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE))))));
-		when(accessMapperService.getAccessibleLabels(any(), any(), any(), any())).thenReturn(Set.of());
-		when(accessMapperService.getAccessibleRoles(any(), any(), any())).thenReturn(Set.of("CASE_OFFICER"));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(), Set.of("CASE_OFFICER")));
 
 		// No restriction listed for the role held, and the errand is not limited, so the errand is mapped in full.
 		assertThat(accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(errand)).isNull();
@@ -822,7 +888,7 @@ class AccessControlServiceTest {
 	void verifyNamespaceAuthorizationPassesWhenResourceIsGranted() {
 		Identifier.set(adUser());
 		when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.NAMESPACE_CONFIG, RW));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOfResources(Map.of(ProtectedResource.NAMESPACE_CONFIG, RW)));
 
 		assertThatNoException().isThrownBy(() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
 	}
@@ -831,7 +897,7 @@ class AccessControlServiceTest {
 	void verifyNamespaceAuthorizationThrowsWhenResourceIsNotGranted() {
 		Identifier.set(adUser());
 		when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.METADATA_STATUS, RW));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOfResources(Map.of(ProtectedResource.METADATA_STATUS, RW)));
 
 		final var exception = assertThrows(ThrowableProblem.class,
 			() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
@@ -844,7 +910,7 @@ class AccessControlServiceTest {
 	void verifyNamespaceAuthorizationThrowsWhenGrantedLevelIsTooLow() {
 		Identifier.set(adUser());
 		when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(accessMapperService.getAccessibleResources(any(), any(), any())).thenReturn(Map.of(ProtectedResource.NAMESPACE_CONFIG, R));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOfResources(Map.of(ProtectedResource.NAMESPACE_CONFIG, R)));
 
 		assertThrows(ThrowableProblem.class,
 			() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
