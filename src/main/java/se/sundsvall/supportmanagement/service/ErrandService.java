@@ -222,7 +222,9 @@ public class ErrandService {
 			validateLabelVersions(errand.getLabels());
 			expandLabelsToAncestorChain(errandEntity);
 		}
-		final var entity = persistLabelUpdate(errandEntity);
+		final var entity = errand.getLabels() != null
+			? persistLabelUpdate(errandEntity)
+			: repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 
 		final var revisionResult = revisionService.createErrandRevision(entity);
