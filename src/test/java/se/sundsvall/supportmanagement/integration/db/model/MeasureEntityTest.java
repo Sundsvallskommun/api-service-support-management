@@ -30,8 +30,8 @@ class MeasureEntityTest {
 		MatcherAssert.assertThat(MeasureEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("errandEntity"),
-			hasValidBeanEqualsExcluding("errandEntity"),
+			hasValidBeanHashCodeExcluding("errandEntity", "version"),
+			hasValidBeanEqualsExcluding("errandEntity", "version"),
 			hasValidBeanToStringExcluding("errandEntity")));
 	}
 
@@ -60,6 +60,7 @@ class MeasureEntityTest {
 		// Act
 		final var result = MeasureEntity.create()
 			.withId(id)
+			.withVersion(1L)
 			.withErrandEntity(errandEntity)
 			.withResponsibleUser(responsibleUser)
 			.withType(type)
@@ -80,6 +81,7 @@ class MeasureEntityTest {
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
 		assertThat(result.getId()).isEqualTo(id);
+		assertThat(result.getVersion()).isEqualTo(1L);
 		assertThat(result.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(result.getResponsibleUser()).isEqualTo(responsibleUser);
 		assertThat(result.getType()).isEqualTo(type);

@@ -36,6 +36,8 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);
 
+	boolean existsByNamespaceAndMunicipalityIdAndMeasuresType(String namespace, String municipalityId, String type);
+
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
 }

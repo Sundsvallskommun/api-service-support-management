@@ -325,6 +325,7 @@
         modified datetime(6),
         planned_complete datetime(6),
         planned_start datetime(6),
+        version bigint default 0 not null,
         description varchar(1000),
         rework_description varchar(1000),
         accept_motivation varchar(255),

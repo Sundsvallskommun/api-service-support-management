@@ -46,6 +46,7 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
@@ -646,20 +647,34 @@ public class MetadataService {
 			.toList();
 	}
 
+	/**
+	 * Deletes a measure type no measure refers to. A type in use is deprecated instead, so that the measures referring
+	 * to it keep a valid reference.
+	 */
+	@Transactional
 	public void deleteMeasureType(final String namespace, final String municipalityId, final String id) {
-		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
-		}
+		final var entity = measureTypeRepository.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId)));
 
-		measureTypeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		if (errandsRepository.existsByNamespaceAndMunicipalityIdAndMeasuresType(namespace, municipalityId, entity.getName())) {
+			throw Problem.valueOf(CONFLICT, "Measure type '%s' is in use; deprecate it instead of deleting it".formatted(entity.getName()));
+		}
+		measureTypeRepository.delete(entity);
 	}
 
+	/**
+	 * Updates the fields of a measure type the patch supplies. The name is the key measures refer to and cannot change:
+	 * a patch may leave it out or repeat the current one, but sending another name is refused.
+	 */
+	@Transactional
 	public MeasureType updateMeasureType(final String namespace, final String municipalityId, final String id, final MeasureType measureType) {
-		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
-			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
+		final var entity = measureTypeRepository.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId)));
+
+		if (measureType.getName() != null && !measureType.getName().equals(entity.getName())) {
+			throw Problem.valueOf(CONFLICT, "Measure type names are immutable; change displayName or create a new type instead");
 		}
-		final var entity = updateMeasureTypeEntity(measureTypeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), measureType);
-		return toMeasureType(measureTypeRepository.save(entity));
+		return toMeasureType(measureTypeRepository.saveAndFlush(updateMeasureTypeEntity(entity, measureType)));
 	}
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {

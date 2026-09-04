@@ -38,19 +38,39 @@ public final class ErrandMeasureMapper {
 	}
 
 	public static MeasureEntity updateMeasureEntity(final MeasureEntity entity, final Measure measure) {
-		ofNullable(measure.getResponsibleUser()).ifPresent(entity::setResponsibleUser);
-		ofNullable(measure.getType()).ifPresent(entity::setType);
-		ofNullable(measure.getPlannedStart()).ifPresent(entity::setPlannedStart);
-		ofNullable(measure.getPlannedComplete()).ifPresent(entity::setPlannedComplete);
-		ofNullable(measure.getExecuted()).ifPresent(entity::setExecuted);
-		ofNullable(measure.getAddedByUser()).ifPresent(entity::setAddedByUser);
-		ofNullable(measure.getAddedByRole()).ifPresent(entity::setAddedByRole);
-		ofNullable(measure.getGoal()).ifPresent(entity::setGoal);
-		ofNullable(measure.getDescription()).ifPresent(entity::setDescription);
-		ofNullable(measure.getAccept()).map(Accept::valueOf).ifPresent(entity::setAccept);
-		ofNullable(measure.getAcceptMotivation()).ifPresent(entity::setAcceptMotivation);
-		ofNullable(measure.getReworkGoal()).ifPresent(entity::setReworkGoal);
-		ofNullable(measure.getReworkDescription()).ifPresent(entity::setReworkDescription);
+		if (measure.hasField(Measure.Field.RESPONSIBLE_USER)) {
+			entity.setResponsibleUser(measure.getResponsibleUser());
+		}
+		if (measure.hasField(Measure.Field.TYPE)) {
+			entity.setType(measure.getType());
+		}
+		if (measure.hasField(Measure.Field.PLANNED_START)) {
+			entity.setPlannedStart(measure.getPlannedStart());
+		}
+		if (measure.hasField(Measure.Field.PLANNED_COMPLETE)) {
+			entity.setPlannedComplete(measure.getPlannedComplete());
+		}
+		if (measure.hasField(Measure.Field.EXECUTED)) {
+			entity.setExecuted(measure.getExecuted());
+		}
+		if (measure.hasField(Measure.Field.GOAL)) {
+			entity.setGoal(measure.getGoal());
+		}
+		if (measure.hasField(Measure.Field.DESCRIPTION)) {
+			entity.setDescription(measure.getDescription());
+		}
+		if (measure.hasField(Measure.Field.ACCEPT)) {
+			entity.setAccept(ofNullable(measure.getAccept()).map(Accept::valueOf).orElse(null));
+		}
+		if (measure.hasField(Measure.Field.ACCEPT_MOTIVATION)) {
+			entity.setAcceptMotivation(measure.getAcceptMotivation());
+		}
+		if (measure.hasField(Measure.Field.REWORK_GOAL)) {
+			entity.setReworkGoal(measure.getReworkGoal());
+		}
+		if (measure.hasField(Measure.Field.REWORK_DESCRIPTION)) {
+			entity.setReworkDescription(measure.getReworkDescription());
+		}
 		return entity;
 	}
 
@@ -94,6 +114,7 @@ public final class ErrandMeasureMapper {
 	public static Measure toMeasure(final MeasureEntity entity) {
 		return Measure.create()
 			.withId(entity.getId())
+			.withVersion(entity.getVersion())
 			.withResponsibleUser(entity.getResponsibleUser())
 			.withType(entity.getType())
 			.withPlannedStart(entity.getPlannedStart())

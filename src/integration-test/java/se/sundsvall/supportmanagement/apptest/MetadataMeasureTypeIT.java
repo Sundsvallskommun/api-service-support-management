@@ -7,6 +7,7 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -22,6 +23,7 @@ import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 
 /**
  * MeasureType Metadata IT tests.
@@ -108,7 +110,7 @@ class MetadataMeasureTypeIT extends AbstractAppTest {
 
 	@Test
 	void test06_deleteMeasureType() {
-		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000102";
 
 		assertThat(measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(measureTypeId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(measureTypeRepository.count()).isEqualTo(3);
@@ -135,5 +137,56 @@ class MetadataMeasureTypeIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_cannotDeleteReferencedType() {
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+
+		setupCall()
+			.withServicePath(PATH + "/" + measureTypeId)
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(measureTypeRepository.existsById(measureTypeId)).isTrue();
+	}
+
+	@Test
+	void test09_cannotRenameTheReferenceKey() {
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+
+		setupCall()
+			.withServicePath(PATH + "/" + measureTypeId)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(measureTypeRepository.findById(measureTypeId).orElseThrow().getName()).isEqualTo("MEASURE-1");
+	}
+
+	/**
+	 * MEASURE-1 is referenced in NAMESPACE-1. A type of the same name in another namespace is a different type and must
+	 * remain deletable.
+	 */
+	@Test
+	void test10_referenceChecksAreScopedToTheNamespace() {
+		final var measureType = measureTypeRepository.save(MeasureTypeEntity.create()
+			.withNamespace("OTHER")
+			.withMunicipalityId(MUNICIPALITY_2281)
+			.withName("MEASURE-1")
+			.withMeasureGroup("GROUP-A"));
+
+		setupCall()
+			.withServicePath("/" + MUNICIPALITY_2281 + "/OTHER/metadata/measuretypes/" + measureType.getId())
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		assertThat(measureTypeRepository.existsById(measureType.getId())).isFalse();
 	}
 }

@@ -22,6 +22,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasureEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasures;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.updateMeasureEntity;
+import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 
 @Service
 public class ErrandMeasureService {
@@ -41,12 +42,11 @@ public class ErrandMeasureService {
 	}
 
 	@Transactional
-	public String createErrandMeasure(final String namespace, final String municipalityId, final String errandId, final Measure measure) {
-		measureValidator.validate(measure, namespace, municipalityId);
-
+	public Measure createErrandMeasure(final String namespace, final String municipalityId, final String errandId, final Measure measure) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
+		measureValidator.validate(measure, namespace, municipalityId);
 		final var measureEntity = toMeasureEntity(measure, errandEntity);
 		ofNullable(errandEntity.getMeasures()).orElseGet(() -> {
 			errandEntity.setMeasures(new ArrayList<>());
@@ -54,8 +54,8 @@ public class ErrandMeasureService {
 		}).add(measureEntity);
 
 		entityManager.persist(measureEntity);
-		errandsRepository.save(errandEntity);
-		return measureEntity.getId();
+		errandsRepository.saveAndFlush(errandEntity);
+		return toMeasure(measureEntity);
 	}
 
 	@Transactional(readOnly = true)
@@ -71,25 +71,24 @@ public class ErrandMeasureService {
 	}
 
 	@Transactional
-	public Measure updateErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final Measure measure) {
-		measureValidator.validate(measure, namespace, municipalityId);
-
+	public Measure updateErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final String ifMatch, final Measure measure) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
-		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
-
 		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
+		validateIfMatch(ifMatch, measureEntity.getVersion());
+		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+		measureValidator.validate(measure, measureEntity, namespace, municipalityId);
 		updateMeasureEntity(measureEntity, measure);
 
-		errandsRepository.save(errandEntity);
+		errandsRepository.saveAndFlush(errandEntity);
 		return toMeasure(measureEntity);
 	}
 
 	@Transactional
-	public void deleteErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId) {
+	public void deleteErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final String ifMatch) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
-		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
-
 		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
+		validateIfMatch(ifMatch, measureEntity.getVersion());
+		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 		ofNullable(errandEntity.getMeasures()).ifPresent(measures -> measures.remove(measureEntity));
 
 		errandsRepository.save(errandEntity);

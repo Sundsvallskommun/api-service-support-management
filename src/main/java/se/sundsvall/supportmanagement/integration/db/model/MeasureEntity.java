@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
@@ -35,6 +36,10 @@ public class MeasureEntity {
 	@UuidGenerator
 	@Column(name = "id")
 	private String id;
+
+	@Version
+	@Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+	private Long version;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_measure_errand_id"))
@@ -103,6 +108,19 @@ public class MeasureEntity {
 
 	public static MeasureEntity create() {
 		return new MeasureEntity();
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public MeasureEntity withVersion(final Long version) {
+		this.version = version;
+		return this;
 	}
 
 	public String getId() {
@@ -378,6 +396,7 @@ public class MeasureEntity {
 			", reworkDescription='" + reworkDescription + '\'' +
 			", created=" + created +
 			", modified=" + modified +
+			", version=" + version +
 			'}';
 	}
 }

@@ -466,17 +466,32 @@ class ErrandServiceTest {
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
-		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
 		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'"))
-			.when(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
+			.when(measureValidatorMock).validate(eq(errand.getMeasures()), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 
-		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"0\"", errand))
 			.hasMessage("Bad Request: 'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'");
 
-		verify(errandPhaseServiceMock).processPhaseChange(eq(entity), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandPhaseServiceMock).validateStatusAgainstActivePhase(eq(entity), any());
-		verify(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
+		verify(measureValidatorMock).validate(eq(errand.getMeasures()), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+	}
+
+	/**
+	 * Measures are a protected resource of their own. Carrying them on the errand must not let a caller with write access
+	 * to the errand past the measure write check they would meet on the measure resource.
+	 */
+	@Test
+	void updateErrandWithMeasuresRequiresMeasureWriteAccess() {
+		final var errand = buildErrand().withMeasures(List.of(Measure.create().withType("TYPE")));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(buildErrandEntity());
+		when(accessControlServiceMock.readableKeyResolver(any(), any(), any(), any())).thenReturn(_ -> _ -> true);
+		doThrow(Problem.valueOf(UNAUTHORIZED, "Errand is not accessible"))
+			.when(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.MEASURE, RW);
+
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"0\"", errand))
+			.hasMessage("Unauthorized: Errand is not accessible");
+
+		verifyNoInteractions(measureValidatorMock, errandRepositoryMock);
 	}
 
 	@Test

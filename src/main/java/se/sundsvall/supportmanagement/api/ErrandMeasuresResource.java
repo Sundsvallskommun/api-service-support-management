@@ -19,17 +19,20 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.supportmanagement.api.model.errand.CreateMeasureRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import se.sundsvall.supportmanagement.service.ErrandMeasureService;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpHeaders.ETAG;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -40,6 +43,7 @@ import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
+import static se.sundsvall.supportmanagement.service.util.ETagUtil.format;
 
 @RestController
 @Validated
@@ -59,24 +63,30 @@ class ErrandMeasuresResource {
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Create errand measure", description = "Creates a new measure for the errand", responses = {
-		@ApiResponse(responseCode = "201", description = "Successful operation", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "201", description = "Successful operation", headers = {
+			@Header(name = LOCATION, schema = @Schema(type = "string")),
+			@Header(name = ETAG, description = "ETag of the created measure", schema = @Schema(type = "string"))
+		}, useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "409", description = "Conflict — resource modified concurrently", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Void> createErrandMeasure(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Valid @NotNull @RequestBody final Measure measure) {
+		@Valid @NotNull @RequestBody final CreateMeasureRequest measure) {
 
+		final var createdMeasure = service.createErrandMeasure(namespace, municipalityId, errandId, measure);
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}/measures/{measureId}")
-			.buildAndExpand(municipalityId, namespace, errandId, service.createErrandMeasure(namespace, municipalityId, errandId, measure)).toUri())
+			.buildAndExpand(municipalityId, namespace, errandId, createdMeasure.getId()).toUri())
+			.header(ETAG, format(createdMeasure.getVersion()))
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
 	}
 
 	@GetMapping(path = "/{measureId}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read errand measure", description = "Fetches the measure matching the provided errand id and measure id", responses = {
-		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "200", description = "Successful operation", headers = @Header(name = ETAG, description = "ETag of the measure", schema = @Schema(type = "string")), useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Measure> readErrandMeasure(
@@ -85,7 +95,8 @@ class ErrandMeasuresResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "measureId", description = "Measure id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String measureId) {
 
-		return ok(service.readErrandMeasure(namespace, municipalityId, errandId, measureId));
+		final var measure = service.readErrandMeasure(namespace, municipalityId, errandId, measureId);
+		return ok().header(ETAG, format(measure.getVersion())).body(measure);
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -102,31 +113,38 @@ class ErrandMeasuresResource {
 
 	@PatchMapping(path = "/{measureId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update errand measure", description = "Updates the measure matching the provided errand id and measure id", responses = {
-		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "412", description = "If-Match does not match the current measure version", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409", description = "Conflict — resource modified concurrently", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "200", description = "Successful operation", headers = @Header(name = ETAG, description = "ETag of the updated measure", schema = @Schema(type = "string")), useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Measure> updateErrandMeasure(
+		@Parameter(name = "If-Match", description = "Optional ETag of the measure for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "measureId", description = "Measure id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String measureId,
 		@Validated(OnUpdate.class) @NotNull @RequestBody final Measure measure) {
 
-		return ok(service.updateErrandMeasure(namespace, municipalityId, errandId, measureId, measure));
+		final var updated = service.updateErrandMeasure(namespace, municipalityId, errandId, measureId, ifMatch, measure);
+		return ok().header(ETAG, format(updated.getVersion())).body(updated);
 	}
 
 	@DeleteMapping(path = "/{measureId}", produces = ALL_VALUE)
 	@Operation(summary = "Delete errand measure", description = "Deletes the measure matching the provided errand id and measure id", responses = {
+		@ApiResponse(responseCode = "412", description = "If-Match does not match the current measure version", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409", description = "Conflict — resource modified concurrently", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Void> deleteErrandMeasure(
+		@Parameter(name = "If-Match", description = "Optional ETag of the measure for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "measureId", description = "Measure id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String measureId) {
 
-		service.deleteErrandMeasure(namespace, municipalityId, errandId, measureId);
+		service.deleteErrandMeasure(namespace, municipalityId, errandId, measureId, ifMatch);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
