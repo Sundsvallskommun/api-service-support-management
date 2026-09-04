@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,9 +22,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelAttributes;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelSiblings;
@@ -33,12 +38,14 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.accepted;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
@@ -112,6 +119,40 @@ class MetadataLabelResource {
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
+	}
+
+	@PutMapping(path = "/{labelId}/move", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Move label", description = "Validates a label move. When dryRun is true, returns the number of affected errands and actions without making any changes. When dryRun is false, starts the move as an asynchronous job.", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful dry-run operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = LabelMoveDryRunResponse.class))),
+		@ApiResponse(responseCode = "202",
+			headers = @Header(name = LOCATION, schema = @Schema(type = "string")),
+			description = "Move accepted and started as an asynchronous job",
+			content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = JobResponse.class))),
+		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409", description = "Conflict — path collision at destination", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Object> moveLabel(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "labelId", description = "Label ID to move", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String labelId,
+		@Valid @NotNull @RequestBody final LabelMoveRequest request) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
+
+		if (request.isDryRun()) {
+			return ok(metadataService.moveLabel(namespace, municipalityId, labelId, request));
+		}
+
+		final var job = metadataService.startLabelMove(namespace, municipalityId, labelId, request);
+		return accepted()
+			.header(LOCATION, fromPath("/{municipalityId}/{namespace}/jobs/{jobId}")
+				.buildAndExpand(municipalityId, namespace, job.getJobId())
+				.toString())
+			.body(job);
 	}
 
 	@DeleteMapping(produces = ALL_VALUE)

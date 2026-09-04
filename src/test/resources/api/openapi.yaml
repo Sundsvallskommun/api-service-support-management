@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "15.4"
 servers:
-- url: http://localhost:65503
+- url: http://localhost:64563
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -699,6 +699,97 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/labels/{labelId}/move:
+    put:
+      tags:
+      - Metadata for labels
+      summary: Move label
+      description: "Validates a label move. When dryRun is true, returns the number\
+        \ of affected errands and actions without making any changes. When dryRun\
+        \ is false, starts the move as an asynchronous job."
+      operationId: moveLabel
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: labelId
+        in: path
+        description: Label ID to move
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelMoveRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful dry-run operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelMoveDryRunResponse"
+        "202":
+          description: Move accepted and started as an asynchronous job
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — path collision at destination
           content:
             application/problem+json:
               schema:
@@ -3211,7 +3302,7 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "412":
-          description: "Precondition Failed — label version mismatch"
+          description: Precondition Failed — label version mismatch
           content:
             application/problem+json:
               schema:
@@ -9732,16 +9823,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        title:
-          type: string
-        detail:
-          type: string
         status:
           type: integer
           format: int32
@@ -9760,13 +9851,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        detail:
+          type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
-        detail:
-          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -10221,6 +10312,95 @@ components:
       required:
       - key
       - value
+    AffectedAction:
+      type: object
+      description: An action that references labels affected by a label move
+      properties:
+        id:
+          type: string
+          description: Action ID
+          example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        name:
+          type: string
+          description: Action name
+          example: SEND_EMAIL
+        displayValue:
+          type: string
+          description: Human-readable display value for the action
+          example: Send email to assignee
+    LabelMoveDryRunResponse:
+      type: object
+      description: Result of a label move dry-run — no changes are made
+      properties:
+        affectedErrandCount:
+          type: integer
+          format: int64
+          description: Number of errands that reference the label or any of its descendants
+        affectedActions:
+          type: array
+          description: Actions that have hasLabel conditions referencing the moved
+            label or its descendants
+          items:
+            $ref: "#/components/schemas/AffectedAction"
+    JobResponse:
+      type: object
+      description: Job response
+      properties:
+        jobId:
+          type: string
+          description: Job ID
+        type:
+          type: string
+          description: Job type
+          enum:
+          - MOVE_LABEL
+          - ERRAND_PURGE
+        status:
+          type: string
+          description: Job status
+          enum:
+          - PENDING
+          - RUNNING
+          - COMPLETED
+          - STOPPED
+          - FAILED
+        progress:
+          type: integer
+          format: int32
+          description: Progress percentage (0-100)
+        total:
+          type: integer
+          format: int32
+          description: Total number of items to process
+        processed:
+          type: integer
+          format: int32
+          description: Number of items processed so far
+        message:
+          type: string
+          description: "Error message, populated on FAILED status"
+        created:
+          type: string
+          format: date-time
+          description: When the job was created
+        modified:
+          type: string
+          format: date-time
+          description: When the job was last updated
+    LabelMoveRequest:
+      type: object
+      description: Request for moving a label to a new parent
+      properties:
+        newParentId:
+          type:
+          - string
+          - "null"
+          description: ID of the new parent label. Null means move to root.
+          example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        dryRun:
+          type: boolean
+          default: false
+          description: "If true, return affected counts without making any changes."
     MessageExchangeIntegration:
       type: object
       description: Message exchange worker config model
@@ -10258,21 +10438,11 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
+        container:
           type: boolean
-        array:
+        number:
           type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
-        integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
+        floatingPointNumber:
           type: boolean
         nodeType:
           type: string
@@ -10286,34 +10456,44 @@ components:
           - OBJECT
           - POJO
           - STRING
-        floatingPointNumber:
+        string:
           type: boolean
-        bigInteger:
+        integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
+        pojo:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
           type: boolean
         bigDecimal:
           type: boolean
-        string:
-          type: boolean
-        boolean:
+        bigInteger:
           type: boolean
         textual:
           type: boolean
           deprecated: true
+        boolean:
+          type: boolean
         binary:
           type: boolean
-        pojo:
+        empty:
           type: boolean
-        double:
+        array:
           type: boolean
-        short:
+        "null":
           type: boolean
-        long:
+        object:
           type: boolean
-        int:
-          type: boolean
-        number:
-          type: boolean
-        container:
+        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -12697,51 +12877,6 @@ components:
       required:
       - dryRun
       - olderThan
-    JobResponse:
-      type: object
-      description: Job response
-      properties:
-        jobId:
-          type: string
-          description: Job ID
-        type:
-          type: string
-          description: Job type
-          enum:
-          - MOVE_LABEL
-          - ERRAND_PURGE
-        status:
-          type: string
-          description: Job status
-          enum:
-          - PENDING
-          - RUNNING
-          - COMPLETED
-          - STOPPED
-          - FAILED
-        progress:
-          type: integer
-          format: int32
-          description: Progress percentage (0-100)
-        total:
-          type: integer
-          format: int32
-          description: Total number of items to process
-        processed:
-          type: integer
-          format: int32
-          description: Number of items processed so far
-        message:
-          type: string
-          description: "Error message, populated on FAILED status"
-        created:
-          type: string
-          format: date-time
-          description: When the job was created
-        modified:
-          type: string
-          format: date-time
-          description: When the job was last updated
     Validation:
       type: object
       description: Validation model
@@ -12940,29 +13075,29 @@ components:
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
-        unpaged:
-          type: boolean
-        paged:
-          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
+        paged:
+          type: boolean
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
+        unpaged:
+          type: boolean
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
-          type: boolean
         sorted:
           type: boolean
         unsorted:
+          type: boolean
+        empty:
           type: boolean
     SubscriberNotification:
       type: object

@@ -10,15 +10,24 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @AutoConfigureWebTestClient
@@ -115,6 +124,55 @@ class MetadataLabelResourceTest {
 
 		// Assert and verify
 		verify(metadataServiceMock).deleteLabels(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void moveLabel() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var request = LabelMoveRequest.create().withDryRun(true);
+		final var response = LabelMoveDryRunResponse.create()
+			.withAffectedErrandCount(3L)
+			.withAffectedActions(List.of(AffectedAction.create().withId("action-id").withName("ACTION").withDisplayValue("Display")));
+
+		when(metadataServiceMock.moveLabel(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(labelId), any())).thenReturn(response);
+
+		final var result = webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody(LabelMoveDryRunResponse.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(result).isEqualTo(response);
+		verify(metadataServiceMock).moveLabel(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(labelId), any());
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void moveLabel_notDryRun_startsJobAndReturnsAccepted() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var request = LabelMoveRequest.create().withDryRun(false);
+		final var jobResponse = JobResponse.create().withJobId("job-id").withType(JobType.MOVE_LABEL).withStatus(JobStatus.PENDING).withTotal(3);
+
+		when(metadataServiceMock.startLabelMove(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(labelId), any())).thenReturn(jobResponse);
+
+		final var result = webTestClient.put()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectHeader().valueEquals(LOCATION, "/%s/%s/jobs/job-id".formatted(MUNICIPALITY_ID, NAMESPACE))
+			.expectBody(JobResponse.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(result).isEqualTo(jobResponse);
+		verify(metadataServiceMock).startLabelMove(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(labelId), any());
 		verifyNoMoreInteractions(metadataServiceMock);
 	}
 }
