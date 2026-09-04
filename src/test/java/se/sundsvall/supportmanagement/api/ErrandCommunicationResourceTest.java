@@ -276,6 +276,33 @@ class ErrandCommunicationResourceTest {
 	}
 
 	@Test
+	void getOrCreateInternalConversation() {
+		final var request = ConversationRequest.create().withType(ConversationType.INTERNAL).withTopic("Report");
+		final var conversation = Conversation.create().withId(CONVERSATION_ID).withType(ConversationType.INTERNAL).withTopic("Original topic");
+		when(conversationServiceMock.createConversation(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, request)).thenReturn(conversation);
+		webTestClient.put()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/internal")
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON).bodyValue(request).exchange()
+			.expectStatus().isOk().expectBody(Conversation.class).isEqualTo(conversation);
+		verify(conversationServiceMock).createConversation(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, request);
+	}
+
+	@Test
+	void getOrCreateRejectsExternalAndRelatedConversations() {
+		final var requests = List.of(
+			ConversationRequest.create().withType(ConversationType.EXTERNAL).withTopic("External"),
+			ConversationRequest.create().withType(ConversationType.INTERNAL).withTopic("Related").withRelationIds(List.of(randomUUID().toString())));
+		for (final var request : requests) {
+			webTestClient.put()
+				.uri(builder -> builder.path(PATH_PREFIX + PATH_CONVERSATIONS + "/internal")
+					.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
+				.contentType(APPLICATION_JSON).bodyValue(request).exchange().expectStatus().isBadRequest();
+		}
+		verifyNoMoreInteractions(conversationServiceMock);
+	}
+
+	@Test
 	void updateConversation() {
 
 		// Arrange

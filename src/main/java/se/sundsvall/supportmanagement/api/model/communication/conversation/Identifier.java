@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import java.util.Objects;
 
-@Schema(description = "Identifier model")
+@Schema(name = "ConversationIdentifier", description = "Identifier model")
 public class Identifier {
 
 	@Pattern(regexp = "^(adAccount|partyId)$", message = "Type must be 'adAccount' or 'partyId'")

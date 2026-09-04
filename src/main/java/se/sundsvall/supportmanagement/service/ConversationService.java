@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.Conversation;
@@ -30,11 +32,13 @@ import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageE
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
+import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.INTERNAL;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversation;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toConversationEntity;
@@ -84,8 +88,22 @@ public class ConversationService {
 		this.errandAttachmentService = errandAttachmentService;
 	}
 
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION, RW);
+		if (conversationRequest.getType() == INTERNAL && ofNullable(conversationRequest.getRelationIds()).orElse(emptyList()).isEmpty()) {
+			// The relationless internal conversation belongs to the reporter and the case worker.
+			// Lock the errand before looking for it, including when no conversation exists yet.
+			// The database lock coordinates all application instances and both clients.
+			accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.CONVERSATION, RW);
+			final var existing = conversationRepository.findByMunicipalityIdAndNamespaceAndErrandId(municipalityId, namespace, errandId).stream()
+				.filter(conversation -> INTERNAL.name().equals(conversation.getType()) && ofNullable(conversation.getRelationIds()).orElse(emptyList()).isEmpty())
+				.min(comparing(ConversationEntity::getId));
+			if (existing.isPresent()) {
+				return toConversation(existing.get());
+			}
+		} else {
+			accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION, RW);
+		}
 		// Create conversation in MessageExchange
 		final var createResponse = messageExchangeClient.createConversation(municipalityId, messageExchangeNamespace, toMessageExchangeConversation(municipalityId, messageExchangeNamespace, conversationRequest));
 

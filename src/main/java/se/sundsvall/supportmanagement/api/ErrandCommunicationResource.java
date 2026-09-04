@@ -56,6 +56,7 @@ import static jakarta.validation.Validation.buildDefaultValidatorFactory;
 import static java.util.Comparator.comparing;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
@@ -66,6 +67,7 @@ import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
+import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.INTERNAL;
 
 @RestController
 @Validated
@@ -201,8 +203,25 @@ class ErrandCommunicationResource {
 		communicationService.getMessageAttachmentStreamed(namespace, municipalityId, errandId, communicationId, attachmentId, response);
 	}
 
+	@PutMapping(path = "/conversations/internal", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Create or reuse the internal conversation without relations", description = "Atomically returns the internal conversation belonging to the errand itself. Existing conversations keep their topic and participants.", responses = {
+		@ApiResponse(responseCode = "200", description = "The created or existing conversation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Errand not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Conversation> getOrCreateInternalConversation(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "errandId", description = "Errand ID", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
+		@Valid @NotNull @RequestBody final ConversationRequest request) {
+
+		if (request.getType() != INTERNAL || (request.getRelationIds() != null && !request.getRelationIds().isEmpty())) {
+			throw Problem.valueOf(BAD_REQUEST, "Only internal conversations without relations can be reused");
+		}
+		return ok(conversationService.createConversation(municipalityId, namespace, errandId, request));
+	}
+
 	@PostMapping(path = "/conversations", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
-	@Operation(summary = "Create conversation", description = "Create new conversation", responses = {
+	@Operation(summary = "Create conversation", description = "Create a conversation. Internal conversations without relations are atomically reused when one already exists.", responses = {
 		@ApiResponse(responseCode = "201", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Successful operation", useReturnTypeSchema = true),
 	})
 	ResponseEntity<Void> createConversation(

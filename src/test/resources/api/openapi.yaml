@@ -3993,6 +3993,79 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations/internal:
+    put:
+      tags:
+      - Errand communication
+      summary: Create or reuse the internal conversation without relations
+      description: Atomically returns the internal conversation belonging to the errand
+        itself. Existing conversations keep their topic and participants.
+      operationId: getOrCreateInternalConversation
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand ID
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationRequest"
+        required: true
+      responses:
+        "200":
+          description: The created or existing conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "404":
+          description: Errand not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/communication/conversations:
     get:
       tags:
@@ -4065,7 +4138,8 @@ paths:
       tags:
       - Errand communication
       summary: Create conversation
-      description: Create new conversation
+      description: Create a conversation. Internal conversations without relations
+        are atomically reused when one already exists.
       operationId: createConversation
       parameters:
       - name: namespace
@@ -12585,6 +12659,24 @@ components:
       - recipient
       - sender
       - subject
+    ConversationIdentifier:
+      type: object
+      description: Identifier model
+      properties:
+        type:
+          type: string
+          description: The conversation identifier type
+          examples:
+          - adAccount
+          pattern: ^(adAccount|partyId)$
+        value:
+          type: string
+          description: The conversation identifier value
+          examples:
+          - joe01doe
+          minLength: 1
+      required:
+      - value
     ConversationRequest:
       type: object
       description: ConversationRequest model
@@ -12606,7 +12698,7 @@ components:
         participants:
           type: array
           items:
-            $ref: "#/components/schemas/Identifier"
+            $ref: "#/components/schemas/ConversationIdentifier"
             description: A list of participants in this conversation
         metadata:
           type: array
@@ -12898,7 +12990,7 @@ components:
         participants:
           type: array
           items:
-            $ref: "#/components/schemas/Identifier"
+            $ref: "#/components/schemas/ConversationIdentifier"
             description: A list of participants in this conversation
         metadata:
           type: array
@@ -13633,7 +13725,7 @@ components:
           examples:
           - 2023-01-01T12:00:00
         createdBy:
-          $ref: "#/components/schemas/Identifier"
+          $ref: "#/components/schemas/ConversationIdentifier"
           description: The participant who created the message.
         content:
           type: string
@@ -13696,7 +13788,7 @@ components:
       description: Readby model
       properties:
         identifier:
-          $ref: "#/components/schemas/Identifier"
+          $ref: "#/components/schemas/ConversationIdentifier"
           description: The identifier of the person who read the message.
           examples:
           - joe01doe
@@ -13749,7 +13841,7 @@ components:
       description: Read count for a specific identifier
       properties:
         identifier:
-          $ref: "#/components/schemas/Identifier"
+          $ref: "#/components/schemas/ConversationIdentifier"
           description: The identifier that read the messages
         count:
           type: integer

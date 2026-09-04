@@ -150,6 +150,31 @@ class ConversationServiceTest {
 	}
 
 	@Test
+	void reusesTheSameInternalRootRegardlessOfListOrder() {
+		final var other = ConversationEntity.create().withId("a-external").withType("EXTERNAL");
+		final var related = ConversationEntity.create().withId("a-related").withType("INTERNAL").withRelationIds(List.of("relation"));
+		final var root = ConversationEntity.create().withId("root-a").withMessageExchangeId(MESSAGE_EXCHANGE_ID).withType("INTERNAL");
+		final var secondRoot = ConversationEntity.create().withId("root-b").withType("INTERNAL");
+		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID))
+			.thenReturn(List.of(secondRoot, other, related, root));
+		final var response = conversationService.createConversation(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID,
+			ConversationRequest.create().withType(INTERNAL).withTopic("New topic"));
+		assertThat(response.getId()).isEqualTo("root-a");
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.CONVERSATION, RW);
+		verify(messageExchangeClientMock, never()).createConversation(any(), any(), any());
+		verify(conversationRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void cannotReuseAConversationWithoutWriteAccess() {
+		doThrow(new IllegalStateException("Denied")).when(accessControlServiceMock)
+			.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.CONVERSATION, RW);
+		assertThatThrownBy(() -> conversationService.createConversation(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID,
+			ConversationRequest.create().withType(INTERNAL).withTopic("Report"))).hasMessage("Denied");
+		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
+	}
+
+	@Test
 	void createConversationNoConversationIdReturnedFromMessageExchange() {
 		// Arrange
 		final var conversationRequest = createConversationRequest();
