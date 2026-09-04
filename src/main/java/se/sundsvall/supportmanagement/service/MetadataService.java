@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
@@ -53,6 +54,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReason;
@@ -108,6 +110,7 @@ public class MetadataService {
 	private final StatusRepository statusRepository;
 	private final ValidationRepository validationRepository;
 	private final ContactReasonRepository contactReasonRepository;
+	private final JobService jobService;
 	private final AntPathMatcher pathMatcher;
 
 	public MetadataService(
@@ -121,7 +124,8 @@ public class MetadataService {
 		final RoleRepository roleRepository,
 		final StatusRepository statusRepository,
 		final ValidationRepository validationRepository,
-		final ContactReasonRepository contactReasonRepository) {
+		final ContactReasonRepository contactReasonRepository,
+		final JobService jobService) {
 		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -133,6 +137,7 @@ public class MetadataService {
 		this.statusRepository = statusRepository;
 		this.validationRepository = validationRepository;
 		this.contactReasonRepository = contactReasonRepository;
+		this.jobService = jobService;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
 	}
@@ -354,18 +359,7 @@ public class MetadataService {
 
 	@Transactional(readOnly = true)
 	public LabelMoveDryRunResponse moveLabel(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, labelId, namespace, municipalityId)));
-
-		MetadataLabelEntity newParent = null;
-		if (request.getNewParentId() != null) {
-			newParent = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(request.getNewParentId(), namespace, municipalityId)
-				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, request.getNewParentId(), namespace, municipalityId)));
-		}
-
-		validateNotNoOp(labelToMove, request.getNewParentId());
-		validateNoCycle(labelId, newParent);
-		validateNoPathCollision(namespace, municipalityId, labelToMove, newParent);
+		var labelToMove = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
 
 		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
 			namespace, municipalityId, labelToMove.getResourcePath() + "/");
@@ -386,6 +380,38 @@ public class MetadataService {
 		return LabelMoveDryRunResponse.create()
 			.withAffectedErrandCount(affectedErrandCount)
 			.withAffectedActions(affectedActions);
+	}
+
+	/**
+	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
+	 * <p>
+	 * The re-stuvning (re-parenting of affected errand labels) that carries the move out is not wired up yet — the job
+	 * is created here and stays PENDING until a worker that performs it is added.
+	 */
+	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
+		validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+
+		var affectedErrandCount = errandsRepository.countByLabelsMetadataLabelId(labelId);
+		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount);
+
+		return jobService.get(namespace, municipalityId, jobId);
+	}
+
+	private MetadataLabelEntity validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
+		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, labelId, namespace, municipalityId)));
+
+		MetadataLabelEntity newParent = null;
+		if (newParentId != null) {
+			newParent = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(newParentId, namespace, municipalityId)
+				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, newParentId, namespace, municipalityId)));
+		}
+
+		validateNotNoOp(labelToMove, newParentId);
+		validateNoCycle(labelId, newParent);
+		validateNoPathCollision(namespace, municipalityId, labelToMove, newParent);
+
+		return labelToMove;
 	}
 
 	private static void validateNotNoOp(final MetadataLabelEntity labelToMove, final String newParentId) {

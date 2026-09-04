@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
@@ -24,6 +25,7 @@ import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -33,6 +35,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
 
 @ExtendWith(MockitoExtension.class)
 class MetadataServiceMoveLabelTest {
@@ -75,6 +78,9 @@ class MetadataServiceMoveLabelTest {
 
 	@Mock
 	private ContactReasonRepository contactReasonRepositoryMock;
+
+	@Mock
+	private JobService jobServiceMock;
 
 	@InjectMocks
 	private MetadataService service;
@@ -225,9 +231,44 @@ class MetadataServiceMoveLabelTest {
 		assertThat(result.getAffectedActions()).isEmpty();
 	}
 
+	@Test
+	void startLabelMove_labelNotFound_throws404() {
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.empty());
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(NOT_FOUND.value()));
+
+		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
+	}
+
+	@Test
+	void startLabelMove_createsJobAndReturnsJobResponse() {
+		var label = labelEntityWithParent(LABEL_ID, "CHILD", "PARENT/CHILD", labelEntity(PARENT_ID, "PARENT", null));
+		var jobResponse = JobResponse.create().withJobId("job-id").withType(MOVE_LABEL).withStatus(JobStatus.PENDING).withTotal(3);
+
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(label));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD"))
+			.thenReturn(Optional.empty());
+		when(errandsRepositoryMock.countByLabelsMetadataLabelId(LABEL_ID)).thenReturn(3L);
+		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3)).thenReturn("job-id");
+		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(jobResponse);
+
+		var result = service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false));
+
+		assertThat(result).isEqualTo(jobResponse);
+		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
+		verify(errandsRepositoryMock).countByLabelsMetadataLabelId(LABEL_ID);
+		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3);
+		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
+	}
+
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
-		verifyNoMoreInteractions(actionConfigRepositoryMock, metadataLabelRepositoryMock, errandsRepositoryMock);
+		verifyNoMoreInteractions(actionConfigRepositoryMock, metadataLabelRepositoryMock, errandsRepositoryMock, jobServiceMock);
 	}
 
 	private static MetadataLabelEntity labelEntity(final String id, final String resourceName, final String resourcePath) {
