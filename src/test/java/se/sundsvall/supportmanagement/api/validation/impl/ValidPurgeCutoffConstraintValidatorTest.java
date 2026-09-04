@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
+import java.time.Duration;
 import java.time.Period;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +30,7 @@ class ValidPurgeCutoffConstraintValidatorTest {
 	private final ValidPurgeCutoffConstraintValidator validator = validator("P2Y");
 
 	private static ValidPurgeCutoffConstraintValidator validator(final String minimumAge) {
-		return new ValidPurgeCutoffConstraintValidator(new ErrandPurgeProperties(Period.parse(minimumAge), 250, 2));
+		return new ValidPurgeCutoffConstraintValidator(new ErrandPurgeProperties(Period.parse(minimumAge), 250, 2, Duration.ofMinutes(1)));
 	}
 
 	@Test

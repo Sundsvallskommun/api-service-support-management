@@ -9,6 +9,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -96,6 +97,28 @@ class CommunicationRepositoryTest {
 		// Assertions
 		assertThat(communications).isNotEmpty();
 		assertThat(communications.getFirst().getErrandNumber()).isEqualTo(errandNumber);
+	}
+
+	@Test
+	void findIdsByErrandNumberAndNamespaceAndMunicipalityId() {
+		// Setup
+		final var errandNumber = "errand1";
+
+		// Execution
+		final var ids = communicationRepository.findIdsByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID);
+
+		// Assertions
+		assertThat(ids)
+			.isNotEmpty()
+			.extracting(IdProjection::getId)
+			.containsExactlyInAnyOrderElementsOf(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID).stream()
+				.map(CommunicationEntity::getId)
+				.toList());
+	}
+
+	@Test
+	void findIdsByErrandNumberAndNamespaceAndMunicipalityIdNotFound() {
+		assertThat(communicationRepository.findIdsByErrandNumberAndNamespaceAndMunicipalityId("does-not-exist", NAMESPACE, MUNICIPALITY_ID)).isNotNull().isEmpty();
 	}
 
 	@Test
