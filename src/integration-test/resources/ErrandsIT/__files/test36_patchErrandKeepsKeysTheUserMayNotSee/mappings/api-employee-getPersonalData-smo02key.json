@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-employee/2506/portalpersondata/personal/smo02key"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 200
+	},
+	"name": "api-employee-getPersonalData-smo02key"
+}

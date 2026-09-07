@@ -26,8 +26,11 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.SubscriptionService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -52,9 +55,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class SubscriptionsResource {
 
 	private final SubscriptionService service;
+	private final AccessControlService accessControlService;
 
-	SubscriptionsResource(final SubscriptionService service) {
+	SubscriptionsResource(final SubscriptionService service, final AccessControlService accessControlService) {
 		this.service = service;
+		this.accessControlService = accessControlService;
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -88,6 +93,8 @@ class SubscriptionsResource {
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId,
 		@Valid @NotNull @RequestBody final Subscription subscription) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIPTION, RW);
+
 		final var id = service.createSubscription(municipalityId, namespace, subscriberId, subscription);
 		return created(fromPath("/{municipalityId}/{namespace}/subscribers/{subscriberId}/subscriptions/{id}")
 			.buildAndExpand(municipalityId, namespace, subscriberId, id).toUri())
@@ -105,6 +112,8 @@ class SubscriptionsResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId,
 		@Parameter(name = "subscriptionId", description = "Subscription ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriptionId) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIPTION, RW);
 
 		service.deleteSubscription(municipalityId, namespace, subscriberId, subscriptionId);
 		return noContent()

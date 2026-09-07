@@ -25,8 +25,11 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotification;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -47,9 +50,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class SubscriberNotificationsResource {
 
 	private final SubscriberNotificationService service;
+	private final AccessControlService accessControlService;
 
-	SubscriberNotificationsResource(final SubscriberNotificationService service) {
+	SubscriberNotificationsResource(final SubscriberNotificationService service, final AccessControlService accessControlService) {
 		this.service = service;
+		this.accessControlService = accessControlService;
 	}
 
 	@GetMapping(path = "/{identifierType}/{identifierValue}", produces = APPLICATION_JSON_VALUE)
@@ -76,6 +81,8 @@ class SubscriberNotificationsResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "notificationId", description = "Notification ID", example = "74540a24-70e1-4e82-90f7-7d8ad4666cdc") @ValidUuid @PathVariable final String notificationId) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIBER_NOTIFICATION, RW);
+
 		service.deleteNotification(municipalityId, namespace, notificationId);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
@@ -91,6 +98,8 @@ class SubscriberNotificationsResource {
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "notificationId", description = "Notification ID", example = "74540a24-70e1-4e82-90f7-7d8ad4666cdc") @ValidUuid @PathVariable final String notificationId) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIBER_NOTIFICATION, RW);
 
 		service.acknowledgeNotification(municipalityId, namespace, notificationId);
 		return noContent()

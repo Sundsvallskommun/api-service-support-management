@@ -32,17 +32,19 @@ import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepo
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
 import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -82,6 +84,7 @@ public class CommunicationService {
 	private final EmployeeService employeeService;
 	private final CitizenIntegration citizenIntegration;
 	private final MessagingSettingsIntegration messagingSettingsIntegration;
+	private final ChunkedDeleter chunkedDeleter;
 
 	public CommunicationService(
 		final AccessControlService accessControlService,
@@ -93,7 +96,8 @@ public class CommunicationService {
 		final Semaphore semaphore,
 		final EmployeeService employeeService,
 		final CitizenIntegration citizenIntegration,
-		final MessagingSettingsIntegration messagingSettingsIntegration) {
+		final MessagingSettingsIntegration messagingSettingsIntegration,
+		final ChunkedDeleter chunkedDeleter) {
 
 		this.accessControlService = accessControlService;
 		this.messagingClient = messagingClient;
@@ -105,26 +109,28 @@ public class CommunicationService {
 		this.employeeService = employeeService;
 		this.citizenIntegration = citizenIntegration;
 		this.messagingSettingsIntegration = messagingSettingsIntegration;
+		this.chunkedDeleter = chunkedDeleter;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, LR);
 
-		return communicationMapper.toCommunications(communicationRepository.findByErrandNumber(errand.getErrandNumber()));
+		return communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errand.getErrandNumber(), namespace, municipalityId));
 	}
 
 	public List<Communication> readExternalCommunications(final String namespace, final String municipalityId, final String errandId) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
-		final var communications = communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndInternal(errand.getErrandNumber(), false));
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, LR);
+		final var communications = communicationMapper.toCommunications(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityIdAndInternal(errand.getErrandNumber(), namespace, municipalityId, false));
 		communications.forEach(communication -> communication.setViewed(null));
 		return communications;
 	}
 
 	public void updateViewedStatus(final String namespace, final String municipalityId, final String id, final String communicationId, final boolean isViewed) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
 
+		// Scoped to the errand, so a communication belonging to another errand cannot be marked through this one.
 		final var message = communicationRepository
-			.findById(communicationId)
+			.findByIdAndErrandNumberAndNamespaceAndMunicipalityId(communicationId, errand.getErrandNumber(), namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, COMMUNICATION_NOT_FOUND.formatted(communicationId)));
 
 		message.setViewed(isViewed);
@@ -132,7 +138,7 @@ public class CommunicationService {
 	}
 
 	public void getMessageAttachmentStreamed(final String namespace, final String municipalityId, final String errandId, final String communicationId, final String attachmentId, final HttpServletResponse response) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, R, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION_ATTACHMENT, LR);
 		final var communicationAttachment = communicationAttachmentRepository.findByNamespaceAndMunicipalityIdAndCommunicationEntityIdAndId(namespace, municipalityId, communicationId, attachmentId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_NOT_FOUND));
 
@@ -168,7 +174,7 @@ public class CommunicationService {
 	}
 
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
 		sendEmail(errandEntity, request);
 	}
 
@@ -179,7 +185,7 @@ public class CommunicationService {
 			}
 		}, () -> request.setEmailHeaders(Map.of(EmailHeader.MESSAGE_ID, List.of(MESSAGE_ID_TEMPLATE.formatted(UUID.randomUUID(), errandEntity.getNamespace())))));
 
-		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), request.getAttachmentIds());
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity.getId(), request.getAttachmentIds());
 
 		final var emailRequest = toEmailRequest(errandEntity, request, toEmailAttachments(errandAttachments));
 
@@ -226,7 +232,7 @@ public class CommunicationService {
 	}
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
-		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
 		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
@@ -238,8 +244,8 @@ public class CommunicationService {
 	}
 
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
-		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
-		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, entity.getId(), request.getAttachmentIds());
 
 		final var fullName = getFullName(municipalityId);
 
@@ -320,7 +326,7 @@ public class CommunicationService {
 	 * @param departmentName the department name to use when retreiving which messaging settings to use
 	 */
 	public void sendMessageNotification(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, RW);
 		final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
 
 		sendMessageNotification(errand, messagingSettings);
@@ -336,7 +342,7 @@ public class CommunicationService {
 	 */
 	public void sendEmailNotificationToReporter(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
 		LOGGER.info("Processing logic to send email notification to stakeholder with reporter role.");
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, RW);
 		final var stakeholder = getStakeholderMatchingRole(errandEntity, "REPORTER");
 
 		if (isStakeholderEligibleForEmailNotification(stakeholder)) {
@@ -391,9 +397,28 @@ public class CommunicationService {
 
 	}
 
+	/**
+	 * Removes every communication of an errand.
+	 * <p>
+	 * Only the ids are read, and the communications are then removed a chunk at a time. A communication holds its
+	 * message as both text and html, each of them long text, so an errand carrying a correspondence of any length is
+	 * more than the heap can hold all at once - which is what reading them before removing any would ask of it.
+	 * <p>
+	 * Removing in chunks empties the persistence context as it goes, so an entity a caller was holding is detached by
+	 * the time this returns.
+	 *
+	 * @param errandNumber   number of the errand.
+	 * @param namespace      namespace of the errand.
+	 * @param municipalityId id of the municipality of the errand.
+	 */
 	@Transactional
-	public void deleteAllCommunicationsByErrandNumber(final String errandNumber) {
-		final var list = communicationRepository.findByErrandNumber(errandNumber);
-		communicationRepository.deleteAll(list);
+	public void deleteAllCommunicationsByErrandNumber(final String errandNumber, final String namespace, final String municipalityId) {
+		// Errand numbers repeat across tenants that share a short code, so an unscoped delete would remove another
+		// tenant's communications.
+		final var ids = communicationRepository.findIdsByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, namespace, municipalityId).stream()
+			.map(IdProjection::getId)
+			.toList();
+
+		chunkedDeleter.deleteInChunks(ids, communicationRepository::deleteAllById);
 	}
 }

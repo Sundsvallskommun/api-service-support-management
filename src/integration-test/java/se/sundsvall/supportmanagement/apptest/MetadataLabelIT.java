@@ -38,6 +38,8 @@ class MetadataLabelIT extends AbstractAppTest {
 	private static final String MUNICIPALITY_2309 = "2309";
 	private static final String MUNICIPALITY_2303 = "2303";
 	private static final String NAMESPACE_2 = "NAMESPACE-2";
+	private static final String MUNICIPALITY_2262 = "2262";
+	private static final String CONTACTCENTER = "CONTACTCENTER";
 	private static final String MUNICIPALITY_2584 = "2584";
 
 	@Test
@@ -226,6 +228,28 @@ class MetadataLabelIT extends AbstractAppTest {
 			.withHttpMethod(PUT)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test11_updateLabelsWithNewLeafsHasCorrectResourcePath() {
+		final var path = "/" + MUNICIPALITY_2262 + "/" + CONTACTCENTER + "/metadata/labels";
+
+		// PUT existing hierarchy with new leaf nodes added under LEVELTWO-1
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		// GET and verify that the new leaf nodes have fully qualified resourcePath
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}

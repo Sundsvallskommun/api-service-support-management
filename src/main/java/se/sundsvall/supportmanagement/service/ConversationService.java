@@ -21,12 +21,13 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeScheduler;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -84,7 +85,7 @@ public class ConversationService {
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION, RW);
 		// Create conversation in MessageExchange
 		final var createResponse = messageExchangeClient.createConversation(municipalityId, messageExchangeNamespace, toMessageExchangeConversation(municipalityId, messageExchangeNamespace, conversationRequest));
 
@@ -104,7 +105,7 @@ public class ConversationService {
 	}
 
 	public Conversation readConversationById(final String municipalityId, final String namespace, final String errandId, final String conversationId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION, LR);
 		// Fetch conversation from DB.
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
@@ -118,12 +119,12 @@ public class ConversationService {
 	}
 
 	public List<Conversation> readConversations(final String municipalityId, final String namespace, final String errandId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION, LR);
 		return toConversationList(conversationRepository.findByMunicipalityIdAndNamespaceAndErrandId(municipalityId, namespace, errandId));
 	}
 
 	public Conversation updateConversationById(final String municipalityId, final String namespace, final String errandId, final String conversationId, final ConversationRequest conversationRequest) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION, RW);
 		// Fetch conversation from DB.
 		var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
@@ -138,7 +139,7 @@ public class ConversationService {
 	}
 
 	public Page<Message> getMessages(final String municipalityId, final String namespace, final String errandId, final String conversationId, final Pageable pageable) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION_MESSAGE, LR);
 
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 		final var response = messageExchangeClient.getMessages(municipalityId, messageExchangeNamespace, conversationEntity.getMessageExchangeId(), null, pageable);
@@ -150,12 +151,12 @@ public class ConversationService {
 	}
 
 	public void createMessage(final String municipalityId, final String namespace, final String errandId, final String conversationId, final MessageRequest messageRequest, final List<MultipartFile> attachments) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION_MESSAGE, RW);
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
 		// Fetch referenced errand attachments and convert to MultipartFiles
 		final var referencedAttachments = toMultipartFiles(
-			errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, messageRequest.getAttachmentIds()));
+			errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, errandId, messageRequest.getAttachmentIds()));
 
 		// Merge uploaded attachments with referenced attachments
 		final var mergedAttachments = new ArrayList<MultipartFile>();
@@ -205,7 +206,7 @@ public class ConversationService {
 		final String conversationId, final String messageId, final String attachmentId,
 		final HttpServletResponse response) throws IOException {
 
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION_ATTACHMENT, LR);
 
 		final var conversation = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 		final var exchangeId = conversation.getMessageExchangeId();
@@ -236,7 +237,7 @@ public class ConversationService {
 	}
 
 	public void markAsRead(final String municipalityId, final String namespace, final String errandId, final String conversationId, final MarkAsReadRequest request) {
-		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, RW);
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.CONVERSATION_MESSAGE, RW);
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
 		final var meRequest = new generated.se.sundsvall.messageexchange.MarkAsReadRequest()
@@ -247,7 +248,7 @@ public class ConversationService {
 	}
 
 	public List<ConversationReadByCount> countReadBy(final String municipalityId, final String namespace, final String errandId, final Boolean includeSystemMessages, final String conversationId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION, LR);
 
 		final List<ConversationEntity> conversations;
 		if (conversationId != null) {

@@ -1,0 +1,17 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-json-schema/2506/schemas/test-schema-1.0/validation",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"visible": false
+				}
+			}
+		]
+	},
+	"response": {
+		"status": 204
+	},
+	"name": "api-json-schema-validate"
+}

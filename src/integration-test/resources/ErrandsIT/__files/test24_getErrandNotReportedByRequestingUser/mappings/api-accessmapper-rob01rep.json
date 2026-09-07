@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/rob01rep"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"bodyFileName": "test24_getErrandNotReportedByRequestingUser/responses/api-accessmapper-rob01rep.json"
+	},
+	"name": "api-accessmapper-rob01rep"
+}

@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.config;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.TITLE;
 
 class NamespaceConfigTest {
 
@@ -44,6 +46,11 @@ class NamespaceConfigTest {
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var accessControl = true;
 		final var notifyReporter = true;
+		final var roleBasedMapping = true;
+		final var resourceAccessControl = true;
+		final var roleFieldRestrictions = List.of(RoleFieldRestriction.create().withRole("FIRST_LINE_CASE_OFFICER"));
+		final var limitedReadAccess = LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
+		final var reporterAccess = ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
 
 		final var bean = NamespaceConfig.create()
 			.withNamespace(namespace)
@@ -53,6 +60,11 @@ class NamespaceConfigTest {
 			.withNotificationTTLInDays(notificationTTLInDays)
 			.withAccessControl(accessControl)
 			.withNotifyReporter(notifyReporter)
+			.withRoleBasedMapping(roleBasedMapping)
+			.withResourceAccessControl(resourceAccessControl)
+			.withRoleFieldRestrictions(roleFieldRestrictions)
+			.withLimitedReadAccess(limitedReadAccess)
+			.withReporterAccess(reporterAccess)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -64,19 +76,28 @@ class NamespaceConfigTest {
 		assertThat(bean.getNotificationTTLInDays()).isEqualTo(notificationTTLInDays);
 		assertThat(bean.isAccessControl()).isEqualTo(accessControl);
 		assertThat(bean.isNotifyReporter()).isEqualTo(notifyReporter);
+		assertThat(bean.isRoleBasedMapping()).isEqualTo(roleBasedMapping);
+		assertThat(bean.isResourceAccessControl()).isEqualTo(resourceAccessControl);
+		assertThat(bean.getRoleFieldRestrictions()).isEqualTo(roleFieldRestrictions);
+		assertThat(bean.getLimitedReadAccess()).isEqualTo(limitedReadAccess);
+		assertThat(bean.getReporterAccess()).isEqualTo(reporterAccess);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter").satisfies(namespaceConfig -> {
+		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl").satisfies(namespaceConfig -> {
 			assertThat(namespaceConfig.isAccessControl()).isFalse();
 			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
+			assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
+			assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
 		});
-		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter").satisfies(namespaceConfig -> {
+		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl").satisfies(namespaceConfig -> {
 			assertThat(namespaceConfig.isAccessControl()).isFalse();
 			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
+			assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
+			assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
 
 		});
 	}

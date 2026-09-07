@@ -84,5 +84,6 @@
 	"assignedUserId": "joe01doe",
 	"suspension": {},
 	"status": "STATUS-2",
-	"version": 0
+	"version": 0,
+	"measures": []
 }

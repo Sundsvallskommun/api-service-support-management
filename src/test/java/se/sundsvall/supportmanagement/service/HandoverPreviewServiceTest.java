@@ -32,10 +32,10 @@ import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -119,7 +119,7 @@ class HandoverPreviewServiceTest {
 	}
 
 	private void verifyAuthorizationAndErrandLoad() {
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, R);
 		verify(namespaceConfigRepositoryMock).existsByNamespaceAndMunicipalityId(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 	}
@@ -171,13 +171,13 @@ class HandoverPreviewServiceTest {
 	@Test
 	void previewHandoverWhenNotAuthorized() {
 		doThrow(Problem.valueOf(UNAUTHORIZED, "Errand not accessible by user 'user'"))
-			.when(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+			.when(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, R);
 
 		final var request = request();
 		final var e = assertThrows(ThrowableProblem.class, () -> service.previewHandover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request));
 
 		assertThat(e.getStatus()).isEqualTo(UNAUTHORIZED);
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, R);
 		verifyNoMoreInteractions(accessControlServiceMock);
 		verifyNoInteractions(errandsRepositoryMock, namespaceConfigRepositoryMock, statusRepositoryMock, categoryRepositoryMock,
 			metadataLabelRepositoryMock, contactReasonRepositoryMock, roleRepositoryMock, jsonSchemaClientMock);
@@ -193,7 +193,7 @@ class HandoverPreviewServiceTest {
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getMessage()).isEqualTo("Bad Request: Target namespace 'OTHER_NAMESPACE' for municipality '2262' does not exist");
 		// Authorization is checked first; the errand is only loaded once the target namespace is known to exist
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, R);
 		verify(namespaceConfigRepositoryMock).existsByNamespaceAndMunicipalityId(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID);
 		verifyNoMoreInteractions(accessControlServiceMock, namespaceConfigRepositoryMock);
 		verifyNoInteractions(errandsRepositoryMock, statusRepositoryMock, categoryRepositoryMock, metadataLabelRepositoryMock, contactReasonRepositoryMock, roleRepositoryMock, jsonSchemaClientMock);
@@ -209,7 +209,7 @@ class HandoverPreviewServiceTest {
 
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getMessage()).isEqualTo("Not Found: An errand with id '%s' could not be found in namespace 'namespace' for municipality with id '2281'".formatted(ERRAND_ID));
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, R);
 		verify(namespaceConfigRepositoryMock).existsByNamespaceAndMunicipalityId(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		// No metadata is read once the errand is known to be missing
@@ -359,7 +359,7 @@ class HandoverPreviewServiceTest {
 		assertThat(result.getDirectlyCopyable().getTitle()).isEqualTo("Tom");
 		assertThat(result.getWarnings()).isEmpty();
 
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, R, RW);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, R);
 		verify(namespaceConfigRepositoryMock).existsByNamespaceAndMunicipalityId(NAMESPACE, targetMunicipalityId);
 		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(targetMunicipalityId), any());

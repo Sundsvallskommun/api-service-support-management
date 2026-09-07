@@ -10,4 +10,13 @@ public interface HandoverIdempotencyRepository extends JpaRepository<HandoverIde
 
 	Optional<HandoverIdempotencyEntity> findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(String sourceErrandId, String targetNamespace, String targetMunicipalityId);
 
+	/**
+	 * Removes every handover record naming the errand, at either end of the handover. A purged errand may be the one a
+	 * handover started from as well as the one it created.
+	 *
+	 * @param  sourceErrandId the id of the errand as the source of a handover.
+	 * @param  newErrandId    the id of the errand as the one a handover created.
+	 * @return                the number of removed records.
+	 */
+	long deleteAllBySourceErrandIdOrNewErrandId(String sourceErrandId, String newErrandId);
 }

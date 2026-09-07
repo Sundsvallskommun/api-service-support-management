@@ -1,0 +1,21 @@
+{
+	"title": "Updated by first line",
+	"parameters": [
+		{
+			"key": "granted-key",
+			"displayName": "Granted",
+			"values": [
+				"updated"
+			]
+		}
+	],
+	"jsonParameters": [
+		{
+			"key": "granted-json",
+			"value": {
+				"visible": false
+			},
+			"schemaId": "test-schema-1.0"
+		}
+	]
+}

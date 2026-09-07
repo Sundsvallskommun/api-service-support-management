@@ -46,7 +46,10 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 		@Index(name = "idx_errand_municipality_id_namespace_status_touched", columnList = "municipality_id,namespace,status,touched"),
 		@Index(name = "idx_errand_municipality_id_namespace_status_modified", columnList = "municipality_id,namespace,status,modified"),
 		@Index(name = "idx_errand_municipality_id_namespace_created", columnList = "municipality_id,namespace,created"),
-		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched")
+		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched"),
+		// Carries the retention purge, which walks a namespace in id order a batch at a time and would otherwise have to
+		// work through the whole namespace to find where the previous batch ended.
+		@Index(name = "idx_errand_municipality_id_namespace_id", columnList = "municipality_id,namespace,id")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {
@@ -208,6 +211,9 @@ public class ErrandEntity {
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true, fetch = EAGER)
 	private List<TimeMeasurementEntity> timeMeasures;
+
+	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true, fetch = EAGER)
+	private List<MeasureEntity> measures;
 
 	public static ErrandEntity create() {
 		return new ErrandEntity();
@@ -701,6 +707,19 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public List<MeasureEntity> getMeasures() {
+		return measures;
+	}
+
+	public void setMeasures(final List<MeasureEntity> measures) {
+		this.measures = measures;
+	}
+
+	public ErrandEntity withMeasures(final List<MeasureEntity> measures) {
+		this.measures = measures;
+		return this;
+	}
+
 	public String getPreviousStatus() {
 		return previousStatus;
 	}
@@ -731,7 +750,8 @@ public class ErrandEntity {
 					.equals(actions, that.actions) && Objects.equals(phases, that.phases) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(
 						suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(accessLabels, that.accessLabels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(
 							touched, that.touched) && Objects.equals(errandNumber,
-								that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures);
+								that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures) && Objects.equals(measures,
+									that.measures);
 	}
 
 	@Override
@@ -739,7 +759,7 @@ public class ErrandEntity {
 		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, channel, priority, reporterUserId,
 			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, actions, phases, suspendedTo, suspendedFrom, labels, accessLabels, created, modified, touched, errandNumber, tempPreviousStatus,
 			previousStatus,
-			timeMeasures);
+			timeMeasures, measures);
 	}
 
 	@Override
@@ -784,6 +804,7 @@ public class ErrandEntity {
 			", tempPreviousStatus='" + tempPreviousStatus + '\'' +
 			", previousStatus='" + previousStatus + '\'' +
 			", timeMeasures=" + timeMeasures +
+			", measures=" + measures +
 			'}';
 	}
 }

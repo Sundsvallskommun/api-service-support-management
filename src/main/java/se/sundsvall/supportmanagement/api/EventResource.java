@@ -56,7 +56,7 @@ class EventResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@ParameterObject final Pageable pageable) {
 
-		return ok(eventService.readEvents(municipalityId, errandId, pageable));
+		return ok(eventService.readEvents(namespace, municipalityId, errandId, pageable));
 	}
 
 }

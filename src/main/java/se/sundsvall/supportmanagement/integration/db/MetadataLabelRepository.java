@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,4 +21,6 @@ public interface MetadataLabelRepository extends JpaRepository<MetadataLabelEnti
 	boolean existsByNamespaceAndMunicipalityId(String namespace, String municipalityId);
 
 	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+
+	List<MetadataLabelEntity> findByNamespaceAndMunicipalityIdAndResourcePathIn(String namespace, String municipalityId, Collection<String> resourcePaths);
 }

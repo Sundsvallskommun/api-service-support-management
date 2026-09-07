@@ -27,5 +27,6 @@
 	"reporterUserId": "joe01doe",
 	"created": "${json-unit.any-string}",
 	"touched": "${json-unit.any-string}",
-	"version": 0
+	"version": 0,
+	"measures": []
 }

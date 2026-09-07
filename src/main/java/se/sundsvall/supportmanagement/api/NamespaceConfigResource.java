@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,11 +27,17 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.config.Validation;
 import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.ErrandActionService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+import se.sundsvall.supportmanagement.service.config.ValidationService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -50,10 +57,14 @@ class NamespaceConfigResource {
 
 	private final NamespaceConfigService service;
 	private final ErrandActionService actionService;
+	private final ValidationService validationService;
+	private final AccessControlService accessControlService;
 
-	NamespaceConfigResource(final NamespaceConfigService service, final ErrandActionService actionService) {
+	NamespaceConfigResource(final NamespaceConfigService service, final ErrandActionService actionService, final ValidationService validationService, final AccessControlService accessControlService) {
 		this.service = service;
 		this.actionService = actionService;
+		this.validationService = validationService;
+		this.accessControlService = accessControlService;
 	}
 
 	@PostMapping(path = "/{municipalityId}/{namespace}/namespace-config", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -68,6 +79,8 @@ class NamespaceConfigResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final NamespaceConfig namespaceConfig) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
 
 		service.create(namespaceConfig, namespace, municipalityId);
 
@@ -120,6 +133,8 @@ class NamespaceConfigResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final NamespaceConfig namespaceConfig) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
+
 		service.replace(namespaceConfig, namespace, municipalityId);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
@@ -139,10 +154,50 @@ class NamespaceConfigResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
+
 		service.delete(namespace, municipalityId);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
+	}
+
+	// =============== Validation ===============
+
+	@GetMapping(path = "/{municipalityId}/{namespace}/namespace-config/validation", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Read validations", description = "Fetches the validation setting of each metadata type within the namespace. Types that have never been configured are returned as not validated.", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<List<Validation>> getValidations(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
+
+		return ok(validationService.findAll(namespace, municipalityId));
+	}
+
+	@PatchMapping(path = "/{municipalityId}/{namespace}/namespace-config/validation/{type}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Update validation", description = "Turns validation against the metadata of the namespace on or off for the provided type. The validation is created if it does not exist yet.", responses = {
+		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		}))),
+		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Validation> updateValidation(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "type", description = "Type of metadata to validate", example = "STATUS") @PathVariable final EntityType type,
+		@Valid @NotNull @RequestBody final Validation validation) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
+
+		return ok(validationService.update(namespace, municipalityId, type, validation));
 	}
 
 	// =============== Action ===============
@@ -190,6 +245,8 @@ class NamespaceConfigResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @NotNull @RequestBody final Config config) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
+
 		var id = actionService.createActionConfig(municipalityId, namespace, config);
 
 		return created(fromPath("/{municipalityId}/{namespace}/namespace-config/action-config/{id}")
@@ -212,6 +269,8 @@ class NamespaceConfigResource {
 		@Parameter(name = "id", description = "Action config id") @ValidUuid @PathVariable final String id,
 		@Valid @NotNull @RequestBody final Config config) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
+
 		actionService.updateActionConfig(municipalityId, namespace, id, config);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
@@ -231,6 +290,8 @@ class NamespaceConfigResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Action config id") @ValidUuid @PathVariable final String id) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
 
 		actionService.deleteActionConfig(municipalityId, namespace, id);
 		return noContent()

@@ -1,0 +1,6 @@
+{
+	"name": "A_NEW_MEASURE_TYPE",
+	"displayName": "A new measure type",
+	"measureGroup": "GROUP-A",
+	"sortOrder": 10
+}

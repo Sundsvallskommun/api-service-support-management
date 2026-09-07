@@ -9,6 +9,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -28,6 +29,9 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 	"/db/scripts/testdata-junit.sql"
 })
 class CommunicationRepositoryTest {
+
+	private static final String NAMESPACE = "NAMESPACE.1";
+	private static final String MUNICIPALITY_ID = "2281";
 
 	@Autowired
 	private CommunicationRepository communicationRepository;
@@ -83,16 +87,38 @@ class CommunicationRepositoryTest {
 	}
 
 	@Test
-	void findByErrandNumber() {
+	void findByErrandNumberAndNamespaceAndMunicipalityId() {
 		// Setup
 		final var errandNumber = "errand1";
 
 		// Execution
-		final var communications = communicationRepository.findByErrandNumber(errandNumber);
+		final var communications = communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID);
 
 		// Assertions
 		assertThat(communications).isNotEmpty();
 		assertThat(communications.getFirst().getErrandNumber()).isEqualTo(errandNumber);
+	}
+
+	@Test
+	void findIdsByErrandNumberAndNamespaceAndMunicipalityId() {
+		// Setup
+		final var errandNumber = "errand1";
+
+		// Execution
+		final var ids = communicationRepository.findIdsByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID);
+
+		// Assertions
+		assertThat(ids)
+			.isNotEmpty()
+			.extracting(IdProjection::getId)
+			.containsExactlyInAnyOrderElementsOf(communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID).stream()
+				.map(CommunicationEntity::getId)
+				.toList());
+	}
+
+	@Test
+	void findIdsByErrandNumberAndNamespaceAndMunicipalityIdNotFound() {
+		assertThat(communicationRepository.findIdsByErrandNumberAndNamespaceAndMunicipalityId("does-not-exist", NAMESPACE, MUNICIPALITY_ID)).isNotNull().isEmpty();
 	}
 
 	@Test
@@ -108,14 +134,14 @@ class CommunicationRepositoryTest {
 	}
 
 	@Test
-	void existsByErrandNumberAndExternalId() {
-		assertThat(communicationRepository.existsByErrandNumberAndExternalId("errand1", "case1")).isTrue();
-		assertThat(communicationRepository.existsByErrandNumberAndExternalId("errand1", "case2")).isFalse();
+	void existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId() {
+		assertThat(communicationRepository.existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId("errand1", NAMESPACE, MUNICIPALITY_ID, "case1")).isTrue();
+		assertThat(communicationRepository.existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId("errand1", NAMESPACE, MUNICIPALITY_ID, "case2")).isFalse();
 	}
 
 	@Test
-	void findByErrandNumberAndInternal() {
-		final var communications = communicationRepository.findByErrandNumberAndInternal("errand1", true);
+	void findByErrandNumberAndNamespaceAndMunicipalityIdAndInternal() {
+		final var communications = communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityIdAndInternal("errand1", NAMESPACE, MUNICIPALITY_ID, true);
 		assertThat(communications).isNotEmpty().hasSize(1).allMatch(CommunicationEntity::isInternal);
 	}
 }

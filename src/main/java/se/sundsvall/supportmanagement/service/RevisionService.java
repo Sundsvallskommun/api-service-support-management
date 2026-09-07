@@ -16,7 +16,9 @@ import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 import se.sundsvall.supportmanagement.service.mapper.RevisionMapper;
@@ -28,11 +30,11 @@ import static com.flipkart.zjsonpatch.DiffFlags.OMIT_COPY_OPERATION;
 import static com.flipkart.zjsonpatch.DiffFlags.OMIT_MOVE_OPERATION;
 import static com.jayway.jsonpath.Configuration.defaultConfiguration;
 import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
@@ -63,14 +65,19 @@ public class RevisionService {
 	private final ObjectMapper objectMapper;
 
 	private final NotesClient notesClient;
+	private final ErrandNoteService errandNoteService;
+	private final ChunkedDeleter chunkedDeleter;
 
 	public RevisionService(final AccessControlService accessControlService,
 		final RevisionRepository revisionRepository, final ObjectMapper objectMapper,
-		final NotesClient notesClient) {
+		final NotesClient notesClient, final ErrandNoteService errandNoteService,
+		final ChunkedDeleter chunkedDeleter) {
 		this.accessControlService = accessControlService;
 		this.revisionRepository = revisionRepository;
 		this.objectMapper = objectMapper;
 		this.notesClient = notesClient;
+		this.errandNoteService = errandNoteService;
+		this.chunkedDeleter = chunkedDeleter;
 	}
 
 	/**
@@ -130,9 +137,36 @@ public class RevisionService {
 	 */
 	@Transactional(readOnly = true)
 	public List<Revision> getErrandRevisions(final String namespace, final String municipalityId, final String errandId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.REVISION, LR);
 
 		return RevisionMapper.toRevisions(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(namespace, municipalityId, errandId));
+	}
+
+	/**
+	 * Removes every revision of an errand.
+	 * <p>
+	 * A revision holds a full serialized snapshot of the errand it belongs to, so a removal that left them behind would
+	 * keep a complete copy of everything it set out to remove. No access check is made here: the callers are the errand
+	 * delete, which has already authorized its caller, and the purge, which runs on a cutoff with no caller at all.
+	 * <p>
+	 * The ids are read first and the revisions removed a chunk at a time, since it is exactly that full snapshot which
+	 * makes reading them all at once expensive: an errand with a long history holds as many copies of itself as it has
+	 * been edited. This empties the persistence context as it goes, so an entity a caller was holding is detached by
+	 * the time this returns.
+	 *
+	 * @param namespace      namespace of the errand.
+	 * @param municipalityId id of the municipality of the errand.
+	 * @param errandId       id of the errand to remove the revisions of.
+	 */
+	@Transactional
+	public void deleteErrandRevisions(final String namespace, final String municipalityId, final String errandId) {
+		final var ids = revisionRepository.findIdsByNamespaceAndMunicipalityIdAndEntityId(namespace, municipalityId, errandId).stream()
+			.map(IdProjection::getId)
+			.toList();
+
+		chunkedDeleter.deleteInChunks(ids, revisionRepository::deleteAllById);
+
+		LOG.debug("Removed {} revisions for errand {} in namespace {} for municipality {}", ids.size(), sanitizeForLogging(errandId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 	}
 
 	/**
@@ -174,7 +208,7 @@ public class RevisionService {
 	 */
 	@Transactional(readOnly = true)
 	public DifferenceResponse compareErrandRevisionVersions(final String namespace, final String municipalityId, final String errandId, final int sourceVersion, final int targetVersion) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.REVISION, LR);
 
 		final var sourceRevision = revisionRepository.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(namespace, municipalityId, errandId, sourceVersion)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, String.format(VERSION_DOES_NOT_EXIST, "source")));
@@ -209,7 +243,9 @@ public class RevisionService {
 	 */
 	@Transactional(readOnly = true)
 	public List<Revision> getNoteRevisions(final String namespace, final String municipalityId, final String errandId, final String noteId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTE_REVISION, LR);
+		// Revisions expose the historical bodies of the note, so the note must belong to this errand.
+		errandNoteService.findNoteOnErrand(municipalityId, errandId, noteId);
 
 		return ErrandNoteMapper.toRevisions(notesClient.findAllNoteRevisions(municipalityId, noteId));
 	}
@@ -227,7 +263,8 @@ public class RevisionService {
 	 */
 	@Transactional(readOnly = true)
 	public DifferenceResponse compareNoteRevisionVersions(final String namespace, final String municipalityId, final String errandId, final String noteId, final int sourceVersion, final int targetVersion) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, R, RW);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTE_REVISION, LR);
+		errandNoteService.findNoteOnErrand(municipalityId, errandId, noteId);
 
 		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(municipalityId, noteId, sourceVersion, targetVersion));
 	}

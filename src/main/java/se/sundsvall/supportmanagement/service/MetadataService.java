@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -10,12 +11,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
+import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
@@ -26,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
+import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
@@ -51,6 +55,8 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCon
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabels;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toMeasureType;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toMeasureTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toMetadataLabelEntityList;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhase;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhaseEntity;
@@ -62,6 +68,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toSta
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateExternalIdTypeEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMeasureTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMetadataLabelEntities;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updatePhaseEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateRoleEntity;
@@ -78,6 +85,7 @@ public class MetadataService {
 	private static final String EXTERNAL_ID_TYPE = "ExternalIdType";
 	private static final String PHASE = "Phase";
 	private static final String PHASE_TRANSITION = "PhaseTransition";
+	private static final String MEASURE_TYPE = "MeasureType";
 	private static final String ROLE = "Role";
 	private static final String STATUS = "Status";
 	private static final String SORT_ORDER = "sortOrder";
@@ -85,6 +93,7 @@ public class MetadataService {
 	private final CategoryRepository categoryRepository;
 	private final ErrandsRepository errandsRepository;
 	private final ExternalIdTypeRepository externalIdTypeRepository;
+	private final MeasureTypeRepository measureTypeRepository;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final PhaseRepository phaseRepository;
 	private final RoleRepository roleRepository;
@@ -96,6 +105,7 @@ public class MetadataService {
 	public MetadataService(final CategoryRepository categoryRepository,
 		final ErrandsRepository errandsRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
+		final MeasureTypeRepository measureTypeRepository,
 		final MetadataLabelRepository metadataLabelRepository,
 		final PhaseRepository phaseRepository,
 		final RoleRepository roleRepository,
@@ -105,6 +115,7 @@ public class MetadataService {
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
 		this.externalIdTypeRepository = externalIdTypeRepository;
+		this.measureTypeRepository = measureTypeRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.phaseRepository = phaseRepository;
 		this.roleRepository = roleRepository;
@@ -125,6 +136,7 @@ public class MetadataService {
 			.withLabels(findLabels(namespace, municipalityId))
 			.withStatuses(findStatuses(namespace, municipalityId, Sort.unsorted()))
 			.withRoles(findRoles(namespace, municipalityId, Sort.unsorted()))
+			.withMeasureTypes(findMeasureTypes(namespace, municipalityId, null, Sort.unsorted()))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId, Sort.unsorted()))
 			.withContactReasons(findContactReasons(namespace, municipalityId, Sort.unsorted()))
 			.withPhases(findPhases(namespace, municipalityId));
@@ -343,17 +355,37 @@ public class MetadataService {
 			.forEach(metadataLabelRepository::deleteById);
 	}
 
+	/**
+	 * Resolves the labels of the namespace matching each group of resource path patterns.
+	 * <p>
+	 * The labels are read once for every group rather than once per group, so that the groups are answered from a single
+	 * state of the label table and a caller resolving several of them pays one read.
+	 *
+	 * @param  namespace            namespace
+	 * @param  municipalityId       municipality id
+	 * @param  resourcePathPatterns patterns to match, per group
+	 * @return                      labels matching the patterns of each group, empty for a group carrying no patterns
+	 */
 	@Transactional(readOnly = true)
-	public Set<MetadataLabelEntity> patternToLabels(
+	public <K> Map<K, Set<MetadataLabelEntity>> patternToLabels(
 		final String namespace,
 		final String municipalityId,
-		final List<String> resourcePathPatterns) {
+		final Map<K, List<String>> resourcePathPatterns) {
 
-		if (isEmpty(resourcePathPatterns)) {
-			return Set.of();
+		if (resourcePathPatterns.values().stream().allMatch(CollectionUtils::isEmpty)) {
+			return resourcePathPatterns.keySet().stream().collect(Collectors.toMap(key -> key, _ -> Set.of()));
 		}
 
 		final var potentialMatches = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
+
+		return resourcePathPatterns.entrySet().stream()
+			.collect(Collectors.toMap(Map.Entry::getKey, entry -> matching(potentialMatches, entry.getValue())));
+	}
+
+	private Set<MetadataLabelEntity> matching(final List<MetadataLabelEntity> potentialMatches, final List<String> resourcePathPatterns) {
+		if (isEmpty(resourcePathPatterns)) {
+			return Set.of();
+		}
 
 		return potentialMatches.stream()
 			.filter(entity -> entity.getResourcePath() != null)
@@ -581,6 +613,53 @@ public class MetadataService {
 		}
 
 		phaseRepository.save(phaseEntity);
+	}
+
+	// =================================================================
+	// MeasureType operations
+	// =================================================================
+
+	public String createMeasureType(final String namespace, final String municipalityId, final MeasureType measureType) {
+		if (measureTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, measureType.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, measureType.getName(), namespace, municipalityId));
+		}
+
+		return measureTypeRepository.save(toMeasureTypeEntity(namespace, municipalityId, measureType)).getId();
+	}
+
+	public MeasureType getMeasureType(final String namespace, final String municipalityId, final String id) {
+		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
+		}
+
+		return toMeasureType(measureTypeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
+	}
+
+	public List<MeasureType> findMeasureTypes(final String namespace, final String municipalityId, final String measureGroup, final Sort sort) {
+		final var sortToUse = getDefaultSortIfUnsorted(sort);
+
+		return ofNullable(measureGroup)
+			.map(group -> measureTypeRepository.findAllByNamespaceAndMunicipalityIdAndMeasureGroup(namespace, municipalityId, group, sortToUse))
+			.orElseGet(() -> measureTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sortToUse))
+			.stream()
+			.map(MetadataMapper::toMeasureType)
+			.toList();
+	}
+
+	public void deleteMeasureType(final String namespace, final String municipalityId, final String id) {
+		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
+		}
+
+		measureTypeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public MeasureType updateMeasureType(final String namespace, final String municipalityId, final String id, final MeasureType measureType) {
+		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
+		}
+		final var entity = updateMeasureTypeEntity(measureTypeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), measureType);
+		return toMeasureType(measureTypeRepository.save(entity));
 	}
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {

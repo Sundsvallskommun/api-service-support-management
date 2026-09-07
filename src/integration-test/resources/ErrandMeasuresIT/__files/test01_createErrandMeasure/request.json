@@ -1,0 +1,10 @@
+{
+	"responsibleUser": "new01user",
+	"type": "MEASURE-3",
+	"plannedStart": "2024-05-01T10:00:00Z",
+	"plannedComplete": "2024-06-01T10:00:00Z",
+	"addedByUser": "new01user",
+	"addedByRole": "ROLE-1",
+	"goal": "New assessment goal",
+	"description": "New assessment description"
+}

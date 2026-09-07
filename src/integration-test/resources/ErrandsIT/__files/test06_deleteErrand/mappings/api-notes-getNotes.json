@@ -11,7 +11,7 @@
 				"equalTo": "1be673c0-6ba3-4fb0-af4a-43acf23389f6"
 			},
 			"limit": {
-				"equalTo": "1000"
+				"equalTo": "100"
 			},
 			"page": {
 				"equalTo": "1"

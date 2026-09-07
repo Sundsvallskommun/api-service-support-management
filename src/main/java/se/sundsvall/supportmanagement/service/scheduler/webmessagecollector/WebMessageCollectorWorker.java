@@ -59,7 +59,7 @@ public class WebMessageCollectorWorker {
 
 		if (entity.isPresent()) {
 			entity
-				.filter(errand -> !communicationRepository.existsByErrandNumberAndExternalId(errand.getErrandNumber(), message.getMessageId()))
+				.filter(errand -> !communicationRepository.existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId(errand.getErrandNumber(), errand.getNamespace(), errand.getMunicipalityId(), message.getMessageId()))
 				.map(errand -> webMessageCollectorMapper.toCommunicationEntity(message, errand))
 				.map(this::addAttachments)
 				.ifPresent(communicationEntity -> saveMessage(communicationEntity, entity.get()));

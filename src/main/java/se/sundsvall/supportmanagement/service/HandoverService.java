@@ -28,10 +28,12 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.HandoverIdempotencyEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.HandoverMapper;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Objects.isNull;
@@ -132,7 +134,7 @@ public class HandoverService {
 			.withTargetNamespace(request.getTarget().getNamespace())
 			.withTargetMunicipalityId(request.getTarget().getMunicipalityId()));
 
-		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false);
+		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.ERRAND, RW);
 
 		final var targetErrand = HandoverMapper.buildTargetErrand(source, request);
 

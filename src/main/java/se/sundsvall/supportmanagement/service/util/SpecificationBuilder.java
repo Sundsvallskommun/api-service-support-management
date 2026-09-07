@@ -4,6 +4,7 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.data.jpa.domain.Specification;
@@ -11,6 +12,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class SpecificationBuilder<T> {
@@ -19,6 +21,10 @@ public class SpecificationBuilder<T> {
 	private static final String ACCESS_LABELS_ATTRIBUTE = "accessLabels";
 	private static final String ID_ATTRIBUTE = "id";
 	private static final String METADATA_LABEL_ID_ATTRIBUTE = "metadataLabelId";
+	private static final String REPORTER_USER_ID_ATTRIBUTE = "reporterUserId";
+	private static final String TOUCHED_ATTRIBUTE = "touched";
+	private static final String MODIFIED_ATTRIBUTE = "modified";
+	private static final String CREATED_ATTRIBUTE = "created";
 
 	public static Specification<ErrandEntity> withNamespace(String namespace) {
 		return ERRAND_ENTITY_BUILDER.buildEqualFilter("namespace", namespace);
@@ -32,38 +38,78 @@ public class SpecificationBuilder<T> {
 		return ERRAND_ENTITY_BUILDER.buildEqualFilter("id", id);
 	}
 
+	/**
+	 * Matches errands that have not been touched since the sent in point in time.
+	 * <p>
+	 * Which timestamp says when an errand was last touched depends on what has happened to it, so the first one that is
+	 * set decides. An errand carrying none of them is left out: one that cannot be dated cannot be shown to be old
+	 * enough to act on, and the coalesce answers null for it.
+	 *
+	 * @param  cutoff the point in time an errand must have been untouched since
+	 * @return        specification matching errands last touched before the sent in point in time
+	 */
+	public static Specification<ErrandEntity> withLastTouchedBefore(OffsetDateTime cutoff) {
+		return (root, _, criteriaBuilder) -> criteriaBuilder.lessThan(criteriaBuilder.<OffsetDateTime>coalesce()
+			.value(root.get(TOUCHED_ATTRIBUTE))
+			.value(root.get(MODIFIED_ATTRIBUTE))
+			.value(root.get(CREATED_ATTRIBUTE)), cutoff);
+	}
+
+	/**
+	 * Matches errands whose id sorts after the sent in one, which is how a walk over a namespace carries on from where
+	 * the previous batch ended without stepping over what moved up behind a removed errand.
+	 *
+	 * @param  id the id the previous batch ended on
+	 * @return    specification matching errands that come after the sent in id
+	 */
+	public static Specification<ErrandEntity> withIdAfter(String id) {
+		return (root, _, criteriaBuilder) -> criteriaBuilder.greaterThan(root.get(ID_ATTRIBUTE), id);
+	}
+
+	/**
+	 * Matches errands reported by sent in user. A null user matches nothing, so an absent or non AD identifier can never
+	 * match errands lacking a reporter.
+	 *
+	 * @param  adAccount ad account of the requesting user, or null
+	 * @return           specification matching errands reported by sent in user
+	 */
+	public static Specification<ErrandEntity> isReportedBy(String adAccount) {
+		return (root, _, criteriaBuilder) -> isNull(adAccount)
+			? criteriaBuilder.disjunction()
+			: criteriaBuilder.equal(root.get(REPORTER_USER_ID_ATTRIBUTE), adAccount);
+	}
+
+	/**
+	 * Matches errands whose every access label is among sent in allowed labels.
+	 * <p>
+	 * Expressed as "has no access label outside the allowed set" rather than by counting labels and matching labels and
+	 * comparing the two. One correlated subquery instead of two aggregating ones, and it stops at the first offending
+	 * label rather than counting every row. An errand carrying no access labels has nothing outside the set and stays
+	 * accessible to everyone, which is the same rule as the counting form giving 0 == 0.
+	 *
+	 * @param  allowedLabels labels the user may see, no access at all if empty
+	 * @return               specification matching errands fully covered by sent in labels
+	 */
 	public static Specification<ErrandEntity> hasAllowedMetadataLabels(Set<MetadataLabelEntity> allowedLabels) {
 		return (root, query, criteriaBuilder) -> {
 			if (allowedLabels == null || allowedLabels.isEmpty()) {
 				return criteriaBuilder.disjunction(); // No access if no allowed labels
 			}
 
-			// Extract IDs from the MetadataLabelEntity set
-			Set<String> allowedLabelIds = allowedLabels.stream()
+			final var allowedLabelIds = allowedLabels.stream()
 				.map(MetadataLabelEntity::getId)
 				.collect(Collectors.toSet());
 
-			// Subquery 1: Count total access labels for this errand
-			Subquery<Long> totalLabelsSubquery = query.subquery(Long.class);
-			Root<ErrandEntity> totalRoot = totalLabelsSubquery.from(ErrandEntity.class);
-			Join<ErrandEntity, AccessLabelEmbeddable> totalLabelJoin = totalRoot.join(ACCESS_LABELS_ATTRIBUTE, JoinType.LEFT);
+			final Subquery<Integer> labelsOutsideAllowed = query.subquery(Integer.class);
+			final Root<ErrandEntity> subRoot = labelsOutsideAllowed.from(ErrandEntity.class);
+			final Join<ErrandEntity, AccessLabelEmbeddable> labelJoin = subRoot.join(ACCESS_LABELS_ATTRIBUTE, JoinType.INNER);
 
-			totalLabelsSubquery.select(criteriaBuilder.count(totalLabelJoin))
-				.where(criteriaBuilder.equal(totalRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)));
-
-			// Subquery 2: Count access labels that are in the allowed list
-			Subquery<Long> allowedLabelsSubquery = query.subquery(Long.class);
-			Root<ErrandEntity> allowedRoot = allowedLabelsSubquery.from(ErrandEntity.class);
-			Join<ErrandEntity, AccessLabelEmbeddable> allowedLabelJoin = allowedRoot.join(ACCESS_LABELS_ATTRIBUTE, JoinType.LEFT);
-
-			allowedLabelsSubquery.select(criteriaBuilder.count(allowedLabelJoin))
+			labelsOutsideAllowed.select(criteriaBuilder.literal(1))
 				.where(
-					criteriaBuilder.equal(allowedRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)),
-					allowedLabelJoin.get(METADATA_LABEL_ID_ATTRIBUTE).in(allowedLabelIds));
+					criteriaBuilder.equal(subRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)),
+					labelJoin.get(METADATA_LABEL_ID_ATTRIBUTE).in(allowedLabelIds).not());
 
-			// Check if counts are equal
-			// For errands with no labels: 0 == 0 → TRUE → accessible to everyone
-			return criteriaBuilder.equal(totalLabelsSubquery, allowedLabelsSubquery);
+			return criteriaBuilder.not(criteriaBuilder.exists(labelsOutsideAllowed));
 		};
 	}
 

@@ -12,12 +12,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.config.Validation;
 import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.api.model.config.action.Parameter;
 import se.sundsvall.supportmanagement.service.ErrandActionService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+import se.sundsvall.supportmanagement.service.config.ValidationService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +28,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.STATUS;
 
 @AutoConfigureWebTestClient
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
@@ -36,6 +40,8 @@ class NamespaceConfigResourceTest {
 	private static final String ACTION_DEFINITION_PATH = "/{municipalityId}/{namespace}/namespace-config/action-definition";
 	private static final String ACTION_CONFIG_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config";
 	private static final String ACTION_CONFIG_ID_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config/{id}";
+	private static final String VALIDATION_PATH = "/{municipalityId}/{namespace}/namespace-config/validation";
+	private static final String VALIDATION_TYPE_PATH = "/{municipalityId}/{namespace}/namespace-config/validation/{type}";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String DISPLAY_NAME = "DisplayName";
@@ -50,6 +56,9 @@ class NamespaceConfigResourceTest {
 
 	@MockitoBean
 	private ErrandActionService actionServiceMock;
+
+	@MockitoBean
+	private ValidationService validationServiceMock;
 
 	@Test
 	void create() {
@@ -257,6 +266,51 @@ class NamespaceConfigResourceTest {
 			.expectBody().isEmpty();
 
 		verify(actionServiceMock).updateActionConfig(MUNICIPALITY_ID, NAMESPACE, CONFIG_ID, config);
+	}
+
+	// =============== Validation ===============
+
+	@Test
+	void getValidations() {
+		final var validations = List.of(
+			Validation.create().withType(STATUS).withValidated(true),
+			Validation.create().withType(CATEGORY).withValidated(false));
+
+		when(validationServiceMock.findAll(any(), any())).thenReturn(validations);
+
+		final var response = webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(VALIDATION_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBodyList(Validation.class)
+			.returnResult()
+			.getResponseBody();
+
+		verify(validationServiceMock).findAll(NAMESPACE, MUNICIPALITY_ID);
+		assertThat(response).isNotNull().isEqualTo(validations);
+	}
+
+	@Test
+	void updateValidation() {
+		final var request = Validation.create().withValidated(true);
+		final var updated = Validation.create().withType(STATUS).withValidated(true);
+
+		when(validationServiceMock.update(any(), any(), any(), any())).thenReturn(updated);
+
+		final var response = webTestClient.patch()
+			.uri(uriBuilder -> uriBuilder.path(VALIDATION_TYPE_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "type", STATUS)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(Validation.class)
+			.returnResult()
+			.getResponseBody();
+
+		verify(validationServiceMock).update(NAMESPACE, MUNICIPALITY_ID, STATUS, request);
+		assertThat(response).isNotNull().isEqualTo(updated);
 	}
 
 	@Test

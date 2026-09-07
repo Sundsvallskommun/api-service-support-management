@@ -36,6 +36,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 
 @ExtendWith(MockitoExtension.class)
@@ -377,7 +378,8 @@ class SubscriberServiceTest {
 	@Test
 	void deleteSubscriber() {
 		final var id = randomUUID().toString();
-		final var entity = SubscriberEntity.create().withId(id);
+		final var entity = SubscriberEntity.create().withId(id)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"));
 		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
 
 		service.deleteSubscriber(MUNICIPALITY_ID, NAMESPACE, id);
@@ -445,5 +447,33 @@ class SubscriberServiceTest {
 		assertThat(saved.getChannels().get(0).getType()).isEqualTo(NotificationChannelType.INTERNAL);
 		verifyNoMoreInteractions(subscriberRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void updatingAnotherUsersSubscriberIsRefused() {
+		final var id = randomUUID().toString();
+		final var entity = SubscriberEntity.create().withId(id)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("someone-else"));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		assertThatThrownBy(() -> service.updateSubscriber(MUNICIPALITY_ID, NAMESPACE, id, Subscriber.create().withName("hijacked")))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(UNAUTHORIZED);
+
+		verify(subscriberRepositoryMock, never()).saveAndFlush(any(SubscriberEntity.class));
+	}
+
+	@Test
+	void deletingAnotherUsersSubscriberIsRefused() {
+		final var id = randomUUID().toString();
+		final var entity = SubscriberEntity.create().withId(id)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("someone-else"));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		assertThatThrownBy(() -> service.deleteSubscriber(MUNICIPALITY_ID, NAMESPACE, id))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(UNAUTHORIZED);
+
+		verify(subscriberRepositoryMock, never()).delete(any(SubscriberEntity.class));
 	}
 }

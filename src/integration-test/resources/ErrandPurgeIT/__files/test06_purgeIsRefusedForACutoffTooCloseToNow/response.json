@@ -1,0 +1,11 @@
+{
+	"type": "https://github.com/Sundsvallskommun/dept44/problems/constraint-violation",
+	"title": "Constraint Violation",
+	"status": 400,
+	"violations": [
+		{
+			"field": "olderThan",
+			"message": "must be at least P2Y before the current time"
+		}
+	]
+}

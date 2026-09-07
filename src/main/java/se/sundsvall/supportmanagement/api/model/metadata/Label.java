@@ -19,6 +19,9 @@ public class Label {
 	@ValidUuid(nullable = true)
 	private String id;
 
+	@Schema(description = "Label version for optimistic concurrency control", accessMode = READ_ONLY)
+	private Long version;
+
 	@Schema(description = "Label classification", examples = "subtype")
 	@NotBlank
 	private String classification;
@@ -60,6 +63,19 @@ public class Label {
 
 	public Label withId(String id) {
 		this.id = id;
+		return this;
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
+	}
+
+	public Label withVersion(Long version) {
+		this.version = version;
 		return this;
 	}
 
@@ -156,7 +172,7 @@ public class Label {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(attributes, classification, deprecated, displayName, id, labels, resourceName, resourcePath);
+		return Objects.hash(attributes, classification, deprecated, displayName, id, labels, resourceName, resourcePath, version);
 	}
 
 	@Override
@@ -172,12 +188,12 @@ public class Label {
 		}
 		Label other = (Label) obj;
 		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && Objects.equals(deprecated, other.deprecated) && Objects.equals(displayName, other.displayName) &&
-			Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath);
+			Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath) && Objects.equals(version, other.version);
 	}
 
 	@Override
 	public String toString() {
-		return "Label [id=" + id + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", deprecated=" + deprecated + ", labels=" + labels + ", attributes="
-			+ attributes + "]";
+		return "Label [id=" + id + ", version=" + version + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", deprecated=" + deprecated + ", labels=" + labels
+			+ ", attributes=" + attributes + "]";
 	}
 }

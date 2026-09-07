@@ -5,12 +5,17 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.ROLE;
 
 import java.util.List;
 import java.util.function.Function;
@@ -21,6 +26,7 @@ import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 
 @WireMockAppTestSuite(files = "classpath:/NamespaceConfigIT/", classes = Application.class)
 @Sql({
@@ -35,9 +41,15 @@ class NamespaceConfigIT extends AbstractAppTest {
 	private static final String NAMESPACE_2 = "NAMESPACE-2";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final Function<String, String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/namespace-config";
+	private static final Function<String, String> VALIDATION_PATH = namespace -> PATH.apply(namespace) + "/validation";
+	private static final String ACCESS_CONTROLLED_PATH = "/2506/NAMESPACE-2506/namespace-config";
+	private static final String ACCESS_CONTROLLED_LABEL_PATH = "/2506/NAMESPACE-2506/metadata/labels";
 
 	@Autowired
 	private NamespaceConfigRepository repository;
+
+	@Autowired
+	private ValidationRepository validationRepository;
 
 	@Test
 	void test01_getConfig() {
@@ -128,6 +140,76 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test07_getValidations() {
+		setupCall()
+			.withServicePath(VALIDATION_PATH.apply(NAMESPACE_1))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_updateValidation() {
+		assertThat(validationRepository.findByNamespaceAndMunicipalityIdAndType(NAMESPACE_1, MUNICIPALITY_ID, CATEGORY))
+			.hasValueSatisfying(entity -> assertThat(entity.isValidated()).isTrue());
+
+		setupCall()
+			.withServicePath(VALIDATION_PATH.apply(NAMESPACE_1) + "/" + CATEGORY)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(validationRepository.findByNamespaceAndMunicipalityIdAndType(NAMESPACE_1, MUNICIPALITY_ID, CATEGORY))
+			.hasValueSatisfying(entity -> assertThat(entity.isValidated()).isFalse());
+	}
+
+	@Test
+	void test09_createValidationForUnconfiguredType() {
+		assertThat(validationRepository.findByNamespaceAndMunicipalityIdAndType(NAMESPACE_1, MUNICIPALITY_ID, ROLE)).isEmpty();
+
+		setupCall()
+			.withServicePath(VALIDATION_PATH.apply(NAMESPACE_1) + "/" + ROLE)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(validationRepository.findByNamespaceAndMunicipalityIdAndType(NAMESPACE_1, MUNICIPALITY_ID, ROLE))
+			.hasValueSatisfying(entity -> assertThat(entity.isValidated()).isTrue());
+	}
+
+	@Test
+	void test10_updateConfigWithoutResourceAccessIsNotAllowed() {
+		// Access control is on for this namespace and the user is granted the whole errand tree but nothing beyond it,
+		// so they cannot reach the config that would let them switch access control off.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_PATH)
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test11_createLabelsWithoutResourceAccessIsNotAllowed() {
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_LABEL_PATH)
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
 			.sendRequestAndVerifyResponse();
 	}
 }

@@ -1,0 +1,36 @@
+{
+	"parameters": [
+		{
+			"key": "granted-key",
+			"displayName": "Granted",
+			"values": [
+				"updated"
+			],
+			"version": 1
+		},
+		{
+			"key": "hidden-key",
+			"displayName": "Hidden",
+			"values": [],
+			"version": 0
+		}
+	],
+	"jsonParameters": [
+		{
+			"key": "granted-json",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"visible": false
+			},
+			"version": 1
+		},
+		{
+			"key": "hidden-json",
+			"schemaId": "test-schema-1.0",
+			"value": {
+				"secret": "must survive"
+			},
+			"version": 0
+		}
+	]
+}

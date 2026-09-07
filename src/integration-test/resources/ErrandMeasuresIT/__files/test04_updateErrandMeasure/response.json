@@ -1,0 +1,16 @@
+{
+	"id": "ee000000-0000-0000-0000-000000000100",
+	"responsibleUser": "joe01doe",
+	"type": "MEASURE-1",
+	"plannedStart": "2024-01-15T10:00:00+01:00",
+	"plannedComplete": "2024-02-15T10:00:00+01:00",
+	"addedByUser": "joe01doe",
+	"addedByRole": "ROLE-1",
+	"goal": "Updated goal",
+	"description": "Updated description",
+	"accept": "REWORK",
+	"acceptMotivation": "Needs rework",
+	"reworkGoal": "Rework goal",
+	"reworkDescription": "Rework description",
+	"created": "2024-01-10T12:00:00+01:00"
+}

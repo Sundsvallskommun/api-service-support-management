@@ -10,6 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
 import static java.lang.Integer.parseInt;
@@ -136,6 +137,23 @@ class RevisionRepositoryTest {
 		final var versionList = repository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, "does-not-exist");
 
 		assertThat(versionList).isNotNull().isEmpty();
+	}
+
+	@Test
+	void findIdsByNamespaceAndMunicipalityIdAndEntityId() {
+		final var ids = repository.findIdsByNamespaceAndMunicipalityIdAndEntityId(NAMESPACE, MUNICIPALITY_ID, ENTITY_ID);
+
+		assertThat(ids)
+			.hasSize(5)
+			.extracting(IdProjection::getId)
+			.containsExactlyInAnyOrderElementsOf(repository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, ENTITY_ID).stream()
+				.map(RevisionEntity::getId)
+				.toList());
+	}
+
+	@Test
+	void findIdsByNamespaceAndMunicipalityIdAndEntityIdNotFound() {
+		assertThat(repository.findIdsByNamespaceAndMunicipalityIdAndEntityId(NAMESPACE, MUNICIPALITY_ID, "does-not-exist")).isNotNull().isEmpty();
 	}
 
 	private boolean isValidUUID(final String value) {

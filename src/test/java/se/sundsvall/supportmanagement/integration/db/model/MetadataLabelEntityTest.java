@@ -1,14 +1,13 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static com.google.code.beanmatchers.BeanMatchers.registerValueGenerator;
@@ -16,6 +15,7 @@ import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
@@ -32,9 +32,32 @@ class MetadataLabelEntityTest {
 		assertThat(MetadataLabelEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("parent", "attributes"),
-			hasValidBeanEqualsExcluding("parent", "attributes"),
 			hasValidBeanToStringExcluding("parent", "attributes")));
+	}
+
+	@Test
+	void hashCodeAndEquals() {
+		final var entity1 = MetadataLabelEntity.create().withId("id-1");
+		final var entity2 = MetadataLabelEntity.create().withId("id-1");
+		final var entity3 = MetadataLabelEntity.create().withId("id-2");
+
+		assertThat(entity1)
+			.isEqualTo(entity2)
+			.hasSameHashCodeAs(entity2)
+			.isNotEqualTo(entity3);
+	}
+
+	@Test
+	void hashCodeDoesNotRecurseWithLoadedRelations() {
+		final var parent = MetadataLabelEntity.create().withId("parent-id").withResourceName("parent");
+		final var child = MetadataLabelEntity.create().withId("child-id").withResourceName("child");
+		parent.addChild(child);
+
+		final var set = new HashSet<MetadataLabelEntity>();
+		set.add(parent);
+		set.add(child);
+
+		assertThat(set).hasSize(2);
 	}
 
 	@Test
@@ -52,6 +75,7 @@ class MetadataLabelEntityTest {
 		final var resourceName = "resourceName";
 		final var resourcePath = "resourcePath";
 		final var deprecated = true;
+		final var version = 1L;
 
 		final var entity = MetadataLabelEntity.create()
 			.withClassification(classification)
@@ -65,7 +89,8 @@ class MetadataLabelEntityTest {
 			.withNamespace(namespace)
 			.withParent(parent)
 			.withResourceName(resourceName)
-			.withResourcePath(resourcePath);
+			.withResourcePath(resourcePath)
+			.withVersion(version);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getClassification()).isEqualTo(classification);
@@ -80,6 +105,7 @@ class MetadataLabelEntityTest {
 		assertThat(entity.getParent()).isEqualTo(parent);
 		assertThat(entity.getResourceName()).isEqualTo(resourceName);
 		assertThat(entity.getResourcePath()).isEqualTo(resourcePath);
+		assertThat(entity.getVersion()).isEqualTo(version);
 	}
 
 	@Test
@@ -178,6 +204,33 @@ class MetadataLabelEntityTest {
 		// Assert — paths are updated recursively
 		assertThat(parent.getResourcePath()).isEqualTo("renamed");
 		assertThat(child.getResourcePath()).isEqualTo("renamed/child");
+	}
+
+	@Test
+	void refreshResourcePath_updatesPathAfterParentChange() {
+		final var parent = MetadataLabelEntity.create().withId("p").withResourceName("parent");
+		final var child = MetadataLabelEntity.create().withId("c").withResourceName("child").withParent(parent);
+		parent.addChild(child);
+		parent.onCreate();
+		child.onCreate();
+
+		assertThat(child.getResourcePath()).isEqualTo("parent/child");
+
+		parent.setResourceName("renamed");
+		child.refreshResourcePath();
+
+		assertThat(child.getResourcePath()).isEqualTo("renamed/child");
+	}
+
+	@Test
+	void updateResourcePath_throwsIllegalStateExceptionOnCycle() {
+		final var a = MetadataLabelEntity.create().withId("a").withResourceName("a");
+		final var b = MetadataLabelEntity.create().withId("b").withResourceName("b").withParent(a);
+		a.setParent(b);
+
+		assertThatThrownBy(a::refreshResourcePath)
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Cycle detected");
 	}
 
 	@Test

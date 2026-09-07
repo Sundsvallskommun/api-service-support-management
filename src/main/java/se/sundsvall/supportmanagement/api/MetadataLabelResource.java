@@ -27,8 +27,11 @@ import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelAttributes;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelSiblings;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -46,9 +49,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class MetadataLabelResource {
 
 	private final MetadataService metadataService;
+	private final AccessControlService accessControlService;
 
-	MetadataLabelResource(final MetadataService metadataService) {
+	MetadataLabelResource(final MetadataService metadataService, final AccessControlService accessControlService) {
 		this.metadataService = metadataService;
+		this.accessControlService = accessControlService;
 	}
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
@@ -63,6 +68,8 @@ class MetadataLabelResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @ValidLabelSiblings @ValidLabelAttributes @NotNull @RequestBody final List<Label> labels) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
 
 		metadataService.createLabels(namespace, municipalityId, labels);
 		return accepted()
@@ -99,6 +106,8 @@ class MetadataLabelResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Valid @ValidLabelSiblings @ValidLabelAttributes @NotNull @RequestBody final List<Label> labels) {
 
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
+
 		metadataService.updateLabels(namespace, municipalityId, labels);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
@@ -117,6 +126,8 @@ class MetadataLabelResource {
 	ResponseEntity<Void> deleteLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
 
 		metadataService.deleteLabels(namespace, municipalityId);
 		return noContent()

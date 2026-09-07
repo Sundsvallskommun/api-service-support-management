@@ -59,6 +59,16 @@ public class NamespaceConfigEntity {
 	}, joinColumns = @JoinColumn(name = "namespace_config_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_namespace_config_value_namespace_config")))
 	private List<NamespaceConfigValueEmbeddable> values = new ArrayList<>();
 
+	@ElementCollection(fetch = EAGER)
+	@CollectionTable(name = "namespace_config_access_grant", indexes = {
+		@Index(name = "idx_namespace_config_access_grant_namespace_config_id_scope", columnList = "namespace_config_id, `scope`")
+	}, uniqueConstraints = {
+		@UniqueConstraint(name = "uk_namespace_config_id_scope_type_value", columnNames = {
+			"namespace_config_id", "`scope`", "`type`", "`value`"
+		})
+	}, joinColumns = @JoinColumn(name = "namespace_config_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_namespace_config_access_grant_namespace_config")))
+	private List<NamespaceConfigAccessGrantEmbeddable> accessGrants = new ArrayList<>();
+
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -158,6 +168,19 @@ public class NamespaceConfigEntity {
 		return this;
 	}
 
+	public List<NamespaceConfigAccessGrantEmbeddable> getAccessGrants() {
+		return accessGrants;
+	}
+
+	public void setAccessGrants(List<NamespaceConfigAccessGrantEmbeddable> accessGrants) {
+		this.accessGrants = accessGrants;
+	}
+
+	public NamespaceConfigEntity withAccessGrants(List<NamespaceConfigAccessGrantEmbeddable> accessGrants) {
+		this.accessGrants = accessGrants;
+		return this;
+	}
+
 	@PrePersist
 	void onCreate() {
 		created = now(systemDefault()).truncatedTo(MILLIS);
@@ -170,7 +193,7 @@ public class NamespaceConfigEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, id, modified, municipalityId, namespace, values);
+		return Objects.hash(accessGrants, created, id, modified, municipalityId, namespace, values);
 	}
 
 	@Override
@@ -178,14 +201,15 @@ public class NamespaceConfigEntity {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final NamespaceConfigEntity other)) { return false; }
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(
-			values, other.values);
+			accessGrants, other.accessGrants) && Objects.equals(values, other.values);
 	}
 
 	@Override
 	public String toString() {
 		final var builder = new StringBuilder();
-		builder.append("NamespaceConfigEntity [id=").append(id).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", values=").append(values).append(", created=").append(created).append(", modified=")
-			.append(modified).append("]");
+		builder.append("NamespaceConfigEntity [id=").append(id).append(", municipalityId=").append(municipalityId).append(", namespace=").append(namespace).append(", values=").append(values).append(", accessGrants=").append(accessGrants).append(
+			", created=")
+			.append(created).append(", modified=").append(modified).append("]");
 		return builder.toString();
 	}
 }

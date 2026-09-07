@@ -35,7 +35,8 @@
 					"classification": "CLASS",
 					"displayName": "LEVELTWO-1-DISPLAY-NAME",
 					"resourcePath": "ROOT/LEVELONE-1/LEVELTWO-1",
-					"resourceName": "LEVELTWO-1"
+					"resourceName": "LEVELTWO-1",
+					"version": 0
 				}
 			],
 			"activeNotifications": [],
@@ -43,7 +44,8 @@
 			"phases": [],
 			"created": "2024-01-01T12:00:00+01:00",
 			"touched": "2024-01-01T12:00:00+01:00",
-			"version": 0
+			"version": 0,
+			"measures": []
 		}
 	],
 	"pageable": {

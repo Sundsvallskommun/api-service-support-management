@@ -14,15 +14,15 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
-import org.springframework.util.StringUtils;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.FetchType.EAGER;
@@ -32,8 +32,6 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.reverse;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import static org.springframework.util.StringUtils.hasText;
 
@@ -56,6 +54,10 @@ public class MetadataLabelEntity {
 	@UuidGenerator
 	@Column(name = "id")
 	private String id;
+
+	@Version
+	@Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+	private Long version;
 
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
@@ -120,6 +122,19 @@ public class MetadataLabelEntity {
 
 	public MetadataLabelEntity withId(String id) {
 		this.id = id;
+		return this;
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
+	}
+
+	public MetadataLabelEntity withVersion(Long version) {
+		this.version = version;
 		return this;
 	}
 
@@ -305,27 +320,30 @@ public class MetadataLabelEntity {
 		this.modified = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
-	/**
-	 * Updates the {@link #resourcePath} based on the current node's {@link #resourceName}
-	 * and all ancestor nodes, forming a hierarchical path like "parent/child/grandchild".
-	 * If {@link #resourceName} is null or blank, {@link #resourcePath} will be set to null.
-	 */
-	private void updateResourcePath() {
+	public void refreshResourcePath() {
+		updateResourcePath();
+	}
+
+	void updateResourcePath() {
 		if (!hasText(this.resourceName)) {
 			this.resourcePath = null;
 			return;
 		}
 
-		this.resourcePath = Stream.iterate(this, current -> current.parent)
-			.takeWhile(Objects::nonNull)
-			.map(MetadataLabelEntity::getResourceName)
-			.filter(StringUtils::hasText)
-			.collect(collectingAndThen(
-				toList(),
-				list -> {
-					reverse(list);								// root first
-					return join(RESOURCE_PATH_SEPARATOR, list);	// build path
-				}));
+		var visited = new HashSet<String>();
+		var segments = new ArrayList<String>();
+		var current = this;
+
+		while (current != null && hasText(current.getResourceName())) {
+			if (current.getId() != null && !visited.add(current.getId())) {
+				throw new IllegalStateException("Cycle detected in label hierarchy at id: " + current.getId());
+			}
+			segments.add(current.getResourceName());
+			current = current.getParent();
+		}
+
+		reverse(segments);
+		this.resourcePath = join(RESOURCE_PATH_SEPARATOR, segments);
 	}
 
 	/**
@@ -354,7 +372,7 @@ public class MetadataLabelEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, created, deprecated, displayName, id, metadataLabels, modified, municipalityId, namespace, parent, resourceName, resourcePath);
+		return Objects.hash(id);
 	}
 
 	@Override
@@ -362,24 +380,16 @@ public class MetadataLabelEntity {
 		if (this == obj) {
 			return true;
 		}
-		if (obj == null) {
+		if (!(obj instanceof MetadataLabelEntity other)) {
 			return false;
 		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		MetadataLabelEntity other = (MetadataLabelEntity) obj;
-		return Objects.equals(classification, other.classification) && Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(
-			metadataLabels, other.metadataLabels)
-			&& Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(
-				resourceName, other.resourceName)
-			&& Objects.equals(resourcePath, other.resourcePath);
+		return id != null && Objects.equals(id, other.id);
 	}
 
 	@Override
 	public String toString() {
-		return "MetadataLabelEntity [id=" + id + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", classification=" + classification + ", displayName=" + displayName + ", deprecated=" + deprecated + ", resourceName=" + resourceName
-			+ ", resourcePath=" + resourcePath
+		return "MetadataLabelEntity [id=" + id + ", version=" + version + ", municipalityId=" + municipalityId + ", namespace=" + namespace + ", classification=" + classification + ", displayName=" + displayName + ", deprecated=" + deprecated
+			+ ", resourceName=" + resourceName + ", resourcePath=" + resourcePath
 			+ ", created=" + created + ", modified=" + modified + ", parent.id=" + (parent != null ? parent.id : null) + ", metadataLabels=" + metadataLabels + "]";
 	}
 }

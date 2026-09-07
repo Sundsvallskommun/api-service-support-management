@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -40,6 +41,8 @@ import static se.sundsvall.supportmanagement.integration.db.specification.Errand
 })
 @Transactional
 class ErrandsRepositoryTest {
+
+	private static final String MUNICIPALITY_ID = "2281";
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
@@ -203,7 +206,7 @@ class ErrandsRepositoryTest {
 
 	@Test
 	void findByErrandNumberAndNamespace() {
-		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-23020001", "NAMESPACE.1");
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespaceAndMunicipalityId("KC-23020001", "NAMESPACE.1", MUNICIPALITY_ID);
 		assertThat(errandEntities).isNotNull();
 		errandEntities.ifPresentOrElse(
 			errandEntity -> assertThat(errandEntity.getId()).isEqualTo("ERRAND_ID-1"),
@@ -212,13 +215,13 @@ class ErrandsRepositoryTest {
 
 	@Test
 	void findByErrandNumberAndNamespaceMissmatchOnNamespace() {
-		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-23020001", "NAMESPACE.2");
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespaceAndMunicipalityId("KC-23020001", "NAMESPACE.2", MUNICIPALITY_ID);
 		assertThat(errandEntities).isEmpty();
 	}
 
 	@Test
 	void findByErrandNumberAndNamespaceNotFound() {
-		final var errandEntities = errandsRepository.findByErrandNumberAndNamespace("KC-22020002", "NAMESPACE.1");
+		final var errandEntities = errandsRepository.findByErrandNumberAndNamespaceAndMunicipalityId("KC-22020002", "NAMESPACE.1", MUNICIPALITY_ID);
 		assertThat(errandEntities).isEmpty();
 	}
 
@@ -246,5 +249,67 @@ class ErrandsRepositoryTest {
 			.extracting(ErrandEntity::getId)
 			.containsExactlyInAnyOrder("ERRAND_ID-1", "ERRAND_ID-2", "ERRAND_ID-3", "ERRAND_ID-4");
 
+	}
+
+	// Label IDs from testdata-junit.sql (namespace-1 / 2281):
+	// 'a0bb7b61-8d55-4857-b619-547572eed26f' = parent/child/resource1
+	// '86d459cd-4810-4b4a-b365-97aa0c2c0ff5' = parent/child/resource2
+
+	@Test
+	void countByLabelsMetadataLabelId_noMatch() {
+		assertThat(errandsRepository.countByLabelsMetadataLabelId("non-existent-label-id")).isZero();
+	}
+
+	@Test
+	void countByLabelsMetadataLabelId_oneErrand() {
+		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		errandsRepository.save(errandWithLabel("errand-count-1", labelId));
+
+		assertThat(errandsRepository.countByLabelsMetadataLabelId(labelId)).isOne();
+	}
+
+	@Test
+	void countByLabelsMetadataLabelId_multipleErrands() {
+		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		errandsRepository.save(errandWithLabel("errand-count-2", labelId));
+		errandsRepository.save(errandWithLabel("errand-count-3", labelId));
+
+		assertThat(errandsRepository.countByLabelsMetadataLabelId(labelId)).isEqualTo(2);
+	}
+
+	@Test
+	void findAllByLabelsMetadataLabelId_noMatch() {
+		assertThat(errandsRepository.findAllByLabelsMetadataLabelId("non-existent-label-id")).isEmpty();
+	}
+
+	@Test
+	void findAllByLabelsMetadataLabelId_oneErrand() {
+		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		final var saved = errandsRepository.save(errandWithLabel("errand-find-1", labelId));
+
+		assertThat(errandsRepository.findAllByLabelsMetadataLabelId(labelId))
+			.hasSize(1)
+			.extracting(ErrandEntity::getId)
+			.containsExactly(saved.getId());
+	}
+
+	@Test
+	void findAllByLabelsMetadataLabelId_multipleErrands() {
+		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		final var saved1 = errandsRepository.save(errandWithLabel("errand-find-2", labelId));
+		final var saved2 = errandsRepository.save(errandWithLabel("errand-find-3", labelId));
+
+		assertThat(errandsRepository.findAllByLabelsMetadataLabelId(labelId))
+			.hasSize(2)
+			.extracting(ErrandEntity::getId)
+			.containsExactlyInAnyOrder(saved1.getId(), saved2.getId());
+	}
+
+	private ErrandEntity errandWithLabel(final String errandNumber, final String labelId) {
+		return ErrandEntity.create()
+			.withNamespace("namespace-1")
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withErrandNumber(errandNumber)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(labelId)));
 	}
 }

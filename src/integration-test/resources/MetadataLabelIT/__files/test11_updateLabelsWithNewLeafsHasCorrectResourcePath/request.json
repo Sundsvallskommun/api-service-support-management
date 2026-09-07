@@ -1,0 +1,52 @@
+[
+	{
+		"id": "dd11aa01-0000-0000-0000-000000000005",
+		"classification": "CLASS",
+		"displayName": "ROOT-DISPLAY-NAME",
+		"resourceName": "ROOT",
+		"labels": [
+			{
+				"id": "dd11aa01-0000-0000-0000-000000000004",
+				"classification": "CLASS",
+				"displayName": "LEVELONE_1-DISPLAY-NAME",
+				"resourceName": "LEVELONE_1",
+				"labels": [
+					{
+						"id": "dd11aa01-0000-0000-0000-000000000001",
+						"classification": "CLASS",
+						"displayName": "LEVELTWO_1-DISPLAY-NAME",
+						"resourceName": "LEVELTWO_1",
+						"labels": [
+							{
+								"classification": "CLASS",
+								"displayName": "NEW-LEAF-A-DISPLAY-NAME",
+								"resourceName": "NEW_LEAF_A",
+								"labels": []
+							},
+							{
+								"classification": "CLASS",
+								"displayName": "NEW-LEAF-B-DISPLAY-NAME",
+								"resourceName": "NEW_LEAF_B",
+								"labels": []
+							}
+						]
+					},
+					{
+						"id": "dd11aa01-0000-0000-0000-000000000002",
+						"classification": "CLASS",
+						"displayName": "LEVELTWO_2-DISPLAY-NAME",
+						"resourceName": "LEVELTWO_2",
+						"labels": []
+					}
+				]
+			},
+			{
+				"id": "dd11aa01-0000-0000-0000-000000000003",
+				"classification": "CLASS",
+				"displayName": "LEVELONE_2-DISPLAY-NAME",
+				"resourceName": "LEVELONE_2",
+				"labels": []
+			}
+		]
+	}
+]

@@ -48,6 +48,19 @@ import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
+// TODO Deprecate and remove this resource. It is superseded by SubscriberNotificationsResource, which is driven by
+// subscriptions rather than an ownerId written onto the errand notification. Removal covers this resource,
+// NotificationService, NotificationRepository and NotificationEntity, plus the errand notification endpoints nested
+// under /errands/{errandId}/notifications.
+//
+// Deliberately NOT fixed here, because the stack is going away: GET /notifications?ownerId= has no access check at all
+// (NotificationService.getNotificationsByOwnerId), so any caller can enumerate any owner's notifications, including the
+// errand ids and numbers of errands they cannot open. The errand scoped endpoints in this resource are fine - those go
+// through verifyExistingErrandAndAuthorization in the service.
+//
+// If removal slips, that read has to be closed instead: either restrict ownerId to the requesting identity, or filter
+// each row against errand access. Filtering per row is an N+1 unless the errand predicate is pushed into the query, so
+// prefer restricting ownerId if the stack is still alive by then.
 @RestController
 @Validated
 @RequestMapping("/{municipalityId}/{namespace}")

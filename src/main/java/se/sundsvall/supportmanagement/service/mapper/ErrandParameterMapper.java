@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -45,6 +46,20 @@ public final class ErrandParameterMapper {
 	}
 
 	public static void mergeParameters(final ErrandEntity entity, final List<Parameter> parameters) {
+		mergeParameters(entity, parameters, _ -> true);
+	}
+
+	/**
+	 * Replaces the parameters of the errand with sent in ones, leaving keys the caller may not reach untouched.
+	 * <p>
+	 * The merge deletes every key absent from the request, so without that guard a caller restricted to a few keys would
+	 * silently delete the parameters they are not even allowed to see, simply by patching back the list they were served.
+	 *
+	 * @param entity        errand to merge into
+	 * @param parameters    parameters replacing the reachable ones
+	 * @param accessibleKey predicate accepting the keys the caller may reach
+	 */
+	public static void mergeParameters(final ErrandEntity entity, final List<Parameter> parameters, final Predicate<String> accessibleKey) {
 		if (entity.getParameters() == null) {
 			entity.setParameters(new ArrayList<>());
 		}
@@ -53,13 +68,15 @@ public final class ErrandParameterMapper {
 		final var incomingByKey = uniqueIncoming.stream().collect(toMap(Parameter::getKey, identity()));
 		final var existingByKey = existing.stream().collect(toMap(ParameterEntity::getKey, identity()));
 
-		existing.removeIf(e -> !incomingByKey.containsKey(e.getKey()));
-		existing.forEach(e -> {
-			final var incoming = incomingByKey.get(e.getKey());
-			e.setDisplayName(incoming.getDisplayName());
-			e.setParameterGroup(incoming.getGroup());
-			e.setValues(incoming.getValues());
-		});
+		existing.removeIf(e -> accessibleKey.test(e.getKey()) && !incomingByKey.containsKey(e.getKey()));
+		existing.stream()
+			.filter(e -> incomingByKey.containsKey(e.getKey()))
+			.forEach(e -> {
+				final var incoming = incomingByKey.get(e.getKey());
+				e.setDisplayName(incoming.getDisplayName());
+				e.setParameterGroup(incoming.getGroup());
+				e.setValues(incoming.getValues());
+			});
 		uniqueIncoming.stream()
 			.filter(p -> !existingByKey.containsKey(p.getKey()))
 			.map(p -> toErrandParameterEntity(p).withErrandEntity(entity))

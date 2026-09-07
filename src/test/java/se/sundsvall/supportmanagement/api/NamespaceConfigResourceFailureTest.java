@@ -13,10 +13,12 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.config.Validation;
 import se.sundsvall.supportmanagement.api.model.config.action.Config;
 import se.sundsvall.supportmanagement.api.model.config.action.Parameter;
 import se.sundsvall.supportmanagement.service.ErrandActionService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+import se.sundsvall.supportmanagement.service.config.ValidationService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -34,6 +36,8 @@ class NamespaceConfigResourceFailureTest {
 	private static final String ACTION_DEFINITION_PATH = "/{municipalityId}/{namespace}/namespace-config/action-definition";
 	private static final String ACTION_CONFIG_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config";
 	private static final String ACTION_CONFIG_ID_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config/{id}";
+	private static final String VALIDATION_PATH = "/{municipalityId}/{namespace}/namespace-config/validation";
+	private static final String VALIDATION_TYPE_PATH = "/{municipalityId}/{namespace}/namespace-config/validation/{type}";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String DISPLAY_NAME = "DisplayName";
@@ -49,6 +53,9 @@ class NamespaceConfigResourceFailureTest {
 
 	@MockitoBean
 	private ErrandActionService actionServiceMock;
+
+	@MockitoBean
+	private ValidationService validationServiceMock;
 
 	@Test
 	void createWithInvalidNamespace() {
@@ -706,6 +713,60 @@ class NamespaceConfigResourceFailureTest {
 			.containsExactly(tuple("deleteActionConfig.id", "not a valid UUID"));
 
 		verifyNoInteractions(actionServiceMock);
+	}
+
+	@Test
+	void getValidationsWithInvalidNamespace() {
+		final var response = webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(VALIDATION_PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("getValidations.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		verifyNoInteractions(validationServiceMock);
+	}
+
+	@Test
+	void updateValidationWithMissingValidatedInBody() {
+		final var response = webTestClient.patch()
+			.uri(uriBuilder -> uriBuilder.path(VALIDATION_TYPE_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "type", "STATUS")))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Validation.create())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("validated", "must not be null"));
+
+		verifyNoInteractions(validationServiceMock);
+	}
+
+	@Test
+	void updateValidationWithUnknownType() {
+		webTestClient.patch()
+			.uri(uriBuilder -> uriBuilder.path(VALIDATION_TYPE_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "type", "UNKNOWN_TYPE")))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Validation.create().withValidated(true))
+			.exchange()
+			.expectStatus().isBadRequest();
+
+		verifyNoInteractions(validationServiceMock);
 	}
 
 	private static NamespaceConfig createValidNamespaceConfig() {

@@ -52,6 +52,7 @@ class HandoverMapperTest {
 		assertThat(result.getErrandNumber()).isNull();
 		assertThat(result.getResolution()).isNull();
 		assertThat(result.getSuspension()).isNull();
+		assertThat(result.getMeasures()).isNull();
 		assertThat(result.getStakeholders()).isNull();
 		assertThat(result.getExternalTags()).isNull();
 		assertThat(result.getParameters()).isNull();
@@ -153,16 +154,11 @@ class HandoverMapperTest {
 		final var result = HandoverMapper.buildAppliedMappings(request);
 
 		assertThat(result).containsKey("status")
-			.containsKey("classification.category")
-			.containsKey("classification.type")
-			.containsKey("labels")
-			.containsKey("contactReason")
-			.containsKey("channel");
-		assertThat(result.get("status")).isEqualTo("NEW_CASE");
-		assertThat(result.get("classification.category")).isEqualTo("SUPPORT_CASE");
-		assertThat(result.get("classification.type")).isEqualTo("OTHER_ISSUES");
-		assertThat(result.get("contactReason")).isEqualTo("Printer issue");
-		assertThat(result.get("channel")).isEqualTo("WEB_UI");
+			.containsEntry("status", "NEW_CASE")
+			.containsEntry("classification.category", "SUPPORT_CASE")
+			.containsEntry("classification.type", "OTHER_ISSUES")
+			.containsEntry("contactReason", "Printer issue")
+			.containsEntry("channel", "WEB_UI");
 	}
 
 	@Test

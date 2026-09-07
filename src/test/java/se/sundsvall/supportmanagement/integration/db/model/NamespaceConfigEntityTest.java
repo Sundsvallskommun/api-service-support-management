@@ -94,7 +94,7 @@ class NamespaceConfigEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "values").satisfies(e -> assertThat(e.getValues()).isEmpty());
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "values", "accessGrants").satisfies(e -> assertThat(e.getValues()).isEmpty());
 	}
 
 	@Test
@@ -103,12 +103,12 @@ class NamespaceConfigEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "values").satisfies(e -> assertThat(e.getValues()).isEmpty());
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "values", "accessGrants").satisfies(e -> assertThat(e.getValues()).isEmpty());
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("values").satisfies(e -> assertThat(e.getValues()).isEmpty());
-		assertThat(new NamespaceConfigEntity()).hasAllNullFieldsOrPropertiesExcept("values").satisfies(e -> assertThat(e.getValues()).isEmpty());
+		assertThat(NamespaceConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("values", "accessGrants").satisfies(e -> assertThat(e.getValues()).isEmpty());
+		assertThat(new NamespaceConfigEntity()).hasAllNullFieldsOrPropertiesExcept("values", "accessGrants").satisfies(e -> assertThat(e.getValues()).isEmpty());
 	}
 }

@@ -1,0 +1,28 @@
+[
+	{
+		"type": "CATEGORY",
+		"validated": true,
+		"created": "2023-01-01T12:00:00+01:00"
+	},
+	{
+		"type": "EXTERNAL_ID_TYPE",
+		"validated": false
+	},
+	{
+		"type": "STATUS",
+		"validated": false
+	},
+	{
+		"type": "TYPE",
+		"validated": false,
+		"created": "2023-01-01T12:00:00+01:00"
+	},
+	{
+		"type": "ROLE",
+		"validated": false
+	},
+	{
+		"type": "CONTACT_REASON",
+		"validated": false
+	}
+]
