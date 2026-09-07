@@ -79,6 +79,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -494,8 +495,8 @@ class CommunicationServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, RW);
 		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, List.of(ATTACHMENT_ID));
 		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
-		verify(communicationMapperMock, org.mockito.Mockito.times(2)).toCommunicationEntity(anyString(), anyString(), any(EmailRequest.class));
-		verify(communicationRepositoryMock, org.mockito.Mockito.times(2)).saveAndFlush(any(CommunicationEntity.class));
+		verify(communicationMapperMock, times(2)).toCommunicationEntity(anyString(), anyString(), any(EmailRequest.class));
+		verify(communicationRepositoryMock, times(2)).saveAndFlush(any(CommunicationEntity.class));
 
 		final var batchRequest = emailBatchRequestCaptor.getValue();
 		assertThat(batchRequest.getParties()).hasSize(2);
