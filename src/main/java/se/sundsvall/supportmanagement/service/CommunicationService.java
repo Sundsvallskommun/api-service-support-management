@@ -198,7 +198,7 @@ public class CommunicationService {
 	public void sendBulkEmail(final String namespace, final String municipalityId, final String id, final BulkEmailRequest request) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
-		final var batchRequest = toEmailBatchRequest(request, errandEntity, toEmailAttachments(errandAttachments));
+		final var batchRequest = toEmailBatchRequest(request, toEmailAttachments(errandAttachments));
 
 		messagingClient.sendEmailBatch(municipalityId, batchRequest);
 

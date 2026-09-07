@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -261,7 +262,7 @@ public class MessagingMapper {
 		}
 	}
 
-	public static EmailBatchRequest toEmailBatchRequest(final se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest request, final ErrandEntity errandEntity, final List<EmailAttachment> attachments) {
+	public static EmailBatchRequest toEmailBatchRequest(final BulkEmailRequest request, final List<EmailAttachment> attachments) {
 		return new EmailBatchRequest()
 			.parties(request.getRecipients().stream()
 				.map(Party::new)
@@ -276,7 +277,7 @@ public class MessagingMapper {
 			.headers(toEmailHeaders(request.getEmailHeaders()));
 	}
 
-	private static EmailSender toEmailSender(final se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest request) {
+	private static EmailSender toEmailSender(final BulkEmailRequest request) {
 		return new EmailSender()
 			.name(ofNullable(request.getSenderName()).orElse(request.getSender()))
 			.address(request.getSender());

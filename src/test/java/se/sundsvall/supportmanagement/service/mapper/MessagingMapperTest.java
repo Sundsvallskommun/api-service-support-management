@@ -502,9 +502,8 @@ class MessagingMapperTest {
 			.withMessage(MESSAGE)
 			.withHtmlMessage(HTML_MESSAGE_IN_BASE64)
 			.withAttachments(List.of(EmailAttachment.create().withBase64EncodedString(FILE_CONTENT).withFileName(FILE_NAME)));
-		final var errandEntity = createErrandEntity();
 
-		final var result = MessagingMapper.toEmailBatchRequest(request, errandEntity, List.of());
+		final var result = MessagingMapper.toEmailBatchRequest(request, List.of());
 
 		assertThat(result.getParties()).hasSize(2)
 			.extracting("emailAddress").containsExactlyInAnyOrder("a@example.com", "b@example.com");
@@ -524,7 +523,7 @@ class MessagingMapperTest {
 			.withMessage(MESSAGE)
 			.withHtmlMessage(HTML_MESSAGE_IN_BASE64);
 
-		final var result = MessagingMapper.toEmailBatchRequest(request, createErrandEntity(), List.of());
+		final var result = MessagingMapper.toEmailBatchRequest(request, List.of());
 
 		assertThat(result.getSender().getName()).isEqualTo(SENDER_EMAIL);
 		assertThat(result.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
