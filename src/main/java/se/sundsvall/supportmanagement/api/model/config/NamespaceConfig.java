@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Null;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -53,6 +54,15 @@ public class NamespaceConfig {
 		description = "If set to true the resources a user may reach are decided by the access mapper in addition to their labels. Leave false until the namespace has resource access configured there, otherwise no resource can be reached. If no value is set it defaults to false.",
 		examples = "true")
 	private boolean resourceAccessControl;
+
+	@Schema(
+		description = "The process engine running the processes of this namespace, named as it is configured under process-engine.consumers. A namespace has exactly one, and leaving it out means the namespace runs no processes at all. It cannot be combined with access control, as the access mapper only grants access to AD accounts",
+		examples = "pw-alkt")
+	private String processConsumer;
+
+	@Schema(
+		description = "The errand changes worth telling the process about. An event whose sub type is not listed here is not published, so a namespace running processes needs at least ERRAND for them to start. Commands sent to the process are not errand changes and are never filtered by this list")
+	private List<@NotNull EventSubType> processTriggers;
 
 	@Valid
 	@Schema(
@@ -214,6 +224,32 @@ public class NamespaceConfig {
 		return this;
 	}
 
+	public String getProcessConsumer() {
+		return processConsumer;
+	}
+
+	public void setProcessConsumer(final String processConsumer) {
+		this.processConsumer = processConsumer;
+	}
+
+	public NamespaceConfig withProcessConsumer(final String processConsumer) {
+		this.processConsumer = processConsumer;
+		return this;
+	}
+
+	public List<EventSubType> getProcessTriggers() {
+		return processTriggers;
+	}
+
+	public void setProcessTriggers(final List<EventSubType> processTriggers) {
+		this.processTriggers = processTriggers;
+	}
+
+	public NamespaceConfig withProcessTriggers(final List<EventSubType> processTriggers) {
+		this.processTriggers = processTriggers;
+		return this;
+	}
+
 	public LimitedReadAccess getLimitedReadAccess() {
 		return limitedReadAccess;
 	}
@@ -256,7 +292,7 @@ public class NamespaceConfig {
 	@Override
 	public int hashCode() {
 		return Objects.hash(accessControl, created, displayName,
-			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, reporterAccess, resourceAccessControl, roleFieldRestrictions, roleBasedMapping, shortCode);
+			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, roleFieldRestrictions, roleBasedMapping, shortCode);
 	}
 
 	@Override
@@ -264,9 +300,10 @@ public class NamespaceConfig {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final NamespaceConfig other)) { return false; }
 		return accessControl == other.accessControl && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
-			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
-				other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && Objects.equals(roleFieldRestrictions,
-					other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
+			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(processConsumer, other.processConsumer) && Objects.equals(processTriggers,
+				other.processTriggers) && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
+					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && Objects.equals(roleFieldRestrictions,
+						other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
 			&& Objects.equals(shortCode, other.shortCode);
 	}
 
@@ -275,8 +312,9 @@ public class NamespaceConfig {
 		final var builder = new StringBuilder();
 		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", notificationTTLInDays=").append(
 			notificationTTLInDays).append(", created=").append(created).append(", modified=").append(modified).append(", accessControl=").append(accessControl).append(", notifyReporter=").append(notifyReporter).append(", roleBasedMapping=").append(
-				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", limitedReadAccess=").append(limitedReadAccess).append(", reporterAccess=").append(reporterAccess).append(", roleFieldRestrictions=").append(
-					roleFieldRestrictions)
+				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", processConsumer=").append(processConsumer).append(", processTriggers=").append(processTriggers).append(", limitedReadAccess=").append(
+					limitedReadAccess).append(", reporterAccess=").append(reporterAccess).append(", roleFieldRestrictions=").append(
+						roleFieldRestrictions)
 			.append("]");
 		return builder.toString();
 	}

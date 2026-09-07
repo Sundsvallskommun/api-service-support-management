@@ -107,4 +107,43 @@ class NamespaceConfigServiceCacheTest {
 
 		assertThat(namespaceConfigService.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).isFalse();
 	}
+
+	@Test
+	void createEvictsTheConfiguration() {
+		final var before = NamespaceConfig.create().withDisplayName("before");
+		final var after = NamespaceConfig.create().withDisplayName("after");
+		when(mock.get(any(), any())).thenReturn(before, after);
+
+		assertThat(namespaceConfigService.get(NAMESPACE, MUNICIPALITY_ID)).isEqualTo(before);
+		namespaceConfigService.create(NamespaceConfig.create(), NAMESPACE, MUNICIPALITY_ID);
+
+		assertThat(namespaceConfigService.get(NAMESPACE, MUNICIPALITY_ID)).isEqualTo(after);
+	}
+
+	@Test
+	void replaceEvictsTheConfiguration() {
+		// Everything the configuration drives, the process consumer and its triggers included, is read back through this
+		// answer. Were it not evicted the configuration could not be changed while the service runs, however much a
+		// successful write looks like it did.
+		final var before = NamespaceConfig.create().withProcessConsumer("pw-alkt");
+		final var after = NamespaceConfig.create().withProcessConsumer("pw-other");
+		when(mock.get(any(), any())).thenReturn(before, after);
+
+		assertThat(namespaceConfigService.get(NAMESPACE, MUNICIPALITY_ID)).isEqualTo(before);
+		namespaceConfigService.replace(NamespaceConfig.create(), NAMESPACE, MUNICIPALITY_ID);
+
+		assertThat(namespaceConfigService.get(NAMESPACE, MUNICIPALITY_ID)).isEqualTo(after);
+	}
+
+	@Test
+	void deleteEvictsTheConfiguration() {
+		final var before = NamespaceConfig.create().withDisplayName("before");
+		final var after = NamespaceConfig.create().withDisplayName("after");
+		when(mock.get(any(), any())).thenReturn(before, after);
+
+		assertThat(namespaceConfigService.get(NAMESPACE, MUNICIPALITY_ID)).isEqualTo(before);
+		namespaceConfigService.delete(NAMESPACE, MUNICIPALITY_ID);
+
+		assertThat(namespaceConfigService.get(NAMESPACE, MUNICIPALITY_ID)).isEqualTo(after);
+	}
 }

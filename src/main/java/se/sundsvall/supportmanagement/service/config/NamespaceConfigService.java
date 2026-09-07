@@ -14,9 +14,11 @@ import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static java.util.Collections.emptyList;
@@ -39,13 +41,18 @@ public class NamespaceConfigService {
 	private static final String ROLE_NAME_IS_RESERVED = "Role '%s' is reserved and may not be used in role access";
 	private static final String KEYS_NOT_ALLOWED = "Keys may not be set for field '%s' of '%s' as the field holds no keyed collection";
 	private static final String DUPLICATE_GRANT = "'%s' occurs more than once as %s in '%s'";
+	private static final String DUPLICATE_PROCESS_TRIGGER = "'%s' occurs more than once among the process triggers";
+	private static final String UNKNOWN_PROCESS_CONSUMER = "'%s' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be one of %s";
+	private static final String PROCESS_CONSUMER_EXCLUDES_ACCESS_CONTROL = "Access control may not be active for a namespace with the process consumer '%s'. A process consumer is not an AD account, and the access mapper grants access to nothing else, so every read and write the process makes for the namespace would be denied";
 
 	private final NamespaceConfigRepository configRepository;
 	private final NamespaceConfigMapper mapper;
+	private final ProcessEngineProperties processEngineProperties;
 
-	public NamespaceConfigService(NamespaceConfigRepository configRepository, NamespaceConfigMapper mapper) {
+	public NamespaceConfigService(NamespaceConfigRepository configRepository, NamespaceConfigMapper mapper, ProcessEngineProperties processEngineProperties) {
 		this.configRepository = configRepository;
 		this.mapper = mapper;
+		this.processEngineProperties = processEngineProperties;
 	}
 
 	@Caching(evict = {
@@ -58,6 +65,7 @@ public class NamespaceConfigService {
 			throw Problem.valueOf(BAD_REQUEST, CONFIG_ENTITY_ALREADY_EXISTS.formatted(namespace, municipalityId));
 		}
 		validateAccessConfiguration(request);
+		validateProcessConfiguration(request);
 		final var config = mapper.toEntity(request, namespace, municipalityId);
 		validateNoDuplicateGrants(config);
 		configRepository.save(config);
@@ -94,6 +102,38 @@ public class NamespaceConfigService {
 		validateFields(ofNullable(request.getLimitedReadAccess()).map(LimitedReadAccess::getFields).orElse(null), "limitedReadAccess");
 		validateFields(ofNullable(request.getReporterAccess()).map(ReporterAccess::getFields).orElse(null), "reporterAccess");
 		restrictions.forEach(restriction -> validateFields(restriction.getFields(), restriction.getRole()));
+	}
+
+	/**
+	 * Verifies the process configuration of the namespace.
+	 * <p>
+	 * The consumer is checked against the register of process engines the service can actually deliver to, since the name
+	 * is the delivery address rather than a label: a misspelt one would otherwise be accepted and then leave every event
+	 * of the namespace undeliverable, which shows up as errands that stop moving rather than as a configuration error.
+	 * <p>
+	 * Access control is refused alongside a consumer for a reason that is technical rather than a policy. The access
+	 * mapper answers for AD accounts only, and a process engine has none, so it would be denied everything it asks for -
+	 * and denied silently, as the process reports the failure as something to retry and the errand simply stands still.
+	 * The day the access mapper can grant access to machine identities, this is the only thing that has to be lifted.
+	 */
+	private void validateProcessConfiguration(NamespaceConfig request) {
+		final var seenTriggers = new HashSet<EventSubType>();
+
+		ofNullable(request.getProcessTriggers()).orElse(emptyList()).stream()
+			.filter(trigger -> !seenTriggers.add(trigger))
+			.findFirst()
+			.ifPresent(trigger -> {
+				throw Problem.valueOf(BAD_REQUEST, DUPLICATE_PROCESS_TRIGGER.formatted(trigger));
+			});
+
+		ofNullable(request.getProcessConsumer()).ifPresent(consumer -> {
+			if (!processEngineProperties.consumers().contains(consumer)) {
+				throw Problem.valueOf(BAD_REQUEST, UNKNOWN_PROCESS_CONSUMER.formatted(consumer, processEngineProperties.consumers()));
+			}
+			if (request.isAccessControl()) {
+				throw Problem.valueOf(BAD_REQUEST, PROCESS_CONSUMER_EXCLUDES_ACCESS_CONTROL.formatted(consumer));
+			}
+		});
 	}
 
 	/**
@@ -137,6 +177,7 @@ public class NamespaceConfigService {
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
+		validateProcessConfiguration(request);
 		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
 

@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
@@ -42,9 +43,12 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_CONSUMER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_RESOURCE_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ROLE_BASED_MAPPING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getNullableValue;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getValue;
 
 @Component
@@ -61,7 +65,7 @@ public class NamespaceConfigMapper {
 	private static final String KEY_SEPARATOR = ":";
 
 	public NamespaceConfigEntity toEntity(final NamespaceConfig config, final String namespace, final String municipalityId) {
-		return NamespaceConfigEntity.create()
+		final var entity = NamespaceConfigEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_DISPLAY_NAME, config.getDisplayName(), STRING))
@@ -72,6 +76,15 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_RESOURCE_ACCESS_CONTROL, String.valueOf(config.isResourceAccessControl()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
 			.withAccessGrants(toAccessGrants(config));
+
+		// The value column does not take null, so a namespace running no processes gets no rows of its own at all.
+		ofNullable(config.getProcessConsumer())
+			.ifPresent(consumer -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_PROCESS_CONSUMER, consumer, STRING)));
+
+		ofNullable(config.getProcessTriggers()).orElse(emptyList())
+			.forEach(trigger -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_PROCESS_TRIGGER, trigger.name(), STRING)));
+
+		return entity;
 	}
 
 	public List<NamespaceConfig> toNamespaceConfigs(final List<NamespaceConfigEntity> entities) {
@@ -101,9 +114,35 @@ public class NamespaceConfigMapper {
 			.withRoleBasedMapping(readOptionalToggle(entity, PROPERTY_ROLE_BASED_MAPPING))
 			.withResourceAccessControl(readOptionalToggle(entity, PROPERTY_RESOURCE_ACCESS_CONTROL))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
+			.withProcessConsumer(getNullableValue(entity, PROPERTY_PROCESS_CONSUMER))
+			.withProcessTriggers(toProcessTriggers(entity))
 			.withLimitedReadAccess(toLimitedReadAccess(entity))
 			.withReporterAccess(toReporterAccess(entity))
 			.withRoleFieldRestrictions(toRoleAccesses(entity));
+	}
+
+	/**
+	 * Rebuilds the triggers of the namespace from the rows holding them. Read through
+	 * {@link ConfigPropertyExtractor#getValues(NamespaceConfigEntity, String)} rather than the single valued reader, which
+	 * would leave all but the first trigger without effect.
+	 * <p>
+	 * Values that no longer resolve to a known event sub type are skipped, so a stale row cannot make the whole
+	 * configuration unreadable.
+	 */
+	private List<EventSubType> toProcessTriggers(final NamespaceConfigEntity entity) {
+		final var triggers = ConfigPropertyExtractor.<String>getValues(entity, PROPERTY_PROCESS_TRIGGER).stream()
+			.map(value -> {
+				final var trigger = EnumUtils.getEnum(EventSubType.class, value);
+				if (trigger == null) {
+					LOG.warn("Skipping unknown process trigger '{}' for namespace '{}'", value, entity.getNamespace());
+				}
+				return trigger;
+			})
+			.filter(Objects::nonNull)
+			.sorted()
+			.toList();
+
+		return triggers.isEmpty() ? null : triggers;
 	}
 
 	/**

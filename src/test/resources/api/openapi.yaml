@@ -9965,6 +9965,33 @@ components:
             \ can be reached. If no value is set it defaults to false."
           examples:
           - true
+        processConsumer:
+          type: string
+          description: "The process engine running the processes of this namespace,\
+            \ named as it is configured under process-engine.consumers. A namespace\
+            \ has exactly one, and leaving it out means the namespace runs no processes\
+            \ at all. It cannot be combined with access control, as the access mapper\
+            \ only grants access to AD accounts"
+          examples:
+          - pw-alkt
+        processTriggers:
+          type: array
+          description: "The errand changes worth telling the process about. An event\
+            \ whose sub type is not listed here is not published, so a namespace running\
+            \ processes needs at least ERRAND for them to start. Commands sent to\
+            \ the process are not errand changes and are never filtered by this list"
+          items:
+            type: string
+            enum:
+            - ATTACHMENT
+            - DECISION
+            - ERRAND
+            - HANDOVER_IN
+            - HANDOVER_OUT
+            - MESSAGE
+            - NOTE
+            - SYSTEM
+            - SUSPENSION
         limitedReadAccess:
           $ref: "#/components/schemas/LimitedReadAccess"
           description: "What a user whose labels only grant them limited read for\

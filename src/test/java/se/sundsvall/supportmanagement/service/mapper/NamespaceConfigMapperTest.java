@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -16,6 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigAccess
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
@@ -31,6 +33,8 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_CONSUMER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 class NamespaceConfigMapperTest {
@@ -129,7 +133,7 @@ class NamespaceConfigMapperTest {
 
 		final var config = mapper.toNamespaceConfig(entity);
 
-		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
+		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "processConsumer", "processTriggers", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
 		assertThat(config.getNamespace()).isEqualTo(namespace);
 		assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -156,7 +160,7 @@ class NamespaceConfigMapperTest {
 		final var configs = mapper.toNamespaceConfigs(entities);
 
 		assertThat(configs).hasSize(1).satisfiesExactly(config -> {
-			assertThat(config).hasNoNullFieldsOrPropertiesExcept("limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
+			assertThat(config).hasNoNullFieldsOrPropertiesExcept("processConsumer", "processTriggers", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
 			assertThat(config.getNamespace()).isEqualTo(namespace);
 			assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -277,6 +281,88 @@ class NamespaceConfigMapperTest {
 		assertThat(config.getReporterAccess()).isNull();
 		assertThat(config.getRoleFieldRestrictions()).isNull();
 		assertThat(config.isRoleBasedMapping()).isFalse();
+	}
+
+	@Test
+	void toEntityWritesEachProcessTriggerAsItsOwnRow() {
+		final var config = NamespaceConfig.create()
+			.withDisplayName("displayName")
+			.withShortCode("shortCode")
+			.withProcessConsumer("pw-alkt")
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE, EventSubType.DECISION));
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		assertThat(entity.getValues())
+			.filteredOn(value -> PROPERTY_PROCESS_CONSUMER.equals(value.getKey()) || PROPERTY_PROCESS_TRIGGER.equals(value.getKey()))
+			.extracting(NamespaceConfigValueEmbeddable::getKey, NamespaceConfigValueEmbeddable::getValue, NamespaceConfigValueEmbeddable::getType)
+			.containsExactly(
+				tuple(PROPERTY_PROCESS_CONSUMER, "pw-alkt", STRING),
+				tuple(PROPERTY_PROCESS_TRIGGER, "ERRAND", STRING),
+				tuple(PROPERTY_PROCESS_TRIGGER, "MESSAGE", STRING),
+				tuple(PROPERTY_PROCESS_TRIGGER, "DECISION", STRING));
+	}
+
+	@Test
+	void toEntityWithoutProcessConfigurationWritesNoProcessRows() {
+		final var config = NamespaceConfig.create()
+			.withDisplayName("displayName")
+			.withShortCode("shortCode");
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		// The value column does not take null, so a namespace running no processes must leave the rows out entirely
+		assertThat(entity.getValues())
+			.extracting(NamespaceConfigValueEmbeddable::getKey)
+			.doesNotContain(PROPERTY_PROCESS_CONSUMER, PROPERTY_PROCESS_TRIGGER);
+	}
+
+	@Test
+	void toNamespaceConfigReadsEveryProcessTrigger() {
+		final var entity = withProcessRows(createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true),
+			processRow(PROPERTY_PROCESS_CONSUMER, "pw-alkt"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "MESSAGE"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "ERRAND"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "DECISION"));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getProcessConsumer()).isEqualTo("pw-alkt");
+		assertThat(config.getProcessTriggers()).containsExactly(EventSubType.DECISION, EventSubType.ERRAND, EventSubType.MESSAGE);
+	}
+
+	@Test
+	void toNamespaceConfigSkipsProcessTriggersThatNoLongerResolve() {
+		final var entity = withProcessRows(createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true),
+			processRow(PROPERTY_PROCESS_TRIGGER, "NO_SUCH_SUB_TYPE"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "ERRAND"));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getProcessTriggers()).containsExactly(EventSubType.ERRAND);
+	}
+
+	@Test
+	void toNamespaceConfigWithoutProcessConfiguration() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true);
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getProcessConsumer()).isNull();
+		assertThat(config.getProcessTriggers()).isNull();
+	}
+
+	/**
+	 * The rows of a namespace built by {@link #createEntity} are immutable, so process rows are added by rebuilding them.
+	 */
+	private static NamespaceConfigEntity withProcessRows(final NamespaceConfigEntity entity, final NamespaceConfigValueEmbeddable... rows) {
+		final var values = new ArrayList<>(entity.getValues());
+		values.addAll(List.of(rows));
+		return entity.withValues(values);
+	}
+
+	private static NamespaceConfigValueEmbeddable processRow(final String key, final String value) {
+		return NamespaceConfigValueEmbeddable.create().withKey(key).withValue(value).withType(STRING);
 	}
 
 	private static NamespaceConfigAccessGrantEmbeddable accessGrantRow(final String scope, final RoleAccessType type, final String value, final String accessLevel) {
