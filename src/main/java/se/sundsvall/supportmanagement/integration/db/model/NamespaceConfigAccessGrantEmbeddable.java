@@ -17,7 +17,8 @@ import static java.sql.Types.LONGVARCHAR;
  * For a FIELD grant the value is an {@link se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField} name,
  * optionally followed by a colon and a key to expose a single entry of a keyed collection, e.g.
  * <code>PARAMETERS:contactChannel</code>. The value is split on the first colon only, so keys may themselves contain
- * colons. Access level is not used for FIELD grants.
+ * colons. The access level of a FIELD grant is optional: set, it holds the field or key below the level the errand
+ * itself is held at, and left out the grant simply follows the errand.
  * <p>
  * For a RESOURCE grant the value is an
  * {@link se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource}

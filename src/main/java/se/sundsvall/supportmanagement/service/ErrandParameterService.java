@@ -51,9 +51,7 @@ public class ErrandParameterService {
 
 		// Resolved once, before the merge below. Resolving it afterwards would query mid transaction, auto flushing the
 		// changed parameters and bumping their version before they are returned.
-		final var accessibleKey = accessControlService.readableKeyPredicate(namespace, municipalityId, Identifier.get(), errandEntity, ErrandField.PARAMETERS);
-
-		accessControlService.verifyAccessibleKeys(accessibleKey, ofNullable(parameters).orElse(emptyList()).stream().map(Parameter::getKey).toList());
+		final var keyAccess = accessControlService.verifyParameterAccess(namespace, municipalityId, errandEntity, parameters);
 
 		if (ifMatch == null) {
 			LOG.debug("PATCH /errands/{}/parameters received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
@@ -61,11 +59,12 @@ public class ErrandParameterService {
 		validateIfMatch(ifMatch, errandEntity.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		// Parameters the caller cannot see are left as they are, so patching back a filtered list cannot delete them.
-		mergeParameters(errandEntity, parameters, accessibleKey);
+		// Parameters the caller cannot write are left as they are, so patching back a filtered list cannot delete them,
+		// and one they may read but not change keeps the value they were served.
+		mergeParameters(errandEntity, parameters, keyAccess.writableKey());
 
 		return toParameterList(ofNullable(errandsRepository.save(errandEntity).getParameters()).orElse(emptyList()).stream()
-			.filter(parameter -> accessibleKey.test(parameter.getKey()))
+			.filter(parameter -> keyAccess.readableKey().test(parameter.getKey()))
 			.toList());
 	}
 
@@ -89,7 +88,8 @@ public class ErrandParameterService {
 	@Transactional
 	public Parameter updateErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey, final String ifMatch, final List<String> parameterValues) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.PARAMETER, RW);
-		accessControlService.verifyAccessibleKey(namespace, municipalityId, errandEntity, ErrandField.PARAMETERS, parameterKey);
+
+		final var keyAccess = accessControlService.verifyParameterAccess(namespace, municipalityId, errandEntity, parameterKey, parameterValues);
 
 		final var parameterEntity = errandEntity.getParameters().stream()
 			.filter(paramEntity -> Objects.equals(paramEntity.getKey(), parameterKey))
@@ -100,6 +100,13 @@ public class ErrandParameterService {
 			LOG.debug("PATCH /errands/{}/parameters/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(parameterKey), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, parameterEntity.getVersion());
+
+		// The request carries what is already stored, since anything else was refused above. Writing it again would bump
+		// the version of a parameter the caller may not change, so the request is answered without touching it.
+		if (!keyAccess.writableKey().test(parameterKey)) {
+			return toParameter(parameterEntity);
+		}
+
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		parameterEntity.withValues(parameterValues);
@@ -110,7 +117,7 @@ public class ErrandParameterService {
 	@Transactional
 	public void deleteErrandParameter(final String namespace, final String municipalityId, final String errandId, final String parameterKey, final String ifMatch) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.PARAMETER, RW);
-		accessControlService.verifyAccessibleKey(namespace, municipalityId, errandEntity, ErrandField.PARAMETERS, parameterKey);
+		accessControlService.verifyWritableKey(namespace, municipalityId, errandEntity, ErrandField.PARAMETERS, parameterKey);
 
 		if (errandEntity.getParameters() == null) {
 			return;
