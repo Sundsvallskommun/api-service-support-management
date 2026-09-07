@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -21,6 +22,7 @@ import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -39,6 +41,8 @@ public class NamespaceConfigService {
 	private static final String ROLE_NAME_IS_RESERVED = "Role '%s' is reserved and may not be used in role access";
 	private static final String KEYS_NOT_ALLOWED = "Keys may not be set for field '%s' of '%s' as the field holds no keyed collection";
 	private static final String DUPLICATE_GRANT = "'%s' occurs more than once as %s in '%s'";
+	private static final String LEVEL_NOT_ALLOWED = "Level may not be set for field '%s' of '%s' as the field holds no keyed collection";
+	private static final String LEVEL_NOT_SUPPORTED = "Level '%s' may not be set for field '%s' of '%s' as a field is held at read or read/write";
 
 	private final NamespaceConfigRepository configRepository;
 	private final NamespaceConfigMapper mapper;
@@ -118,15 +122,37 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * Keys expose single entries of a collection, so they only make sense for a field holding one.
+	 * Keys expose single entries of a collection, so they only make sense for a field holding one - and so does a level,
+	 * which says what the holder may do with those entries.
+	 * <p>
+	 * Limited read is not among the levels a field is held at. It says an errand is reachable but trimmed, which is a
+	 * statement about the errand rather than about one of its fields, and letting it through would leave a level that
+	 * reads as a restriction while restricting nothing.
 	 */
 	private void validateFields(List<FieldAccess> fields, String scope) {
-		ofNullable(fields).orElse(emptyList()).stream()
+		final var applicable = ofNullable(fields).orElse(emptyList());
+
+		applicable.stream()
 			.filter(field -> !isEmpty(field.getKeys()))
 			.filter(field -> isNull(field.getField()) || !field.getField().isKeyed())
 			.findFirst()
 			.ifPresent(field -> {
 				throw Problem.valueOf(BAD_REQUEST, KEYS_NOT_ALLOWED.formatted(field.getField(), scope));
+			});
+
+		applicable.stream()
+			.filter(field -> nonNull(field.getLevel()))
+			.filter(field -> isNull(field.getField()) || !field.getField().isKeyed())
+			.findFirst()
+			.ifPresent(field -> {
+				throw Problem.valueOf(BAD_REQUEST, LEVEL_NOT_ALLOWED.formatted(field.getField(), scope));
+			});
+
+		applicable.stream()
+			.filter(field -> AccessLevel.LR == field.getLevel())
+			.findFirst()
+			.ifPresent(field -> {
+				throw Problem.valueOf(BAD_REQUEST, LEVEL_NOT_SUPPORTED.formatted(field.getLevel(), field.getField(), scope));
 			});
 	}
 
