@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.4"
+  version: "15.5"
 servers:
 - url: http://localhost:65503
   description: Generated server url
@@ -9837,6 +9837,20 @@ components:
           - - contactChannel
           items:
             type: string
+        level:
+          type: string
+          description: "What the holder may do with the field, narrowing it below\
+            \ the level the errand itself is held at. Left unset the field simply\
+            \ follows the errand, which is what every grant did before this was added,\
+            \ and a level may only ever restrict further - it can never make a readable\
+            \ errand writable. Only a field holding a keyed collection may carry one,\
+            \ and limited read is not a level a field can be held at"
+          enum:
+          - LR
+          - R
+          - RW
+          examples:
+          - R
       required:
       - field
     LimitedReadAccess:

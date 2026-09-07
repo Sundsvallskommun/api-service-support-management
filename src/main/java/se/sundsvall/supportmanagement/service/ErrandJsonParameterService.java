@@ -68,7 +68,8 @@ public class ErrandJsonParameterService {
 	@Transactional
 	public UpsertResult updateJsonParameter(final String namespace, final String municipalityId, final String errandId, final String key, final String ifMatch, final JsonParameter jsonParameter) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.JSON_PARAMETER, RW);
-		accessControlService.verifyAccessibleKey(namespace, municipalityId, errandEntity, ErrandField.JSON_PARAMETERS, key);
+
+		final var keyAccess = accessControlService.verifyJsonParameterAccess(namespace, municipalityId, errandEntity, key, jsonParameter);
 
 		final var existing = Optional.ofNullable(errandEntity.getJsonParameters())
 			.flatMap(list -> list.stream().filter(e -> Objects.equals(e.getKey(), key)).findFirst());
@@ -77,6 +78,13 @@ public class ErrandJsonParameterService {
 			LOG.debug("PUT /errands/{}/json-parameters/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(key), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		existing.ifPresent(e -> validateIfMatch(ifMatch, e.getVersion()));
+
+		// The request carries what is already stored, since anything else was refused above. Writing it again would bump
+		// the version of a parameter the caller may not change, so the request is answered without touching it.
+		if (!keyAccess.writableKey().test(key)) {
+			return new UpsertResult(toJsonParameter(existing.orElseThrow()), false);
+		}
+
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final JsonParameterEntity entity;
@@ -110,7 +118,7 @@ public class ErrandJsonParameterService {
 	@Transactional
 	public void deleteJsonParameter(final String namespace, final String municipalityId, final String errandId, final String key, final String ifMatch) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.JSON_PARAMETER, RW);
-		accessControlService.verifyAccessibleKey(namespace, municipalityId, errandEntity, ErrandField.JSON_PARAMETERS, key);
+		accessControlService.verifyWritableKey(namespace, municipalityId, errandEntity, ErrandField.JSON_PARAMETERS, key);
 
 		final var entityToRemove = findJsonParameterEntityOrElseThrow(errandEntity, key);
 

@@ -22,6 +22,10 @@ import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -29,6 +33,8 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+import se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper;
 import se.sundsvall.supportmanagement.service.model.AccessSnapshot;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -50,6 +56,7 @@ public class AccessControlService {
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String ENTITY_NOT_ACCESSIBLE = "Errand not accessible by user '%s'";
 	private static final String KEY_NOT_ACCESSIBLE = "Key '%s' not accessible by user '%s'";
+	private static final String KEY_NOT_WRITABLE = "Key '%s' not writable by user '%s'";
 	private static final String RESOURCE_NOT_ACCESSIBLE = "Resource '%s' not accessible by user '%s'";
 
 	/**
@@ -100,11 +107,29 @@ public class AccessControlService {
 	 * @return                resolver of fields, and the keys to limit them to, per errand
 	 */
 	public Function<ErrandEntity, Map<ErrandField, Set<String>>> roleBasedFieldResolver(String namespace, String municipalityId, Identifier user) {
+		return fieldAccessResolver(namespace, municipalityId, user).andThen(FieldAccessResolution::readable);
+	}
+
+	/**
+	 * Resolves what the user may read of an errand and what of it they may write, in one pass.
+	 * <p>
+	 * The two answer different questions and a caller needing both should ask once: a field grant may hold a field to
+	 * read while the errand itself is writable, so the keys a caller may see are not always the keys they may change.
+	 * What may be written is by construction a subset of what may be read - a level on a grant only ever restricts it
+	 * further, and a grant carrying no level simply follows the errand, which is what every grant did before levels
+	 * existed.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  user           user
+	 * @return                resolver of what the user may read and write, per errand
+	 */
+	public Function<ErrandEntity, FieldAccessResolution> fieldAccessResolver(String namespace, String municipalityId, Identifier user) {
 		final var config = namespaceConfigService.get(namespace, municipalityId);
 
 		// Nothing restricts anyone while the namespace has not opted in, so the access mapper is never asked for it.
 		if (!config.isAccessControl()) {
-			return _ -> null;
+			return _ -> FieldAccessResolution.unrestricted();
 		}
 
 		final var adAccount = adAccountOf(user);
@@ -128,7 +153,7 @@ public class AccessControlService {
 
 			// Reporter fields widen a restriction, they never introduce one.
 			if (isNull(applicable)) {
-				return null;
+				return FieldAccessResolution.unrestricted();
 			}
 
 			if (reporter) {
@@ -142,8 +167,48 @@ public class AccessControlService {
 				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
 			}
 
-			return toFields(applicable);
+			return new FieldAccessResolution(toFields(applicable), toFields(writableOf(applicable)));
 		};
+	}
+
+	/**
+	 * What the user may read of one errand and what of it they may write, resolved together.
+	 * <p>
+	 * A null map means nothing restricts the user and the errand is reached in full, which is what an unrestricted role
+	 * yields. An empty map, in contrast, is a restriction resolving to no fields whatsoever.
+	 *
+	 * @param readable the fields, and the keys of them, the user may see
+	 * @param writable the fields, and the keys of them, the user may change
+	 */
+	public record FieldAccessResolution(Map<ErrandField, Set<String>> readable, Map<ErrandField, Set<String>> writable) {
+
+		private static FieldAccessResolution unrestricted() {
+			return new FieldAccessResolution(null, null);
+		}
+
+		/**
+		 * The keys of sent in field the user may see.
+		 */
+		public Predicate<String> readableKey(ErrandField field) {
+			return toKeyPredicate(readable, field);
+		}
+
+		/**
+		 * The keys of sent in field the user may change. Never wider than {@link #readableKey}.
+		 */
+		public Predicate<String> writableKey(ErrandField field) {
+			return toKeyPredicate(writable, field);
+		}
+	}
+
+	/**
+	 * The grants of sent in ones that carry the right to write, which is every grant a namespace has not deliberately
+	 * held to read.
+	 */
+	private static List<FieldAccess> writableOf(List<FieldAccess> applicable) {
+		return applicable.stream()
+			.filter(fieldAccess -> AccessLevel.R != fieldAccess.getLevel())
+			.toList();
 	}
 
 	/**
@@ -284,7 +349,24 @@ public class AccessControlService {
 	 * @return                predicate accepting the keys the user may read
 	 */
 	public Predicate<String> readableKeyPredicate(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity, ErrandField field) {
-		return toKeyPredicate(roleBasedFieldResolver(namespace, municipalityId, user).apply(errandEntity), field);
+		return fieldAccessResolver(namespace, municipalityId, user).apply(errandEntity).readableKey(field);
+	}
+
+	/**
+	 * Tells which keys of a keyed field the user may change on sent in errand.
+	 * <p>
+	 * Narrower than {@link #readableKeyPredicate} exactly where the namespace holds a field or a key to read, and the
+	 * same answer everywhere else.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  user           user
+	 * @param  errandEntity   errand the field belongs to
+	 * @param  field          field to write
+	 * @return                predicate accepting the keys the user may change
+	 */
+	public Predicate<String> writableKeyPredicate(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity, ErrandField field) {
+		return fieldAccessResolver(namespace, municipalityId, user).apply(errandEntity).writableKey(field);
 	}
 
 	/**
@@ -300,8 +382,7 @@ public class AccessControlService {
 	 * @return                resolver of the predicate accepting the keys the user may read, per field
 	 */
 	public Function<ErrandField, Predicate<String>> readableKeyResolver(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity) {
-		final var fields = roleBasedFieldResolver(namespace, municipalityId, user).apply(errandEntity);
-		return field -> toKeyPredicate(fields, field);
+		return fieldAccessResolver(namespace, municipalityId, user).apply(errandEntity)::readableKey;
 	}
 
 	private static Predicate<String> toKeyPredicate(Map<ErrandField, Set<String>> fields, ErrandField field) {
@@ -319,7 +400,8 @@ public class AccessControlService {
 
 	/**
 	 * Throws 401 unless the user may reach sent in key of sent in field. A key the user cannot read is also a key they
-	 * cannot write, so that no one can overwrite or remove data they are not allowed to see.
+	 * cannot write, so that no one can overwrite or remove data they are not allowed to see. The converse does not hold:
+	 * a key they may read is not necessarily one they may change, which {@link #verifyWritableKeys} answers.
 	 */
 	public void verifyAccessibleKey(String namespace, String municipalityId, ErrandEntity errandEntity, ErrandField field, String key) {
 		verifyAccessibleKeys(namespace, municipalityId, errandEntity, field, List.of(key));
@@ -355,6 +437,134 @@ public class AccessControlService {
 					.orElse(null)));
 			});
 	}
+
+	/**
+	 * Throws 401 unless the user may change every one of sent in keys, according to an already resolved predicate.
+	 * <p>
+	 * Sent in keys are the ones a request would actually change, not every key it carries: a namespace holding a key to
+	 * read leaves it readable, so a caller patching back what they were served may name it as long as they leave it as
+	 * it stands.
+	 */
+	public void verifyWritableKeys(Predicate<String> writableKey, Collection<String> keys) {
+		if (isNull(keys)) {
+			return;
+		}
+
+		keys.stream()
+			.filter(key -> !writableKey.test(key))
+			.findFirst()
+			.ifPresent(key -> {
+				throw Problem.valueOf(UNAUTHORIZED, KEY_NOT_WRITABLE.formatted(key, Optional.ofNullable(Identifier.get())
+					.map(Identifier::getValue)
+					.orElse(null)));
+			});
+	}
+
+	/**
+	 * Throws 401 unless the user may change sent in key of sent in field, resolving the grants for it.
+	 */
+	public void verifyWritableKey(String namespace, String municipalityId, ErrandEntity errandEntity, ErrandField field, String key) {
+		verifyWritableKeys(writableKeyPredicate(namespace, municipalityId, Identifier.get(), errandEntity, field), List.of(key));
+	}
+
+	/**
+	 * Verifies every keyed field of sent in patch against what the caller may reach on the errand, and answers with what
+	 * the merge and the response need.
+	 * <p>
+	 * Two questions are asked of each field. A key the caller cannot see at all is refused outright, whichever endpoint
+	 * they write it through. A key they may see but not change is refused only when the patch would actually change it,
+	 * since a caller patching back what they were served carries it unchanged.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  errandEntity   errand as it stands, before the patch is applied
+	 * @param  patch          patch to apply
+	 * @return                the keys the caller may change, and the resolver mapping the response
+	 */
+	public ErrandKeyAccess verifyKeyAccess(String namespace, String municipalityId, ErrandEntity errandEntity, Errand patch) {
+		final var resolver = fieldAccessResolver(namespace, municipalityId, Identifier.get());
+		final var access = resolver.apply(errandEntity);
+
+		verifyKeys(access, ErrandField.PARAMETERS, keysOf(patch.getParameters(), Parameter::getKey),
+			ErrandParameterMapper.changedKeys(errandEntity, patch.getParameters()));
+		verifyKeys(access, ErrandField.JSON_PARAMETERS, keysOf(patch.getJsonParameters(), JsonParameter::getKey),
+			ErrandMapper.changedJsonParameterKeys(errandEntity, patch.getJsonParameters()));
+		verifyKeys(access, ErrandField.EXTERNAL_TAGS, keysOf(patch.getExternalTags(), ExternalTag::getKey),
+			ErrandMapper.changedExternalTagKeys(errandEntity, patch.getExternalTags()));
+
+		return new ErrandKeyAccess(access::writableKey, resolver.andThen(FieldAccessResolution::readable));
+	}
+
+	/**
+	 * The same two questions for the parameters of one errand, asked by the endpoint replacing them wholesale.
+	 */
+	public KeyAccess verifyParameterAccess(String namespace, String municipalityId, ErrandEntity errandEntity, List<Parameter> parameters) {
+		final var access = fieldAccessResolver(namespace, municipalityId, Identifier.get()).apply(errandEntity);
+
+		verifyKeys(access, ErrandField.PARAMETERS, keysOf(parameters, Parameter::getKey),
+			ErrandParameterMapper.changedKeys(errandEntity, parameters));
+
+		return toKeyAccess(access, ErrandField.PARAMETERS);
+	}
+
+	/**
+	 * The same two questions for a single parameter, which the endpoint writing one asks of its values alone.
+	 */
+	public KeyAccess verifyParameterAccess(String namespace, String municipalityId, ErrandEntity errandEntity, String key, List<String> values) {
+		final var access = fieldAccessResolver(namespace, municipalityId, Identifier.get()).apply(errandEntity);
+
+		verifyKeys(access, ErrandField.PARAMETERS, List.of(key), ErrandParameterMapper.changedValueKeys(errandEntity, key, values));
+
+		return toKeyAccess(access, ErrandField.PARAMETERS);
+	}
+
+	/**
+	 * The same two questions for a single json parameter.
+	 */
+	public KeyAccess verifyJsonParameterAccess(String namespace, String municipalityId, ErrandEntity errandEntity, String key, JsonParameter jsonParameter) {
+		final var access = fieldAccessResolver(namespace, municipalityId, Identifier.get()).apply(errandEntity);
+
+		verifyKeys(access, ErrandField.JSON_PARAMETERS, List.of(key), ErrandMapper.changedJsonParameterKeys(errandEntity, List.of(JsonParameter.create()
+			.withKey(key)
+			.withSchemaId(jsonParameter.getSchemaId())
+			.withValue(jsonParameter.getValue()))));
+
+		return toKeyAccess(access, ErrandField.JSON_PARAMETERS);
+	}
+
+	private void verifyKeys(FieldAccessResolution access, ErrandField field, Collection<String> present, Collection<String> changed) {
+		verifyAccessibleKeys(access.readableKey(field), present);
+		verifyWritableKeys(access.writableKey(field), changed);
+	}
+
+	private static KeyAccess toKeyAccess(FieldAccessResolution access, ErrandField field) {
+		return new KeyAccess(access.readableKey(field), access.writableKey(field));
+	}
+
+	/**
+	 * Keys of a keyed collection of a patch, or null when the patch leaves the collection alone.
+	 */
+	private static <T> List<String> keysOf(List<T> values, Function<T, String> keyExtractor) {
+		return ofNullable(values)
+			.map(list -> list.stream().map(keyExtractor).toList())
+			.orElse(null);
+	}
+
+	/**
+	 * What a caller may do with the keys of one field of one errand.
+	 *
+	 * @param readableKey the keys they may see
+	 * @param writableKey the keys they may change, never wider than the ones they may see
+	 */
+	public record KeyAccess(Predicate<String> readableKey, Predicate<String> writableKey) {}
+
+	/**
+	 * What a caller may do with the keyed fields of one errand they are patching.
+	 *
+	 * @param writableKey the keys they may change, per field, for the merge to leave the rest as it stands
+	 * @param readable    the fields they may see, for the response to be mapped as a plain read would be
+	 */
+	public record ErrandKeyAccess(Function<ErrandField, Predicate<String>> writableKey, Function<ErrandEntity, Map<ErrandField, Set<String>>> readable) {}
 
 	/**
 	 * Merges the keys two roles grant for the same field. An empty set means the whole collection, so it wins over any set
