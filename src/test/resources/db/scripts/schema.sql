@@ -264,7 +264,7 @@
     ) engine=InnoDB;
 
     create table errand_process (
-        active_marker tinyint,
+        active_marker bit,
         created datetime(3) not null,
         ended datetime(3),
         modified datetime(3),

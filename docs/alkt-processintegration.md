@@ -358,7 +358,7 @@ create table if not exists process_event_outbox (
     event_sub_type    varchar(64)  not null,   -- ERRAND | MESSAGE | ATTACHMENT | ...
     -- Far handelsen starta en NY instans? Utraknat vid publicering, 7.7. Ett kommando satter
     -- den sjalv; en vanlig arendeandring far den bara i automatiskt lage.
-    start_allowed     tinyint(1)   not null default 0,
+    start_allowed     bit          not null default 0,
     -- Meddelandenamnet ur BPMN, satt bara for rader med subtypen SIGNAL. Utan den kan pw inte
     -- veta VILKEN grind handlaggaren tryckte pa. Modelldata, inte arendedata. Se 5.9.
     signal_name       varchar(128),
@@ -392,9 +392,9 @@ create table if not exists errand_process (
     error_message         varchar(2048),
     started               datetime(3),
     ended                 datetime(3),
-    -- 1 medan instansen lever, NULL nar den ar terminal. NULL ar distinkt i unika index
+    -- TRUE medan instansen lever, NULL nar den ar terminal. NULL ar distinkt i unika index
     -- -> godtyckligt manga historiska instanser, hogst EN levande per arende.
-    active_marker         tinyint      null,
+    active_marker         bit          null,
     created               datetime(3)  not null,
     modified              datetime(3),
     primary key (id),
@@ -626,9 +626,9 @@ public class ErrandProcessEntity {
     @Column(name = "started") private OffsetDateTime started;
     @Column(name = "ended")   private OffsetDateTime ended;
 
-    /** 1 medan instansen lever, null nar den ar terminal. Bar unikhetsconstrainten. */
+    /** TRUE medan instansen lever, null nar den ar terminal - aldrig FALSE. Bar unikhetsconstrainten. */
     @Column(name = "active_marker")
-    private Byte activeMarker;
+    private Boolean activeMarker;
 
     @Column(name = "created")  private OffsetDateTime created;
     @Column(name = "modified") private OffsetDateTime modified;
@@ -636,7 +636,7 @@ public class ErrandProcessEntity {
     /** Enda stallet som far satta status - haller active_marker och ended i synk. */
     public void applyStatus(final ProcessStatus status, final Clock clock) {
         this.processStatus = status;
-        this.activeMarker  = status.isTerminal() ? null : (byte) 1;
+        this.activeMarker  = status.isTerminal() ? null : TRUE;
         this.ended         = status.isTerminal() ? OffsetDateTime.now(clock) : null;
     }
 }
@@ -1362,9 +1362,9 @@ där, vilket inte besvarar frågan. Det är samma skillnad som §7.5 redan gör 
 
 | Rapporterad status | `active_marker` |
 |--------------------|-----------------|
-| `RUNNING`          | 1               |
-| `WAITING`          | 1               |
-| `RETRYING`         | 1               |
+| `RUNNING`          | TRUE            |
+| `WAITING`          | TRUE            |
+| `RETRYING`         | TRUE            |
 | `COMPLETED`        | NULL            |
 | `FAILED`           | NULL            |
 

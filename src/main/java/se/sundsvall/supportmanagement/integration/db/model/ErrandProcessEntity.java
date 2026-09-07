@@ -17,6 +17,7 @@ import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
+import static java.lang.Boolean.TRUE;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -41,8 +42,6 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 		})
 	})
 public class ErrandProcessEntity {
-
-	private static final byte ALIVE = 1;
 
 	@Id
 	@UuidGenerator
@@ -92,12 +91,13 @@ public class ErrandProcessEntity {
 	private OffsetDateTime ended;
 
 	/**
-	 * Set while the instance lives, null once it is terminal. Null is distinct in a unique index, so
-	 * {@code uq_ep_one_active_per_errand} lets an errand keep any number of finished instances but only one live one.
-	 * Owned by {@link #applyStatus(ProcessStatus, Clock)}.
+	 * TRUE while the instance lives and null once it is terminal, never FALSE. Null is distinct in a unique index, which
+	 * is what lets {@code uq_ep_one_active_per_errand} allow an errand any number of finished instances but only one live
+	 * one. FALSE would take a slot of its own and cap the finished ones at one instead. Owned by
+	 * {@link #applyStatus(ProcessStatus, Clock)}.
 	 */
 	@Column(name = "active_marker")
-	private Byte activeMarker;
+	private Boolean activeMarker;
 
 	@Column(name = "created", nullable = false, columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
@@ -138,7 +138,7 @@ public class ErrandProcessEntity {
 		final var terminal = status.isTerminal();
 
 		this.processStatus = status;
-		this.activeMarker = terminal ? null : ALIVE;
+		this.activeMarker = terminal ? null : TRUE;
 		this.ended = terminal ? now(clock).truncatedTo(MILLIS) : null;
 	}
 
@@ -306,7 +306,7 @@ public class ErrandProcessEntity {
 		return ended;
 	}
 
-	public Byte getActiveMarker() {
+	public Boolean getActiveMarker() {
 		return activeMarker;
 	}
 

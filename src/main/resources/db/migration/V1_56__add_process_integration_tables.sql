@@ -11,7 +11,7 @@ create table if not exists process_event_outbox (
     process_key       varchar(128),
     event_type        varchar(64)  not null,
     event_sub_type    varchar(64)  not null,
-    start_allowed     tinyint(1)   not null default 0,
+    start_allowed     bit          not null default 0,
     signal_name       varchar(128),
     executed_by       varchar(255),
     request_group_id  varchar(36),
@@ -41,7 +41,7 @@ create table if not exists errand_process (
     ended                 datetime(3),
     -- Null is distinct in a unique index, so uq_ep_one_active_per_errand allows any number of finished instances
     -- per errand but only one live one.
-    active_marker         tinyint      null,
+    active_marker         bit          null,
     created               datetime(3)  not null,
     modified              datetime(3),
     primary key (id),
