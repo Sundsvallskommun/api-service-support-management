@@ -31,6 +31,7 @@ import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepo
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -82,6 +83,7 @@ public class CommunicationService {
 	private final EmployeeService employeeService;
 	private final CitizenIntegration citizenIntegration;
 	private final MessagingSettingsIntegration messagingSettingsIntegration;
+	private final ChunkedDeleter chunkedDeleter;
 
 	public CommunicationService(
 		final AccessControlService accessControlService,
@@ -92,7 +94,8 @@ public class CommunicationService {
 		final ErrandAttachmentService errandAttachmentService,
 		final Semaphore semaphore,
 		final EmployeeService employeeService,
-		final CitizenIntegration citizenIntegration, final MessagingSettingsIntegration messagingSettingsIntegration) {
+		final CitizenIntegration citizenIntegration, final MessagingSettingsIntegration messagingSettingsIntegration,
+		final ChunkedDeleter chunkedDeleter) {
 
 		this.accessControlService = accessControlService;
 		this.messagingClient = messagingClient;
@@ -104,6 +107,7 @@ public class CommunicationService {
 		this.employeeService = employeeService;
 		this.citizenIntegration = citizenIntegration;
 		this.messagingSettingsIntegration = messagingSettingsIntegration;
+		this.chunkedDeleter = chunkedDeleter;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -361,11 +365,28 @@ public class CommunicationService {
 
 	}
 
+	/**
+	 * Removes every communication of an errand.
+	 * <p>
+	 * Only the ids are read, and the communications are then removed a chunk at a time. A communication holds its
+	 * message as both text and html, each of them long text, so an errand carrying a correspondence of any length is
+	 * more than the heap can hold all at once - which is what reading them before removing any would ask of it.
+	 * <p>
+	 * Removing in chunks empties the persistence context as it goes, so an entity a caller was holding is detached by
+	 * the time this returns.
+	 *
+	 * @param errandNumber   number of the errand.
+	 * @param namespace      namespace of the errand.
+	 * @param municipalityId id of the municipality of the errand.
+	 */
 	@Transactional
 	public void deleteAllCommunicationsByErrandNumber(final String errandNumber, final String namespace, final String municipalityId) {
 		// Errand numbers repeat across tenants that share a short code, so an unscoped delete would remove another
 		// tenant's communications.
-		final var list = communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, namespace, municipalityId);
-		communicationRepository.deleteAll(list);
+		final var ids = communicationRepository.findIdsByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, namespace, municipalityId).stream()
+			.map(IdProjection::getId)
+			.toList();
+
+		chunkedDeleter.deleteInChunks(ids, communicationRepository::deleteAllById);
 	}
 }

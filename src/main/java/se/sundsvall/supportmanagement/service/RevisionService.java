@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Operation;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
@@ -65,15 +66,18 @@ public class RevisionService {
 
 	private final NotesClient notesClient;
 	private final ErrandNoteService errandNoteService;
+	private final ChunkedDeleter chunkedDeleter;
 
 	public RevisionService(final AccessControlService accessControlService,
 		final RevisionRepository revisionRepository, final ObjectMapper objectMapper,
-		final NotesClient notesClient, final ErrandNoteService errandNoteService) {
+		final NotesClient notesClient, final ErrandNoteService errandNoteService,
+		final ChunkedDeleter chunkedDeleter) {
 		this.accessControlService = accessControlService;
 		this.revisionRepository = revisionRepository;
 		this.objectMapper = objectMapper;
 		this.notesClient = notesClient;
 		this.errandNoteService = errandNoteService;
+		this.chunkedDeleter = chunkedDeleter;
 	}
 
 	/**
@@ -144,6 +148,11 @@ public class RevisionService {
 	 * A revision holds a full serialized snapshot of the errand it belongs to, so a removal that left them behind would
 	 * keep a complete copy of everything it set out to remove. No access check is made here: the callers are the errand
 	 * delete, which has already authorized its caller, and the purge, which runs on a cutoff with no caller at all.
+	 * <p>
+	 * The ids are read first and the revisions removed a chunk at a time, since it is exactly that full snapshot which
+	 * makes reading them all at once expensive: an errand with a long history holds as many copies of itself as it has
+	 * been edited. This empties the persistence context as it goes, so an entity a caller was holding is detached by
+	 * the time this returns.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId id of the municipality of the errand.
@@ -151,9 +160,13 @@ public class RevisionService {
 	 */
 	@Transactional
 	public void deleteErrandRevisions(final String namespace, final String municipalityId, final String errandId) {
-		final var removed = revisionRepository.deleteAllByNamespaceAndMunicipalityIdAndEntityId(namespace, municipalityId, errandId);
+		final var ids = revisionRepository.findIdsByNamespaceAndMunicipalityIdAndEntityId(namespace, municipalityId, errandId).stream()
+			.map(IdProjection::getId)
+			.toList();
 
-		LOG.debug("Removed {} revisions for errand {} in namespace {} for municipality {}", removed, sanitizeForLogging(errandId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
+		chunkedDeleter.deleteInChunks(ids, revisionRepository::deleteAllById);
+
+		LOG.debug("Removed {} revisions for errand {} in namespace {} for municipality {}", ids.size(), sanitizeForLogging(errandId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 	}
 
 	/**

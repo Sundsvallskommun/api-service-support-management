@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ public class ErrandDataDeleter {
 	private final NotesClient notesClient;
 	private final SubscriberNotificationRepository subscriberNotificationRepository;
 	private final HandoverIdempotencyRepository handoverIdempotencyRepository;
+	private final EntityManager entityManager;
 
 	public ErrandDataDeleter(
 		final ConversationService conversationService,
@@ -51,7 +53,8 @@ public class ErrandDataDeleter {
 		final AttachmentRepository attachmentRepository,
 		final NotesClient notesClient,
 		final SubscriberNotificationRepository subscriberNotificationRepository,
-		final HandoverIdempotencyRepository handoverIdempotencyRepository) {
+		final HandoverIdempotencyRepository handoverIdempotencyRepository,
+		final EntityManager entityManager) {
 
 		this.conversationService = conversationService;
 		this.communicationService = communicationService;
@@ -59,6 +62,7 @@ public class ErrandDataDeleter {
 		this.notesClient = notesClient;
 		this.subscriberNotificationRepository = subscriberNotificationRepository;
 		this.handoverIdempotencyRepository = handoverIdempotencyRepository;
+		this.entityManager = entityManager;
 	}
 
 	/**
@@ -70,6 +74,12 @@ public class ErrandDataDeleter {
 	 * <p>
 	 * Relations are left alone. The ones a conversation owns are removed by the conversation itself, and the rest are the
 	 * relation service's to keep or drop.
+	 * <p>
+	 * <b>The errand is detached by the time this returns</b>, deliberately and in every case. Removing the
+	 * communications empties the persistence context to keep an entire correspondence from piling up in the heap, and
+	 * the attachments are removed with the errand out of the context so that nothing is cascaded back into place.
+	 * Everything read off the errand here is therefore read up front, and a caller needing more of it afterwards has to
+	 * read that before calling.
 	 *
 	 * @param entity        the errand being removed.
 	 * @param attachmentIds ids of the attachments to remove along with it.
@@ -77,17 +87,25 @@ public class ErrandDataDeleter {
 	public void deleteRelatedData(final ErrandEntity entity, final List<String> attachmentIds) {
 		final var errandId = entity.getId();
 		final var municipalityId = entity.getMunicipalityId();
+		final var namespace = entity.getNamespace();
+		final var errandNumber = entity.getErrandNumber();
 
 		conversationService.deleteByErrandId(entity);
 
-		communicationService.deleteAllCommunicationsByErrandNumber(entity.getErrandNumber(), entity.getNamespace(), municipalityId);
+		communicationService.deleteAllCommunicationsByErrandNumber(errandNumber, namespace, municipalityId);
 
-		// Taken out of the errand before the rows are removed. The errand is still managed here, and the removals further
-		// down query the database, which flushes. An attachment left in the collection of a managed errand is resurrected
-		// by the cascade on that flush and written back with its data reference nulled, which the column refuses.
-		final var idsToRemove = ofNullable(attachmentIds).orElse(emptyList());
-		ofNullable(entity.getAttachments()).ifPresent(attachments -> attachments.removeIf(attachment -> idsToRemove.contains(attachment.getId())));
-		idsToRemove.forEach(attachmentRepository::deleteById);
+		// After the communications, and that order is not a matter of taste. A communication can arrive carrying an
+		// attachment, and the copy kept on the errand points at the very same blob. Removing the errand's attachment
+		// takes that blob with it through the cascade on its data, so doing it first would pull the blob out from under
+		// a communication attachment still pointing at it.
+		//
+		// The errand is taken out of the persistence context first. An attachment left in the collection of a managed
+		// errand is resurrected by the cascade on the next flush and written back with its data reference nulled, which
+		// the column refuses. Detaching says that once and holds however the removal above happened to leave the
+		// context, which reaching into the collection to take the attachments out of it would not.
+		entityManager.detach(entity);
+
+		ofNullable(attachmentIds).orElse(emptyList()).forEach(attachmentRepository::deleteById);
 
 		deleteNotes(municipalityId, errandId);
 

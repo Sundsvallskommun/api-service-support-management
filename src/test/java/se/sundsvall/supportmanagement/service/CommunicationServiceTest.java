@@ -17,9 +17,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,6 +51,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
@@ -78,6 +81,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -177,6 +181,9 @@ class CommunicationServiceTest {
 
 	@Mock
 	private MessagingSettingsIntegration messagingSettingsIntegrationMock;
+
+	@Mock
+	private ChunkedDeleter chunkedDeleterMock;
 
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.MessageRequest> messageRequestCaptor;
@@ -924,18 +931,42 @@ class CommunicationServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a removal reads only the ids and removes the communications a chunk at a time, since a communication carries its message twice over as long text")
 	void deleteAllCommunicationsByErrandNumber() {
 		// Arrange
 		final var errandNumber = "KC-23090001";
-		when(communicationRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(communicationEntityMock));
+		when(communicationRepositoryMock.findIdsByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(List.of(idProjection("first"), idProjection("second")));
+
+		// Hands every chunk straight back, so that the assertions see the removal the deleter would have carried out.
+		doAnswer(invocation -> {
+			invocation.<Consumer<List<String>>>getArgument(1).accept(invocation.getArgument(0));
+			return null;
+		}).when(chunkedDeleterMock).deleteInChunks(anyList(), any());
 
 		// Act
 		communicationService.deleteAllCommunicationsByErrandNumber(errandNumber, NAMESPACE, MUNICIPALITY_ID);
 
 		// Assert
-		verify(communicationRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID);
-		verify(communicationRepositoryMock).deleteAll(List.of(communicationEntityMock));
+		verify(communicationRepositoryMock).findIdsByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, NAMESPACE, MUNICIPALITY_ID);
+		verify(chunkedDeleterMock).deleteInChunks(eq(List.of("first", "second")), any());
+		verify(communicationRepositoryMock).deleteAllById(List.of("first", "second"));
 		verifyNoMoreInteractions(communicationRepositoryMock);
 		verifyNoInteractions(accessControlServiceMock, communicationAttachmentRepositoryMock, messagingClientMock, communicationMapperMock);
+	}
+
+	private static IdProjection idProjection(final String id) {
+		return new IdProjection() {
+
+			@Override
+			public String getId() {
+				return id;
+			}
+
+			@Override
+			public void setId(final String value) {
+				// Nothing reads a value set here.
+			}
+		};
 	}
 }

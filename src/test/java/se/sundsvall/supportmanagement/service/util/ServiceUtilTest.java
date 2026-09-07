@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.util;
 
-import generated.se.sundsvall.accessmapper.Access;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,9 +21,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -142,19 +138,6 @@ class ServiceUtilTest {
 	@Test
 	void computeSha256HexFromNullInputStream() {
 		assertThat(ServiceUtil.computeSha256Hex((InputStream) null)).isNull();
-	}
-
-	@ParameterizedTest
-	@NullAndEmptySource
-	void createCacheKeyFromNullOrEmpty(List<Access.AccessLevelEnum> filter) {
-		assertThat(ServiceUtil.createCacheKey(filter)).isEqualTo("EMPTY");
-	}
-
-	@Test
-	void createCacheKey() {
-		assertThat(ServiceUtil.createCacheKey(List.of(RW))).isEqualTo("RW");
-		assertThat(ServiceUtil.createCacheKey(List.of(RW, LR))).isEqualTo("RW|LR");
-		assertThat(ServiceUtil.createCacheKey(List.of(LR, RW, R))).isEqualTo("LR|RW|R");
 	}
 
 	@ParameterizedTest
