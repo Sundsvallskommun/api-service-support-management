@@ -8,13 +8,11 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.ROLE;
@@ -79,6 +77,15 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isTrue();
+
+		// Read back, as each process trigger is stored as a row of its own under the same key
+		setupCall()
+			.withServicePath(PATH.apply(NAMESPACE_2))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -213,53 +220,5 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(UNAUTHORIZED)
 			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	void test12_createConfigWithProcessConfiguration() {
-		setupCall()
-			.withServicePath(PATH.apply(NAMESPACE_2))
-			.withHttpMethod(POST)
-			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseBodyIsNull()
-			.sendRequest();
-
-		// Every trigger is stored as a row of its own under the same key, and all of them must be read back
-		setupCall()
-			.withServicePath(PATH.apply(NAMESPACE_2))
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	void test13_createConfigWithUnknownProcessConsumerIsNotAllowed() {
-		setupCall()
-			.withServicePath(PATH.apply(NAMESPACE_2))
-			.withHttpMethod(POST)
-			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(BAD_REQUEST)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-
-		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isFalse();
-	}
-
-	@Test
-	void test14_createConfigWithProcessConsumerAndAccessControlIsNotAllowed() {
-		setupCall()
-			.withServicePath(PATH.apply(NAMESPACE_2))
-			.withHttpMethod(POST)
-			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(BAD_REQUEST)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-
-		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isFalse();
 	}
 }

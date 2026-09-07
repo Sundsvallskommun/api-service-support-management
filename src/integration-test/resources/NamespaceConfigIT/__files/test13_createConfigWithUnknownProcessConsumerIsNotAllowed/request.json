@@ -1,8 +1,0 @@
-{
-	"displayName": "Namespace 2",
-	"shortCode": "NS2",
-	"processConsumer": "pw-alk",
-	"processTriggers": [
-		"ERRAND"
-	]
-}

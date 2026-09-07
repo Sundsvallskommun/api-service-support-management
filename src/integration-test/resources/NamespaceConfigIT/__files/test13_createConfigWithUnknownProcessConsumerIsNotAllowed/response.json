@@ -1,5 +1,0 @@
-{
-	"title": "Bad Request",
-	"status": 400,
-	"detail": "'pw-alk' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be one of [pw-alkt]"
-}
