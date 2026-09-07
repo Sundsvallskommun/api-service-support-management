@@ -42,7 +42,6 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 	})
 public class ErrandProcessEntity {
 
-	/** What a live instance carries in its marker. The value is irrelevant; that it is not null is the whole point. */
 	private static final byte ALIVE = 1;
 
 	@Id
@@ -50,7 +49,6 @@ public class ErrandProcessEntity {
 	@Column(name = "id", length = 36)
 	private String id;
 
-	/** Length follows errand.id, which is varchar(255) rather than a plain uuid column. */
 	@Column(name = "errand_id", nullable = false, length = 255)
 	private String errandId;
 
@@ -66,7 +64,6 @@ public class ErrandProcessEntity {
 	@Column(name = "process_key", nullable = false, length = 128)
 	private String processKey;
 
-	/** Null while the start never succeeded, which is why the row can exist without one. */
 	@Column(name = "process_instance_id", length = 64)
 	private String processInstanceId;
 

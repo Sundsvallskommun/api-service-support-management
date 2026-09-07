@@ -1,10 +1,6 @@
--- Process integration rows for the repository tests.
---
--- Every moment is a fixed wall-clock literal rather than something relative to NOW(). The queries here work in minutes,
--- and NOW() is read from the clock of the database while the moments a test passes in are read from the clock of the
--- JVM - two clocks that are only in the same time zone by accident. The tests read these literals back in their own
--- default zone, which is the same conversion the entities make when they store one, so the comparison holds wherever
--- the build runs.
+-- Fixed wall-clock literals rather than offsets from NOW(): the queries here work in minutes, and NOW() is read from
+-- the clock of the database while the moments a test passes in are read from the clock of the JVM. The tests convert
+-- these literals in their own default zone, which is the same conversion the entities make when they store one.
 INSERT INTO errand_process(id, errand_id, municipality_id, namespace, process_service, process_key, process_instance_id,
                            process_status, current_activity_id, current_activity_name, started, ended, active_marker,
                            created, modified)
@@ -24,11 +20,11 @@ VALUES ('epa-task-1', 'ep-live-1', 'ERRAND_ID-1', 'task-1', 'TASK', 'granska-ans
         'INFO', null, null, '2026-01-01 10:00:00.000', '2026-01-01 10:00:00.000'),
        ('epa-phase-1', 'ep-live-1', 'ERRAND_ID-1', null, 'PHASE', 'utredning', 'Utredning',
         'INFO', null, null, '2026-01-01 11:00:00.000', '2026-01-01 11:00:00.000'),
-       -- Written before any instance existed, which is the whole reason the instance column is nullable.
+       -- Written before any instance existed, which is why the instance column is nullable.
        ('epa-config-1', null, 'ERRAND_ID-1', null, 'CONFIG', null, null,
         'ERROR', 'Two labels resolve to different process keys', 'AMBIGUOUS_PROCESS_KEY',
         '2026-01-01 11:55:00.000', '2026-01-01 11:55:00.000'),
-       -- The same kind of entry, but long enough ago to have aged out of both the window and the retention.
+       -- Aged out of both the window and the retention.
        ('epa-config-2', null, 'ERRAND_ID-2', null, 'CONFIG', null, null,
         'ERROR', 'Two labels resolve to different process keys', 'AMBIGUOUS_PROCESS_KEY',
         '2025-01-01 08:00:00.000', '2025-01-01 08:00:00.000');
@@ -45,6 +41,6 @@ VALUES ('peo-waiting', '2281', 'NAMESPACE.1', 'ERRAND_ID-1', 'pw-alkt', 'alkt-an
         'ERRAND', 0, null, 'joe01doe', null, '2026-01-01 11:59:00.000', '2026-01-01 11:59:30.000'),
        ('peo-delivered-long-ago', '2281', 'NAMESPACE.1', 'ERRAND_ID-1', 'pw-alkt', 'alkt-ansokan', 'CREATE',
         'ERRAND', 1, null, 'joe01doe', null, '2026-01-01 10:00:00.000', '2026-01-01 10:00:05.000'),
-       -- Addressed to another process engine, and so none of the business of a run for pw-alkt.
+       -- Addressed to another process engine.
        ('peo-other-consumer', '2281', 'NAMESPACE.1', 'ERRAND_ID-2', 'pw-other', 'other-process', 'UPDATE',
         'ERRAND', 0, null, 'joe01doe', null, '2026-01-01 11:40:00.000', null);

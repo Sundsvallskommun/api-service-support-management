@@ -57,7 +57,6 @@ public class ErrandProcessActivityEntity {
 	@Column(name = "errand_id", nullable = false, length = 255)
 	private String errandId;
 
-	/** Idempotency key from the process engine, stable across retries of the same work step. */
 	@Column(name = "external_task_id", length = 64)
 	private String externalTaskId;
 

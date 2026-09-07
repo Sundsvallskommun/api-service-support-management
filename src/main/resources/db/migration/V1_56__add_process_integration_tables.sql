@@ -1,41 +1,29 @@
--- Every index is declared inside its create table rather than added afterwards. It keeps the whole script behind a
--- single "if not exists", so a rerun is a no-op, and it is also what keeps InnoDB from silently adding an index of its
--- own next to each foreign key: a constraint reuses an index already declared on the same statement.
+-- Indexes are declared inside their create table so that the whole script sits behind one "if not exists", and so that
+-- InnoDB reuses them for the constraints instead of adding an index of its own beside each foreign key.
 
--- Outbox. Deliberately WITHOUT a foreign key to errand: a DELETE event has to outlive the errand it is about.
+-- No foreign key to errand, deliberately: a DELETE event has to outlive the errand it is about.
 create table if not exists process_event_outbox (
     id                varchar(36)  not null,
     municipality_id   varchar(8)   not null,
     namespace         varchar(32)  not null,
     errand_id         varchar(36)  not null,
-    -- Where the row is headed, taken from the namespace PROCESS_CONSUMER when it is written. The relay never
-    -- reads the configuration again, and groups its work on this column.
     process_service   varchar(64)  not null,
-    -- Nullable: required for CREATE and UPDATE, irrelevant for DELETE where the process engine matches on the
-    -- business key instead.
     process_key       varchar(128),
     event_type        varchar(64)  not null,
     event_sub_type    varchar(64)  not null,
-    -- May the event start a NEW instance? Worked out once, at publication.
     start_allowed     tinyint(1)   not null default 0,
-    -- The message name from the BPMN model, set only on rows with the SIGNAL sub type. Without it the process
-    -- engine cannot tell WHICH gate the handler pressed.
     signal_name       varchar(128),
     executed_by       varchar(255),
     request_group_id  varchar(36),
     created           datetime(3)  not null,
-    -- Soft delete, and the one deliberate departure from notification_dispatch, which removes its rows outright:
-    -- the emergency brake counts delivered rows in a time window and needs them around for a while. No retry
-    -- count, no next retry, no dead letter - an undelivered row is its own receipt that the work remains.
+    -- Soft delete. The emergency brake counts delivered rows in a time window and needs them kept a while.
     delivered_at      datetime(3),
     primary key (id),
     key idx_peo_dispatch (delivered_at, created),
-    -- The fetch: undelivered rows for ONE consumer, oldest first.
     key idx_peo_consumer (process_service, delivered_at, created),
     key idx_peo_guard (errand_id, delivered_at, created)
 ) engine=InnoDB;
 
--- The process instance, including the state of the lock.
 create table if not exists errand_process (
     id                    varchar(36)  not null,
     errand_id             varchar(255) not null,
@@ -51,8 +39,8 @@ create table if not exists errand_process (
     error_message         varchar(2048),
     started               datetime(3),
     ended                 datetime(3),
-    -- 1 while the instance lives, NULL once it is terminal. NULL is distinct in a unique index, so an errand may
-    -- carry any number of historical instances but at most one live one.
+    -- Null is distinct in a unique index, so uq_ep_one_active_per_errand allows any number of finished instances
+    -- per errand but only one live one.
     active_marker         tinyint      null,
     created               datetime(3)  not null,
     modified              datetime(3),
@@ -64,11 +52,10 @@ create table if not exists errand_process (
         references errand (id) on delete cascade
 ) engine=InnoDB;
 
--- Append-only log of facts. Process agnostic: no foreign keys to SM metadata, no validation.
 create table if not exists errand_process_activity (
     id                    varchar(36)  not null,
-    -- Nullable on purpose: SM writes CONFIG and ERROR entries before any process instance exists, and errand_id
-    -- is then the only thing tying the entry to anything.
+    -- Nullable: SM writes the entries explaining why no process started before any instance exists, and errand_id is
+    -- then the only thing tying them to anything.
     errand_process_id     varchar(36)  null,
     errand_id             varchar(255) not null,
     external_task_id      varchar(64),
@@ -78,9 +65,8 @@ create table if not exists errand_process_activity (
     severity              varchar(16)  default 'INFO' not null,
     message               varchar(2048),
     error_code            varchar(64),
-    -- occurred_at is the clock of the process, created the clock of SM.
-    occurred_at           datetime(3)  not null,
-    created               datetime(3)  not null,
+    occurred_at           datetime(3)  not null,   -- the clock of the process
+    created               datetime(3)  not null,   -- the clock of SM
     primary key (id),
     key idx_epa_process_occurred (errand_process_id, occurred_at),
     key idx_epa_errand_occurred (errand_id, occurred_at),

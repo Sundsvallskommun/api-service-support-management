@@ -63,15 +63,13 @@ public class ProcessEventOutboxEntity {
 	@Column(name = "event_sub_type", nullable = false, length = 64)
 	private String eventSubType;
 
-	/** Whether the event may start a new process instance. Worked out once, when the row is published. */
 	@Column(name = "start_allowed", nullable = false)
 	private boolean startAllowed;
 
-	/** The message name from the BPMN model, carried only by rows with the SIGNAL sub type. */
+	/** Carried only by rows with the SIGNAL sub type. */
 	@Column(name = "signal_name", length = 128)
 	private String signalName;
 
-	/** Kept for traceability only - it is not what decides whether a row is written. */
 	@Column(name = "executed_by", length = 255)
 	private String executedBy;
 
