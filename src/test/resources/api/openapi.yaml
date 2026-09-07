@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.4"
+  version: "15.5"
 servers:
-- url: http://localhost:65503
+- url: http://localhost:65432
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -3211,7 +3211,7 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "412":
-          description: "Precondition Failed — label version mismatch"
+          description: Precondition Failed — label version mismatch
           content:
             application/problem+json:
               schema:
@@ -8786,74 +8786,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/errands/{errandId}/json-parameters:
-    get:
-      tags:
-      - Errand JSON Parameters
-      summary: Read all JSON parameters
-      description: Fetches all JSON parameters for the provided errand id
-      operationId: readJsonParameters
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      responses:
-        "200":
-          description: Successful Operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/JsonParameter"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/events:
     get:
       tags:
@@ -9863,16 +9795,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        title:
-          type: string
-        detail:
-          type: string
         status:
           type: integer
           format: int32
@@ -9891,13 +9823,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        detail:
+          type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
-        detail:
-          type: string
     ThrowableProblem:
       type: object
       properties:
@@ -10389,21 +10321,9 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
+        container:
           type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
-        integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
+        number:
           type: boolean
         nodeType:
           type: string
@@ -10417,34 +10337,46 @@ components:
           - OBJECT
           - POJO
           - STRING
-        floatingPointNumber:
+        string:
           type: boolean
-        bigInteger:
+        integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
+        pojo:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
           type: boolean
         bigDecimal:
           type: boolean
-        string:
-          type: boolean
-        boolean:
+        bigInteger:
           type: boolean
         textual:
           type: boolean
           deprecated: true
+        boolean:
+          type: boolean
         binary:
           type: boolean
-        pojo:
+        floatingPointNumber:
           type: boolean
-        double:
+        empty:
           type: boolean
-        short:
+        array:
           type: boolean
-        long:
+        "null":
           type: boolean
-        int:
+        object:
           type: boolean
-        number:
-          type: boolean
-        container:
+        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -13139,29 +13071,29 @@ components:
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
-        unpaged:
-          type: boolean
-        paged:
-          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
+        paged:
+          type: boolean
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
+        unpaged:
+          type: boolean
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
-          type: boolean
         sorted:
           type: boolean
         unsorted:
+          type: boolean
+        empty:
           type: boolean
     SubscriberNotification:
       type: object

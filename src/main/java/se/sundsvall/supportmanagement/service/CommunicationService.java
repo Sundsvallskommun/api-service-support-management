@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.messaging.EmailBatchRequest;
 import generated.se.sundsvall.messaging.Message;
 import generated.se.sundsvall.messaging.MessageParty;
 import jakarta.servlet.http.HttpServletResponse;
@@ -202,8 +203,8 @@ public class CommunicationService {
 	}
 
 	public void sendBulkEmail(final String namespace, final String municipalityId, final String id, final BulkEmailRequest request) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, RW);
-		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndIdIn(namespace, municipalityId, request.getAttachmentIds());
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, id, request.getAttachmentIds());
 		final var batchRequest = toEmailBatchRequest(request, toEmailAttachments(errandAttachments));
 
 		messagingClient.sendEmailBatch(municipalityId, batchRequest);
@@ -354,9 +355,35 @@ public class CommunicationService {
 			if (!emailAddresses.isEmpty()) {
 				LOGGER.info("Stakeholder with reporter role found on errand number {}, sending email notification to {} address(es).", errandEntity.getErrandNumber(), emailAddresses.size());
 				final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
-				messagingClient.sendEmailBatch(municipalityId, toEmailBatchRequest(errandEntity, stakeholder, emailAddresses, messagingSettings));
+				final var batchRequest = toEmailBatchRequest(errandEntity, stakeholder, emailAddresses, messagingSettings);
+
+				messagingClient.sendEmailBatch(municipalityId, batchRequest);
+
+				// No explicit selection exists for an automated notification - null is the documented way to ask for none.
+				final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, errandId, null);
+				final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, toReporterEmailRequest(batchRequest, emailAddresses))
+					.withErrandAttachments(errandAttachments)
+					.withViewed(true)
+					.withErrandNumber(errandEntity.getErrandNumber());
+
+				saveCommunication(communicationEntity);
+				saveAttachment(communicationEntity, errandEntity);
 			}
 		}
+	}
+
+	/**
+	 * The batch request already sent, folded into the single-recipient shape a communication record expects - persisted
+	 * as one record of this notification rather than sent again, since the batch call already reached every address
+	 * on it.
+	 */
+	private static EmailRequest toReporterEmailRequest(final EmailBatchRequest batch, final List<String> recipients) {
+		return EmailRequest.create()
+			.withSender(batch.getSender().getAddress())
+			.withSenderName(batch.getSender().getName())
+			.withRecipient(String.join(",", recipients))
+			.withSubject(batch.getSubject())
+			.withMessage(batch.getMessage());
 	}
 
 	/**
