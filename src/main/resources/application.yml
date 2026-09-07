@@ -43,6 +43,22 @@ scheduler:
     shedlock-lock-at-most-for: PT15M
     maximum-execution-time: PT5M
     batch-size: 250
+  process-event:
+    name: process_event_relay
+    cron: 0 * * * * *
+    shedlock-lock-at-most-for: PT2M
+    maximum-execution-time: PT1M
+    # Last resort for a row that never makes it through
+    max-age: P30D
+    # Measured on the age of the oldest undelivered row
+    unhealthy-after: PT15M
+    # Ceiling per consumer and run, so that one process engine being down cannot starve the others
+    batch-size: 200
+  process-cleanup:
+    name: process_event_cleanup
+    cron: 0 30 2 * * *
+    shedlock-lock-at-most-for: PT10M
+    maximum-execution-time: PT5M
   job:
     name: maintain_jobs
     # Hourly. What the sweep looks for is a job that has been quiet for days, so asking more often than that finds the
@@ -57,6 +73,15 @@ errand:
     batch-size: 250
     max-concurrent-runs: 2
     progress-interval: PT1M
+process-engine:
+  # Settings for the process engines errand events are published to. Documented in ProcessEngineProperties, which is
+  # where the defaults live. The consumers are the register of known process engines, and the name in it is the delivery
+  # address: connecting a namespace to one of them is configuration, adding a new one is a release.
+  consumers:
+    - pw-alkt
+  loop-guard:
+    max-events-per-errand: 20
+    window: PT10M
 job:
   # Settings for the job table every long running piece of work reports against. Documented in JobProperties, which is
   # where the defaults live. Jobs are kept: a purge leaves one row behind, and that row is the lasting record of it.

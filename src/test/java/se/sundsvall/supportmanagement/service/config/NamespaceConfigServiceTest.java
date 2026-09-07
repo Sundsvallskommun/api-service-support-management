@@ -1,15 +1,16 @@
 package se.sundsvall.supportmanagement.service.config;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
@@ -21,8 +22,11 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties.LoopGuard;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +49,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Protecte
 @ExtendWith(MockitoExtension.class)
 class NamespaceConfigServiceTest {
 
+	// The register of process consumers the service validates against, as it is configured in application.yml
+	private static final ProcessEngineProperties PROCESS_ENGINE_PROPERTIES = new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, Duration.ofMinutes(10)));
+
 	@Mock
 	private NamespaceConfigRepository configRepositoryMock;
 
@@ -54,8 +61,12 @@ class NamespaceConfigServiceTest {
 	@Captor
 	private ArgumentCaptor<NamespaceConfigEntity> entityCaptor;
 
-	@InjectMocks
 	private NamespaceConfigService configService;
+
+	@BeforeEach
+	void setUp() {
+		configService = new NamespaceConfigService(configRepositoryMock, mapperMock, PROCESS_ENGINE_PROPERTIES);
+	}
 
 	@Test
 	void create() {
@@ -294,7 +305,7 @@ class NamespaceConfigServiceTest {
 	 * drift apart.
 	 */
 	private NamespaceConfigService serviceWithRealMapper() {
-		return new NamespaceConfigService(configRepositoryMock, new NamespaceConfigMapper());
+		return new NamespaceConfigService(configRepositoryMock, new NamespaceConfigMapper(), PROCESS_ENGINE_PROPERTIES);
 	}
 
 	@Test
@@ -356,5 +367,82 @@ class NamespaceConfigServiceTest {
 
 		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
 		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithUnknownProcessConsumer() {
+		final var request = NamespaceConfig.create().withProcessConsumer("pw-alk");
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo(
+			"Bad Request: 'pw-alk' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be one of [pw-alkt]");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void replaceWithUnknownProcessConsumer() {
+		final var request = NamespaceConfig.create().withProcessConsumer("PW-ALKT");
+
+		// The name is the delivery address, so it has to match the register exactly rather than case insensitively
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.replace(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithProcessConsumerOnAnAccessControlledNamespace() {
+		final var request = NamespaceConfig.create()
+			.withAccessControl(true)
+			.withProcessConsumer("pw-alkt");
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo(
+			"Bad Request: Access control may not be active for a namespace with the process consumer 'pw-alkt'. A process consumer is not an AD account, and the access mapper grants access to nothing else, so every read and write the process makes for the namespace would be denied");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void replaceTurningOnAccessControlForANamespaceWithAProcessConsumer() {
+		final var request = NamespaceConfig.create()
+			.withProcessConsumer("pw-alkt")
+			.withAccessControl(true);
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.replace(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		verify(configRepositoryMock, never()).findByNamespaceAndMunicipalityId(any(), any());
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithDuplicatedProcessTrigger() {
+		final var request = NamespaceConfig.create()
+			.withProcessConsumer("pw-alkt")
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE, EventSubType.ERRAND));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: 'ERRAND' occurs more than once among the process triggers");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithProcessConfiguration() {
+		final var request = NamespaceConfig.create()
+			.withProcessConsumer("pw-alkt")
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.DECISION));
+		final var entity = NamespaceConfigEntity.create();
+
+		when(mapperMock.toEntity(any(), any(), any())).thenReturn(entity);
+
+		configService.create(request, "namespace", "municipalityId");
+
+		verify(configRepositoryMock).save(same(entity));
 	}
 }

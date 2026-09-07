@@ -77,6 +77,15 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isTrue();
+
+		// Read back, as each process trigger is stored as a row of its own under the same key
+		setupCall()
+			.withServicePath(PATH.apply(NAMESPACE_2))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test

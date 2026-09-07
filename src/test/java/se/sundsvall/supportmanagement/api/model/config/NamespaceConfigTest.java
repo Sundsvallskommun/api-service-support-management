@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.TITLE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 
 class NamespaceConfigTest {
 
@@ -48,6 +50,8 @@ class NamespaceConfigTest {
 		final var notifyReporter = true;
 		final var roleBasedMapping = true;
 		final var resourceAccessControl = true;
+		final var processConsumer = "pw-alkt";
+		final var processTriggers = List.of(ERRAND, DECISION);
 		final var roleFieldRestrictions = List.of(RoleFieldRestriction.create().withRole("FIRST_LINE_CASE_OFFICER"));
 		final var limitedReadAccess = LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
 		final var reporterAccess = ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
@@ -62,6 +66,8 @@ class NamespaceConfigTest {
 			.withNotifyReporter(notifyReporter)
 			.withRoleBasedMapping(roleBasedMapping)
 			.withResourceAccessControl(resourceAccessControl)
+			.withProcessConsumer(processConsumer)
+			.withProcessTriggers(processTriggers)
 			.withRoleFieldRestrictions(roleFieldRestrictions)
 			.withLimitedReadAccess(limitedReadAccess)
 			.withReporterAccess(reporterAccess)
@@ -78,6 +84,8 @@ class NamespaceConfigTest {
 		assertThat(bean.isNotifyReporter()).isEqualTo(notifyReporter);
 		assertThat(bean.isRoleBasedMapping()).isEqualTo(roleBasedMapping);
 		assertThat(bean.isResourceAccessControl()).isEqualTo(resourceAccessControl);
+		assertThat(bean.getProcessConsumer()).isEqualTo(processConsumer);
+		assertThat(bean.getProcessTriggers()).isEqualTo(processTriggers);
 		assertThat(bean.getRoleFieldRestrictions()).isEqualTo(roleFieldRestrictions);
 		assertThat(bean.getLimitedReadAccess()).isEqualTo(limitedReadAccess);
 		assertThat(bean.getReporterAccess()).isEqualTo(reporterAccess);

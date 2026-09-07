@@ -41,6 +41,10 @@ scheduler:
     cron: "-"
   attachment-hash:
     cron: "-"
+  process-event:
+    cron: "-"
+  process-cleanup:
+    cron: "-"
   job:
     cron: "-"
 errand:
