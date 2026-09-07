@@ -97,11 +97,11 @@ public final class ErrandParameterMapper {
 	 *
 	 * @param  entity     errand the parameters would be merged into
 	 * @param  parameters parameters of the request
-	 * @return            keys the request would change, null when it carries no parameters at all
+	 * @return            keys the request would change, none when it carries no parameters at all
 	 */
 	public static List<String> changedKeys(final ErrandEntity entity, final List<Parameter> parameters) {
 		if (isNull(parameters)) {
-			return null;
+			return emptyList();
 		}
 
 		final var existingByKey = Optional.ofNullable(entity.getParameters()).orElse(emptyList()).stream()

@@ -199,6 +199,24 @@ public class AccessControlService {
 		public Predicate<String> writableKey(ErrandField field) {
 			return toKeyPredicate(writable, field);
 		}
+
+		/**
+		 * Reads one field out of a resolved map. A null map is a user nothing restricts, so every key of every field is
+		 * theirs; a field the map does not carry is one they do not reach at all; and a field carrying no keys is the
+		 * whole collection.
+		 */
+		private static Predicate<String> toKeyPredicate(Map<ErrandField, Set<String>> fields, ErrandField field) {
+			if (isNull(fields)) {
+				return _ -> true;
+			}
+
+			final var keys = fields.get(field);
+			if (isNull(keys)) {
+				return _ -> false;
+			}
+
+			return keys.isEmpty() ? _ -> true : keys::contains;
+		}
 	}
 
 	/**
@@ -383,19 +401,6 @@ public class AccessControlService {
 	 */
 	public Function<ErrandField, Predicate<String>> readableKeyResolver(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity) {
 		return fieldAccessResolver(namespace, municipalityId, user).apply(errandEntity)::readableKey;
-	}
-
-	private static Predicate<String> toKeyPredicate(Map<ErrandField, Set<String>> fields, ErrandField field) {
-		if (isNull(fields)) {
-			return _ -> true;
-		}
-
-		final var keys = fields.get(field);
-		if (isNull(keys)) {
-			return _ -> false;
-		}
-
-		return keys.isEmpty() ? _ -> true : keys::contains;
 	}
 
 	/**

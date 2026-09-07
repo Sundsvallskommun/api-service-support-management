@@ -208,11 +208,12 @@ public final class ErrandMapper {
 
 	/**
 	 * The keys of sent in external tags that would come out of a patch different from how they stand on the errand. A key
-	 * the errand does not carry at all is a change, since the patch would add it.
+	 * the errand does not carry at all is a change, since the patch would add it, and a patch leaving the collection
+	 * alone changes none of them.
 	 */
 	public static List<String> changedExternalTagKeys(final ErrandEntity entity, final List<ExternalTag> externalTags) {
 		if (isNull(externalTags)) {
-			return null;
+			return emptyList();
 		}
 
 		final var existingByKey = ofNullable(entity.getExternalTags()).orElse(emptyList()).stream()
@@ -233,7 +234,7 @@ public final class ErrandMapper {
 	 */
 	public static List<String> changedJsonParameterKeys(final ErrandEntity entity, final List<JsonParameter> jsonParameters) {
 		if (isNull(jsonParameters)) {
-			return null;
+			return emptyList();
 		}
 
 		final var existingByKey = ofNullable(entity.getJsonParameters()).orElse(emptyList()).stream()
