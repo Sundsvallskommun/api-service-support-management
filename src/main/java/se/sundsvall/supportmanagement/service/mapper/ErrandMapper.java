@@ -40,6 +40,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -224,11 +225,12 @@ public final class ErrandMapper {
 
 	/**
 	 * Maps a single field of an errand. Keyed fields limit themselves to sent in keys, an empty set meaning the whole
-	 * collection.
+	 * collection. The enrichment carries what a field cannot be read off the errand row, which is what a field kept out of
+	 * the errand aggregate on purpose needs.
 	 */
 	@FunctionalInterface
 	private interface FieldMapper {
-		void map(Errand errand, ErrandEntity entity, Set<String> keys);
+		void map(Errand errand, ErrandEntity entity, Set<String> keys, ErrandEnrichment enrichment);
 	}
 
 	/**
@@ -236,34 +238,35 @@ public final class ErrandMapper {
 	 * {@code ErrandMapperTest} asserts that the two stay in step.
 	 */
 	private static final Map<ErrandField, FieldMapper> FIELD_MAPPERS = new EnumMap<>(Map.ofEntries(
-		entry(ErrandField.ID, (errand, e, _) -> errand.setId(e.getId())),
-		entry(ErrandField.ERRAND_NUMBER, (errand, e, _) -> errand.setErrandNumber(e.getErrandNumber())),
-		entry(ErrandField.TITLE, (errand, e, _) -> errand.setTitle(e.getTitle())),
-		entry(ErrandField.STATUS, (errand, e, _) -> errand.setStatus(e.getStatus())),
-		entry(ErrandField.RESOLUTION, (errand, e, _) -> errand.setResolution(e.getResolution())),
-		entry(ErrandField.CHANNEL, (errand, e, _) -> errand.setChannel(e.getChannel())),
-		entry(ErrandField.CREATED, (errand, e, _) -> errand.setCreated(e.getCreated())),
-		entry(ErrandField.MODIFIED, (errand, e, _) -> errand.setModified(e.getModified())),
-		entry(ErrandField.TOUCHED, (errand, e, _) -> errand.setTouched(e.getTouched())),
-		entry(ErrandField.PRIORITY, (errand, e, _) -> errand.setPriority(Priority.valueOf(e.getPriority()))),
-		entry(ErrandField.DESCRIPTION, (errand, e, _) -> errand.setDescription(e.getDescription())),
-		entry(ErrandField.CLASSIFICATION, (errand, e, _) -> errand.setClassification(Classification.create().withCategory(e.getCategory()).withType(e.getType()))),
-		entry(ErrandField.REPORTER_USER_ID, (errand, e, _) -> errand.setReporterUserId(e.getReporterUserId())),
-		entry(ErrandField.ASSIGNED_USER_ID, (errand, e, _) -> errand.setAssignedUserId(e.getAssignedUserId())),
-		entry(ErrandField.ASSIGNED_GROUP_ID, (errand, e, _) -> errand.setAssignedGroupId(e.getAssignedGroupId())),
-		entry(ErrandField.BUSINESS_RELATED, (errand, e, _) -> errand.setBusinessRelated(e.getBusinessRelated())),
-		entry(ErrandField.SUSPENSION, (errand, e, _) -> errand.setSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))),
-		entry(ErrandField.CONTACT_REASON, (errand, e, _) -> errand.setContactReason(ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))),
-		entry(ErrandField.CONTACT_REASON_DESCRIPTION, (errand, e, _) -> errand.setContactReasonDescription(e.getContactReasonDescription())),
-		entry(ErrandField.ESCALATION_EMAIL, (errand, e, _) -> errand.setEscalationEmail(e.getEscalationEmail())),
-		entry(ErrandField.LABELS, (errand, e, _) -> errand.setLabels(toErrandLabels(e.getLabels()))),
-		entry(ErrandField.STAKEHOLDERS, (errand, e, _) -> errand.setStakeholders(toStakeholders(e.getStakeholders()))),
-		entry(ErrandField.MEASURES, (errand, e, _) -> errand.setMeasures(toMeasures(e.getMeasures()))),
-		entry(ErrandField.ACTIVE_NOTIFICATIONS, (errand, e, _) -> errand.setActiveNotifications(toActiveNotifications(e.getNotifications()))),
-		entry(ErrandField.VERSION, (errand, e, _) -> errand.setVersion(e.getVersion())),
-		entry(ErrandField.PARAMETERS, (errand, e, keys) -> errand.setParameters(filterByKey(toParameterList(e.getParameters()), Parameter::getKey, keys))),
-		entry(ErrandField.JSON_PARAMETERS, (errand, e, keys) -> errand.setJsonParameters(filterByKey(toJsonParameters(e.getJsonParameters()), JsonParameter::getKey, keys))),
-		entry(ErrandField.EXTERNAL_TAGS, (errand, e, keys) -> errand.setExternalTags(filterByKey(toExternalTags(e.getExternalTags()), ExternalTag::getKey, keys)))));
+		entry(ErrandField.ID, (errand, e, _, _) -> errand.setId(e.getId())),
+		entry(ErrandField.ERRAND_NUMBER, (errand, e, _, _) -> errand.setErrandNumber(e.getErrandNumber())),
+		entry(ErrandField.TITLE, (errand, e, _, _) -> errand.setTitle(e.getTitle())),
+		entry(ErrandField.STATUS, (errand, e, _, _) -> errand.setStatus(e.getStatus())),
+		entry(ErrandField.RESOLUTION, (errand, e, _, _) -> errand.setResolution(e.getResolution())),
+		entry(ErrandField.CHANNEL, (errand, e, _, _) -> errand.setChannel(e.getChannel())),
+		entry(ErrandField.CREATED, (errand, e, _, _) -> errand.setCreated(e.getCreated())),
+		entry(ErrandField.MODIFIED, (errand, e, _, _) -> errand.setModified(e.getModified())),
+		entry(ErrandField.TOUCHED, (errand, e, _, _) -> errand.setTouched(e.getTouched())),
+		entry(ErrandField.PRIORITY, (errand, e, _, _) -> errand.setPriority(Priority.valueOf(e.getPriority()))),
+		entry(ErrandField.DESCRIPTION, (errand, e, _, _) -> errand.setDescription(e.getDescription())),
+		entry(ErrandField.CLASSIFICATION, (errand, e, _, _) -> errand.setClassification(Classification.create().withCategory(e.getCategory()).withType(e.getType()))),
+		entry(ErrandField.REPORTER_USER_ID, (errand, e, _, _) -> errand.setReporterUserId(e.getReporterUserId())),
+		entry(ErrandField.ASSIGNED_USER_ID, (errand, e, _, _) -> errand.setAssignedUserId(e.getAssignedUserId())),
+		entry(ErrandField.ASSIGNED_GROUP_ID, (errand, e, _, _) -> errand.setAssignedGroupId(e.getAssignedGroupId())),
+		entry(ErrandField.BUSINESS_RELATED, (errand, e, _, _) -> errand.setBusinessRelated(e.getBusinessRelated())),
+		entry(ErrandField.SUSPENSION, (errand, e, _, _) -> errand.setSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))),
+		entry(ErrandField.CONTACT_REASON, (errand, e, _, _) -> errand.setContactReason(ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))),
+		entry(ErrandField.CONTACT_REASON_DESCRIPTION, (errand, e, _, _) -> errand.setContactReasonDescription(e.getContactReasonDescription())),
+		entry(ErrandField.ESCALATION_EMAIL, (errand, e, _, _) -> errand.setEscalationEmail(e.getEscalationEmail())),
+		entry(ErrandField.LABELS, (errand, e, _, _) -> errand.setLabels(toErrandLabels(e.getLabels()))),
+		entry(ErrandField.STAKEHOLDERS, (errand, e, _, _) -> errand.setStakeholders(toStakeholders(e.getStakeholders()))),
+		entry(ErrandField.MEASURES, (errand, e, _, _) -> errand.setMeasures(toMeasures(e.getMeasures()))),
+		entry(ErrandField.ACTIVE_NOTIFICATIONS, (errand, e, _, _) -> errand.setActiveNotifications(toActiveNotifications(e.getNotifications()))),
+		entry(ErrandField.PROCESS, (errand, e, _, enrichment) -> errand.setProcess(enrichment.processOf(e.getId()))),
+		entry(ErrandField.VERSION, (errand, e, _, _) -> errand.setVersion(e.getVersion())),
+		entry(ErrandField.PARAMETERS, (errand, e, keys, _) -> errand.setParameters(filterByKey(toParameterList(e.getParameters()), Parameter::getKey, keys))),
+		entry(ErrandField.JSON_PARAMETERS, (errand, e, keys, _) -> errand.setJsonParameters(filterByKey(toJsonParameters(e.getJsonParameters()), JsonParameter::getKey, keys))),
+		entry(ErrandField.EXTERNAL_TAGS, (errand, e, keys, _) -> errand.setExternalTags(filterByKey(toExternalTags(e.getExternalTags()), ExternalTag::getKey, keys)))));
 
 	/**
 	 * Every restrictable field, none of them limited to keys, which is what an unrestricted user is served.
@@ -289,9 +292,21 @@ public final class ErrandMapper {
 	 * @return               mapped errands
 	 */
 	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver) {
+		return toErrandsWithAccessControl(entities, fieldResolver, ErrandEnrichment.empty());
+	}
+
+	/**
+	 * The same, with what a whole page of errands has been enriched with.
+	 *
+	 * @param  entities      errands to map
+	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see per errand
+	 * @param  enrichment    what the errands carry beyond their own rows
+	 * @return               mapped errands
+	 */
+	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver, final ErrandEnrichment enrichment) {
 		return ofNullable(entities).orElse(emptyList())
 			.stream()
-			.map(entity -> toErrandWithAccessControl(entity, fieldResolver))
+			.map(entity -> toErrandWithAccessControl(entity, fieldResolver, enrichment))
 			.toList();
 	}
 
@@ -304,17 +319,33 @@ public final class ErrandMapper {
 	 * @return               mapped errand
 	 */
 	public static Errand toErrandWithAccessControl(final ErrandEntity entity, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver) {
+		return toErrandWithAccessControl(entity, fieldResolver, ErrandEnrichment.empty());
+	}
+
+	/**
+	 * The same, with what the errand has been enriched with.
+	 * <p>
+	 * The enrichment reaches the errand through the very same field mappers as everything else, so a field read from
+	 * outside the errand row is filtered by the role based mapping exactly as one read from inside it. A user the mapping
+	 * does not grant the field simply never has its mapper called.
+	 *
+	 * @param  entity        errand to map
+	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see for the errand
+	 * @param  enrichment    what the errand carries beyond its own row
+	 * @return               mapped errand
+	 */
+	public static Errand toErrandWithAccessControl(final ErrandEntity entity, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver, final ErrandEnrichment enrichment) {
 		if (isNull(entity)) {
 			return null;
 		}
 
 		final var fields = fieldResolver.apply(entity);
-		return isNull(fields) ? toErrand(entity) : toRoleMappedErrand(entity, fields);
+		return isNull(fields) ? toErrand(entity, enrichment) : toRoleMappedErrand(entity, fields, enrichment);
 	}
 
-	private static Errand toRoleMappedErrand(final ErrandEntity entity, final Map<ErrandField, Set<String>> fields) {
+	private static Errand toRoleMappedErrand(final ErrandEntity entity, final Map<ErrandField, Set<String>> fields, final ErrandEnrichment enrichment) {
 		final var errand = Errand.create();
-		fields.forEach((field, keys) -> FIELD_MAPPERS.get(field).map(errand, entity, keys));
+		fields.forEach((field, keys) -> FIELD_MAPPERS.get(field).map(errand, entity, keys, enrichment));
 		return errand;
 	}
 
@@ -328,11 +359,18 @@ public final class ErrandMapper {
 	 * role mapped errand, so a conversion exists in one place only and the two projections cannot drift apart.
 	 */
 	public static Errand toErrand(final ErrandEntity entity) {
+		return toErrand(entity, ErrandEnrichment.empty());
+	}
+
+	/**
+	 * The same, with what the errand has been enriched with.
+	 */
+	public static Errand toErrand(final ErrandEntity entity, final ErrandEnrichment enrichment) {
 		if (isNull(entity)) {
 			return null;
 		}
 
-		return toRoleMappedErrand(entity, ALL_FIELDS)
+		return toRoleMappedErrand(entity, ALL_FIELDS, enrichment)
 			.withPhases(toErrandPhases(entity.getPhases()))
 			.withActions(toErrandActions(entity.getActions()));
 	}

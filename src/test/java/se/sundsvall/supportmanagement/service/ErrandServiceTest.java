@@ -40,6 +40,8 @@ import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -77,6 +79,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -87,6 +90,8 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -144,6 +149,9 @@ class ErrandServiceTest {
 
 	@Mock
 	private ErrandPhaseService errandPhaseServiceMock;
+
+	@Mock
+	private ErrandProcessService errandProcessServiceMock;
 
 	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
@@ -341,6 +349,51 @@ class ErrandServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR);
 		verify(accessControlServiceMock).roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, user);
 		verifyNoInteractions(errandRepositoryMock);
+	}
+
+	/**
+	 * The process shown on an errand is the latest one rather than a live one, so an errand whose start failed shows the
+	 * failure instead of looking like an errand that never had a process at all.
+	 */
+	@Test
+	void readErrandShowsTheProcessOfTheErrand() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
+		when(errandProcessServiceMock.findLatestProcesses(List.of(ERRAND_ID))).thenReturn(Map.of(ERRAND_ID, ErrandProcess.create()
+			.withProcessKey("alkt-ansokan")
+			.withProcessStatus(FAILED)
+			.withError(ProcessError.create().withCode("START_FAILED").withMessage("boom"))));
+
+		final var response = service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThat(response.getProcess().getProcessStatus()).isEqualTo(FAILED);
+		assertThat(response.getProcess().getError().getMessage()).isEqualTo("boom");
+	}
+
+	/**
+	 * The list view asks for the processes of the whole page in one go. A lookup per errand would be invisible in a test
+	 * asserting only the payload, so what is asserted here is the shape of the call rather than what it returned.
+	 */
+	@Test
+	void findErrandsReadsTheProcessesOfThePageInOneCall() {
+		final var first = buildErrandEntity().withId("errand-1");
+		final var second = buildErrandEntity().withId("errand-2");
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn((_, _, criteriaBuilder) -> criteriaBuilder.conjunction());
+		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), any(Pageable.class)))
+			.thenReturn(new PageImpl<>(List.of(first, second)));
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
+		when(errandProcessServiceMock.findLatestProcesses(List.of("errand-1", "errand-2")))
+			.thenReturn(Map.of("errand-2", ErrandProcess.create().withProcessKey("alkt-ansokan").withProcessStatus(RUNNING)));
+
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, null, PageRequest.of(0, 20));
+
+		assertThat(matches.getContent()).extracting(Errand::getProcess).containsExactly(null, ErrandProcess.create().withProcessKey("alkt-ansokan").withProcessStatus(RUNNING));
+		verify(errandProcessServiceMock, times(1)).findLatestProcesses(List.of("errand-1", "errand-2"));
 	}
 
 	@Test

@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -136,9 +137,21 @@ public class EventService {
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
 		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(_ -> {
-			final var notification = toNotification(event, errandEntity, getAdUser());
+			final var notification = toNotification(event, errandEntity, notificationSender());
 			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
 		});
+	}
+
+	/**
+	 * Who the notification says it came from.
+	 * <p>
+	 * An ad account when a person made the change, and otherwise whatever the identifier calls itself - a process engine
+	 * reporting on an errand is no ad account, and asking only for one would leave the handler with a notification from
+	 * nobody.
+	 */
+	private static String notificationSender() {
+		return ofNullable(getAdUser())
+			.orElseGet(() -> ofNullable(getExecutingUser()).map(Identifier::getValue).orElse(null));
 	}
 
 	private String extractCaseId(final ErrandEntity errand) {

@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
@@ -51,4 +52,26 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	 * @return               whether the errand has an instance in that state.
 	 */
 	boolean existsByErrandIdAndProcessStatus(String errandId, ProcessStatus processStatus);
+
+	/**
+	 * Whether an errand already has an instance of some other process than the sent in one. All instances of an errand run
+	 * the same process model, and that is the one rule of the three about a single process per errand that the database
+	 * cannot hold on its own.
+	 *
+	 * @param  errandId   the errand to look at.
+	 * @param  processKey the process model the incoming report claims.
+	 * @return            whether the errand already runs a different process.
+	 */
+	boolean existsByErrandIdAndProcessKeyNot(String errandId, String processKey);
+
+	/**
+	 * The instances of a whole page of errands, newest first.
+	 * <p>
+	 * One query for the page rather than one per errand, which is what the {@code process} projection on the errand is
+	 * built from: the caller keeps the first row it sees per errand, and the ordering makes that the latest one.
+	 *
+	 * @param  errandIds the errands to read the instances of.
+	 * @return           the instances of those errands, newest first.
+	 */
+	List<ErrandProcessEntity> findByErrandIdInOrderByCreatedDesc(Collection<String> errandIds);
 }

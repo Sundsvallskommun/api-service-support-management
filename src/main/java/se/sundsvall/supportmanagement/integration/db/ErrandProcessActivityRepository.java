@@ -37,6 +37,21 @@ public interface ErrandProcessActivityRepository extends JpaRepository<ErrandPro
 	Page<ErrandProcessActivityEntity> findByErrandIdAndErrandProcessId(String errandId, String errandProcessId, Pageable pageable);
 
 	/**
+	 * The entries an external task has already written for an instance.
+	 * <p>
+	 * Read before a report is stored, so that a replayed report adds nothing: {@code uq_epa_idempotency} would refuse the
+	 * duplicate, but a constraint violation poisons the transaction the rest of the report is being written in, and
+	 * asking first is what keeps a retry a plain success rather than an error to recover from. Entries without an external
+	 * task are never matched here, which is the same answer the constraint gives, since null is distinct in a unique
+	 * index.
+	 *
+	 * @param  errandProcessId the instance the report belongs to.
+	 * @param  externalTaskId  the external task the report was made from.
+	 * @return                 the entries already written for that task.
+	 */
+	List<ErrandProcessActivityEntity> findByErrandProcessIdAndExternalTaskId(String errandProcessId, String externalTaskId);
+
+	/**
 	 * Whether an errand already carries an entry of a kind inside a window.
 	 * <p>
 	 * What it is for is to write the entries that report a jammed errand once per errand and window instead of once per
