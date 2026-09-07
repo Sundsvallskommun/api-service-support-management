@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -189,7 +190,7 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.empty());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
 			.thenReturn(List.of());
-		when(errandsRepositoryMock.countByLabelsMetadataLabelId(LABEL_ID)).thenReturn(3L);
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(3L);
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of(actionWithLabel, actionWithoutLabel));
 
@@ -206,7 +207,7 @@ class MetadataServiceMoveLabelTest {
 	}
 
 	@Test
-	void moveLabel_withDescendants_countsByLabelIdOnly() {
+	void moveLabel_withDescendants_countsAcrossLabelAndDescendants() {
 		var child = labelEntity("child-id", "CHILD", "ROOT/CHILD");
 		var label = labelEntity(LABEL_ID, "ROOT", "ROOT");
 
@@ -220,7 +221,8 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.empty());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "ROOT/"))
 			.thenReturn(List.of(child));
-		when(errandsRepositoryMock.countByLabelsMetadataLabelId(LABEL_ID)).thenReturn(5L);
+		// An errand tagged only with the descendant - not the moved label itself - must still be counted
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID, "child-id"))).thenReturn(5L);
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of());
 
@@ -252,7 +254,9 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.of(label));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD"))
 			.thenReturn(Optional.empty());
-		when(errandsRepositoryMock.countByLabelsMetadataLabelId(LABEL_ID)).thenReturn(3L);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
+			.thenReturn(List.of());
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(3L);
 		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3)).thenReturn("job-id");
 		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(jobResponse);
 
@@ -261,7 +265,8 @@ class MetadataServiceMoveLabelTest {
 		assertThat(result).isEqualTo(jobResponse);
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
-		verify(errandsRepositoryMock).countByLabelsMetadataLabelId(LABEL_ID);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
+		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
 		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3);
 		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
 	}

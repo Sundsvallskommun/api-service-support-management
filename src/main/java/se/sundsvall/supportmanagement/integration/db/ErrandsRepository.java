@@ -34,6 +34,10 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	long countByLabelsMetadataLabelId(String metadataLabelId);
 
+	// Distinct: an errand tagged with more than one of the given ids (e.g. the moved label itself and one of its
+	// descendants, both stored per the ancestor-chain-expansion invariant) must still be counted once.
+	long countDistinctByLabelsMetadataLabelIdIn(Collection<String> metadataLabelIds);
+
 	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);

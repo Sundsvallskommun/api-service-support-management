@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.integration.db;
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -275,6 +276,36 @@ class ErrandsRepositoryTest {
 		errandsRepository.save(errandWithLabel("errand-count-3", labelId));
 
 		assertThat(errandsRepository.countByLabelsMetadataLabelId(labelId)).isEqualTo(2);
+	}
+
+	@Test
+	void countDistinctByLabelsMetadataLabelIdIn_noMatch() {
+		assertThat(errandsRepository.countDistinctByLabelsMetadataLabelIdIn(Set.of("non-existent-label-id"))).isZero();
+	}
+
+	@Test
+	void countDistinctByLabelsMetadataLabelIdIn_matchesAcrossMultipleIds() {
+		final var labelId1 = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		final var labelId2 = "86d459cd-4810-4b4a-b365-97aa0c2c0ff5";
+		errandsRepository.save(errandWithLabel("errand-count-4", labelId1));
+		errandsRepository.save(errandWithLabel("errand-count-5", labelId2));
+
+		assertThat(errandsRepository.countDistinctByLabelsMetadataLabelIdIn(Set.of(labelId1, labelId2))).isEqualTo(2);
+	}
+
+	@Test
+	void countDistinctByLabelsMetadataLabelIdIn_doesNotDoubleCountAnErrandTaggedWithBothIds() {
+		final var labelId1 = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		final var labelId2 = "86d459cd-4810-4b4a-b365-97aa0c2c0ff5";
+		errandsRepository.save(ErrandEntity.create()
+			.withNamespace("namespace-1")
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withErrandNumber("errand-count-6")
+			.withLabels(List.of(
+				ErrandLabelEmbeddable.create().withMetadataLabelId(labelId1),
+				ErrandLabelEmbeddable.create().withMetadataLabelId(labelId2))));
+
+		assertThat(errandsRepository.countDistinctByLabelsMetadataLabelIdIn(Set.of(labelId1, labelId2))).isOne();
 	}
 
 	@Test

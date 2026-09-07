@@ -360,14 +360,9 @@ public class MetadataService {
 	@Transactional(readOnly = true)
 	public LabelMoveDryRunResponse moveLabel(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
 		var labelToMove = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var allMovedIds = allMovedLabelIds(namespace, municipalityId, labelToMove);
 
-		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
-			namespace, municipalityId, labelToMove.getResourcePath() + "/");
-
-		var allMovedIds = Stream.concat(Stream.of(labelId), descendants.stream().map(MetadataLabelEntity::getId))
-			.collect(Collectors.toSet());
-
-		var affectedErrandCount = errandsRepository.countByLabelsMetadataLabelId(labelId);
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
 
 		var affectedActions = actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
 			.filter(action -> isAffectedByMove(action, allMovedIds))
@@ -389,12 +384,26 @@ public class MetadataService {
 	 * is created here and stays PENDING until a worker that performs it is added.
 	 */
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var labelToMove = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var allMovedIds = allMovedLabelIds(namespace, municipalityId, labelToMove);
 
-		var affectedErrandCount = errandsRepository.countByLabelsMetadataLabelId(labelId);
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
 		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount);
 
 		return jobService.get(namespace, municipalityId, jobId);
+	}
+
+	/**
+	 * The moved label's id together with every descendant's - an errand tagged with any of them is affected by the
+	 * move, since the ancestor-chain-expansion invariant means a descendant-tagged errand already carries the moved
+	 * label's id too, but relying on that alone would silently undercount data that was written outside it.
+	 */
+	private Set<String> allMovedLabelIds(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove) {
+		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
+			namespace, municipalityId, labelToMove.getResourcePath() + "/");
+
+		return Stream.concat(Stream.of(labelToMove.getId()), descendants.stream().map(MetadataLabelEntity::getId))
+			.collect(Collectors.toSet());
 	}
 
 	private MetadataLabelEntity validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
