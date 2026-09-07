@@ -28,7 +28,9 @@ import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.supportmanagement.api.model.metadata.CreateMeasureTypeRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -71,7 +73,7 @@ class MetadataMeasureTypeResource {
 	ResponseEntity<Void> createMeasureType(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Valid @NotNull @RequestBody final MeasureType body) {
+		@Valid @NotNull @RequestBody final CreateMeasureTypeRequest body) {
 
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_MEASURE_TYPE, RW);
 
@@ -116,7 +118,8 @@ class MetadataMeasureTypeResource {
 	}
 
 	@PatchMapping(path = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Update measure type", description = "Update measure type matching namespace, municipality and id", responses = {
+	@Operation(summary = "Update measure type", description = "Update measure type matching namespace, municipality and id. Omitted fields are left unchanged, the name cannot be changed", responses = {
+		@ApiResponse(responseCode = "409", description = "The measure type name is immutable", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -128,7 +131,7 @@ class MetadataMeasureTypeResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Measure type id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
-		@Valid @NotNull @RequestBody final MeasureType body) {
+		@Validated(OnUpdate.class) @NotNull @RequestBody final MeasureType body) {
 
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_MEASURE_TYPE, RW);
 
@@ -137,6 +140,7 @@ class MetadataMeasureTypeResource {
 
 	@DeleteMapping(path = "/{id}", produces = ALL_VALUE)
 	@Operation(summary = "Delete measure type", description = "Delete measure type matching namespace, municipality and id", responses = {
+		@ApiResponse(responseCode = "409", description = "The measure type is in use; deprecate it instead", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class

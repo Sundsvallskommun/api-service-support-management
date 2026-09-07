@@ -158,4 +158,24 @@ class MetadataMeasureTypeResourceTest {
 		verify(metadataServiceMock).updateMeasureType(NAMESPACE, MUNICIPALITY_ID, id, body);
 		assertThat(response).isNotNull().isEqualTo(body);
 	}
+
+	@Test
+	void updateMeasureTypeWithoutName() {
+		// Setup
+		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var body = MeasureType.create().withDisplayName("New label");
+
+		// Mock
+		when(metadataServiceMock.updateMeasureType(NAMESPACE, MUNICIPALITY_ID, id, body)).thenReturn(body);
+
+		// Call
+		webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().isOk();
+
+		// Verifications & assertions
+		verify(metadataServiceMock).updateMeasureType(NAMESPACE, MUNICIPALITY_ID, id, body);
+	}
 }

@@ -8,5 +8,6 @@
 	"addedByRole": "ROLE-1",
 	"goal": "Improve response time",
 	"description": "Detailed description of measure 1",
-	"created": "2024-01-10T12:00:00+01:00"
+	"created": "2024-01-10T12:00:00+01:00",
+	"version": 0
 }

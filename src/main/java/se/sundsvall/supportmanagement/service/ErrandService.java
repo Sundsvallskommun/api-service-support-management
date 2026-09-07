@@ -202,7 +202,12 @@ public class ErrandService {
 			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, errandEntityToUpdate.getVersion());
+		if (errand.getMeasures() != null) {
+			accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.MEASURE, RW);
+		}
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+
+		measureValidator.validate(errand.getMeasures(), errandEntityToUpdate.getMeasures(), namespace, municipalityId);
 
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand, accessibleKey);
 
@@ -215,8 +220,6 @@ public class ErrandService {
 
 			errandEntity.withContactReason(contactReason);
 		});
-
-		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
 
 		if (errand.getLabels() != null) {
 			validateLabelVersions(errand.getLabels());

@@ -105,6 +105,8 @@ Access the API documentation via Swagger UI:
 
 Alternatively, refer to the `openapi.yaml` file located in `src/test/resources/api` for the OpenAPI specification.
 
+The measure contract, covering catalogue keys, deprecation, PATCH null semantics and concurrency, is described in [docs/measures.md](docs/measures.md).
+
 ## Usage
 
 ### API Endpoints

@@ -144,7 +144,7 @@ class ErrandsResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE, groups = OnUpdate.class) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnUpdate.class) @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid(groups = OnUpdate.class) @PathVariable("errandId") final String errandId,
-		@Parameter(name = "If-Match", description = "Optional ETag for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
+		@Parameter(name = "If-Match", description = "Optional ETag of the errand for optimistic locking, including changes to measures. Omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@Valid @NotNull @RequestBody final Errand errand) {
 
 		final var updated = service.updateErrand(namespace, municipalityId, errandId, ifMatch, errand);

@@ -57,6 +57,7 @@ class MeasureTest {
 		// Act
 		final var measure = Measure.create()
 			.withId(id)
+			.withVersion(1L)
 			.withResponsibleUser(responsibleUser)
 			.withType(type)
 			.withPlannedStart(plannedStart)
@@ -76,6 +77,7 @@ class MeasureTest {
 		// Assert
 		assertThat(measure).hasNoNullFieldsOrProperties();
 		assertThat(measure.getId()).isEqualTo(id);
+		assertThat(measure.getVersion()).isEqualTo(1L);
 		assertThat(measure.getResponsibleUser()).isEqualTo(responsibleUser);
 		assertThat(measure.getType()).isEqualTo(type);
 		assertThat(measure.getPlannedStart()).isEqualTo(plannedStart);
@@ -95,8 +97,8 @@ class MeasureTest {
 
 	@Test
 	void noDirtOnCreatedBean() {
-		assertThat(Measure.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Measure()).hasAllNullFieldsOrProperties();
+		assertThat(Measure.create()).hasAllNullFieldsOrPropertiesExcept("suppliedFields");
+		assertThat(new Measure()).hasAllNullFieldsOrPropertiesExcept("suppliedFields");
 	}
 
 }

@@ -8,6 +8,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasure;
@@ -137,7 +138,8 @@ class ErrandMeasureMapperTest {
 			.withReworkGoal("rework goal")
 			.withReworkDescription("rework description")
 			.withCreated(now)
-			.withModified(now.plusHours(1));
+			.withModified(now.plusHours(1))
+			.withVersion(3L);
 
 		// Act
 		final var result = toMeasure(entity);
@@ -160,6 +162,7 @@ class ErrandMeasureMapperTest {
 		assertThat(result.getReworkDescription()).isEqualTo("rework description");
 		assertThat(result.getCreated()).isEqualTo(now);
 		assertThat(result.getModified()).isEqualTo(now.plusHours(1));
+		assertThat(result.getVersion()).isEqualTo(3L);
 	}
 
 	@Test
@@ -283,5 +286,34 @@ class ErrandMeasureMapperTest {
 
 		// Assert
 		assertThat(errandEntity.getMeasures()).isEmpty();
+	}
+
+	@Test
+	void explicitNullClearsFieldsButOmissionPreservesThem() {
+		final var json = new ObjectMapper();
+		final var date = java.time.OffsetDateTime.parse("2026-09-03T12:00:00Z");
+		final var entity = MeasureEntity.create().withType("TYPE").withExecuted(date).withPlannedComplete(date)
+			.withAccept(Accept.TRUE).withGoal("Keep this goal").withDescription("Old description");
+		final var patch = json.readValue("{\"executed\":null,\"accept\":null,\"description\":null}", Measure.class);
+		updateMeasureEntity(entity, patch);
+		assertThat(entity.getExecuted()).isNull();
+		assertThat(entity.getAccept()).isNull();
+		assertThat(entity.getDescription()).isNull();
+		assertThat(entity.getPlannedComplete()).isEqualTo(date);
+		assertThat(entity.getGoal()).isEqualTo("Keep this goal");
+		assertThat(entity.getType()).isEqualTo("TYPE");
+		assertThat(json.writeValueAsString(patch)).doesNotContain("suppliedFields");
+	}
+
+	@Test
+	void genericErrandMergeUsesTheSameNullSemantics() {
+		final var date = java.time.OffsetDateTime.parse("2026-09-03T12:00:00Z");
+		final var original = MeasureEntity.create().withId("id").withExecuted(date).withGoal("Keep");
+		final var errand = ErrandEntity.create().withMeasures(new ArrayList<>(List.of(original)));
+		final var patch = new ObjectMapper().readValue("{\"id\":\"id\",\"executed\":null}", Measure.class);
+		ErrandMeasureMapper.mergeMeasures(errand, List.of(patch));
+		assertThat(errand.getMeasures()).containsExactly(original);
+		assertThat(original.getExecuted()).isNull();
+		assertThat(original.getGoal()).isEqualTo("Keep");
 	}
 }

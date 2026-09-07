@@ -587,7 +587,6 @@ public class MetadataMapper {
 			return entity;
 		}
 
-		ofNullable(measureType.getName()).ifPresent(entity::setName);
 		ofNullable(measureType.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(measureType.getMeasureGroup()).ifPresent(entity::setMeasureGroup);
 		ofNullable(measureType.getSortOrder()).ifPresent(entity::setSortOrder);
