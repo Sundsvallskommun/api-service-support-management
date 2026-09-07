@@ -263,6 +263,43 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table errand_process (
+        active_marker tinyint,
+        created datetime(3) not null,
+        ended datetime(3),
+        modified datetime(3),
+        municipality_id varchar(8) not null,
+        started datetime(3),
+        namespace varchar(32) not null,
+        id varchar(36) not null,
+        error_code varchar(64),
+        process_instance_id varchar(64),
+        process_service varchar(64) not null,
+        process_key varchar(128) not null,
+        error_message varchar(2048),
+        current_activity_id varchar(255),
+        current_activity_name varchar(255),
+        errand_id varchar(255) not null,
+        process_status enum ('COMPLETED','FAILED','RETRYING','RUNNING','WAITING') not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table errand_process_activity (
+        created datetime(3) not null,
+        occurred_at datetime(3) not null,
+        errand_process_id varchar(36),
+        id varchar(36) not null,
+        activity_type varchar(64) not null,
+        error_code varchar(64),
+        external_task_id varchar(64),
+        message varchar(2048),
+        activity_id varchar(255),
+        activity_name varchar(255),
+        errand_id varchar(255) not null,
+        severity enum ('ERROR','INFO','WARN') not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table external_id_type (
         deprecated bit not null,
         sort_order integer,
@@ -501,6 +538,24 @@
         id varchar(255) not null,
         phase_id varchar(255) not null,
         target_phase_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table process_event_outbox (
+        start_allowed bit not null,
+        created datetime(3) not null,
+        delivered_at datetime(3),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        errand_id varchar(36) not null,
+        id varchar(36) not null,
+        request_group_id varchar(36),
+        event_sub_type varchar(64) not null,
+        event_type varchar(64) not null,
+        process_service varchar(64) not null,
+        process_key varchar(128),
+        signal_name varchar(128),
+        executed_by varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -799,13 +854,13 @@
     create index idx_errand_municipality_id_namespace_created 
        on errand (municipality_id, namespace, created);
 
-    create index idx_errand_municipality_id_namespace_touched
+    create index idx_errand_municipality_id_namespace_touched 
        on errand (municipality_id, namespace, touched);
 
-    create index idx_errand_municipality_id_namespace_id
+    create index idx_errand_municipality_id_namespace_id 
        on errand (municipality_id, namespace, id);
 
-    alter table if exists errand
+    alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
     create index idx_errand_access_labels_errand_id_metadata_label_id 
@@ -847,6 +902,27 @@
     create index idx_errand_phase_phase_id 
        on errand_phase (phase_id);
 
+    create index idx_ep_errand_id 
+       on errand_process (errand_id);
+
+    alter table if exists errand_process 
+       add constraint uq_ep_process_instance_id unique (process_instance_id);
+
+    alter table if exists errand_process 
+       add constraint uq_ep_one_active_per_errand unique (errand_id, active_marker);
+
+    create index idx_epa_process_occurred 
+       on errand_process_activity (errand_process_id, occurred_at);
+
+    create index idx_epa_errand_occurred 
+       on errand_process_activity (errand_id, occurred_at);
+
+    create index idx_epa_retention 
+       on errand_process_activity (created);
+
+    alter table if exists errand_process_activity 
+       add constraint uq_epa_idempotency unique (errand_process_id, external_task_id, activity_id);
+
     create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);
 
@@ -865,11 +941,11 @@
     alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    alter table if exists handover_idempotency
+    alter table if exists handover_idempotency 
        add constraint uq_handover_source_target unique (source_errand_id, target_namespace, target_municipality_id);
 
-    create index idx_job_namespace_municipality_id_status
-        on job (namespace, municipality_id, status);
+    create index idx_job_namespace_municipality_id_status 
+       on job (namespace, municipality_id, status);
 
     create index idx_json_parameter_errand_id 
        on json_parameter (errand_id);
@@ -951,6 +1027,15 @@
 
     create index idx_phase_transition_phase_id 
        on phase_transition (phase_id);
+
+    create index idx_peo_dispatch 
+       on process_event_outbox (delivered_at, created);
+
+    create index idx_peo_consumer 
+       on process_event_outbox (process_service, delivered_at, created);
+
+    create index idx_peo_guard 
+       on process_event_outbox (errand_id, delivered_at, created);
 
     create index revision_entity_id_index 
        on revision (entity_id);

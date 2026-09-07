@@ -64,4 +64,7 @@ TRUNCATE table subscriber_notification;
 TRUNCATE table measure;
 TRUNCATE table measure_type;
 TRUNCATE table job;
+TRUNCATE table errand_process_activity;
+TRUNCATE table errand_process;
+TRUNCATE table process_event_outbox;
 SET FOREIGN_KEY_CHECKS = 1;
