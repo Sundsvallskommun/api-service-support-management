@@ -866,7 +866,7 @@ class CommunicationServiceTest {
 		verify(errandEntityMock).getStakeholders();
 		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
 		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
-		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(null));
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(EmailRequest.class));
 		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
 		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
