@@ -6,6 +6,9 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -35,6 +38,11 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	long countByLabelsMetadataLabelId(String metadataLabelId);
 
 	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);
+
+	// accessLabels is lazy by default; the label-move worker reads it on an already-detached entity (the page fetch and
+	// the persist that follows it are each their own transaction), so it must come back populated with the page itself.
+	@EntityGraph(attributePaths = "accessLabels")
+	Page<ErrandEntity> findByLabelsMetadataLabelId(String metadataLabelId, Pageable pageable);
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 

@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -31,6 +33,7 @@ import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
@@ -80,6 +83,20 @@ public class EventService {
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {
 		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true, subtype);
+	}
+
+	/**
+	 * Logs a single, aggregated entry for a system-level operation that is not tied to one errand's revision diff, such
+	 * as a label move. Logged under the operation's own id rather than an errand id, since no single errand's revision
+	 * history is what this is about.
+	 */
+	public void createLabelMoveEvent(final String municipalityId, final String labelId, final String message) {
+		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), getExecutingUser(), SYSTEM.getValue(), getRequestGroupId());
+		try {
+			eventLogClient.createEvent(municipalityId, labelId, event);
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for label move {}: {}", sanitizeForLogging(labelId), sanitizeForLogging(e.getMessage()));
+		}
 	}
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {

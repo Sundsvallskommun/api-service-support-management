@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -381,5 +383,37 @@ class EventServiceTest {
 		assertThat(pagedEvents.getContent()).hasSize(6)
 			.extracting(se.sundsvall.supportmanagement.api.model.event.Event::getType)
 			.containsOnly(se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN);
+	}
+
+	@Test
+	void createLabelMoveEventLogsAggregatedSystemEvent() {
+		final var municipalityId = "2281";
+		final var labelId = randomUUID().toString();
+		final var message = "Label moved under new-parent, 3 errand(s) restowed";
+
+		service.createLabelMoveEvent(municipalityId, labelId, message);
+
+		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(labelId), eventCaptor.capture());
+
+		final var event = eventCaptor.getValue();
+		assertThat(event.getType()).isEqualTo(EventType.UPDATE);
+		assertThat(event.getMessage()).isEqualTo(message);
+		assertThat(event.getSourceType()).isEqualTo(MetadataLabelEntity.class.getSimpleName());
+		assertThat(event.getSubType()).isEqualTo(SYSTEM.getValue());
+		assertThat(event.getHistoryReference()).isNull();
+		assertThat(event.getExecutingUser()).isNotNull()
+			.satisfies(eu -> assertThat(eu.getValue()).isEqualTo("executingUserId"));
+	}
+
+	@Test
+	void createLabelMoveEventSwallowsClientException() {
+		final var municipalityId = "2281";
+		final var labelId = randomUUID().toString();
+
+		when(eventLogClientMock.createEvent(any(), any(), any())).thenThrow(new RuntimeException("boom"));
+
+		service.createLabelMoveEvent(municipalityId, labelId, "message");
+
+		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(labelId), any());
 	}
 }

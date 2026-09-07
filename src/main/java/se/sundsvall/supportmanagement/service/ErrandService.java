@@ -420,6 +420,34 @@ public class ErrandService {
 		return repository.saveAndFlush(entity);
 	}
 
+	/**
+	 * Restows a batch of errands - each one's label set rebuilt from its access labels (leaves) outward - in a
+	 * transaction of its own, separate from whatever transaction (if any) the caller is running in. Used by the
+	 * label-move worker, which calls this once per page rather than once per errand, and must not join or be joined by
+	 * the caller's transaction: the worker is not itself transactional, and the interactive PATCH path that also calls
+	 * {@link #persistLabelUpdate} must keep its label write inside its own single transaction rather than being pulled
+	 * into a separate one.
+	 * <p>
+	 * The rebuild is driven entirely by {@code resourcePath} lookups ({@link #expandLabelsToAncestorChain}), never by
+	 * walking an entity's own lazy associations - the errands handed in were read by the worker in a transaction that
+	 * has already closed by the time this one opens, so nothing on them beyond an eagerly-fetched collection is safe to
+	 * touch.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
+		batch.forEach(this::restowFromAccessLabels);
+	}
+
+	private void restowFromAccessLabels(final ErrandEntity errand) {
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
+			.toList();
+
+		errand.setLabels(leafLabels);
+		expandLabelsToAncestorChain(errand);
+		persistLabelUpdate(errand);
+	}
+
 	private void computeAndSetAccessLabels(final ErrandEntity errandEntity) {
 		final var allLabelIds = ofNullable(errandEntity.getLabels())
 			.orElse(emptyList())

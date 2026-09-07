@@ -652,6 +652,42 @@ class ErrandServiceTest {
 	}
 
 	@Test
+	void persistLabelMigrationBatch_rebuildsEachErrandsLabelsFromItsAccessLabels() {
+		var parentId = "parent-id";
+		var leafId = "leaf-id";
+		var errand = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			// A stale chain from before the move - restowing must replace it, not merge into it
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
+			.withAccessLabels(List.of(se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(leafId)));
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(leafId)))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/leaf")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent")))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(parentId).withResourcePath("parent")));
+		when(metadataLabelRepositoryMock.findAllById(Set.of(leafId, parentId)))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/leaf"),
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent")));
+		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
+
+		service.persistLabelMigrationBatch(List.of(errand));
+
+		assertThat(errand.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactlyInAnyOrder(leafId, parentId);
+		assertThat(errand.getAccessLabels())
+			.extracting(se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable::getMetadataLabelId)
+			.containsExactly(leafId);
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(leafId));
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent"));
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(leafId, parentId));
+		verify(errandRepositoryMock).saveAndFlush(errand);
+		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
 	void expandLabelsToAncestorChain_leafExpandsToFullChain() {
 		final var leafId = "leaf-id";
 		final var parentId = "parent-id";

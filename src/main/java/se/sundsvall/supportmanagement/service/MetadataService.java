@@ -7,11 +7,16 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
@@ -52,6 +57,7 @@ import static java.util.Comparator.nullsFirst;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
@@ -88,6 +94,9 @@ public class MetadataService {
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
+	private static final String ALREADY_RUNNING = "A job is already running for namespace '%s' in municipality with id '%s'";
+	private static final String COULD_NOT_START = "Label move could not be started: %s";
+	private static final String UNKNOWN_CALLER = "unknown";
 
 	private static final String CONTACT_REASON = "ContactReason";
 	private static final String CATEGORY = "Category";
@@ -111,6 +120,8 @@ public class MetadataService {
 	private final ValidationRepository validationRepository;
 	private final ContactReasonRepository contactReasonRepository;
 	private final JobService jobService;
+	private final LabelMoveWorker labelMoveWorker;
+	private final AsyncTaskExecutor labelMoveTaskExecutor;
 	private final AntPathMatcher pathMatcher;
 
 	public MetadataService(
@@ -125,7 +136,12 @@ public class MetadataService {
 		final StatusRepository statusRepository,
 		final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository,
-		final JobService jobService) {
+		final JobService jobService,
+		// Lazy: LabelMoveWorker sits behind ErrandService -> RevisionService -> AccessControlService -> AccessMapperService
+		// -> MetadataService, a cycle back to this very bean. Never actually needed before the async dispatch fires, by
+		// which point every bean in the cycle is already constructed.
+		@Lazy final LabelMoveWorker labelMoveWorker,
+		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor) {
 		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -138,6 +154,8 @@ public class MetadataService {
 		this.validationRepository = validationRepository;
 		this.contactReasonRepository = contactReasonRepository;
 		this.jobService = jobService;
+		this.labelMoveWorker = labelMoveWorker;
+		this.labelMoveTaskExecutor = labelMoveTaskExecutor;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
 	}
@@ -385,16 +403,41 @@ public class MetadataService {
 	/**
 	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
 	 * <p>
-	 * The re-stuvning (re-parenting of affected errand labels) that carries the move out is not wired up yet — the job
-	 * is created here and stays PENDING until a worker that performs it is added.
+	 * Refused outright if another job is already under way for the namespace, since a move re-parents shared state
+	 * (the label tree and the errands under it) that a second run — of any kind — could just as easily be reading or
+	 * writing at the same time.
 	 */
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
+		if (jobService.hasActiveJob(namespace, municipalityId)) {
+			throw Problem.valueOf(CONFLICT, ALREADY_RUNNING.formatted(namespace, municipalityId));
+		}
+
 		validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
 
-		var affectedErrandCount = errandsRepository.countByLabelsMetadataLabelId(labelId);
-		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount);
+		final var affectedErrandCount = errandsRepository.countByLabelsMetadataLabelId(labelId);
+		final var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount);
+		final var startedBy = startedBy();
+
+		try {
+			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, labelId, request.getNewParentId(), startedBy)));
+		} catch (final Exception e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			jobService.fail(jobId, COULD_NOT_START.formatted(e.getMessage()));
+
+			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START.formatted(e.getMessage()));
+		}
 
 		return jobService.get(namespace, municipalityId, jobId);
+	}
+
+	/**
+	 * The caller a label move is recorded against. Read here, on the request thread, since the thread carrying out the
+	 * run has no identifier of its own to read.
+	 */
+	private static String startedBy() {
+		return ofNullable(Identifier.get())
+			.map(Identifier::getValue)
+			.orElse(UNKNOWN_CALLER);
 	}
 
 	private MetadataLabelEntity validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
