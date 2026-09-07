@@ -80,9 +80,11 @@ public class ErrandJsonParameterService {
 		existing.ifPresent(e -> validateIfMatch(ifMatch, e.getVersion()));
 
 		// The request carries what is already stored, since anything else was refused above. Writing it again would bump
-		// the version of a parameter the caller may not change, so the request is answered without touching it.
+		// the version of a parameter the caller may not change, so the request is answered without touching it. A key
+		// that is not there yet would be a creation, which is a change and was refused above, so it is answered as the
+		// absence it is rather than as a value that is not present.
 		if (!keyAccess.writableKey().test(key)) {
-			return new UpsertResult(toJsonParameter(existing.orElseThrow()), false);
+			return new UpsertResult(toJsonParameter(findJsonParameterEntityOrElseThrow(errandEntity, key)), false);
 		}
 
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
