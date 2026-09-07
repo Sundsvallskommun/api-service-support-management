@@ -13,5 +13,6 @@
 	"reworkGoal": "Rework goal",
 	"reworkDescription": "Rework description",
 	"created": "2024-01-10T12:00:00+01:00",
+	"modified": "${json-unit.any-string}",
 	"version": 1
 }

@@ -652,6 +652,9 @@ public class MetadataService {
 		if (measureType.getName() != null && !measureType.getName().equals(entity.getName())) {
 			throw Problem.valueOf(CONFLICT, "Measure type names are immutable; change displayName or create a new type instead");
 		}
+		if (measureType.getMeasureGroup() != null && measureType.getMeasureGroup().isBlank()) {
+			throw Problem.valueOf(BAD_REQUEST, "Measure group must not be blank");
+		}
 		return toMeasureType(measureTypeRepository.saveAndFlush(updateMeasureTypeEntity(entity, measureType)));
 	}
 

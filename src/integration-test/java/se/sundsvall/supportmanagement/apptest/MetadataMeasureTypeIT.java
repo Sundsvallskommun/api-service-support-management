@@ -7,6 +7,7 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -188,5 +189,40 @@ class MetadataMeasureTypeIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(measureTypeRepository.existsById(measureType.getId())).isFalse();
+	}
+
+	@Test
+	void test11_rejectBlankMeasureGroups() {
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+
+		for (final var request : List.of("request-empty.json", "request-whitespace.json", "request-unicode-whitespace.json")) {
+			setupCall()
+				.withServicePath(PATH + "/" + measureTypeId)
+				.withHttpMethod(PATCH)
+				.withRequest(request)
+				.withExpectedResponseStatus(BAD_REQUEST)
+				.withExpectedResponse(RESPONSE_FILE)
+				.sendRequestAndVerifyResponse();
+
+			assertThat(measureTypeRepository.findById(measureTypeId).orElseThrow().getMeasureGroup()).isEqualTo("GROUP-A");
+		}
+	}
+
+	@Test
+	void test12_optionalMeasureGroupKeepsCurrentValue() {
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+
+		for (final var request : List.of("request-omitted.json", "request-null.json")) {
+			setupCall()
+				.withServicePath(PATH + "/" + measureTypeId)
+				.withHttpMethod(PATCH)
+				.withRequest(request)
+				.withExpectedResponseStatus(OK)
+				.sendRequest();
+
+			final var measureType = measureTypeRepository.findById(measureTypeId).orElseThrow();
+			assertThat(measureType.getMeasureGroup()).isEqualTo("GROUP-A");
+			assertThat(measureType.getDisplayName()).isEqualTo("Updated label");
+		}
 	}
 }
