@@ -2,12 +2,14 @@ package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Null;
 import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
@@ -32,10 +34,16 @@ public class Measure {
 	@Schema(description = "Responsible user (ad-username)", examples = "jo12doe")
 	private String responsibleUser;
 
-	@Schema(description = "Type of measure", examples = "INTERVENTION")
+	@Schema(description = "Measure type ID (UUID reference to measure type metadata)", examples = "dd000000-0000-0000-0000-000000000100")
 	@NotBlank(groups = {
 		Default.class, OnCreate.class
 	})
+	@ValidUuid(nullable = true, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
+	private String measureTypeId;
+
+	@Schema(description = "Type name (from measure type metadata)", examples = "INTERVENTION", accessMode = READ_ONLY)
 	private String type;
 
 	@Schema(description = "Planned start date", examples = "2021-09-01T12:00:00Z")
@@ -85,6 +93,12 @@ public class Measure {
 	@Schema(description = "Rework description", examples = "Detailed description of the rework")
 	private String reworkDescription;
 
+	@Schema(description = "Optimistic locking version of the measure", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private Long version;
+
 	@Schema(description = "Timestamp when the measure was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime created;
@@ -120,6 +134,19 @@ public class Measure {
 
 	public Measure withResponsibleUser(final String responsibleUser) {
 		this.responsibleUser = responsibleUser;
+		return this;
+	}
+
+	public String getMeasureTypeId() {
+		return measureTypeId;
+	}
+
+	public void setMeasureTypeId(final String measureTypeId) {
+		this.measureTypeId = measureTypeId;
+	}
+
+	public Measure withMeasureTypeId(final String measureTypeId) {
+		this.measureTypeId = measureTypeId;
 		return this;
 	}
 
@@ -279,6 +306,19 @@ public class Measure {
 		return this;
 	}
 
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public Measure withVersion(final Long version) {
+		this.version = version;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -307,7 +347,7 @@ public class Measure {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, responsibleUser, type, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, description, accept, acceptMotivation, reworkGoal, reworkDescription, created, modified);
+		return Objects.hash(id, responsibleUser, measureTypeId, type, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, description, accept, acceptMotivation, reworkGoal, reworkDescription, version, created, modified);
 	}
 
 	@Override
@@ -321,6 +361,7 @@ public class Measure {
 		final Measure that = (Measure) o;
 		return Objects.equals(id, that.id)
 			&& Objects.equals(responsibleUser, that.responsibleUser)
+			&& Objects.equals(measureTypeId, that.measureTypeId)
 			&& Objects.equals(type, that.type)
 			&& Objects.equals(plannedStart, that.plannedStart)
 			&& Objects.equals(plannedComplete, that.plannedComplete)
@@ -333,6 +374,7 @@ public class Measure {
 			&& Objects.equals(acceptMotivation, that.acceptMotivation)
 			&& Objects.equals(reworkGoal, that.reworkGoal)
 			&& Objects.equals(reworkDescription, that.reworkDescription)
+			&& Objects.equals(version, that.version)
 			&& Objects.equals(created, that.created)
 			&& Objects.equals(modified, that.modified);
 	}
@@ -342,6 +384,7 @@ public class Measure {
 		return "Measure{" +
 			"id='" + id + '\'' +
 			", responsibleUser='" + responsibleUser + '\'' +
+			", measureTypeId='" + measureTypeId + '\'' +
 			", type='" + type + '\'' +
 			", plannedStart=" + plannedStart +
 			", plannedComplete=" + plannedComplete +
@@ -354,6 +397,7 @@ public class Measure {
 			", acceptMotivation='" + acceptMotivation + '\'' +
 			", reworkGoal='" + reworkGoal + '\'' +
 			", reworkDescription='" + reworkDescription + '\'' +
+			", version=" + version +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

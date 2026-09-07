@@ -39,6 +39,7 @@ class MeasureTest {
 		// Arrange
 		final var id = "id";
 		final var responsibleUser = "responsibleUser";
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
 		final var type = "type";
 		final var plannedStart = now();
 		final var plannedComplete = now().plusDays(30);
@@ -51,6 +52,7 @@ class MeasureTest {
 		final var acceptMotivation = "acceptMotivation";
 		final var reworkGoal = "reworkGoal";
 		final var reworkDescription = "reworkDescription";
+		final var version = 1L;
 		final var created = now();
 		final var modified = now();
 
@@ -58,6 +60,7 @@ class MeasureTest {
 		final var measure = Measure.create()
 			.withId(id)
 			.withResponsibleUser(responsibleUser)
+			.withMeasureTypeId(measureTypeId)
 			.withType(type)
 			.withPlannedStart(plannedStart)
 			.withPlannedComplete(plannedComplete)
@@ -70,6 +73,7 @@ class MeasureTest {
 			.withAcceptMotivation(acceptMotivation)
 			.withReworkGoal(reworkGoal)
 			.withReworkDescription(reworkDescription)
+			.withVersion(version)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -77,6 +81,7 @@ class MeasureTest {
 		assertThat(measure).hasNoNullFieldsOrProperties();
 		assertThat(measure.getId()).isEqualTo(id);
 		assertThat(measure.getResponsibleUser()).isEqualTo(responsibleUser);
+		assertThat(measure.getMeasureTypeId()).isEqualTo(measureTypeId);
 		assertThat(measure.getType()).isEqualTo(type);
 		assertThat(measure.getPlannedStart()).isEqualTo(plannedStart);
 		assertThat(measure.getPlannedComplete()).isEqualTo(plannedComplete);
@@ -89,6 +94,7 @@ class MeasureTest {
 		assertThat(measure.getAcceptMotivation()).isEqualTo(acceptMotivation);
 		assertThat(measure.getReworkGoal()).isEqualTo(reworkGoal);
 		assertThat(measure.getReworkDescription()).isEqualTo(reworkDescription);
+		assertThat(measure.getVersion()).isEqualTo(version);
 		assertThat(measure.getCreated()).isEqualTo(created);
 		assertThat(measure.getModified()).isEqualTo(modified);
 	}

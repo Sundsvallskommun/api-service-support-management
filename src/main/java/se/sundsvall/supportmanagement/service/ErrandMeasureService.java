@@ -4,6 +4,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
@@ -18,14 +20,17 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasure;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasureEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasures;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.updateMeasureEntity;
+import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 
 @Service
 public class ErrandMeasureService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandMeasureService.class);
 	private static final String MEASURE_NOT_FOUND = "A measure with id '%s' could not be found in errand with id '%s'";
 
 	private final ErrandsRepository errandsRepository;
@@ -71,13 +76,18 @@ public class ErrandMeasureService {
 	}
 
 	@Transactional
-	public Measure updateErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final Measure measure) {
+	public Measure updateErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final String ifMatch, final Measure measure) {
 		measureValidator.validate(measure, namespace, municipalityId);
 
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
+		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
+
+		if (ifMatch == null) {
+			LOG.debug("PATCH /errands/{}/measures/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(measureId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
+		}
+		validateIfMatch(ifMatch, measureEntity.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 		updateMeasureEntity(measureEntity, measure);
 
 		errandsRepository.save(errandEntity);
@@ -85,11 +95,16 @@ public class ErrandMeasureService {
 	}
 
 	@Transactional
-	public void deleteErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId) {
+	public void deleteErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final String ifMatch) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
+		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
+
+		if (ifMatch == null) {
+			LOG.debug("DELETE /errands/{}/measures/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(measureId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
+		}
+		validateIfMatch(ifMatch, measureEntity.getVersion());
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 		ofNullable(errandEntity.getMeasures()).ifPresent(measures -> measures.remove(measureEntity));
 
 		errandsRepository.save(errandEntity);

@@ -60,7 +60,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 		final var errand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_2281).orElseThrow();
 		assertThat(errand.getMeasures()).hasSize(3);
 		assertThat(errand.getMeasures())
-			.filteredOn(m -> "MEASURE-3".equals(m.getType()))
+			.filteredOn(m -> "dd000000-0000-0000-0000-000000000102".equals(m.getMeasureTypeId()))
 			.singleElement()
 			.satisfies(m -> {
 				assertThat(m.getResponsibleUser()).isEqualTo("new01user");

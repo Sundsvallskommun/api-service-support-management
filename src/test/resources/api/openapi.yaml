@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "15.5"
 servers:
-- url: http://localhost:65503
+- url: http://localhost:61884
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -3211,7 +3211,7 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "412":
-          description: "Precondition Failed — label version mismatch"
+          description: Precondition Failed — label version mismatch
           content:
             application/problem+json:
               schema:
@@ -7485,6 +7485,13 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: If-Match
+        in: header
+        description: Optional ETag of the measure for optimistic locking — omit to
+          skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -7499,6 +7506,18 @@ paths:
           description: Successful operation
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -7554,6 +7573,13 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: If-Match
+        in: header
+        description: Optional ETag of the measure for optimistic locking — omit to
+          skip version check
+        required: false
+        schema:
+          type: string
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -7578,6 +7604,18 @@ paths:
                 $ref: "#/components/schemas/Measure"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — resource modified concurrently
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
           content:
             application/problem+json:
               schema:
@@ -9738,9 +9776,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -9763,10 +9801,10 @@ components:
         instance:
           type: string
           format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
         detail:
           type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
     ThrowableProblem:
       type: object
       properties:
@@ -10282,9 +10320,28 @@ components:
           type: boolean
         float:
           type: boolean
-        integralNumber:
+        binary:
           type: boolean
-        missingNode:
+        textual:
+          type: boolean
+          deprecated: true
+        double:
+          type: boolean
+        long:
+          type: boolean
+        pojo:
+          type: boolean
+        boolean:
+          type: boolean
+        int:
+          type: boolean
+        short:
+          type: boolean
+        string:
+          type: boolean
+        container:
+          type: boolean
+        number:
           type: boolean
         valueNode:
           type: boolean
@@ -10300,34 +10357,15 @@ components:
           - OBJECT
           - POJO
           - STRING
-        floatingPointNumber:
-          type: boolean
         bigInteger:
           type: boolean
         bigDecimal:
           type: boolean
-        string:
+        floatingPointNumber:
           type: boolean
-        boolean:
+        integralNumber:
           type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        binary:
-          type: boolean
-        pojo:
-          type: boolean
-        double:
-          type: boolean
-        short:
-          type: boolean
-        long:
-          type: boolean
-        int:
-          type: boolean
-        number:
-          type: boolean
-        container:
+        missingNode:
           type: boolean
         embeddedValue:
           type: boolean
@@ -11565,11 +11603,17 @@ components:
           description: Responsible user (ad-username)
           examples:
           - jo12doe
+        measureTypeId:
+          type: string
+          description: Measure type ID (UUID reference to measure type metadata)
+          examples:
+          - dd000000-0000-0000-0000-000000000100
         type:
           type: string
-          description: Type of measure
+          description: Type name (from measure type metadata)
           examples:
           - INTERVENTION
+          readOnly: true
         plannedStart:
           type: string
           format: date-time
@@ -11630,6 +11674,11 @@ components:
           description: Rework description
           examples:
           - Detailed description of the rework
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version of the measure
+          readOnly: true
         created:
           type: string
           format: date-time
@@ -12957,10 +13006,6 @@ components:
         offset:
           type: integer
           format: int64
-        unpaged:
-          type: boolean
-        paged:
-          type: boolean
         sort:
           $ref: "#/components/schemas/SortObject"
         pageNumber:
@@ -12969,6 +13014,10 @@ components:
         pageSize:
           type: integer
           format: int32
+        unpaged:
+          type: boolean
+        paged:
+          type: boolean
     SortObject:
       type: object
       properties:

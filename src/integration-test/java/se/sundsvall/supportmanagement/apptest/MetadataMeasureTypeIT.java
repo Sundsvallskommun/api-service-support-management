@@ -108,7 +108,7 @@ class MetadataMeasureTypeIT extends AbstractAppTest {
 
 	@Test
 	void test06_deleteMeasureType() {
-		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000102";
 
 		assertThat(measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(measureTypeId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(measureTypeRepository.count()).isEqualTo(3);
