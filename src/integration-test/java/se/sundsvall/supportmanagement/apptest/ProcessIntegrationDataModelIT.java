@@ -12,6 +12,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
@@ -118,7 +119,14 @@ class ProcessIntegrationDataModelIT {
 	}
 
 	private String createErrand() {
-		return ProcessTestErrands.createErrand(errandsRepository, MUNICIPALITY_ID, NAMESPACE, "PDM");
+		return errandsRepository.saveAndFlush(ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandNumber("PDM-" + UUID.randomUUID())
+			.withTitle("TITLE")
+			.withStatus("STATUS")
+			.withPriority("MEDIUM")
+			.withReporterUserId("joe01doe")).getId();
 	}
 
 	private ErrandProcessEntity saveProcess(final String errandId, final ProcessStatus status) {
