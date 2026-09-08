@@ -46,7 +46,7 @@ class ErrandMeasuresResourceTest {
 
 		// Arrange
 		final var measure = new Measure()
-			.withType("INTERVENTION")
+			.withMeasureTypeId("dd000000-0000-0000-0000-000000000100")
 			.withResponsibleUser("jo12doe")
 			.withAddedByUser("jo12doe")
 			.withAddedByRole("MANAGER")
@@ -75,7 +75,7 @@ class ErrandMeasuresResourceTest {
 		// Arrange
 		final var measure = new Measure()
 			.withId(MEASURE_ID)
-			.withType("INTERVENTION")
+			.withMeasureTypeId("dd000000-0000-0000-0000-000000000100")
 			.withResponsibleUser("jo12doe")
 			.withCreated(OffsetDateTime.now())
 			.withModified(OffsetDateTime.now());
@@ -103,8 +103,8 @@ class ErrandMeasuresResourceTest {
 
 		// Arrange
 		final var measures = List.of(
-			new Measure().withId(MEASURE_ID).withType("INTERVENTION"),
-			new Measure().withId(randomUUID().toString()).withType("SUPPORT"));
+			new Measure().withId(MEASURE_ID).withMeasureTypeId("dd000000-0000-0000-0000-000000000100"),
+			new Measure().withId(randomUUID().toString()).withMeasureTypeId("dd000000-0000-0000-0000-000000000101"));
 
 		when(serviceMock.findErrandMeasures(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(measures);
 
@@ -128,15 +128,15 @@ class ErrandMeasuresResourceTest {
 
 		// Arrange
 		final var measure = new Measure()
-			.withType("UPDATED_TYPE")
+			.withMeasureTypeId("dd000000-0000-0000-0000-000000000102")
 			.withGoal("Updated goal");
 
 		final var updatedMeasure = new Measure()
 			.withId(MEASURE_ID)
-			.withType("UPDATED_TYPE")
+			.withMeasureTypeId("dd000000-0000-0000-0000-000000000102")
 			.withGoal("Updated goal");
 
-		when(serviceMock.updateErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any(Measure.class))).thenReturn(updatedMeasure);
+		when(serviceMock.updateErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any(), any(Measure.class))).thenReturn(updatedMeasure);
 
 		// Act
 		final var response = webTestClient.patch()
@@ -151,7 +151,7 @@ class ErrandMeasuresResourceTest {
 			.getResponseBody();
 
 		// Verify
-		verify(serviceMock).updateErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any(Measure.class));
+		verify(serviceMock).updateErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any(), any(Measure.class));
 		assertThat(response).isNotNull();
 		assertThat(response.getId()).isEqualTo(MEASURE_ID);
 	}
@@ -166,6 +166,6 @@ class ErrandMeasuresResourceTest {
 			.expectStatus().isNoContent();
 
 		// Verify
-		verify(serviceMock).deleteErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID);
+		verify(serviceMock).deleteErrandMeasure(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any());
 	}
 }

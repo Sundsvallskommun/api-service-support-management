@@ -11,7 +11,7 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSettersExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.registerValueGenerator;
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,10 +29,10 @@ class MeasureEntityTest {
 	void hasValidBean() {
 		MatcherAssert.assertThat(MeasureEntity.class, allOf(
 			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("errandEntity"),
-			hasValidBeanEqualsExcluding("errandEntity"),
-			hasValidBeanToStringExcluding("errandEntity")));
+			hasValidGettersAndSettersExcluding("measureType"),
+			hasValidBeanHashCodeExcluding("errandEntity", "measureType"),
+			hasValidBeanEqualsExcluding("errandEntity", "measureType"),
+			hasValidBeanToStringExcluding("errandEntity", "measureType")));
 	}
 
 	@Test
@@ -42,7 +42,7 @@ class MeasureEntityTest {
 		final var id = "id";
 		final var errandEntity = ErrandEntity.create().withId("errandId");
 		final var responsibleUser = "responsibleUser";
-		final var type = "type";
+		final var measureTypeId = "dd000000-0000-0000-0000-000000000100";
 		final var plannedStart = now();
 		final var plannedComplete = now().plusDays(30);
 		final var executed = now().plusDays(15);
@@ -54,6 +54,7 @@ class MeasureEntityTest {
 		final var acceptMotivation = "acceptMotivation";
 		final var reworkGoal = "reworkGoal";
 		final var reworkDescription = "reworkDescription";
+		final var version = 1L;
 		final var created = now();
 		final var modified = now();
 
@@ -62,7 +63,7 @@ class MeasureEntityTest {
 			.withId(id)
 			.withErrandEntity(errandEntity)
 			.withResponsibleUser(responsibleUser)
-			.withType(type)
+			.withMeasureTypeId(measureTypeId)
 			.withPlannedStart(plannedStart)
 			.withPlannedComplete(plannedComplete)
 			.withExecuted(executed)
@@ -74,15 +75,16 @@ class MeasureEntityTest {
 			.withAcceptMotivation(acceptMotivation)
 			.withReworkGoal(reworkGoal)
 			.withReworkDescription(reworkDescription)
+			.withVersion(version)
 			.withCreated(created)
 			.withModified(modified);
 
 		// Assert
-		assertThat(result).hasNoNullFieldsOrProperties();
+		assertThat(result).hasNoNullFieldsOrPropertiesExcept("measureType");
 		assertThat(result.getId()).isEqualTo(id);
 		assertThat(result.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(result.getResponsibleUser()).isEqualTo(responsibleUser);
-		assertThat(result.getType()).isEqualTo(type);
+		assertThat(result.getMeasureTypeId()).isEqualTo(measureTypeId);
 		assertThat(result.getPlannedStart()).isEqualTo(plannedStart);
 		assertThat(result.getPlannedComplete()).isEqualTo(plannedComplete);
 		assertThat(result.getExecuted()).isEqualTo(executed);
@@ -94,6 +96,7 @@ class MeasureEntityTest {
 		assertThat(result.getAcceptMotivation()).isEqualTo(acceptMotivation);
 		assertThat(result.getReworkGoal()).isEqualTo(reworkGoal);
 		assertThat(result.getReworkDescription()).isEqualTo(reworkDescription);
+		assertThat(result.getVersion()).isEqualTo(version);
 		assertThat(result.getCreated()).isEqualTo(created);
 		assertThat(result.getModified()).isEqualTo(modified);
 	}

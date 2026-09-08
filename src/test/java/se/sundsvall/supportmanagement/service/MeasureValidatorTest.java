@@ -35,8 +35,8 @@ class MeasureValidatorTest {
 	void acceptsKnownTypeAndRole() {
 
 		// Arrange
-		final var measure = Measure.create().withType("INTERVENTION").withAddedByRole("MANAGER");
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "INTERVENTION")).thenReturn(true);
+		final var measure = Measure.create().withMeasureTypeId("dd000000-0000-0000-0000-000000000100").withAddedByRole("MANAGER");
+		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId("dd000000-0000-0000-0000-000000000100", NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(roleRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "MANAGER")).thenReturn(true);
 
 		// Act & Assert
@@ -47,13 +47,13 @@ class MeasureValidatorTest {
 	void rejectsUnknownType() {
 
 		// Arrange
-		final var measure = Measure.create().withType("NOT_A_TYPE");
-		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "NOT_A_TYPE")).thenReturn(false);
+		final var measure = Measure.create().withMeasureTypeId("00000000-0000-0000-0000-000000000000");
+		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId("00000000-0000-0000-0000-000000000000", NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 
 		// Act & Assert
 		assertThatThrownBy(() -> validator.validate(measure, NAMESPACE, MUNICIPALITY_ID))
 			.isInstanceOf(Problem.class)
-			.hasMessage("Bad Request: 'NOT_A_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id '2281'");
+			.hasMessage("Bad Request: '00000000-0000-0000-0000-000000000000' is not a valid measure type id for namespace 'namespace' and municipality with id '2281'");
 	}
 
 	@Test

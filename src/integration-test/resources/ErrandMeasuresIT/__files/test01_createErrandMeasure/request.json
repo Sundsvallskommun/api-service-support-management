@@ -1,6 +1,6 @@
 {
 	"responsibleUser": "new01user",
-	"type": "MEASURE-3",
+	"measureTypeId": "dd000000-0000-0000-0000-000000000102",
 	"plannedStart": "2024-05-01T10:00:00Z",
 	"plannedComplete": "2024-06-01T10:00:00Z",
 	"addedByUser": "new01user",

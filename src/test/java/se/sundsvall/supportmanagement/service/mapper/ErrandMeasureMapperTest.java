@@ -24,7 +24,7 @@ class ErrandMeasureMapperTest {
 		final var errandEntity = ErrandEntity.create().withId("errand-id");
 		final var measure = new Measure()
 			.withResponsibleUser("jo12doe")
-			.withType("INTERVENTION")
+			.withMeasureTypeId("dd000000-0000-0000-0000-000000000100")
 			.withPlannedStart(OffsetDateTime.now())
 			.withPlannedComplete(OffsetDateTime.now().plusDays(30))
 			.withExecuted(OffsetDateTime.now().plusDays(15))
@@ -44,7 +44,7 @@ class ErrandMeasureMapperTest {
 		assertThat(result).isNotNull();
 		assertThat(result.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(result.getResponsibleUser()).isEqualTo("jo12doe");
-		assertThat(result.getType()).isEqualTo("INTERVENTION");
+		assertThat(result.getMeasureTypeId()).isEqualTo("dd000000-0000-0000-0000-000000000100");
 		assertThat(result.getPlannedStart()).isEqualTo(measure.getPlannedStart());
 		assertThat(result.getPlannedComplete()).isEqualTo(measure.getPlannedComplete());
 		assertThat(result.getExecuted()).isEqualTo(measure.getExecuted());
@@ -63,7 +63,7 @@ class ErrandMeasureMapperTest {
 
 		// Arrange
 		final var errandEntity = ErrandEntity.create().withId("errand-id");
-		final var measure = new Measure().withType("INTERVENTION");
+		final var measure = new Measure().withMeasureTypeId("dd000000-0000-0000-0000-000000000100");
 
 		// Act
 		final var result = toMeasureEntity(measure, errandEntity);
@@ -78,7 +78,7 @@ class ErrandMeasureMapperTest {
 		// Arrange
 		final var entity = MeasureEntity.create()
 			.withId("id")
-			.withType("OLD_TYPE")
+			.withMeasureTypeId("dd000000-0000-0000-0000-000000000100")
 			.withGoal("old goal")
 			.withDescription("old description");
 
@@ -91,7 +91,7 @@ class ErrandMeasureMapperTest {
 
 		// Assert
 		assertThat(result).isSameAs(entity);
-		assertThat(result.getType()).isEqualTo("OLD_TYPE");
+		assertThat(result.getMeasureTypeId()).isEqualTo("dd000000-0000-0000-0000-000000000100");
 		assertThat(result.getGoal()).isEqualTo("new goal");
 		assertThat(result.getDescription()).isEqualTo("old description");
 		assertThat(result.getAccept()).isEqualTo(Accept.REWORK);
@@ -103,7 +103,7 @@ class ErrandMeasureMapperTest {
 		// Arrange
 		final var entity = MeasureEntity.create()
 			.withId("id")
-			.withType("TYPE")
+			.withMeasureTypeId("dd000000-0000-0000-0000-000000000101")
 			.withGoal("goal");
 
 		final var measure = new Measure();
@@ -112,7 +112,7 @@ class ErrandMeasureMapperTest {
 		final var result = updateMeasureEntity(entity, measure);
 
 		// Assert
-		assertThat(result.getType()).isEqualTo("TYPE");
+		assertThat(result.getMeasureTypeId()).isEqualTo("dd000000-0000-0000-0000-000000000101");
 		assertThat(result.getGoal()).isEqualTo("goal");
 	}
 
@@ -124,7 +124,7 @@ class ErrandMeasureMapperTest {
 		final var entity = MeasureEntity.create()
 			.withId("measure-id")
 			.withResponsibleUser("jo12doe")
-			.withType("INTERVENTION")
+			.withMeasureTypeId("dd000000-0000-0000-0000-000000000100")
 			.withPlannedStart(now)
 			.withPlannedComplete(now.plusDays(30))
 			.withExecuted(now.plusDays(15))
@@ -136,6 +136,7 @@ class ErrandMeasureMapperTest {
 			.withAcceptMotivation("motivation")
 			.withReworkGoal("rework goal")
 			.withReworkDescription("rework description")
+			.withVersion(3L)
 			.withCreated(now)
 			.withModified(now.plusHours(1));
 
@@ -146,7 +147,8 @@ class ErrandMeasureMapperTest {
 		assertThat(result).isNotNull();
 		assertThat(result.getId()).isEqualTo("measure-id");
 		assertThat(result.getResponsibleUser()).isEqualTo("jo12doe");
-		assertThat(result.getType()).isEqualTo("INTERVENTION");
+		assertThat(result.getMeasureTypeId()).isEqualTo("dd000000-0000-0000-0000-000000000100");
+		assertThat(result.getType()).isNull();
 		assertThat(result.getPlannedStart()).isEqualTo(now);
 		assertThat(result.getPlannedComplete()).isEqualTo(now.plusDays(30));
 		assertThat(result.getExecuted()).isEqualTo(now.plusDays(15));
@@ -158,6 +160,7 @@ class ErrandMeasureMapperTest {
 		assertThat(result.getAcceptMotivation()).isEqualTo("motivation");
 		assertThat(result.getReworkGoal()).isEqualTo("rework goal");
 		assertThat(result.getReworkDescription()).isEqualTo("rework description");
+		assertThat(result.getVersion()).isEqualTo(3L);
 		assertThat(result.getCreated()).isEqualTo(now);
 		assertThat(result.getModified()).isEqualTo(now.plusHours(1));
 	}
@@ -166,7 +169,7 @@ class ErrandMeasureMapperTest {
 	void testToMeasureWithNullAccept() {
 
 		// Arrange
-		final var entity = MeasureEntity.create().withId("id").withType("TYPE");
+		final var entity = MeasureEntity.create().withId("id").withMeasureTypeId("dd000000-0000-0000-0000-000000000100");
 
 		// Act
 		final var result = toMeasure(entity);
@@ -180,8 +183,8 @@ class ErrandMeasureMapperTest {
 
 		// Arrange
 		final var entities = List.of(
-			MeasureEntity.create().withId("id-1").withType("TYPE_1"),
-			MeasureEntity.create().withId("id-2").withType("TYPE_2"));
+			MeasureEntity.create().withId("id-1").withMeasureTypeId("dd000000-0000-0000-0000-000000000100"),
+			MeasureEntity.create().withId("id-2").withMeasureTypeId("dd000000-0000-0000-0000-000000000101"));
 
 		// Act
 		final var result = toMeasures(entities);

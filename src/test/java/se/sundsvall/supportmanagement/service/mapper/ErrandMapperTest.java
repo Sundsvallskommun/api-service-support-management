@@ -120,7 +120,7 @@ class ErrandMapperTest {
 	private static final OffsetDateTime PHASE_STARTED = now().minusDays(3);
 	private static final String MEASURE_ID = "measure-id";
 	private static final String MEASURE_RESPONSIBLE_USER = "measureResponsibleUser";
-	private static final String MEASURE_TYPE = "INTERVENTION";
+	private static final String MEASURE_TYPE_ID = "dd000000-0000-0000-0000-000000000100";
 	private static final OffsetDateTime MEASURE_PLANNED_START = now().plusDays(10);
 	private static final OffsetDateTime MEASURE_PLANNED_COMPLETE = now().plusDays(40);
 	private static final OffsetDateTime MEASURE_EXECUTED = now().plusDays(20);
@@ -175,7 +175,7 @@ class ErrandMapperTest {
 			.withLabels(List.of(LABEL_1, LABEL_2))
 			.withMeasures(List.of(Measure.create()
 				.withResponsibleUser(MEASURE_RESPONSIBLE_USER)
-				.withType(MEASURE_TYPE)
+				.withMeasureTypeId(MEASURE_TYPE_ID)
 				.withPlannedStart(MEASURE_PLANNED_START)
 				.withPlannedComplete(MEASURE_PLANNED_COMPLETE)
 				.withExecuted(MEASURE_EXECUTED)
@@ -252,7 +252,7 @@ class ErrandMapperTest {
 			.withMeasures(List.of(MeasureEntity.create()
 				.withId(MEASURE_ID)
 				.withResponsibleUser(MEASURE_RESPONSIBLE_USER)
-				.withType(MEASURE_TYPE)
+				.withMeasureTypeId(MEASURE_TYPE_ID)
 				.withPlannedStart(MEASURE_PLANNED_START)
 				.withPlannedComplete(MEASURE_PLANNED_COMPLETE)
 				.withExecuted(MEASURE_EXECUTED)
@@ -345,9 +345,9 @@ class ErrandMapperTest {
 			.extracting(ErrandPhase::getPhaseId, ErrandPhase::getName, ErrandPhase::getDisplayName, ErrandPhase::getStarted, ErrandPhase::getEnded)
 			.containsExactly(tuple(PHASE_ID, PHASE_NAME, PHASE_DISPLAY_NAME, PHASE_STARTED, null));
 		assertThat(errand.getMeasures()).hasSize(1)
-			.extracting(Measure::getId, Measure::getResponsibleUser, Measure::getType, Measure::getPlannedStart, Measure::getPlannedComplete, Measure::getExecuted, Measure::getAddedByUser, Measure::getAddedByRole, Measure::getGoal,
+			.extracting(Measure::getId, Measure::getResponsibleUser, Measure::getMeasureTypeId, Measure::getPlannedStart, Measure::getPlannedComplete, Measure::getExecuted, Measure::getAddedByUser, Measure::getAddedByRole, Measure::getGoal,
 				Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation, Measure::getReworkGoal, Measure::getReworkDescription, Measure::getCreated, Measure::getModified)
-			.containsExactly(tuple(MEASURE_ID, MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION,
+			.containsExactly(tuple(MEASURE_ID, MEASURE_RESPONSIBLE_USER, MEASURE_TYPE_ID, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION,
 				MEASURE_ACCEPT.name(), MEASURE_ACCEPT_MOTIVATION, MEASURE_REWORK_GOAL, MEASURE_REWORK_DESCRIPTION, MEASURE_CREATED, MEASURE_MODIFIED));
 		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 	}
@@ -612,9 +612,9 @@ class ErrandMapperTest {
 				JSON_PARAMETER_VALUE_STRING));
 
 		assertThat(entity.getMeasures()).hasSize(1)
-			.extracting(MeasureEntity::getResponsibleUser, MeasureEntity::getType, MeasureEntity::getPlannedStart, MeasureEntity::getPlannedComplete, MeasureEntity::getExecuted, MeasureEntity::getAddedByUser, MeasureEntity::getAddedByRole,
+			.extracting(MeasureEntity::getResponsibleUser, MeasureEntity::getMeasureTypeId, MeasureEntity::getPlannedStart, MeasureEntity::getPlannedComplete, MeasureEntity::getExecuted, MeasureEntity::getAddedByUser, MeasureEntity::getAddedByRole,
 				MeasureEntity::getGoal, MeasureEntity::getDescription, MeasureEntity::getAccept, MeasureEntity::getAcceptMotivation, MeasureEntity::getReworkGoal, MeasureEntity::getReworkDescription)
-			.containsExactly(tuple(MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION, MEASURE_ACCEPT,
+			.containsExactly(tuple(MEASURE_RESPONSIBLE_USER, MEASURE_TYPE_ID, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION, MEASURE_ACCEPT,
 				MEASURE_ACCEPT_MOTIVATION, MEASURE_REWORK_GOAL, MEASURE_REWORK_DESCRIPTION));
 		assertThat(entity.getMeasures().getFirst().getErrandEntity()).isSameAs(entity);
 

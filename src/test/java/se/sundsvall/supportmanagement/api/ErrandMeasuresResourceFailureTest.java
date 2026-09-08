@@ -46,7 +46,7 @@ class ErrandMeasuresResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(new Measure().withType(" ").withAddedByUser(" ").withAddedByRole(" "))
+			.bodyValue(new Measure().withMeasureTypeId(" ").withAddedByUser(" ").withAddedByRole(" "))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -59,7 +59,8 @@ class ErrandMeasuresResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
-				tuple("type", "must not be blank"),
+				tuple("measureTypeId", "must not be blank"),
+				tuple("measureTypeId", "not a valid UUID"),
 				tuple("addedByUser", "must not be blank"),
 				tuple("addedByRole", "must not be blank"));
 
@@ -85,7 +86,7 @@ class ErrandMeasuresResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
-				tuple("type", "must not be blank"),
+				tuple("measureTypeId", "must not be blank"),
 				tuple("addedByUser", "must not be blank"),
 				tuple("addedByRole", "must not be blank"));
 
@@ -98,7 +99,7 @@ class ErrandMeasuresResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", "invalid!", "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(new Measure().withType("INTERVENTION").withAddedByUser("jo12doe").withAddedByRole("MANAGER"))
+			.bodyValue(new Measure().withMeasureTypeId("dd000000-0000-0000-0000-000000000100").withAddedByUser("jo12doe").withAddedByRole("MANAGER"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -121,7 +122,7 @@ class ErrandMeasuresResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID, "errandId", ERRAND_ID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(new Measure().withType("INTERVENTION").withAddedByUser("jo12doe").withAddedByRole("MANAGER"))
+			.bodyValue(new Measure().withMeasureTypeId("dd000000-0000-0000-0000-000000000100").withAddedByUser("jo12doe").withAddedByRole("MANAGER"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -144,7 +145,7 @@ class ErrandMeasuresResourceFailureTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", INVALID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(new Measure().withType("INTERVENTION").withAddedByUser("jo12doe").withAddedByRole("MANAGER"))
+			.bodyValue(new Measure().withMeasureTypeId("dd000000-0000-0000-0000-000000000100").withAddedByUser("jo12doe").withAddedByRole("MANAGER"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -188,7 +189,7 @@ class ErrandMeasuresResourceFailureTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH_WITH_ID).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "measureId", INVALID)))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(new Measure().withType("INTERVENTION").withAddedByUser("jo12doe").withAddedByRole("MANAGER"))
+			.bodyValue(new Measure().withMeasureTypeId("dd000000-0000-0000-0000-000000000100").withAddedByUser("jo12doe").withAddedByRole("MANAGER"))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

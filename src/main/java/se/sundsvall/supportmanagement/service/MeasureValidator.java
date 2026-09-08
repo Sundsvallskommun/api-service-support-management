@@ -25,7 +25,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 @Component
 public class MeasureValidator {
 
-	private static final String BAD_MEASURE_TYPE = "'%s' is not a valid measure type for namespace '%s' and municipality with id '%s'";
+	private static final String BAD_MEASURE_TYPE = "'%s' is not a valid measure type id for namespace '%s' and municipality with id '%s'";
 	private static final String BAD_ROLE = "'%s' is not a valid role for namespace '%s' and municipality with id '%s'";
 
 	private final MeasureTypeRepository measureTypeRepository;
@@ -43,14 +43,14 @@ public class MeasureValidator {
 
 	public void validate(final Measure measure, final String namespace, final String municipalityId) {
 		ofNullable(measure).ifPresent(value -> {
-			validateMeasureType(value.getType(), namespace, municipalityId);
+			validateMeasureType(value.getMeasureTypeId(), namespace, municipalityId);
 			validateRole(value.getAddedByRole(), namespace, municipalityId);
 		});
 	}
 
-	private void validateMeasureType(final String type, final String namespace, final String municipalityId) {
-		ofNullable(type).ifPresent(value -> {
-			if (!measureTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, value)) {
+	private void validateMeasureType(final String measureTypeId, final String namespace, final String municipalityId) {
+		ofNullable(measureTypeId).ifPresent(value -> {
+			if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(value, namespace, municipalityId)) {
 				throw Problem.valueOf(BAD_REQUEST, BAD_MEASURE_TYPE.formatted(value, namespace, municipalityId));
 			}
 		});

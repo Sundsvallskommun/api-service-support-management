@@ -23,7 +23,7 @@ public final class ErrandMeasureMapper {
 		return MeasureEntity.create()
 			.withErrandEntity(errandEntity)
 			.withResponsibleUser(measure.getResponsibleUser())
-			.withType(measure.getType())
+			.withMeasureTypeId(measure.getMeasureTypeId())
 			.withPlannedStart(measure.getPlannedStart())
 			.withPlannedComplete(measure.getPlannedComplete())
 			.withExecuted(measure.getExecuted())
@@ -39,7 +39,7 @@ public final class ErrandMeasureMapper {
 
 	public static MeasureEntity updateMeasureEntity(final MeasureEntity entity, final Measure measure) {
 		ofNullable(measure.getResponsibleUser()).ifPresent(entity::setResponsibleUser);
-		ofNullable(measure.getType()).ifPresent(entity::setType);
+		ofNullable(measure.getMeasureTypeId()).ifPresent(entity::setMeasureTypeId);
 		ofNullable(measure.getPlannedStart()).ifPresent(entity::setPlannedStart);
 		ofNullable(measure.getPlannedComplete()).ifPresent(entity::setPlannedComplete);
 		ofNullable(measure.getExecuted()).ifPresent(entity::setExecuted);
@@ -95,7 +95,8 @@ public final class ErrandMeasureMapper {
 		return Measure.create()
 			.withId(entity.getId())
 			.withResponsibleUser(entity.getResponsibleUser())
-			.withType(entity.getType())
+			.withMeasureTypeId(entity.getMeasureTypeId())
+			.withType(nonNull(entity.getMeasureType()) ? entity.getMeasureType().getName() : null)
 			.withPlannedStart(entity.getPlannedStart())
 			.withPlannedComplete(entity.getPlannedComplete())
 			.withExecuted(entity.getExecuted())
@@ -107,6 +108,7 @@ public final class ErrandMeasureMapper {
 			.withAcceptMotivation(entity.getAcceptMotivation())
 			.withReworkGoal(entity.getReworkGoal())
 			.withReworkDescription(entity.getReworkDescription())
+			.withVersion(entity.getVersion())
 			.withCreated(entity.getCreated())
 			.withModified(entity.getModified());
 	}

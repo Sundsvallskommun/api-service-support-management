@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
@@ -43,8 +44,15 @@ public class MeasureEntity {
 	@Column(name = "responsible_user")
 	private String responsibleUser;
 
-	@Column(name = "type")
-	private String type;
+	@Column(name = "measure_type_id")
+	private String measureTypeId;
+
+	@ManyToOne
+	@JoinColumn(name = "measure_type_id",
+		insertable = false,
+		updatable = false,
+		foreignKey = @ForeignKey(name = "fk_measure_measure_type_id"))
+	private MeasureTypeEntity measureType;
 
 	@Column(name = "planned_start")
 	@TimeZoneStorage(NORMALIZE)
@@ -82,6 +90,10 @@ public class MeasureEntity {
 
 	@Column(name = "rework_description", length = 1000)
 	private String reworkDescription;
+
+	@Version
+	@Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+	private Long version;
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
@@ -144,17 +156,21 @@ public class MeasureEntity {
 		return this;
 	}
 
-	public String getType() {
-		return type;
+	public String getMeasureTypeId() {
+		return measureTypeId;
 	}
 
-	public void setType(final String type) {
-		this.type = type;
+	public void setMeasureTypeId(final String measureTypeId) {
+		this.measureTypeId = measureTypeId;
 	}
 
-	public MeasureEntity withType(final String type) {
-		this.type = type;
+	public MeasureEntity withMeasureTypeId(final String measureTypeId) {
+		this.measureTypeId = measureTypeId;
 		return this;
+	}
+
+	public MeasureTypeEntity getMeasureType() {
+		return measureType;
 	}
 
 	public OffsetDateTime getPlannedStart() {
@@ -300,6 +316,19 @@ public class MeasureEntity {
 		return this;
 	}
 
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(final Long version) {
+		this.version = version;
+	}
+
+	public MeasureEntity withVersion(final Long version) {
+		this.version = version;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -337,7 +366,7 @@ public class MeasureEntity {
 		final MeasureEntity that = (MeasureEntity) o;
 		return Objects.equals(id, that.id)
 			&& Objects.equals(responsibleUser, that.responsibleUser)
-			&& Objects.equals(type, that.type)
+			&& Objects.equals(measureTypeId, that.measureTypeId)
 			&& Objects.equals(plannedStart, that.plannedStart)
 			&& Objects.equals(plannedComplete, that.plannedComplete)
 			&& Objects.equals(executed, that.executed)
@@ -349,13 +378,14 @@ public class MeasureEntity {
 			&& Objects.equals(acceptMotivation, that.acceptMotivation)
 			&& Objects.equals(reworkGoal, that.reworkGoal)
 			&& Objects.equals(reworkDescription, that.reworkDescription)
+			&& Objects.equals(version, that.version)
 			&& Objects.equals(created, that.created)
 			&& Objects.equals(modified, that.modified);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, responsibleUser, type, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, description, accept, acceptMotivation, reworkGoal, reworkDescription, created, modified);
+		return Objects.hash(id, responsibleUser, measureTypeId, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, description, accept, acceptMotivation, reworkGoal, reworkDescription, version, created, modified);
 	}
 
 	@Override
@@ -364,7 +394,7 @@ public class MeasureEntity {
 			"id='" + id + '\'' +
 			", errandEntity=" + (errandEntity != null ? errandEntity.getId() : "null") +
 			", responsibleUser='" + responsibleUser + '\'' +
-			", type='" + type + '\'' +
+			", measureTypeId='" + measureTypeId + '\'' +
 			", plannedStart=" + plannedStart +
 			", plannedComplete=" + plannedComplete +
 			", executed=" + executed +
@@ -376,6 +406,7 @@ public class MeasureEntity {
 			", acceptMotivation='" + acceptMotivation + '\'' +
 			", reworkGoal='" + reworkGoal + '\'' +
 			", reworkDescription='" + reworkDescription + '\'' +
+			", version=" + version +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

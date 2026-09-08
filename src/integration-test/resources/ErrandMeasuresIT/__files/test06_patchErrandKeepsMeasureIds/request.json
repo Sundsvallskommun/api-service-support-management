@@ -4,7 +4,7 @@
 		{
 			"id": "ee000000-0000-0000-0000-000000000100",
 			"responsibleUser": "joe01doe",
-			"type": "MEASURE-1",
+			"measureTypeId": "dd000000-0000-0000-0000-000000000100",
 			"plannedStart": "2024-01-15T10:00:00.000+01:00",
 			"plannedComplete": "2024-02-15T10:00:00.000+01:00",
 			"addedByUser": "joe01doe",
@@ -16,7 +16,7 @@
 		{
 			"id": "ee000000-0000-0000-0000-000000000101",
 			"responsibleUser": "jane11dane",
-			"type": "MEASURE-2",
+			"measureTypeId": "dd000000-0000-0000-0000-000000000101",
 			"plannedStart": "2024-03-01T08:00:00.000+01:00",
 			"plannedComplete": "2024-04-01T08:00:00.000+01:00",
 			"executed": "2024-03-15T14:00:00.000+01:00",
