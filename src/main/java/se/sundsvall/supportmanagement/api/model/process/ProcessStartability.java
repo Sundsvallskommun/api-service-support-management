@@ -5,6 +5,10 @@ package se.sundsvall.supportmanagement.api.model.process;
  * <p>
  * One field rather than a flag beside a reason: with a flag the two can contradict each other, and a client is left
  * weighing them against one another instead of asking whether the value is AVAILABLE.
+ * <p>
+ * Deliberately not the type of the field it fills. {@link ProcessStartable#getStatus()} is a string, and this enum is
+ * what may be written into it - the closed set is kept on the side that produces the value, so that adding a case here
+ * is a release of this service rather than a new version of its API.
  */
 public enum ProcessStartability {
 

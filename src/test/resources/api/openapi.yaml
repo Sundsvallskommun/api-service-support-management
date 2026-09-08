@@ -13950,12 +13950,6 @@ components:
             \ so there is nothing to start. Setting the right label is the fix. NO_PROCESS_ENGINE\
             \ - this namespace does not run processes at all. Treat any value you\
             \ do not recognise as not startable - values may be added over time."
-          enum:
-          - AVAILABLE
-          - LIVE_INSTANCE
-          - PROCESS_COMPLETED
-          - NO_PROCESS_KEY
-          - NO_PROCESS_ENGINE
           examples:
           - AVAILABLE
           readOnly: true

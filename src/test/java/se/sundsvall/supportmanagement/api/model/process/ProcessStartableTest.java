@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.process;
 
 import java.util.List;
+import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
@@ -31,8 +32,21 @@ class ProcessStartableTest {
 			.withStatus(AVAILABLE)
 			.withProcessKeys(List.of("alkt-tillsyn"));
 
-		assertThat(startable.getStatus()).isEqualTo(AVAILABLE);
+		assertThat(startable.getStatus()).isEqualTo("AVAILABLE");
 		assertThat(startable.getProcessKeys()).containsExactly("alkt-tillsyn");
+	}
+
+	/**
+	 * The status leaves this service as a string so that a value added later does not break a client that generated an
+	 * enum from the schema, while the builder still takes the enum so nothing outside the set can be published.
+	 */
+	@Test
+	void theStatusIsCarriedAsAStringOfTheEnumName() {
+		assertThat(ProcessStartable.create().withStatus(null).getStatus()).isNull();
+
+		assertThat(Stream.of(ProcessStartability.values())
+			.map(value -> ProcessStartable.create().withStatus(value).getStatus()))
+			.containsExactly(Stream.of(ProcessStartability.values()).map(Enum::name).toArray(String[]::new));
 	}
 
 	@Test

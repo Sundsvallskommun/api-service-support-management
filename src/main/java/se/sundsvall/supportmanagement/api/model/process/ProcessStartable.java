@@ -5,9 +5,16 @@ import java.util.List;
 import java.util.Objects;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static java.util.Optional.ofNullable;
 
 /**
  * Whether a process may be started for an errand, and which one.
+ * <p>
+ * The status is carried as a string rather than as an enum, because its own contract is that values are added over
+ * time: a client is told to treat what it does not recognise as not startable, and a generated enum would throw on the
+ * value instead of letting it. {@link ProcessStartability} remains the set this service may answer with - it is what
+ * {@link #withStatus(ProcessStartability)} takes, so a value outside it cannot be published by mistake - but it is kept
+ * off the wire so that adding one is not a new version of this API.
  */
 @Schema(description = "Whether a process may be started for an errand, and which one")
 public class ProcessStartable {
@@ -21,7 +28,7 @@ public class ProcessStartable {
 		label is the fix. \
 		NO_PROCESS_ENGINE - this namespace does not run processes at all. \
 		Treat any value you do not recognise as not startable - values may be added over time.""", examples = "AVAILABLE", accessMode = READ_ONLY)
-	private ProcessStartability status;
+	private String status;
 
 	@Schema(description = """
 		The process keys that are eligible to start, taken from the process key attribute on the labels of the errand. \
@@ -33,16 +40,20 @@ public class ProcessStartable {
 		return new ProcessStartable();
 	}
 
-	public ProcessStartability getStatus() {
+	public String getStatus() {
 		return status;
 	}
 
-	public void setStatus(final ProcessStartability status) {
+	public void setStatus(final String status) {
 		this.status = status;
 	}
 
+	/**
+	 * Takes the enum rather than a string, which is what keeps the published values a closed set on this side of the wire
+	 * while leaving them open on the other.
+	 */
 	public ProcessStartable withStatus(final ProcessStartability status) {
-		this.status = status;
+		this.status = ofNullable(status).map(Enum::name).orElse(null);
 		return this;
 	}
 
@@ -73,7 +84,7 @@ public class ProcessStartable {
 			return false;
 		}
 		final ProcessStartable other = (ProcessStartable) obj;
-		return status == other.status && Objects.equals(processKeys, other.processKeys);
+		return Objects.equals(status, other.status) && Objects.equals(processKeys, other.processKeys);
 	}
 
 	@Override
