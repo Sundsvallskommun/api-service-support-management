@@ -1,0 +1,12 @@
+{
+	"id": "${json-unit.any-string}",
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "FAILED",
+	"ended": "${json-unit.any-string}",
+	"error": {
+		"code": "START_FAILED",
+		"message": "Timeout against the process engine"
+	},
+	"created": "${json-unit.any-string}"
+}

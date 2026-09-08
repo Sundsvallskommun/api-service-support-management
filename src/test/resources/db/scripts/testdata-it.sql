@@ -645,3 +645,52 @@ VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 'GROUP-A', 1,
 INSERT INTO measure(id, errand_id, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, rework_goal, rework_description, created, modified)
 VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, null, null, '2024-01-10 12:00:00.000', null),
        ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', null, null, '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');
+
+-- Process integration
+-- -----------------------------------
+-- A namespace of its own rather than a process consumer bolted onto NAMESPACE-1: the consumer is what decides whether
+-- a process report is accepted at all, and switching it on for the namespace every other test uses would change the
+-- shape of a config five NamespaceConfigIT fixtures assert on.
+INSERT INTO namespace_config(id, municipality_id, namespace, created, modified)
+VALUES (6, '2281', 'PROCESS-NAMESPACE', '2026-01-01 10:00:00.000', null);
+
+INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
+VALUES (6, 'DISPLAY_NAME', 'Process namespace', 'STRING'),
+       (6, 'SHORT_CODE', 'PN', 'STRING'),
+       (6, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
+       (6, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (6, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (6, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (6, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (6, 'PROCESS_CONSUMER', 'pw-alkt', 'STRING');
+
+-- Two errands: one already running a process, one with none at all, so that creating and updating can each be asked
+-- of an errand in the state the question needs without one test depending on another having run.
+INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace,
+                   priority, reporter_user_id, status, title, type, created, modified, resolution,
+                   description, escalation_email, errand_number, business_related, previous_status, channel, touched)
+VALUES ('2281', 'aa000000-0000-0000-0000-0000000000a1', null, null, 'CATEGORY-1', 'PROCESS-NAMESPACE',
+        'MEDIUM', 'joe01doe', 'STATUS-1', 'Errand running a process', 'TYPE-1',
+        '2026-01-01 10:00:00.000', null, null, null, null, 'PN-26010001', false, null, null,
+        '2026-01-01 10:00:00.000'),
+       ('2281', 'aa000000-0000-0000-0000-0000000000a2', null, null, 'CATEGORY-1', 'PROCESS-NAMESPACE',
+        'MEDIUM', 'joe01doe', 'STATUS-1', 'Errand without a process', 'TYPE-1',
+        '2026-01-01 10:00:00.000', null, null, null, null, 'PN-26010002', false, null, null,
+        '2026-01-01 10:00:00.000');
+
+INSERT INTO errand_process(id, errand_id, municipality_id, namespace, process_service, process_key,
+                           process_instance_id, process_status, current_activity_id, current_activity_name,
+                           started, ended, active_marker, created, modified)
+VALUES ('ep-it-live', 'aa000000-0000-0000-0000-0000000000a1', '2281', 'PROCESS-NAMESPACE', 'pw-alkt', 'alkt-ansokan',
+        'pi-it-live', 'RUNNING', 'granska-ansokan', 'Granska ansokan',
+        '2026-01-01 10:00:00.000', null, 1, '2026-01-01 10:00:00.000', null);
+
+-- The second entry belongs to no instance, which is what makes narrowing the log to one instance a question worth
+-- asking over the wire: it is present unfiltered and absent filtered.
+INSERT INTO errand_process_activity(id, errand_process_id, errand_id, external_task_id, activity_type, activity_id,
+                                    activity_name, severity, message, error_code, occurred_at, created)
+VALUES ('epa-it-task', 'ep-it-live', 'aa000000-0000-0000-0000-0000000000a1', 'task-it-1', 'TASK', 'granska-ansokan',
+        'Granska ansokan', 'INFO', null, null, '2026-01-01 11:00:00.000', '2026-01-01 11:00:00.000'),
+       ('epa-it-config', null, 'aa000000-0000-0000-0000-0000000000a1', null, 'CONFIG', null,
+        null, 'ERROR', 'Two labels resolve to different process keys', 'AMBIGUOUS_PROCESS_KEY',
+        '2026-01-01 10:30:00.000', '2026-01-01 10:30:00.000');

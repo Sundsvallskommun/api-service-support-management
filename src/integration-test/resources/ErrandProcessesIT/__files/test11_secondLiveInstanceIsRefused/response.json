@@ -1,0 +1,5 @@
+{
+	"detail": "The errand 'aa000000-0000-0000-0000-0000000000a1' already has a live process instance 'pi-it-live' and cannot be given another one",
+	"title": "Conflict",
+	"status": 409
+}

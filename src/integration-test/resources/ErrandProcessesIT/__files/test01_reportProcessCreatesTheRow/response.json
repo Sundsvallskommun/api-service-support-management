@@ -1,0 +1,10 @@
+{
+	"id": "${json-unit.any-string}",
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processInstanceId": "pi-it-new",
+	"processStatus": "RUNNING",
+	"currentActivityId": "granska-ansokan",
+	"currentActivityName": "Granska ansokan",
+	"created": "${json-unit.any-string}"
+}

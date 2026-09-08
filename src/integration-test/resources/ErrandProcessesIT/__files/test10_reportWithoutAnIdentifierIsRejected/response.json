@@ -1,0 +1,5 @@
+{
+	"detail": "A report must carry the identifier of its sender in the 'X-Sent-By' header, since it is what the activity log and the notification of the errand name as the author",
+	"title": "Bad Request",
+	"status": 400
+}
