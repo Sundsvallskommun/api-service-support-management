@@ -22,10 +22,15 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Activity
 
 class ErrandProcessActivityEntityTest {
 
+	/**
+	 * No generator is registered for {@link ActivitySeverity}: BeanMatchers generates enum values by itself, and its
+	 * registry is static for the whole JVM while surefire reuses the fork. A generator handing out one constant would
+	 * therefore leave every later test in the run unable to find two distinct severities - which is what
+	 * {@code hasValidBeanEquals} needs, and what {@code ProcessActivityTest} asks for.
+	 */
 	@BeforeAll
 	static void setup() {
 		registerValueGenerator(() -> now().plusDays(new Random().nextInt()), OffsetDateTime.class);
-		registerValueGenerator(() -> ActivitySeverity.WARN, ActivitySeverity.class);
 	}
 
 	@Test
