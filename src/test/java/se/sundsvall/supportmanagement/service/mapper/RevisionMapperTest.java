@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -67,6 +68,15 @@ class RevisionMapperTest {
 			"""
 				{"id":"ERRAND_ID-4","externalTags":[],"stakeholders":[{"id":3004,"externalId":"EXTERNAL_ID-3","externalIdType":"ENTERPRISE","contactChannels":[],"parameters":[]}],"municipalityId":"2305","namespace":"NAMESPACE.3","title":"TITLE-3","category":"CATEGORY-3","type":"TYPE-3","status":"STATUS-3","priority":"PRIORITY-3","reporterUserId":"REPORTER_USER_ID-3","assignedUserId":"ASSIGNED_USER_ID-3","assignedGroupId":"ASSIGNED_GROUP_ID-3","escalationEmail":"ESCALATION_EMAIL_4","parameters":[],"jsonParameters":[],"attachments":[],"notifications":[],"actions":[],"phases":[],"labels":[],"accessLabels":[],"errandNumber":"KC-23020004","tempPreviousStatus":"STATUS-3","timeMeasures":[],"measures":[]}
 				""");
+	}
+
+	@Test
+	@DisplayName("Verification that an attachment reaches a snapshot without the file it holds, and without the id of the row holding it - a revision keeps the errand as it was, not what was uploaded to it or where that ended up")
+	void toSerializedSnapshotLeavesOutWhatAnAttachmentPointsAt() {
+		final var serializedSnapshot = RevisionMapper.toSerializedSnapshot(errandsRepository.getReferenceById("ERRAND_ID-1"));
+
+		// Covers the id of the data row as well, since its name begins with the name of the association.
+		assertThat(serializedSnapshot).contains("ATTACHMENT_ID-1").doesNotContain("attachmentData");
 	}
 
 	@Test

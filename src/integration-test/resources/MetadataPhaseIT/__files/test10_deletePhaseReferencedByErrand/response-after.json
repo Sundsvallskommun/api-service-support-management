@@ -6,7 +6,8 @@
 	"phaseOrder": 0,
 	"allowedStatuses": [
 		"NEW",
-		"IN_PROGRESS"
+		"IN_PROGRESS",
+		"STATUS-3"
 	],
 	"transitions": [
 		{
