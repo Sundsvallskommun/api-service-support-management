@@ -486,8 +486,10 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.empty());
 		when(processRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("Column 'activity_type' cannot be null"));
 
+		final var report = report(RUNNING);
+
 		assertThatExceptionOfType(DataIntegrityViolationException.class)
-			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)));
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report));
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------

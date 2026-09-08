@@ -61,8 +61,6 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 class ErrandProcessResource {
 
-	private static final String PROCESS_PATH = "/{municipalityId}/{namespace}/errands/{errandId}/processes/{processInstanceId}";
-
 	private final ErrandProcessService service;
 
 	ErrandProcessResource(final ErrandProcessService service) {
@@ -165,7 +163,7 @@ class ErrandProcessResource {
 			return status(CREATED).body(result.process());
 		}
 
-		return created(fromPath(PROCESS_PATH)
+		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}/processes/{processInstanceId}")
 			.buildAndExpand(municipalityId, namespace, errandId, processInstanceId).toUri())
 			.body(result.process());
 	}
