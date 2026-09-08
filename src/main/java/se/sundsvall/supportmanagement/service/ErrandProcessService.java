@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository.LiveProcessInstance;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -32,6 +33,7 @@ import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
@@ -49,6 +51,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcesses;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessActivities;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessStatus;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.updateErrandProcessEntity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 
@@ -118,7 +121,7 @@ public class ErrandProcessService {
 
 		verifySenderOfReport(namespace, municipalityId, report);
 
-		return write(errandId, processInstanceId, () -> reportInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
+		return writeWithCollisionRecovery(errandId, processInstanceId, () -> reportInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
 	}
 
 	private ErrandProcessResult reportInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
@@ -160,13 +163,13 @@ public class ErrandProcessService {
 	public ErrandProcessResult registerProcess(final String namespace, final String municipalityId, final String errandId, final ErrandProcess report) {
 		final var processInstanceId = report.getProcessInstanceId();
 
-		if (isNull(processInstanceId) && FAILED != report.getProcessStatus()) {
+		if (isNull(processInstanceId) && FAILED != toProcessStatus(report)) {
 			throw Problem.valueOf(BAD_REQUEST, MISSING_INSTANCE_ID);
 		}
 
 		verifySenderOfReport(namespace, municipalityId, report);
 
-		return write(errandId, processInstanceId, () -> registerInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
+		return writeWithCollisionRecovery(errandId, processInstanceId, () -> registerInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
 	}
 
 	private ErrandProcessResult registerInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
@@ -196,7 +199,7 @@ public class ErrandProcessService {
 		verifyNoOtherLiveInstance(errandId, processInstanceId, report);
 
 		final var entity = toErrandProcessEntity(namespace, municipalityId, errandId, processInstanceId, report);
-		entity.applyStatus(report.getProcessStatus(), clock);
+		entity.applyStatus(toProcessStatus(report), clock);
 
 		final var saved = processRepository.saveAndFlush(entity);
 		storeActivities(saved, errandId, report);
@@ -301,7 +304,7 @@ public class ErrandProcessService {
 	 * one left out - is raised as it is rather than dressed up as contention, since a report answered with 409 tells a
 	 * process engine to abort the process it just started.
 	 */
-	private ErrandProcessResult write(final String errandId, final String processInstanceId, final Supplier<ErrandProcessResult> attempt) {
+	private ErrandProcessResult writeWithCollisionRecovery(final String errandId, final String processInstanceId, final Supplier<ErrandProcessResult> attempt) {
 		try {
 			return transactionTemplate.execute(_ -> attempt.get());
 		} catch (final DataIntegrityViolationException lostTheRace) {
@@ -314,7 +317,7 @@ public class ErrandProcessService {
 				// the update path or refused it as the conflict it is. Getting here again with nothing in the way means
 				// the violation was never about a race - a value too long for its column, a missing one - and answering
 				// that with 409 would tell a process engine its perfectly healthy process had already ended.
-				if (!aRowNowStandsInTheWay(errandId, processInstanceId)) {
+				if (!hasCollidingRow(errandId, processInstanceId)) {
 					LOG.error("The write for process instance '{}' on errand '{}' violates an integrity constraint no concurrent write explains", processInstanceId, errandId, stillViolating);
 					throw stillViolating;
 				}
@@ -325,17 +328,18 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * Whether a row that was written while this one was being attempted explains the violation.
+	 * Whether a row written while this one was being attempted explains the violation.
 	 * <p>
 	 * Read in a transaction of its own, since a constraint violation leaves the one that hit it unusable. Both unique
 	 * keys are asked about: the instance may have been taken by the report of its own work step, and the live slot of
-	 * the errand by an instance of another one.
+	 * the errand by an instance of another one. Only the answer matters here, so neither row is read.
 	 */
-	private boolean aRowNowStandsInTheWay(final String errandId, final String processInstanceId) {
-		return Boolean.TRUE.equals(transactionTemplate.execute(_ -> ofNullable(processInstanceId)
-			.flatMap(processRepository::findByProcessInstanceId)
-			.isPresent()
-			|| processRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId).isPresent()));
+	private boolean hasCollidingRow(final String errandId, final String processInstanceId) {
+		return TRUE.equals(transactionTemplate.execute(_ -> instanceExists(processInstanceId) || processRepository.existsByErrandIdAndActiveMarkerIsNotNull(errandId)));
+	}
+
+	private boolean instanceExists(final String processInstanceId) {
+		return nonNull(processInstanceId) && processRepository.existsByProcessInstanceId(processInstanceId);
 	}
 
 	/**
@@ -393,11 +397,11 @@ public class ErrandProcessService {
 	 * is occupied, which is what lets a start that failed be registered while the instance it failed to replace lives on.
 	 */
 	private void verifyNoOtherLiveInstance(final String errandId, final String processInstanceId, final ErrandProcess report) {
-		if (report.getProcessStatus().isTerminal()) {
+		if (toProcessStatus(report).isTerminal()) {
 			return;
 		}
 
-		processRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId)
+		processRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId, LiveProcessInstance.class)
 			.filter(live -> !Objects.equals(live.getProcessInstanceId(), processInstanceId))
 			.ifPresent(live -> {
 				throw Problem.valueOf(CONFLICT, OTHER_LIVE_INSTANCE.formatted(errandId, live.getProcessInstanceId()));

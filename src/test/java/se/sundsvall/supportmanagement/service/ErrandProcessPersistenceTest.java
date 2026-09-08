@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.apptest;
+package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -26,18 +26,17 @@ import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityReposi
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
-import se.sundsvall.supportmanagement.service.ErrandProcessService;
-import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.time.OffsetDateTime.now;
-import static org.assertj.core.api.Assertions.tuple;
 import static java.time.ZoneId.systemDefault;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.tuple;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessError.create;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
@@ -52,9 +51,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
  * process shown on an errand is read for a whole page in one query rather than once per errand.
  */
 @SpringBootTest(classes = Application.class)
-@ActiveProfiles("it")
+@ActiveProfiles("junit")
 @Transactional
-class ErrandProcessIT {
+class ErrandProcessPersistenceTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "PROCESS-IT";
@@ -125,7 +124,7 @@ class ErrandProcessIT {
 		final var registration = errandProcessService.registerProcess(NAMESPACE, MUNICIPALITY_ID, errandId, report(RUNNING).withProcessInstanceId(processInstanceId));
 
 		assertThat(registration.created()).isFalse();
-		assertThat(registration.process().getProcessStatus()).isEqualTo(WAITING);
+		assertThat(registration.process().getProcessStatus()).isEqualTo(WAITING.name());
 		assertThat(registration.process().getCurrentActivityId()).isEqualTo("granska");
 		assertThat(errandProcessRepository.findByProcessInstanceId(processInstanceId)).get()
 			.satisfies(entity -> assertThat(entity.getProcessStatus()).isEqualTo(WAITING));
@@ -142,7 +141,7 @@ class ErrandProcessIT {
 
 		assertThat(registration.created()).isTrue();
 		assertThat(report.created()).isFalse();
-		assertThat(report.process().getProcessStatus()).isEqualTo(COMPLETED);
+		assertThat(report.process().getProcessStatus()).isEqualTo(COMPLETED.name());
 		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId)).isEmpty();
 	}
 
@@ -199,7 +198,7 @@ class ErrandProcessIT {
 		final var retry = errandProcessService.registerProcess(NAMESPACE, MUNICIPALITY_ID, errandId, report(RUNNING).withProcessInstanceId("retry-instance"));
 
 		assertThat(retry.created()).isTrue();
-		assertThat(retry.process().getProcessStatus()).isEqualTo(RUNNING);
+		assertThat(retry.process().getProcessStatus()).isEqualTo(RUNNING.name());
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -293,7 +292,7 @@ class ErrandProcessIT {
 		final var errand = errandService.readErrand(NAMESPACE, MUNICIPALITY_ID, errandId);
 
 		assertThat(errand.getProcess()).isNotNull();
-		assertThat(errand.getProcess().getProcessStatus()).isEqualTo(FAILED);
+		assertThat(errand.getProcess().getProcessStatus()).isEqualTo(FAILED.name());
 		assertThat(errand.getProcess().getError().getMessage()).isEqualTo("Timeout against the process engine");
 	}
 
@@ -332,7 +331,7 @@ class ErrandProcessIT {
 
 		final var page = errandService.findErrands(NAMESPACE, MUNICIPALITY_ID, null, PageRequest.of(0, 50));
 
-		assertThat(page.getContent()).hasSize(3).allSatisfy(errand -> assertThat(errand.getProcess().getProcessStatus()).isEqualTo(RUNNING));
+		assertThat(page.getContent()).hasSize(3).allSatisfy(errand -> assertThat(errand.getProcess().getProcessStatus()).isEqualTo(RUNNING.name()));
 		assertThat(processQueryExecutions(statistics)).isEqualTo(1);
 	}
 
@@ -356,7 +355,14 @@ class ErrandProcessIT {
 	}
 
 	private String createErrand() {
-		return ProcessTestErrands.createErrand(errandsRepository, MUNICIPALITY_ID, NAMESPACE, "PIT");
+		return errandsRepository.saveAndFlush(ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandNumber("PPT-" + UUID.randomUUID())
+			.withTitle("TITLE")
+			.withStatus("STATUS")
+			.withPriority("MEDIUM")
+			.withReporterUserId("joe01doe")).getId();
 	}
 
 	private static ErrandProcess report(final ProcessStatus status) {

@@ -9,6 +9,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository.LiveProcessInstance;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,6 +92,35 @@ class ErrandProcessRepositoryTest {
 		assertThat(errandProcessRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("ERRAND_ID-1", "ERRAND_ID-2"), "2281", "NAMESPACE.1"))
 			.extracting(ErrandProcessEntity::getId)
 			.containsExactly("ep-live-1", "ep-failed-2", "ep-done-1");
+	}
+
+	@Test
+	@DisplayName("Verification that the existence of an instance is answered without reading the row")
+	void existsByProcessInstanceId() {
+		assertThat(errandProcessRepository.existsByProcessInstanceId("pi-live-1")).isTrue();
+		assertThat(errandProcessRepository.existsByProcessInstanceId("pi-never-seen")).isFalse();
+	}
+
+	@Test
+	@DisplayName("Verification that a live instance is seen among the finished ones, and that an errand with only finished ones has none")
+	void existsByErrandIdAndActiveMarkerIsNotNull() {
+		assertThat(errandProcessRepository.existsByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-1")).isTrue();
+		assertThat(errandProcessRepository.existsByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-2")).isFalse();
+	}
+
+	/**
+	 * The refusal of a second instance names the one holding the slot, so the projection has to carry that column and
+	 * not merely say that a row is there.
+	 */
+	@Test
+	@DisplayName("Verification that the live instance can be read as its id alone")
+	void findByErrandIdAndActiveMarkerIsNotNullAsProjection() {
+		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-1", LiveProcessInstance.class))
+			.get()
+			.extracting(LiveProcessInstance::getProcessInstanceId)
+			.isEqualTo("pi-live-1");
+
+		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-2", LiveProcessInstance.class)).isEmpty();
 	}
 
 	@Test

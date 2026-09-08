@@ -79,4 +79,40 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	 * @return                the instances of those errands, newest first.
 	 */
 	List<ErrandProcessEntity> findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(Collection<String> errandIds, String municipalityId, String namespace);
+
+	/**
+	 * Whether the instance is known at all, asked where only the answer matters and the row itself is never read.
+	 *
+	 * @param  processInstanceId the instance to look for.
+	 * @return                   whether a row for the instance exists.
+	 */
+	boolean existsByProcessInstanceId(String processInstanceId);
+
+	/**
+	 * Whether the errand has an instance occupying the live slot of {@code uq_ep_one_active_per_errand}.
+	 *
+	 * @param  errandId the errand to look at.
+	 * @return          whether the errand has a live instance.
+	 */
+	boolean existsByErrandIdAndActiveMarkerIsNotNull(String errandId);
+
+	/**
+	 * The live instance of an errand, read as the projection the caller asks for.
+	 * <p>
+	 * The refusal of a second instance names the one standing in the way, so the plain answer of an exists query is not
+	 * enough - but neither is the whole row. {@link LiveProcessInstance} reads the one column the message needs.
+	 *
+	 * @param  <T>      the projection to read.
+	 * @param  errandId the errand to look at.
+	 * @param  type     the projection to read the row as.
+	 * @return          the live instance of the errand, or empty if it has none.
+	 */
+	<T> Optional<T> findByErrandIdAndActiveMarkerIsNotNull(String errandId, Class<T> type);
+
+	/**
+	 * The instance id of a live process, and nothing else of it.
+	 */
+	interface LiveProcessInstance {
+		String getProcessInstanceId();
+	}
 }

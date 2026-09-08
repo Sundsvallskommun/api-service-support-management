@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository.LiveProcessInstance;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
@@ -184,7 +185,7 @@ class ErrandProcessServiceTest {
 		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
 
 		assertThat(result.created()).isTrue();
-		assertThat(result.process().getProcessStatus()).isEqualTo(RUNNING);
+		assertThat(result.process().getProcessStatus()).isEqualTo(RUNNING.name());
 		assertThat(result.process().getProcessInstanceId()).isEqualTo(PROCESS_INSTANCE_ID);
 
 		verify(processRepositoryMock).saveAndFlush(entityCaptor.capture());
@@ -201,7 +202,7 @@ class ErrandProcessServiceTest {
 		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED));
 
 		assertThat(result.created()).isFalse();
-		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED);
+		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED.name());
 		assertThat(existing.getActiveMarker()).isNull();
 		verify(processRepositoryMock, never()).existsByErrandIdAndProcessKeyNot(anyString(), anyString());
 	}
@@ -262,7 +263,7 @@ class ErrandProcessServiceTest {
 	@Test
 	void aSecondLiveInstanceIsRefused() {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(entity("another-instance", RUNNING)));
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID, LiveProcessInstance.class)).thenReturn(Optional.of(liveInstance("another-instance")));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
@@ -279,7 +280,7 @@ class ErrandProcessServiceTest {
 	@Test
 	void anInstanceComingBackToLifeIsToldWhichInstanceTookItsPlace() {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, FAILED)));
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(entity("took-its-place", RUNNING)));
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID, LiveProcessInstance.class)).thenReturn(Optional.of(liveInstance("took-its-place")));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
@@ -303,7 +304,7 @@ class ErrandProcessServiceTest {
 		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(FAILED));
 
 		assertThat(result.created()).isTrue();
-		verify(processRepositoryMock, never()).findByErrandIdAndActiveMarkerIsNotNull(anyString());
+		verify(processRepositoryMock, never()).findByErrandIdAndActiveMarkerIsNotNull(anyString(), any());
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -318,7 +319,7 @@ class ErrandProcessServiceTest {
 		final var result = service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID));
 
 		assertThat(result.created()).isFalse();
-		assertThat(result.process().getProcessStatus()).isEqualTo(WAITING);
+		assertThat(result.process().getProcessStatus()).isEqualTo(WAITING.name());
 		assertThat(result.process().getCurrentActivityId()).isEqualTo("granska");
 		verify(processRepositoryMock, never()).saveAndFlush(any());
 		verifyNoInteractions(activityRepositoryMock);
@@ -454,7 +455,7 @@ class ErrandProcessServiceTest {
 		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED));
 
 		assertThat(result.created()).isFalse();
-		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED);
+		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED.name());
 		verify(processRepositoryMock, times(2)).findByProcessInstanceId(PROCESS_INSTANCE_ID);
 	}
 
@@ -465,10 +466,8 @@ class ErrandProcessServiceTest {
 	@Test
 	void aCollisionThatSurvivesTheSecondAttemptIsAnsweredAsAConflict() {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID))
-			.thenReturn(Optional.empty())
-			.thenReturn(Optional.empty())
-			.thenReturn(Optional.of(entity("took-the-slot", RUNNING)));
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID, LiveProcessInstance.class)).thenReturn(Optional.empty());
+		when(processRepositoryMock.existsByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(true);
 		when(processRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("uq_ep_one_active_per_errand"));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
@@ -483,7 +482,8 @@ class ErrandProcessServiceTest {
 	@Test
 	void aViolationNoConcurrentRowExplainsIsRaisedAsItIs() {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.empty());
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID, LiveProcessInstance.class)).thenReturn(Optional.empty());
+		when(processRepositoryMock.existsByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(false);
 		when(processRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("Column 'activity_type' cannot be null"));
 
 		final var report = report(RUNNING);
@@ -601,6 +601,13 @@ class ErrandProcessServiceTest {
 			.withActivityType("PHASE")
 			.withActivityId(activityId)
 			.withOccurredAt(now(systemDefault()));
+	}
+
+	/**
+	 * The projection the live instance is read as, which carries the one column the refusal names.
+	 */
+	private static LiveProcessInstance liveInstance(final String processInstanceId) {
+		return () -> processInstanceId;
 	}
 
 	private static ErrandProcessEntity entity(final String processInstanceId, final ProcessStatus status) {

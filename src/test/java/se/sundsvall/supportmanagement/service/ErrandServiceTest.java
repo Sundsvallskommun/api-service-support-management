@@ -367,7 +367,7 @@ class ErrandServiceTest {
 
 		final var response = service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
-		assertThat(response.getProcess().getProcessStatus()).isEqualTo(FAILED);
+		assertThat(response.getProcess().getProcessStatus()).isEqualTo(FAILED.name());
 		assertThat(response.getProcess().getError().getMessage()).isEqualTo("boom");
 	}
 
