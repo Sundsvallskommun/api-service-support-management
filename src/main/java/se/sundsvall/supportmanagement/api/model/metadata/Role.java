@@ -3,10 +3,13 @@ package se.sundsvall.supportmanagement.api.model.metadata;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import org.springframework.format.annotation.DateTimeFormat;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -16,8 +19,9 @@ public class Role {
 	@Schema(description = "Role ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
 	private String id;
 
-	@Schema(description = "Name for the role. Used as key", examples = "roleName")
+	@Schema(description = "Immutable role key used by AccessMapper and saved measures. Change displayName to rename the presentation.", examples = "roleName")
 	@NotBlank
+	@Pattern(regexp = ".*\\S.*", groups = OnUpdate.class)
 	private String name;
 
 	@Schema(description = "Display name for the role", examples = "Role name", types = {
@@ -35,12 +39,12 @@ public class Role {
 
 	@Schema(description = "Timestamp when the role was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null
+	@Null(groups = { Default.class, OnUpdate.class })
 	private OffsetDateTime created;
 
 	@Schema(description = "Timestamp when the role was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null
+	@Null(groups = { Default.class, OnUpdate.class })
 	private OffsetDateTime modified;
 
 	public static Role create() {

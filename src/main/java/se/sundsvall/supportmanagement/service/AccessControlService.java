@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
@@ -26,7 +27,9 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
+import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
@@ -35,6 +38,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
 import se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper;
+import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
 import se.sundsvall.supportmanagement.service.model.AccessSnapshot;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -44,6 +48,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
@@ -72,12 +77,41 @@ public class AccessControlService {
 
 	private final AccessMapperService accessMapperService;
 	private final NamespaceConfigService namespaceConfigService;
+	private final RoleRepository roleRepository;
 	private final ErrandsRepository errandsRepository;
 
-	public AccessControlService(final AccessMapperService accessMapperService, final NamespaceConfigService namespaceConfigService, final ErrandsRepository errandsRepository) {
+	public AccessControlService(final AccessMapperService accessMapperService, final NamespaceConfigService namespaceConfigService, final ErrandsRepository errandsRepository, final RoleRepository roleRepository) {
 		this.accessMapperService = accessMapperService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.errandsRepository = errandsRepository;
+		this.roleRepository = roleRepository;
+	}
+
+	/** Actual role memberships, independent of whether the namespace filters errand fields by role. */
+	public List<Role> findCurrentUserRoles(final String namespace, final String municipalityId) {
+		final var user = Identifier.get();
+		final var account = adAccountOf(user);
+		if (account == null || account.isBlank()) {
+			throw Problem.valueOf(UNAUTHORIZED, "An AD account identifier is required to resolve the current user's roles");
+		}
+		final var granted = accessMapperService.getAccessSnapshot(municipalityId, namespace, user).roles();
+		return roleRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by("sortOrder", "name")).stream()
+			.filter(role -> !role.isDeprecated() && granted.contains(role.getName().toUpperCase(Locale.ROOT)))
+			.map(MetadataMapper::toRole)
+			.toList();
+	}
+
+	/** Resource write permission is checked separately. Attribution always requires an actual user and role grant. */
+	public String verifyMeasureCreator(final String namespace, final String municipalityId, final String submittedUser, final String role) {
+		final var roles = findCurrentUserRoles(namespace, municipalityId);
+		final var account = adAccountOf(Identifier.get());
+		if (submittedUser != null && !submittedUser.equalsIgnoreCase(account)) {
+			throw Problem.valueOf(FORBIDDEN, "Measure creator must match the requesting AD account");
+		}
+		if (roles.stream().noneMatch(granted -> granted.getName().equals(role))) {
+			throw Problem.valueOf(FORBIDDEN, "The requesting user does not hold the selected active registration role");
+		}
+		return account;
 	}
 
 	/**

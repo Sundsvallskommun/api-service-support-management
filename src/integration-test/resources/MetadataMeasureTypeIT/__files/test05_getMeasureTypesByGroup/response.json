@@ -5,7 +5,10 @@
 		"measureGroup": "GROUP-A",
 		"sortOrder": 1,
 		"deprecated": false,
-		"created": "2023-01-01T12:00:00+01:00"
+		"created": "2023-01-01T12:00:00+01:00",
+		"allowedRoleIds": [
+			"cc000000-0000-0000-0000-000000000100"
+		]
 	},
 	{
 		"id": "dd000000-0000-0000-0000-000000000101",
@@ -14,6 +17,9 @@
 		"measureGroup": "GROUP-A",
 		"sortOrder": 2,
 		"deprecated": false,
-		"created": "2023-01-01T12:00:00+01:00"
+		"created": "2023-01-01T12:00:00+01:00",
+		"allowedRoleIds": [
+			"cc000000-0000-0000-0000-000000000101"
+		]
 	}
 ]

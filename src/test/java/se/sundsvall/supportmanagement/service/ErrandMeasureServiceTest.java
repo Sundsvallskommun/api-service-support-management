@@ -78,7 +78,7 @@ class ErrandMeasureServiceTest {
 
 	/**
 	 * What the validator accepts is MeasureValidatorTest's business. What matters here is that it is consulted, and that
-	 * its rejection stops the request before the errand is even loaded.
+	 * its rejection stops the write after access to the errand has been checked.
 	 */
 	@Test
 	void createErrandMeasureRejectedByValidator() {
@@ -88,13 +88,17 @@ class ErrandMeasureServiceTest {
 
 		doThrow(Problem.valueOf(BAD_REQUEST, "'00000000-0000-0000-0000-000000000000' is not a valid measure type id")).when(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
 
+		final var saved = MeasureEntity.create().withId(MEASURE_ID);
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any()))
+			.thenReturn(ErrandEntity.create().withMeasures(new ArrayList<>(List.of(saved))));
+
 		// Act & Assert
 		assertThatThrownBy(() -> service.createErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, measure))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("not a valid measure type id");
 
 		verify(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(accessControlServiceMock, errandsRepositoryMock, entityManagerMock);
+		verifyNoInteractions(errandsRepositoryMock, entityManagerMock);
 	}
 
 	@Test
@@ -186,7 +190,7 @@ class ErrandMeasureServiceTest {
 		final var measure = new Measure().withGoal("new goal");
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntity);
-		when(errandsRepositoryMock.save(any())).thenReturn(errandEntity);
+		when(errandsRepositoryMock.saveAndFlush(any())).thenReturn(errandEntity);
 
 		// Act
 		final var result = service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, null, measure);
@@ -194,7 +198,7 @@ class ErrandMeasureServiceTest {
 		// Assert
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW);
 		verify(entityManagerMock).lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
-		verify(errandsRepositoryMock).save(errandEntity);
+		verify(errandsRepositoryMock).saveAndFlush(errandEntity);
 		assertThat(result).isNotNull();
 		assertThat(result.getGoal()).isEqualTo("new goal");
 		assertThat(result.getMeasureTypeId()).isEqualTo("dd000000-0000-0000-0000-000000000100");
@@ -213,7 +217,7 @@ class ErrandMeasureServiceTest {
 		final var measure = new Measure().withMeasureTypeId("dd000000-0000-0000-0000-000000000101");
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntity);
-		when(errandsRepositoryMock.save(any())).thenReturn(errandEntity);
+		when(errandsRepositoryMock.saveAndFlush(any())).thenReturn(errandEntity);
 
 		// Act
 		final var result = service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, null, measure);
@@ -229,15 +233,19 @@ class ErrandMeasureServiceTest {
 		// Arrange
 		final var measure = new Measure().withMeasureTypeId("00000000-0000-0000-0000-000000000000");
 
-		doThrow(Problem.valueOf(BAD_REQUEST, "'00000000-0000-0000-0000-000000000000' is not a valid measure type id")).when(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
+		final var saved = MeasureEntity.create().withId(MEASURE_ID);
+		doThrow(Problem.valueOf(BAD_REQUEST, "'00000000-0000-0000-0000-000000000000' is not a valid measure type id")).when(measureValidatorMock).validateUpdate(measure, saved, NAMESPACE, MUNICIPALITY_ID);
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any()))
+			.thenReturn(ErrandEntity.create().withMeasures(new ArrayList<>(List.of(saved))));
 
 		// Act & Assert
 		assertThatThrownBy(() -> service.updateErrandMeasure(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, null, measure))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("not a valid measure type id");
 
-		verify(measureValidatorMock).validate(measure, NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(accessControlServiceMock, errandsRepositoryMock, entityManagerMock);
+		verify(measureValidatorMock).validateUpdate(measure, saved, NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(errandsRepositoryMock, entityManagerMock);
 	}
 
 	@Test

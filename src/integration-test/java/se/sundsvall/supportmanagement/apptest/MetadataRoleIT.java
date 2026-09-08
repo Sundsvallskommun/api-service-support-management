@@ -7,6 +7,7 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -96,7 +97,7 @@ class MetadataRoleIT extends AbstractAppTest {
 
 	@Test
 	void test05_deleteRole() {
-		final var roleId = "cc000000-0000-0000-0000-000000000101";
+		final var roleId = "cc000000-0000-0000-0000-000000000102";
 
 		assertThat(roleRepository.existsByIdAndNamespaceAndMunicipalityId(roleId, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 		assertThat(roleRepository.count()).isEqualTo(6);
@@ -143,5 +144,18 @@ class MetadataRoleIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_deleteReferencedRole() {
+		final var id = "cc000000-0000-0000-0000-000000000101";
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(roleRepository.existsByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 	}
 }

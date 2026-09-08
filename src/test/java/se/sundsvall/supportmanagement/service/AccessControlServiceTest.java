@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,9 +28,11 @@ import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -40,8 +43,10 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -69,6 +74,9 @@ class AccessControlServiceTest {
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
+
+	@Mock
+	private RoleRepository roleRepository;
 
 	@Captor
 	private ArgumentCaptor<Specification<ErrandEntity>> specificationCaptor;
@@ -990,4 +998,46 @@ class AccessControlServiceTest {
 
 		verifyNoInteractions(accessMapperService);
 	}
+	@AfterEach
+	void clearIdentifier() {
+		Identifier.remove();
+	}
+
+	@Test
+	void currentUserRolesIntersectGrantsWithActiveNamespaceMetadata() {
+		Identifier.set(adUser());
+		when(accessMapperService.getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, adUser()))
+			.thenReturn(new AccessSnapshot(Map.of(), Set.of("MANAGER", "RETIRED", "UNKNOWN"), Map.of()));
+		when(roleRepository.findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(List.of(
+			RoleEntity.create().withId("manager-id").withName("manager").withDisplayName("Enhetschef"),
+			RoleEntity.create().withId("nurse-id").withName("NURSE"),
+			RoleEntity.create().withId("retired-id").withName("RETIRED").withDeprecated(true)));
+		assertThat(accessControlService.findCurrentUserRoles(NAMESPACE, MUNICIPALITY_ID))
+			.singleElement().satisfies(role -> {
+				assertThat(role.getId()).isEqualTo("manager-id");
+				assertThat(role.getName()).isEqualTo("manager");
+				assertThat(role.getDisplayName()).isEqualTo("Enhetschef");
+			});
+	}
+
+	@Test
+	void missingCurrentUserNeverReceivesMetadataRoles() {
+		Identifier.remove();
+		assertThatThrownBy(() -> accessControlService.findCurrentUserRoles(NAMESPACE, MUNICIPALITY_ID)).hasMessageContaining("AD account identifier is required");
+		verifyNoInteractions(roleRepository);
+	}
+
+	@Test
+	void rejectsUnheldRolesAndSpoofedCreatorsEvenWithoutNamespaceAccessFiltering() {
+		Identifier.set(adUser());
+		when(accessMapperService.getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, adUser()))
+			.thenReturn(new AccessSnapshot(Map.of(), Set.of("MANAGER"), Map.of()));
+		when(roleRepository.findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any()))
+			.thenReturn(List.of(RoleEntity.create().withId("manager-id").withName("MANAGER")));
+		assertThat(accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, null, "MANAGER")).isEqualTo(AD_ACCOUNT);
+		assertThatThrownBy(() -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, "someone-else", "MANAGER")).hasMessageContaining("must match");
+		assertThatThrownBy(() -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, AD_ACCOUNT, "NURSE")).hasMessageContaining("does not hold");
+		verifyNoInteractions(namespaceConfigServiceMock);
+	}
+
 }

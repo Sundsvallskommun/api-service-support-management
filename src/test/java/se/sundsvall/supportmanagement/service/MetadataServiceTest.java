@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,6 +42,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -448,13 +450,13 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(roleRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.of(RoleEntity.create().withId(id).withName("role")));
 
 		// Call
 		metadataService.deleteRole(namespace, municipalityId, id);
 
 		// Verifications
-		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(roleRepositoryMock).findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verify(roleRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
@@ -472,7 +474,7 @@ class MetadataServiceTest {
 		// Verifications
 		assertThat(e.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(e.getMessage()).isEqualTo("Not Found: Role '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
-		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(roleRepositoryMock).findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(roleRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
@@ -490,22 +492,20 @@ class MetadataServiceTest {
 			.withDisplayName("existing_display");
 
 		final var role = Role.create()
-			.withName("name")
+			.withName("existing_role")
 			.withDisplayName("displayName");
 
 		// Mock
-		when(roleRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
-		when(roleRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(Optional.of(entity));
 		when(roleRepositoryMock.save(entity)).thenReturn(entity);
 
 		// Call
 		final var response = metadataService.updateRole(namespace, municipalityId, id, role);
 
 		// Assertions and verifications
-		assertThat(response.getName()).isEqualTo("name");
+		assertThat(response.getName()).isEqualTo("existing_role");
 		assertThat(response.getDisplayName()).isEqualTo("displayName");
-		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		verify(roleRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(roleRepositoryMock).findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verify(roleRepositoryMock).save(entity);
 		verifyNoMoreInteractions(roleRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
@@ -520,7 +520,7 @@ class MetadataServiceTest {
 		final var role = Role.create();
 
 		// Mock
-		when(roleRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
+		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(Optional.empty());
 
 		// Call
 		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateRole(namespace, municipalityId, id, role));
@@ -528,7 +528,7 @@ class MetadataServiceTest {
 		// Assertions and verifications
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(exception.getMessage()).isEqualTo("Not Found: Role '%s' is not present in namespace 'namespace' for municipalityId 'municipalityId'".formatted(id));
-		verify(roleRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(roleRepositoryMock).findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(roleRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, metadataLabelRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
@@ -1869,13 +1869,13 @@ class MetadataServiceTest {
 		final var id = "id";
 
 		// Mock
-		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.of(MeasureTypeEntity.create().withId(id)));
 
 		// Call
 		metadataService.deleteMeasureType(namespace, municipalityId, id);
 
 		// Verifications
-		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(measureTypeRepositoryMock).findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verify(measureTypeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 	}
 
@@ -1891,7 +1891,7 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(measureTypeRepositoryMock).findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(measureTypeRepositoryMock);
 	}
 
@@ -1905,8 +1905,7 @@ class MetadataServiceTest {
 		final var measureType = MeasureType.create().withName("newName").withMeasureGroup("newGroup");
 
 		// Mock
-		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
-		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(Optional.of(entity));
 		when(measureTypeRepositoryMock.save(entity)).thenReturn(entity);
 
 		// Call
@@ -1914,8 +1913,7 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(result).isNotNull();
-		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		verify(measureTypeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(measureTypeRepositoryMock).findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verify(measureTypeRepositoryMock).save(entity);
 		verifyNoMoreInteractions(measureTypeRepositoryMock);
 	}
@@ -1928,7 +1926,7 @@ class MetadataServiceTest {
 		final var id = "id";
 
 		// Mock
-		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(Optional.empty());
 
 		// Call
 		final var measureType = MeasureType.create().withName("name").withMeasureGroup("group");
@@ -1936,7 +1934,48 @@ class MetadataServiceTest {
 
 		// Verifications
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
-		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(measureTypeRepositoryMock).findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(measureTypeRepositoryMock);
 	}
+	@Test
+	void measureRoleAssignmentsMustBelongToTheSameNamespaceAndMunicipality() {
+		final var request = MeasureType.create().withName("TYPE").withMeasureGroup("GROUP").withAllowedRoleIds(Set.of("foreign-role"));
+		assertThatThrownBy(() -> metadataService.createMeasureType("namespace", "2281", request)).hasMessageContaining("is not present in namespace");
+		verify(measureTypeRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void partialMetadataPatchPreservesOrExplicitlyClearsAssignments() {
+		final var entity = MeasureTypeEntity.create().withId("type-id").withName("TYPE").withAllowedRoleIds(Set.of("role-id"));
+		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("type-id", "namespace", "2281")).thenReturn(Optional.of(entity));
+		when(measureTypeRepositoryMock.save(entity)).thenReturn(entity);
+		assertThat(metadataService.updateMeasureType("namespace", "2281", "type-id", MeasureType.create().withDisplayName("New label")).getAllowedRoleIds()).containsExactly("role-id");
+		assertThat(metadataService.updateMeasureType("namespace", "2281", "type-id", MeasureType.create().withAllowedRoleIds(Set.of())).getAllowedRoleIds()).isEmpty();
+	}
+
+	@Test
+	void roleKeysCannotBeRenamed() {
+		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("role-id", "namespace", "2281"))
+			.thenReturn(Optional.of(RoleEntity.create().withId("role-id").withName("MANAGER")));
+		assertThatThrownBy(() -> metadataService.updateRole("namespace", "2281", "role-id", Role.create().withName("OTHER"))).hasMessageContaining("immutable key");
+		verify(roleRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void referencedRolesCannotBeDeleted() {
+		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("role-id", "namespace", "2281"))
+			.thenReturn(Optional.of(RoleEntity.create().withId("role-id").withName("MANAGER")));
+		when(measureTypeRepositoryMock.existsByAllowedRoleIdsContaining("role-id")).thenReturn(true);
+		assertThatThrownBy(() -> metadataService.deleteRole("namespace", "2281", "role-id")).hasMessageContaining("deprecate it instead");
+		verify(roleRepositoryMock, never()).deleteByIdAndNamespaceAndMunicipalityId(any(), any(), any());
+	}
+
+	@Test
+	void historicalRolesStayProtectedAfterAllTypeAssignmentsAreRemoved() {
+		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("role-id", "namespace", "2281"))
+			.thenReturn(Optional.of(RoleEntity.create().withId("role-id").withName("MANAGER")));
+		when(errandsRepositoryMock.existsByNamespaceAndMunicipalityIdAndMeasuresAddedByRole("namespace", "2281", "MANAGER")).thenReturn(true);
+		assertThatThrownBy(() -> metadataService.deleteRole("namespace", "2281", "role-id")).hasMessageContaining("deprecate it instead");
+	}
+
 }

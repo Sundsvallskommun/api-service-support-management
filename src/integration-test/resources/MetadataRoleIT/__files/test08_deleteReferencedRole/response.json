@@ -1,0 +1,5 @@
+{
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Role is referenced by measure types or saved measures; deprecate it instead"
+}

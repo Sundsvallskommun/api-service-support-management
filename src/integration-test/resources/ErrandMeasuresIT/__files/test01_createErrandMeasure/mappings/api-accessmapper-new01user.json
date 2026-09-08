@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api-accessmapper/2281/NAMESPACE-1/access/ad/new01user"
+  },
+  "response": {
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "status": 200,
+    "bodyFileName": "test01_createErrandMeasure/responses/api-accessmapper-new01user.json"
+  }
+}

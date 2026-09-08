@@ -47,9 +47,8 @@ public class ErrandMeasureService {
 
 	@Transactional
 	public String createErrandMeasure(final String namespace, final String municipalityId, final String errandId, final Measure measure) {
-		measureValidator.validate(measure, namespace, municipalityId);
-
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
+		measureValidator.validate(measure, namespace, municipalityId);
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final var measureEntity = toMeasureEntity(measure, errandEntity);
@@ -77,8 +76,6 @@ public class ErrandMeasureService {
 
 	@Transactional
 	public Measure updateErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final String ifMatch, final Measure measure) {
-		measureValidator.validate(measure, namespace, municipalityId);
-
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 
@@ -86,11 +83,14 @@ public class ErrandMeasureService {
 			LOG.debug("PATCH /errands/{}/measures/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(measureId), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, measureEntity.getVersion());
+		measureValidator.validateUpdate(measure, measureEntity, namespace, municipalityId);
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		updateMeasureEntity(measureEntity, measure);
 
-		errandsRepository.save(errandEntity);
+		errandsRepository.saveAndFlush(errandEntity);
+		// Refresh the derived type relation and version before returning the new ETag.
+		entityManager.refresh(measureEntity);
 		return toMeasure(measureEntity);
 	}
 

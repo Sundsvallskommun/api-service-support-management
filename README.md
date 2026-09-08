@@ -5,6 +5,9 @@ creating, updating, and tracking errand statuses and progress._
 
 ## Getting Started
 
+See [measure registration by namespace role](docs/measure-registration.md) for the
+role/type contract, metadata configuration and coordinated deployment with Draken.
+
 ### Prerequisites
 
 - **Java 25 or higher**

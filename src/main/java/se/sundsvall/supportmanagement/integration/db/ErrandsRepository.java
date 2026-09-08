@@ -14,6 +14,10 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 @CircuitBreaker(name = "errandsRepository")
 public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, JpaSpecificationExecutor<ErrandEntity> {
 
+	boolean existsByNamespaceAndMunicipalityIdAndMeasuresAddedByRole(String namespace, String municipalityId, String role);
+
+	boolean existsByMeasuresMeasureTypeId(String measureTypeId);
+
 	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	// Locks row in transaction. Other threads will wait until lock is released.

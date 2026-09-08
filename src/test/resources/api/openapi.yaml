@@ -74,6 +74,8 @@ tags:
   description: Errand operations
 - name: Subscriber notifications
   description: Subscriber notification operations
+- name: Current user
+  description: Access of the requesting user within the namespace
 paths:
   /{municipalityId}/{namespace}/notifications/{notificationId}/acknowledge:
     put:
@@ -2197,6 +2199,68 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/users/me/roles:
+    get:
+      tags:
+      - Current user
+      summary: Get current user's active roles
+      description: Intersects AccessMapper role grants for the requesting AD account with active metadata roles in this municipality and namespace. An empty list grants no roles. This does not grant access to errands or resources.
+      operationId: getCurrentUserRoles
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "401":
+          description: AD account identifier required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
   /{municipalityId}/{namespace}/metadata/roles:
     get:
       tags:
@@ -5448,6 +5512,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -5515,6 +5585,12 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict
           content:
             application/problem+json:
               schema:
@@ -5834,6 +5910,12 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict
           content:
             application/problem+json:
               schema:
@@ -10861,7 +10943,8 @@ components:
           readOnly: true
         name:
           type: string
-          description: Name for the role. Used as key
+          pattern: ".*\\S.*"
+          description: "Immutable role key used by AccessMapper and saved measures. Change displayName to rename the presentation."
           examples:
           - roleName
           minLength: 1
@@ -11023,6 +11106,7 @@ components:
           readOnly: true
         name:
           type: string
+          pattern: ".*\\S.*"
           description: Name for the measure type. Used as key
           examples:
           - INTERVENTION
@@ -11036,10 +11120,19 @@ components:
           - Intervention
         measureGroup:
           type: string
+          pattern: ".*\\S.*"
           description: Group that this measure type belongs to
           examples:
           - MANAGERS
           minLength: 1
+        allowedRoleIds:
+          type: array
+          description: "Role IDs allowed to register this measure type. Empty means no roles. Omitted or null on PATCH preserves existing assignments; an empty array removes all assignments."
+          items:
+            type: string
+            format: uuid
+            minLength: 1
+          uniqueItems: true
         sortOrder:
           type:
           - integer
@@ -11634,12 +11727,12 @@ components:
           - 2021-09-15T12:00:00Z
         addedByUser:
           type: string
-          description: User who added the measure
+          description: "AD account of the requesting user, set by the API when creating. If supplied it must match the request identity. Immutable after creation."
           examples:
           - jo12doe
         addedByRole:
           type: string
-          description: Role of the user who added the measure
+          description: "Active namespace Role.name held by the requesting user and assigned to the measure type. Immutable after creation."
           examples:
           - MANAGER
         goal:
