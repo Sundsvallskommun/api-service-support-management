@@ -311,14 +311,12 @@ public class ErrandProcessService {
 		try {
 			return transactionTemplate.execute(_ -> attempt.get());
 		} catch (final DataIntegrityViolationException lostTheRace) {
-			LOG.info("Retrying the write for process instance '{}' on errand '{}' after an integrity violation", processInstanceId, errandId, lostTheRace);
+			// The one place the errand and the instance can be named, and it fires whether or not the retry saves the
+			// write. The second attempt is left to fail on its own: rethrowing it here with a line of its own would say
+			// the same thing twice, since what leaves this service unhandled is logged where it is turned into a response.
+			LOG.warn("Retrying the write for process instance '{}' on errand '{}' after an integrity violation", processInstanceId, errandId, lostTheRace);
 
-			try {
-				return transactionTemplate.execute(_ -> attempt.get());
-			} catch (final DataIntegrityViolationException stillViolating) {
-				LOG.error("The write for process instance '{}' on errand '{}' violates an integrity constraint no concurrent write explains", processInstanceId, errandId, stillViolating);
-				throw stillViolating;
-			}
+			return transactionTemplate.execute(_ -> attempt.get());
 		}
 	}
 
