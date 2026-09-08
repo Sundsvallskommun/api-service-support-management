@@ -81,22 +81,6 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	List<ErrandProcessEntity> findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(Collection<String> errandIds, String municipalityId, String namespace);
 
 	/**
-	 * Whether the instance is known at all, asked where only the answer matters and the row itself is never read.
-	 *
-	 * @param  processInstanceId the instance to look for.
-	 * @return                   whether a row for the instance exists.
-	 */
-	boolean existsByProcessInstanceId(String processInstanceId);
-
-	/**
-	 * Whether the errand has an instance occupying the live slot of {@code uq_ep_one_active_per_errand}.
-	 *
-	 * @param  errandId the errand to look at.
-	 * @return          whether the errand has a live instance.
-	 */
-	boolean existsByErrandIdAndActiveMarkerIsNotNull(String errandId);
-
-	/**
 	 * The live instance of an errand, read as the projection the caller asks for.
 	 * <p>
 	 * The refusal of a second instance names the one standing in the way, so the plain answer of an exists query is not

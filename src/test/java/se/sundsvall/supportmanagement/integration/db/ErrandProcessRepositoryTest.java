@@ -94,20 +94,6 @@ class ErrandProcessRepositoryTest {
 			.containsExactly("ep-live-1", "ep-failed-2", "ep-done-1");
 	}
 
-	@Test
-	@DisplayName("Verification that the existence of an instance is answered without reading the row")
-	void existsByProcessInstanceId() {
-		assertThat(errandProcessRepository.existsByProcessInstanceId("pi-live-1")).isTrue();
-		assertThat(errandProcessRepository.existsByProcessInstanceId("pi-never-seen")).isFalse();
-	}
-
-	@Test
-	@DisplayName("Verification that a live instance is seen among the finished ones, and that an errand with only finished ones has none")
-	void existsByErrandIdAndActiveMarkerIsNotNull() {
-		assertThat(errandProcessRepository.existsByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-1")).isTrue();
-		assertThat(errandProcessRepository.existsByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-2")).isFalse();
-	}
-
 	/**
 	 * The refusal of a second instance names the one holding the slot, so the projection has to carry that column and
 	 * not merely say that a row is there.

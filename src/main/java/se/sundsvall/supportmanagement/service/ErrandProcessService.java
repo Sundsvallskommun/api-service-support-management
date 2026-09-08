@@ -33,7 +33,6 @@ import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
@@ -74,7 +73,6 @@ public class ErrandProcessService {
 	private static final String OTHER_LIVE_INSTANCE = "The errand '%s' already has a live process instance '%s' and cannot be given another one";
 	private static final String OTHER_PROCESS_KEY = "The errand '%s' already runs a process other than '%s', and every instance of an errand runs the same process";
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again";
-	private static final String CONCURRENT_REPORT = "Another report for the process instance '%s' is being written right now";
 	private static final String NO_PROCESS_CONSUMER = "The namespace '%s' in municipality '%s' has no process consumer configured and runs no process";
 	private static final String WRONG_PROCESS_CONSUMER = "The process service '%s' is not the process consumer of namespace '%s', which is '%s'";
 	private static final String MISSING_IDENTIFIER = "A report must carry the identifier of its sender in the '%s' header, since it is what the activity log and the notification of the errand name as the author";
@@ -293,16 +291,21 @@ public class ErrandProcessService {
 	/**
 	 * Runs a write, and recovers from losing a race for one of the unique keys.
 	 * <p>
-	 * Both keys can be hit by the same insert, so which one gave way says nothing about what to do; the row is looked up
-	 * by its process instance id instead. That lookup has to happen after the transaction that lost has been rolled back,
-	 * since a constraint violation leaves it unusable - which is why the second attempt is a transaction of its own
-	 * rather than a read inside the failed one. It reaches the same conclusion the first would have: the row now exists,
-	 * so the report updates it or the registration returns it, unless another live instance is what stood in the way, in
-	 * which case it is refused as the conflict it is.
+	 * Both keys can be hit by the same insert, so which one gave way says nothing about what to do. The second attempt
+	 * settles it instead, by reading before it writes exactly as the first did: a row that appeared meanwhile sends the
+	 * report down the update path, and one that stands in the way is refused as the conflict it is, named. That reading
+	 * has to happen after the transaction that lost has been rolled back, since a constraint violation leaves it
+	 * unusable, which is why the second attempt is a transaction of its own.
 	 * <p>
-	 * Only a violation some other row explains is a race. Every other one - a value too long for its column, a required
-	 * one left out - is raised as it is rather than dressed up as contention, since a report answered with 409 tells a
-	 * process engine to abort the process it just started.
+	 * A violation that survives that second attempt is therefore not contention: contention would have been seen and
+	 * answered by the checks the attempt begins with. What is left is a row this service cannot write at all - a value
+	 * too long for its column, a key it collides with for reasons no concurrent writer explains - and it is raised as
+	 * the fault it is rather than dressed up as a conflict, since a report answered with 409 tells a process engine to
+	 * abort the process it just started.
+	 * <p>
+	 * Asking the database afterwards which rows exist cannot tell the two apart, and must not be tried: on the update
+	 * path the row and the live slot were both already taken by this very report, so every such question answers yes
+	 * whatever the true cause was.
 	 */
 	private ErrandProcessResult writeWithCollisionRecovery(final String errandId, final String processInstanceId, final Supplier<ErrandProcessResult> attempt) {
 		try {
@@ -313,33 +316,10 @@ public class ErrandProcessService {
 			try {
 				return transactionTemplate.execute(_ -> attempt.get());
 			} catch (final DataIntegrityViolationException stillViolating) {
-				// The second attempt reads before it writes, so a row that explains the violation would have sent it down
-				// the update path or refused it as the conflict it is. Getting here again with nothing in the way means
-				// the violation was never about a race - a value too long for its column, a missing one - and answering
-				// that with 409 would tell a process engine its perfectly healthy process had already ended.
-				if (!hasCollidingRow(errandId, processInstanceId)) {
-					LOG.error("The write for process instance '{}' on errand '{}' violates an integrity constraint no concurrent write explains", processInstanceId, errandId, stillViolating);
-					throw stillViolating;
-				}
-
-				throw Problem.valueOf(CONFLICT, CONCURRENT_REPORT.formatted(processInstanceId));
+				LOG.error("The write for process instance '{}' on errand '{}' violates an integrity constraint no concurrent write explains", processInstanceId, errandId, stillViolating);
+				throw stillViolating;
 			}
 		}
-	}
-
-	/**
-	 * Whether a row written while this one was being attempted explains the violation.
-	 * <p>
-	 * Read in a transaction of its own, since a constraint violation leaves the one that hit it unusable. Both unique
-	 * keys are asked about: the instance may have been taken by the report of its own work step, and the live slot of
-	 * the errand by an instance of another one. Only the answer matters here, so neither row is read.
-	 */
-	private boolean hasCollidingRow(final String errandId, final String processInstanceId) {
-		return TRUE.equals(transactionTemplate.execute(_ -> instanceExists(processInstanceId) || processRepository.existsByErrandIdAndActiveMarkerIsNotNull(errandId)));
-	}
-
-	private boolean instanceExists(final String processInstanceId) {
-		return nonNull(processInstanceId) && processRepository.existsByProcessInstanceId(processInstanceId);
 	}
 
 	/**

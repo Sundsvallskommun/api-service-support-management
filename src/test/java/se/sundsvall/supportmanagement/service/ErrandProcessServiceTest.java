@@ -460,33 +460,35 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * The live slot of the errand taken by an instance of another process is a race the second attempt can still lose,
-	 * and only then is contention the honest answer.
+	 * A violation that survives the second attempt is not contention: contention would have been seen by the checks the
+	 * attempt begins with and refused as the conflict it is, named. Dressing it up as 409 would tell a process engine
+	 * that this errand already had its process, and it would abort the one it just started.
 	 */
 	@Test
-	void aCollisionThatSurvivesTheSecondAttemptIsAnsweredAsAConflict() {
+	void aViolationThatSurvivesTheSecondAttemptIsRaisedAsItIs() {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID, LiveProcessInstance.class)).thenReturn(Optional.empty());
-		when(processRepositoryMock.existsByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(true);
-		when(processRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("uq_ep_one_active_per_errand"));
-
-		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
-			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(409));
-	}
-
-	/**
-	 * A violation no other row explains is not contention, and must not be dressed up as it: a process engine reads 409
-	 * as "this errand already had its process" and aborts the one it just started.
-	 */
-	@Test
-	void aViolationNoConcurrentRowExplainsIsRaisedAsItIs() {
-		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID, LiveProcessInstance.class)).thenReturn(Optional.empty());
-		when(processRepositoryMock.existsByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(false);
 		when(processRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("Column 'activity_type' cannot be null"));
 
 		final var report = report(RUNNING);
+
+		assertThatExceptionOfType(DataIntegrityViolationException.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report));
+	}
+
+	/**
+	 * The report of a work step on a row that already exists is the case a lookup after the fact cannot judge: the row
+	 * and the live slot of the errand were both taken by this very report before it wrote anything, so asking the
+	 * database whether they are occupied answers yes whatever the true cause was. Only the second attempt can tell the
+	 * two apart, and this is what keeps a broken activity from being reported as a race that never happened.
+	 */
+	@Test
+	void aViolationOnTheUpdatePathIsNotMistakenForContention() {
+		final var existing = entity(PROCESS_INSTANCE_ID, RUNNING);
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(activityRepositoryMock.saveAll(any())).thenThrow(new DataIntegrityViolationException("uq_epa_idempotency"));
+
+		final var report = report(RUNNING).withActivities(List.of(activity("granska")));
 
 		assertThatExceptionOfType(DataIntegrityViolationException.class)
 			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report));
