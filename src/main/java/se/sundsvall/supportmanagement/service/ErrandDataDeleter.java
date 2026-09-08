@@ -5,9 +5,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.integration.db.AttachmentDataRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.HandoverIdempotencyRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 
@@ -42,27 +44,33 @@ public class ErrandDataDeleter {
 	private final ConversationService conversationService;
 	private final CommunicationService communicationService;
 	private final AttachmentRepository attachmentRepository;
+	private final AttachmentDataRepository attachmentDataRepository;
 	private final NotesClient notesClient;
 	private final SubscriberNotificationRepository subscriberNotificationRepository;
 	private final HandoverIdempotencyRepository handoverIdempotencyRepository;
 	private final EntityManager entityManager;
+	private final ChunkedDeleter chunkedDeleter;
 
 	public ErrandDataDeleter(
 		final ConversationService conversationService,
 		final CommunicationService communicationService,
 		final AttachmentRepository attachmentRepository,
+		final AttachmentDataRepository attachmentDataRepository,
 		final NotesClient notesClient,
 		final SubscriberNotificationRepository subscriberNotificationRepository,
 		final HandoverIdempotencyRepository handoverIdempotencyRepository,
-		final EntityManager entityManager) {
+		final EntityManager entityManager,
+		final ChunkedDeleter chunkedDeleter) {
 
 		this.conversationService = conversationService;
 		this.communicationService = communicationService;
 		this.attachmentRepository = attachmentRepository;
+		this.attachmentDataRepository = attachmentDataRepository;
 		this.notesClient = notesClient;
 		this.subscriberNotificationRepository = subscriberNotificationRepository;
 		this.handoverIdempotencyRepository = handoverIdempotencyRepository;
 		this.entityManager = entityManager;
+		this.chunkedDeleter = chunkedDeleter;
 	}
 
 	/**
@@ -105,7 +113,7 @@ public class ErrandDataDeleter {
 		// context, which reaching into the collection to take the attachments out of it would not.
 		entityManager.detach(entity);
 
-		ofNullable(attachmentIds).orElse(emptyList()).forEach(attachmentRepository::deleteById);
+		deleteAttachments(ofNullable(attachmentIds).orElse(emptyList()));
 
 		deleteNotes(municipalityId, errandId);
 
@@ -115,6 +123,37 @@ public class ErrandDataDeleter {
 
 		// A handover is recorded against both ends, and the errand being removed may be either of them.
 		handoverIdempotencyRepository.deleteAllBySourceErrandIdOrNewErrandId(errandId, errandId);
+	}
+
+	/**
+	 * Removes the attachments of an errand together with the files they hold.
+	 * <p>
+	 * The rows are named rather than loaded, and that is what this method is for. An attachment cascades its removal
+	 * onto its data, and a cascade reaches the data by loading it - which means the whole file in the heap, for every
+	 * attachment of the errand at once, held until the transaction commits. An errand may carry fifty megabytes per
+	 * attachment and any number of them, so what that costs is set by what somebody once uploaded rather than by
+	 * anything this service controls.
+	 * <p>
+	 * The ids of the data rows are therefore read without the files, and both tables are then emptied of those rows by
+	 * removals that load nothing. The attachments go first, since they are the ones holding the foreign key. Doing it
+	 * this way means the cascade is bypassed rather than relied on, which is why the data rows are removed here
+	 * explicitly instead of being left to follow.
+	 *
+	 * @param attachmentIds ids of the attachments to remove.
+	 */
+	private void deleteAttachments(final List<String> attachmentIds) {
+		if (attachmentIds.isEmpty()) {
+			return;
+		}
+
+		// Read before anything is removed: once the attachment rows are gone there is nothing left to say which data
+		// rows they pointed at.
+		final var attachmentDataIds = attachmentRepository.findByIdIn(attachmentIds).stream()
+			.map(AttachmentDataIdProjection::getAttachmentDataId)
+			.toList();
+
+		chunkedDeleter.deleteInChunks(attachmentIds, attachmentRepository::deleteAllByIdInBatch);
+		chunkedDeleter.deleteInChunks(attachmentDataIds, attachmentDataRepository::deleteAllByIdInBatch);
 	}
 
 	/**

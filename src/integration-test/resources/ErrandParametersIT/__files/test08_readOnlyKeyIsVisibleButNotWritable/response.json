@@ -1,0 +1,8 @@
+{
+	"key": "readonly-key",
+	"displayName": "Readonly",
+	"values": [
+		"kept"
+	],
+	"version": 0
+}

@@ -6,6 +6,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
@@ -120,6 +121,55 @@ class ErrandParametersIT extends AbstractAppTest {
 			.sendRequest();
 
 		// adm01adm holds no role and is therefore unrestricted, so both keys must come back.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_ERRAND + "/parameters")
+			.withHeader(SENT_BY_HEADER, "adm01adm; type=adAccount")
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(List.of(Option.IGNORING_ARRAY_ORDER))
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-privileged.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_readOnlyKeyIsVisibleButNotWritable() {
+		// The FIRST_LINE role is granted readonly-key at level R, so smo02key is served it and may not change it.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_ERRAND + "/parameters/readonly-key")
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequest();
+
+		// Changing it is refused, even though the errand itself is theirs to write.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_ERRAND + "/parameters/readonly-key")
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest("request-change.json")
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequest();
+
+		// Writing back the value they were served changes nothing, so it is not refused.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_ERRAND + "/parameters/readonly-key")
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest("request-unchanged.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		// A wholesale patch that leaves it out may not delete it either.
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_ERRAND + "/parameters")
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		// adm01adm is unrestricted, so the untouched value and version must still be there.
 		setupCall()
 			.withServicePath(ACCESS_CONTROLLED_ERRAND + "/parameters")
 			.withHeader(SENT_BY_HEADER, "adm01adm; type=adAccount")

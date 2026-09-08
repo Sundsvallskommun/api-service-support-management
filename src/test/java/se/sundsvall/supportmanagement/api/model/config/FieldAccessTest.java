@@ -31,11 +31,13 @@ class FieldAccessTest {
 
 		final var bean = FieldAccess.create()
 			.withField(PARAMETERS)
-			.withKeys(keys);
+			.withKeys(keys)
+			.withLevel(AccessLevel.R);
 
 		assertThat(bean).hasNoNullFieldsOrProperties();
 		assertThat(bean.getField()).isEqualTo(PARAMETERS);
 		assertThat(bean.getKeys()).isEqualTo(keys);
+		assertThat(bean.getLevel()).isEqualTo(AccessLevel.R);
 	}
 
 	@Test
