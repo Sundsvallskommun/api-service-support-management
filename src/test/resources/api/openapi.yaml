@@ -10724,13 +10724,13 @@ components:
           minLength: 0
         processStatus:
           type: string
-          description: The state the process is in
-          enum:
+          description: "The state the process is in: RUNNING, WAITING, RETRYING, COMPLETED\
+            \ or FAILED. Carried as a string rather than as an enum so that a value\
+            \ added later does not break a client that generated one from this schema;\
+            \ an unknown value is still refused."
+          examples:
           - RUNNING
-          - WAITING
-          - RETRYING
-          - COMPLETED
-          - FAILED
+          minLength: 1
         currentActivityId:
           type: string
           description: "Identifier of the activity the process is at, as the process\
@@ -10852,11 +10852,12 @@ components:
           minLength: 0
         severity:
           type: string
-          description: Severity of the entry. Defaults to INFO
-          enum:
+          description: "Severity of the entry: INFO, WARN or ERROR. Defaults to INFO.\
+            \ Carried as a string rather than as an enum so that a value added later\
+            \ does not break a client that generated one from this schema; an unknown\
+            \ value is still refused."
+          examples:
           - INFO
-          - WARN
-          - ERROR
         message:
           type: string
           description: Free text describing what happened. Must not carry personal

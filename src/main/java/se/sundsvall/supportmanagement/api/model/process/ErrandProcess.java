@@ -4,18 +4,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import se.sundsvall.supportmanagement.api.validation.ValidEnumValue;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.WRITE_ONLY;
+import static java.util.Optional.ofNullable;
 
 /**
  * A process attached to an errand, and its state.
@@ -49,9 +50,13 @@ public class ErrandProcess {
 	@Size(max = 64)
 	private String processInstanceId;
 
-	@Schema(implementation = ProcessStatus.class, description = "The state the process is in")
-	@NotNull
-	private ProcessStatus processStatus;
+	@Schema(description = """
+		The state the process is in: RUNNING, WAITING, RETRYING, COMPLETED or FAILED. Carried as a string rather than as \
+		an enum so that a value added later does not break a client that generated one from this schema; an unknown value \
+		is still refused.""", examples = "RUNNING")
+	@NotBlank
+	@ValidEnumValue(ProcessStatus.class)
+	private String processStatus;
 
 	@Schema(description = "Identifier of the activity the process is at, as the process model names it", examples = "investigation_phase")
 	@Size(max = 255)
@@ -156,16 +161,19 @@ public class ErrandProcess {
 		return this;
 	}
 
-	public ProcessStatus getProcessStatus() {
+	public String getProcessStatus() {
 		return processStatus;
 	}
 
-	public void setProcessStatus(final ProcessStatus processStatus) {
+	public void setProcessStatus(final String processStatus) {
 		this.processStatus = processStatus;
 	}
 
+	/**
+	 * Takes the enum, which is what keeps this service from publishing a state it does not have.
+	 */
 	public ErrandProcess withProcessStatus(final ProcessStatus processStatus) {
-		this.processStatus = processStatus;
+		this.processStatus = ofNullable(processStatus).map(Enum::name).orElse(null);
 		return this;
 	}
 
@@ -317,7 +325,7 @@ public class ErrandProcess {
 			&& Objects.equals(processService, other.processService)
 			&& Objects.equals(processKey, other.processKey)
 			&& Objects.equals(processInstanceId, other.processInstanceId)
-			&& processStatus == other.processStatus
+			&& Objects.equals(processStatus, other.processStatus)
 			&& Objects.equals(currentActivityId, other.currentActivityId)
 			&& Objects.equals(currentActivityName, other.currentActivityName)
 			&& Objects.equals(externalTaskId, other.externalTaskId)

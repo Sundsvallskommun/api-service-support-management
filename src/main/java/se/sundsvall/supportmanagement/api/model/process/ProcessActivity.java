@@ -8,9 +8,11 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import se.sundsvall.supportmanagement.api.validation.ValidEnumValue;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static java.util.Optional.ofNullable;
 
 /**
  * One entry in the log of what the process did, and of what kept it from doing anything.
@@ -42,8 +44,12 @@ public class ProcessActivity {
 	@Size(max = 255)
 	private String activityName;
 
-	@Schema(implementation = ActivitySeverity.class, description = "Severity of the entry. Defaults to INFO")
-	private ActivitySeverity severity;
+	@Schema(description = """
+		Severity of the entry: INFO, WARN or ERROR. Defaults to INFO. Carried as a string rather than as an enum so that \
+		a value added later does not break a client that generated one from this schema; an unknown value is still \
+		refused.""", examples = "INFO")
+	@ValidEnumValue(ActivitySeverity.class)
+	private String severity;
 
 	@Schema(description = "Free text describing what happened. Must not carry personal data", examples = "Concurrent external tasks detected")
 	@Size(max = 2048)
@@ -131,16 +137,19 @@ public class ProcessActivity {
 		return this;
 	}
 
-	public ActivitySeverity getSeverity() {
+	public String getSeverity() {
 		return severity;
 	}
 
-	public void setSeverity(final ActivitySeverity severity) {
+	public void setSeverity(final String severity) {
 		this.severity = severity;
 	}
 
+	/**
+	 * Takes the enum, which is what keeps this service from publishing a severity it does not have.
+	 */
 	public ProcessActivity withSeverity(final ActivitySeverity severity) {
-		this.severity = severity;
+		this.severity = ofNullable(severity).map(Enum::name).orElse(null);
 		return this;
 	}
 
@@ -215,7 +224,7 @@ public class ProcessActivity {
 			&& Objects.equals(activityType, other.activityType)
 			&& Objects.equals(activityId, other.activityId)
 			&& Objects.equals(activityName, other.activityName)
-			&& severity == other.severity
+			&& Objects.equals(severity, other.severity)
 			&& Objects.equals(message, other.message)
 			&& Objects.equals(errorCode, other.errorCode)
 			&& Objects.equals(occurredAt, other.occurredAt)

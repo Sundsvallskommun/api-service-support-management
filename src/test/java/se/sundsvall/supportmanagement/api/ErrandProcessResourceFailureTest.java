@@ -94,7 +94,7 @@ class ErrandProcessResourceFailureTest {
 			.containsExactlyInAnyOrder(
 				tuple("processService", "must not be blank"),
 				tuple("processKey", "must not be blank"),
-				tuple("processStatus", "must not be null"));
+				tuple("processStatus", "must not be blank"));
 
 		verifyNoInteractions(serviceMock);
 	}

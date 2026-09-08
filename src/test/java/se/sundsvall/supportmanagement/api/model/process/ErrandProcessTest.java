@@ -68,7 +68,7 @@ class ErrandProcessTest {
 		assertThat(process.getProcessService()).isEqualTo("pw-alkt");
 		assertThat(process.getProcessKey()).isEqualTo("alkt-ansokan");
 		assertThat(process.getProcessInstanceId()).isEqualTo("processInstanceId");
-		assertThat(process.getProcessStatus()).isEqualTo(RUNNING);
+		assertThat(process.getProcessStatus()).isEqualTo(RUNNING.name());
 		assertThat(process.getCurrentActivityId()).isEqualTo("investigation_phase");
 		assertThat(process.getCurrentActivityName()).isEqualTo("Utredning");
 		assertThat(process.getExternalTaskId()).isEqualTo("externalTaskId");

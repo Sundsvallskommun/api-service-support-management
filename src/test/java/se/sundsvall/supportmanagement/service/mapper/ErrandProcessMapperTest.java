@@ -60,7 +60,7 @@ class ErrandProcessMapperTest {
 		assertThat(process.getProcessService()).isEqualTo("pw-alkt");
 		assertThat(process.getProcessKey()).isEqualTo("alkt-ansokan");
 		assertThat(process.getProcessInstanceId()).isEqualTo("processInstanceId");
-		assertThat(process.getProcessStatus()).isEqualTo(RUNNING);
+		assertThat(process.getProcessStatus()).isEqualTo(RUNNING.name());
 		assertThat(process.getCurrentActivityId()).isEqualTo("investigation_phase");
 		assertThat(process.getCurrentActivityName()).isEqualTo("Utredning");
 		assertThat(process.getStarted()).isEqualTo(started);
@@ -202,8 +202,8 @@ class ErrandProcessMapperTest {
 		assertThat(activities)
 			.extracting(ProcessActivity::getId, ProcessActivity::getProcessInstanceId, ProcessActivity::getSeverity)
 			.containsExactly(
-				tuple("withInstance", "processInstanceId", INFO),
-				tuple("withoutInstance", null, ERROR));
+				tuple("withInstance", "processInstanceId", INFO.name()),
+				tuple("withoutInstance", null, ERROR.name()));
 	}
 
 	@Test

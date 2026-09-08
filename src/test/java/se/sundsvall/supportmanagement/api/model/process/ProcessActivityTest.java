@@ -56,7 +56,7 @@ class ProcessActivityTest {
 		assertThat(activity.getActivityType()).isEqualTo("PHASE");
 		assertThat(activity.getActivityId()).isEqualTo("review_phase");
 		assertThat(activity.getActivityName()).isEqualTo("Granskning");
-		assertThat(activity.getSeverity()).isEqualTo(WARN);
+		assertThat(activity.getSeverity()).isEqualTo(WARN.name());
 		assertThat(activity.getMessage()).isEqualTo("message");
 		assertThat(activity.getErrorCode()).isEqualTo("errorCode");
 		assertThat(activity.getOccurredAt()).isEqualTo(occurredAt);

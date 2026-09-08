@@ -3,11 +3,14 @@ package se.sundsvall.supportmanagement.service.mapper;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.EnumUtils;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -51,6 +54,20 @@ public final class ErrandProcessMapper {
 		return ofNullable(entities).orElse(emptyList()).stream()
 			.map(ErrandProcessMapper::toErrandProcess)
 			.toList();
+	}
+
+	/**
+	 * The reported state as the enum this service works in.
+	 * <p>
+	 * The report carries it as a string so that the published schema does not pin the set (see {@link ErrandProcess}), and
+	 * the value is held to that set by validation before it ever reaches here - so an unknown one is a bug rather than a
+	 * bad request, and is left to fail as one.
+	 *
+	 * @param  report the report to read the state of.
+	 * @return        the state the report carries.
+	 */
+	public static ProcessStatus toProcessStatus(final ErrandProcess report) {
+		return EnumUtils.getEnum(ProcessStatus.class, report.getProcessStatus());
 	}
 
 	/**
@@ -113,7 +130,7 @@ public final class ErrandProcessMapper {
 
 		ofNullable(report.getStarted()).ifPresent(entity::setStarted);
 
-		entity.applyStatus(report.getProcessStatus(), clock);
+		entity.applyStatus(toProcessStatus(report), clock);
 	}
 
 	private static String errorCodeOf(final ErrandProcess report) {
@@ -141,7 +158,7 @@ public final class ErrandProcessMapper {
 			.withActivityType(activity.getActivityType())
 			.withActivityId(activity.getActivityId())
 			.withActivityName(activity.getActivityName())
-			.withSeverity(ofNullable(activity.getSeverity()).orElse(INFO))
+			.withSeverity(ofNullable(activity.getSeverity()).map(severity -> EnumUtils.getEnum(ActivitySeverity.class, severity)).orElse(INFO))
 			.withMessage(activity.getMessage())
 			.withErrorCode(activity.getErrorCode())
 			.withOccurredAt(activity.getOccurredAt());
