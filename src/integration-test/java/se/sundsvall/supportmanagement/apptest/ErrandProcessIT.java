@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
@@ -97,7 +99,15 @@ class ErrandProcessIT {
 			.withShortCode("PIT")
 			.withAccessControl(false)
 			.withNotifyReporter(false)
+			.withProcessConsumer(PROCESS_SERVICE)
 			.withNotificationTTLInDays(30), NAMESPACE, MUNICIPALITY_ID);
+
+		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue(PROCESS_SERVICE));
+	}
+
+	@AfterEach
+	void clearIdentifier() {
+		Identifier.remove();
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------

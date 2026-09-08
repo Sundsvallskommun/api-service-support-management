@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.config;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import org.apache.commons.lang3.EnumUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -19,6 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static java.util.Collections.emptyList;
@@ -29,6 +31,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_CONSUMER;
 
 @Service
 public class NamespaceConfigService {
@@ -58,7 +61,8 @@ public class NamespaceConfigService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}")
 	})
 	public void create(NamespaceConfig request, String namespace, String municipalityId) {
 		if (configRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
@@ -173,7 +177,8 @@ public class NamespaceConfigService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}")
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
@@ -208,6 +213,23 @@ public class NamespaceConfigService {
 			.orElse(false);
 	}
 
+	/**
+	 * The process engine the namespace delivers its events to, or empty for a namespace that runs no process at all.
+	 * <p>
+	 * Cached in its own right for the same reason as {@link #isAccessControlActive(String, String)}: it is asked on every
+	 * process write, and answering it through {@link #get(String, String)} would throw for a namespace that has no
+	 * configuration rather than saying it has no process.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @return                the process consumer of the namespace, or empty if it has none
+	 */
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
+	public Optional<String> getProcessConsumer(String namespace, String municipalityId) {
+		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.map(entity -> ConfigPropertyExtractor.<String>getNullableValue(entity, PROPERTY_PROCESS_CONSUMER));
+	}
+
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public NamespaceConfig get(String namespace, String municipalityId) {
 		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
@@ -224,7 +246,8 @@ public class NamespaceConfigService {
 	@Caching(evict = {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}")
 	})
 	public void delete(String namespace, String municipalityId) {
 		if (configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {

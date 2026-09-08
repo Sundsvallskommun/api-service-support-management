@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.PlatformTransactionManager;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
@@ -26,6 +28,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -36,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -56,6 +60,7 @@ class ErrandProcessServiceTest {
 	private static final String ERRAND_ID = "errandId";
 	private static final String PROCESS_INSTANCE_ID = "8f1c2b6e";
 	private static final String PROCESS_KEY = "alkt-ansokan";
+	private static final String PROCESS_SERVICE = "pw-alkt";
 	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-14T10:15:30.000Z"), ZoneId.of("UTC"));
 
 	@Mock
@@ -68,6 +73,9 @@ class ErrandProcessServiceTest {
 	private AccessControlService accessControlServiceMock;
 
 	@Mock
+	private NamespaceConfigService namespaceConfigServiceMock;
+
+	@Mock
 	private PlatformTransactionManager transactionManagerMock;
 
 	@Captor
@@ -78,9 +86,90 @@ class ErrandProcessServiceTest {
 
 	private ErrandProcessService service;
 
+	/**
+	 * Every write path checks its sender against the process configuration of the namespace, so the happy path needs both
+	 * an identifier and a configured consumer. Stubbed leniently because the read paths ask for neither.
+	 */
 	@BeforeEach
 	void setUp() {
-		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, accessControlServiceMock, transactionManagerMock, CLOCK);
+		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock, transactionManagerMock, CLOCK);
+
+		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue(PROCESS_SERVICE));
+		lenient().when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(PROCESS_SERVICE));
+	}
+
+	@AfterEach
+	void tearDown() {
+		Identifier.remove();
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	// The sender of a report, checked against the configuration of the namespace
+	// ---------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Answered as validation rather than as authorization, which is the whole reason these are 400 and not 403: nothing
+	 * behind {@code X-Sent-By} is verified, so refusing with 403 would claim a check the service never made.
+	 */
+	@Test
+	void aReportFromAServiceThatIsNotTheConsumerOfTheNamespaceIsRejected() {
+		final var report = report(RUNNING).withProcessService("pw-someone-else");
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains("pw-someone-else").contains(PROCESS_SERVICE);
+			});
+
+		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
+	}
+
+	@Test
+	void aRegistrationFromAServiceThatIsNotTheConsumerOfTheNamespaceIsRejected() {
+		final var report = report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID).withProcessService("pw-someone-else");
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report))
+			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(400));
+
+		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
+	}
+
+	/**
+	 * The rule that lets the reading side skip its lookup entirely for a namespace running no process: with no rows
+	 * possible, there is nothing to read.
+	 */
+	@Test
+	void aReportToANamespaceWithNoProcessConsumerIsRejected() {
+		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains(NAMESPACE);
+			});
+
+		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
+	}
+
+	/**
+	 * Without an identifier the notification of the errand and the activity log stand without an author, which is the
+	 * thing the fallback in EventService was added to prevent.
+	 */
+	@Test
+	void aReportWithoutAnIdentifierIsRejected() {
+		Identifier.remove();
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains("X-Sent-By");
+			});
+
+		verifyNoInteractions(processRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -500,7 +589,7 @@ class ErrandProcessServiceTest {
 
 	private static ErrandProcess report(final ProcessStatus status) {
 		return ErrandProcess.create()
-			.withProcessService("pw-alkt")
+			.withProcessService(PROCESS_SERVICE)
 			.withProcessKey(PROCESS_KEY)
 			.withProcessStatus(status);
 	}
@@ -517,7 +606,7 @@ class ErrandProcessServiceTest {
 			.withErrandId(ERRAND_ID)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
-			.withProcessService("pw-alkt")
+			.withProcessService(PROCESS_SERVICE)
 			.withProcessKey(PROCESS_KEY)
 			.withProcessInstanceId(processInstanceId);
 		entity.applyStatus(status, CLOCK);

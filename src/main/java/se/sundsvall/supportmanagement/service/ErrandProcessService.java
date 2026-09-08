@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityReposi
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
@@ -38,6 +39,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS;
@@ -48,6 +50,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcesses;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessActivities;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.updateErrandProcessEntity;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 
 /**
  * The state a process reports about an errand, and the reading of it.
@@ -69,12 +72,16 @@ public class ErrandProcessService {
 	private static final String OTHER_PROCESS_KEY = "The errand '%s' already runs a process other than '%s', and every instance of an errand runs the same process";
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again";
 	private static final String CONCURRENT_REPORT = "Another report for the process instance '%s' is being written right now";
+	private static final String NO_PROCESS_CONSUMER = "The namespace '%s' in municipality '%s' has no process consumer configured and runs no process";
+	private static final String WRONG_PROCESS_CONSUMER = "The process service '%s' is not the process consumer of namespace '%s', which is '%s'";
+	private static final String MISSING_IDENTIFIER = "A report must carry the identifier of its sender in the '%s' header, since it is what the activity log and the notification of the errand name as the author";
 
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandProcessService.class);
 
 	private final ErrandProcessRepository processRepository;
 	private final ErrandProcessActivityRepository activityRepository;
 	private final AccessControlService accessControlService;
+	private final NamespaceConfigService namespaceConfigService;
 	private final TransactionTemplate transactionTemplate;
 	private final Clock clock;
 
@@ -82,12 +89,14 @@ public class ErrandProcessService {
 		final ErrandProcessRepository processRepository,
 		final ErrandProcessActivityRepository activityRepository,
 		final AccessControlService accessControlService,
+		final NamespaceConfigService namespaceConfigService,
 		final PlatformTransactionManager transactionManager,
 		final Clock clock) {
 
 		this.processRepository = processRepository;
 		this.activityRepository = activityRepository;
 		this.accessControlService = accessControlService;
+		this.namespaceConfigService = namespaceConfigService;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
 		this.clock = clock;
 	}
@@ -106,6 +115,8 @@ public class ErrandProcessService {
 		if (nonNull(report.getProcessInstanceId()) && !processInstanceId.equals(report.getProcessInstanceId())) {
 			throw Problem.valueOf(BAD_REQUEST, INSTANCE_ID_MISMATCH.formatted(report.getProcessInstanceId(), processInstanceId));
 		}
+
+		verifySenderOfReport(namespace, municipalityId, report);
 
 		return write(errandId, processInstanceId, () -> reportInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
 	}
@@ -152,6 +163,8 @@ public class ErrandProcessService {
 		if (isNull(processInstanceId) && FAILED != report.getProcessStatus()) {
 			throw Problem.valueOf(BAD_REQUEST, MISSING_INSTANCE_ID);
 		}
+
+		verifySenderOfReport(namespace, municipalityId, report);
 
 		return write(errandId, processInstanceId, () -> registerInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
 	}
@@ -332,6 +345,28 @@ public class ErrandProcessService {
 	 */
 	private void lockErrandForWriting(final String namespace, final String municipalityId, final String errandId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, PROCESS, RW);
+	}
+
+	/**
+	 * Checks a report against the process configuration of the namespace before anything is written.
+	 * <p>
+	 * Validation rather than authorization, and answered as such. {@code X-Sent-By} is set by the caller and nothing
+	 * behind it is verified - this service authenticates no one, the gateway does - so refusing a report with 403 would
+	 * claim a check that was never made and send the caller looking for credentials over a field in the body. What the
+	 * rules do buy is that {@code process_service} is a column someone guarantees rather than free text, that a namespace
+	 * running no process cannot collect rows for one, and that the log and the notification of the errand name an author.
+	 */
+	private void verifySenderOfReport(final String namespace, final String municipalityId, final ErrandProcess report) {
+		if (isNull(getExecutingUser())) {
+			throw Problem.valueOf(BAD_REQUEST, MISSING_IDENTIFIER.formatted(SENT_BY_HEADER));
+		}
+
+		final var consumer = namespaceConfigService.getProcessConsumer(namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, NO_PROCESS_CONSUMER.formatted(namespace, municipalityId)));
+
+		if (!consumer.equals(report.getProcessService())) {
+			throw Problem.valueOf(BAD_REQUEST, WRONG_PROCESS_CONSUMER.formatted(report.getProcessService(), namespace, consumer));
+		}
 	}
 
 	private static void verifyBelongsToErrand(final ErrandProcessEntity entity, final String errandId) {
