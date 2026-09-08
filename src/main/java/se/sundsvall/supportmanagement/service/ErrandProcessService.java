@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -25,7 +27,6 @@ import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityReposi
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
-import se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper;
 import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
@@ -69,6 +70,8 @@ public class ErrandProcessService {
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again";
 	private static final String CONCURRENT_REPORT = "Another report for the process instance '%s' is being written right now";
 
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandProcessService.class);
+
 	private final ErrandProcessRepository processRepository;
 	private final ErrandProcessActivityRepository activityRepository;
 	private final AccessControlService accessControlService;
@@ -104,7 +107,7 @@ public class ErrandProcessService {
 			throw Problem.valueOf(BAD_REQUEST, INSTANCE_ID_MISMATCH.formatted(report.getProcessInstanceId(), processInstanceId));
 		}
 
-		return write(processInstanceId, () -> reportInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
+		return write(errandId, processInstanceId, () -> reportInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
 	}
 
 	private ErrandProcessResult reportInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
@@ -150,7 +153,7 @@ public class ErrandProcessService {
 			throw Problem.valueOf(BAD_REQUEST, MISSING_INSTANCE_ID);
 		}
 
-		return write(processInstanceId, () -> registerInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
+		return write(errandId, processInstanceId, () -> registerInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
 	}
 
 	private ErrandProcessResult registerInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
@@ -249,22 +252,26 @@ public class ErrandProcessService {
 	 * mistyped process key would be invisible.
 	 * <p>
 	 * One query for the whole page. The rows arrive newest first, so the first one seen per errand is the latest one.
+	 * Deduplicated before they are mapped, since an errand whose process start has failed repeatedly carries a row per
+	 * attempt and all but the newest are thrown away.
 	 *
-	 * @param  errandIds the errands to read the process of.
-	 * @return           the latest process per errand id, holding no entry for an errand that has none.
+	 * @param  namespace      the namespace of the errands.
+	 * @param  municipalityId the municipality of the errands.
+	 * @param  errandIds      the errands to read the process of.
+	 * @return                the latest process per errand id, holding no entry for an errand that has none.
 	 */
 	@Transactional(readOnly = true)
-	public Map<String, ErrandProcess> findLatestProcesses(final Collection<String> errandIds) {
+	public Map<String, ErrandProcess> findLatestProcesses(final String namespace, final String municipalityId, final Collection<String> errandIds) {
 		if (isNull(errandIds) || errandIds.isEmpty()) {
 			return emptyMap();
 		}
 
-		return processRepository.findByErrandIdInOrderByCreatedDesc(errandIds).stream()
-			.collect(Collectors.toMap(
-				ErrandProcessEntity::getErrandId,
-				ErrandProcessMapper::toErrandProcess,
-				(latest, _) -> latest,
-				LinkedHashMap::new));
+		final var latestPerErrand = new LinkedHashMap<String, ErrandProcess>();
+
+		processRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(errandIds, municipalityId, namespace)
+			.forEach(entity -> latestPerErrand.computeIfAbsent(entity.getErrandId(), _ -> toErrandProcess(entity)));
+
+		return latestPerErrand;
 	}
 
 	/**
@@ -276,17 +283,46 @@ public class ErrandProcessService {
 	 * rather than a read inside the failed one. It reaches the same conclusion the first would have: the row now exists,
 	 * so the report updates it or the registration returns it, unless another live instance is what stood in the way, in
 	 * which case it is refused as the conflict it is.
+	 * <p>
+	 * Only a violation some other row explains is a race. Every other one - a value too long for its column, a required
+	 * one left out - is raised as it is rather than dressed up as contention, since a report answered with 409 tells a
+	 * process engine to abort the process it just started.
 	 */
-	private ErrandProcessResult write(final String processInstanceId, final Supplier<ErrandProcessResult> attempt) {
+	private ErrandProcessResult write(final String errandId, final String processInstanceId, final Supplier<ErrandProcessResult> attempt) {
 		try {
 			return transactionTemplate.execute(_ -> attempt.get());
 		} catch (final DataIntegrityViolationException lostTheRace) {
+			LOG.info("Retrying the write for process instance '{}' on errand '{}' after an integrity violation", processInstanceId, errandId, lostTheRace);
+
 			try {
 				return transactionTemplate.execute(_ -> attempt.get());
-			} catch (final DataIntegrityViolationException stillContended) {
+			} catch (final DataIntegrityViolationException stillViolating) {
+				// The second attempt reads before it writes, so a row that explains the violation would have sent it down
+				// the update path or refused it as the conflict it is. Getting here again with nothing in the way means
+				// the violation was never about a race - a value too long for its column, a missing one - and answering
+				// that with 409 would tell a process engine its perfectly healthy process had already ended.
+				if (!aRowNowStandsInTheWay(errandId, processInstanceId)) {
+					LOG.error("The write for process instance '{}' on errand '{}' violates an integrity constraint no concurrent write explains", processInstanceId, errandId, stillViolating);
+					throw stillViolating;
+				}
+
 				throw Problem.valueOf(CONFLICT, CONCURRENT_REPORT.formatted(processInstanceId));
 			}
 		}
+	}
+
+	/**
+	 * Whether a row that was written while this one was being attempted explains the violation.
+	 * <p>
+	 * Read in a transaction of its own, since a constraint violation leaves the one that hit it unusable. Both unique
+	 * keys are asked about: the instance may have been taken by the report of its own work step, and the live slot of
+	 * the errand by an instance of another one.
+	 */
+	private boolean aRowNowStandsInTheWay(final String errandId, final String processInstanceId) {
+		return Boolean.TRUE.equals(transactionTemplate.execute(_ -> ofNullable(processInstanceId)
+			.flatMap(processRepository::findByProcessInstanceId)
+			.isPresent()
+			|| processRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId).isPresent()));
 	}
 
 	/**

@@ -34,16 +34,19 @@ public class ErrandProcess {
 
 	@Schema(description = "The service running the process, matching the process consumer configured for the namespace", examples = "pw-alkt")
 	@NotBlank
+	@Size(min = 1, max = 64)
 	private String processService;
 
 	@Schema(description = "The process model this instance runs, as the process engine names it", examples = "alkt-ansokan")
 	@NotBlank
+	@Size(min = 1, max = 128)
 	private String processKey;
 
 	@Schema(description = """
 		Id of the process instance in the process engine. Required when registering a start that succeeded, and left out \
 		when registering one that failed, since a start that never happened has no instance. Taken from the path when \
 		reporting on an instance; sending a different one there is rejected.""", examples = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33")
+	@Size(max = 64)
 	private String processInstanceId;
 
 	@Schema(implementation = ProcessStatus.class, description = "The state the process is in")
@@ -51,14 +54,17 @@ public class ErrandProcess {
 	private ProcessStatus processStatus;
 
 	@Schema(description = "Identifier of the activity the process is at, as the process model names it", examples = "investigation_phase")
+	@Size(max = 255)
 	private String currentActivityId;
 
 	@Schema(description = "Display name of the activity the process is at", examples = "Utredning")
+	@Size(max = 255)
 	private String currentActivityName;
 
 	@Schema(description = """
 		The external task the report was made from. Together with the activity ids of the report it is what makes a \
 		replayed report add no duplicate activities.""", examples = "a91c7f30-4d2b-11f0-9e21-0242ac120004", accessMode = WRITE_ONLY)
+	@Size(max = 64)
 	private String externalTaskId;
 
 	@Schema(description = """

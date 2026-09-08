@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.api.model.process;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -28,21 +30,27 @@ public class ProcessActivity {
 	private String processInstanceId;
 
 	@Schema(description = "Kind of entry. A free string that this service stores without interpreting it", examples = "PHASE")
+	@NotBlank
+	@Size(min = 1, max = 64)
 	private String activityType;
 
 	@Schema(description = "Identifier of the activity in the process model", examples = "review_phase")
+	@Size(max = 255)
 	private String activityId;
 
 	@Schema(description = "Display name of the activity", examples = "Granskning")
+	@Size(max = 255)
 	private String activityName;
 
 	@Schema(implementation = ActivitySeverity.class, description = "Severity of the entry. Defaults to INFO")
 	private ActivitySeverity severity;
 
 	@Schema(description = "Free text describing what happened. Must not carry personal data", examples = "Concurrent external tasks detected")
+	@Size(max = 2048)
 	private String message;
 
 	@Schema(description = "Error code, set for entries reporting a failure", examples = "INCIDENT")
+	@Size(max = 64)
 	private String errorCode;
 
 	@Schema(description = "When the entry happened, read from the clock of the process", examples = "2026-09-14T09:02:44.910+02:00")

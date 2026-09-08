@@ -368,7 +368,7 @@ class ErrandMapperTest {
 		fields.put(ErrandField.TITLE, Set.of());
 		fields.put(ErrandField.STATUS, Set.of());
 
-		final var errand = toErrandWithAccessControl(createEntity(), _ -> fields);
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> fields, ErrandEnrichment.empty());
 
 		assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "errandNumber", "title", "status");
 		assertThat(errand.getId()).isEqualTo(ID);
@@ -383,7 +383,7 @@ class ErrandMapperTest {
 		final var configuredKey = entity.getParameters().getFirst().getKey();
 		final var fields = Map.of(ErrandField.PARAMETERS, Set.of(configuredKey));
 
-		final var errand = toErrandWithAccessControl(entity, _ -> fields);
+		final var errand = toErrandWithAccessControl(entity, _ -> fields, ErrandEnrichment.empty());
 
 		assertThat(errand.getParameters()).hasSize(1).extracting(Parameter::getKey).containsExactly(configuredKey);
 	}
@@ -393,7 +393,7 @@ class ErrandMapperTest {
 		final var entity = createEntity();
 		final var fields = Map.of(ErrandField.PARAMETERS, Set.<String>of());
 
-		final var errand = toErrandWithAccessControl(entity, _ -> fields);
+		final var errand = toErrandWithAccessControl(entity, _ -> fields, ErrandEnrichment.empty());
 
 		assertThat(errand.getParameters()).hasSameSizeAs(entity.getParameters());
 	}
@@ -442,14 +442,14 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandWithAccessControlMapsNoFieldsWhenRestrictionResolvesToNone() {
-		final var errand = toErrandWithAccessControl(createEntity(), _ -> Map.of());
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> Map.of(), ErrandEnrichment.empty());
 
 		assertThat(errand).hasAllNullFieldsOrProperties();
 	}
 
 	@Test
 	void testToErrandWithAccessControlFromNull() {
-		assertThat(toErrandWithAccessControl(null, _ -> Map.of(ErrandField.ID, Set.of()))).isNull();
+		assertThat(toErrandWithAccessControl(null, _ -> Map.of(ErrandField.ID, Set.of()), ErrandEnrichment.empty())).isNull();
 	}
 
 	@Test
@@ -460,7 +460,7 @@ class ErrandMapperTest {
 		// The full errand is the role mapped errand of every field, plus the properties no ErrandField names.
 		assertThat(toErrand(entity)).usingRecursiveComparison()
 			.ignoringFields("phases", "actions")
-			.isEqualTo(toErrandWithAccessControl(entity, _ -> allFields));
+			.isEqualTo(toErrandWithAccessControl(entity, _ -> allFields, ErrandEnrichment.empty()));
 	}
 
 	@Test
@@ -556,7 +556,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandsWithAccessControlFromNull() {
-		assertThat(toErrandsWithAccessControl(null, _ -> Map.of())).isEmpty();
+		assertThat(toErrandsWithAccessControl(null, _ -> Map.of(), ErrandEnrichment.empty())).isEmpty();
 	}
 
 	@Test

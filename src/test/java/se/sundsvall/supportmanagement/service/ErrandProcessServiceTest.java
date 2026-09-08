@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -77,11 +78,9 @@ class ErrandProcessServiceTest {
 
 	private ErrandProcessService service;
 
-	private ErrandProcessService service() {
-		if (service == null) {
-			service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, accessControlServiceMock, transactionManagerMock, CLOCK);
-		}
-		return service;
+	@BeforeEach
+	void setUp() {
+		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, accessControlServiceMock, transactionManagerMock, CLOCK);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -93,7 +92,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		final var result = service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
 
 		assertThat(result.created()).isTrue();
 		assertThat(result.process().getProcessStatus()).isEqualTo(RUNNING);
@@ -110,7 +109,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		final var result = service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED));
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED));
 
 		assertThat(result.created()).isFalse();
 		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED);
@@ -123,7 +122,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING)));
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW);
 	}
@@ -133,7 +132,7 @@ class ErrandProcessServiceTest {
 		final var report = report(RUNNING).withProcessInstanceId("someone-else");
 
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report))
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(400));
 
 		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
@@ -145,7 +144,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(409));
 	}
 
@@ -155,7 +154,7 @@ class ErrandProcessServiceTest {
 		final var report = report(RUNNING).withProcessKey("alkt-tillsyn");
 
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report))
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(409));
 
 		verify(processRepositoryMock, never()).saveAndFlush(any());
@@ -167,7 +166,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.existsByErrandIdAndProcessKeyNot(ERRAND_ID, PROCESS_KEY)).thenReturn(true);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(409));
 	}
 
@@ -177,17 +176,13 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(entity("another-instance", RUNNING)));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus().value()).isEqualTo(409);
 				assertThat(problem.getDetail()).contains("another-instance");
 			});
 	}
 
-	/**
-	 * A terminal row leaves the slot of the unique key empty, so it can never take one that is occupied. Asking the
-	 * question of it anyway would refuse a start that failed while an older instance is still alive.
-	 */
 	/**
 	 * A failed instance reporting itself alive again asks for the place it gave up when it ended, and the answer has to
 	 * name the instance holding it rather than leaving the unique key to say only that something collided.
@@ -198,7 +193,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(entity("took-its-place", RUNNING)));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus().value()).isEqualTo(409);
 				assertThat(problem.getDetail()).contains("took-its-place");
@@ -207,12 +202,16 @@ class ErrandProcessServiceTest {
 		verify(processRepositoryMock, never()).saveAndFlush(any());
 	}
 
+	/**
+	 * A terminal row leaves the slot of the unique key empty, so it can never take one that is occupied. Asking the
+	 * question of it anyway would refuse a start that failed while an older instance is still alive.
+	 */
 	@Test
 	void aTerminalRowIsWrittenEvenWhileAnotherInstanceLives() {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		final var result = service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(FAILED));
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(FAILED));
 
 		assertThat(result.created()).isTrue();
 		verify(processRepositoryMock, never()).findByErrandIdAndActiveMarkerIsNotNull(anyString());
@@ -227,7 +226,7 @@ class ErrandProcessServiceTest {
 		final var existing = entity(PROCESS_INSTANCE_ID, WAITING).withCurrentActivityId("granska");
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
 
-		final var result = service().registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID));
+		final var result = service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID));
 
 		assertThat(result.created()).isFalse();
 		assertThat(result.process().getProcessStatus()).isEqualTo(WAITING);
@@ -242,7 +241,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.existsByErrandIdAndProcessStatus(ERRAND_ID, COMPLETED)).thenReturn(true);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID)))
+			.isThrownBy(() -> service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID)))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(409));
 	}
 
@@ -252,7 +251,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.existsByErrandIdAndProcessStatus(ERRAND_ID, COMPLETED)).thenReturn(false);
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		final var result = service().registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID));
+		final var result = service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID));
 
 		assertThat(result.created()).isTrue();
 	}
@@ -261,7 +260,7 @@ class ErrandProcessServiceTest {
 	void aStartThatFailedIsRegisteredWithoutAnInstance() {
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		final var result = service().registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(FAILED)
+		final var result = service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(FAILED)
 			.withError(ProcessError.create().withCode("START_FAILED").withMessage("boom")));
 
 		assertThat(result.created()).isTrue();
@@ -273,7 +272,7 @@ class ErrandProcessServiceTest {
 	@Test
 	void aStartWithoutAnInstanceThatDoesNotSayItFailedIsRejected() {
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING)))
+			.isThrownBy(() -> service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING)))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(400));
 
 		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
@@ -283,7 +282,7 @@ class ErrandProcessServiceTest {
 	void registeringAStartGuardsTheErrandWithAWriteLockOnTheProcessResource() {
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		service().registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(FAILED));
+		service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(FAILED));
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW);
 	}
@@ -299,7 +298,7 @@ class ErrandProcessServiceTest {
 		when(activityRepositoryMock.findByErrandProcessIdAndExternalTaskId("rowId", "task-1"))
 			.thenReturn(List.of(ErrandProcessActivityEntity.create().withActivityId("review_phase")));
 
-		service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)
 			.withExternalTaskId("task-1")
 			.withActivities(List.of(activity("review_phase"), activity("decision_phase"))));
 
@@ -315,7 +314,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 		when(activityRepositoryMock.findByErrandProcessIdAndExternalTaskId("rowId", "task-1")).thenReturn(List.of());
 
-		service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)
 			.withExternalTaskId("task-1")
 			.withActivities(List.of(activity("review_phase"), activity("review_phase"))));
 
@@ -332,7 +331,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId")));
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)
 			.withActivities(List.of(activity("review_phase"), activity("review_phase"))));
 
 		verify(activityRepositoryMock).saveAll(activitiesCaptor.capture());
@@ -345,7 +344,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING)));
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-		service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
 
 		verifyNoInteractions(activityRepositoryMock);
 	}
@@ -363,21 +362,43 @@ class ErrandProcessServiceTest {
 			.thenThrow(new DataIntegrityViolationException("uq_ep_process_instance_id"))
 			.thenAnswer(invocation -> invocation.getArgument(0));
 
-		final var result = service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED));
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED));
 
 		assertThat(result.created()).isFalse();
 		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED);
 		verify(processRepositoryMock, times(2)).findByProcessInstanceId(PROCESS_INSTANCE_ID);
 	}
 
+	/**
+	 * The live slot of the errand taken by an instance of another process is a race the second attempt can still lose,
+	 * and only then is contention the honest answer.
+	 */
 	@Test
 	void aCollisionThatSurvivesTheSecondAttemptIsAnsweredAsAConflict() {
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID))
+			.thenReturn(Optional.empty())
+			.thenReturn(Optional.empty())
+			.thenReturn(Optional.of(entity("took-the-slot", RUNNING)));
 		when(processRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("uq_ep_one_active_per_errand"));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service().reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(409));
+	}
+
+	/**
+	 * A violation no other row explains is not contention, and must not be dressed up as it: a process engine reads 409
+	 * as "this errand already had its process" and aborts the one it just started.
+	 */
+	@Test
+	void aViolationNoConcurrentRowExplainsIsRaisedAsItIs() {
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.empty());
+		when(processRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("Column 'activity_type' cannot be null"));
+
+		assertThatExceptionOfType(DataIntegrityViolationException.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)));
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -389,7 +410,7 @@ class ErrandProcessServiceTest {
 		when(processRepositoryMock.findByErrandIdAndMunicipalityIdAndNamespaceOrderByCreatedDesc(ERRAND_ID, MUNICIPALITY_ID, NAMESPACE, Pageable.unpaged()))
 			.thenReturn(List.of(entity("newest", RUNNING), entity("oldest", COMPLETED)));
 
-		final var processes = service().readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		final var processes = service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		assertThat(processes.getProcesses())
 			.extracting(ErrandProcess::getProcessInstanceId)
@@ -406,7 +427,7 @@ class ErrandProcessServiceTest {
 		when(activityRepositoryMock.findByErrandId(ERRAND_ID, pageable)).thenReturn(new PageImpl<>(List.of(withInstance, withoutInstance), pageable, 2));
 		when(processRepositoryMock.findAllById(any())).thenReturn(List.of(entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId")));
 
-		final var page = service().readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, pageable);
+		final var page = service.readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, pageable);
 
 		assertThat(page.getContent())
 			.extracting(ProcessActivity::getId, ProcessActivity::getProcessInstanceId)
@@ -423,7 +444,7 @@ class ErrandProcessServiceTest {
 		when(activityRepositoryMock.findByErrandIdAndErrandProcessId(ERRAND_ID, "rowId", pageable))
 			.thenReturn(new PageImpl<>(List.of(ErrandProcessActivityEntity.create().withId("a").withErrandProcessId("rowId").withOccurredAt(now(systemDefault()))), pageable, 1));
 
-		final var page = service().readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, pageable);
+		final var page = service.readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, pageable);
 
 		assertThat(page.getContent()).extracting(ProcessActivity::getProcessInstanceId).containsExactly(PROCESS_INSTANCE_ID);
 		verify(activityRepositoryMock, never()).findByErrandId(anyString(), any());
@@ -434,7 +455,7 @@ class ErrandProcessServiceTest {
 		final var pageable = PageRequest.of(0, 50);
 		when(processRepositoryMock.findByProcessInstanceId("unknown")).thenReturn(Optional.empty());
 
-		final var page = service().readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "unknown", pageable);
+		final var page = service.readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "unknown", pageable);
 
 		assertThat(page).isEmpty();
 		verifyNoInteractions(activityRepositoryMock);
@@ -445,7 +466,7 @@ class ErrandProcessServiceTest {
 		final var pageable = PageRequest.of(0, 50);
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING).withErrandId("anotherErrand")));
 
-		assertThat(service().readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, pageable)).isEmpty();
+		assertThat(service.readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, pageable)).isEmpty();
 		verifyNoInteractions(activityRepositoryMock);
 	}
 
@@ -455,23 +476,23 @@ class ErrandProcessServiceTest {
 
 	@Test
 	void theLatestProcessPerErrandIsReadInOneQuery() {
-		when(processRepositoryMock.findByErrandIdInOrderByCreatedDesc(List.of("errand-1", "errand-2"))).thenReturn(List.of(
+		when(processRepositoryMock.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("errand-1", "errand-2"), MUNICIPALITY_ID, NAMESPACE)).thenReturn(List.of(
 			entity("newest-1", FAILED).withErrandId("errand-1"),
 			entity("older-1", COMPLETED).withErrandId("errand-1"),
 			entity("newest-2", RUNNING).withErrandId("errand-2")));
 
-		final var processes = service().findLatestProcesses(List.of("errand-1", "errand-2"));
+		final var processes = service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1", "errand-2"));
 
 		assertThat(processes).hasSize(2);
 		assertThat(processes.get("errand-1").getProcessInstanceId()).isEqualTo("newest-1");
 		assertThat(processes.get("errand-2").getProcessInstanceId()).isEqualTo("newest-2");
-		verify(processRepositoryMock, times(1)).findByErrandIdInOrderByCreatedDesc(any());
+		verify(processRepositoryMock, times(1)).findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(any(), anyString(), anyString());
 	}
 
 	@Test
 	void noErrandsAsksTheDatabaseNothing() {
-		assertThat(service().findLatestProcesses(List.of())).isEmpty();
-		assertThat(service().findLatestProcesses(null)).isEmpty();
+		assertThat(service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of())).isEmpty();
+		assertThat(service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, null)).isEmpty();
 		verifyNoInteractions(processRepositoryMock);
 	}
 

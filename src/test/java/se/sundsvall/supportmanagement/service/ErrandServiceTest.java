@@ -362,7 +362,7 @@ class ErrandServiceTest {
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
-		when(errandProcessServiceMock.findLatestProcesses(List.of(ERRAND_ID))).thenReturn(Map.of(ERRAND_ID, ErrandProcess.create()
+		when(errandProcessServiceMock.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of(ERRAND_ID))).thenReturn(Map.of(ERRAND_ID, ErrandProcess.create()
 			.withProcessKey("alkt-ansokan")
 			.withProcessStatus(FAILED)
 			.withError(ProcessError.create().withCode("START_FAILED").withMessage("boom"))));
@@ -387,13 +387,13 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), any(Pageable.class)))
 			.thenReturn(new PageImpl<>(List.of(first, second)));
 		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
-		when(errandProcessServiceMock.findLatestProcesses(List.of("errand-1", "errand-2")))
+		when(errandProcessServiceMock.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1", "errand-2")))
 			.thenReturn(Map.of("errand-2", ErrandProcess.create().withProcessKey("alkt-ansokan").withProcessStatus(RUNNING)));
 
 		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, null, PageRequest.of(0, 20));
 
 		assertThat(matches.getContent()).extracting(Errand::getProcess).containsExactly(null, ErrandProcess.create().withProcessKey("alkt-ansokan").withProcessStatus(RUNNING));
-		verify(errandProcessServiceMock, times(1)).findLatestProcesses(List.of("errand-1", "errand-2"));
+		verify(errandProcessServiceMock, times(1)).findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1", "errand-2"));
 	}
 
 	@Test

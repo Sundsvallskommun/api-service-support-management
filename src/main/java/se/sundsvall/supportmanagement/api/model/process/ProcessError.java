@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.process;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 /**
@@ -13,9 +14,11 @@ import java.util.Objects;
 public class ProcessError {
 
 	@Schema(description = "Error code as reported by the process. Not interpreted by this service", examples = "INCIDENT")
+	@Size(max = 64)
 	private String code;
 
 	@Schema(description = "Human readable explanation of the failure. Must not carry personal data", examples = "Timeout against Employee after 30 s")
+	@Size(max = 2048)
 	private String message;
 
 	public static ProcessError create() {

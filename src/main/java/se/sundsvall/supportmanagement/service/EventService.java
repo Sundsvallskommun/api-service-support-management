@@ -35,7 +35,6 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
 
@@ -145,13 +144,14 @@ public class EventService {
 	/**
 	 * Who the notification says it came from.
 	 * <p>
-	 * An ad account when a person made the change, and otherwise whatever the identifier calls itself - a process engine
+	 * Whatever the identifier of the request calls itself, whether that is an ad account or not - a process engine
 	 * reporting on an errand is no ad account, and asking only for one would leave the handler with a notification from
 	 * nobody.
 	 */
 	private static String notificationSender() {
-		return ofNullable(getAdUser())
-			.orElseGet(() -> ofNullable(getExecutingUser()).map(Identifier::getValue).orElse(null));
+		return ofNullable(getExecutingUser())
+			.map(Identifier::getValue)
+			.orElse(null);
 	}
 
 	private String extractCaseId(final ErrandEntity errand) {

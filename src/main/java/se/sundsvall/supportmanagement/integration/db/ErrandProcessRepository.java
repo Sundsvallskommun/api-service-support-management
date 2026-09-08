@@ -69,9 +69,14 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	 * <p>
 	 * One query for the page rather than one per errand, which is what the {@code process} projection on the errand is
 	 * built from: the caller keeps the first row it sees per errand, and the ordering makes that the latest one.
+	 * <p>
+	 * Scoped by namespace and municipality like every other read of this table, so that a caller holding errand ids from
+	 * somewhere else cannot reach across a tenant by handing them over.
 	 *
-	 * @param  errandIds the errands to read the instances of.
-	 * @return           the instances of those errands, newest first.
+	 * @param  errandIds      the errands to read the instances of.
+	 * @param  municipalityId the municipality of the errands.
+	 * @param  namespace      the namespace of the errands.
+	 * @return                the instances of those errands, newest first.
 	 */
-	List<ErrandProcessEntity> findByErrandIdInOrderByCreatedDesc(Collection<String> errandIds);
+	List<ErrandProcessEntity> findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(Collection<String> errandIds, String municipalityId, String namespace);
 }

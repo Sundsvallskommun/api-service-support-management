@@ -55,6 +55,10 @@ class ErrandProcessResourceTest {
 		return Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID);
 	}
 
+	private static Map<String, Object> instanceVariables() {
+		return Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "processInstanceId", PROCESS_INSTANCE_ID);
+	}
+
 	private static ErrandProcess report() {
 		return ErrandProcess.create()
 			.withProcessService("pw-alkt")
@@ -68,7 +72,7 @@ class ErrandProcessResourceTest {
 			.thenReturn(new ErrandProcessResult(report().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), true));
 
 		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "processInstanceId", PROCESS_INSTANCE_ID)))
+			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(report())
 			.exchange()
@@ -89,7 +93,7 @@ class ErrandProcessResourceTest {
 			.thenReturn(new ErrandProcessResult(report().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), false));
 
 		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "processInstanceId", PROCESS_INSTANCE_ID)))
+			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(report())
 			.exchange()

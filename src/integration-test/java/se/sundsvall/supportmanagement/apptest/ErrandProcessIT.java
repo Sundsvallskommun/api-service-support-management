@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.apptest;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.hibernate.SessionFactory;
@@ -13,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.Application;
@@ -23,10 +23,9 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
 import se.sundsvall.supportmanagement.service.ErrandService;
@@ -37,10 +36,6 @@ import static org.assertj.core.api.Assertions.tuple;
 import static java.time.ZoneId.systemDefault;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.clearInvocations;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessError.create;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
@@ -73,7 +68,7 @@ class ErrandProcessIT {
 	@Autowired
 	private ErrandsRepository errandsRepository;
 
-	@MockitoSpyBean
+	@Autowired
 	private ErrandProcessRepository errandProcessRepository;
 
 	@Autowired
@@ -81,9 +76,6 @@ class ErrandProcessIT {
 
 	@Autowired
 	private RevisionRepository revisionRepository;
-
-	@Autowired
-	private NamespaceConfigRepository namespaceConfigRepository;
 
 	@Autowired
 	private NamespaceConfigService namespaceConfigService;
@@ -100,14 +92,12 @@ class ErrandProcessIT {
 	 */
 	@BeforeEach
 	void createNamespaceConfig() {
-		if (!namespaceConfigRepository.existsByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)) {
-			namespaceConfigService.create(NamespaceConfig.create()
-				.withDisplayName("Process integration")
-				.withShortCode("PIT")
-				.withAccessControl(false)
-				.withNotifyReporter(false)
-				.withNotificationTTLInDays(30), NAMESPACE, MUNICIPALITY_ID);
-		}
+		namespaceConfigService.create(NamespaceConfig.create()
+			.withDisplayName("Process integration")
+			.withShortCode("PIT")
+			.withAccessControl(false)
+			.withNotifyReporter(false)
+			.withNotificationTTLInDays(30), NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -307,7 +297,7 @@ class ErrandProcessIT {
 
 		final var statistics = statistics();
 		statistics.clear();
-		errandProcessService.findLatestProcesses(errandIds);
+		errandProcessService.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, errandIds);
 
 		assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
 	}
@@ -316,7 +306,8 @@ class ErrandProcessIT {
 	 * The list view is asked the one question a statement count cannot answer for it: whether the processes of the page
 	 * are looked up once or once per errand. Counting statements around the whole read would count the collections of
 	 * every errand as well, which are lazy and have always been read one errand at a time - so the answer would say
-	 * nothing about this lookup. What the lookup itself costs is settled by the test above.
+	 * nothing about this lookup. Counting the executions of the process query alone leaves those out, and answers about
+	 * the query that actually reached the database rather than about a method call.
 	 */
 	@Test
 	@DisplayName("Verification that listing errands looks up the processes of the whole page once, not once per errand")
@@ -325,12 +316,14 @@ class ErrandProcessIT {
 		errandIds.forEach(errandId -> errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance-" + errandId, report(RUNNING)));
 		entityManager.flush();
 		entityManager.clear();
-		clearInvocations(errandProcessRepository);
+
+		final var statistics = statistics();
+		statistics.clear();
 
 		final var page = errandService.findErrands(NAMESPACE, MUNICIPALITY_ID, null, PageRequest.of(0, 50));
 
 		assertThat(page.getContent()).hasSize(3).allSatisfy(errand -> assertThat(errand.getProcess().getProcessStatus()).isEqualTo(RUNNING));
-		verify(errandProcessRepository, times(1)).findByErrandIdInOrderByCreatedDesc(argThat(ids -> ids.containsAll(errandIds)));
+		assertThat(processQueryExecutions(statistics)).isEqualTo(1);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -341,15 +334,19 @@ class ErrandProcessIT {
 		return statistics;
 	}
 
+	/**
+	 * How many times a query against the process table ran, whatever the query looks like - the point is the count, and
+	 * pinning the generated text would break on any rename of the method behind it.
+	 */
+	private static long processQueryExecutions(final Statistics statistics) {
+		return Arrays.stream(statistics.getQueries())
+			.filter(query -> query.contains(ErrandProcessEntity.class.getSimpleName()))
+			.mapToLong(query -> statistics.getQueryStatistics(query).getExecutionCount())
+			.sum();
+	}
+
 	private String createErrand() {
-		return errandsRepository.saveAndFlush(ErrandEntity.create()
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withNamespace(NAMESPACE)
-			.withErrandNumber("PIT-" + UUID.randomUUID())
-			.withTitle("TITLE")
-			.withStatus("STATUS")
-			.withPriority("MEDIUM")
-			.withReporterUserId("joe01doe")).getId();
+		return ProcessTestErrands.createErrand(errandsRepository, MUNICIPALITY_ID, NAMESPACE, "PIT");
 	}
 
 	private static ErrandProcess report(final ProcessStatus status) {

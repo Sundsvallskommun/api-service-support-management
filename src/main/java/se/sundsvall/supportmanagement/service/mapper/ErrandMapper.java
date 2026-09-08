@@ -284,19 +284,12 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Maps errands according to the fields the requesting user may see of each of them. A user nothing restricts, which
-	 * the resolver signals with null, receives the full errand.
-	 *
-	 * @param  entities      errands to map
-	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see per errand
-	 * @return               mapped errands
-	 */
-	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver) {
-		return toErrandsWithAccessControl(entities, fieldResolver, ErrandEnrichment.empty());
-	}
-
-	/**
-	 * The same, with what a whole page of errands has been enriched with.
+	 * Maps errands according to the fields the requesting user may see of each of them, together with what a whole page
+	 * of them has been enriched with. A user nothing restricts, which the resolver signals with null, receives the full
+	 * errand.
+	 * <p>
+	 * The enrichment is required rather than defaulted, so that a caller reaching a field read outside the errand row
+	 * has to say what it holds instead of silently getting nothing.
 	 *
 	 * @param  entities      errands to map
 	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see per errand
@@ -311,19 +304,8 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Maps an errand according to the fields the requesting user may see of it. A user nothing restricts, which the
-	 * resolver signals with null, receives the full errand.
-	 *
-	 * @param  entity        errand to map
-	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see for the errand
-	 * @return               mapped errand
-	 */
-	public static Errand toErrandWithAccessControl(final ErrandEntity entity, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver) {
-		return toErrandWithAccessControl(entity, fieldResolver, ErrandEnrichment.empty());
-	}
-
-	/**
-	 * The same, with what the errand has been enriched with.
+	 * Maps an errand according to the fields the requesting user may see of it, together with what it has been enriched
+	 * with. A user nothing restricts, which the resolver signals with null, receives the full errand.
 	 * <p>
 	 * The enrichment reaches the errand through the very same field mappers as everything else, so a field read from
 	 * outside the errand row is filtered by the role based mapping exactly as one read from inside it. A user the mapping

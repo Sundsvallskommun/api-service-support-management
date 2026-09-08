@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,5 +71,32 @@ class ErrandProcessRepositoryTest {
 	void existsByErrandIdAndProcessStatus() {
 		assertThat(errandProcessRepository.existsByErrandIdAndProcessStatus("ERRAND_ID-1", COMPLETED)).isTrue();
 		assertThat(errandProcessRepository.existsByErrandIdAndProcessStatus("ERRAND_ID-2", COMPLETED)).isFalse();
+	}
+
+	@Test
+	@DisplayName("Verification that the rule of one process per errand is asked of every instance the errand has had, not only the live one")
+	void existsByErrandIdAndProcessKeyNot() {
+		assertThat(errandProcessRepository.existsByErrandIdAndProcessKeyNot("ERRAND_ID-1", "alkt-ansokan")).isFalse();
+		assertThat(errandProcessRepository.existsByErrandIdAndProcessKeyNot("ERRAND_ID-1", "alkt-tillsyn")).isTrue();
+	}
+
+	/**
+	 * The ordering is the whole contract of this query: the projection on the errand keeps the first row it sees per
+	 * errand and calls it the latest. Reversed, every errand would show its oldest process instead, and nothing else in
+	 * the suite would notice - the errands it is exercised on elsewhere have one instance each.
+	 */
+	@Test
+	@DisplayName("Verification that the instances of several errands come back newest first, so the first row seen per errand is its latest")
+	void findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc() {
+		assertThat(errandProcessRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("ERRAND_ID-1", "ERRAND_ID-2"), "2281", "NAMESPACE.1"))
+			.extracting(ErrandProcessEntity::getId)
+			.containsExactly("ep-live-1", "ep-failed-2", "ep-done-1");
+	}
+
+	@Test
+	@DisplayName("Verification that errand ids from another tenant reach nothing")
+	void findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDescOfAnotherTenant() {
+		assertThat(errandProcessRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("ERRAND_ID-1"), "2281", "NAMESPACE.2")).isEmpty();
+		assertThat(errandProcessRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("ERRAND_ID-1"), "2262", "NAMESPACE.1")).isEmpty();
 	}
 }

@@ -178,22 +178,22 @@ public class ErrandService {
 		final var matches = repository.findAll(fullFilter, pageable);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
 
-		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver, enrichmentOf(matches.getContent())), pageable, matches.getTotalElements());
+		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver, enrichmentOf(namespace, municipalityId, matches.getContent())), pageable, matches.getTotalElements());
 	}
 
 	@Transactional(readOnly = true)
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.ERRAND, LR);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
-		return toErrandWithAccessControl(errandEntity, fieldResolver, enrichmentOf(List.of(errandEntity)));
+		return toErrandWithAccessControl(errandEntity, fieldResolver, enrichmentOf(namespace, municipalityId, List.of(errandEntity)));
 	}
 
 	/**
 	 * What the errands of a page carry beyond their own rows, read in one query for the whole page rather than one per
 	 * errand.
 	 */
-	private ErrandEnrichment enrichmentOf(final List<ErrandEntity> entities) {
-		return ErrandEnrichment.of(errandProcessService.findLatestProcesses(entities.stream()
+	private ErrandEnrichment enrichmentOf(final String namespace, final String municipalityId, final List<ErrandEntity> entities) {
+		return ErrandEnrichment.of(errandProcessService.findLatestProcesses(namespace, municipalityId, entities.stream()
 			.map(ErrandEntity::getId)
 			.toList()));
 	}
@@ -250,7 +250,7 @@ public class ErrandService {
 			}
 		}
 
-		return toErrandWithAccessControl(entity, fieldResolver, enrichmentOf(List.of(entity)));
+		return toErrandWithAccessControl(entity, fieldResolver, enrichmentOf(namespace, municipalityId, List.of(entity)));
 	}
 
 	/**

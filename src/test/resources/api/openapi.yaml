@@ -978,6 +978,8 @@ paths:
         required: true
         schema:
           type: string
+          maxLength: 64
+          minLength: 0
         example: 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
       - name: X-Request-Group-Id
         in: header
@@ -10685,6 +10687,7 @@ components:
             \ configured for the namespace"
           examples:
           - pw-alkt
+          maxLength: 64
           minLength: 1
         processKey:
           type: string
@@ -10692,6 +10695,7 @@ components:
             \ names it"
           examples:
           - alkt-ansokan
+          maxLength: 128
           minLength: 1
         processInstanceId:
           type: string
@@ -10702,6 +10706,8 @@ components:
             \ one there is rejected."
           examples:
           - 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
+          maxLength: 64
+          minLength: 0
         processStatus:
           type: string
           description: The state the process is in
@@ -10717,11 +10723,15 @@ components:
             \ model names it"
           examples:
           - investigation_phase
+          maxLength: 255
+          minLength: 0
         currentActivityName:
           type: string
           description: Display name of the activity the process is at
           examples:
           - Utredning
+          maxLength: 255
+          minLength: 0
         externalTaskId:
           type: string
           description: The external task the report was made from. Together with the
@@ -10729,6 +10739,8 @@ components:
             activities.
           examples:
           - a91c7f30-4d2b-11f0-9e21-0242ac120004
+          maxLength: 64
+          minLength: 0
           writeOnly: true
         errandVersion:
           type: integer
@@ -10808,16 +10820,22 @@ components:
             interpreting it
           examples:
           - PHASE
+          maxLength: 64
+          minLength: 1
         activityId:
           type: string
           description: Identifier of the activity in the process model
           examples:
           - review_phase
+          maxLength: 255
+          minLength: 0
         activityName:
           type: string
           description: Display name of the activity
           examples:
           - Granskning
+          maxLength: 255
+          minLength: 0
         severity:
           type: string
           description: Severity of the entry. Defaults to INFO
@@ -10831,11 +10849,15 @@ components:
             data
           examples:
           - Concurrent external tasks detected
+          maxLength: 2048
+          minLength: 0
         errorCode:
           type: string
           description: "Error code, set for entries reporting a failure"
           examples:
           - INCIDENT
+          maxLength: 64
+          minLength: 0
         occurredAt:
           type: string
           format: date-time
@@ -10850,6 +10872,7 @@ components:
           - 2026-09-14T09:02:45.121+02:00
           readOnly: true
       required:
+      - activityType
       - occurredAt
     ProcessError:
       type: object
@@ -10861,12 +10884,16 @@ components:
             service
           examples:
           - INCIDENT
+          maxLength: 64
+          minLength: 0
         message:
           type: string
           description: Human readable explanation of the failure. Must not carry personal
             data
           examples:
           - Timeout against Employee after 30 s
+          maxLength: 2048
+          minLength: 0
     JsonNode:
       type: object
       properties:
