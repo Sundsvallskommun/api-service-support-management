@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService.KeyAccess;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -61,6 +63,7 @@ class ErrandParameterServiceTest {
 		// Arrange
 		final var parameters = List.of(Parameter.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE)));
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(ErrandEntity.create().withParameters(new ArrayList<>()));
+		when(accessControlServiceMock.verifyParameterAccess(any(), any(), any(), anyList())).thenReturn(new KeyAccess(_ -> true, _ -> true));
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create());
 
 		// Act
@@ -84,7 +87,7 @@ class ErrandParameterServiceTest {
 			ParameterEntity.create().withKey("hidden").withValues(new ArrayList<>(List.of("secret"))))));
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
-		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn("visible"::equals);
+		when(accessControlServiceMock.verifyParameterAccess(any(), any(), any(), anyList())).thenReturn(new KeyAccess("visible"::equals, "visible"::equals));
 		when(errandsRepositoryMock.save(any(ErrandEntity.class))).thenReturn(errand);
 
 		// The caller patches back the list they were served, which holds the keys they may see only.
@@ -145,6 +148,7 @@ class ErrandParameterServiceTest {
 		final var errandParameterValues = List.of("anotherValue");
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
+		when(accessControlServiceMock.verifyParameterAccess(any(), any(), any(), any(), any())).thenReturn(new KeyAccess(_ -> true, _ -> true));
 		when(errandsRepositoryMock.save(errand)).thenReturn(errand);
 
 		// Act

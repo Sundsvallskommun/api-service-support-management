@@ -695,6 +695,70 @@ class AccessControlServiceTest {
 	}
 
 	@Test
+	void writableKeyPredicateHoldsAKeyGrantedToRead() {
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("read-only")).withLevel(AccessLevel.R),
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("writable")))));
+
+		final var readable = accessControlService.readableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS);
+		final var writable = accessControlService.writableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS);
+
+		// A level only ever narrows: the key is served, it simply may not be changed.
+		assertThat(readable.test("read-only")).isTrue();
+		assertThat(writable.test("read-only")).isFalse();
+
+		// A grant carrying no level follows the errand, which is what every grant did before levels existed.
+		assertThat(readable.test("writable")).isTrue();
+		assertThat(writable.test("writable")).isTrue();
+	}
+
+	@Test
+	void writableKeyPredicateAcceptsAKeyGrantedToReadAndWrite() {
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")).withLevel(AccessLevel.RW))));
+
+		assertThat(accessControlService.writableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS).test("key-1")).isTrue();
+	}
+
+	@Test
+	void writableKeyPredicateTakesTheMostPermissiveOfTwoScopes() {
+		final var errand = ErrandEntity.create().withReporterUserId(AD_ACCOUNT);
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withRoleBasedMapping(true)
+			.withReporterAccess(ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")).withLevel(AccessLevel.RW))))
+			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(
+				FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")).withLevel(AccessLevel.R))))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(), Set.of("CASE_OFFICER")));
+
+		// One scope holding the key to read does not take the write away from a scope granting it.
+		assertThat(accessControlService.writableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS).test("key-1")).isTrue();
+	}
+
+	@Test
+	void writableKeyPredicateHoldsAWholeCollectionGrantedToRead() {
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withLevel(AccessLevel.R))));
+
+		final var readable = accessControlService.readableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS);
+		final var writable = accessControlService.writableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), errand, ErrandField.PARAMETERS);
+
+		// The whole collection is served and none of it may be changed.
+		assertThat(readable.test("any-key")).isTrue();
+		assertThat(writable.test("any-key")).isFalse();
+	}
+
+	@Test
+	void writableKeyPredicateAllowsEveryKeyOfAnErrandNothingRestricts() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+
+		assertThat(accessControlService.writableKeyPredicate(NAMESPACE, MUNICIPALITY_ID, adUser(), ErrandEntity.create(), ErrandField.PARAMETERS).test("any-key")).isTrue();
+	}
+
+	@Test
 	void readableKeyPredicateLimitsToConfiguredKeys() {
 		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(null, List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1")))));
