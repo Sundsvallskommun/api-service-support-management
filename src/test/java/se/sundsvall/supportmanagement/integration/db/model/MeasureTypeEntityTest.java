@@ -80,7 +80,7 @@ class MeasureTypeEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "deprecated", "allowedRoleIds");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "deprecated");
 	}
 
 	@Test
@@ -89,12 +89,12 @@ class MeasureTypeEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "deprecated", "allowedRoleIds");
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified", "deprecated");
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(MeasureTypeEntity.create()).hasAllNullFieldsOrPropertiesExcept("deprecated", "allowedRoleIds");
-		assertThat(new MeasureTypeEntity()).hasAllNullFieldsOrPropertiesExcept("deprecated", "allowedRoleIds");
+		assertThat(MeasureTypeEntity.create()).hasAllNullFieldsOrPropertiesExcept("deprecated");
+		assertThat(new MeasureTypeEntity()).hasAllNullFieldsOrPropertiesExcept("deprecated");
 	}
 }

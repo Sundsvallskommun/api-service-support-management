@@ -639,12 +639,6 @@ VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 'GROUP-A', 1,
        ('dd000000-0000-0000-0000-000000000101', 'MEASURE-2', 'Display Measure 2', 'GROUP-A', 2, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
        ('dd000000-0000-0000-0000-000000000102', 'MEASURE-3', 'Display Measure 3', 'GROUP-B', 3, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null);
 
--- Explicit registration assignments in test data only.
-INSERT INTO measure_type_allowed_role(measure_type_id, role_id)
-VALUES ('dd000000-0000-0000-0000-000000000100', 'cc000000-0000-0000-0000-000000000100'),
-       ('dd000000-0000-0000-0000-000000000101', 'cc000000-0000-0000-0000-000000000101'),
-       ('dd000000-0000-0000-0000-000000000102', 'cc000000-0000-0000-0000-000000000100');
-
 -- -----------------------------------
 -- Measure (errand measures)
 -- -----------------------------------

@@ -266,8 +266,8 @@ public class MetadataService {
 	public void deleteRole(final String namespace, final String municipalityId, final String id) {
 		final var role = roleRepository.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ROLE, id, namespace, municipalityId)));
-		if (measureTypeRepository.existsByAllowedRoleIdsContaining(id) || errandsRepository.existsByNamespaceAndMunicipalityIdAndMeasuresAddedByRole(namespace, municipalityId, role.getName())) {
-			throw Problem.valueOf(CONFLICT, "Role is referenced by measure types or saved measures; deprecate it instead");
+		if (errandsRepository.existsByNamespaceAndMunicipalityIdAndMeasuresAddedByRole(namespace, municipalityId, role.getName())) {
+			throw Problem.valueOf(CONFLICT, "Role is referenced by saved measures; deprecate it instead");
 		}
 
 		roleRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
@@ -626,13 +626,11 @@ public class MetadataService {
 	// MeasureType operations
 	// =================================================================
 
-	@Transactional
 	public String createMeasureType(final String namespace, final String municipalityId, final MeasureType measureType) {
 		if (measureTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, measureType.getName())) {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, measureType.getName(), namespace, municipalityId));
 		}
 
-		validateAllowedMeasureRoles(namespace, municipalityId, measureType);
 		return measureTypeRepository.save(toMeasureTypeEntity(namespace, municipalityId, measureType)).getId();
 	}
 
@@ -670,17 +668,8 @@ public class MetadataService {
 	public MeasureType updateMeasureType(final String namespace, final String municipalityId, final String id, final MeasureType measureType) {
 		final var existing = measureTypeRepository.findWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId)));
-		validateAllowedMeasureRoles(namespace, municipalityId, measureType);
 		final var entity = updateMeasureTypeEntity(existing, measureType);
 		return toMeasureType(measureTypeRepository.save(entity));
-	}
-
-	private void validateAllowedMeasureRoles(final String namespace, final String municipalityId, final MeasureType measureType) {
-		ofNullable(measureType.getAllowedRoleIds()).ifPresent(ids -> ids.forEach(id -> {
-			if (!roleRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
-				throw Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ROLE, id, namespace, municipalityId));
-			}
-		}));
 	}
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {

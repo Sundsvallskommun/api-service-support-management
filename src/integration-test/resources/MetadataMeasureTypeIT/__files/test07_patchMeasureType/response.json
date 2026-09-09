@@ -6,8 +6,5 @@
 	"sortOrder": 42,
 	"created": "2023-01-01T12:00:00+01:00",
 	"modified": "${json-unit.ignore}",
-	"deprecated": true,
-	"allowedRoleIds": [
-		"cc000000-0000-0000-0000-000000000100"
-	]
+	"deprecated": true
 }

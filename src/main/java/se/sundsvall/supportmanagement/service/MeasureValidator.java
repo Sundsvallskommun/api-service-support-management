@@ -37,19 +37,20 @@ public class MeasureValidator {
 		if (measure == null) {
 			throw Problem.valueOf(BAD_REQUEST, "A measure entry must not be null");
 		}
-		validateTypeForRole(measure.getMeasureTypeId(), measure.getAddedByRole(), namespace, municipalityId);
+		validateActiveType(measure.getMeasureTypeId(), namespace, municipalityId);
+		validateActiveRole(measure.getAddedByRole(), namespace, municipalityId);
 		validateDates(measure, null);
 		measure.setAddedByUser(accessControlService.verifyMeasureCreator(namespace, municipalityId, measure.getAddedByUser(), measure.getAddedByRole()));
 	}
 
-	/** An unchanged historical type remains editable; changing type must satisfy the current registration rules. */
+	/** An unchanged historical type remains editable; changing type requires active type metadata. */
 	public void validateUpdate(final Measure measure, final MeasureEntity existing, final String namespace, final String municipalityId) {
 		if (measure.getAddedByUser() != null && !Objects.equals(measure.getAddedByUser(), existing.getAddedByUser()) ||
 			measure.getAddedByRole() != null && !Objects.equals(measure.getAddedByRole(), existing.getAddedByRole())) {
 			throw Problem.valueOf(BAD_REQUEST, "Measure creator and registration role cannot be changed");
 		}
 		if (measure.getMeasureTypeId() != null && !Objects.equals(measure.getMeasureTypeId(), existing.getMeasureTypeId())) {
-			validateTypeForRole(measure.getMeasureTypeId(), existing.getAddedByRole(), namespace, municipalityId);
+			validateActiveType(measure.getMeasureTypeId(), namespace, municipalityId);
 		}
 		validateDates(measure, existing);
 	}
@@ -74,16 +75,25 @@ public class MeasureValidator {
 		}
 	}
 
-	private void validateTypeForRole(final String measureTypeId, final String roleName, final String namespace, final String municipalityId) {
-		if (measureTypeId == null || roleName == null) {
-			throw Problem.valueOf(BAD_REQUEST, "Measure type ID and registration role are required");
+	private void validateActiveType(final String measureTypeId, final String namespace, final String municipalityId) {
+		if (measureTypeId == null) {
+			throw Problem.valueOf(BAD_REQUEST, "Measure type ID is required");
 		}
 		final var type = measureTypeRepository.findByIdAndNamespaceAndMunicipalityId(measureTypeId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, "Measure type does not exist in this municipality and namespace"));
+		if (type.isDeprecated()) {
+			throw Problem.valueOf(BAD_REQUEST, "Select an active measure type");
+		}
+	}
+
+	private void validateActiveRole(final String roleName, final String namespace, final String municipalityId) {
+		if (roleName == null) {
+			throw Problem.valueOf(BAD_REQUEST, "Registration role is required");
+		}
 		final var role = roleRepository.findByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, roleName)
 			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, "Registration role does not exist in this municipality and namespace"));
-		if (type.isDeprecated() || role.isDeprecated() || !type.getAllowedRoleIds().contains(role.getId())) {
-			throw Problem.valueOf(BAD_REQUEST, "Select an active measure type assigned to the active registration role");
+		if (role.isDeprecated()) {
+			throw Problem.valueOf(BAD_REQUEST, "Select an active registration role");
 		}
 	}
 

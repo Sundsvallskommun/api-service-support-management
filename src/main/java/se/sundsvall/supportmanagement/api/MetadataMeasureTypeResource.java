@@ -29,7 +29,6 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
-import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -129,7 +128,7 @@ class MetadataMeasureTypeResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "id", description = "Measure type id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String id,
-		@Validated(OnUpdate.class) @NotNull @RequestBody final MeasureType body) {
+		@Valid @NotNull @RequestBody final MeasureType body) {
 
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_MEASURE_TYPE, RW);
 

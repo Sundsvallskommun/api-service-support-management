@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;

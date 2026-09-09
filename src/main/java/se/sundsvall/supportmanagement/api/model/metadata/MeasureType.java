@@ -1,17 +1,12 @@
 package se.sundsvall.supportmanagement.api.model.metadata;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-import java.util.Set;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -23,7 +18,6 @@ public class MeasureType {
 
 	@Schema(description = "Name for the measure type. Used as key", examples = "INTERVENTION")
 	@NotBlank
-	@Pattern(regexp = ".*\\S.*", groups = OnUpdate.class)
 	private String name;
 
 	@Schema(description = "Display name for the measure type", examples = "Intervention", types = {
@@ -33,11 +27,7 @@ public class MeasureType {
 
 	@Schema(description = "Group that this measure type belongs to", examples = "MANAGERS")
 	@NotBlank
-	@Pattern(regexp = ".*\\S.*", groups = OnUpdate.class)
 	private String measureGroup;
-
-	@ArraySchema(arraySchema = @Schema(description = "Role IDs allowed to register this measure type. Empty means no roles. Omitted or null on PATCH preserves existing assignments; an empty array removes all assignments."), schema = @Schema(type = "string", format = "uuid"))
-	private Set<@NotBlank(groups = { Default.class, OnUpdate.class }) String> allowedRoleIds;
 
 	@Schema(description = "Sort order for the measure type", examples = "1", types = {
 		"integer", "null"
@@ -49,12 +39,12 @@ public class MeasureType {
 
 	@Schema(description = "Timestamp when the measure type was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { Default.class, OnUpdate.class })
+	@Null
 	private OffsetDateTime created;
 
 	@Schema(description = "Timestamp when the measure type was last modified", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
-	@Null(groups = { Default.class, OnUpdate.class })
+	@Null
 	private OffsetDateTime modified;
 
 	public static MeasureType create() {
@@ -102,19 +92,6 @@ public class MeasureType {
 
 	public String getMeasureGroup() {
 		return measureGroup;
-	}
-
-	public Set<String> getAllowedRoleIds() {
-		return allowedRoleIds;
-	}
-
-	public void setAllowedRoleIds(final Set<String> allowedRoleIds) {
-		this.allowedRoleIds = allowedRoleIds;
-	}
-
-	public MeasureType withAllowedRoleIds(final Set<String> allowedRoleIds) {
-		this.allowedRoleIds = allowedRoleIds;
-		return this;
 	}
 
 	public void setMeasureGroup(final String measureGroup) {
@@ -180,7 +157,7 @@ public class MeasureType {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, deprecated, id, measureGroup, modified, name, displayName, sortOrder, allowedRoleIds);
+		return Objects.hash(created, deprecated, id, measureGroup, modified, name, displayName, sortOrder);
 	}
 
 	@Override
@@ -192,7 +169,7 @@ public class MeasureType {
 			return false;
 		}
 		return Objects.equals(created, other.created) && Objects.equals(deprecated, other.deprecated) && Objects.equals(id, other.id) && Objects.equals(measureGroup, other.measureGroup) && Objects.equals(modified, other.modified)
-			&& Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder, other.sortOrder) && Objects.equals(allowedRoleIds, other.allowedRoleIds);
+			&& Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
@@ -202,7 +179,6 @@ public class MeasureType {
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
 			", measureGroup='" + measureGroup + '\'' +
-			", allowedRoleIds=" + allowedRoleIds +
 			", sortOrder=" + sortOrder +
 			", deprecated=" + deprecated +
 			", created=" + created +

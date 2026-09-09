@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,12 +40,17 @@ class MeasureValidatorTest {
 	@InjectMocks
 	private MeasureValidator validator;
 
-	private MeasureTypeEntity assignType() {
-		final var type = MeasureTypeEntity.create().withId(TYPE_ID).withAllowedRoleIds(Set.of(ROLE_ID));
+	private MeasureTypeEntity activeType() {
+		final var type = MeasureTypeEntity.create().withId(TYPE_ID).withMeasureGroup("INDEPENDENT_GROUP");
 		when(measureTypeRepository.findByIdAndNamespaceAndMunicipalityId(TYPE_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(type));
-		when(roleRepository.findByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "MANAGER"))
-			.thenReturn(Optional.of(RoleEntity.create().withId(ROLE_ID).withName("MANAGER")));
 		return type;
+	}
+
+	private RoleEntity activeRole() {
+		final var role = RoleEntity.create().withId(ROLE_ID).withName("MANAGER");
+		when(roleRepository.findByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "MANAGER"))
+			.thenReturn(Optional.of(role));
+		return role;
 	}
 
 	private Measure registration() {
@@ -54,8 +58,9 @@ class MeasureValidatorTest {
 	}
 
 	@Test
-	void setsTheCreatorFromTheVerifiedIdentity() {
-		assignType();
+	void acceptsAnyActiveTypeForAHeldRoleAndSetsTheVerifiedCreator() {
+		activeType();
+		activeRole();
 		when(accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, null, "MANAGER")).thenReturn("joe01doe");
 		final var measure = registration();
 		validator.validate(measure, NAMESPACE, MUNICIPALITY_ID);
@@ -63,16 +68,17 @@ class MeasureValidatorTest {
 	}
 
 	@Test
-	void rejectsAnUnassignedTypeEvenWhenItsGroupLooksLikeTheRole() {
-		assignType().withAllowedRoleIds(Set.of()).withMeasureGroup("MANAGER");
-		assertThatThrownBy(() -> validator.validate(registration(), NAMESPACE, MUNICIPALITY_ID)).hasMessageContaining("assigned to");
-		verifyNoInteractions(accessControlService);
+	void rejectsDeprecatedTypes() {
+		activeType().withDeprecated(true);
+		assertThatThrownBy(() -> validator.validate(registration(), NAMESPACE, MUNICIPALITY_ID)).hasMessageContaining("active measure type");
 	}
 
 	@Test
-	void rejectsDeprecatedTypes() {
-		assignType().withDeprecated(true);
-		assertThatThrownBy(() -> validator.validate(registration(), NAMESPACE, MUNICIPALITY_ID)).hasMessageContaining("active measure type");
+	void rejectsDeprecatedRegistrationRoles() {
+		activeType();
+		activeRole().withDeprecated(true);
+		assertThatThrownBy(() -> validator.validate(registration(), NAMESPACE, MUNICIPALITY_ID)).hasMessageContaining("active registration role");
+		verifyNoInteractions(accessControlService);
 	}
 
 	@Test
@@ -83,7 +89,8 @@ class MeasureValidatorTest {
 
 	@Test
 	void rejectsUsersWithoutTheSelectedRole() {
-		assignType();
+		activeType();
+		activeRole();
 		when(accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, null, "MANAGER")).thenThrow(Problem.valueOf(FORBIDDEN, "Role not granted"));
 		assertThatThrownBy(() -> validator.validate(registration(), NAMESPACE, MUNICIPALITY_ID)).hasMessageContaining("Role not granted");
 	}
@@ -103,8 +110,8 @@ class MeasureValidatorTest {
 	}
 
 	@Test
-	void typeChangesUseTheSavedRegistrationRole() {
-		assignType();
+	void typeChangesDoNotReassignOrReauthorizeTheHistoricalRegistrationRole() {
+		activeType();
 		final var existing = MeasureEntity.create().withMeasureTypeId("old-type").withAddedByRole("MANAGER");
 		assertThatCode(() -> validator.validateUpdate(Measure.create().withMeasureTypeId(TYPE_ID), existing, NAMESPACE, MUNICIPALITY_ID)).doesNotThrowAnyException();
 		verifyNoInteractions(accessControlService);

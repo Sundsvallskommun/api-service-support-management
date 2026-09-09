@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -1938,22 +1937,6 @@ class MetadataServiceTest {
 		verifyNoMoreInteractions(measureTypeRepositoryMock);
 	}
 	@Test
-	void measureRoleAssignmentsMustBelongToTheSameNamespaceAndMunicipality() {
-		final var request = MeasureType.create().withName("TYPE").withMeasureGroup("GROUP").withAllowedRoleIds(Set.of("foreign-role"));
-		assertThatThrownBy(() -> metadataService.createMeasureType("namespace", "2281", request)).hasMessageContaining("is not present in namespace");
-		verify(measureTypeRepositoryMock, never()).save(any());
-	}
-
-	@Test
-	void partialMetadataPatchPreservesOrExplicitlyClearsAssignments() {
-		final var entity = MeasureTypeEntity.create().withId("type-id").withName("TYPE").withAllowedRoleIds(Set.of("role-id"));
-		when(measureTypeRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("type-id", "namespace", "2281")).thenReturn(Optional.of(entity));
-		when(measureTypeRepositoryMock.save(entity)).thenReturn(entity);
-		assertThat(metadataService.updateMeasureType("namespace", "2281", "type-id", MeasureType.create().withDisplayName("New label")).getAllowedRoleIds()).containsExactly("role-id");
-		assertThat(metadataService.updateMeasureType("namespace", "2281", "type-id", MeasureType.create().withAllowedRoleIds(Set.of())).getAllowedRoleIds()).isEmpty();
-	}
-
-	@Test
 	void roleKeysCannotBeRenamed() {
 		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("role-id", "namespace", "2281"))
 			.thenReturn(Optional.of(RoleEntity.create().withId("role-id").withName("MANAGER")));
@@ -1962,16 +1945,7 @@ class MetadataServiceTest {
 	}
 
 	@Test
-	void referencedRolesCannotBeDeleted() {
-		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("role-id", "namespace", "2281"))
-			.thenReturn(Optional.of(RoleEntity.create().withId("role-id").withName("MANAGER")));
-		when(measureTypeRepositoryMock.existsByAllowedRoleIdsContaining("role-id")).thenReturn(true);
-		assertThatThrownBy(() -> metadataService.deleteRole("namespace", "2281", "role-id")).hasMessageContaining("deprecate it instead");
-		verify(roleRepositoryMock, never()).deleteByIdAndNamespaceAndMunicipalityId(any(), any(), any());
-	}
-
-	@Test
-	void historicalRolesStayProtectedAfterAllTypeAssignmentsAreRemoved() {
+	void rolesReferencedByHistoricalMeasuresCannotBeDeleted() {
 		when(roleRepositoryMock.findWithLockingByIdAndNamespaceAndMunicipalityId("role-id", "namespace", "2281"))
 			.thenReturn(Optional.of(RoleEntity.create().withId("role-id").withName("MANAGER")));
 		when(errandsRepositoryMock.existsByNamespaceAndMunicipalityIdAndMeasuresAddedByRole("namespace", "2281", "MANAGER")).thenReturn(true);

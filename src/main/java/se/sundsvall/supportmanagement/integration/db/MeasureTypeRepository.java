@@ -20,8 +20,6 @@ public interface MeasureTypeRepository extends JpaRepository<MeasureTypeEntity, 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<MeasureTypeEntity> findWithLockingByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
-	boolean existsByAllowedRoleIdsContaining(String roleId);
-
 	List<MeasureTypeEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId, Sort sort);
 
 	List<MeasureTypeEntity> findAllByNamespaceAndMunicipalityIdAndMeasureGroup(String namespace, String municipalityId, String measureGroup, Sort sort);

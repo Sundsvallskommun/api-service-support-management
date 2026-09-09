@@ -1,24 +1,18 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
-import static jakarta.persistence.FetchType.EAGER;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -49,11 +43,6 @@ public class MeasureTypeEntity {
 
 	@Column(name = "measure_group", nullable = false)
 	private String measureGroup;
-
-	@ElementCollection(fetch = EAGER)
-	@CollectionTable(name = "measure_type_allowed_role", joinColumns = @JoinColumn(name = "measure_type_id"))
-	@Column(name = "role_id", nullable = false)
-	private Set<String> allowedRoleIds = new HashSet<>();
 
 	@Column(name = "sort_order")
 	private Integer sortOrder;
@@ -120,19 +109,6 @@ public class MeasureTypeEntity {
 
 	public String getMeasureGroup() {
 		return measureGroup;
-	}
-
-	public Set<String> getAllowedRoleIds() {
-		return allowedRoleIds;
-	}
-
-	public void setAllowedRoleIds(final Set<String> allowedRoleIds) {
-		this.allowedRoleIds = allowedRoleIds == null ? new HashSet<>() : new HashSet<>(allowedRoleIds);
-	}
-
-	public MeasureTypeEntity withAllowedRoleIds(final Set<String> allowedRoleIds) {
-		setAllowedRoleIds(allowedRoleIds);
-		return this;
 	}
 
 	public void setMeasureGroup(final String measureGroup) {
@@ -234,7 +210,7 @@ public class MeasureTypeEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, deprecated, id, measureGroup, modified, municipalityId, name, namespace, displayName, sortOrder, allowedRoleIds);
+		return Objects.hash(created, deprecated, id, measureGroup, modified, municipalityId, name, namespace, displayName, sortOrder);
 	}
 
 	@Override
@@ -246,8 +222,7 @@ public class MeasureTypeEntity {
 			return false;
 		}
 		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(id, other.id) && Objects.equals(measureGroup, other.measureGroup) && Objects.equals(modified, other.modified)
-			&& Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder, other.sortOrder)
-			&& Objects.equals(allowedRoleIds, other.allowedRoleIds);
+			&& Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
 	@Override
@@ -256,7 +231,6 @@ public class MeasureTypeEntity {
 			+ ", name=" + name
 			+ ", displayName=" + displayName
 			+ ", measureGroup=" + measureGroup
-			+ ", allowedRoleIds=" + allowedRoleIds
 			+ ", sortOrder=" + sortOrder
 			+ ", deprecated=" + deprecated
 			+ ", municipalityId=" + municipalityId

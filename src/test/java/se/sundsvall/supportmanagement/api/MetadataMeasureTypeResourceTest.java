@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -159,14 +158,4 @@ class MetadataMeasureTypeResourceTest {
 		verify(metadataServiceMock).updateMeasureType(NAMESPACE, MUNICIPALITY_ID, id, body);
 		assertThat(response).isNotNull().isEqualTo(body);
 	}
-	@Test
-	void canPatchOnlyTheRoleAssignments() {
-		final var id = "dd000000-0000-0000-0000-000000000100";
-		final var body = MeasureType.create().withAllowedRoleIds(Set.of("cc000000-0000-0000-0000-000000000100"));
-		when(metadataServiceMock.updateMeasureType(NAMESPACE, MUNICIPALITY_ID, id, body)).thenReturn(body);
-		webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "id", id)))
-			.contentType(APPLICATION_JSON).bodyValue(body).exchange().expectStatus().isOk()
-			.expectBody(MeasureType.class).isEqualTo(body);
-	}
-
 }

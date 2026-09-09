@@ -61,7 +61,7 @@ public class Measure {
 	@Schema(description = "AD account of the requesting user, set by the API when creating. If supplied it must match the request identity. Immutable after creation.", examples = "jo12doe")
 	private String addedByUser;
 
-	@Schema(description = "Active namespace Role.name held by the requesting user and assigned to the measure type. Immutable after creation.", examples = "MANAGER")
+	@Schema(description = "Active namespace Role.name held by the requesting user. Immutable after creation.", examples = "MANAGER")
 	@NotBlank(groups = {
 		Default.class, OnCreate.class
 	})
