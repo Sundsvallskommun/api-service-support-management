@@ -37,6 +37,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -83,6 +84,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -187,6 +189,9 @@ class CommunicationServiceTest {
 
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.MessageRequest> messageRequestCaptor;
+
+	@Captor
+	private ArgumentCaptor<generated.se.sundsvall.messaging.EmailBatchRequest> emailBatchRequestCaptor;
 
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.EmailRequest> emailRequestCaptor;
@@ -473,6 +478,45 @@ class CommunicationServiceTest {
 		verifyNoMoreInteractions(accessControlServiceMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
 
+	}
+
+	@Test
+	void sendBulkEmail() {
+		// Parameter values
+		final var request = BulkEmailRequest.create()
+			.withSender(SENDER_EMAIL)
+			.withSenderName(SENDER_NAME)
+			.withRecipients(List.of(RECIPIENT, "other@example.com"))
+			.withSubject(SUBJECT)
+			.withHtmlMessage(HTML_MESSAGE)
+			.withMessage(PLAIN_MESSAGE)
+			.withAttachmentIds(List.of(ATTACHMENT_ID));
+
+		// Mock
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandEntityMock);
+		when(errandEntityMock.getErrandNumber()).thenReturn("ERRAND-0001");
+		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(any(), any(), any(), any())).thenReturn(List.of());
+		when(communicationMapperMock.toCommunicationEntity(anyString(), anyString(), any(EmailRequest.class))).thenReturn(CommunicationEntity.create());
+		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(attachmentEntityMock));
+		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
+
+		// Call
+		communicationService.sendBulkEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
+
+		// Verifications
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, List.of(ATTACHMENT_ID));
+		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
+		verify(communicationMapperMock, times(2)).toCommunicationEntity(anyString(), anyString(), any(EmailRequest.class));
+		verify(communicationRepositoryMock, times(2)).saveAndFlush(any(CommunicationEntity.class));
+		// Any attachment content is the same for every recipient, so it must only be persisted once, not once per recipient.
+		verify(errandAttachmentServiceMock).createErrandAttachment(same(attachmentEntityMock), same(errandEntityMock));
+
+		final var batchRequest = emailBatchRequestCaptor.getValue();
+		assertThat(batchRequest.getParties()).hasSize(2);
+		assertThat(batchRequest.getSubject()).isEqualTo(SUBJECT);
+		assertThat(batchRequest.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
+		assertThat(batchRequest.getSender().getName()).isEqualTo(SENDER_NAME);
 	}
 
 	@Test
@@ -801,42 +845,44 @@ class CommunicationServiceTest {
 		final var katlaUrl = "katlaUrl";
 		final var contactInformationEmail = "contactInformationEmail";
 		final var contactInformationName = "contactInformationEmailName";
-		final var recieverEmail = "abc123@noreply.com";
+		final var receiverEmail = "abc123@noreply.com";
 		final var messagingsettings = new MessagingSettings(null, reporterSupportText, null, katlaUrl, null, contactInformationEmail, contactInformationName);
 
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW)).thenReturn(errandEntityMock);
-		when(errandEntityMock.getMunicipalityId()).thenReturn(MUNICIPALITY_ID);
-		when(errandEntityMock.getNamespace()).thenReturn(NAMESPACE);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
 		when(errandEntityMock.getStakeholders()).thenReturn(List.of(StakeholderEntity.create()
 			.withRole("REPORTER")
 			.withContactChannels(List.of(ContactChannelEntity.create()
-				.withType("email")
-				.withValue(recieverEmail)))
+				.withType("EMAIL")
+				.withValue(receiverEmail)))
 			.withParameters(List.of(StakeholderParameterEntity.create()
 				.withKey("username")
 				.withValues(List.of("abc123"))))));
 		when(messagingSettingsIntegrationMock.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME)).thenReturn(messagingsettings);
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(any(), any(), any(), any())).thenReturn(attachmentEntitiesMock);
 		when(communicationMapperMock.toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(EmailRequest.class))).thenReturn(CommunicationEntity.create());
+		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of());
 
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
 		verify(errandEntityMock).getStakeholders();
 		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
-		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any());
+		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
+		verify(errandAttachmentServiceMock).findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 		verify(communicationMapperMock).toCommunicationEntity(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(EmailRequest.class));
-		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(false), emailRequestCaptor.capture());
+		verify(communicationMapperMock).toAttachments(any(CommunicationEntity.class));
+		verify(communicationRepositoryMock).saveAndFlush(any(CommunicationEntity.class));
+		// Notified once, via the batch call above - not sent again individually
 		verifyNoMoreInteractions(accessControlServiceMock, messagingSettingsIntegrationMock, messagingClientMock);
 
-		assertThat(emailRequestCaptor.getValue()).satisfies(emailRequest -> {
-			assertThat(emailRequest.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s".formatted(errandNumber));
-			assertThat(emailRequest.getMessage()).isEqualToNormalizingUnicode(reporterSupportText);
-			assertThat(emailRequest.getRecipients()).containsExactly(recieverEmail);
-			assertThat(emailRequest.getHtmlMessage()).isNull();
-			assertThat(emailRequest.getSender().getAddress()).isEqualTo(contactInformationEmail);
-			assertThat(emailRequest.getSender().getName()).isEqualTo(contactInformationName);
+		assertThat(emailBatchRequestCaptor.getValue()).satisfies(batchRequest -> {
+			assertThat(batchRequest.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s".formatted(errandNumber));
+			assertThat(batchRequest.getMessage()).isEqualToNormalizingUnicode(reporterSupportText);
+			assertThat(batchRequest.getParties()).hasSize(1);
+			assertThat(batchRequest.getParties().getFirst().getEmailAddress()).isEqualTo(receiverEmail);
+			assertThat(batchRequest.getSender().getAddress()).isEqualTo(contactInformationEmail);
+			assertThat(batchRequest.getSender().getName()).isEqualTo(contactInformationName);
 		});
 	}
 

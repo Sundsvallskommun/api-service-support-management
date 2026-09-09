@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import generated.se.sundsvall.messaging.Email;
 import generated.se.sundsvall.messaging.EmailAttachment;
+import generated.se.sundsvall.messaging.EmailBatchRequest;
 import generated.se.sundsvall.messaging.EmailRequest;
 import generated.se.sundsvall.messaging.EmailRequestParty;
 import generated.se.sundsvall.messaging.EmailSender;
@@ -9,6 +10,7 @@ import generated.se.sundsvall.messaging.ExternalReference;
 import generated.se.sundsvall.messaging.MessageParty;
 import generated.se.sundsvall.messaging.MessageRequest;
 import generated.se.sundsvall.messaging.MessageSender;
+import generated.se.sundsvall.messaging.Party;
 import generated.se.sundsvall.messaging.Sms;
 import generated.se.sundsvall.messaging.SmsRequest;
 import generated.se.sundsvall.messaging.SmsRequestParty;
@@ -32,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -257,6 +260,48 @@ public class MessagingMapper {
 		} catch (final Exception _) {
 			return BASE64_ENCODER.encodeToString(message.getBytes(UTF_8));
 		}
+	}
+
+	public static EmailBatchRequest toEmailBatchRequest(final BulkEmailRequest request, final List<EmailAttachment> attachments) {
+		return new EmailBatchRequest()
+			.parties(request.getRecipients().stream()
+				.map(Party::new)
+				.toList())
+			.subject(request.getSubject())
+			.message(request.getMessage())
+			.htmlMessage(addBase64Encoding(request.getHtmlMessage()))
+			.attachments(Stream.of(attachments, toAttachments(request.getAttachments()))
+				.flatMap(List::stream)
+				.toList())
+			.sender(toEmailSender(request))
+			.headers(toEmailHeaders(request.getEmailHeaders()));
+	}
+
+	private static EmailSender toEmailSender(final BulkEmailRequest request) {
+		return new EmailSender()
+			.name(ofNullable(request.getSenderName()).orElse(request.getSender()))
+			.address(request.getSender());
+	}
+
+	public static EmailBatchRequest toEmailBatchRequest(final ErrandEntity errandEntity, final StakeholderEntity stakeholder, final List<String> emailAddresses, final MessagingSettings messagingSettings) {
+		final var subject = SUBJECT_TEMPLATE.formatted(errandEntity.getErrandNumber());
+		final var message = ofNullable(messagingSettings.reporterSupportText())
+			.map(text -> text.formatted(
+				ofNullable(stakeholder).map(StakeholderEntity::getFirstName).orElse(""),
+				errandEntity.getErrandNumber(),
+				messagingSettings.katlaUrl(),
+				errandEntity.getErrandNumber()))
+			.orElse("");
+
+		return new EmailBatchRequest()
+			.parties(emailAddresses.stream()
+				.map(Party::new)
+				.toList())
+			.subject(subject)
+			.message(message)
+			.sender(new EmailSender()
+				.name(ofNullable(messagingSettings.contactInformationEmailName()).orElse(messagingSettings.contactInformationEmail()))
+				.address(messagingSettings.contactInformationEmail()));
 	}
 
 	public static MessageRequest toMessagingMessageRequest(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {

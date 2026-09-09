@@ -10,6 +10,16 @@
 					"status": "SENT"
 				}
 			]
+		},
+		{
+			"messageId": "3c2f5a4a-3e0f-4a3a-8e2e-30ab6a6c2f18",
+			"deliveries": [
+				{
+					"deliveryId": "22222222-2222-2222-2222-222222222222",
+					"messageType": "EMAIL",
+					"status": "SENT"
+				}
+			]
 		}
 	]
 }

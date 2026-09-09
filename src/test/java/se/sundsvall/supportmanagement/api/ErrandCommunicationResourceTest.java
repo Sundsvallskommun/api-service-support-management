@@ -17,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -64,6 +65,7 @@ class ErrandCommunicationResourceTest {
 	private static final String PATH_PREFIX = "/{municipalityId}/{namespace}/errands/{errandId}/communication";
 	private static final String PATH_SMS = "/sms";
 	private static final String PATH_EMAIL = "/email";
+	private static final String PATH_EMAIL_BATCH = "/email/batch";
 	private static final String PATH_WEB_MESSAGE = "/webmessage";
 	private static final String PATH_ATTACHMENTS = "/{communicationId}/attachments/{attachmentId}";
 	private static final String PATH_CONVERSATIONS = "/conversations";
@@ -82,6 +84,15 @@ class ErrandCommunicationResourceTest {
 			.withMessage("message")
 			.withRecipient("+46701740605")
 			.withSender("sender");
+	}
+
+	private static BulkEmailRequest bulkEmailRequest() {
+		return BulkEmailRequest.create()
+			.withHtmlMessage("htmlMessage")
+			.withMessage("message")
+			.withRecipients(List.of("recipient1@recipient.com", "recipient2@recipient.com"))
+			.withSender("sender@sender.com")
+			.withSubject("subject");
 	}
 
 	private static EmailRequest emailRequest(final boolean withAttachment) {
@@ -182,6 +193,23 @@ class ErrandCommunicationResourceTest {
 
 		// Verification
 		verify(communicationServiceMock).sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
+		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
+	void sendBulkEmail() {
+		final var requestBody = bulkEmailRequest();
+
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL_BATCH)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isNoContent()
+			.expectBody().isEmpty();
+
+		verify(communicationServiceMock).sendBulkEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requestBody);
 		verifyNoMoreInteractions(communicationServiceMock, conversationServiceMock);
 	}
 
