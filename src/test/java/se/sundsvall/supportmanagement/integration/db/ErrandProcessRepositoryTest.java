@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository.LiveProcessInstance;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,5 +72,47 @@ class ErrandProcessRepositoryTest {
 	void existsByErrandIdAndProcessStatus() {
 		assertThat(errandProcessRepository.existsByErrandIdAndProcessStatus("ERRAND_ID-1", COMPLETED)).isTrue();
 		assertThat(errandProcessRepository.existsByErrandIdAndProcessStatus("ERRAND_ID-2", COMPLETED)).isFalse();
+	}
+
+	@Test
+	@DisplayName("Verification that the rule of one process per errand is asked of every instance the errand has had, not only the live one")
+	void existsByErrandIdAndProcessKeyNot() {
+		assertThat(errandProcessRepository.existsByErrandIdAndProcessKeyNot("ERRAND_ID-1", "alkt-ansokan")).isFalse();
+		assertThat(errandProcessRepository.existsByErrandIdAndProcessKeyNot("ERRAND_ID-1", "alkt-tillsyn")).isTrue();
+	}
+
+	/**
+	 * The ordering is the whole contract of this query: the projection on the errand keeps the first row it sees per
+	 * errand and calls it the latest. Reversed, every errand would show its oldest process instead, and nothing else in
+	 * the suite would notice - the errands it is exercised on elsewhere have one instance each.
+	 */
+	@Test
+	@DisplayName("Verification that the instances of several errands come back newest first, so the first row seen per errand is its latest")
+	void findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc() {
+		assertThat(errandProcessRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("ERRAND_ID-1", "ERRAND_ID-2"), "2281", "NAMESPACE.1"))
+			.extracting(ErrandProcessEntity::getId)
+			.containsExactly("ep-live-1", "ep-failed-2", "ep-done-1");
+	}
+
+	/**
+	 * The refusal of a second instance names the one holding the slot, so the projection has to carry that column and
+	 * not merely say that a row is there.
+	 */
+	@Test
+	@DisplayName("Verification that the live instance can be read as its id alone")
+	void findByErrandIdAndActiveMarkerIsNotNullAsProjection() {
+		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-1", LiveProcessInstance.class))
+			.get()
+			.extracting(LiveProcessInstance::getProcessInstanceId)
+			.isEqualTo("pi-live-1");
+
+		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-2", LiveProcessInstance.class)).isEmpty();
+	}
+
+	@Test
+	@DisplayName("Verification that errand ids from another tenant reach nothing")
+	void findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDescOfAnotherTenant() {
+		assertThat(errandProcessRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("ERRAND_ID-1"), "2281", "NAMESPACE.2")).isEmpty();
+		assertThat(errandProcessRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("ERRAND_ID-1"), "2262", "NAMESPACE.1")).isEmpty();
 	}
 }

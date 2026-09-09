@@ -24,6 +24,8 @@ public enum ProtectedResource {
 	JSON_PARAMETER("errand/json-parameter"),
 	MEASURE("errand/measure"),
 	NOTIFICATION("errand/notification"),
+	PROCESS("errand/process"),
+	PROCESS_ACTIVITY("errand/process-activity"),
 	REVISION("errand/revision"),
 	TIME_MEASURE("errand/time-measure"),
 

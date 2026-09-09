@@ -1,0 +1,17 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "RUNNING",
+	"currentActivityId": "granska-ansokan",
+	"currentActivityName": "Granska ansokan",
+	"externalTaskId": "task-it-new",
+	"activities": [
+		{
+			"activityType": "PHASE",
+			"activityId": "utredning",
+			"activityName": "Utredning",
+			"severity": "INFO",
+			"occurredAt": "2026-01-02T09:00:00+01:00"
+		}
+	]
+}

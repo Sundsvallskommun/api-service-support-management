@@ -1,0 +1,24 @@
+{
+	"content": [
+		{
+			"id": "epa-it-task",
+			"processInstanceId": "pi-it-live",
+			"activityType": "TASK",
+			"activityId": "granska-ansokan",
+			"activityName": "Granska ansokan",
+			"severity": "INFO",
+			"occurredAt": "${json-unit.any-string}",
+			"created": "${json-unit.any-string}"
+		}
+	],
+	"pageable": "${json-unit.ignore}",
+	"totalPages": 1,
+	"last": true,
+	"totalElements": 1,
+	"size": 50,
+	"number": 0,
+	"sort": "${json-unit.ignore}",
+	"first": true,
+	"numberOfElements": 1,
+	"empty": false
+}

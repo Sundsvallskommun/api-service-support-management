@@ -1,0 +1,13 @@
+{
+	"id": "ep-it-live",
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processInstanceId": "pi-it-live",
+	"processStatus": "COMPLETED",
+	"currentActivityId": "avslut",
+	"currentActivityName": "Avslut",
+	"started": "${json-unit.any-string}",
+	"ended": "${json-unit.any-string}",
+	"created": "${json-unit.any-string}",
+	"modified": "${json-unit.any-string}"
+}

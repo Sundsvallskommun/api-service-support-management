@@ -22,6 +22,8 @@ tags:
   description: Label metadata operations
 - name: Errand events
   description: Errand event operations
+- name: Errand processes
+  description: Errand process operations
 - name: Errand purge
   description: Bulk removal of errands past their retention period
 - name: User notifications
@@ -931,6 +933,113 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/processes/{processInstanceId}:
+    put:
+      tags:
+      - Errand processes
+      summary: Report process state
+      description: "Takes the state of a process instance and the activities it performed,\
+        \ in one call. Creates the row for the instance when this is the first report\
+        \ about it, which is what lets a work step report before the start of its\
+        \ own process has been registered."
+      operationId: reportProcess
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: processInstanceId
+        in: path
+        description: Process instance id
+        required: true
+        schema:
+          type: string
+          maxLength: 64
+          minLength: 0
+        example: 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrandProcess"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcess"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcess"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcess"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcess"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -3211,11 +3320,180 @@ paths:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "412":
-          description: "Precondition Failed — label version mismatch"
+          description: Precondition Failed — label version mismatch
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/processes:
+    get:
+      tags:
+      - Errand processes
+      summary: Read errand processes
+      description: "Every process the errand has had, most recent first, in an envelope\
+        \ that also has room for whether a new one may be started. An empty list is\
+        \ not an error."
+      operationId: readErrandProcesses
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcesses"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcesses"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Errand processes
+      summary: Register process start
+      description: "Registers that a process was started for the errand, or that starting\
+        \ one failed. Creates, and never updates: an instance already reported on\
+        \ is answered with what it says right now, untouched, since that report came\
+        \ from the process itself and is the newer word. A start that failed carries\
+        \ no process instance id."
+      operationId: registerProcess
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrandProcess"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcess"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcess"
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcess"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrandProcess"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -8344,6 +8622,112 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/process-activities:
+    get:
+      tags:
+      - Errand processes
+      summary: Read errand process activities
+      description: "The activity log of the errand. Read per errand rather than per\
+        \ process instance, since the entries explaining why no process ever started\
+        \ belong to no instance. Narrowing to one instance therefore leaves those\
+        \ entries out."
+      operationId: readErrandProcessActivities
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: processInstanceId
+        in: query
+        description: Narrows the log to one process instance
+        required: false
+        schema:
+          type: string
+        example: 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 50
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          default:
+          - "occurredAt,DESC"
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageProcessActivity"
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/PageProcessActivity"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notifications/{notificationId}:
     get:
       tags:
@@ -9823,6 +10207,7 @@ components:
           - STAKEHOLDERS
           - MEASURES
           - ACTIVE_NOTIFICATIONS
+          - PROCESS
           - VERSION
           - PARAMETERS
           - JSON_PARAMETERS
@@ -9882,6 +10267,8 @@ components:
             - JSON_PARAMETER
             - MEASURE
             - NOTIFICATION
+            - PROCESS
+            - PROCESS_ACTIVITY
             - REVISION
             - TIME_MEASURE
             - NAMESPACE_CONFIG
@@ -10069,6 +10456,8 @@ components:
           - JSON_PARAMETER
           - MEASURE
           - NOTIFICATION
+          - PROCESS
+          - PROCESS_ACTIVITY
           - REVISION
           - TIME_MEASURE
           - NAMESPACE_CONFIG
@@ -10296,6 +10685,230 @@ components:
           examples:
           - 2000-10-31T01:30:00.000+02:00
           readOnly: true
+    ErrandProcess:
+      type: object
+      description: "A process attached to an errand, and its state"
+      properties:
+        id:
+          type: string
+          description: Unique id of the process row
+          examples:
+          - 1f0e4c21-4ba9-4f39-8a3b-9a6a1a9d1b77
+          readOnly: true
+        processService:
+          type: string
+          description: "The service running the process, matching the process consumer\
+            \ configured for the namespace"
+          examples:
+          - pw-alkt
+          maxLength: 64
+          minLength: 1
+        processKey:
+          type: string
+          description: "The process model this instance runs, as the process engine\
+            \ names it"
+          examples:
+          - alkt-ansokan
+          maxLength: 128
+          minLength: 1
+        processInstanceId:
+          type: string
+          description: "Id of the process instance in the process engine. Required\
+            \ when registering a start that succeeded, and left out when registering\
+            \ one that failed, since a start that never happened has no instance.\
+            \ Taken from the path when reporting on an instance; sending a different\
+            \ one there is rejected."
+          examples:
+          - 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
+          maxLength: 64
+          minLength: 0
+        processStatus:
+          type: string
+          description: "The state the process is in: RUNNING, WAITING, RETRYING, COMPLETED\
+            \ or FAILED. Carried as a string rather than as an enum so that a value\
+            \ added later does not break a client that generated one from this schema;\
+            \ an unknown value is still refused."
+          examples:
+          - RUNNING
+          minLength: 1
+        currentActivityId:
+          type: string
+          description: "Identifier of the activity the process is at, as the process\
+            \ model names it"
+          examples:
+          - investigation_phase
+          maxLength: 255
+          minLength: 0
+        currentActivityName:
+          type: string
+          description: Display name of the activity the process is at
+          examples:
+          - Utredning
+          maxLength: 255
+          minLength: 0
+        externalTaskId:
+          type: string
+          description: The external task the report was made from. Together with the
+            activity ids of the report it is what makes a replayed report add no duplicate
+            activities.
+          examples:
+          - a91c7f30-4d2b-11f0-9e21-0242ac120004
+          maxLength: 64
+          minLength: 0
+          writeOnly: true
+        errandVersion:
+          type: integer
+          format: int64
+          description: "The version of the errand the work step read. Optional, and\
+            \ meant for a step that reads the errand without writing back to it and\
+            \ therefore has no If-Match of its own."
+          examples:
+          - 7
+          writeOnly: true
+        started:
+          type: string
+          format: date-time
+          description: When the process started
+          examples:
+          - 2026-09-14T08:55:11.004+02:00
+        ended:
+          type: string
+          format: date-time
+          description: "When the process reached a state it does not leave. Set by\
+            \ this service from the reported state rather than taken from the report,\
+            \ and cleared again if the instance comes back to life."
+          examples:
+          - 2026-09-20T14:03:11.882+02:00
+        error:
+          $ref: "#/components/schemas/ProcessError"
+          description: "Why the process failed, set when the state says it did"
+        activities:
+          type: array
+          description: "What the process did, appended to the activity log of the\
+            \ errand in the same call as the state. Read back through GET /errands/{errandId}/process-activities\
+            \ rather than here."
+          items:
+            $ref: "#/components/schemas/ProcessActivity"
+          maxItems: 100
+          minItems: 0
+          writeOnly: true
+        created:
+          type: string
+          format: date-time
+          description: When the process was first registered on the errand
+          examples:
+          - 2026-09-14T08:55:11.121+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: When the state of the process was last updated
+          examples:
+          - 2026-09-14T09:02:45.004+02:00
+          readOnly: true
+      required:
+      - processKey
+      - processService
+      - processStatus
+    ProcessActivity:
+      type: object
+      description: An entry in the activity log of an errand
+      properties:
+        id:
+          type: string
+          description: Unique id of the entry
+          examples:
+          - e1ec7cf3-1c85-4f0a-9dbc-6e3f3d3d0a41
+          readOnly: true
+        processInstanceId:
+          type: string
+          description: "The process instance the entry belongs to. Null for entries\
+            \ written when the errand had no process instance at all, which is precisely\
+            \ the case for the entries explaining why no process started."
+          examples:
+          - 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
+          readOnly: true
+        activityType:
+          type: string
+          description: Kind of entry. A free string that this service stores without
+            interpreting it
+          examples:
+          - PHASE
+          maxLength: 64
+          minLength: 1
+        activityId:
+          type: string
+          description: Identifier of the activity in the process model
+          examples:
+          - review_phase
+          maxLength: 255
+          minLength: 0
+        activityName:
+          type: string
+          description: Display name of the activity
+          examples:
+          - Granskning
+          maxLength: 255
+          minLength: 0
+        severity:
+          type: string
+          description: "Severity of the entry: INFO, WARN or ERROR. Defaults to INFO.\
+            \ Carried as a string rather than as an enum so that a value added later\
+            \ does not break a client that generated one from this schema; an unknown\
+            \ value is still refused."
+          examples:
+          - INFO
+        message:
+          type: string
+          description: Free text describing what happened. Must not carry personal
+            data
+          examples:
+          - Concurrent external tasks detected
+          maxLength: 2048
+          minLength: 0
+        errorCode:
+          type: string
+          description: "Error code, set for entries reporting a failure"
+          examples:
+          - INCIDENT
+          maxLength: 64
+          minLength: 0
+        occurredAt:
+          type: string
+          format: date-time
+          description: "When the entry happened, read from the clock of the process"
+          examples:
+          - 2026-09-14T09:02:44.910+02:00
+        created:
+          type: string
+          format: date-time
+          description: "When the entry was stored, read from the clock of this service"
+          examples:
+          - 2026-09-14T09:02:45.121+02:00
+          readOnly: true
+      required:
+      - activityType
+      - occurredAt
+    ProcessError:
+      type: object
+      description: Why a process failed
+      properties:
+        code:
+          type: string
+          description: Error code as reported by the process. Not interpreted by this
+            service
+          examples:
+          - INCIDENT
+          maxLength: 64
+          minLength: 0
+        message:
+          type: string
+          description: Human readable explanation of the failure. Must not carry personal
+            data
+          examples:
+          - Timeout against Employee after 30 s
+          maxLength: 2048
+          minLength: 0
     JsonNode:
       type: object
       properties:
@@ -11425,6 +12038,14 @@ components:
           description: List of pending actions for the errand
           items:
             $ref: "#/components/schemas/ErrandAction"
+          readOnly: true
+        process:
+          $ref: "#/components/schemas/ErrandProcess"
+          description: "The process driving this errand, and its state. Null for a\
+            \ namespace that runs no processes, and for an errand that never had one.\
+            \ Shows the most recent process rather than a running one, so that a start\
+            \ which failed is visible as a failure instead of as an errand without\
+            \ a process."
           readOnly: true
         measures:
           type: array
@@ -13295,6 +13916,86 @@ components:
           examples:
           - John
       readOnly: true
+    ErrandProcesses:
+      type: object
+      description: "The processes attached to an errand, and whether a new one may\
+        \ be started right now"
+      properties:
+        startable:
+          $ref: "#/components/schemas/ProcessStartable"
+          description: "Whether a process may be started for this errand right now,\
+            \ and why not when it cannot be. Not answered yet: the field is absent\
+            \ until starting a process is offered by this API. Read it before offering\
+            \ a start action to the user, and treat its absence as unknown rather\
+            \ than as available."
+          readOnly: true
+        processes:
+          type: array
+          description: "Every process this errand has had, most recent first. Normally\
+            \ exactly one element. An empty list is not an error and does not mean\
+            \ the errand is broken."
+          items:
+            $ref: "#/components/schemas/ErrandProcess"
+          readOnly: true
+    ProcessStartable:
+      type: object
+      description: "Whether a process may be started for an errand, and which one"
+      properties:
+        status:
+          type: string
+          description: "AVAILABLE means a process may be started right now; every\
+            \ other value says why one cannot be. LIVE_INSTANCE - a process is already\
+            \ running for this errand. PROCESS_COMPLETED - a process has already run\
+            \ to its end. An errand has one process life; a new process means a new\
+            \ errand. NO_PROCESS_KEY - no label on the errand carries a process key,\
+            \ so there is nothing to start. Setting the right label is the fix. NO_PROCESS_ENGINE\
+            \ - this namespace does not run processes at all. Treat any value you\
+            \ do not recognise as not startable - values may be added over time."
+          examples:
+          - AVAILABLE
+          readOnly: true
+        processKeys:
+          type: array
+          description: "The process keys that are eligible to start, taken from the\
+            \ process key attribute on the labels of the errand. One element is the\
+            \ normal case. Two or more elements mean the errand carries labels pointing\
+            \ at different processes and a person has to choose. Empty whenever status\
+            \ is not AVAILABLE."
+          items:
+            type: string
+          readOnly: true
+    PageProcessActivity:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcessActivity"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        empty:
+          type: boolean
     FindErrandNotesRequest:
       type: object
       description: FindErrandNotesRequest model

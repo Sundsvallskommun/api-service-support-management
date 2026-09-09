@@ -26,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -73,6 +74,7 @@ public class ErrandService {
 	private final ErrandLabelService errandLabelService;
 	private final ErrandActionService errandActionService;
 	private final ErrandPhaseService errandPhaseService;
+	private final ErrandProcessService errandProcessService;
 	private final EntityManager entityManager;
 
 	public ErrandService(
@@ -89,6 +91,7 @@ public class ErrandService {
 		final ErrandLabelService errandLabelService,
 		final ErrandActionService errandActionService,
 		final ErrandPhaseService errandPhaseService,
+		final ErrandProcessService errandProcessService,
 		final EntityManager entityManager) {
 
 		this.repository = repository;
@@ -104,6 +107,7 @@ public class ErrandService {
 		this.errandLabelService = errandLabelService;
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
+		this.errandProcessService = errandProcessService;
 		this.entityManager = entityManager;
 	}
 
@@ -149,14 +153,24 @@ public class ErrandService {
 		final var matches = repository.findAll(fullFilter, pageable);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
 
-		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver), pageable, matches.getTotalElements());
+		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver, enrichmentOf(namespace, municipalityId, matches.getContent())), pageable, matches.getTotalElements());
 	}
 
 	@Transactional(readOnly = true)
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.ERRAND, LR);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
-		return toErrandWithAccessControl(errandEntity, fieldResolver);
+		return toErrandWithAccessControl(errandEntity, fieldResolver, enrichmentOf(namespace, municipalityId, List.of(errandEntity)));
+	}
+
+	/**
+	 * What the errands of a page carry beyond their own rows, read in one query for the whole page rather than one per
+	 * errand.
+	 */
+	private ErrandEnrichment enrichmentOf(final String namespace, final String municipalityId, final List<ErrandEntity> entities) {
+		return ErrandEnrichment.of(errandProcessService.findLatestProcesses(namespace, municipalityId, entities.stream()
+			.map(ErrandEntity::getId)
+			.toList()));
 	}
 
 	@Transactional
@@ -191,7 +205,7 @@ public class ErrandService {
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
-		return toErrandWithAccessControl(entity, keyAccess.readable());
+		return toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity)));
 	}
 
 	@Transactional

@@ -15,6 +15,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassificationCreate;
 import se.sundsvall.supportmanagement.api.validation.ValidClassificationUpdate;
@@ -158,6 +159,15 @@ public class Errand {
 		OnCreate.class, OnUpdate.class
 	})
 	private List<ErrandAction> actions;
+
+	@Schema(description = """
+		The process driving this errand, and its state. Null for a namespace that runs no processes, and for an errand \
+		that never had one. Shows the most recent process rather than a running one, so that a start which failed is \
+		visible as a failure instead of as an errand without a process.""", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private ErrandProcess process;
 
 	@Valid
 	@Schema(description = "List of measures for the errand")
@@ -571,6 +581,19 @@ public class Errand {
 		return this;
 	}
 
+	public ErrandProcess getProcess() {
+		return process;
+	}
+
+	public void setProcess(final ErrandProcess process) {
+		this.process = process;
+	}
+
+	public Errand withProcess(final ErrandProcess process) {
+		this.process = process;
+		return this;
+	}
+
 	public List<Measure> getMeasures() {
 		return measures;
 	}
@@ -600,7 +623,7 @@ public class Errand {
 	@Override
 	public int hashCode() {
 		return Objects.hash(activePhaseId, actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters,
-			labels, measures, activeNotifications, modified,
+			labels, measures, activeNotifications, modified, process,
 			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched, version);
 	}
 
@@ -617,7 +640,7 @@ public class Errand {
 			&& Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
 			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(jsonParameters, other.jsonParameters) && Objects.equals(labels, other.labels)
 			&& Objects.equals(measures, other.measures) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && Objects.equals(phases, other.phases)
-			&& Objects.equals(priority, other.priority)
+			&& Objects.equals(priority, other.priority) && Objects.equals(process, other.process)
 			&& Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status)
 			&& Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(version, other.version);
 	}
@@ -649,6 +672,7 @@ public class Errand {
 			", businessRelated=" + businessRelated +
 			", labels=" + labels +
 			", phases=" + phases +
+			", process=" + process +
 			", activePhaseId='" + activePhaseId + '\'' +
 			", activeNotifications=" + activeNotifications +
 			", measures=" + measures +

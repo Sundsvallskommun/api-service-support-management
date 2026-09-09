@@ -55,6 +55,8 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 36 | **SM räknar ut startlovet och skickar det med händelsen som `startAllowed`**                                                    | Att pw avgör själv och frågar SM om ärendet har en avslutad process                                                                         | Manuell start går annars inte att uttrycka: den skiljer sig från en vanlig ärendeändring bara genom att den får starta. På köpet försvinner pw:s återanrop till SM för `COMPLETED`-kontrollen — lovet är redan uträknat när händelsen kommer fram — §7.7, §9.3                                                                                                                                               |
 | 37 | **Kommandon filtreras inte av `PROCESS_TRIGGER` och kräver AD-identitet**                                                       | Ett `PROCESS`-värde i triggern; att släppa in maskinidentiteter och i stället undanta kommandon från loop-skyddets lager 1                  | Ett kommando är ingen ärendeändring, och en människa som trycker på en knapp är ingen loop. Kommandon passerar därför **alla tre** lagren: AD-kravet gör lager 1 verkningslöst av sig självt, medan lager 2 och 3 undantar dem uttryckligen. Utan undantaget för nödbromsen sväljs startkommandot tyst på just de ärenden som har mest trafik. `SIGNAL` utgår därmed ur `PROCESS_TRIGGER` — §6.5, §7.1, §7.7 |
 | 38 | **`GET .../processes` svarar med ett kuvert: `startable` + `processes`**                                                        | En naken lista; ett fält på ärendeprojektionen                                                                                              | Det intressanta fallet är när listan är tom, och en tom lista kan inte bära *varför*. Ärendeprojektionen är tjänstens varmaste läsväg och hade dragit med sig en uppslagning per ärende i listsvar — §5.10                                                                                                                                                                                                   |
+| 39 | **`decision` reduceras i listsvar till `outcome`, `method` och `decidedAt`; `process` reduceras inte**                          | Hela beslutet i varje träff; en egen listmodell för beslutet                                                                                | `justification` är fritext med personuppgifter, och en träfflista hade burit en per rad till en klient som bara visar utfallet. Reduceringen görs i mapparen så att modellen förblir en — §5.3                                                                                                                                                                                                               |
+| 40 | **Kontrollen av processrapportens avsändare är validering och svarar `400`, inte `403`**                                        | `403` enligt §5.6:s ursprungliga tabell                                                                                                     | SM autentiserar ingenting inkommande och `X-Sent-By` sätts av anroparen själv, så ett `403` hade påstått en behörighetsprövning som aldrig gjordes och skickat felsökningen till WSO2 i stället för till fältet i kroppen. Reglerna gör `process_service` garanterad, hindrar rader i namespace utan processmotor och ger loggen en avsändare — §5.6, beslut 33                                              |
 
 ---
 
@@ -879,10 +881,22 @@ personuppgifter. Två saker följer: gränssnittet måste tåla att `process` oc
 begränsad användare, och ett namespace som vill visa dem lägger till dem i `limitedReadAccess.fields`,
 `roleFieldRestrictions` eller `reporterAccess`.
 
-**Det som återstår att bestämma** är om `decision` ska vara reducerad i listsvar. `findErrands` returnerar
-i dag hela beslutet per träff, `justification` inräknad, och det är både nyttolast och dataminimering. Ett
-rimligt val är utfall, `method` och `decidedAt` i listan och hela beslutet vid enskild läsning — men det är
-ett beslut som ska tas innan T3 byggs, inte efteråt.
+**`decision` är reducerad i listsvar (beslut 39).** `findErrands` lämnar `outcome`, `method` och
+`decidedAt` per träff; hela beslutet läses vid enskild läsning av ärendet och på `GET .../decision`. Skälet
+är `justification`: en beslutsmotivering är fritext med personuppgifter, och en träfflista på hundra
+ärenden hade annars burit hundra sådana till en klient som bara ville visa en kolumn med utfall.
+Dataminimering och nyttolast pekar åt samma håll, och de tre fälten är precis vad en lista behöver för att
+kunna visa och sortera på beslutet.
+
+Reduceringen ligger i `ErrandMapper`, inte i en egen modell: samma `Decision` serialiseras utan null-fält,
+och listvägen fyller bara de tre fälten. En andra modell hade behövt hållas i takt med den första, och det
+är samma fälla som §5.3 undviker för `ErrandProcess`. Fältfiltreringen gäller ändå: `DECISION` som helhet
+kan stängas av `roleBasedFieldResolver`, och reduceringen är ett golv under den, inte ett alternativ till
+den.
+
+**`process` reduceras däremot inte.** Processens tillstånd är just det listvyn ska visa (§2.1), och ingen
+del av `ErrandProcess` är fritext om en person — `error.message` beskriver ett tekniskt fel och får enligt
+§11 inte bära personuppgifter.
 
 **En modell, inte två.** `ErrandProcess` används både som svar från `/processes` och som fältet på ärendet.
 De tre fälten som bara hör hemma i en rapport — `externalTaskId`, `errandVersion` och `activities` — är
@@ -1009,6 +1023,15 @@ namespacets `PROCESS_CONSUMER`, utpekad med `X-Sent-By` — den bär processens 
 ärendeinnehåll. Det är den enda plats vid sidan av beslutets `method` där `X-Sent-By` styr ett utfall;
 loop-skyddet läser den inte (§6.5). **Beslutet** går den vanliga vägen för ärendeskrivningar, eftersom det *är* ärendedata.
 
+**Kontrollen är validering, inte behörighetsprövning, och svaret är `400`** (beslut 40). SM autentiserar
+ingenting inkommande — det gör WSO2 — och `X-Sent-By` sätts av anroparen själv utan att något bakom den
+kontrolleras (§1.8). Ett `403` hade därför påstått en prövning som aldrig gjordes, och skickat den som
+felsöker till WSO2 efter credentials när felet sitter i ett fält i kroppen. Vad reglerna faktiskt ger är
+tre saker: `process_service` blir en kolumn någon garanterar i stället för fritext, ett namespace utan
+processmotor kan inte samla på sig processrader, och aktivitetsloggen och notisen får en avsändare.
+Skyddet mot den som *vill* åt skrivvägen ligger i vilka klienter WSO2 ger scope på sökvägarna — inte i en
+statuskod.
+
 #### Vilken `ProtectedResource` varje väg skyddas av
 
 `AccessControlService.getErrand(...)` och `.verifyExistingErrandAndAuthorization(...)` **kräver** en
@@ -1039,7 +1062,7 @@ namespacet självt, som konfiguration och metadata; våra ligger alla under ett 
 |  Kod  |                                                                                                                  När                                                                                                                  |
 |-------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `400` | Etikettändring som byter `processKey`; `processInstanceId` i `PUT`-kroppen skiljer sig från pathens                                                                                                                                   |
-| `403` | `X-Sent-By` saknas; `processService` matchar inte namespacets `PROCESS_CONSUMER`                                                                                                                                                      |
+| `400` | `X-Sent-By` saknas; `processService` matchar inte namespacets `PROCESS_CONSUMER`; namespacet har ingen `PROCESS_CONSUMER` (beslut 40)                                                                                                 |
 | `404` | Ärendet finns inte eller ligger i annat namespace                                                                                                                                                                                     |
 | `409` | Annan levande instans för ärendet **med ett annat `processInstanceId`**; ärendet har redan en `COMPLETED` instans (§7.4); instans med annat `process_key` än ärendets befintliga. Samma `processInstanceId` är aldrig `409` — se §5.1 |
 | `412` | `errandVersion` i rapporten matchar inte ärendets aktuella version (§6.3)                                                                                                                                                             |

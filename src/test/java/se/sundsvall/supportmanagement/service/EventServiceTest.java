@@ -382,4 +382,32 @@ class EventServiceTest {
 			.extracting(se.sundsvall.supportmanagement.api.model.event.Event::getType)
 			.containsOnly(se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN);
 	}
+
+	/**
+	 * A process engine is not an ad account, and asking only for one would leave the handler with a notification saying
+	 * it came from nobody. The identifier says what it is called, and that is who the notification is from.
+	 */
+	@Test
+	void aNotificationOfAWriteMadeByAProcessNamesTheProcessAsItsSender() {
+		Identifier.set(Identifier.parse("pw-alkt; type=processEngine"));
+
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(notificationServiceMock).createNotification(any(), any(), any(), notificationCaptor.capture());
+		assertThat(notificationCaptor.getValue().getCreatedBy()).isEqualTo("pw-alkt");
+	}
+
+	@Test
+	void aNotificationOfAWriteMadeWithoutAnIdentityHasNoSender() {
+		Identifier.remove();
+
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(notificationServiceMock).createNotification(any(), any(), any(), notificationCaptor.capture());
+		assertThat(notificationCaptor.getValue().getCreatedBy()).isNull();
+	}
 }

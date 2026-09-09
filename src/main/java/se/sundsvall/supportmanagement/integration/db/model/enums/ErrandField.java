@@ -31,6 +31,7 @@ public enum ErrandField {
 	STAKEHOLDERS(false),
 	MEASURES(false),
 	ACTIVE_NOTIFICATIONS(false),
+	PROCESS(false),
 	VERSION(false),
 	PARAMETERS(true),
 	JSON_PARAMETERS(true),

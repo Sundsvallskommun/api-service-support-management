@@ -80,6 +80,24 @@ class ErrandProcessActivityRepositoryTest {
 			.containsExactly("epa-config-2");
 	}
 
+	/**
+	 * What a replayed report is compared against. Entries of the same instance written by another work step must not
+	 * come back, or a report would be taken for a replay of one it has nothing to do with.
+	 */
+	@Test
+	@DisplayName("Verification that the entries of one external task are found without dragging in the rest of the instance")
+	void findByErrandProcessIdAndExternalTaskId() {
+		assertThat(errandProcessActivityRepository.findByErrandProcessIdAndExternalTaskId("ep-live-1", "task-1"))
+			.extracting(ErrandProcessActivityEntity::getId)
+			.containsExactly("epa-task-1");
+	}
+
+	@Test
+	@DisplayName("Verification that an external task nothing was logged under finds nothing")
+	void findByErrandProcessIdAndExternalTaskIdOfAnUnknownTask() {
+		assertThat(errandProcessActivityRepository.findByErrandProcessIdAndExternalTaskId("ep-live-1", "task-never-seen")).isEmpty();
+	}
+
 	@Test
 	@DisplayName("Verification that an entry can be written before any process instance exists")
 	void anActivityWithoutAProcessInstanceCanBeSaved() {
