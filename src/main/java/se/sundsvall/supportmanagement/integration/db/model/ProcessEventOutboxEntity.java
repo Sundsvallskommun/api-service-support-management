@@ -32,6 +32,18 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 	})
 public class ProcessEventOutboxEntity {
 
+	/**
+	 * The widths of the columns fed from values this service does not control - a free text label attribute and the
+	 * identity header of the caller.
+	 * <p>
+	 * Public and used by the annotations below, so that the writer can hold a value against the column it is headed for
+	 * without the two numbers drifting apart. What the writer does when a value does not fit is its own decision, and
+	 * differs per column: a key that is cut is a different process, while an identity that is cut is still a trace.
+	 */
+	public static final int PROCESS_KEY_LENGTH = 128;
+	public static final int SIGNAL_NAME_LENGTH = 128;
+	public static final int EXECUTED_BY_LENGTH = 255;
+
 	@Id
 	@UuidGenerator
 	@Column(name = "id", length = 36)
@@ -54,7 +66,7 @@ public class ProcessEventOutboxEntity {
 	private String processService;
 
 	/** Required for CREATE and UPDATE. A DELETE is published without it, since the process engine matches on the errand. */
-	@Column(name = "process_key", length = 128)
+	@Column(name = "process_key", length = PROCESS_KEY_LENGTH)
 	private String processKey;
 
 	@Column(name = "event_type", nullable = false, length = 64)
@@ -67,10 +79,10 @@ public class ProcessEventOutboxEntity {
 	private boolean startAllowed;
 
 	/** Carried only by rows with the SIGNAL sub type. */
-	@Column(name = "signal_name", length = 128)
+	@Column(name = "signal_name", length = SIGNAL_NAME_LENGTH)
 	private String signalName;
 
-	@Column(name = "executed_by", length = 255)
+	@Column(name = "executed_by", length = EXECUTED_BY_LENGTH)
 	private String executedBy;
 
 	@Column(name = "request_group_id", length = 36)

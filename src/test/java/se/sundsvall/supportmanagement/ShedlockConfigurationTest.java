@@ -1,6 +1,4 @@
-package se.sundsvall.supportmanagement.apptest;
-
-import static org.assertj.core.api.Assertions.assertThat;
+package se.sundsvall.supportmanagement;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -10,11 +8,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import se.sundsvall.supportmanagement.Application;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = Application.class)
-@ActiveProfiles("it")
-class ShedlockConfigurationIT { // Needs to be run in IT-phase as we need flyway to be enabled to verify shedlock mechanism
+@ActiveProfiles({
+	"junit", "dbtest"
+})
+class ShedlockConfigurationTest { // Runs on the dbtest profile, since the lock table the mechanism needs is created by Flyway
 
 	@Autowired
 	private LockProvider lockProvider;

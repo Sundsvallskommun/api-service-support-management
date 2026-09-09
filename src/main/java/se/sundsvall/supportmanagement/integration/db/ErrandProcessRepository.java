@@ -25,6 +25,18 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	Optional<ErrandProcessEntity> findByErrandIdAndActiveMarkerIsNotNull(String errandId);
 
 	/**
+	 * Every process row of an errand, live or finished.
+	 * <p>
+	 * One read for the two questions publication asks: which process the errand runs, and whether it may be given a new
+	 * instance. Reading only the live one would answer the first and leave the second - a completed process ends the
+	 * process life of an errand, and a completed row is not a live one.
+	 *
+	 * @param  errandId the errand to look at.
+	 * @return          the process rows of the errand, empty for one that has never had a process.
+	 */
+	List<ErrandProcessEntity> findByErrandId(String errandId);
+
+	/**
 	 * The row a report from the process engine belongs to. Unique by {@code uq_ep_process_instance_id}.
 	 *
 	 * @param  processInstanceId the instance the process engine reports on.

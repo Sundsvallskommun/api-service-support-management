@@ -30,12 +30,14 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 public class ServiceUtil {
 
 	public static final String REQUEST_GROUP_ID_HEADER = "X-Request-Group-Id";
+	public static final String TRIGGER_PROCESS_HEADER = "X-Trigger-Process";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceUtil.class);
 	private static final String MIME_ERROR_MSG = "Exception when detecting mime type of file with filename '{}'";
 	private static final String HASH_ALGORITHM = "SHA-256";
 	private static final Tika DETECTOR = new Tika();
 	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
+	private static final ThreadLocal<String> TRIGGER_PROCESS = new ThreadLocal<>();
 
 	private ServiceUtil() {}
 
@@ -112,6 +114,28 @@ public class ServiceUtil {
 
 	public static void clearRequestGroupId() {
 		REQUEST_GROUP_ID.remove();
+	}
+
+	/**
+	 * Holds what the request said about waking the process of the errand it writes to. Stored as it arrived: what counts
+	 * as a refusal is decided where the process event is published, not here.
+	 *
+	 * @param triggerProcess the raw header value, or null when the request carried none
+	 */
+	public static void setTriggerProcess(final String triggerProcess) {
+		if (StringUtils.isBlank(triggerProcess)) {
+			TRIGGER_PROCESS.remove();
+		} else {
+			TRIGGER_PROCESS.set(triggerProcess);
+		}
+	}
+
+	public static String getTriggerProcess() {
+		return TRIGGER_PROCESS.get();
+	}
+
+	public static void clearTriggerProcess() {
+		TRIGGER_PROCESS.remove();
 	}
 
 	public static String computeSha256Hex(final InputStream inputStream) {

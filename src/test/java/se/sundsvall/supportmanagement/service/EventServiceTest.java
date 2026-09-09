@@ -7,6 +7,7 @@ import generated.se.sundsvall.eventlog.PageEvent;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,6 +28,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
+import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.eventlog.ExecutingUser.TypeEnum.AD_USER;
@@ -39,11 +41,14 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -62,6 +67,9 @@ class EventServiceTest {
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
+
+	@Mock
+	private ProcessEventPublisher processEventPublisherMock;
 
 	@Mock
 	private PageEvent pageEventMock;
@@ -409,5 +417,50 @@ class EventServiceTest {
 
 		verify(notificationServiceMock).createNotification(any(), any(), any(), notificationCaptor.capture());
 		assertThat(notificationCaptor.getValue().getCreatedBy()).isNull();
+	}
+
+	/**
+	 * Every errand event passes here, which is the whole reason publication hangs off this method rather than off the
+	 * errand service: an intake that writes no revision would otherwise never reach a process.
+	 */
+	@Test
+	void everyErrandEventIsHandedToTheProcessPublisher() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, ERRAND, "executingUserId", null, null);
+	}
+
+	@Test
+	@DisplayName("Verification that an event which sends no notification still reaches the process, since an outbox row is no notice to a handler")
+	void anEventThatNotifiesNobodyIsStillPublished() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createErrandEvent(EventType.DELETE, "message", entity, null, null, false, ERRAND);
+
+		verify(notificationServiceMock, never()).createNotification(any(), any(), any(), any());
+		verify(processEventPublisherMock).publish(entity, EventType.DELETE, ERRAND, "executingUserId", null, null);
+	}
+
+	@Test
+	@DisplayName("Verification that a command carries the key a handler chose through to publication, where it is never resolved again")
+	void aCommandIsCarriedThroughToThePublisher() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+		final var command = new ProcessCommand("alkt-tillsyn", null);
+
+		service.createErrandEvent(EventType.CREATE, "message", entity, null, null, false, PROCESS, command);
+
+		verify(processEventPublisherMock).publish(entity, EventType.CREATE, PROCESS, "executingUserId", null, command);
+	}
+
+	@Test
+	@DisplayName("Verification that a note event is no errand event, and reaches no process")
+	void aNoteEventIsNotPublished() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createErrandNoteEvent(EventType.CREATE, "message", "logKey", entity, randomUUID().toString(), null, null);
+
+		verifyNoInteractions(processEventPublisherMock);
 	}
 }

@@ -1,0 +1,26 @@
+# Layered on top of the junit profile, and only for the tests that need the migrated schema rather than one generated
+# from the entities.
+#
+# What separates them from the rest of src/test is not that they talk to a database - every @DataJpaTest does - but
+# which schema they talk to. Foreign keys that cascade, and every constraint on a column no entity declares a relation
+# for, exist in the migrations alone. A schema built from the entity metadata simply does not have them, so a test of
+# those rules would pass or fail for reasons that have nothing to do with the rules.
+#
+# The cost is one Testcontainers database beyond the one the junit profile already runs - started once and shared by
+# every test on this profile. Worth knowing before adding a test here that would be happy on the plain junit profile:
+# a repository test that asks nothing of the migrations belongs there instead.
+spring:
+  flyway:
+    enabled: true
+  datasource:
+    # A database of its own, since Flyway and the entity generated schema of the junit profile cannot share one
+    url: jdbc:tc:mariadb:10.6:///dbtest?TC_TMPFS=/var/lib/mysql:rw
+  jpa:
+    properties:
+      jakarta:
+        persistence:
+          schema-generation:
+            database:
+              # Held against the migrations rather than allowed to alter them, which is what makes an entity that has
+              # drifted from its table fail here instead of in production
+              action: validate

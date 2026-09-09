@@ -31,6 +31,7 @@ class ServiceUtilTest {
 	@AfterEach
 	void clearRequestGroupId() {
 		ServiceUtil.clearRequestGroupId();
+		ServiceUtil.clearTriggerProcess();
 		Identifier.remove();
 	}
 
@@ -231,5 +232,33 @@ class ServiceUtilTest {
 	@Test
 	void isRequestingUserOwnsNothingWithoutAnIdentifier() {
 		assertThat(ServiceUtil.isRequestingUser("adAccount", "jo12doe")).isFalse();
+	}
+
+	@Test
+	void getTriggerProcessReturnsTheValueAsItArrived() {
+		ServiceUtil.setTriggerProcess("  FALSE ");
+
+		assertThat(ServiceUtil.getTriggerProcess()).isEqualTo("  FALSE ");
+	}
+
+	@Test
+	void getTriggerProcessReturnsNullWhenNotSet() {
+		assertThat(ServiceUtil.getTriggerProcess()).isNull();
+	}
+
+	@Test
+	void setTriggerProcessWithBlankValueClearsIt() {
+		ServiceUtil.setTriggerProcess("false");
+		ServiceUtil.setTriggerProcess("  ");
+
+		assertThat(ServiceUtil.getTriggerProcess()).isNull();
+	}
+
+	@Test
+	void clearTriggerProcessRemovesValue() {
+		ServiceUtil.setTriggerProcess("false");
+		ServiceUtil.clearTriggerProcess();
+
+		assertThat(ServiceUtil.getTriggerProcess()).isNull();
 	}
 }
