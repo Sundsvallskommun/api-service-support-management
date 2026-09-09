@@ -6,15 +6,17 @@ import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import se.sundsvall.supportmanagement.integration.db.AttachmentDataRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.HandoverIdempotencyRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
@@ -24,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -39,6 +42,9 @@ import static org.mockito.Mockito.when;
  * The deleter is what a single errand delete and a retention purge have in common, so what is worth pinning down is
  * that every table and every neighbouring service the errand reaches into is covered, and that the removal does not
  * come apart when one of those services is unavailable.
+ * <p>
+ * The chunked deleter is used for real rather than mocked, since handing the ids over is part of what these tests are
+ * checking.
  */
 @ExtendWith(MockitoExtension.class)
 class ErrandDataDeleterTest {
@@ -47,6 +53,8 @@ class ErrandDataDeleterTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 	private static final String ERRAND_NUMBER = "KC-23090001";
+	private static final String ATTACHMENT_ID = "attachmentId";
+	private static final int ATTACHMENT_DATA_ID = 101;
 
 	@Mock
 	private ConversationService conversationServiceMock;
@@ -56,6 +64,9 @@ class ErrandDataDeleterTest {
 
 	@Mock
 	private AttachmentRepository attachmentRepositoryMock;
+
+	@Mock
+	private AttachmentDataRepository attachmentDataRepositoryMock;
 
 	@Mock
 	private NotesClient notesClientMock;
@@ -69,34 +80,43 @@ class ErrandDataDeleterTest {
 	@Mock
 	private EntityManager entityManagerMock;
 
-	@InjectMocks
 	private ErrandDataDeleter deleter;
+
+	@BeforeEach
+	void setUp() {
+		deleter = new ErrandDataDeleter(conversationServiceMock, communicationServiceMock, attachmentRepositoryMock,
+			attachmentDataRepositoryMock, notesClientMock, subscriberNotificationRepositoryMock,
+			handoverIdempotencyRepositoryMock, entityManagerMock, new ChunkedDeleter(entityManagerMock));
+	}
 
 	@Test
 	void deleteRelatedData() {
 		final var entity = errandEntity();
 
+		when(attachmentRepositoryMock.findByIdIn(List.of(ATTACHMENT_ID))).thenReturn(List.of(dataId(ATTACHMENT_DATA_ID)));
 		when(notesClientMock.findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 100))
 			.thenReturn(new FindNotesResponse().notes(List.of(new Note().id("noteId"))));
 
-		deleter.deleteRelatedData(entity, List.of("attachmentId"));
+		deleter.deleteRelatedData(entity, List.of(ATTACHMENT_ID));
 
 		verify(conversationServiceMock).deleteByErrandId(entity);
 		verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(ERRAND_NUMBER, NAMESPACE, MUNICIPALITY_ID);
-		verify(attachmentRepositoryMock).deleteById("attachmentId");
+		verify(attachmentRepositoryMock).findByIdIn(List.of(ATTACHMENT_ID));
+		verify(attachmentRepositoryMock).deleteAllByIdInBatch(List.of(ATTACHMENT_ID));
+		verify(attachmentDataRepositoryMock).deleteAllByIdInBatch(List.of(ATTACHMENT_DATA_ID));
 		verify(notesClientMock).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 100);
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "noteId");
 		verify(subscriberNotificationRepositoryMock).deleteAllByErrandId(ERRAND_ID);
 		verify(handoverIdempotencyRepositoryMock).deleteAllBySourceErrandIdOrNewErrandId(ERRAND_ID, ERRAND_ID);
-		verifyNoMoreInteractions(conversationServiceMock, communicationServiceMock, attachmentRepositoryMock, notesClientMock,
-			subscriberNotificationRepositoryMock, handoverIdempotencyRepositoryMock);
+		verifyNoMoreInteractions(conversationServiceMock, communicationServiceMock, attachmentRepositoryMock,
+			attachmentDataRepositoryMock, notesClientMock, subscriberNotificationRepositoryMock, handoverIdempotencyRepositoryMock);
 	}
 
 	@Test
 	@DisplayName("Verification that a failing conversation removal is reported rather than swallowed, since what reaches here is a database write that has already doomed the transaction the removal runs in")
 	void deleteRelatedDataWhenConversationRemovalFails() {
 		final var entity = errandEntity();
-		final var attachmentIds = List.of("attachmentId");
+		final var attachmentIds = List.of(ATTACHMENT_ID);
 
 		doThrow(new RuntimeException("Could not remove conversations")).when(conversationServiceMock).deleteByErrandId(any());
 
@@ -106,7 +126,7 @@ class ErrandDataDeleterTest {
 
 		// Carrying on would remove the rest of the errand for a transaction that cannot commit, and answer the caller
 		// with a removal that never happened.
-		verifyNoInteractions(communicationServiceMock, attachmentRepositoryMock, notesClientMock,
+		verifyNoInteractions(communicationServiceMock, attachmentRepositoryMock, attachmentDataRepositoryMock, notesClientMock,
 			subscriberNotificationRepositoryMock, handoverIdempotencyRepositoryMock);
 	}
 
@@ -136,33 +156,42 @@ class ErrandDataDeleterTest {
 
 		assertThatNoException().isThrownBy(() -> deleter.deleteRelatedData(entity, null));
 
-		verify(attachmentRepositoryMock, never()).deleteById(anyString());
+		// Nothing to remove is not the same as removing nothing: an errand without attachments must not cost a query at
+		// all, neither for the ids of the data rows nor for an empty batch.
+		verifyNoInteractions(attachmentRepositoryMock, attachmentDataRepositoryMock);
 		verify(subscriberNotificationRepositoryMock).deleteAllByErrandId(ERRAND_ID);
 		verify(handoverIdempotencyRepositoryMock).deleteAllBySourceErrandIdOrNewErrandId(ERRAND_ID, ERRAND_ID);
 	}
 
 	@Test
-	@DisplayName("Verification that the attachments are removed after the communications and with the errand out of the persistence context, which is what keeps a shared blob and the cascade from undoing the removal")
+	@DisplayName("Verification that the attachments and the files they hold are removed by naming the rows rather than loading them, after the communications and with the errand out of the persistence context")
 	void deleteRelatedDataRemovesAttachmentsWithTheErrandDetached() {
-		final var removed = AttachmentEntity.create().withId("attachmentId");
+		final var removed = AttachmentEntity.create().withId(ATTACHMENT_ID);
 		final var kept = AttachmentEntity.create().withId("otherAttachmentId");
 		final var entity = errandEntity().withAttachments(new ArrayList<>(List.of(removed, kept)));
 
+		when(attachmentRepositoryMock.findByIdIn(List.of(ATTACHMENT_ID))).thenReturn(List.of(dataId(ATTACHMENT_DATA_ID)));
 		when(notesClientMock.findNotes(anyString(), any(), any(), anyString(), any(), any(), anyInt(), anyInt()))
 			.thenReturn(new FindNotesResponse().notes(emptyList()));
 
-		deleter.deleteRelatedData(entity, List.of("attachmentId"));
+		deleter.deleteRelatedData(entity, List.of(ATTACHMENT_ID));
 
 		// The communications first: one can arrive carrying an attachment whose blob the copy kept on the errand points
 		// at too, and removing the errand's copy takes that blob with it. Then the errand out of the context, since an
 		// attachment left in the collection of a managed errand is written back by the cascade with its data reference
-		// nulled. Only then the rows.
-		final var inOrder = inOrder(communicationServiceMock, entityManagerMock, attachmentRepositoryMock);
+		// nulled. Then the ids of the data rows, which nothing can say once the attachments are gone. Only then the
+		// rows, attachments before the data they point at, since the attachments hold the foreign key.
+		final var inOrder = inOrder(communicationServiceMock, entityManagerMock, attachmentRepositoryMock, attachmentDataRepositoryMock);
 		inOrder.verify(communicationServiceMock).deleteAllCommunicationsByErrandNumber(ERRAND_NUMBER, NAMESPACE, MUNICIPALITY_ID);
 		inOrder.verify(entityManagerMock).detach(entity);
-		inOrder.verify(attachmentRepositoryMock).deleteById("attachmentId");
+		inOrder.verify(attachmentRepositoryMock).findByIdIn(List.of(ATTACHMENT_ID));
+		inOrder.verify(attachmentRepositoryMock).deleteAllByIdInBatch(List.of(ATTACHMENT_ID));
+		inOrder.verify(attachmentDataRepositoryMock).deleteAllByIdInBatch(List.of(ATTACHMENT_DATA_ID));
 
-		verify(attachmentRepositoryMock, never()).deleteById("otherAttachmentId");
+		// Loading an attachment to remove it is what this exists to avoid: the removal reaches its data through the
+		// cascade, and reaching a data row means holding the whole file it carries.
+		verify(attachmentRepositoryMock, never()).deleteById(anyString());
+		verify(attachmentRepositoryMock, never()).deleteAllById(anyList());
 	}
 
 	@Test
@@ -179,6 +208,10 @@ class ErrandDataDeleterTest {
 		// The full page is what says there may be more, and the page that did not fill up is what says there is not.
 		verify(notesClientMock, times(2)).findNotes(MUNICIPALITY_ID, null, null, ERRAND_ID, null, null, 1, 100);
 		verify(notesClientMock, times(107)).deleteNoteById(eq(MUNICIPALITY_ID), anyString());
+	}
+
+	private static AttachmentDataIdProjection dataId(final int id) {
+		return () -> id;
 	}
 
 	private static List<Note> notes(final int count) {
