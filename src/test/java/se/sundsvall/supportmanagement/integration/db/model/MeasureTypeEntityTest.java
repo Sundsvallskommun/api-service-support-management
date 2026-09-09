@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ class MeasureTypeEntityTest {
 		final var municipalityId = "municipalityId";
 		final var name = "name";
 		final var displayName = "displayName";
-		final var measureGroup = "MANAGERS";
+		final var measureGroups = List.of("MANAGERS", "LEADERS");
 		final var namespace = "namespace";
 		final var sortOrder = 5;
 		final var deprecated = true;
@@ -57,7 +58,7 @@ class MeasureTypeEntityTest {
 			.withMunicipalityId(municipalityId)
 			.withName(name)
 			.withDisplayName(displayName)
-			.withMeasureGroup(measureGroup)
+			.withMeasureGroups(measureGroups)
 			.withNamespace(namespace)
 			.withSortOrder(sortOrder);
 
@@ -69,7 +70,7 @@ class MeasureTypeEntityTest {
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(entity.getName()).isEqualTo(name);
 		assertThat(entity.getDisplayName()).isEqualTo(displayName);
-		assertThat(entity.getMeasureGroup()).isEqualTo(measureGroup);
+		assertThat(entity.getMeasureGroups()).isEqualTo(measureGroups);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getSortOrder()).isEqualTo(sortOrder);
 	}

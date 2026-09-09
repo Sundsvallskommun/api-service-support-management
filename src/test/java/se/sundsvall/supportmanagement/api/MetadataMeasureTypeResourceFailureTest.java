@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.assertj.core.groups.Tuple;
@@ -42,7 +43,7 @@ class MetadataMeasureTypeResourceFailureTest {
 	void createWithInvalidArguments(final String namespace, final String municipalityId, final Tuple expectedResponse) {
 
 		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("namespace", namespace, "municipalityId", municipalityId)))
-			.bodyValue(MeasureType.create().withName("name").withMeasureGroup("group"))
+			.bodyValue(MeasureType.create().withName("name").withMeasureGroups(List.of("group")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

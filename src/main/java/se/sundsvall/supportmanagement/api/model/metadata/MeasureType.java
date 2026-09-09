@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
@@ -25,9 +26,8 @@ public class MeasureType {
 	})
 	private String displayName;
 
-	@Schema(description = "Group that this measure type belongs to", examples = "MANAGERS")
-	@NotBlank
-	private String measureGroup;
+	@Schema(description = "Groups that this measure type belongs to", examples = "MANAGERS")
+	private List<String> measureGroups;
 
 	@Schema(description = "Sort order for the measure type", examples = "1", types = {
 		"integer", "null"
@@ -90,16 +90,16 @@ public class MeasureType {
 		return this;
 	}
 
-	public String getMeasureGroup() {
-		return measureGroup;
+	public List<String> getMeasureGroups() {
+		return measureGroups;
 	}
 
-	public void setMeasureGroup(final String measureGroup) {
-		this.measureGroup = measureGroup;
+	public void setMeasureGroups(final List<String> measureGroups) {
+		this.measureGroups = measureGroups;
 	}
 
-	public MeasureType withMeasureGroup(final String measureGroup) {
-		this.measureGroup = measureGroup;
+	public MeasureType withMeasureGroups(final List<String> measureGroups) {
+		this.measureGroups = measureGroups;
 		return this;
 	}
 
@@ -157,7 +157,7 @@ public class MeasureType {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, deprecated, id, measureGroup, modified, name, displayName, sortOrder);
+		return Objects.hash(created, deprecated, id, measureGroups, modified, name, displayName, sortOrder);
 	}
 
 	@Override
@@ -168,7 +168,7 @@ public class MeasureType {
 		if (!(obj instanceof final MeasureType other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(deprecated, other.deprecated) && Objects.equals(id, other.id) && Objects.equals(measureGroup, other.measureGroup) && Objects.equals(modified, other.modified)
+		return Objects.equals(created, other.created) && Objects.equals(deprecated, other.deprecated) && Objects.equals(id, other.id) && Objects.equals(measureGroups, other.measureGroups) && Objects.equals(modified, other.modified)
 			&& Objects.equals(name, other.name) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
@@ -178,7 +178,7 @@ public class MeasureType {
 			"id='" + id + '\'' +
 			", name='" + name + '\'' +
 			", displayName='" + displayName + '\'' +
-			", measureGroup='" + measureGroup + '\'' +
+			", measureGroups=" + measureGroups +
 			", sortOrder=" + sortOrder +
 			", deprecated=" + deprecated +
 			", created=" + created +
