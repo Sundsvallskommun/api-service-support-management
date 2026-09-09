@@ -1,0 +1,17 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "COMPLETED",
+	"currentActivityId": "avslut",
+	"currentActivityName": "Avslut",
+	"externalTaskId": "task-it-stale",
+	"errandVersion": 99,
+	"activities": [
+		{
+			"activityType": "PHASE",
+			"activityId": "avslut",
+			"activityName": "Avslut",
+			"occurredAt": "2026-01-01T12:00:00.000+01:00"
+		}
+	]
+}

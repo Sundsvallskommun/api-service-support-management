@@ -1,0 +1,15 @@
+{
+	"processes": [
+		{
+			"id": "ep-it-live",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processInstanceId": "pi-it-live",
+			"processStatus": "RUNNING",
+			"currentActivityId": "granska-ansokan",
+			"currentActivityName": "Granska ansokan",
+			"started": "${json-unit.any-string}",
+			"created": "${json-unit.any-string}"
+		}
+	]
+}

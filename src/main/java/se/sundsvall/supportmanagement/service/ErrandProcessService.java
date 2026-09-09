@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -26,6 +27,7 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository.LiveProcessInstance;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -33,6 +35,7 @@ import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
@@ -40,9 +43,12 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.WARN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS_ACTIVITY;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcess;
@@ -76,6 +82,15 @@ public class ErrandProcessService {
 	private static final String NO_PROCESS_CONSUMER = "The namespace '%s' in municipality '%s' has no process consumer configured and runs no process";
 	private static final String WRONG_PROCESS_CONSUMER = "The process service '%s' is not the process consumer of namespace '%s', which is '%s'";
 	private static final String MISSING_IDENTIFIER = "A report must carry the identifier of its sender in the '%s' header, since it is what the activity log and the notification of the errand name as the author";
+	private static final String ERRAND_CHANGED = "The errand has changed since version %s, which the report says it was read at";
+
+	private static final String CONCURRENCY_ACTIVITY_TYPE = "CONCURRENCY";
+	private static final String CONCURRENT_TASKS_DETECTED = """
+		concurrent external tasks detected: task '%s' reported RUNNING while task '%s' was still working. Two \
+		branches of the process instance are changing the errand at once - take the parallel gateway out of the \
+		model, or leave the errand writes to one branch alone. Until then the two keep knocking each other out \
+		with 412 and neither of them finishes""";
+	private static final String CONCURRENT_TASKS_ERROR_CODE = "CONCURRENT_EXTERNAL_TASKS";
 
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandProcessService.class);
 
@@ -84,6 +99,7 @@ public class ErrandProcessService {
 	private final AccessControlService accessControlService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final TransactionTemplate transactionTemplate;
+	private final ProcessMetrics metrics;
 	private final Clock clock;
 
 	public ErrandProcessService(
@@ -92,6 +108,7 @@ public class ErrandProcessService {
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
 		final PlatformTransactionManager transactionManager,
+		final ProcessMetrics metrics,
 		final Clock clock) {
 
 		this.processRepository = processRepository;
@@ -99,6 +116,7 @@ public class ErrandProcessService {
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
+		this.metrics = metrics;
 		this.clock = clock;
 	}
 
@@ -123,7 +141,7 @@ public class ErrandProcessService {
 	}
 
 	private ErrandProcessResult reportInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
-		lockErrandForWriting(namespace, municipalityId, errandId);
+		verifyErrandVersion(lockErrandForWriting(namespace, municipalityId, errandId), report);
 
 		final var existing = processRepository.findByProcessInstanceId(processInstanceId).orElse(null);
 
@@ -139,8 +157,15 @@ public class ErrandProcessService {
 		// refuse that too, but only the check can say which instance is standing in the way.
 		verifyNoOtherLiveInstance(errandId, processInstanceId, report);
 
+		final var displaced = trackOutstandingTask(existing, report);
+
 		updateErrandProcessEntity(existing, report, clock);
 		final var saved = processRepository.saveAndFlush(existing);
+
+		if (nonNull(displaced)) {
+			logConcurrentTasks(saved, errandId, report.getExternalTaskId(), displaced);
+		}
+
 		storeActivities(saved, errandId, report);
 
 		return new ErrandProcessResult(toErrandProcess(saved), false);
@@ -171,7 +196,7 @@ public class ErrandProcessService {
 	}
 
 	private ErrandProcessResult registerInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
-		lockErrandForWriting(namespace, municipalityId, errandId);
+		verifyErrandVersion(lockErrandForWriting(namespace, municipalityId, errandId), report);
 
 		// A start that never produced an instance cannot have been reported on: with no instance there is no work step.
 		if (nonNull(processInstanceId)) {
@@ -198,6 +223,9 @@ public class ErrandProcessService {
 
 		final var entity = toErrandProcessEntity(namespace, municipalityId, errandId, processInstanceId, report);
 		entity.applyStatus(toProcessStatus(report), clock);
+
+		// A row that did not exist has no task standing on it, so this can only record the one reporting now.
+		trackOutstandingTask(entity, report);
 
 		final var saved = processRepository.saveAndFlush(entity);
 		storeActivities(saved, errandId, report);
@@ -324,9 +352,12 @@ public class ErrandProcessService {
 	 * Takes the write lock on the errand, which is what serialises the reports of one errand against each other. The
 	 * checks below read what other reports have written and would otherwise be answering a question that is no longer
 	 * true by the time the row is inserted.
+	 * <p>
+	 * Hands the errand back, since the version it carries is what a report claiming to have read the errand is held
+	 * against, and it has to be the version behind the lock rather than one read before it.
 	 */
-	private void lockErrandForWriting(final String namespace, final String municipalityId, final String errandId) {
-		accessControlService.getErrand(namespace, municipalityId, errandId, true, PROCESS, RW);
+	private ErrandEntity lockErrandForWriting(final String namespace, final String municipalityId, final String errandId) {
+		return accessControlService.getErrand(namespace, municipalityId, errandId, true, PROCESS, RW);
 	}
 
 	/**
@@ -384,6 +415,99 @@ public class ErrandProcessService {
 			.ifPresent(live -> {
 				throw Problem.valueOf(CONFLICT, OTHER_LIVE_INSTANCE.formatted(errandId, live.getProcessInstanceId()));
 			});
+	}
+
+	/**
+	 * Refuses a report whose picture of the errand has gone stale.
+	 * <p>
+	 * This is the If-Match of a work step that reads the errand and then acts outside this service - sends a letter,
+	 * calls another party - and therefore never writes back and has no header to carry one on. It is optional for that
+	 * reason: a step that neither reads nor writes the errand sends no version, and is held against nothing.
+	 * <p>
+	 * Answered before anything is written, so a refused report leaves neither state nor activities behind. For the step
+	 * it is a 412 like any other: report RETRYING, throw, and let the process engine run it again against the errand as
+	 * it now is.
+	 */
+	private void verifyErrandVersion(final ErrandEntity errand, final ErrandProcess report) {
+		final var readVersion = report.getErrandVersion();
+
+		if (isNull(readVersion) || readVersion.equals(errand.getVersion())) {
+			return;
+		}
+
+		metrics.errandConflict();
+
+		throw Problem.valueOf(PRECONDITION_FAILED, ERRAND_CHANGED.formatted(readVersion));
+	}
+
+	/**
+	 * Notes which external task is working on the instance right now, and answers whether another one already was.
+	 * <p>
+	 * A work step announces itself with RUNNING and reports again when it is done, so the place is taken between those
+	 * two reports and empty the rest of the time. Steps that run one after another therefore never meet here: the
+	 * process engine completes a task before it hands out the next one, so the report that empties the place has always
+	 * arrived before the next task announces itself. Two that do meet are two branches of the same instance running at
+	 * once, which the process models are not allowed to have.
+	 * <p>
+	 * A report naming no task leaves the place as it found it. It says nothing about the task standing there, and a
+	 * registration of a start - which names none - must not be read as one having finished.
+	 *
+	 * @return the task that was already working when this report came in, or null if the place was free. The id
+	 *         rather than a yes or no, since the warning names both tasks to be worth acting on.
+	 */
+	private String trackOutstandingTask(final ErrandProcessEntity entity, final ErrandProcess report) {
+		final var reporting = report.getExternalTaskId();
+
+		if (isNull(reporting)) {
+			return null;
+		}
+
+		final var outstanding = entity.getOutstandingExternalTaskId();
+		final var takesThePlace = RUNNING == toProcessStatus(report) && !reporting.equals(outstanding);
+
+		entity.setOutstandingExternalTaskId(takesThePlace ? reporting : null);
+
+		return takesThePlace ? outstanding : null;
+	}
+
+	/**
+	 * Records that two work steps were running at once, and takes the report anyway.
+	 * <p>
+	 * Refusing one of them would silence the very entry that reveals the model is breaking the rule, and would leave
+	 * the two steps knocking each other out with nothing on the errand to say why.
+	 * <p>
+	 * Counted every time and logged once per instance. Branches that pass each other keep doing so for as long as
+	 * the model has the gateway, so the counter is what says how often while a single entry says what is wrong -
+	 * a log the handler reads would otherwise drown in a fault it has already been told about.
+	 * <p>
+	 * That entry is written without an activity id, so that {@code uq_epa_idempotency} - which counts null as
+	 * distinct - can never refuse it. A constraint violation here would take the report it was found in down with
+	 * it, which is the opposite of the point.
+	 * <p>
+	 * The entry names both tasks and says what to do about them. Whoever reads it is looking at an errand, not at a
+	 * BPMN file, and the fix is in the model rather than anywhere they can reach from here - so a warning that only
+	 * announced the problem would be read once and left alone. The error code is what an alert is built on, since the
+	 * message carries the two task ids and is therefore different every time.
+	 */
+	private void logConcurrentTasks(final ErrandProcessEntity process, final String errandId, final String externalTaskId, final String displacedTaskId) {
+		metrics.concurrentTaskDetected();
+
+		LOG.warn("Concurrent external tasks on process instance '{}' of errand '{}': task '{}' reported RUNNING while task '{}' was still working",
+			process.getProcessInstanceId(), errandId, externalTaskId, displacedTaskId);
+
+		if (activityRepository.existsByErrandProcessIdAndActivityType(process.getId(), CONCURRENCY_ACTIVITY_TYPE)) {
+			return;
+		}
+
+		activityRepository.save(ErrandProcessActivityEntity.create()
+			.withErrandProcessId(process.getId())
+			.withErrandId(errandId)
+			.withExternalTaskId(externalTaskId)
+			.withActivityType(CONCURRENCY_ACTIVITY_TYPE)
+			.withSeverity(WARN)
+			.withMessage(CONCURRENT_TASKS_DETECTED.formatted(externalTaskId, displacedTaskId))
+			.withErrorCode(CONCURRENT_TASKS_ERROR_CODE)
+			.withOccurredAt(OffsetDateTime.now(clock).truncatedTo(MILLIS)));
 	}
 
 	/**

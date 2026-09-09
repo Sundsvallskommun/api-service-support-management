@@ -273,6 +273,7 @@
         namespace varchar(32) not null,
         id varchar(36) not null,
         error_code varchar(64),
+        outstanding_external_task_id varchar(64),
         process_instance_id varchar(64),
         process_service varchar(64) not null,
         process_key varchar(128) not null,

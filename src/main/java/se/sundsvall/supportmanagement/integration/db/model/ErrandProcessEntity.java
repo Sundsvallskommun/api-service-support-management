@@ -76,6 +76,17 @@ public class ErrandProcessEntity {
 	@Column(name = "current_activity_name", length = 255)
 	private String currentActivityName;
 
+	/**
+	 * The external task that reported RUNNING and has not reported since. Cleared when that task reports again, which
+	 * is what a work step does when it hands in the report it was written to produce.
+	 * <p>
+	 * Kept so that a second task reporting RUNNING while another still stands here can be recognised for what it is: a
+	 * parallel branch, which the process models are not allowed to have. Sequential steps never meet here, since the
+	 * process engine completes a task before it hands out the next one.
+	 */
+	@Column(name = "outstanding_external_task_id", length = 64)
+	private String outstandingExternalTaskId;
+
 	@Column(name = "error_code", length = 64)
 	private String errorCode;
 
@@ -263,6 +274,19 @@ public class ErrandProcessEntity {
 		return this;
 	}
 
+	public String getOutstandingExternalTaskId() {
+		return outstandingExternalTaskId;
+	}
+
+	public void setOutstandingExternalTaskId(final String outstandingExternalTaskId) {
+		this.outstandingExternalTaskId = outstandingExternalTaskId;
+	}
+
+	public ErrandProcessEntity withOutstandingExternalTaskId(final String outstandingExternalTaskId) {
+		this.outstandingExternalTaskId = outstandingExternalTaskId;
+		return this;
+	}
+
 	public String getErrorCode() {
 		return errorCode;
 	}
@@ -338,7 +362,8 @@ public class ErrandProcessEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, errandId, municipalityId, namespace, processService, processKey, processInstanceId, processStatus, currentActivityId, currentActivityName, errorCode, errorMessage, started, ended, activeMarker, created, modified);
+		return Objects.hash(id, errandId, municipalityId, namespace, processService, processKey, processInstanceId, processStatus, currentActivityId, currentActivityName, outstandingExternalTaskId, errorCode, errorMessage, started, ended, activeMarker,
+			created, modified);
 	}
 
 	@Override
@@ -360,6 +385,7 @@ public class ErrandProcessEntity {
 			&& processStatus == other.processStatus
 			&& Objects.equals(currentActivityId, other.currentActivityId)
 			&& Objects.equals(currentActivityName, other.currentActivityName)
+			&& Objects.equals(outstandingExternalTaskId, other.outstandingExternalTaskId)
 			&& Objects.equals(errorCode, other.errorCode)
 			&& Objects.equals(errorMessage, other.errorMessage)
 			&& Objects.equals(started, other.started)
@@ -382,6 +408,7 @@ public class ErrandProcessEntity {
 			", processStatus=" + processStatus +
 			", currentActivityId='" + currentActivityId + '\'' +
 			", currentActivityName='" + currentActivityName + '\'' +
+			", outstandingExternalTaskId='" + outstandingExternalTaskId + '\'' +
 			", errorCode='" + errorCode + '\'' +
 			", errorMessage='" + errorMessage + '\'' +
 			", started=" + started +

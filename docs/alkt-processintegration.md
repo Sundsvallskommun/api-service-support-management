@@ -328,7 +328,7 @@ T1), `V1_57__add_errand_decision.sql` med beslutet (T9) och `V1_58__add_errand_p
 väntade signalerna (T11). De ligger i var sin fil eftersom Flyway jämför checksumma — en migrering som
 redan körts går inte att fylla på i efterhand.
 
-**Två regler gäller alla migreringar här, och de står i förväg eftersom båda kostar mest när de upptäcks
+**Tre regler gäller alla migreringar här, och de står i förväg eftersom de kostar mest när de upptäcks
 sent.**
 
 - **Versionsnumret sätts efter det högsta som redan finns i repot, inte efter det som stod i ett dokument.**
@@ -342,6 +342,10 @@ sent.**
   stället för i egna satser: hela skriptet hamnar då bakom ett enda `if not exists`, och InnoDB slipper
   lägga ett eget index bredvid varje främmande nyckel — en constraint återanvänder ett index som deklareras
   på samma sats.
+- **Inga kommentarer i själva skripten.** Vad en kolumn är till för hör hemma i entitetens javadoc och i det
+  annoterade schemat här nedan, där det går att hitta utan att öppna en migrering som ändå aldrig ska röras
+  igen. En kommentar i migreringen blir dessutom osann med tiden: filen är låst av sin checksumma medan
+  kolumnen den beskriver lever vidare.
 
 ```sql
 -- 1. Outbox. Medvetet UTAN FK mot errand: ett DELETE-event maste overleva att arendet raderas.
@@ -390,6 +394,10 @@ create table if not exists errand_process (
     process_status        varchar(32)  not null,   -- RUNNING|WAITING|RETRYING|COMPLETED|FAILED
     current_activity_id   varchar(255),
     current_activity_name varchar(255),
+    -- Det arbetssteg som rapporterat RUNNING och inte hort av sig sedan dess. Tomt igen sa
+    -- snart samma steg rapporterar en andra gang. Ett annat externalTaskId som rapporterar RUNNING
+    -- medan den har ar upptagen ar tva parallella grenar i samma instans (6.4).
+    outstanding_external_task_id varchar(64),
     error_code            varchar(64),
     error_message         varchar(2048),
     started               datetime(3),
@@ -430,6 +438,7 @@ create table if not exists errand_process_activity (
     constraint uq_epa_idempotency unique (errand_process_id, external_task_id, activity_id),
     constraint fk_epa_process foreign key (errand_process_id)
         references errand_process (id) on delete cascade,
+    -- Behovs eftersom instansnyckeln ar nullbar: utan den skulle de instanslosa posterna overleva arendet.
     constraint fk_epa_errand foreign key (errand_id)
         references errand (id) on delete cascade
 ) engine=InnoDB;
@@ -1456,6 +1465,29 @@ instans utan att någon av dem hunnit bli klar däremellan, skriver SM en rad i 
 `severity = WARN` och texten *"concurrent external tasks detected"* och räknar upp
 `process.concurrent_task_detected`. Båda rapporterna tas emot ändå — att avvisa den ena hade tystat just
 den post som ska avslöja att modellen bryter mot regeln.
+.
+**Posten säger också vad man gör åt saken.** Efter inledningen namnger den båda arbetsstegen — *"task 'B'
+reported RUNNING while task 'A' was still working"* — och pekar ut åtgärden: ta bort den parallella
+gatewayen ur modellen, eller låt bara en gren skriva till ärendet. Den som läser posten står i ett ärende
+medan felet sitter i en BPMN-fil hen inte når därifrån, så en varning som bara konstaterar problemet läses
+en gång och lämnas därhän. `error_code` sätts till `CONCURRENT_EXTERNAL_TASKS`, och det är den larmet byggs
+på — meddelandet bär de två task-id:na och ser därför olika ut varje gång.
+
+**Så vet SM att ett steg är klart.** Kolumnen `errand_process.outstanding_external_task_id` bär det
+arbetssteg som rapporterat `RUNNING` och inte hört av sig sedan dess, och töms så fort samma
+`externalTaskId` rapporterar en andra gång. Basklassen rapporterar `RUNNING` när steget börjar och lämnar
+sin egentliga rapport när det slutar (§9.4), så platsen är upptagen just mellan de två — och bara då. Steg
+som körs efter varandra möts därför aldrig där: Operaton slutför en task innan den delar ut nästa, så
+rapporten som tömmer platsen har alltid hunnit fram innan nästa steg anmäler sig. Utan den regeln hade
+varningen gått igång på varenda sekventiell process, och mätvärdet varit oanvändbart.
+
+En rapport som inte namnger något arbetssteg lämnar platsen som den fann den. Den säger ingenting om steget
+som står där, och registreringen av en start — som inte bär något `externalTaskId` — får inte läsas som att
+ett steg blivit klart.
+
+Varningsposten skrivs **utan `activity_id`**, eftersom `uq_epa_idempotency` räknar null som distinkt. En
+andra varning på samma instans ska inte kunna fällas av unikhetsnyckeln — då hade den tagit rapporten den
+hittades i med sig i fallet, vilket är raka motsatsen till poängen.
 
 ### 6.5 Så hindrar vi att tjänsterna väcker varandra i evighet
 
@@ -2420,7 +2452,7 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T4 — Optimistisk samtidighetskontroll (SM)
 
-**Bygg:** `errandVersion` i rapportmodellen och kontrollen mot `errand.version` i `ErrandProcessService` (§6.3); WARN-aktivitet och `process.concurrent_task_detected` när två skilda `externalTaskId` rapporterar `RUNNING` mot samma instans utan terminal rapport emellan (§6.4); `process.errand_conflict`.
+**Bygg:** `errandVersion` i rapportmodellen och kontrollen mot `errand.version` i `ErrandProcessService` (§6.3); kolumnen `outstanding_external_task_id` i T1:s `V1_56` (§3.1) med WARN-aktivitet och `process.concurrent_task_detected` när ett annat `externalTaskId` rapporterar `RUNNING` medan ett steg fortfarande står där (§6.4); `process.errand_conflict`.
 
 **Acceptans:**
 - Rapport med `errandVersion` som glidit ⇒ `412`, och **varken** tillstånd eller aktiviteter skrivs.

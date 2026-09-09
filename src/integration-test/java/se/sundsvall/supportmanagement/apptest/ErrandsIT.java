@@ -12,6 +12,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
@@ -582,5 +583,21 @@ class ErrandsIT extends AbstractAppTest {
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(BAD_REQUEST)
 			.sendRequest();
+	}
+
+	/**
+	 * The regression guard under the whole concurrency model of the process integration: it rests on the errand version
+	 * already being enforced here, since a work step that writes back to the errand has nothing else to hold on to.
+	 */
+	@Test
+	void test38_patchErrandWithAStaleIfMatch() {
+		setupCall()
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6")
+			.withHttpMethod(PATCH)
+			.withHeader("If-Match", "\"999\"")
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(PRECONDITION_FAILED)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 }

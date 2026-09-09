@@ -15,6 +15,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 /**
@@ -186,6 +187,80 @@ class ErrandProcessesIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, PROCESS_ENGINE)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * The refusal a work step that only reads the errand gets when a handler has been there since. Nothing of the report
+	 * survives it: the state of the instance and the log of the errand are read back afterwards and stand where they did.
+	 */
+	@Test
+	void test12_reportReadAtAStaleErrandVersionIsRefused() {
+		setupCall()
+			.withServicePath(processesPath(ERRAND_WITH_PROCESS) + "/" + LIVE_INSTANCE_ID)
+			.withHttpMethod(PUT)
+			.withHeader(SENT_BY_HEADER, PROCESS_ENGINE)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(PRECONDITION_FAILED)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(processesPath(ERRAND_WITH_PROCESS))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-processes.json")
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(activitiesPath(ERRAND_WITH_PROCESS))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-activities.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test13_reportReadAtTheCurrentErrandVersionIsTaken() {
+		setupCall()
+			.withServicePath(processesPath(ERRAND_WITH_PROCESS) + "/" + LIVE_INSTANCE_ID)
+			.withHttpMethod(PUT)
+			.withHeader(SENT_BY_HEADER, PROCESS_ENGINE)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * Two branches of one instance working at the same time. Both reports are taken - refusing one would silence the
+	 * entry that reveals the model is breaking the rule - and the warning stands in the log afterwards.
+	 */
+	@Test
+	void test14_twoTasksWorkingAtOnceAreWarnedAboutAndBothReportsAreTaken() {
+		final var path = processesPath(ERRAND_WITH_PROCESS) + "/" + LIVE_INSTANCE_ID;
+
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withHeader(SENT_BY_HEADER, PROCESS_ENGINE)
+			.withRequest("request-first-task.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(PUT)
+			.withHeader(SENT_BY_HEADER, PROCESS_ENGINE)
+			.withRequest("request-second-task.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(activitiesPath(ERRAND_WITH_PROCESS))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}

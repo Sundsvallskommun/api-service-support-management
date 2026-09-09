@@ -67,6 +67,19 @@ public interface ErrandProcessActivityRepository extends JpaRepository<ErrandPro
 	boolean existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(String errandId, String activityType, ActivitySeverity severity, OffsetDateTime createdAfter);
 
 	/**
+	 * Whether an instance already carries an entry of a kind.
+	 * <p>
+	 * Asked before the warning about two work steps running at once is written, so that it is written once per
+	 * instance while the counter takes every occurrence. Branches that pass each other do so for as long as the model
+	 * has the gateway, and a log the handler reads would drown in a fault it has already been told about.
+	 *
+	 * @param  errandProcessId the instance to look at.
+	 * @param  activityType    the kind of entry to look for.
+	 * @return                 whether such an entry has already been written for the instance.
+	 */
+	boolean existsByErrandProcessIdAndActivityType(String errandProcessId, String activityType);
+
+	/**
 	 * Entries old enough to be swept, oldest first. Retention runs on the SM clock, not on the clock of the process.
 	 *
 	 * @param  createdBefore the moment an entry has to predate to be swept.

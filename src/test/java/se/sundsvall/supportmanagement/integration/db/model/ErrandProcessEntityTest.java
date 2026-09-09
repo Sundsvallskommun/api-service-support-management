@@ -78,6 +78,7 @@ class ErrandProcessEntityTest {
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "2281";
 		final var namespace = "ALKT";
+		final var outstandingExternalTaskId = "a91c7f30-4d2b-11f0-9e21-0242ac120004";
 		final var processInstanceId = "8f3d1e2a-0000-4444-8888-cccccccccccc";
 		final var processKey = "alkt-ansokan";
 		final var processService = "pw-alkt";
@@ -94,6 +95,7 @@ class ErrandProcessEntityTest {
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
+			.withOutstandingExternalTaskId(outstandingExternalTaskId)
 			.withProcessInstanceId(processInstanceId)
 			.withProcessKey(processKey)
 			.withProcessService(processService)
@@ -113,6 +115,7 @@ class ErrandProcessEntityTest {
 				assertThat(e.getModified()).isEqualTo(modified);
 				assertThat(e.getMunicipalityId()).isEqualTo(municipalityId);
 				assertThat(e.getNamespace()).isEqualTo(namespace);
+				assertThat(e.getOutstandingExternalTaskId()).isEqualTo(outstandingExternalTaskId);
 				assertThat(e.getProcessInstanceId()).isEqualTo(processInstanceId);
 				assertThat(e.getProcessKey()).isEqualTo(processKey);
 				assertThat(e.getProcessService()).isEqualTo(processService);
