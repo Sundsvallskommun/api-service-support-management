@@ -58,13 +58,10 @@ public class Measure {
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime executed;
 
-	@Schema(description = "User who added the measure", examples = "jo12doe")
-	@NotBlank(groups = {
-		Default.class, OnCreate.class
-	})
+	@Schema(description = "AD account of the requesting user, set by the API when creating. If supplied it must match the request identity. Immutable after creation.", examples = "jo12doe")
 	private String addedByUser;
 
-	@Schema(description = "Role of the user who added the measure", examples = "MANAGER")
+	@Schema(description = "Active namespace Role.name held by the requesting user. Immutable after creation.", examples = "MANAGER")
 	@NotBlank(groups = {
 		Default.class, OnCreate.class
 	})

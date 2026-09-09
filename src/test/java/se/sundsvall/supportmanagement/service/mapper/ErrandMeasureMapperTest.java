@@ -287,4 +287,13 @@ class ErrandMeasureMapperTest {
 		// Assert
 		assertThat(errandEntity.getMeasures()).isEmpty();
 	}
+	@Test
+	void updatesCannotRewriteCreatorAttribution() {
+		final var existing = MeasureEntity.create().withAddedByUser("original").withAddedByRole("MANAGER");
+		updateMeasureEntity(existing, Measure.create().withAddedByUser("other").withAddedByRole("OTHER").withGoal("Revised"));
+		assertThat(existing.getAddedByUser()).isEqualTo("original");
+		assertThat(existing.getAddedByRole()).isEqualTo("MANAGER");
+		assertThat(existing.getGoal()).isEqualTo("Revised");
+	}
+
 }

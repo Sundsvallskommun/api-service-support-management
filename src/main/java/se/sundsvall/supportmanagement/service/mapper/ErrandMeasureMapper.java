@@ -43,8 +43,6 @@ public final class ErrandMeasureMapper {
 		ofNullable(measure.getPlannedStart()).ifPresent(entity::setPlannedStart);
 		ofNullable(measure.getPlannedComplete()).ifPresent(entity::setPlannedComplete);
 		ofNullable(measure.getExecuted()).ifPresent(entity::setExecuted);
-		ofNullable(measure.getAddedByUser()).ifPresent(entity::setAddedByUser);
-		ofNullable(measure.getAddedByRole()).ifPresent(entity::setAddedByRole);
 		ofNullable(measure.getGoal()).ifPresent(entity::setGoal);
 		ofNullable(measure.getDescription()).ifPresent(entity::setDescription);
 		ofNullable(measure.getAccept()).map(Accept::valueOf).ifPresent(entity::setAccept);

@@ -44,6 +44,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
@@ -78,6 +79,23 @@ public class AccessControlService {
 		this.accessMapperService = accessMapperService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.errandsRepository = errandsRepository;
+	}
+
+	/** Resource write permission is checked separately. Attribution always requires an actual user and role grant. */
+	public String verifyMeasureCreator(final String namespace, final String municipalityId, final String submittedUser, final String role) {
+		final var user = Identifier.get();
+		final var account = adAccountOf(user);
+		if (account == null || account.isBlank()) {
+			throw Problem.valueOf(UNAUTHORIZED, "An AD account identifier is required to register a measure");
+		}
+		if (submittedUser != null && !submittedUser.equalsIgnoreCase(account)) {
+			throw Problem.valueOf(FORBIDDEN, "Measure creator must match the requesting AD account");
+		}
+		final var grantedRoles = accessMapperService.getAccessSnapshot(municipalityId, namespace, user).roles();
+		if (role == null || !grantedRoles.contains(role.toUpperCase(Locale.ROOT))) {
+			throw Problem.valueOf(FORBIDDEN, "The requesting user does not hold the selected active registration role");
+		}
+		return account;
 	}
 
 	/**

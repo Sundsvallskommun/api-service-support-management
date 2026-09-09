@@ -460,13 +460,13 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
 		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'"))
-			.when(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
+			.when(measureValidatorMock).validateUpdate(errand.getMeasures(), entity.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
 
 		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
 			.hasMessage("Bad Request: 'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'");
 
 		// The request is held to the measure types before the errand is touched, so nothing downstream of that runs.
-		verify(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
+		verify(measureValidatorMock).validateUpdate(errand.getMeasures(), entity.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(contactReasonRepositoryMock, errandPhaseServiceMock, errandLabelServiceMock, errandActionServiceMock);
 	}
 
@@ -650,4 +650,16 @@ class ErrandServiceTest {
 	void verifyNoMoreInteractionsOnMocks() {
 		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, errandLabelServiceMock, errandPhaseServiceMock);
 	}
+	@Test
+	void clearingEmbeddedMeasuresRequiresMeasureWritePermission() {
+		final var entity = buildErrandEntity();
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		doThrow(Problem.valueOf(BAD_REQUEST, "Measure write denied")).when(accessControlServiceMock)
+			.verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.MEASURE, RW);
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withMeasures(List.of())))
+			.hasMessageContaining("Measure write denied");
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+	}
+
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,8 +41,10 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -990,4 +993,28 @@ class AccessControlServiceTest {
 
 		verifyNoInteractions(accessMapperService);
 	}
+	@AfterEach
+	void clearIdentifier() {
+		Identifier.remove();
+	}
+
+	@Test
+	void measureRegistrationRequiresAnAdIdentity() {
+		Identifier.remove();
+		assertThatThrownBy(() -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, null, "MANAGER")).hasMessageContaining("AD account identifier is required");
+		verifyNoInteractions(accessMapperService);
+	}
+
+	@Test
+	void rejectsUnheldRolesAndSpoofedCreatorsEvenWithoutNamespaceAccessFiltering() {
+		Identifier.set(adUser());
+		when(accessMapperService.getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, adUser()))
+			.thenReturn(new AccessSnapshot(Map.of(), Set.of("MANAGER"), Map.of()));
+		assertThat(accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, null, "MANAGER")).isEqualTo(AD_ACCOUNT);
+		assertThat(accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, AD_ACCOUNT.toUpperCase(), "manager")).isEqualTo(AD_ACCOUNT);
+		assertThatThrownBy(() -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, "someone-else", "MANAGER")).hasMessageContaining("must match");
+		assertThatThrownBy(() -> accessControlService.verifyMeasureCreator(NAMESPACE, MUNICIPALITY_ID, AD_ACCOUNT, "NURSE")).hasMessageContaining("does not hold");
+		verifyNoInteractions(namespaceConfigServiceMock);
+	}
+
 }

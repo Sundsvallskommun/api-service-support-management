@@ -765,7 +765,6 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactlyInAnyOrder(
 				tuple("measures[0].accept", "must be one of: [TRUE, FALSE, REWORK]"),
 				tuple("measures[0].measureTypeId", "must not be blank"),
-				tuple("measures[0].addedByUser", "must not be blank"),
 				tuple("measures[0].addedByRole", "must not be blank"));
 
 		verifyNoInteractions(errandServiceMock);

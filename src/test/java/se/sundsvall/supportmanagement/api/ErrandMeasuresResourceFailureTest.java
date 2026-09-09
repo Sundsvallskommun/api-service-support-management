@@ -61,7 +61,6 @@ class ErrandMeasuresResourceFailureTest {
 			.containsExactlyInAnyOrder(
 				tuple("measureTypeId", "must not be blank"),
 				tuple("measureTypeId", "not a valid UUID"),
-				tuple("addedByUser", "must not be blank"),
 				tuple("addedByRole", "must not be blank"));
 
 		verifyNoInteractions(serviceMock);
@@ -87,7 +86,6 @@ class ErrandMeasuresResourceFailureTest {
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("measureTypeId", "must not be blank"),
-				tuple("addedByUser", "must not be blank"),
 				tuple("addedByRole", "must not be blank"));
 
 		verifyNoInteractions(serviceMock);

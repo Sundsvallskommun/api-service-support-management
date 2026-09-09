@@ -1,0 +1,15 @@
+[
+  {
+    "accessByType": [
+      {
+        "type": "role",
+        "access": [
+          {
+            "accessLevel": "RW",
+            "pattern": "ROLE-1"
+          }
+        ]
+      }
+    ]
+  }
+]

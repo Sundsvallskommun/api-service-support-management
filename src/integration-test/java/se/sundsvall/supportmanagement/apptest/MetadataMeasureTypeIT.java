@@ -7,6 +7,7 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -135,5 +136,18 @@ class MetadataMeasureTypeIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_deleteReferencedMeasureType() {
+		final var id = "dd000000-0000-0000-0000-000000000100";
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_2281)).isTrue();
 	}
 }

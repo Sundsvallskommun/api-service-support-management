@@ -112,6 +112,9 @@ public class ErrandService {
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 
 		// Everything the request is held to on its own, before an errand is built from it.
+		if (errand.getMeasures() != null && !errand.getMeasures().isEmpty()) {
+			accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.MEASURE, RW);
+		}
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
 		errandLabelService.validateVersions(errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
@@ -169,7 +172,11 @@ public class ErrandService {
 
 		// Everything the patch is held to on its own, before the errand is touched by it.
 		requireMatchingVersion(ifMatch, errandEntityToUpdate.getVersion(), id, namespace, municipalityId);
-		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
+		if (errand.getMeasures() != null) {
+			// Includes an empty list: removing measures requires the same permission as their dedicated DELETE.
+			accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, id, ProtectedResource.MEASURE, RW);
+			measureValidator.validateUpdate(errand.getMeasures(), errandEntityToUpdate.getMeasures(), namespace, municipalityId);
+		}
 		errandLabelService.validateVersions(errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 

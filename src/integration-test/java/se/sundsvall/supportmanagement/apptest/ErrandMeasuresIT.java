@@ -1,5 +1,15 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -11,18 +21,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
+import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 
 /**
  * Errand Measures IT tests.
@@ -49,6 +48,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	@Test
 	void test01_createErrandMeasure() {
 		setupCall()
+			.withHeader(HEADER_NAME, "new01user; type=adAccount")
 			.withServicePath(PATH)
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
@@ -93,6 +93,8 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	@Test
 	void test04_updateErrandMeasure() {
 		setupCall()
+			.withHeader("If-Match", "\"0\"")
+			.withExpectedResponseHeader("ETag", List.of("\"1\""))
 			.withServicePath(PATH + "/" + MEASURE_ID)
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
