@@ -1,0 +1,54 @@
+[
+	{
+		"communicationAttachments": [
+			{
+				"fileName": "Test3.txt",
+				"id": "99fa4dd0-9308-4d45-bb8e-4bb881a9a536",
+				"mimeType": "text/plain"
+			}
+		],
+		"messageBody": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
+		"htmlMessageBody": "<html>Some message about the HAL Institute for <b>Criminally Insane Robots</b>, where robots that <i>murderously</i> turns against its human crew are held</html>",
+		"sender": "bender@rodriguez.com",
+		"errandNumber": "KC-23020003",
+		"subject": "Insane in the Mainframe",
+		"communicationID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+		"viewed": true,
+		"communicationType": "EMAIL",
+		"sent": "${json-unit.ignore}",
+		"direction": "OUTBOUND",
+		"target": "john.a@zoidberg.com",
+		"recipients": [
+			"john.a@zoidberg.com"
+		],
+		"ccRecipients": [],
+		"internal": false,
+		"emailHeaders": {}
+	},
+	{
+		"communicationAttachments": [
+			{
+				"fileName": "Test3.txt",
+				"id": "99fa4dd0-9308-4d45-bb8e-4bb881a9a536",
+				"mimeType": "text/plain"
+			}
+		],
+		"messageBody": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
+		"htmlMessageBody": "<html>Some message about the HAL Institute for <b>Criminally Insane Robots</b>, where robots that <i>murderously</i> turns against its human crew are held</html>",
+		"sender": "bender@rodriguez.com",
+		"errandNumber": "KC-23020003",
+		"subject": "Insane in the Mainframe",
+		"communicationID": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+		"viewed": true,
+		"communicationType": "EMAIL",
+		"sent": "${json-unit.ignore}",
+		"direction": "OUTBOUND",
+		"target": "turanga@leela.com",
+		"recipients": [
+			"turanga@leela.com"
+		],
+		"ccRecipients": [],
+		"internal": false,
+		"emailHeaders": {}
+	}
+]
