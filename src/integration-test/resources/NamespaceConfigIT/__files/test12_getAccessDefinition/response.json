@@ -1,0 +1,296 @@
+{
+	"fields": [
+		{
+			"field": "ID",
+			"property": "id",
+			"keyed": false
+		},
+		{
+			"field": "ERRAND_NUMBER",
+			"property": "errandNumber",
+			"keyed": false
+		},
+		{
+			"field": "TITLE",
+			"property": "title",
+			"keyed": false
+		},
+		{
+			"field": "STATUS",
+			"property": "status",
+			"keyed": false
+		},
+		{
+			"field": "RESOLUTION",
+			"property": "resolution",
+			"keyed": false
+		},
+		{
+			"field": "CHANNEL",
+			"property": "channel",
+			"keyed": false
+		},
+		{
+			"field": "CREATED",
+			"property": "created",
+			"keyed": false
+		},
+		{
+			"field": "MODIFIED",
+			"property": "modified",
+			"keyed": false
+		},
+		{
+			"field": "TOUCHED",
+			"property": "touched",
+			"keyed": false
+		},
+		{
+			"field": "PRIORITY",
+			"property": "priority",
+			"keyed": false
+		},
+		{
+			"field": "DESCRIPTION",
+			"property": "description",
+			"keyed": false
+		},
+		{
+			"field": "CLASSIFICATION",
+			"property": "classification",
+			"keyed": false
+		},
+		{
+			"field": "REPORTER_USER_ID",
+			"property": "reporterUserId",
+			"keyed": false
+		},
+		{
+			"field": "ASSIGNED_USER_ID",
+			"property": "assignedUserId",
+			"keyed": false
+		},
+		{
+			"field": "ASSIGNED_GROUP_ID",
+			"property": "assignedGroupId",
+			"keyed": false
+		},
+		{
+			"field": "BUSINESS_RELATED",
+			"property": "businessRelated",
+			"keyed": false
+		},
+		{
+			"field": "SUSPENSION",
+			"property": "suspension",
+			"keyed": false
+		},
+		{
+			"field": "CONTACT_REASON",
+			"property": "contactReason",
+			"keyed": false
+		},
+		{
+			"field": "CONTACT_REASON_DESCRIPTION",
+			"property": "contactReasonDescription",
+			"keyed": false
+		},
+		{
+			"field": "ESCALATION_EMAIL",
+			"property": "escalationEmail",
+			"keyed": false
+		},
+		{
+			"field": "LABELS",
+			"property": "labels",
+			"keyed": false
+		},
+		{
+			"field": "STAKEHOLDERS",
+			"property": "stakeholders",
+			"keyed": false
+		},
+		{
+			"field": "MEASURES",
+			"property": "measures",
+			"keyed": false
+		},
+		{
+			"field": "ACTIVE_NOTIFICATIONS",
+			"property": "activeNotifications",
+			"keyed": false
+		},
+		{
+			"field": "VERSION",
+			"property": "version",
+			"keyed": false
+		},
+		{
+			"field": "PARAMETERS",
+			"property": "parameters",
+			"keyed": true
+		},
+		{
+			"field": "JSON_PARAMETERS",
+			"property": "jsonParameters",
+			"keyed": true
+		},
+		{
+			"field": "EXTERNAL_TAGS",
+			"property": "externalTags",
+			"keyed": true
+		}
+	],
+	"resources": [
+		{
+			"resource": "ERRAND",
+			"path": "errand",
+			"errandScoped": true
+		},
+		{
+			"resource": "ATTACHMENT",
+			"path": "errand/attachment",
+			"errandScoped": true
+		},
+		{
+			"resource": "COMMUNICATION",
+			"path": "errand/communication",
+			"errandScoped": true
+		},
+		{
+			"resource": "COMMUNICATION_ATTACHMENT",
+			"path": "errand/communication/attachment",
+			"errandScoped": true
+		},
+		{
+			"resource": "CONVERSATION",
+			"path": "errand/conversation",
+			"errandScoped": true
+		},
+		{
+			"resource": "CONVERSATION_MESSAGE",
+			"path": "errand/conversation/message",
+			"errandScoped": true
+		},
+		{
+			"resource": "CONVERSATION_ATTACHMENT",
+			"path": "errand/conversation/attachment",
+			"errandScoped": true
+		},
+		{
+			"resource": "EVENT",
+			"path": "errand/event",
+			"errandScoped": true
+		},
+		{
+			"resource": "NOTE",
+			"path": "errand/note",
+			"errandScoped": true
+		},
+		{
+			"resource": "NOTE_REVISION",
+			"path": "errand/note/revision",
+			"errandScoped": true
+		},
+		{
+			"resource": "PARAMETER",
+			"path": "errand/parameter",
+			"errandScoped": true
+		},
+		{
+			"resource": "JSON_PARAMETER",
+			"path": "errand/json-parameter",
+			"errandScoped": true
+		},
+		{
+			"resource": "MEASURE",
+			"path": "errand/measure",
+			"errandScoped": true
+		},
+		{
+			"resource": "NOTIFICATION",
+			"path": "errand/notification",
+			"errandScoped": true
+		},
+		{
+			"resource": "REVISION",
+			"path": "errand/revision",
+			"errandScoped": true
+		},
+		{
+			"resource": "TIME_MEASURE",
+			"path": "errand/time-measure",
+			"errandScoped": true
+		},
+		{
+			"resource": "NAMESPACE_CONFIG",
+			"path": "namespace-config",
+			"errandScoped": false
+		},
+		{
+			"resource": "EMAIL_INTEGRATION_CONFIG",
+			"path": "email-integration-config",
+			"errandScoped": false
+		},
+		{
+			"resource": "MESSAGE_EXCHANGE_INTEGRATION_CONFIG",
+			"path": "messageexchange-integration-config",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_CATEGORY",
+			"path": "metadata/category",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_CONTACT_REASON",
+			"path": "metadata/contact-reason",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_EXTERNAL_ID_TYPE",
+			"path": "metadata/external-id-type",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_LABEL",
+			"path": "metadata/label",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_MEASURE_TYPE",
+			"path": "metadata/measure-type",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_PHASE",
+			"path": "metadata/phase",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_ROLE",
+			"path": "metadata/role",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_STATUS",
+			"path": "metadata/status",
+			"errandScoped": false
+		},
+		{
+			"resource": "SUBSCRIBER",
+			"path": "subscriber",
+			"errandScoped": false
+		},
+		{
+			"resource": "SUBSCRIPTION",
+			"path": "subscriber/subscription",
+			"errandScoped": false
+		},
+		{
+			"resource": "SUBSCRIBER_NOTIFICATION",
+			"path": "subscriber-notification",
+			"errandScoped": false
+		}
+	]
+}

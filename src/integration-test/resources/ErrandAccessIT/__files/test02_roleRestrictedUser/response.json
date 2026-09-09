@@ -1,0 +1,100 @@
+{
+	"level": "RW",
+	"fields": [
+		{
+			"field": "id"
+		},
+		{
+			"field": "errandNumber"
+		},
+		{
+			"field": "title"
+		},
+		{
+			"field": "parameters",
+			"allKeys": false,
+			"keys": [
+				{
+					"key": "granted-key",
+					"level": "RW"
+				},
+				{
+					"key": "readonly-key",
+					"level": "R"
+				}
+			]
+		},
+		{
+			"field": "jsonParameters",
+			"allKeys": false,
+			"keys": [
+				{
+					"key": "granted-json",
+					"level": "RW"
+				}
+			]
+		}
+	],
+	"resources": [
+		{
+			"resource": "errand/attachment",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/communication",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/communication/attachment",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/conversation",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/conversation/message",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/conversation/attachment",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/event",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/note",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/note/revision",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/parameter",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/json-parameter",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/measure",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/notification",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/revision",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/time-measure",
+			"level": "RW"
+		}
+	]
+}

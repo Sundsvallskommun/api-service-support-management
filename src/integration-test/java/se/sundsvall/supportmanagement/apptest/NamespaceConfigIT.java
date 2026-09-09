@@ -41,6 +41,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 	private static final String NAMESPACE_2 = "NAMESPACE-2";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final Function<String, String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/namespace-config";
+	private static final Function<String, String> ACCESS_DEFINITION_PATH = namespace -> PATH.apply(namespace) + "/access-definition";
 	private static final Function<String, String> VALIDATION_PATH = namespace -> PATH.apply(namespace) + "/validation";
 	private static final String ACCESS_CONTROLLED_PATH = "/2506/NAMESPACE-2506/namespace-config";
 	private static final String ACCESS_CONTROLLED_LABEL_PATH = "/2506/NAMESPACE-2506/metadata/labels";
@@ -210,6 +211,20 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequestAndVerifyResponse();
+	}
+	/**
+	 * The values the access configuration accepts, published as data so that exposing a new field or guarding a new
+	 * resource does not alter the contract. The fixture is the whole definition, so adding either shows up here.
+	 */
+	@Test
+	void test12_getAccessDefinition() {
+		setupCall()
+			.withServicePath(ACCESS_DEFINITION_PATH.apply(NAMESPACE_1))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 }
