@@ -209,14 +209,21 @@ public class CommunicationService {
 
 		messagingClient.sendEmailBatch(municipalityId, batchRequest);
 
-		request.getRecipients().forEach(recipient -> {
+		// Any inline attachments in the request are the same content for every recipient, so they are only
+		// persisted as errand attachments once - not once per recipient.
+		var attachmentSaved = false;
+		for (final var recipient : request.getRecipients()) {
 			final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, toSingleEmailRequest(request, recipient))
 				.withErrandAttachments(errandAttachments)
 				.withViewed(true)
 				.withErrandNumber(errandEntity.getErrandNumber());
 			saveCommunication(communicationEntity);
-			saveAttachment(communicationEntity, errandEntity);
-		});
+
+			if (!attachmentSaved) {
+				saveAttachment(communicationEntity, errandEntity);
+				attachmentSaved = true;
+			}
+		}
 	}
 
 	private static EmailRequest toSingleEmailRequest(final BulkEmailRequest bulk, final String recipient) {

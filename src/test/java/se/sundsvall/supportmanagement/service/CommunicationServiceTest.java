@@ -497,7 +497,8 @@ class CommunicationServiceTest {
 		when(errandEntityMock.getErrandNumber()).thenReturn("ERRAND-0001");
 		when(errandAttachmentServiceMock.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(any(), any(), any(), any())).thenReturn(List.of());
 		when(communicationMapperMock.toCommunicationEntity(anyString(), anyString(), any(EmailRequest.class))).thenReturn(CommunicationEntity.create());
-		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of());
+		when(communicationMapperMock.toAttachments(any(CommunicationEntity.class))).thenReturn(List.of(attachmentEntityMock));
+		when(attachmentEntityMock.withErrandEntity(any())).thenReturn(attachmentEntityMock);
 
 		// Call
 		communicationService.sendBulkEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
@@ -508,6 +509,8 @@ class CommunicationServiceTest {
 		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
 		verify(communicationMapperMock, times(2)).toCommunicationEntity(anyString(), anyString(), any(EmailRequest.class));
 		verify(communicationRepositoryMock, times(2)).saveAndFlush(any(CommunicationEntity.class));
+		// Any attachment content is the same for every recipient, so it must only be persisted once, not once per recipient.
+		verify(errandAttachmentServiceMock).createErrandAttachment(same(attachmentEntityMock), same(errandEntityMock));
 
 		final var batchRequest = emailBatchRequestCaptor.getValue();
 		assertThat(batchRequest.getParties()).hasSize(2);
