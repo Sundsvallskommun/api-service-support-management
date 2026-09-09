@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/lim01red"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test04_limitedRead/responses/api-accessmapper-lim01red.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-lim01red"
+}

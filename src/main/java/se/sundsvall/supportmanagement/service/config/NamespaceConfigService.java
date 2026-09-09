@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.config.AccessDefinition;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
@@ -191,6 +192,14 @@ public class NamespaceConfigService {
 			.map(mapper::toNamespaceConfig)
 			.map(NamespaceConfig::isAccessControl)
 			.orElse(false);
+	}
+
+	/**
+	 * The values the access configuration accepts. Resolved from the enums themselves rather than stored, so it needs no
+	 * namespace of its own and cannot fall out of step with what is actually enforced.
+	 */
+	public AccessDefinition getAccessDefinition() {
+		return mapper.toAccessDefinition();
 	}
 
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")

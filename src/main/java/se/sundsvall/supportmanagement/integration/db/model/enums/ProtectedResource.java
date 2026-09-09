@@ -51,4 +51,13 @@ public enum ProtectedResource {
 	public String getPath() {
 		return path;
 	}
+
+	/**
+	 * Signals if the resource belongs to an errand rather than to the namespace itself, which is what separates the
+	 * resources guarded per errand from those guarded on the access mapper alone. Kept next to the paths, since it is the
+	 * paths it reads.
+	 */
+	public boolean isErrandScoped() {
+		return ERRAND.path.equals(path) || path.startsWith(ERRAND.path + "/");
+	}
 }

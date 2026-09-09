@@ -11,6 +11,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.config.AccessDefinition;
+import se.sundsvall.supportmanagement.api.model.config.AccessFieldDefinition;
+import se.sundsvall.supportmanagement.api.model.config.AccessResourceDefinition;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.Validation;
 import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
@@ -37,6 +40,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityTy
 class NamespaceConfigResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/namespace-config";
+	private static final String ACCESS_DEFINITION_PATH = "/{municipalityId}/{namespace}/namespace-config/access-definition";
 	private static final String ACTION_DEFINITION_PATH = "/{municipalityId}/{namespace}/namespace-config/action-definition";
 	private static final String ACTION_CONFIG_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config";
 	private static final String ACTION_CONFIG_ID_PATH = "/{municipalityId}/{namespace}/namespace-config/action-config/{id}";
@@ -322,5 +326,26 @@ class NamespaceConfigResourceTest {
 			.expectBody().isEmpty();
 
 		verify(actionServiceMock).deleteActionConfig(MUNICIPALITY_ID, NAMESPACE, CONFIG_ID);
+	}
+
+	@Test
+	void getAccessDefinition() {
+		final var definition = AccessDefinition.create()
+			.withFields(List.of(AccessFieldDefinition.create().withField("PARAMETERS").withProperty("parameters").withKeyed(true)))
+			.withResources(List.of(AccessResourceDefinition.create().withResource("COMMUNICATION").withPath("errand/communication").withErrandScoped(true)));
+
+		when(serviceMock.getAccessDefinition()).thenReturn(definition);
+
+		final var response = webTestClient.get()
+			.uri(uriBuilder -> uriBuilder.path(ACCESS_DEFINITION_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(AccessDefinition.class)
+			.returnResult()
+			.getResponseBody();
+
+		verify(serviceMock).getAccessDefinition();
+		assertThat(response).isNotNull().isEqualTo(definition);
 	}
 }

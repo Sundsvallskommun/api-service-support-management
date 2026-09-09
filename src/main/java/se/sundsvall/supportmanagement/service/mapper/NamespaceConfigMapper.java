@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -12,7 +13,10 @@ import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.api.model.config.AccessDefinition;
+import se.sundsvall.supportmanagement.api.model.config.AccessFieldDefinition;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
+import se.sundsvall.supportmanagement.api.model.config.AccessResourceDefinition;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -63,6 +67,28 @@ public class NamespaceConfigMapper {
 	private static final Comparator<FieldAtLevel> FIELD_AT_LEVEL_ORDER = Comparator
 		.comparing(FieldAtLevel::field)
 		.thenComparing(FieldAtLevel::level, Comparator.nullsFirst(Comparator.naturalOrder()));
+
+	/**
+	 * The values the access configuration accepts, published so that a client configuring access reads them from here
+	 * rather than from an enum of the schema - which is what lets a field or a resource be added without altering the
+	 * contract. Each field also carries the property it names on the errand, and each resource the path it is guarded
+	 * on, so that a configuration can be matched up with what the access of an errand reports.
+	 */
+	public AccessDefinition toAccessDefinition() {
+		return AccessDefinition.create()
+			.withFields(Arrays.stream(ErrandField.values())
+				.map(field -> AccessFieldDefinition.create()
+					.withField(field.name())
+					.withProperty(field.getPropertyName())
+					.withKeyed(field.isKeyed()))
+				.toList())
+			.withResources(Arrays.stream(ProtectedResource.values())
+				.map(resource -> AccessResourceDefinition.create()
+					.withResource(resource.name())
+					.withPath(resource.getPath())
+					.withErrandScoped(resource.isErrandScoped()))
+				.toList());
+	}
 
 	public NamespaceConfigEntity toEntity(final NamespaceConfig config, final String namespace, final String municipalityId) {
 		return NamespaceConfigEntity.create()

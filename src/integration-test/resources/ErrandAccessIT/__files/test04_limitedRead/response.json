@@ -1,0 +1,38 @@
+{
+	"level": "LR",
+	"fields": [
+		{
+			"field": "id"
+		},
+		{
+			"field": "errandNumber"
+		},
+		{
+			"field": "title"
+		},
+		{
+			"field": "status"
+		},
+		{
+			"field": "resolution"
+		},
+		{
+			"field": "channel"
+		},
+		{
+			"field": "created"
+		},
+		{
+			"field": "modified"
+		},
+		{
+			"field": "touched"
+		}
+	],
+	"resources": [
+		{
+			"resource": "errand/communication",
+			"level": "LR"
+		}
+	]
+}

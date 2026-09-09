@@ -2,7 +2,9 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -132,9 +134,17 @@ public class AccessControlService {
 			return _ -> FieldAccessResolution.unrestricted();
 		}
 
-		final var adAccount = adAccountOf(user);
-		final var access = accessMapperService.getAccessSnapshot(municipalityId, namespace, user);
+		return fieldAccessResolver(config, accessMapperService.getAccessSnapshot(municipalityId, namespace, user), adAccountOf(user));
+	}
 
+	/**
+	 * The same resolver, built from a configuration and a snapshot already in hand.
+	 * <p>
+	 * Lets a caller answering more than one question of the same user resolve both from a single snapshot. Read once per
+	 * question instead, the two could be answered from different moments and disagree with each other - the reason a
+	 * snapshot holds labels, roles and resources together in the first place.
+	 */
+	private Function<ErrandEntity, FieldAccessResolution> fieldAccessResolver(NamespaceConfig config, AccessSnapshot access, String adAccount) {
 		// R/RW has precedence over LR, so an errand fully covered by them is not limited for this user.
 		final var fullReadLabelIds = labelIds(access, levelsAtOrAbove(R));
 
@@ -218,6 +228,137 @@ public class AccessControlService {
 			return keys.isEmpty() ? _ -> true : keys::contains;
 		}
 	}
+
+	/**
+	 * Reports what the user may do with one errand, so that a client can render only the controls their next request
+	 * would actually be allowed to make.
+	 * <p>
+	 * Answered from the same grants the write paths enforce rather than from a second reading of the configuration:
+	 * {@link #highestLevel} mirrors the specification guarding every endpoint, and the fields come from the very
+	 * resolver {@code readErrand} maps its response with, so what is reported and what is served cannot drift apart.
+	 * <p>
+	 * The configuration and the access snapshot are resolved once and the fields once, since both underlying lookups are
+	 * cached per request at best and resolving them twice is what quietly turns one read into several.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  user           user
+	 * @param  errandEntity   errand to report on
+	 * @return                what the user holds the errand, its fields and its resources at
+	 */
+	public ErrandAccessResolution resolveErrandAccess(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity) {
+		final var config = namespaceConfigService.get(namespace, municipalityId);
+		final var access = config.isAccessControl() ? accessMapperService.getAccessSnapshot(municipalityId, namespace, user) : AccessSnapshot.empty();
+		final var adAccount = adAccountOf(user);
+
+		final var errandLevel = highestLevel(config, access, errandEntity, adAccount, ProtectedResource.ERRAND);
+
+		if (isNull(errandLevel)) {
+			throw Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(ofNullable(user)
+				.map(Identifier::getValue)
+				.orElse(null)));
+		}
+
+		// The errand itself is reported as the level of the whole answer, so it is left out here rather than repeated and
+		// left free to disagree with it.
+		final Map<ProtectedResource, Access.AccessLevelEnum> resources = new EnumMap<>(ProtectedResource.class);
+		Arrays.stream(ProtectedResource.values())
+			.filter(ProtectedResource::isErrandScoped)
+			.filter(resource -> ProtectedResource.ERRAND != resource)
+			.forEach(resource -> ofNullable(highestLevel(config, access, errandEntity, adAccount, resource))
+				.ifPresent(level -> resources.put(resource, level)));
+
+		// Built from the snapshot already resolved above, so that what is reported of the fields and what is reported of
+		// the errand cannot come from two different answers of the access mapper.
+		final var resolution = config.isAccessControl()
+			? fieldAccessResolver(config, access, adAccount).apply(errandEntity)
+			: FieldAccessResolution.unrestricted();
+
+		final var fields = toFieldGrants(resolution, RW == errandLevel);
+
+		return new ErrandAccessResolution(errandLevel, resources, fields);
+	}
+
+	/**
+	 * Renders a resolved field restriction as what the user may do with each field they reach.
+	 * <p>
+	 * Every level is capped by whether the errand itself is writable. A namespace may not put a level on a field holding
+	 * no keyed collection, so every such grant is levelless and would otherwise be reported writable to a user holding
+	 * the errand at read - who would then be refused by the very endpoint the report invited them to call.
+	 *
+	 * @param  access         resolved fields of the errand
+	 * @param  errandWritable if the user may write the errand at all
+	 * @return                what the user may do with each field they reach
+	 */
+	private static Map<ErrandField, FieldGrant> toFieldGrants(FieldAccessResolution access, boolean errandWritable) {
+		final Map<ErrandField, FieldGrant> grants = new EnumMap<>(ErrandField.class);
+
+		// A user nothing restricts reaches every field, and every key of the keyed ones.
+		if (isNull(access.readable())) {
+			Arrays.stream(ErrandField.values()).forEach(field -> grants.put(field, unrestrictedGrant(field)));
+			return grants;
+		}
+
+		access.readable().forEach((field, readableKeys) -> grants.put(field, toFieldGrant(access, field, readableKeys, errandWritable)));
+		return grants;
+	}
+
+	private static FieldGrant unrestrictedGrant(ErrandField field) {
+		return field.isKeyed() ? new FieldGrant(true, new LinkedHashMap<>()) : new FieldGrant(null, null);
+	}
+
+	/**
+	 * What the user may do with one field they reach, and with the individual keys of it when it holds a keyed
+	 * collection.
+	 * <p>
+	 * A key restriction is all or nothing: either the namespace names the keys of the field, in which case those are the
+	 * only ones reachable, or it names none and every key of the collection simply follows the errand. The field itself
+	 * therefore carries no level of its own - a field is writable exactly when the errand is, since a namespace may only
+	 * hold a key to read, never a whole field.
+	 */
+	private static FieldGrant toFieldGrant(FieldAccessResolution access, ErrandField field, Set<String> readableKeys, boolean errandWritable) {
+		if (!field.isKeyed()) {
+			return new FieldGrant(null, null);
+		}
+
+		// No key restriction, so the keys are not enumerated at all and each of them follows the errand.
+		if (readableKeys.isEmpty()) {
+			return new FieldGrant(true, new LinkedHashMap<>());
+		}
+
+		final var writableKey = access.writableKey(field);
+		final Map<String, Access.AccessLevelEnum> keys = new LinkedHashMap<>();
+
+		// Every key the user reaches, listed whether or not the errand carries it yet: a key granted here may be created
+		// as well as changed, which is what lets a form be rendered before anything has been saved to it.
+		readableKeys.forEach(key -> keys.put(key, errandWritable && writableKey.test(key) ? RW : R));
+
+		return new FieldGrant(false, keys);
+	}
+
+	/**
+	 * What a user may do with one errand, resolved in one pass.
+	 *
+	 * @param errandLevel the level they hold the errand itself at, never null
+	 * @param resources   the level they hold each errand scoped resource they reach at, the errand itself excluded
+	 * @param fields      what they may do with each field they reach
+	 */
+	public record ErrandAccessResolution(
+		Access.AccessLevelEnum errandLevel,
+		Map<ProtectedResource, Access.AccessLevelEnum> resources,
+		Map<ErrandField, FieldGrant> fields) {}
+
+	/**
+	 * What a user may do with one field of one errand. A field they do not reach at all is simply absent, and a field
+	 * they reach follows the errand unless its keys say otherwise.
+	 *
+	 * @param allKeys if the field is reached without a key restriction, null for a field holding no keyed collection
+	 * @param keys    every key of the collection they reach, empty when {@code allKeys}, null for a field holding no
+	 *                keyed collection
+	 */
+	public record FieldGrant(
+		Boolean allKeys,
+		Map<String, Access.AccessLevelEnum> keys) {}
 
 	/**
 	 * The grants of sent in ones that carry the right to write, which is every grant a namespace has not deliberately
@@ -612,12 +753,7 @@ public class AccessControlService {
 		// Labels say which errands the user reaches, the access mapper resources say which operations they may perform at
 		// all, and both must allow.
 		if (grantsResourceAccess(config, access, resource, required)) {
-			// One clause at the lowest label level that reaches this resource. A separate clause for limited read would be
-			// redundant, since the labels of a level are a subset of those of every level below it and the predicate is
-			// monotonic, so the stricter clause can never match a row the looser one does not.
-			final var lowestLevel = grantsLimitedReadAccess(config, resource, required) ? LR : fullAccessLevel(required);
-
-			clauses.add(hasAllowedMetadataLabels(access.labels(levelsAtOrAbove(lowestLevel))));
+			clauses.add(hasAllowedMetadataLabels(allowedLabels(config, access, resource, required)));
 		}
 
 		// Errands reported by the user, which their labels may say nothing at all about.
@@ -636,6 +772,61 @@ public class AccessControlService {
 	 */
 	private static Access.AccessLevelEnum fullAccessLevel(Access.AccessLevelEnum required) {
 		return RW == required ? RW : R;
+	}
+
+	/**
+	 * The labels that reach sent in resource at sent in level.
+	 * <p>
+	 * One set at the lowest label level reaching the resource. A separate set for limited read would be redundant, since
+	 * the labels of a level are a subset of those of every level below it and the predicate is monotonic, so the stricter
+	 * set can never match an errand the looser one does not.
+	 */
+	private Set<MetadataLabelEntity> allowedLabels(NamespaceConfig config, AccessSnapshot access, ProtectedResource resource, Access.AccessLevelEnum required) {
+		return access.labels(levelsAtOrAbove(grantsLimitedReadAccess(config, resource, required) ? LR : fullAccessLevel(required)));
+	}
+
+	/**
+	 * Answers, for one errand already in hand, the question {@link #withAccessControl} asks of the database.
+	 * <p>
+	 * The two must agree, since this is what {@link #resolveErrandAccess} reports and the specification is what actually
+	 * guards every endpoint: an answer here that the specification would refuse is a caller told they may do something
+	 * that then fails with 401. {@code AccessControlSpecificationParityTest} holds the two to each other.
+	 * <p>
+	 * Kept in memory rather than asked of the database, since reporting the level of every resource of an errand would
+	 * otherwise be one query per resource and level.
+	 */
+	private boolean reaches(NamespaceConfig config, AccessSnapshot access, ErrandEntity errandEntity, String adAccount, ProtectedResource resource, Access.AccessLevelEnum required) {
+		// Nothing restricts anyone while the namespace has not opted in, which is the conjunction of the specification.
+		if (!config.isAccessControl()) {
+			return true;
+		}
+
+		if (grantsResourceAccess(config, access, resource, required)) {
+			final var allowed = allowedLabels(config, access, resource, required);
+
+			// hasAllowedMetadataLabels reaches no errand at all for a user holding no labels, where covers would call an
+			// unlabelled errand covered by the empty set. The specification is the enforcement, so emptiness is asked first.
+			if (!allowed.isEmpty() && covers(allowed.stream().map(MetadataLabelEntity::getId).collect(Collectors.toSet()), errandEntity)) {
+				return true;
+			}
+		}
+
+		// isReportedBy reaches no errand for a caller carrying no ad account, so neither does this.
+		return grantsReporterAccess(config, resource, required) && isReporter(adAccount, errandEntity);
+	}
+
+	/**
+	 * The most a user may do with sent in resource of one errand, or null for a resource they do not reach at all.
+	 * <p>
+	 * Probed from the top down, which settles it in at most three passes: {@link #reaches} is monotonic in the level
+	 * asked for, since the labels of a level are a subset of those of every level below it, {@link #satisfies} weighs a
+	 * grant the same way, and limited read only ever widens the lowest level.
+	 */
+	private Access.AccessLevelEnum highestLevel(NamespaceConfig config, AccessSnapshot access, ErrandEntity errandEntity, String adAccount, ProtectedResource resource) {
+		return levelsAtOrAbove(LR).reversed().stream()
+			.filter(level -> reaches(config, access, errandEntity, adAccount, resource, level))
+			.findFirst()
+			.orElse(null);
 	}
 
 	/**

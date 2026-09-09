@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.config;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -9,9 +10,10 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 @Schema(description = "What limited read means within the namespace")
 public class LimitedReadAccess {
 
-	@Schema(
-		description = "Resources reachable on an errand the labels of the user only grant them limited read for. The errand itself is always reachable, listing resources here extends limited read beyond it. Read only, so no access level is given per resource",
-		examples = "[\"COMMUNICATION\"]")
+	@ArraySchema(
+		schema = @Schema(type = "string", implementation = String.class, description = "Resource reachable at limited read", examples = "COMMUNICATION"),
+		arraySchema = @Schema(
+			description = "Resources reachable on an errand the labels of the user only grant them limited read for. The errand itself is always reachable, listing resources here extends limited read beyond it. Read only, so no access level is given per resource. The values accepted are published by the access definition of the namespace configuration"))
 	private List<ProtectedResource> resources;
 
 	@Valid

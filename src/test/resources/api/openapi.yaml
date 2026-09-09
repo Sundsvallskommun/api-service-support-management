@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.0"
+  version: "16.1"
 servers:
-- url: http://localhost:59471
+- url: http://localhost:42271
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -47,6 +47,8 @@ tags:
   description: Category metadata operations
 - name: Revisions
   description: Errand and errand note revision operations
+- name: Errand Access
+  description: Errand access operations
 - name: Subscriptions
   description: "Subscription operations. A subscription describes what a subscriber\
     \ listens for (an errand or all events in a namespace). Subscriptions support\
@@ -7996,6 +7998,61 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/namespace-config/access-definition:
+    get:
+      tags:
+      - Configuration for namespace
+      summary: Read the access definition
+      description: "Fetches the values the access configuration accepts for fields\
+        \ and resources, so that a client configuring access reads them from here\
+        \ rather than from an enum of the schema"
+      operationId: getAccessDefinition
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessDefinition"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata:
     get:
       tags:
@@ -9364,6 +9421,80 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/access:
+    get:
+      tags:
+      - Errand Access
+      summary: Read errand access
+      description: "Reports what the requesting user may do with the errand that matches\
+        \ the provided id, so that a client can render only the controls their next\
+        \ request would be allowed to make"
+      operationId: readErrandAccess
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrandAccess"
+        "401":
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/count:
     get:
       tags:
@@ -9776,9 +9907,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -9835,36 +9966,8 @@ components:
       properties:
         field:
           type: string
-          description: Field to expose
-          enum:
-          - ID
-          - ERRAND_NUMBER
-          - TITLE
-          - STATUS
-          - RESOLUTION
-          - CHANNEL
-          - CREATED
-          - MODIFIED
-          - TOUCHED
-          - PRIORITY
-          - DESCRIPTION
-          - CLASSIFICATION
-          - REPORTER_USER_ID
-          - ASSIGNED_USER_ID
-          - ASSIGNED_GROUP_ID
-          - BUSINESS_RELATED
-          - SUSPENSION
-          - CONTACT_REASON
-          - CONTACT_REASON_DESCRIPTION
-          - ESCALATION_EMAIL
-          - LABELS
-          - STAKEHOLDERS
-          - MEASURES
-          - ACTIVE_NOTIFICATIONS
-          - VERSION
-          - PARAMETERS
-          - JSON_PARAMETERS
-          - EXTERNAL_TAGS
+          description: Field to expose. The values accepted are published by the access
+            definition of the namespace configuration
           examples:
           - PARAMETERS
         keys:
@@ -9900,42 +10003,13 @@ components:
           description: "Resources reachable on an errand the labels of the user only\
             \ grant them limited read for. The errand itself is always reachable,\
             \ listing resources here extends limited read beyond it. Read only, so\
-            \ no access level is given per resource"
-          examples:
-          - - COMMUNICATION
+            \ no access level is given per resource. The values accepted are published\
+            \ by the access definition of the namespace configuration"
           items:
             type: string
-            enum:
-            - ERRAND
-            - ATTACHMENT
+            description: Resource reachable at limited read
+            examples:
             - COMMUNICATION
-            - COMMUNICATION_ATTACHMENT
-            - CONVERSATION
-            - CONVERSATION_MESSAGE
-            - CONVERSATION_ATTACHMENT
-            - EVENT
-            - NOTE
-            - NOTE_REVISION
-            - PARAMETER
-            - JSON_PARAMETER
-            - MEASURE
-            - NOTIFICATION
-            - REVISION
-            - TIME_MEASURE
-            - NAMESPACE_CONFIG
-            - EMAIL_INTEGRATION_CONFIG
-            - MESSAGE_EXCHANGE_INTEGRATION_CONFIG
-            - METADATA_CATEGORY
-            - METADATA_CONTACT_REASON
-            - METADATA_EXTERNAL_ID_TYPE
-            - METADATA_LABEL
-            - METADATA_MEASURE_TYPE
-            - METADATA_PHASE
-            - METADATA_ROLE
-            - METADATA_STATUS
-            - SUBSCRIBER
-            - SUBSCRIPTION
-            - SUBSCRIBER_NOTIFICATION
         fields:
           type: array
           description: "Fields of the errand exposed, applying instead of the fields\
@@ -10064,38 +10138,8 @@ components:
       properties:
         resource:
           type: string
-          description: Resource to grant access to
-          enum:
-          - ERRAND
-          - ATTACHMENT
-          - COMMUNICATION
-          - COMMUNICATION_ATTACHMENT
-          - CONVERSATION
-          - CONVERSATION_MESSAGE
-          - CONVERSATION_ATTACHMENT
-          - EVENT
-          - NOTE
-          - NOTE_REVISION
-          - PARAMETER
-          - JSON_PARAMETER
-          - MEASURE
-          - NOTIFICATION
-          - REVISION
-          - TIME_MEASURE
-          - NAMESPACE_CONFIG
-          - EMAIL_INTEGRATION_CONFIG
-          - MESSAGE_EXCHANGE_INTEGRATION_CONFIG
-          - METADATA_CATEGORY
-          - METADATA_CONTACT_REASON
-          - METADATA_EXTERNAL_ID_TYPE
-          - METADATA_LABEL
-          - METADATA_MEASURE_TYPE
-          - METADATA_PHASE
-          - METADATA_ROLE
-          - METADATA_STATUS
-          - SUBSCRIBER
-          - SUBSCRIPTION
-          - SUBSCRIBER_NOTIFICATION
+          description: Resource to grant access to. The values accepted are published
+            by the access definition of the namespace configuration
           examples:
           - COMMUNICATION
         level:
@@ -10324,24 +10368,26 @@ components:
           type: boolean
         number:
           type: boolean
-        string:
-          type: boolean
-        pojo:
+        floatingPointNumber:
           type: boolean
         short:
           type: boolean
-        binary:
+        int:
+          type: boolean
+        long:
           type: boolean
         double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
           type: boolean
         textual:
           type: boolean
           deprecated: true
-        long:
-          type: boolean
         boolean:
           type: boolean
-        int:
+        binary:
           type: boolean
         valueNode:
           type: boolean
@@ -10359,13 +10405,11 @@ components:
           - OBJECT
           - POJO
           - STRING
-        floatingPointNumber:
+        string:
           type: boolean
         integralNumber:
           type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
+        pojo:
           type: boolean
         embeddedValue:
           type: boolean
@@ -13006,17 +13050,17 @@ components:
         offset:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        paged:
+          type: boolean
         pageNumber:
           type: integer
           format: int32
         pageSize:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         unpaged:
-          type: boolean
-        paged:
           type: boolean
     SortObject:
       type: object
@@ -13175,6 +13219,65 @@ components:
           description: Display name for the value
           examples:
           - Category 1
+    AccessDefinition:
+      type: object
+      description: |-
+        The values the access configuration of a namespace accepts.
+
+        Published as data rather than as an enum of this API, so that exposing a new field or guarding a new resource does not alter the contract. A client configuring access reads the values from here instead of from the schema.
+      properties:
+        fields:
+          type: array
+          description: Fields access may be configured for
+          items:
+            $ref: "#/components/schemas/AccessFieldDefinition"
+        resources:
+          type: array
+          description: Resources access may be configured for
+          items:
+            $ref: "#/components/schemas/AccessResourceDefinition"
+    AccessFieldDefinition:
+      type: object
+      description: Field of an errand that access may be configured for
+      properties:
+        field:
+          type: string
+          description: Value to configure the field with
+          examples:
+          - PARAMETERS
+        property:
+          type: string
+          description: "Property the field names on the errand, which is how the access\
+            \ of an errand reports it"
+          examples:
+          - parameters
+        keyed:
+          type: boolean
+          description: "If the field holds a keyed collection, in which case keys\
+            \ and a level may be configured for it"
+          examples:
+          - true
+    AccessResourceDefinition:
+      type: object
+      description: Resource that access may be configured for
+      properties:
+        resource:
+          type: string
+          description: Value to configure the resource with
+          examples:
+          - COMMUNICATION
+        path:
+          type: string
+          description: "Path the resource is guarded on. Access patterns of the access\
+            \ mapper are matched against it, and the access of an errand reports it"
+          examples:
+          - errand/communication
+        errandScoped:
+          type: boolean
+          description: If the resource belongs to an errand rather than to the namespace
+            itself
+          examples:
+          - true
     Labels:
       type: object
       description: Labels model
@@ -13861,6 +13964,104 @@ components:
           examples:
           - e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
           readOnly: true
+    ErrandAccess:
+      type: object
+      description: |-
+        What the requesting user may do with one errand, so that a client can render only the controls their next request would be allowed to make.
+
+        'fields' describes what a patch of the errand itself accepts. The endpoints serving a resource of the errand on its own are additionally governed by 'resources', so a keyed field may be writable through one of the two and not the other. External tags have no resource of their own and are reached through the errand alone.
+      properties:
+        level:
+          type: string
+          description: What the user may do with the errand itself. Reaching this
+            endpoint at all means at least limited read
+          enum:
+          - LR
+          - R
+          - RW
+          examples:
+          - RW
+        fields:
+          type: array
+          description: "What the user may do with each field of the errand they reach.\
+            \ A field that is not listed is not shown to them at all. Fields that\
+            \ cannot be restricted, such as phases and actions, are never listed and\
+            \ are always readable"
+          items:
+            $ref: "#/components/schemas/ErrandFieldAccess"
+        resources:
+          type: array
+          description: What the user may do with each resource of the errand they
+            reach. A resource that is not listed is not reachable by them. The errand
+            itself is reported as 'level' rather than listed here
+          items:
+            $ref: "#/components/schemas/ErrandResourceAccess"
+    ErrandFieldAccess:
+      type: object
+      description: What the requesting user may do with one field of an errand
+      properties:
+        field:
+          type: string
+          description: "Property of the errand, named as it is written in the errand\
+            \ payload. A field the user does not reach at all is not listed"
+          examples:
+          - parameters
+        allKeys:
+          type: boolean
+          description: "If the field is reached without any key restriction, in which\
+            \ case every key of it follows the level of the errand and 'keys' is empty.\
+            \ False means the namespace restricts the field to the keys listed. Only\
+            \ set for the keyed fields PARAMETERS, JSON_PARAMETERS and EXTERNAL_TAGS"
+          examples:
+          - false
+        keys:
+          type: array
+          description: "Every key of the collection the user reaches, and what they\
+            \ may do with each. A key that is not listed is not reachable at all,\
+            \ whether it is stored on the errand yet or not - so a key listed as 'RW'\
+            \ may be created as well as changed. Empty when 'allKeys' is true. Only\
+            \ set for keyed fields"
+          items:
+            $ref: "#/components/schemas/ErrandFieldKeyAccess"
+    ErrandFieldKeyAccess:
+      type: object
+      description: What the requesting user may do with one key of a keyed field of
+        an errand
+      properties:
+        key:
+          type: string
+          description: Key of the keyed collection
+          examples:
+          - contactChannel
+        level:
+          type: string
+          description: What the user may do with the key. Never wider than what they
+            may do with the errand itself
+          enum:
+          - LR
+          - R
+          - RW
+          examples:
+          - RW
+    ErrandResourceAccess:
+      type: object
+      description: What the requesting user may do with one resource of an errand
+      properties:
+        resource:
+          type: string
+          description: "Resource of the errand, named by the path access is granted\
+            \ on. A resource the user does not reach at all is not listed"
+          examples:
+          - errand/communication
+        level:
+          type: string
+          description: What the user may do with the resource
+          enum:
+          - LR
+          - R
+          - RW
+          examples:
+          - R
     CountResponse:
       type: object
       properties:
