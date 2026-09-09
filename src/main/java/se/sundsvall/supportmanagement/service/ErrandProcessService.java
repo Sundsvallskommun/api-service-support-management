@@ -99,7 +99,6 @@ public class ErrandProcessService {
 	private final AccessControlService accessControlService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final TransactionTemplate transactionTemplate;
-	private final ProcessMetrics metrics;
 	private final Clock clock;
 
 	public ErrandProcessService(
@@ -108,7 +107,6 @@ public class ErrandProcessService {
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
 		final PlatformTransactionManager transactionManager,
-		final ProcessMetrics metrics,
 		final Clock clock) {
 
 		this.processRepository = processRepository;
@@ -116,7 +114,6 @@ public class ErrandProcessService {
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
-		this.metrics = metrics;
 		this.clock = clock;
 	}
 
@@ -435,7 +432,12 @@ public class ErrandProcessService {
 			return;
 		}
 
-		metrics.errandConflict();
+		// The only trace a refused report leaves. Neither state nor activities are written, so without this line a
+		// work step that keeps being run again would have nothing behind it to explain why. Logged as routine rather
+		// than as a fault: a handler editing an errand while a process works on it is the case this is built for,
+		// and it is how often it happens, not any single occurrence, that is worth knowing.
+		LOG.info("Report on errand '{}' was read at version {}, which the errand has since left behind at {}",
+			errand.getId(), readVersion, errand.getVersion());
 
 		throw Problem.valueOf(PRECONDITION_FAILED, ERRAND_CHANGED.formatted(readVersion));
 	}
@@ -490,8 +492,6 @@ public class ErrandProcessService {
 	 * message carries the two task ids and is therefore different every time.
 	 */
 	private void logConcurrentTasks(final ErrandProcessEntity process, final String errandId, final String externalTaskId, final String displacedTaskId) {
-		metrics.concurrentTaskDetected();
-
 		LOG.warn("Concurrent external tasks on process instance '{}' of errand '{}': task '{}' reported RUNNING while task '{}' was still working",
 			process.getProcessInstanceId(), errandId, externalTaskId, displacedTaskId);
 

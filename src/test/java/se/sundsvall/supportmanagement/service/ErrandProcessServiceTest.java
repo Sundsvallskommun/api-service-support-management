@@ -82,9 +82,6 @@ class ErrandProcessServiceTest {
 	@Mock
 	private PlatformTransactionManager transactionManagerMock;
 
-	@Mock
-	private ProcessMetrics metricsMock;
-
 	@Captor
 	private ArgumentCaptor<ErrandProcessEntity> entityCaptor;
 
@@ -102,7 +99,7 @@ class ErrandProcessServiceTest {
 	 */
 	@BeforeEach
 	void setUp() {
-		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock, transactionManagerMock, metricsMock, CLOCK);
+		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock, transactionManagerMock, CLOCK);
 
 		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue(PROCESS_SERVICE));
 		lenient().when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(PROCESS_SERVICE));
@@ -469,7 +466,6 @@ class ErrandProcessServiceTest {
 			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(412));
 
-		verify(metricsMock).errandConflict();
 		verify(processRepositoryMock, never()).saveAndFlush(any());
 		verifyNoInteractions(activityRepositoryMock);
 	}
@@ -483,7 +479,6 @@ class ErrandProcessServiceTest {
 		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(WAITING).withErrandVersion(7L));
 
 		assertThat(result.process().getProcessStatus()).isEqualTo(WAITING.name());
-		verifyNoInteractions(metricsMock);
 	}
 
 	/**
@@ -498,7 +493,6 @@ class ErrandProcessServiceTest {
 		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
 
 		assertThat(result.process().getProcessStatus()).isEqualTo(RUNNING.name());
-		verifyNoInteractions(metricsMock);
 	}
 
 	@Test
@@ -511,7 +505,6 @@ class ErrandProcessServiceTest {
 			.isThrownBy(() -> service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report))
 			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(412));
 
-		verify(metricsMock).errandConflict();
 		verify(processRepositoryMock, never()).saveAndFlush(any());
 	}
 
@@ -532,7 +525,6 @@ class ErrandProcessServiceTest {
 		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-2"));
 
 		assertThat(result.process().getProcessStatus()).isEqualTo(RUNNING.name());
-		verify(metricsMock).concurrentTaskDetected();
 		verify(activityRepositoryMock).save(activityCaptor.capture());
 		assertThat(activityCaptor.getValue())
 			.extracting(
@@ -553,11 +545,11 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * Counted every time, logged once. The two branches keep passing each other for as long as the model has the
-	 * gateway, and the log this would fill is the one a handler reads on the errand.
+	 * Logged once per instance. The two branches keep passing each other for as long as the model has the gateway,
+	 * and the log this would otherwise fill is the one a handler reads on the errand.
 	 */
 	@Test
-	void aFurtherCollisionOnTheSameInstanceIsCountedButNotLoggedAgain() {
+	void aFurtherCollisionOnTheSameInstanceIsNotLoggedAgain() {
 		final var existing = entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId").withOutstandingExternalTaskId("task-1");
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
 		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -565,7 +557,6 @@ class ErrandProcessServiceTest {
 
 		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-2"));
 
-		verify(metricsMock).concurrentTaskDetected();
 		verify(activityRepositoryMock, never()).save(any());
 	}
 
@@ -588,7 +579,6 @@ class ErrandProcessServiceTest {
 		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-2"));
 		assertThat(existing.getOutstandingExternalTaskId()).isEqualTo("task-2");
 
-		verifyNoInteractions(metricsMock);
 		verify(activityRepositoryMock, never()).save(any());
 	}
 
@@ -609,7 +599,6 @@ class ErrandProcessServiceTest {
 		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-2"));
 
 		assertThat(existing.getOutstandingExternalTaskId()).isEqualTo("task-2");
-		verifyNoInteractions(metricsMock);
 		verify(activityRepositoryMock, never()).save(any());
 	}
 
@@ -626,7 +615,6 @@ class ErrandProcessServiceTest {
 		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
 
 		assertThat(existing.getOutstandingExternalTaskId()).isEqualTo("task-1");
-		verifyNoInteractions(metricsMock);
 	}
 
 	@Test
@@ -637,7 +625,6 @@ class ErrandProcessServiceTest {
 
 		verify(processRepositoryMock).saveAndFlush(entityCaptor.capture());
 		assertThat(entityCaptor.getValue().getOutstandingExternalTaskId()).isEqualTo("task-1");
-		verifyNoInteractions(metricsMock);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
