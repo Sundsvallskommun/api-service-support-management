@@ -350,9 +350,13 @@ create table measure_type (
                               namespace varchar(32) not null,
                               display_name varchar(255),
                               id varchar(255) not null,
-                              measure_group varchar(255) not null,
                               name varchar(255) not null,
                               primary key (id)
+) engine=InnoDB;
+
+create table measure_type_groups (
+                                    measure_group varchar(255),
+                                    measure_type_id varchar(255) not null
 ) engine=InnoDB;
 
 create table message_exchange_integration_config (
@@ -1154,6 +1158,11 @@ alter table if exists measure
 
 alter table if exists measure
     add constraint fk_measure_measure_type_id
+    foreign key (measure_type_id)
+    references measure_type (id);
+
+alter table if exists measure_type_groups
+    add constraint fk_measure_type_groups_measure_type_id
     foreign key (measure_type_id)
     references measure_type (id);
 

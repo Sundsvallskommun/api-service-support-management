@@ -560,7 +560,7 @@ public class MetadataMapper {
 				.withModified(e.getModified())
 				.withName(e.getName())
 				.withDisplayName(e.getDisplayName())
-				.withMeasureGroup(e.getMeasureGroup())
+				.withMeasureGroups(e.getMeasureGroups())
 				.withDeprecated(e.isDeprecated())
 				.withSortOrder(e.getSortOrder()))
 			.orElse(null);
@@ -575,7 +575,7 @@ public class MetadataMapper {
 			.withMunicipalityId(municipalityId)
 			.withName(measureType.getName())
 			.withDisplayName(measureType.getDisplayName())
-			.withMeasureGroup(measureType.getMeasureGroup())
+			.withMeasureGroups(measureType.getMeasureGroups())
 			.withSortOrder(measureType.getSortOrder())
 			.withNamespace(namespace);
 		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
@@ -589,7 +589,7 @@ public class MetadataMapper {
 
 		ofNullable(measureType.getName()).ifPresent(entity::setName);
 		ofNullable(measureType.getDisplayName()).ifPresent(entity::setDisplayName);
-		ofNullable(measureType.getMeasureGroup()).ifPresent(entity::setMeasureGroup);
+		ofNullable(measureType.getMeasureGroups()).ifPresent(entity::setMeasureGroups);
 		ofNullable(measureType.getSortOrder()).ifPresent(entity::setSortOrder);
 		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
 

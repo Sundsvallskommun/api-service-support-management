@@ -719,14 +719,14 @@ class MetadataMapperTest {
 		final var modified = OffsetDateTime.now();
 		final var name = "measureTypeName";
 		final var displayName = "displayName";
-		final var measureGroup = "MANAGERS";
+		final var measureGroups = List.of("MANAGERS", "LEADERS");
 
 		final var entity = MeasureTypeEntity.create()
 			.withCreated(created)
 			.withModified(modified)
 			.withName(name)
 			.withDisplayName(displayName)
-			.withMeasureGroup(measureGroup);
+			.withMeasureGroups(measureGroups);
 
 		final var bean = MetadataMapper.toMeasureType(entity);
 
@@ -734,7 +734,7 @@ class MetadataMapperTest {
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
-		assertThat(bean.getMeasureGroup()).isEqualTo(measureGroup);
+		assertThat(bean.getMeasureGroups()).isEqualTo(measureGroups);
 	}
 
 	@Test
@@ -756,12 +756,12 @@ class MetadataMapperTest {
 	private static Stream<Arguments> toMeasureTypeEntityArguments() {
 		return Stream.of(
 			Arguments.of("namespace", "municipalityId", null, null),
-			Arguments.of("namespace", null, MeasureType.create().withName("name").withMeasureGroup("group"), null),
-			Arguments.of(null, "municipalityId", MeasureType.create().withName("name").withMeasureGroup("group"), null),
-			Arguments.of("namespace", "municipalityId", MeasureType.create().withName("name").withMeasureGroup("group"),
-				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withMeasureGroup("group")),
-			Arguments.of("namespace", "municipalityId", MeasureType.create().withName("name").withDisplayName("displayName").withMeasureGroup("group"),
-				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName").withMeasureGroup("group")));
+			Arguments.of("namespace", null, MeasureType.create().withName("name").withMeasureGroups(List.of("group")), null),
+			Arguments.of(null, "municipalityId", MeasureType.create().withName("name").withMeasureGroups(List.of("group")), null),
+			Arguments.of("namespace", "municipalityId", MeasureType.create().withName("name").withMeasureGroups(List.of("group")),
+				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withMeasureGroups(List.of("group"))),
+			Arguments.of("namespace", "municipalityId", MeasureType.create().withName("name").withDisplayName("displayName").withMeasureGroups(List.of("group")),
+				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName").withMeasureGroups(List.of("group"))));
 	}
 
 	@Test
@@ -769,13 +769,13 @@ class MetadataMapperTest {
 		final var entity = MeasureTypeEntity.create()
 			.withName("oldName")
 			.withDisplayName("oldDisplayName")
-			.withMeasureGroup("oldGroup")
+			.withMeasureGroups(List.of("oldGroup"))
 			.withSortOrder(1);
 
 		final var measureType = MeasureType.create()
 			.withName("newName")
 			.withDisplayName("newDisplayName")
-			.withMeasureGroup("newGroup")
+			.withMeasureGroups(List.of("newGroup"))
 			.withSortOrder(2)
 			.withDeprecated(true);
 
@@ -783,7 +783,7 @@ class MetadataMapperTest {
 
 		assertThat(result.getName()).isEqualTo("newName");
 		assertThat(result.getDisplayName()).isEqualTo("newDisplayName");
-		assertThat(result.getMeasureGroup()).isEqualTo("newGroup");
+		assertThat(result.getMeasureGroups()).containsExactly("newGroup");
 		assertThat(result.getSortOrder()).isEqualTo(2);
 		assertThat(result.isDeprecated()).isTrue();
 	}

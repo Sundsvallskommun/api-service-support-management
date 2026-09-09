@@ -1753,10 +1753,10 @@ class MetadataServiceTest {
 		final var id = "generated-id";
 
 		// Mock
-		when(measureTypeRepositoryMock.save(any())).thenReturn(MeasureTypeEntity.create().withId(id).withName(name).withMeasureGroup("MANAGERS"));
+		when(measureTypeRepositoryMock.save(any())).thenReturn(MeasureTypeEntity.create().withId(id).withName(name).withMeasureGroups(List.of("MANAGERS")));
 
 		// Call
-		final var result = metadataService.createMeasureType(namespace, municipalityId, MeasureType.create().withName(name).withMeasureGroup("MANAGERS"));
+		final var result = metadataService.createMeasureType(namespace, municipalityId, MeasureType.create().withName(name).withMeasureGroups(List.of("MANAGERS")));
 
 		// Verifications
 		assertThat(result).isEqualTo(id);
@@ -1775,7 +1775,7 @@ class MetadataServiceTest {
 		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
 
 		// Call
-		final var measureType = MeasureType.create().withName(name).withMeasureGroup("MANAGERS");
+		final var measureType = MeasureType.create().withName(name).withMeasureGroups(List.of("MANAGERS"));
 		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.createMeasureType(namespace, municipalityId, measureType));
 
 		// Verifications
@@ -1793,7 +1793,7 @@ class MetadataServiceTest {
 
 		// Mock
 		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
-		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroup("group"));
+		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroups(List.of("group")));
 
 		// Call
 		final var result = metadataService.getMeasureType(namespace, municipalityId, id);
@@ -1827,8 +1827,8 @@ class MetadataServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var measureTypeEntityList = List.of(
-			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroup("GROUP-1"),
-			MeasureTypeEntity.create().withName("TYPE-2").withMeasureGroup("GROUP-2"));
+			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroups(List.of("GROUP-1")),
+			MeasureTypeEntity.create().withName("TYPE-2").withMeasureGroups(List.of("GROUP-2")));
 
 		// Mock
 		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(measureTypeEntityList);
@@ -1848,17 +1848,17 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 		final var measureGroup = "GROUP-1";
 		final var measureTypeEntityList = List.of(
-			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroup(measureGroup));
+			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroups(List.of(measureGroup)));
 
 		// Mock
-		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityIdAndMeasureGroup(any(), any(), any(), any(Sort.class))).thenReturn(measureTypeEntityList);
+		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(any(), any(), any(), any(Sort.class))).thenReturn(measureTypeEntityList);
 
 		// Call
 		final var result = metadataService.findMeasureTypes(namespace, municipalityId, measureGroup, Sort.unsorted());
 
 		// Verifications
 		assertThat(result).hasSize(1).extracting(MeasureType::getName).containsExactly("TYPE-1");
-		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityIdAndMeasureGroup(namespace, municipalityId, measureGroup, Sort.by(DEFAULT_SORT));
+		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(namespace, municipalityId, measureGroup, Sort.by(DEFAULT_SORT));
 	}
 
 	@Test
@@ -1901,8 +1901,8 @@ class MetadataServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var id = "id";
-		final var entity = MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroup("group");
-		final var measureType = MeasureType.create().withName("newName").withMeasureGroup("newGroup");
+		final var entity = MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroups(List.of("group"));
+		final var measureType = MeasureType.create().withName("newName").withMeasureGroups(List.of("newGroup"));
 
 		// Mock
 		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
@@ -1931,7 +1931,7 @@ class MetadataServiceTest {
 		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
 
 		// Call
-		final var measureType = MeasureType.create().withName("name").withMeasureGroup("group");
+		final var measureType = MeasureType.create().withName("name").withMeasureGroups(List.of("group"));
 		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateMeasureType(namespace, municipalityId, id, measureType));
 
 		// Verifications

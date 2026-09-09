@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.0"
 servers:
-- url: http://localhost:61884
+- url: http://localhost:59471
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -9776,9 +9776,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -10320,30 +10320,32 @@ components:
           type: boolean
         float:
           type: boolean
+        container:
+          type: boolean
+        number:
+          type: boolean
+        string:
+          type: boolean
+        pojo:
+          type: boolean
+        short:
+          type: boolean
         binary:
+          type: boolean
+        double:
           type: boolean
         textual:
           type: boolean
           deprecated: true
-        double:
-          type: boolean
         long:
-          type: boolean
-        pojo:
           type: boolean
         boolean:
           type: boolean
         int:
           type: boolean
-        short:
-          type: boolean
-        string:
-          type: boolean
-        container:
-          type: boolean
-        number:
-          type: boolean
         valueNode:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -10357,15 +10359,13 @@ components:
           - OBJECT
           - POJO
           - STRING
-        bigInteger:
-          type: boolean
-        bigDecimal:
-          type: boolean
         floatingPointNumber:
           type: boolean
         integralNumber:
           type: boolean
-        missingNode:
+        bigDecimal:
+          type: boolean
+        bigInteger:
           type: boolean
         embeddedValue:
           type: boolean
@@ -11034,12 +11034,13 @@ components:
           description: Display name for the measure type
           examples:
           - Intervention
-        measureGroup:
-          type: string
-          description: Group that this measure type belongs to
+        measureGroups:
+          type: array
+          description: Groups that this measure type belongs to
           examples:
           - MANAGERS
-          minLength: 1
+          items:
+            type: string
         sortOrder:
           type:
           - integer
@@ -11069,7 +11070,6 @@ components:
           - 2000-10-31T01:30:00.000+02:00
           readOnly: true
       required:
-      - measureGroup
       - name
     ExternalIdType:
       type: object

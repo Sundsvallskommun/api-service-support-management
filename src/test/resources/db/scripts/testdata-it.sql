@@ -634,10 +634,15 @@ VALUES ('a1b2c3d4-0000-0000-0000-000000000001', '2023-12-31 23:59:59.999', null,
 -- -----------------------------------
 -- MeasureType
 -- -----------------------------------
-INSERT INTO measure_type(id, name, display_name, measure_group, sort_order, deprecated, namespace, municipality_id, created, modified)
-VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 'GROUP-A', 1, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
-       ('dd000000-0000-0000-0000-000000000101', 'MEASURE-2', 'Display Measure 2', 'GROUP-A', 2, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
-       ('dd000000-0000-0000-0000-000000000102', 'MEASURE-3', 'Display Measure 3', 'GROUP-B', 3, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null);
+INSERT INTO measure_type(id, name, display_name, sort_order, deprecated, namespace, municipality_id, created, modified)
+VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 1, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
+       ('dd000000-0000-0000-0000-000000000101', 'MEASURE-2', 'Display Measure 2', 2, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
+       ('dd000000-0000-0000-0000-000000000102', 'MEASURE-3', 'Display Measure 3', 3, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null);
+
+INSERT INTO measure_type_groups(measure_type_id, measure_group)
+VALUES ('dd000000-0000-0000-0000-000000000100', 'GROUP-A'),
+       ('dd000000-0000-0000-0000-000000000101', 'GROUP-A'),
+       ('dd000000-0000-0000-0000-000000000102', 'GROUP-B');
 
 -- -----------------------------------
 -- Measure (errand measures)

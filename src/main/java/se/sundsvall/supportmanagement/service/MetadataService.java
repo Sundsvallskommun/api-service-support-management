@@ -639,7 +639,7 @@ public class MetadataService {
 		final var sortToUse = getDefaultSortIfUnsorted(sort);
 
 		return ofNullable(measureGroup)
-			.map(group -> measureTypeRepository.findAllByNamespaceAndMunicipalityIdAndMeasureGroup(namespace, municipalityId, group, sortToUse))
+			.map(group -> measureTypeRepository.findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(namespace, municipalityId, group, sortToUse))
 			.orElseGet(() -> measureTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sortToUse))
 			.stream()
 			.map(MetadataMapper::toMeasureType)
