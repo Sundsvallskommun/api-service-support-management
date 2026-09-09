@@ -259,7 +259,7 @@ Poängen är att en utebliven outbox-rad drar med sig hela ärendeändringen
 undantaget. Namespace utan `PROCESS_CONSUMER` vänder redan i steg 1 och märker aldrig något av det här.
 
 Finns det ingen transaktion alls går det förstås inte att rulla tillbaka någonting — då är ärendet redan
-sparat. Det loggas som ERROR och räknas i `process_event.publish_failed` (§8.1). I dag har varje väg in en
+sparat. Det loggas som ERROR (§8.1). I dag har varje väg in en
 transaktion (`ErrandService`, `EmailReaderWorker.processEmail`, `MessageExchangeWorker.processConversation`),
 så det ska aldrig hända.
 
@@ -293,7 +293,7 @@ Mekaniken: `@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)`
 **Blir kön full ska direktkörningen hoppas över, inte anropet fällas.** Standardbeteendet `AbortPolicy`
 kastar ett `RejectedExecutionException` i den tråd som just sparat ärendet, och det når hela vägen ut till
 anroparen — en full kö hade alltså gett `500` på en ärendeskrivning som faktiskt gick bra. Kasta i stället
-bort signalen, räkna upp `process_event.direct_run_rejected` och lägg try/catch runt lyssnaren, precis som
+bort signalen, logga att det hände och lägg try/catch runt lyssnaren, precis som
 `handleAutoSubscribeEvent` redan gör. Cronjobbet är skyddsnätet: en missad direktkörning kostar upp till en
 minut, aldrig ett fel.
 
@@ -328,7 +328,7 @@ T1), `V1_57__add_errand_decision.sql` med beslutet (T9) och `V1_58__add_errand_p
 väntade signalerna (T11). De ligger i var sin fil eftersom Flyway jämför checksumma — en migrering som
 redan körts går inte att fylla på i efterhand.
 
-**Två regler gäller alla migreringar här, och de står i förväg eftersom båda kostar mest när de upptäcks
+**Tre regler gäller alla migreringar här, och de står i förväg eftersom de kostar mest när de upptäcks
 sent.**
 
 - **Versionsnumret sätts efter det högsta som redan finns i repot, inte efter det som stod i ett dokument.**
@@ -342,6 +342,10 @@ sent.**
   stället för i egna satser: hela skriptet hamnar då bakom ett enda `if not exists`, och InnoDB slipper
   lägga ett eget index bredvid varje främmande nyckel — en constraint återanvänder ett index som deklareras
   på samma sats.
+- **Inga kommentarer i själva skripten.** Vad en kolumn är till för hör hemma i entitetens javadoc och i det
+  annoterade schemat här nedan, där det går att hitta utan att öppna en migrering som ändå aldrig ska röras
+  igen. En kommentar i migreringen blir dessutom osann med tiden: filen är låst av sin checksumma medan
+  kolumnen den beskriver lever vidare.
 
 ```sql
 -- 1. Outbox. Medvetet UTAN FK mot errand: ett DELETE-event maste overleva att arendet raderas.
@@ -390,6 +394,10 @@ create table if not exists errand_process (
     process_status        varchar(32)  not null,   -- RUNNING|WAITING|RETRYING|COMPLETED|FAILED
     current_activity_id   varchar(255),
     current_activity_name varchar(255),
+    -- Det arbetssteg som rapporterat RUNNING och inte hort av sig sedan dess. Tomt igen sa
+    -- snart samma steg rapporterar en andra gang. Ett annat externalTaskId som rapporterar RUNNING
+    -- medan den har ar upptagen ar tva parallella grenar i samma instans (6.4).
+    outstanding_external_task_id varchar(64),
     error_code            varchar(64),
     error_message         varchar(2048),
     started               datetime(3),
@@ -430,6 +438,7 @@ create table if not exists errand_process_activity (
     constraint uq_epa_idempotency unique (errand_process_id, external_task_id, activity_id),
     constraint fk_epa_process foreign key (errand_process_id)
         references errand_process (id) on delete cascade,
+    -- Behovs eftersom instansnyckeln ar nullbar: utan den skulle de instanslosa posterna overleva arendet.
     constraint fk_epa_errand foreign key (errand_id)
         references errand (id) on delete cascade
 ) engine=InnoDB;
@@ -1453,9 +1462,31 @@ två kommer aldrig i mål.
 
 **Men regeln ska synas, inte bara antas.** Rapporterar två olika `externalTaskId` in `RUNNING` mot samma
 instans utan att någon av dem hunnit bli klar däremellan, skriver SM en rad i aktivitetsloggen med
-`severity = WARN` och texten *"concurrent external tasks detected"* och räknar upp
-`process.concurrent_task_detected`. Båda rapporterna tas emot ändå — att avvisa den ena hade tystat just
-den post som ska avslöja att modellen bryter mot regeln.
+`severity = WARN` och texten *"concurrent external tasks detected"*. Båda rapporterna tas emot ändå — att
+avvisa den ena hade tystat just den post som ska avslöja att modellen bryter mot regeln.
+
+**Posten säger också vad man gör åt saken.** Efter inledningen namnger den båda arbetsstegen — *"task 'B'
+reported RUNNING while task 'A' was still working"* — och pekar ut åtgärden: ta bort den parallella
+gatewayen ur modellen, eller låt bara en gren skriva till ärendet. Den som läser posten står i ett ärende
+medan felet sitter i en BPMN-fil hen inte når därifrån, så en varning som bara konstaterar problemet läses
+en gång och lämnas därhän. `error_code` sätts till `CONCURRENT_EXTERNAL_TASKS`, och det är den larmet byggs
+på — meddelandet bär de två task-id:na och ser därför olika ut varje gång.
+
+**Så vet SM att ett steg är klart.** Kolumnen `errand_process.outstanding_external_task_id` bär det
+arbetssteg som rapporterat `RUNNING` och inte hört av sig sedan dess, och töms så fort samma
+`externalTaskId` rapporterar en andra gång. Basklassen rapporterar `RUNNING` när steget börjar och lämnar
+sin egentliga rapport när det slutar (§9.4), så platsen är upptagen just mellan de två — och bara då. Steg
+som körs efter varandra möts därför aldrig där: Operaton slutför en task innan den delar ut nästa, så
+rapporten som tömmer platsen har alltid hunnit fram innan nästa steg anmäler sig. Utan den regeln hade
+varningen gått igång på varenda sekventiell process, och posten inte sagt någonting alls.
+
+En rapport som inte namnger något arbetssteg lämnar platsen som den fann den. Den säger ingenting om steget
+som står där, och registreringen av en start — som inte bär något `externalTaskId` — får inte läsas som att
+ett steg blivit klart.
+
+Varningsposten skrivs **utan `activity_id`**, eftersom `uq_epa_idempotency` räknar null som distinkt. En
+andra varning på samma instans ska inte kunna fällas av unikhetsnyckeln — då hade den tagit rapporten den
+hittades i med sig i fallet, vilket är raka motsatsen till poängen.
 
 ### 6.5 Så hindrar vi att tjänsterna väcker varandra i evighet
 
@@ -1478,7 +1509,7 @@ byggd och beprövad — det som tillkommer är en konstant, en ThreadLocal, ett 
 | Vad som helst annat, skräp inräknat  | Raden skrivs                                                                     |
 
 **Riktningen på tveksamma fall är vald med flit.** En rad för mycket blir en onödig väckning som lager 2
-och 3 fångar och som syns i mätvärdena. En rad för lite blir en process som står och väntar för alltid utan
+och 3 fångar. En rad för lite blir en process som står och väntar för alltid utan
 att någon märker det. Därför betyder allt utom exakt `false` *väck processen*.
 
 **Headern hedras inte för AD-identiteter.** En handläggares skrivning väcker alltid processen, hur klienten
@@ -1535,8 +1566,8 @@ loggen det rapporteras i.
 också — `X-Sent-By` var precis lika fritt satt — skillnaden är att det nu är uttalat i stället för dolt
 bakom en identitetsjämförelse. En pw-tjänst som glömmer headern loopar tills lager 2 eller 3 fångar den.
 Motmedlen är att en `RequestInterceptor` sätter den på **alla** utgående skrivningar (P3), och att
-`process_event.suppressed{reason=OPT_OUT}` ska visa värden skilda från noll i drift. Står den på noll
-skriver processen antingen ingenting alls, eller så är headern fel.
+processens egen identitet aldrig ska förekomma bland outbox-radernas `executed_by` (§8.1). Gör den det
+skrivs rader den skulle ha tystat, och headern är fel eller borta.
 
 **Vad SM inte längre behöver veta:** vad pw-tjänsten heter, för att kunna hålla loopen borta.
 `PROCESS_CONSUMER` finns kvar, men bara till det den faktiskt behövs för — att peka ut vart raden ska
@@ -2000,30 +2031,34 @@ attribut. Ingen kodändring, ingen driftsättning, och vägen tillbaka är lika 
 
 ## 8. Drift och förvaltning
 
-### 8.1 Mätvärden som måste finnas
+### 8.1 Fel som inte syns, och vad som gör dem synliga
 
-Utan dem går varken loop-skyddet eller samtidigheten att följa i drift — man märker att något är fel
-först när någon hör av sig.
+Det finns ingen mätvärdesinsamling, och det är ett medvetet val. Utan larm är en räknare bara ett tal som
+någon skulle behöva komma ihåg att titta på. Micrometer-räknare ligger dessutom i varje podds minne, så med
+två poddar i klustret svarar `/actuator/metrics` med en slumpvis delsumma som kan sjunka mellan två anrop —
+sämre än ingen siffra alls.
 
-|                          Mätvärde                           |                                                                                                                     Varför                                                                                                                      |
-|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `process_event.suppressed{reason=OPT_OUT\|TRIGGER\|GUARD}`  | Ett tyst loop-skydd som slutar fungera märks annars först när loopen är där. `OPT_OUT` ska vara **skild från noll** — står den på noll sätter pw inte `X-Trigger-Process`. Tagga även med anropande identitet                                   |
-| `process_event.published`, `.delivered`, `.delivery_failed` | Leveranshälsa                                                                                                                                                                                                                                   |
-| `process_event.oldest_undelivered_age`                      | Åldern på den äldsta oskickade raden. Den är larmklockan nu när det inte finns någon dead letter-flagga att räkna på: stiger den stadigt är det något som aldrig går igenom                                                                     |
-| `process_event.aged_out`                                    | Rader som släppts oskickade vid `max-age`. **Ska vara noll.** Varje sådan rad betyder att en process aldrig fick veta något                                                                                                                     |
-| `process_event.publish_failed`                              | Publicering som inte kunde rullas tillbaka (ingen aktiv transaktion, §2.2). Ska vara noll                                                                                                                                                       |
-| `process_event.direct_run_rejected`                         | Trådpoolen är full, så direktkörningen hoppades över och leveransen får vänta på cronjobbet (§2.3)                                                                                                                                              |
-| `process.errand_conflict`                                   | **Viktigaste driftindikatorn.** Hur ofta process och handläggare krockar (`412`). Stiger den arbetar processen på ärenden som redigeras samtidigt, och arbete görs om i onödan                                                                  |
-| `process.concurrent_task_detected`                          | Brott mot modelleringsregeln i §6.4                                                                                                                                                                                                             |
-| `process.start_failed`                                      | Feltaggade etiketter                                                                                                                                                                                                                            |
-| `process.start_requested{method=MANUAL\|AUTOMATIC}`         | Hur processer faktiskt startas. Ligger `MANUAL` på noll i ett namespace vars etiketter säger `MANUAL` betyder det att knappen inte syns eller inte fungerar (§7.7)                                                                              |
-| `process.start_rejected{reason=...}`                        | Avvisade startkommandon, taggat med `status`-värdet eller `NOT_AD`. Återkommande `NOT_AD` betyder att en integration försöker starta processer maskinellt (§5.10); återkommande `LIVE_INSTANCE` att gränssnittet visar en knapp som inte gäller |
-| `decision.written{method=MANUAL\|AUTOMATIC}`                | Hur många beslut som fattas av maskin respektive människa. Krävs för att kunna svara på frågan i efterhand (§7.5), och en oväntad rörelse i `AUTOMATIC` är den tidigaste signalen på att en process fattar beslut den inte borde                |
-| `process.signal_sent{signal=...}`                           | Hur ofta handläggaren stegar processen manuellt, och vid vilken grind. Står en grind still trots att ärenden köar där, är det ofta gränssnittet som inte visar knappen                                                                          |
-| `process.signal_rejected{reason=UNKNOWN\|TERMINAL}`         | Signaler som avvisats med `409`. En återkommande `UNKNOWN` betyder att gränssnittet visar en knapp processen inte längre väntar på                                                                                                              |
-| `decision.rejected{reason=METHOD\|LOCKED}`                  | Avvisade beslutsskrivningar: fel `method` för identiteten (`403`) eller låst av `COMPLETED` process (`409`)                                                                                                                                     |
+Kvar står den fråga som listan egentligen besvarade, och den är värd mer än namnen var: **vilka fel märks
+inte av sig själva?** Ett fel som ger ett felsvar, en rad i outboxen eller en post i aktivitetsloggen hittar
+den som letar. De nedan gör det inte — de yttrar sig i att ingenting händer.
 
-Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id` — dubbelleveranser blir då spårbara i efterhand. **Logga aldrig `justification`** — den innehåller personuppgifter (§11).
+|                                      Fel                                       |                                                 Varför det är tyst                                                  |                                                                           Så syns det ändå                                                                            |
+|--------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Loop-skyddets lager 1 ur funktion — pw slutar sätta `X-Trigger-Process: false` | Skyddet verkar genom att *inte* skriva en rad, så att det upphört yttrar sig i extra rader som ser fullt normala ut | Gruppera outbox-rader på `executed_by` i ett tidsfönster. Processens egen identitet ska inte förekomma där; gör den det väcker processen sig själv (§6.5)             |
+| Handläggare och process krockar (`412`)                                        | Rapporten avvisas innan något skrivs — varken tillstånd eller aktivitet, med flit (§6.3)                            | `ErrandProcessService` loggar en INFO-rad per avvisad rapport med ärende, läst version och aktuell. Räkna dem i loggverktyget när ett arbetssteg körs om gång på gång |
+| Startknappen visas inte i ett namespace vars etiketter säger `MANUAL`          | Ingen trycker, alltså händer ingenting alls (§7.7)                                                                  | Ärenden vars etikett bär ett `processKey` men som saknar processrad, äldre än ett dygn                                                                                |
+| Manuell grind som ingen klickar på                                             | Processen står kvar i `WAITING` för alltid (§9.2 punkt 2)                                                           | Processrader i `WAITING` med samma `current_activity_id` längre än fasen rimligen tar                                                                                 |
+| Oskickad outbox-rad som aldrig går igenom                                      | Det finns ingen dead letter-flagga att räkna på (§8.3)                                                              | **Hälsoindikatorn**, som inte är ett mätvärde: den slår om när äldsta oskickade rad passerat `unhealthy-after`                                                        |
+| Rad som släppts vid `max-age`, och publicering utan aktiv transaktion          | Anropet lyckas, men något gick ändå förlorat                                                                        | ERROR-loggar, båda två. Ska aldrig förekomma                                                                                                                          |
+
+Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id` — dubbelleveranser blir då
+spårbara i efterhand. **Logga aldrig `justification`** — den innehåller personuppgifter (§11).
+
+Behöver någon senare veta hur ofta något sker snarare än om det skett, är svaret oftast en fråga till
+databasen: `errand_decision` bär `method` och `decided_by`, `process_event_outbox` bär `delivered_at`, och
+aktivitetsloggen bär en post per instans där modellen bryter mot §6.4. Ett mätvärde blir motiverat den dag
+något faktiskt larmar på det — och då är beroendet `micrometer-registry-prometheus` det som saknas, inte
+räknarna.
 
 ### 8.2 Vanliga frågor i drift — och svaren
 
@@ -2031,11 +2066,11 @@ Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id`
 |-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Varför startade ingen process för ärendet?                            | Börja i `startable.status` från `GET .../processes` — den svarar direkt i de vanliga fallen (§5.10). Står den på `AVAILABLE` väntar ärendet bara på en knapptryckning, alltså `processStartMode: MANUAL` på etiketten (§7.7). Annars: läs `GET .../process-activities`, där tvetydig etikett och nödbroms ligger som `CONFIG`/`ERROR`-poster, och kontrollera etikettens `processKey`-attribut via `GET /{municipalityId}/{namespace}/metadata/labels` samt att `PROCESS_CONSUMER` finns för namespacet |
 | Varför syns ingen knapp för att starta handläggningen?                | `startable.status` säger vilket hinder det är. `PROCESS_COMPLETED` betyder att ärendets processliv är slut — nästa process är ett nytt ärende (§7.4)                                                                                                                                                                                                                                                                                                                                                    |
-| Varför går processen inte vidare fast handläggaren tryckt på knappen? | Kontrollera att signalen står bland `errand.process.awaitingSignals` och att väntläget i modellen lyssnar på just det namnet. Signaler filtreras inte av `PROCESS_TRIGGER` (§7.7), så där finns ingenting att felkonfigurera. Se `process.signal_rejected`                                                                                                                                                                                                                                              |
+| Varför går processen inte vidare fast handläggaren tryckt på knappen? | Kontrollera att signalen står bland `errand.process.awaitingSignals` och att väntläget i modellen lyssnar på just det namnet. Signaler filtreras inte av `PROCESS_TRIGGER` (§7.7), så där finns ingenting att felkonfigurera. En avvisad signal svarar `409`                                                                                                                                                                                                                                            |
 | Varför syns ingen knapp för att gå vidare?                            | `errand.process.awaitingSignals` är tom. Antingen är väntläget automatiskt, eller så rapporterar pw inte in signalerna (§9.3)                                                                                                                                                                                                                                                                                                                                                                           |
 | Varför avslutas inte processen fast beslutet är fattat?               | Kontrollera att `DECISION` ligger i `PROCESS_TRIGGER` (§7.1), att outbox-raden finns för beslutsskrivningen, och att väntläget läser om ärendet när det går in i väntan (§9.2 punkt 1)                                                                                                                                                                                                                                                                                                                  |
 | Vem fattade beslutet på ärendet?                                      | `errand.decision.method` och `.decidedBy`. `AUTOMATIC` betyder att processen fattade det; `processId` pekar ut vilken processrad                                                                                                                                                                                                                                                                                                                                                                        |
-| Varför kör processen om samma steg gång på gång?                      | Handläggaren ändrar ärendet mitt i steget ⇒ `412` (§6.2). Se `process.errand_conflict` och aktivitetsloggen                                                                                                                                                                                                                                                                                                                                                                                             |
+| Varför kör processen om samma steg gång på gång?                      | Handläggaren ändrar ärendet mitt i steget ⇒ `412` (§6.2). Se INFO-raden per avvisad rapport (§8.1) och aktivitetsloggen                                                                                                                                                                                                                                                                                                                                                                                 |
 | Varför väcks inte processen av inkommande e-post?                     | `MESSAGE` saknas i `PROCESS_TRIGGER`                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Varför väcks processen inte av sina egna ändringar?                   | Det är meningen — lager 1 i §6.5                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Varför står instansen kvar som `RUNNING` fast inget händer?           | Workern kraschade utan att rapportera. Operaton kör om task:en när dess eget lås löper ut; instansen uppdateras vid nästa rapport                                                                                                                                                                                                                                                                                                                                                                       |
@@ -2065,18 +2100,18 @@ Två följder är värda att skriva ut:
 
 **`max-age` är sista utvägen, inte en väg ut.** Som i `NotificationDispatchWorker` släpps en rad som
 passerat åldersgränsen oskickad. Skillnaden mot en notis är att det här betyder att en process aldrig fick
-veta något, så gränsen sätts högt (30 dagar) och varje sådan rad **loggas som ERROR och räknas i
-`process_event.aged_out`, som ska stå på noll**.
+veta något, så gränsen sätts högt (30 dagar) och varje sådan rad **loggas som ERROR**. Det ska aldrig
+hända.
 
 **Hälsan mäts i ålder, inte i antal.** Det finns alltid oskickade rader — varje publicering lägger en, och
 den ligger kvar tills nästa körning tar den. Villkoret är därför att den **äldsta** oskickade raden
 passerat `unhealthy-after` (§7.2, `PT15M` som standard), inte att det över huvud taget finns oskickade
-rader. Det är samma tal som `process_event.oldest_undelivered_age` mäter. Sätts villkoret på existens i
+rader. Sätts villkoret på existens i
 stället står tjänsten unhealthy under normal drift, och då slutar någon titta på indikatorn — vilket är
 värre än att inte ha den.
 
 Någon redrive-endpoint behövs inte längre: en rad som inte gått igenom försöker redan igen av sig själv.
-Det som behövs är att någon märker att den ligger kvar, och det är vad de två mätvärdena är till för.
+Det som behövs är att någon märker att den ligger kvar, och det är vad hälsoindikatorn är till för.
 
 ### 8.4 Prova själv, lokalt
 
@@ -2420,7 +2455,7 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T4 — Optimistisk samtidighetskontroll (SM)
 
-**Bygg:** `errandVersion` i rapportmodellen och kontrollen mot `errand.version` i `ErrandProcessService` (§6.3); WARN-aktivitet och `process.concurrent_task_detected` när två skilda `externalTaskId` rapporterar `RUNNING` mot samma instans utan terminal rapport emellan (§6.4); `process.errand_conflict`.
+**Bygg:** `errandVersion` i rapportmodellen och kontrollen mot `errand.version` i `ErrandProcessService` (§6.3); kolumnen `outstanding_external_task_id` i T1:s `V1_56` (§3.1) med WARN-aktivitet när ett annat `externalTaskId` rapporterar `RUNNING` medan ett steg fortfarande står där (§6.4); INFO-raden som är enda spåret av ett `412` (§8.1).
 
 **Acceptans:**
 - Rapport med `errandVersion` som glidit ⇒ `412`, och **varken** tillstånd eller aktiviteter skrivs.
@@ -2444,26 +2479,26 @@ pw-alkt) följer tjänst i stället för ordning.
 - `ProcessKeySelectorTest`: en tagg ⇒ en nyckel; två med samma ⇒ en; två med olika ⇒ ERROR-aktivitet och ingen rad; `deprecated` ignoreras; **namnbyte och omflyttning av labeln lämnar upplösningen oförändrad**.
 - Selektorn lämnar nyckel **och** startläge som ett par, ur samma etikett. Lovet räknas ut först i T12, men paret ska inte behöva byggas om då (§7.7).
 - **Publisher kastar ⇒ ärendeskrivningen är inte committad**, trots att anropsstället sväljer undantaget (§1.7). Verifieras genom att PATCH:a och sedan läsa tillbaka ärendet — inte genom att inspektera loggen.
-- Utan aktiv transaktion: ERROR-logg och `process_event.publish_failed` ökar, inget kast som spräcker anropet.
+- Utan aktiv transaktion: ERROR-logg, inget kast som spräcker anropet.
 - Nödbromsen slår över tröskeln med rader som har `delivered_at` satt, och dess ERROR-aktivitet skrivs **utan** instans.
 - `ProcessKeySelector` med två skilda nycklar skriver ERROR-aktivitet **utan** instans — testet får inte förutsätta att en instansrad finns — och **en gång per ärende och fönster**: tio händelser på ett tvetydigt ärende ger en post, inte tio (§2.2).
 - Kommandon (subtyp `PROCESS`, `SIGNAL`) publiceras även när nödbromsen slagit till för ärendet och även när `PROCESS_TRIGGER` är tom (§6.5).
 
 ### T6 — Relay och leverans (SM)
 
-**Bygg:** paketet `service/scheduler/processevent/` med schemaläggare, jobb och relay efter mönstret i `service/scheduler/notificationdispatch/` — leverans och kvittering i samma transaktion, ingen retry-bokföring; direktkörningen efter commit tillsammans med en trådpool med tak; `ProcessEngineClient` med ett lager som översätter felen; `422` som permanent fel och `5xx` som tillfälligt; `max-age` och röjningen av levererade rader (§8.3); mätvärdena i §8.1.
+**Bygg:** paketet `service/scheduler/processevent/` med schemaläggare, jobb och relay efter mönstret i `service/scheduler/notificationdispatch/` — leverans och kvittering i samma transaktion, ingen retry-bokföring; direktkörningen efter commit tillsammans med en trådpool med tak; `ProcessEngineClient` med ett lager som översätter felen; `422` som permanent fel och `5xx` som tillfälligt; `max-age`, röjningen av levererade rader och hälsoindikatorn (§8.3).
 
 **Acceptans:**
 - WireMock svarar `202` / `422` / `503` / timeout — samtliga fyra vägar verifierade, inklusive att `422` **inte** görs om, utan konsumerar raden och skriver `FAILED` + ERROR-aktivitet.
 - **`503` ⇒ raden ligger kvar orörd** och nästa körning levererar den. Verifieras genom att läsa raden ur databasen, inte genom loggen.
-- Rad som passerat `max-age` släpps oskickad, loggas som ERROR och räknas i `process_event.aged_out`.
+- Rad som passerat `max-age` släpps oskickad och loggas som ERROR.
 - Röjningen tar levererade rader på `delivered_at` (§4) och lämnar **oskickade** rader i fred.
 - **Hälsoindikatorn är grön direkt efter en publicering** och slår om först när äldsta oskickade rad passerat `unhealthy-after` (§8.3). Ett test som bara skriver en rad och läser indikatorn får inte se unhealthy.
 - **Två konsumenter, en nere:** den friska konsumentens rader levereras i samma körning (§7.6). Utan det svälter ett namespace ett annat.
 - `batch-size` respekteras per konsument och körning; hämtningen har ett `LIMIT` (§1.2).
 - Raden levereras till den tjänst som står i `process_service`, även om `PROCESS_CONSUMER` hunnit ändras efter publiceringen.
 - Ordning per ärende hålls när flera rader finns, och en grupp som fallerar rullas tillbaka i sin helhet.
-- Full trådpool ⇒ direktkörningen hoppas över, `process_event.direct_run_rejected` ökar och cronjobbet levererar i stället. **Inget undantag når anroparen** — testet ska fylla kön och kontrollera att ärendeskrivningen ändå svarar `200` (§2.3).
+- Full trådpool ⇒ direktkörningen hoppas över och cronjobbet levererar i stället. **Inget undantag når anroparen** — testet ska fylla kön och kontrollera att ärendeskrivningen ändå svarar `200` (§2.3).
 - Samma händelse levererad två gånger, efter en återrullad transaktion, ger inte två processinstanser — idempotensen ligger hos pw (§8.3, §9.3).
 
 ### T7 — Skyddsräcken (SM)
@@ -2486,7 +2521,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### T9 — Beslutet: modell, endpoint och spårbarhet (SM)
 
-**Bygg:** `V1_57`-migreringen med `errand_decision` (§3.1) och `DecisionEntity` som `@OneToOne` på `ErrandEntity`; enums `DecisionOutcome` och `DecisionMethod` (§4.2); `Decision`-modellen (§5.3); `ErrandDecisionResource` (`GET`, `PUT`, `DELETE` med `If-Match`) och `ErrandDecisionService`; `method`-regeln mot identiteten; `EventSubType.DECISION`-event och revision från beslutsskrivningen; låsning mot `COMPLETED` process; `Errand.decision`; `DECISION` i `PROCESS_TRIGGER` för ALKT; mätvärdena i §8.1; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
+**Bygg:** `V1_57`-migreringen med `errand_decision` (§3.1) och `DecisionEntity` som `@OneToOne` på `ErrandEntity`; enums `DecisionOutcome` och `DecisionMethod` (§4.2); `Decision`-modellen (§5.3); `ErrandDecisionResource` (`GET`, `PUT`, `DELETE` med `If-Match`) och `ErrandDecisionService`; `method`-regeln mot identiteten; `EventSubType.DECISION`-event och revision från beslutsskrivningen; låsning mot `COMPLETED` process; `Errand.decision`; `DECISION` i `PROCESS_TRIGGER` för ALKT; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
 
 **Acceptans:**
 - Beslutsskrivning ger en eventlogg-post med subtyp `DECISION` **och** en revision, och beslutet ingår i revisionssnapshotten. Utan eventet publiceras ingen outbox-rad och processen vaknar aldrig.
@@ -2505,7 +2540,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### T11 — Manuell stegning med signaler (SM)
 
-**Bygg:** `V1_58`-migreringen med `errand_process_signal` (§3.1), entitet och repository; `ProcessSignal` i API:et och `awaitingSignals` på `ErrandProcess` (§5.3); `POST .../processes/{processInstanceId}/signals` (§5.9); aktivitetspost med `activityType = SIGNAL`; värdet `SIGNAL` i `EventSubType`; signalnamnet i outbox-raden och i händelsemodellen — kolumnen `signal_name` skapas redan i T1:s `V1_56` (§3.1), här fylls den i; mätvärdena `process.signal_sent` och `process.signal_rejected`; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
+**Bygg:** `V1_58`-migreringen med `errand_process_signal` (§3.1), entitet och repository; `ProcessSignal` i API:et och `awaitingSignals` på `ErrandProcess` (§5.3); `POST .../processes/{processInstanceId}/signals` (§5.9); aktivitetspost med `activityType = SIGNAL`; värdet `SIGNAL` i `EventSubType`; signalnamnet i outbox-raden och i händelsemodellen — kolumnen `signal_name` skapas redan i T1:s `V1_56` (§3.1), här fylls den i; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
 
 **Acceptans:**
 - **Outbox-raden bär signalens namn i `signal_name`, och det följer med ut i `signalName` på händelsen.** Ett test som bara kontrollerar att en rad skrevs missar poängen — det är namnet pw korrelerar på (§5.4).
@@ -2521,7 +2556,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### T12 — Automatisk och manuell start (SM)
 
-**Bygg:** `start_allowed` i outbox-raden och `startAllowed` i händelsemodellen — kolumnen skapas i T1:s `V1_56` (§3.1), här fylls den i (§5.4); attributet `processStartMode` med validering vid etikettskrivning (§7.7); `ProcessKeySelector` som lämnar nyckel och läge som ett par; startlovet i publiceringens steg 6 och kommandonas undantag från triggerfiltret (§2.2); `startable` i kuvertet runt `GET .../processes` (§5.10); `POST .../processes/start` med `ProcessStartRequest`; värdet `PROCESS` i `EventSubType`; aktivitetspost med `activityType = START`; mätvärdena `process.start_requested` och `process.start_rejected`; regenerera `openapi.yaml`.
+**Bygg:** `start_allowed` i outbox-raden och `startAllowed` i händelsemodellen — kolumnen skapas i T1:s `V1_56` (§3.1), här fylls den i (§5.4); attributet `processStartMode` med validering vid etikettskrivning (§7.7); `ProcessKeySelector` som lämnar nyckel och läge som ett par; startlovet i publiceringens steg 6 och kommandonas undantag från triggerfiltret (§2.2); `startable` i kuvertet runt `GET .../processes` (§5.10); `POST .../processes/start` med `ProcessStartRequest`; värdet `PROCESS` i `EventSubType`; aktivitetspost med `activityType = START`; regenerera `openapi.yaml`.
 
 **Acceptans:**
 - Etikett med `processStartMode: MANUAL` ⇒ `POST /errands` skapar ärendet, publicerar en rad med `start_allowed = 0`, och ingen process startar. Samma etikett med `AUTOMATIC` ⇒ `start_allowed = 1` och processen startar.
@@ -2613,53 +2648,53 @@ den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. U
 
 ## 11. Vad som kan gå fel, och vad vi gör åt det
 
-|                              Risk                               |                                                                                                                                                Hantering                                                                                                                                                 |
-|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **RabbitMQ-mognad** (öppen fråga)                               | §2.4. Varje REST-konsument byggd innan bytet är kastat arbete                                                                                                                                                                                                                                            |
-| **`WAITING` felaktigt behandlad som terminal**                  | Skulle bryta 1-1-invarianten tyst. Skyddas av `applyStatus` som enda väg + tabelldrivet test (T1)                                                                                                                                                                                                        |
-| **Handläggaren ändrar mitt i ett arbetssteg**                   | `412`, och steget körs om (§6.2). Kostar en omkörning. Mäts av `process.errand_conflict`                                                                                                                                                                                                                 |
-| **Steg med extern sidoeffekt körs om**                          | Sidoeffekten kan dubbleras. Samma krav som när ett steg kraschar (§9.4) — lägg sidoeffekten sist i steget, eller gör den idempotent                                                                                                                                                                      |
-| **Läsande steg utan `errandVersion`**                           | Då finns inget skydd alls (§6.3). Det får vara ett medvetet val för varje steg — men ett val som faktiskt måste göras                                                                                                                                                                                    |
-| **Underresurser fångas inte av versionen**                      | En bilaga som raderas mitt i en körning höjer inte `errand.version`. Processen måste läsa om bilagor när den behöver dem                                                                                                                                                                                 |
-| **Parallella grenar**                                           | Modelleringsregel + WARN-aktivitet gör brottet synligt (§6.4)                                                                                                                                                                                                                                            |
-| **Loop SM ↔ pw**                                                | Tre lager (§6.5). Lager 1 vilar på en klientsatt header — därför är `process_event.suppressed{reason=OPT_OUT}` ett mätvärde som **ska** vara skilt från noll                                                                                                                                             |
-| **Klient som tystar sina egna skrivningar**                     | `X-Trigger-Process: false` är fritt satt, så en integration som härmar pw kan göra sina ändringar osynliga för processen. Headern hedras inte för AD-identiteter (§6.5), och varje undertryckt rad räknas med anropande identitet i `process_event.suppressed`                                           |
-| **Beslut skrivet medan processen arbetar**                      | Korrelationen sväljs och väckningen är borta. Fångas bara av modelleringskravet i §9.2 punkt 1 — väntläget måste läsa om ärendet när det går in i väntan. Ingen kod i SM kan rädda ett väntläge som inte gör det                                                                                         |
-| **`DECISION` saknas i `PROCESS_TRIGGER`**                       | Processen vaknar aldrig av beslutet och står i `WAITING` för alltid. Validering av triggervärden och ett IT-fall i T9                                                                                                                                                                                    |
-| **Personuppgifter i beslutets motivering**                      | `justification` innehåller nästan alltid personuppgifter. Får aldrig loggas (§8.1), aldrig kopieras till aktivitetsloggen och aldrig läggas i outboxens nyttolast — den bär medvetet ingen ärendedata alls (§5.4). Beslutet kaskaderas bort med ärendet                                                  |
-| **Automatiskt beslut felstämplat som manuellt, eller tvärtom**  | `method` valideras mot identiteten vid systemgränsen och räknas i `decision.written` (§8.1). Utan bådadera går frågan "vilka beslut fattades av en maskin?" inte att svara på i efterhand — och det är en fråga som kommer att ställas                                                                   |
-| **Instans som försvinner utan slutrapport**                     | SM står kvar på `RUNNING` medan instansen är borta ur Operaton, och ärendet kan varken gå vidare eller få en ny process. Modelleringskravet i §9.2 punkt 5 ska hindra det; P6:s schemalagda kontroll stämmer av det som ändå glider isär                                                                 |
-| **Skelettmodellen driftsatt för tidigt**                        | Sex tomma subprocesser springer igenom på millisekunder. Startas den mot ett skarpt ärende är ärendets processliv förbrukat (§9.1). Driftsätt inte förrän väntlägena finns                                                                                                                               |
-| **Manuell grind som ingen klickar på**                          | Processen står i `WAITING` för alltid. Modelleringsregeln i §9.2 punkt 2 kräver en tidsgräns på grindar som kan glömmas bort, och `process.signal_sent` visar vilka grindar som faktiskt används                                                                                                         |
-| **Signal som accepteras men aldrig konsumeras**                 | Går processen vidare på en timer i samma stund som handläggaren trycker, hinner SM svara `202` innan den nya bilden rapporterats. Signalen når då inget väntläge och är borta. Handläggaren ser det vid nästa omläsning, men vi räknar det inte någonstans — överväg ett mätvärde om det visar sig hända |
-| **Knapp som inte längre gäller**                                | Handläggaren ser en signal processen hunnit lämna. Skrivningen ger `409` och räknas i `process.signal_rejected` — gränssnittet ska läsa om ärendet, inte försöka igen                                                                                                                                    |
-| **Beslut på ärende helt utan process**                          | Tillåtet och olåst: det finns ingen `COMPLETED` process att låsa mot. Spårbarheten bärs då av revisionen, inte av spärren (§7.5)                                                                                                                                                                         |
-| **Föräldralös processinstans efter radering**                   | `DELETE` publiceras även utan `processKey` (§2.2), och pw raderar på `businessKey` (§9.3). Restrisk kvarstår om leveransen aldrig går igenom och raden åldras ur — därför `process_event.aged_out` och hälsoindikatorn (§8.3)                                                                            |
-| **Etikettändring utanför API:t**                                | `AddLabelAction.executeAction` körs schemalagt och lägger till etiketter utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar — T7:s kontroll måste ligga även där                                                                                        |
-| **Publiceringsfel sväljs av anropsstället**                     | `setRollbackOnly` före kast (§2.2) gör svälj-fångsten ofarlig. Kvarstående hål: anropsväg helt utan transaktion — mäts av `process_event.publish_failed`                                                                                                                                                 |
-| **Start uteblir när etiketten sätts sent**                      | Start villkoras av `processKey`, inte `eventType` (§9.3). Täckt av ett P2-fall                                                                                                                                                                                                                           |
-| **Startlov som hunnit bli inaktuellt**                          | Lovet räknas ut vid publicering och används vid leverans. Hinner processen gå i mål däremellan startar pw något den inte borde — `409` från `POST .../processes` och pw:s avbrytande av den nystartade instansen är skyddsnätet (§7.7)                                                                   |
-| **Felstavat `processStartMode`**                                | Attributnycklar är inte whitelistade (§1.6), så `processstartmode` hade tyst betytt `AUTOMATIC`. Värdet valideras därför när etiketten skrivs, inte när den läses (§7.7)                                                                                                                                 |
-| **Automatisk start på gamla ärenden vid driftsättning**         | Ett ärende som redan bär etiketten startar vid nästa ändring, inte bara vid `CREATE` (beslut 17). Rulla ut med `MANUAL` på etiketterna och byt till `AUTOMATIC` när kedjan är sedd i drift (§7.7)                                                                                                        |
-| **Signal utan namn i händelsen**                                | pw vet att någon tryckte men inte på vad, och grinden öppnas aldrig. `signal_name` i outbox-raden och `signalName` på händelsen bär namnet hela vägen (§5.4); pw svarar `202` med ERROR-logg om det ändå saknas, eftersom en retry inte kan hjälpa                                                       |
-| **Kommando som tystas av ett filter**                           | Ett `202` utan verkan är knappen som ser ut att fungera. Kommandon undantas därför från nödbromsen och triggerfiltret, och de tre lagren gäller bara härledda händelser (§6.5). Täckt av testfall i T5 och T12                                                                                           |
-| **Maskinidentitet som trycker på startknappen**                 | Skulle ge `202` och ingen start, eftersom lager 1 filtrerar bort raden när pw:s `X-Trigger-Process: false` följer med (§6.5). Kommandot kräver AD-konto och svarar `403` (§5.10)                                                                                                                         |
-| **Felstavat `processKey`**                                      | Upptäcks vid första ärendet. `422` ⇒ ingen retry, `FAILED` + ERROR-aktivitet direkt på ärendet                                                                                                                                                                                                           |
-| **Oskickad rad som ingen upptäcker**                            | Utan dead letter-flagga finns ingenting att larma på i tabellen. Hälsoindikatorn, `process_event.oldest_undelivered_age` och `process_event.aged_out` är det som gör raden synlig (§8.3)                                                                                                                 |
-| **Återlevererad händelse efter återrullad transaktion**         | Leverans och kvittering delar transaktion, så ett fel efter att pw tagit emot händelsen ger en till. pw:s event-endpoint måste vara idempotent — annars blir följden dubbla processinstanser (§8.3)                                                                                                      |
-| **Routingen går att ändra i drift, utan granskning**            | Priset för att slippa en release varje gång. Validering av `PROCESS_CONSUMER`; överväg ändringslogg                                                                                                                                                                                                      |
-| **En långsam pw svälter de andra**                              | Ett jobb levererar åt alla namespace, och hämtningen sorterar deterministiskt. Motmedlen är `batch-size` per konsument, oberoende leverans, circuit breaker per konsument och kort read-timeout (§7.6)                                                                                                   |
-| **Nödbromsen tolkar ett leveransavbrott som en loop**           | Skulle förvandla en fördröjning till permanent händelseförlust. Bromsen räknar därför bara rader med `delivered_at` satt (§6.5)                                                                                                                                                                          |
-| **Hälsoindikatorn på existens i stället för ålder**             | Tjänsten står unhealthy under normal drift och indikatorn slutar betyda något. Villkoret är `unhealthy-after` (§8.3)                                                                                                                                                                                     |
-| **`justification` utanför fältfiltreringen**                    | Beslutsmotiveringen är fritext med personuppgifter. `PROCESS` och `DECISION` är `ErrandField`-värden och stängda som utgångsläge för begränsade användare (§5.3). Att ALKT saknar åtkomstkontroll döljer bara felet till nästa namespace                                                                 |
-| **Åtkomstkontroll påslagen för ett namespace med processmotor** | pw får `401` på allt, och felet visar sig som ärenden som står stilla — inte som ett behörighetsfel. AccessMapper svarar bara på AD-konton (§1.8). Spärren i §7.1 gör det till ett konfigurationsfel i stället, och lyfts först när AccessMapper kan bevilja maskinidentiteter                           |
-| **Personuppgifter i aktivitetsloggen**                          | `message` är fri text som kommer från processen. **pw måste instrueras att inte skriva personuppgifter där** — det är en regel, inte en spärr                                                                                                                                                            |
-| **Dubbla processinstanser**                                     | ShedLock-serialiserad leverans + businessKey-kontroll + `409` + DB-constraint. Restrisk i Operaton, som saknar unikhet på business key — men SM kan inte registrera resultatet                                                                                                                           |
-| **Delas Operaton-tenanten `ALKT`?**                             | Påverkar `getDeployments`-assertions och `historyTimeToLive`. Bekräfta mot driftmiljön                                                                                                                                                                                                                   |
+|                              Risk                               |                                                                                                                                         Hantering                                                                                                                                         |
+|-----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **RabbitMQ-mognad** (öppen fråga)                               | §2.4. Varje REST-konsument byggd innan bytet är kastat arbete                                                                                                                                                                                                                             |
+| **`WAITING` felaktigt behandlad som terminal**                  | Skulle bryta 1-1-invarianten tyst. Skyddas av `applyStatus` som enda väg + tabelldrivet test (T1)                                                                                                                                                                                         |
+| **Handläggaren ändrar mitt i ett arbetssteg**                   | `412`, och steget körs om (§6.2). Kostar en omkörning. Syns som en INFO-rad per avvisad rapport (§8.1)                                                                                                                                                                                    |
+| **Steg med extern sidoeffekt körs om**                          | Sidoeffekten kan dubbleras. Samma krav som när ett steg kraschar (§9.4) — lägg sidoeffekten sist i steget, eller gör den idempotent                                                                                                                                                       |
+| **Läsande steg utan `errandVersion`**                           | Då finns inget skydd alls (§6.3). Det får vara ett medvetet val för varje steg — men ett val som faktiskt måste göras                                                                                                                                                                     |
+| **Underresurser fångas inte av versionen**                      | En bilaga som raderas mitt i en körning höjer inte `errand.version`. Processen måste läsa om bilagor när den behöver dem                                                                                                                                                                  |
+| **Parallella grenar**                                           | Modelleringsregel + WARN-aktivitet gör brottet synligt (§6.4)                                                                                                                                                                                                                             |
+| **Loop SM ↔ pw**                                                | Tre lager (§6.5). Lager 1 vilar på en klientsatt header — därför ska processens egen identitet aldrig förekomma bland outbox-radernas `executed_by` (§8.1)                                                                                                                                |
+| **Klient som tystar sina egna skrivningar**                     | `X-Trigger-Process: false` är fritt satt, så en integration som härmar pw kan göra sina ändringar osynliga för processen. Headern hedras inte för AD-identiteter (§6.5), men en maskinell integration som härmar pw lämnar inga spår alls — en undertryckt rad skrivs per definition inte |
+| **Beslut skrivet medan processen arbetar**                      | Korrelationen sväljs och väckningen är borta. Fångas bara av modelleringskravet i §9.2 punkt 1 — väntläget måste läsa om ärendet när det går in i väntan. Ingen kod i SM kan rädda ett väntläge som inte gör det                                                                          |
+| **`DECISION` saknas i `PROCESS_TRIGGER`**                       | Processen vaknar aldrig av beslutet och står i `WAITING` för alltid. Validering av triggervärden och ett IT-fall i T9                                                                                                                                                                     |
+| **Personuppgifter i beslutets motivering**                      | `justification` innehåller nästan alltid personuppgifter. Får aldrig loggas (§8.1), aldrig kopieras till aktivitetsloggen och aldrig läggas i outboxens nyttolast — den bär medvetet ingen ärendedata alls (§5.4). Beslutet kaskaderas bort med ärendet                                   |
+| **Automatiskt beslut felstämplat som manuellt, eller tvärtom**  | `method` valideras mot identiteten vid systemgränsen och står kvar i `errand_decision.method` och `.decided_by` (§8.1). Utan bådadera går frågan "vilka beslut fattades av en maskin?" inte att svara på i efterhand — och det är en fråga som kommer att ställas                         |
+| **Instans som försvinner utan slutrapport**                     | SM står kvar på `RUNNING` medan instansen är borta ur Operaton, och ärendet kan varken gå vidare eller få en ny process. Modelleringskravet i §9.2 punkt 5 ska hindra det; P6:s schemalagda kontroll stämmer av det som ändå glider isär                                                  |
+| **Skelettmodellen driftsatt för tidigt**                        | Sex tomma subprocesser springer igenom på millisekunder. Startas den mot ett skarpt ärende är ärendets processliv förbrukat (§9.1). Driftsätt inte förrän väntlägena finns                                                                                                                |
+| **Manuell grind som ingen klickar på**                          | Processen står i `WAITING` för alltid. Modelleringsregeln i §9.2 punkt 2 kräver en tidsgräns på grindar som kan glömmas bort, och §8.1 visar hur en grind som står still hittas                                                                                                           |
+| **Signal som accepteras men aldrig konsumeras**                 | Går processen vidare på en timer i samma stund som handläggaren trycker, hinner SM svara `202` innan den nya bilden rapporterats. Signalen når då inget väntläge och är borta. Handläggaren ser det vid nästa omläsning, men ingenstans syns att det hände                                |
+| **Knapp som inte längre gäller**                                | Handläggaren ser en signal processen hunnit lämna. Skrivningen ger `409` — gränssnittet ska läsa om ärendet, inte försöka igen                                                                                                                                                            |
+| **Beslut på ärende helt utan process**                          | Tillåtet och olåst: det finns ingen `COMPLETED` process att låsa mot. Spårbarheten bärs då av revisionen, inte av spärren (§7.5)                                                                                                                                                          |
+| **Föräldralös processinstans efter radering**                   | `DELETE` publiceras även utan `processKey` (§2.2), och pw raderar på `businessKey` (§9.3). Restrisk kvarstår om leveransen aldrig går igenom och raden åldras ur — därför ERROR-loggen när en rad åldras ur, och hälsoindikatorn (§8.3)                                                   |
+| **Etikettändring utanför API:t**                                | `AddLabelAction.executeAction` körs schemalagt och lägger till etiketter utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar — T7:s kontroll måste ligga även där                                                                         |
+| **Publiceringsfel sväljs av anropsstället**                     | `setRollbackOnly` före kast (§2.2) gör svälj-fångsten ofarlig. Kvarstående hål: anropsväg helt utan transaktion — syns som ERROR-logg                                                                                                                                                     |
+| **Start uteblir när etiketten sätts sent**                      | Start villkoras av `processKey`, inte `eventType` (§9.3). Täckt av ett P2-fall                                                                                                                                                                                                            |
+| **Startlov som hunnit bli inaktuellt**                          | Lovet räknas ut vid publicering och används vid leverans. Hinner processen gå i mål däremellan startar pw något den inte borde — `409` från `POST .../processes` och pw:s avbrytande av den nystartade instansen är skyddsnätet (§7.7)                                                    |
+| **Felstavat `processStartMode`**                                | Attributnycklar är inte whitelistade (§1.6), så `processstartmode` hade tyst betytt `AUTOMATIC`. Värdet valideras därför när etiketten skrivs, inte när den läses (§7.7)                                                                                                                  |
+| **Automatisk start på gamla ärenden vid driftsättning**         | Ett ärende som redan bär etiketten startar vid nästa ändring, inte bara vid `CREATE` (beslut 17). Rulla ut med `MANUAL` på etiketterna och byt till `AUTOMATIC` när kedjan är sedd i drift (§7.7)                                                                                         |
+| **Signal utan namn i händelsen**                                | pw vet att någon tryckte men inte på vad, och grinden öppnas aldrig. `signal_name` i outbox-raden och `signalName` på händelsen bär namnet hela vägen (§5.4); pw svarar `202` med ERROR-logg om det ändå saknas, eftersom en retry inte kan hjälpa                                        |
+| **Kommando som tystas av ett filter**                           | Ett `202` utan verkan är knappen som ser ut att fungera. Kommandon undantas därför från nödbromsen och triggerfiltret, och de tre lagren gäller bara härledda händelser (§6.5). Täckt av testfall i T5 och T12                                                                            |
+| **Maskinidentitet som trycker på startknappen**                 | Skulle ge `202` och ingen start, eftersom lager 1 filtrerar bort raden när pw:s `X-Trigger-Process: false` följer med (§6.5). Kommandot kräver AD-konto och svarar `403` (§5.10)                                                                                                          |
+| **Felstavat `processKey`**                                      | Upptäcks vid första ärendet. `422` ⇒ ingen retry, `FAILED` + ERROR-aktivitet direkt på ärendet                                                                                                                                                                                            |
+| **Oskickad rad som ingen upptäcker**                            | Utan dead letter-flagga finns ingenting att larma på i tabellen. Hälsoindikatorn och ERROR-loggen när en rad åldras ur är det som gör raden synlig (§8.3)                                                                                                                                 |
+| **Återlevererad händelse efter återrullad transaktion**         | Leverans och kvittering delar transaktion, så ett fel efter att pw tagit emot händelsen ger en till. pw:s event-endpoint måste vara idempotent — annars blir följden dubbla processinstanser (§8.3)                                                                                       |
+| **Routingen går att ändra i drift, utan granskning**            | Priset för att slippa en release varje gång. Validering av `PROCESS_CONSUMER`; överväg ändringslogg                                                                                                                                                                                       |
+| **En långsam pw svälter de andra**                              | Ett jobb levererar åt alla namespace, och hämtningen sorterar deterministiskt. Motmedlen är `batch-size` per konsument, oberoende leverans, circuit breaker per konsument och kort read-timeout (§7.6)                                                                                    |
+| **Nödbromsen tolkar ett leveransavbrott som en loop**           | Skulle förvandla en fördröjning till permanent händelseförlust. Bromsen räknar därför bara rader med `delivered_at` satt (§6.5)                                                                                                                                                           |
+| **Hälsoindikatorn på existens i stället för ålder**             | Tjänsten står unhealthy under normal drift och indikatorn slutar betyda något. Villkoret är `unhealthy-after` (§8.3)                                                                                                                                                                      |
+| **`justification` utanför fältfiltreringen**                    | Beslutsmotiveringen är fritext med personuppgifter. `PROCESS` och `DECISION` är `ErrandField`-värden och stängda som utgångsläge för begränsade användare (§5.3). Att ALKT saknar åtkomstkontroll döljer bara felet till nästa namespace                                                  |
+| **Åtkomstkontroll påslagen för ett namespace med processmotor** | pw får `401` på allt, och felet visar sig som ärenden som står stilla — inte som ett behörighetsfel. AccessMapper svarar bara på AD-konton (§1.8). Spärren i §7.1 gör det till ett konfigurationsfel i stället, och lyfts först när AccessMapper kan bevilja maskinidentiteter            |
+| **Personuppgifter i aktivitetsloggen**                          | `message` är fri text som kommer från processen. **pw måste instrueras att inte skriva personuppgifter där** — det är en regel, inte en spärr                                                                                                                                             |
+| **Dubbla processinstanser**                                     | ShedLock-serialiserad leverans + businessKey-kontroll + `409` + DB-constraint. Restrisk i Operaton, som saknar unikhet på business key — men SM kan inte registrera resultatet                                                                                                            |
+| **Delas Operaton-tenanten `ALKT`?**                             | Påverkar `getDeployments`-assertions och `historyTimeToLive`. Bekräfta mot driftmiljön                                                                                                                                                                                                    |
 
 ### Vad som inte går att verifiera automatiskt
 
 - Att WSO2 släpper igenom med rätt scope, och att `If-Match`/`ETag` passerar oförvanskade.
 - Verklig samtidighet mellan poddar — ShedLock täcks indirekt av `ShedlockConfigurationIT`.
-- Långtidsbeteende hos outbox och aktivitetslogg. Kompensation: mätvärdena i §8.1.
+- Långtidsbeteende hos outbox och aktivitetslogg. Kompensation: hälsoindikatorn (§8.3).
 

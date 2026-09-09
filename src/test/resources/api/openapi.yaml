@@ -1026,6 +1026,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — the errand has changed since the version
+            the report was read at
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "409":
           description: Conflict
           content:
@@ -3476,6 +3483,13 @@ paths:
                 $ref: "#/components/schemas/ErrandProcess"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — the errand has changed since the version
+            the report was read at
           content:
             application/problem+json:
               schema:

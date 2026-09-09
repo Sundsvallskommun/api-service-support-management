@@ -1,0 +1,43 @@
+{
+	"content": [
+		{
+			"id": "${json-unit.any-string}",
+			"processInstanceId": "pi-it-live",
+			"activityType": "CONCURRENCY",
+			"severity": "WARN",
+			"message": "concurrent external tasks detected: task 'task-branch-two' reported RUNNING while task 'task-branch-one' was still working. Two branches of the process instance are changing the errand at once - take the parallel gateway out of the model, or leave the errand writes to one branch alone. Until then the two keep knocking each other out with 412 and neither of them finishes",
+			"errorCode": "CONCURRENT_EXTERNAL_TASKS",
+			"occurredAt": "${json-unit.any-string}",
+			"created": "${json-unit.any-string}"
+		},
+		{
+			"id": "epa-it-task",
+			"processInstanceId": "pi-it-live",
+			"activityType": "TASK",
+			"activityId": "granska-ansokan",
+			"activityName": "Granska ansokan",
+			"severity": "INFO",
+			"occurredAt": "${json-unit.any-string}",
+			"created": "${json-unit.any-string}"
+		},
+		{
+			"id": "epa-it-config",
+			"activityType": "CONFIG",
+			"severity": "ERROR",
+			"message": "Two labels resolve to different process keys",
+			"errorCode": "AMBIGUOUS_PROCESS_KEY",
+			"occurredAt": "${json-unit.any-string}",
+			"created": "${json-unit.any-string}"
+		}
+	],
+	"pageable": "${json-unit.ignore}",
+	"totalPages": 1,
+	"last": true,
+	"totalElements": 3,
+	"size": 50,
+	"number": 0,
+	"sort": "${json-unit.ignore}",
+	"first": true,
+	"numberOfElements": 3,
+	"empty": false
+}

@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +27,7 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository.LiveProcessInstance;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
@@ -46,6 +48,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.WARN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
@@ -84,6 +87,9 @@ class ErrandProcessServiceTest {
 
 	@Captor
 	private ArgumentCaptor<List<ErrandProcessActivityEntity>> activitiesCaptor;
+
+	@Captor
+	private ArgumentCaptor<ErrandProcessActivityEntity> activityCaptor;
 
 	private ErrandProcessService service;
 
@@ -440,6 +446,188 @@ class ErrandProcessServiceTest {
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
+	// The errand moving under a work step
+	// ---------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * The 412 a work step that only reads the errand gets in place of the If-Match it has no way to send, and the whole
+	 * reason the field exists. Neither the state nor the activities of the report are written.
+	 */
+	@Test
+	void aReportReadAtAVersionTheErrandHasLeftBehindIsRefused() {
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW)).thenReturn(errand(8L));
+
+		final var report = report(RUNNING)
+			.withErrandVersion(7L)
+			.withExternalTaskId("task-1")
+			.withActivities(List.of(activity("review_phase")));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report))
+			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(412));
+
+		verify(processRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(activityRepositoryMock);
+	}
+
+	@Test
+	void aReportReadAtTheVersionTheErrandStillHasIsTaken() {
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW)).thenReturn(errand(7L));
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING)));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(WAITING).withErrandVersion(7L));
+
+		assertThat(result.process().getProcessStatus()).isEqualTo(WAITING.name());
+	}
+
+	/**
+	 * A step that neither reads nor writes the errand sends no version, and then nothing is checked at all - not even the
+	 * errand it would have been checked against, which is what leaving it unstubbed here says.
+	 */
+	@Test
+	void aReportWithoutAVersionIsHeldAgainstNothing() {
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING)));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
+
+		assertThat(result.process().getProcessStatus()).isEqualTo(RUNNING.name());
+	}
+
+	@Test
+	void aRegistrationReadAtAVersionTheErrandHasLeftBehindIsRefused() {
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW)).thenReturn(errand(8L));
+
+		final var report = report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID).withErrandVersion(7L);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report))
+			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(412));
+
+		verify(processRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	// Two work steps at once
+	// ---------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Two branches of one instance working at the same time, which the process models are not allowed to have. The report
+	 * is taken anyway: refusing it would silence the very entry that reveals the model is breaking the rule.
+	 */
+	@Test
+	void aSecondTaskAnnouncingItselfIsLoggedAndItsReportIsStillTaken() {
+		final var existing = entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId").withOutstandingExternalTaskId("task-1");
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-2"));
+
+		assertThat(result.process().getProcessStatus()).isEqualTo(RUNNING.name());
+		verify(activityRepositoryMock).save(activityCaptor.capture());
+		assertThat(activityCaptor.getValue())
+			.extracting(
+				ErrandProcessActivityEntity::getSeverity,
+				ErrandProcessActivityEntity::getExternalTaskId,
+				ErrandProcessActivityEntity::getActivityId,
+				ErrandProcessActivityEntity::getErrorCode,
+				ErrandProcessActivityEntity::getOccurredAt)
+			.containsExactly(WARN, "task-2", null, "CONCURRENT_EXTERNAL_TASKS", OffsetDateTime.now(CLOCK));
+
+		// Both tasks named, and what to do about them. Whoever reads the entry is looking at an errand, while the fix
+		// is in a BPMN file they cannot reach from there.
+		assertThat(activityCaptor.getValue().getMessage())
+			.startsWith("concurrent external tasks detected")
+			.contains("task 'task-2' reported RUNNING while task 'task-1' was still working")
+			.contains("take the parallel gateway out of the model");
+		assertThat(existing.getOutstandingExternalTaskId()).isEqualTo("task-2");
+	}
+
+	/**
+	 * Logged once per instance. The two branches keep passing each other for as long as the model has the gateway,
+	 * and the log this would otherwise fill is the one a handler reads on the errand.
+	 */
+	@Test
+	void aFurtherCollisionOnTheSameInstanceIsNotLoggedAgain() {
+		final var existing = entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId").withOutstandingExternalTaskId("task-1");
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(activityRepositoryMock.existsByErrandProcessIdAndActivityType("rowId", "CONCURRENCY")).thenReturn(true);
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-2"));
+
+		verify(activityRepositoryMock, never()).save(any());
+	}
+
+	/**
+	 * Steps running one after another never meet, and that is what keeps the warning from firing on every process there
+	 * is: the report a step hands in when it is done empties the place before the next task announces itself.
+	 */
+	@Test
+	void tasksTakingTurnsRaiseNoWarning() {
+		final var existing = entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId");
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-1"));
+		assertThat(existing.getOutstandingExternalTaskId()).isEqualTo("task-1");
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-1"));
+		assertThat(existing.getOutstandingExternalTaskId()).isNull();
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-2"));
+		assertThat(existing.getOutstandingExternalTaskId()).isEqualTo("task-2");
+
+		verify(activityRepositoryMock, never()).save(any());
+	}
+
+	/**
+	 * The report a step hands in when it is done empties the place even when it does not say RUNNING, which is what a
+	 * step that leaves the process waiting reports. Without that the next task to announce itself would be taken for a
+	 * parallel branch, and every process with a wait state would raise the warning.
+	 */
+	@Test
+	void aClosingReportFromTheWorkingTaskEmptiesThePlace() {
+		final var existing = entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId").withOutstandingExternalTaskId("task-1");
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(WAITING).withExternalTaskId("task-1"));
+		assertThat(existing.getOutstandingExternalTaskId()).isNull();
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-2"));
+
+		assertThat(existing.getOutstandingExternalTaskId()).isEqualTo("task-2");
+		verify(activityRepositoryMock, never()).save(any());
+	}
+
+	/**
+	 * A report naming no task - the registration of a start, among others - says nothing about the task standing on the
+	 * row, and must not be read as that task having finished.
+	 */
+	@Test
+	void aReportNamingNoTaskLeavesTheOutstandingOneWhereItIs() {
+		final var existing = entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId").withOutstandingExternalTaskId("task-1");
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
+
+		assertThat(existing.getOutstandingExternalTaskId()).isEqualTo("task-1");
+	}
+
+	@Test
+	void theFirstReportAboutAnInstanceRecordsTheTaskThatMadeIt() {
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withExternalTaskId("task-1"));
+
+		verify(processRepositoryMock).saveAndFlush(entityCaptor.capture());
+		assertThat(entityCaptor.getValue().getOutstandingExternalTaskId()).isEqualTo("task-1");
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------
 	// Losing the race
 	// ---------------------------------------------------------------------------------------------------------------
 
@@ -596,6 +784,10 @@ class ErrandProcessServiceTest {
 			.withProcessService(PROCESS_SERVICE)
 			.withProcessKey(PROCESS_KEY)
 			.withProcessStatus(status);
+	}
+
+	private static ErrandEntity errand(final long version) {
+		return ErrandEntity.create().withId(ERRAND_ID).withVersion(version);
 	}
 
 	private static ProcessActivity activity(final String activityId) {

@@ -99,6 +99,13 @@ class ErrandProcessActivityRepositoryTest {
 	}
 
 	@Test
+	@DisplayName("Verification that an instance already carrying an entry of a kind is recognised, which is what keeps the warning about two branches to one entry while the counter takes every occurrence")
+	void existsByErrandProcessIdAndActivityType() {
+		assertThat(errandProcessActivityRepository.existsByErrandProcessIdAndActivityType("ep-live-1", "TASK")).isTrue();
+		assertThat(errandProcessActivityRepository.existsByErrandProcessIdAndActivityType("ep-live-1", "CONCURRENCY")).isFalse();
+	}
+
+	@Test
 	@DisplayName("Verification that an entry can be written before any process instance exists")
 	void anActivityWithoutAProcessInstanceCanBeSaved() {
 		final var saved = errandProcessActivityRepository.saveAndFlush(ErrandProcessActivityEntity.create()
