@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
-import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -26,14 +25,11 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 public class MeasureValidator {
 
 	private static final String BAD_MEASURE_TYPE = "'%s' is not a valid measure type id for namespace '%s' and municipality with id '%s'";
-	private static final String BAD_ROLE = "'%s' is not a valid role for namespace '%s' and municipality with id '%s'";
 
 	private final MeasureTypeRepository measureTypeRepository;
-	private final RoleRepository roleRepository;
 
-	MeasureValidator(final MeasureTypeRepository measureTypeRepository, final RoleRepository roleRepository) {
+	MeasureValidator(final MeasureTypeRepository measureTypeRepository) {
 		this.measureTypeRepository = measureTypeRepository;
-		this.roleRepository = roleRepository;
 	}
 
 	public void validate(final List<Measure> measures, final String namespace, final String municipalityId) {
@@ -42,24 +38,13 @@ public class MeasureValidator {
 	}
 
 	public void validate(final Measure measure, final String namespace, final String municipalityId) {
-		ofNullable(measure).ifPresent(value -> {
-			validateMeasureType(value.getMeasureTypeId(), namespace, municipalityId);
-			validateRole(value.getAddedByRole(), namespace, municipalityId);
-		});
+		ofNullable(measure).ifPresent(value -> validateMeasureType(value.getMeasureTypeId(), namespace, municipalityId));
 	}
 
 	private void validateMeasureType(final String measureTypeId, final String namespace, final String municipalityId) {
 		ofNullable(measureTypeId).ifPresent(value -> {
 			if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(value, namespace, municipalityId)) {
 				throw Problem.valueOf(BAD_REQUEST, BAD_MEASURE_TYPE.formatted(value, namespace, municipalityId));
-			}
-		});
-	}
-
-	private void validateRole(final String role, final String namespace, final String municipalityId) {
-		ofNullable(role).ifPresent(value -> {
-			if (!roleRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, value)) {
-				throw Problem.valueOf(BAD_REQUEST, BAD_ROLE.formatted(value, namespace, municipalityId));
 			}
 		});
 	}

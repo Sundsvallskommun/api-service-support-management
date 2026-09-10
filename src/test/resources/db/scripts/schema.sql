@@ -326,13 +326,13 @@ create table measure (
                          planned_complete datetime(6),
                          planned_start datetime(6),
                          version bigint default 0 not null,
-                         description varchar(1000),
-                         rework_description varchar(1000),
+                         description varchar(3000),
+                         goal varchar(3000),
+                         rework_description varchar(3000),
                          accept_motivation varchar(255),
                          added_by_role varchar(255),
                          added_by_user varchar(255),
                          errand_id varchar(255) not null,
-                         goal varchar(255),
                          id varchar(255) not null,
                          measure_type_id varchar(255),
                          responsible_user varchar(255),
@@ -355,8 +355,8 @@ create table measure_type (
 ) engine=InnoDB;
 
 create table measure_type_groups (
-                                    measure_group varchar(255),
-                                    measure_type_id varchar(255) not null
+                                     measure_group varchar(255),
+                                     measure_type_id varchar(255) not null
 ) engine=InnoDB;
 
 create table message_exchange_integration_config (

@@ -10,6 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.validation.ValidRole;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
@@ -68,6 +69,7 @@ public class Measure {
 	@NotBlank(groups = {
 		Default.class, OnCreate.class
 	})
+	@ValidRole
 	private String addedByRole;
 
 	@Schema(description = "Goal of the measure", examples = "Improve response time")

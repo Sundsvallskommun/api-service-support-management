@@ -72,10 +72,10 @@ public class MeasureEntity {
 	@Column(name = "added_by_role")
 	private String addedByRole;
 
-	@Column(name = "goal")
+	@Column(name = "goal", length = 3000)
 	private String goal;
 
-	@Column(name = "description", length = 1000)
+	@Column(name = "description", length = 3000)
 	private String description;
 
 	@Column(name = "accept")
@@ -88,7 +88,7 @@ public class MeasureEntity {
 	@Column(name = "rework_goal")
 	private String reworkGoal;
 
-	@Column(name = "rework_description", length = 1000)
+	@Column(name = "rework_description", length = 3000)
 	private String reworkDescription;
 
 	@Version
