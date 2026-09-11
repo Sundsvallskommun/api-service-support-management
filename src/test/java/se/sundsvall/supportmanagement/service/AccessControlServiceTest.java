@@ -127,7 +127,11 @@ class AccessControlServiceTest {
 	 * A label granted at one level each, so that the clause built for an operation shows which levels it reaches.
 	 */
 	private static AccessSnapshot snapshotWithALabelPerLevel() {
-		return new AccessSnapshot(Map.of(LR, Set.of(LIMITED_READ_LABEL), R, Set.of(READ_LABEL), RW, Set.of(WRITE_LABEL)), Set.of(), Map.of());
+		return snapshotWithALabelPerLevel(Map.of());
+	}
+
+	private static AccessSnapshot snapshotWithALabelPerLevel(final Map<ProtectedResource, Access.AccessLevelEnum> resources) {
+		return new AccessSnapshot(Map.of(LR, Set.of(LIMITED_READ_LABEL), R, Set.of(READ_LABEL), RW, Set.of(WRITE_LABEL)), Set.of(), resources);
 	}
 
 	/**
@@ -871,6 +875,71 @@ class AccessControlServiceTest {
 		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
 	}
 
+	/**
+	 * The grant of the access mapper is what says the user may perform the operation, so the labels are left only having
+	 * to reach the errand at read. Limited read labels stay out of it - a write is never permitted on an errand the user
+	 * cannot see in full.
+	 */
+	@Test
+	void withAccessControlLetsAResourceGrantCarryAWrite() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			snapshotWithALabelPerLevel(Map.of(ProtectedResource.CONVERSATION_MESSAGE, RW)));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.CONVERSATION_MESSAGE, RW);
+
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(READ_LABEL, WRITE_LABEL)));
+	}
+
+	/**
+	 * Without resource access control there is no second axis, so the labels carry the write themselves - which is what
+	 * every namespace holding its labels alone relies on.
+	 */
+	@Test
+	void withAccessControlLeavesAWriteToTheLabelsWithoutResourceAccessControl() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			snapshotWithALabelPerLevel(Map.of(ProtectedResource.CONVERSATION_MESSAGE, RW)));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.CONVERSATION_MESSAGE, RW);
+
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(WRITE_LABEL)));
+	}
+
+	/**
+	 * The errand itself is what the labels are held against, so no grant can vouch for writing it.
+	 */
+	@Test
+	void withAccessControlNeverLetsAResourceGrantCarryAnErrandWrite() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			snapshotWithALabelPerLevel(Map.of(ProtectedResource.ERRAND, RW)));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, RW);
+
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(WRITE_LABEL)));
+	}
+
+	/**
+	 * Lowering what the labels ask does not lower what the grant asks: the two axes still both have to allow.
+	 */
+	@Test
+	void withAccessControlStillDemandsTheResourceGrantForAWrite() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			snapshotWithALabelPerLevel(Map.of(ProtectedResource.CONVERSATION_MESSAGE, R)));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.CONVERSATION_MESSAGE, RW);
+
+		assertThat(matches(specification)).isFalse();
+	}
+
 	@Test
 	void roleBasedFieldResolverFallsBackToAMinimumWhenLimitedReadIsNotConfigured() {
 		final var errand = ErrandEntity.create().withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId("label-id-1")));
@@ -1234,11 +1303,11 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * And the report says as much rather than passing the resource grant on unqualified, so a client is never invited to
-	 * call an endpoint the labels would refuse.
+	 * A resource of an errand held at read is reported at what its own grant carries, since that is what the endpoint
+	 * serving it accepts. The errand itself stays at read - no grant vouches for writing it.
 	 */
 	@Test
-	void resolveErrandAccessHoldsAResourceGrantAgainstTheLabels() {
+	void resolveErrandAccessReportsAWritableResourceOnAnErrandHeldAtRead() {
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig().withResourceAccessControl(true));
 		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
 			Map.of(LR, Set.of(ERRAND_LABEL), R, Set.of(ERRAND_LABEL), RW, Set.of()),
@@ -1248,6 +1317,45 @@ class AccessControlServiceTest {
 		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
 
 		assertThat(resolution.errandLevel()).isEqualTo(R);
-		assertThat(resolution.resources()).containsExactly(entry(ProtectedResource.PARAMETER, R));
+		assertThat(resolution.resources()).containsExactly(entry(ProtectedResource.PARAMETER, RW));
+	}
+
+	/**
+	 * And the keys of a field written through that resource are reported by it too, so the report cannot invite a client
+	 * to render a form the endpoint would then refuse - nor withhold one it would accept.
+	 */
+	@Test
+	void resolveErrandAccessReportsKeysOfAFieldByTheResourceServingIt() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("granted-key")),
+			FieldAccess.create().withField(ErrandField.EXTERNAL_TAGS).withKeys(List.of("tag-key"))))
+			.withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
+			Map.of(LR, Set.of(ERRAND_LABEL), R, Set.of(ERRAND_LABEL), RW, Set.of()),
+			Set.of("CASE_OFFICER"),
+			Map.of(ProtectedResource.ERRAND, RW, ProtectedResource.PARAMETER, RW)));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(R);
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).keys()).containsExactly(entry("granted-key", RW));
+
+		// External tags are only ever written through the errand, so they stay held against it.
+		assertThat(resolution.fields().get(ErrandField.EXTERNAL_TAGS).keys()).containsExactly(entry("tag-key", R));
+	}
+
+	/**
+	 * A resource of the namespace is guarded on its grant alone, whether or not the namespace weighs resource grants for
+	 * the resources of its errands.
+	 */
+	@Test
+	void verifyNamespaceAuthorizationThrowsWithoutAGrantEvenWithoutResourceAccessControl() {
+		when(namespaceConfigServiceMock.isAccessControlActive(any(), any())).thenReturn(true);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOfResources(Map.of()));
+
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
+
+		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
 	}
 }

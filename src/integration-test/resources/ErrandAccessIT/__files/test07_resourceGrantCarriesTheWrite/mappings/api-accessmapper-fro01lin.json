@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2507/access/ad/fro01lin"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test07_resourceGrantCarriesTheWrite/responses/api-accessmapper-fro01lin.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-fro01lin"
+}

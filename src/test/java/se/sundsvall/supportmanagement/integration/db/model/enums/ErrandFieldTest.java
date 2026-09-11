@@ -52,6 +52,22 @@ class ErrandFieldTest {
 			.collect(joining());
 	}
 
+	/**
+	 * A write resource says the field has an endpoint of its own, which is what the access of an errand reports its keys
+	 * by instead of by the errand. Only a keyed collection can have one, since the endpoints serving a field one key at
+	 * a time are the only ones there are.
+	 */
+	@Test
+	void onlyTheKeyedFieldsServedByAnEndpointCarryAWriteResource() {
+		assertThat(Arrays.stream(ErrandField.values()).filter(field -> field.getWriteResource() != null))
+			.containsExactlyInAnyOrder(ErrandField.PARAMETERS, ErrandField.JSON_PARAMETERS);
+
+		assertThat(ErrandField.PARAMETERS.getWriteResource()).isEqualTo(ProtectedResource.PARAMETER);
+		assertThat(ErrandField.JSON_PARAMETERS.getWriteResource()).isEqualTo(ProtectedResource.JSON_PARAMETER);
+		assertThat(Arrays.stream(ErrandField.values()).filter(field -> field.getWriteResource() != null))
+			.allSatisfy(field -> assertThat(field.isKeyed()).isTrue());
+	}
+
 	@Test
 	void everyFieldCarriesADistinctProperty() {
 		assertThat(Arrays.stream(ErrandField.values()).map(ErrandField::getPropertyName).collect(toSet()))

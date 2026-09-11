@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
+import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
@@ -46,6 +47,10 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
  * to make. That is worth nothing if the two disagree: an answer the specification would refuse is a caller invited to
  * make a request that then fails with 401. Rather than assert either side in isolation, every combination is put to
  * both and the two are required to agree.
+ * <p>
+ * Holding one reported level against all three required levels is also what pins the monotonicity
+ * {@code AccessControlService#highestLevel} relies on: a rule demanding less of the labels for a write than for a read
+ * would report a level the specification then contradicts, and fails here.
  */
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -108,6 +113,59 @@ class AccessControlSpecificationParityTest {
 	}
 
 	/**
+	 * Every shape a user and a resource of an errand can meet in. The reporter axis is left out, being orthogonal to the
+	 * resource and already held above, which is what keeps the case count in the dozens.
+	 */
+	static Stream<Arguments> resourceCombinations() {
+		final List<Set<MetadataLabelEntity>> grantedLabels = List.of(Set.of(), Set.of(LABEL), Set.of(OTHER_LABEL));
+
+		return Stream.of(ProtectedResource.CONVERSATION_MESSAGE, ProtectedResource.NOTE)
+			.flatMap(resource -> Stream.of(true, false).flatMap(labelled -> grantedLabels.stream().flatMap(labels -> Stream.of(LR, R, RW).flatMap(grantedAt -> Stream.of(true, false)
+				.map(resourceAccessControl -> Arguments.of(resource, labelled, labels, grantedAt, resourceAccessControl))))));
+	}
+
+	/**
+	 * The same question asked of a resource of the errand rather than of the errand itself, which is where the level
+	 * demanded of the labels stops following the operation and starts following what the resource grant carries.
+	 */
+	@ParameterizedTest(name = "resource={0} labelled={1} labels={2} grantedAt={3} resourceAccessControl={4}")
+	@MethodSource("resourceCombinations")
+	void reportedResourceLevelMatchesTheSpecification(final ProtectedResource resource, final boolean labelled, final Set<MetadataLabelEntity> grantedLabels, final Access.AccessLevelEnum grantedAt, final boolean resourceAccessControl) {
+
+		final var errand = persistErrand(labelled, false);
+
+		// NOTE is reached at limited read and CONVERSATION_MESSAGE is not, so the floor, what the grant carries and their
+		// composition are all exercised.
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config(false, resourceAccessControl)
+			.withLimitedReadAccess(LimitedReadAccess.create().withResources(List.of(ProtectedResource.NOTE))));
+		when(accessMapperServiceMock.getAccessSnapshot(any(), any(), any())).thenReturn(snapshot(grantedLabels, grantedAt,
+			resourceAccessControl ? Map.of(ProtectedResource.ERRAND, RW, resource, RW) : Map.of()));
+
+		final var reported = reportedResourceLevel(errand, resource);
+
+		Stream.of(LR, R, RW).forEach(required -> {
+			final var specificationAllows = errandsRepository.exists(withId(errand.getId())
+				.and(accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), resource, required)));
+
+			assertThat(satisfiedBy(reported, required))
+				.as("reported level %s of %s against required %s", reported, resource, required)
+				.isEqualTo(specificationAllows);
+		});
+	}
+
+	/**
+	 * The level the report gives one resource of the errand, or null where it gives none - including where it refuses
+	 * the user the errand altogether, which no resource of it outlives.
+	 */
+	private Access.AccessLevelEnum reportedResourceLevel(final ErrandEntity errand, final ProtectedResource resource) {
+		try {
+			return accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), errand).resources().get(resource);
+		} catch (final ThrowableProblem e) {
+			return null;
+		}
+	}
+
+	/**
 	 * The level the report gives the errand, or null where it refuses the user altogether, which is the answer the
 	 * specification gives by matching no row at any level.
 	 */
@@ -154,15 +212,19 @@ class AccessControlSpecificationParityTest {
 	 * held in one access group.
 	 */
 	private static AccessSnapshot snapshot(final Set<MetadataLabelEntity> labels, final Access.AccessLevelEnum grantedAt, final boolean resourceAccessControl) {
+		// Granted at read/write so that the resource never becomes the narrower of the two and the labels stay the thing
+		// being compared, while still exercising the branch weighing resources at all.
+		return snapshot(labels, grantedAt, resourceAccessControl ? Map.of(ProtectedResource.ERRAND, RW) : Map.of());
+	}
+
+	private static AccessSnapshot snapshot(final Set<MetadataLabelEntity> labels, final Access.AccessLevelEnum grantedAt, final Map<ProtectedResource, Access.AccessLevelEnum> resources) {
 		return new AccessSnapshot(
 			Map.of(
 				LR, LR == grantedAt ? labels : Set.of(),
 				R, R == grantedAt ? labels : Set.of(),
 				RW, RW == grantedAt ? labels : Set.of()),
 			Set.of(),
-			// Granted at read/write so that the resource never becomes the narrower of the two and the labels stay the
-			// thing being compared, while still exercising the branch weighing resources at all.
-			resourceAccessControl ? Map.of(ProtectedResource.ERRAND, RW) : Map.of());
+			resources);
 	}
 
 	private static Identifier adUser() {
