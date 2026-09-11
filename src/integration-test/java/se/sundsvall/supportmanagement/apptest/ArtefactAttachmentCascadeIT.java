@@ -15,6 +15,7 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 import java.util.List;
+import java.util.Map;
 import net.javacrumbs.jsonunit.core.Option;
 
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	private static final String OTHER_ERRAND_ID = "cc236cf1-c00f-4479-8341-ecf5dd90b5b9";
 
 	private static final String STATEMENT_ID = "f1000000-0000-0000-0000-000000000001";
+	private static final String INVESTIGATION_ID = "f2000000-0000-0000-0000-000000000001";
+	private static final String DECISION_ID = "f4000000-0000-0000-0000-000000000001";
+	private static final String MEASURE_ID = "ee000000-0000-0000-0000-000000000200";
 	private static final String ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000001";
 	private static final String SUPPORTING_PURPOSE_ID = "f6000000-0000-0000-0000-000000000001";
 	private static final String RESPONSE_PURPOSE_ID = "f6000000-0000-0000-0000-000000000002";
@@ -63,21 +67,21 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	private JdbcTemplate jdbcTemplate;
 
 	/**
-	 * Case 1 - the attachment is removed. The link goes with it; the statement lives on.
+	 * Case 1 - the attachment is removed where Hibernate does not see it: the purge job, a manual correction, a bulk
+	 * removal still to be written. The foreign keys take every link with it, and none of the artefacts it was linked to.
+	 * <p>
+	 * This is the {@code on delete cascade} of the migration at work - the safety net rather than the mechanism - and the
+	 * only way to reach it is to go around the application, which is why the row is removed with SQL.
 	 */
 	@Test
-	void test01_deletingAttachmentRemovesLinkButKeepsStatement() {
+	void test01_deletingAttachmentOutsideHibernateRemovesLinksButKeepsArtefacts() {
 
-		assertThat(links()).isOne();
+		assertThat(linkCounts()).as("linked to all four artefacts").allSatisfy((table, count) -> assertThat(count).as(table).isOne());
 
-		setupCall()
-			.withServicePath(ERRAND_PATH + "/attachments/" + ATTACHMENT_ID)
-			.withHttpMethod(DELETE)
-			.withExpectedResponseStatus(NO_CONTENT)
-			.sendRequestAndVerifyResponse();
+		jdbcTemplate.update("delete from attachment where id = ?", ATTACHMENT_ID);
 
-		assertThat(links()).as("the link went with the attachment").isZero();
-		assertThat(statements()).as("the statement stayed").isOne();
+		assertThat(linkCounts()).as("every link went with the attachment").allSatisfy((table, count) -> assertThat(count).as(table).isZero());
+		assertThat(artefactCounts()).as("every artefact stayed").allSatisfy((table, count) -> assertThat(count).as(table).isOne());
 	}
 
 	/**
@@ -119,11 +123,14 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Case 4 - the attachment is removed through the errand rather than named directly. Same outcome as case 1, and the
-	 * point of testing it separately is that it takes a different route through the service.
+	 * Case 4 - the attachment is removed through the attachment list of the errand, which is how the API removes one.
+	 * Orphan removal takes it off the errand and the cascade on the attachment continues to its links: every one of them
+	 * goes, and every artefact it was linked to stays.
 	 */
 	@Test
-	void test04_deletingAttachmentViaErrandRemovesLink() {
+	void test04_deletingAttachmentViaErrandRemovesLinksButKeepsArtefacts() {
+
+		assertThat(linkCounts()).as("linked to all four artefacts").allSatisfy((table, count) -> assertThat(count).as(table).isOne());
 
 		setupCall()
 			.withServicePath(ERRAND_PATH + "/attachments/" + ATTACHMENT_ID)
@@ -132,18 +139,19 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(attachments()).as("the attachment went").isZero();
-		assertThat(links()).as("the link went with it").isZero();
-		assertThat(statements()).as("the statement stayed").isOne();
+		assertThat(linkCounts()).as("every link went with it").allSatisfy((table, count) -> assertThat(count).as(table).isZero());
+		assertThat(artefactCounts()).as("every artefact stayed").allSatisfy((table, count) -> assertThat(count).as(table).isOne());
 	}
 
 	/**
-	 * Case 5 - the errand is removed. Everything goes: the statement, its links and the attachments.
+	 * Case 5 - the errand is removed. Everything goes: all four artefacts with their sections and terms, their links and
+	 * the attachments.
 	 */
 	@Test
 	void test05_deletingErrandRemovesEverything() {
 
-		assertThat(statements()).isOne();
-		assertThat(links()).isOne();
+		assertThat(artefactCounts()).allSatisfy((table, count) -> assertThat(count).as(table).isOne());
+		assertThat(linkCounts()).allSatisfy((table, count) -> assertThat(count).as(table).isOne());
 
 		setupCall()
 			.withServicePath(ERRAND_PATH)
@@ -151,8 +159,12 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(statements()).as("the statement went with the errand").isZero();
-		assertThat(links()).as("the links went").isZero();
+		assertThat(artefactCounts()).as("every artefact went with the errand").allSatisfy((table, count) -> assertThat(count).as(table).isZero());
+		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_section where investigation_id = ?", Integer.class, INVESTIGATION_ID))
+			.as("the sections went with the investigation").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_term where decision_id = ?", Integer.class, DECISION_ID))
+			.as("the terms went with the decision").isZero();
+		assertThat(linkCounts()).as("the links went").allSatisfy((table, count) -> assertThat(count).as(table).isZero());
 		assertThat(attachments()).as("the attachments went").isZero();
 	}
 
@@ -271,6 +283,24 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 		assertThat(purposeOf(ATTACHMENT_ID)).as("the reference went").isNull();
 		assertThat(jdbcTemplate.queryForObject("select count(*) from attachment_purpose where id = ?", Integer.class, SUPPORTING_PURPOSE_ID))
 			.as("the purpose stayed").isOne();
+	}
+
+	/** The links to the attachment these cases own, per kind of artefact - it is linked to one of each. */
+	private Map<String, Integer> linkCounts() {
+		return Map.of(
+			"statement_attachment", jdbcTemplate.queryForObject("select count(*) from statement_attachment where attachment_id = ?", Integer.class, ATTACHMENT_ID),
+			"investigation_attachment", jdbcTemplate.queryForObject("select count(*) from investigation_attachment where attachment_id = ?", Integer.class, ATTACHMENT_ID),
+			"decision_attachment", jdbcTemplate.queryForObject("select count(*) from decision_attachment where attachment_id = ?", Integer.class, ATTACHMENT_ID),
+			"measure_attachment", jdbcTemplate.queryForObject("select count(*) from measure_attachment where attachment_id = ?", Integer.class, ATTACHMENT_ID));
+	}
+
+	/** The four artefacts that attachment is linked to. */
+	private Map<String, Integer> artefactCounts() {
+		return Map.of(
+			"statement", jdbcTemplate.queryForObject("select count(*) from statement where id = ?", Integer.class, STATEMENT_ID),
+			"investigation", jdbcTemplate.queryForObject("select count(*) from investigation where id = ?", Integer.class, INVESTIGATION_ID),
+			"decision", jdbcTemplate.queryForObject("select count(*) from decision where id = ?", Integer.class, DECISION_ID),
+			"measure", jdbcTemplate.queryForObject("select count(*) from measure where id = ?", Integer.class, MEASURE_ID));
 	}
 
 	private String purposeOf(final String attachmentId) {

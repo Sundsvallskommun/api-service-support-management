@@ -46,6 +46,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	private static final String OTHER_ERRAND_ID = "cc236cf1-c00f-4479-8341-ecf5dd90b5b9";
 	private static final String STATEMENT_ID = "f1000000-0000-0000-0000-000000000001";
 	private static final String DRAFT_STATEMENT_ID = "f1000000-0000-0000-0000-000000000002";
+	private static final String MEASURE_ID = "ee000000-0000-0000-0000-000000000200";
 	private static final String LINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000001";
 	private static final String UNLINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000002";
 
@@ -124,6 +125,8 @@ class ErrandStatementsIT extends AbstractAppTest {
 
 	@Test
 	void test05_deleteErrandStatement() {
+		jdbcTemplate.update("update measure set statement_id = ? where id = ?", DRAFT_STATEMENT_ID, MEASURE_ID);
+
 		setupCall()
 			.withServicePath(PATH + "/" + DRAFT_STATEMENT_ID)
 			.withHttpMethod(DELETE)
@@ -132,6 +135,8 @@ class ErrandStatementsIT extends AbstractAppTest {
 
 		assertThat(statementRepository.existsById(DRAFT_STATEMENT_ID)).isFalse();
 		assertThat(statementRepository.existsById(STATEMENT_ID)).as("the other statement stayed").isTrue();
+		assertThat(jdbcTemplate.queryForObject("select statement_id from measure where id = ?", String.class, MEASURE_ID))
+			.as("the measure stayed, without the reference").isNull();
 	}
 
 	/**

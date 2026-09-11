@@ -280,6 +280,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 
 		assertThat(measures(ARTEFACT_MEASURE_ID)).isZero();
 		assertThat(parametersWithKey("measureForm")).as("the parameter went with the measure").isZero();
+		assertThat(attachmentLinks()).as("the link went").isZero();
 		assertThat(attachments(LINKED_ATTACHMENT_ID)).as("the attachment stayed on the errand").isOne();
 	}
 

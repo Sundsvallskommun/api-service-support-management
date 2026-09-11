@@ -46,6 +46,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = "a0000000-0000-0000-0000-000000000001";
 	private static final String INVESTIGATION_ID = "f2000000-0000-0000-0000-000000000001";
+	private static final String DECISION_ID = "f4000000-0000-0000-0000-000000000001";
 	private static final String SECTION_ID = "f3000000-0000-0000-0000-000000000002";
 	private static final String LINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000001";
 	private static final String UNLINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000002";
@@ -220,6 +221,8 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 		assertThat(parametersWithKey("sectionForm")).isZero();
 		assertThat(attachmentLinks()).as("the link went").isZero();
 		assertThat(attachments(LINKED_ATTACHMENT_ID)).as("the attachment stayed on the errand").isOne();
+		assertThat(jdbcTemplate.queryForObject("select investigation_id from decision where id = ?", String.class, DECISION_ID))
+			.as("the decision resting on it stayed, without the reference").isNull();
 	}
 
 	@Test

@@ -45,6 +45,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String ERRAND_ID = "a0000000-0000-0000-0000-000000000001";
 	private static final String DECISION_ID = "f4000000-0000-0000-0000-000000000001";
+	private static final String MEASURE_ID = "ee000000-0000-0000-0000-000000000200";
 	private static final String TERM_ID = "f5000000-0000-0000-0000-000000000002";
 	private static final String LINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000001";
 	private static final String UNLINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000002";
@@ -224,6 +225,8 @@ class ErrandDecisionsIT extends AbstractAppTest {
 	 */
 	@Test
 	void test12_deleteErrandDecision() {
+		jdbcTemplate.update("update measure set decision_id = ? where id = ?", DECISION_ID, MEASURE_ID);
+
 		setupCall()
 			.withServicePath(DECISION_PATH)
 			.withHttpMethod(DELETE)
@@ -233,7 +236,10 @@ class ErrandDecisionsIT extends AbstractAppTest {
 		assertThat(decisionRepository.existsById(DECISION_ID)).isFalse();
 		assertThat(terms()).as("the terms went with the decision").isZero();
 		assertThat(parametersWithKey("decisionForm")).as("and so did its parameter").isZero();
+		assertThat(attachmentLinks()).as("the link went").isZero();
 		assertThat(attachments(LINKED_ATTACHMENT_ID)).as("the attachment stayed on the errand").isOne();
+		assertThat(jdbcTemplate.queryForObject("select decision_id from measure where id = ?", String.class, MEASURE_ID))
+			.as("the measure stayed, without the reference").isNull();
 	}
 
 	@Test
