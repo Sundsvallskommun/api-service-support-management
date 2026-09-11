@@ -65,8 +65,9 @@ class ProcessEventRollbackTest {
 	@DisplayName("Verification that an errand change is not committed when the publication of its event fails, even though the caller swallows the exception")
 	void anErrandChangeIsNotCommittedWhenThePublicationFails() {
 		when(outboxRepositoryMock.save(any())).thenThrow(new DataIntegrityViolationException("the row could not be written"));
+		final var transaction = new TransactionTemplate(transactionManager);
 
-		assertThatExceptionOfType(UnexpectedRollbackException.class).isThrownBy(() -> new TransactionTemplate(transactionManager).executeWithoutResult(_ -> {
+		assertThatExceptionOfType(UnexpectedRollbackException.class).isThrownBy(() -> transaction.executeWithoutResult(_ -> {
 			final var errand = errandsRepository.findById(ERRAND_ID).orElseThrow();
 			errand.setTitle(NEW_TITLE);
 			errandsRepository.saveAndFlush(errand);

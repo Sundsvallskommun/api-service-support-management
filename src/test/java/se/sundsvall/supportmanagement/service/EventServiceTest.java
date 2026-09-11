@@ -49,6 +49,7 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -449,9 +450,21 @@ class EventServiceTest {
 		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
 		final var command = new ProcessCommand("alkt-tillsyn", null);
 
-		service.createErrandEvent(EventType.CREATE, "message", entity, null, null, false, PROCESS, command);
+		service.createProcessCommandEvent(EventType.CREATE, "message", entity, false, PROCESS, command);
 
 		verify(processEventPublisherMock).publish(entity, EventType.CREATE, PROCESS, "executingUserId", null, command);
+	}
+
+	@Test
+	@DisplayName("Verification that a command is logged on the errand like any other event, but points at no revision since a command changes nothing on the errand")
+	void aCommandIsLoggedWithoutARevision() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createProcessCommandEvent(EventType.UPDATE, "message", entity, false, SIGNAL, new ProcessCommand(null, "granskning-godkand"));
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getHistoryReference()).isNull();
+		assertThat(eventCaptor.getValue().getMetadata()).extracting(Metadata::getKey).doesNotContain("CurrentRevision", "CurrentVersion", "PreviousRevision", "PreviousVersion");
 	}
 
 	@Test

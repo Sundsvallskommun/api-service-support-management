@@ -198,7 +198,7 @@ Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_eve
 
 ### 2.2 När en händelse blir en outbox-rad
 
-`ProcessEventPublisher.publish(errandEntity, eventType, eventSubType, executedBy, requestGroupId)` anropas sist i `EventService.createErrandEvent` och kör i samma transaktion. `sendNotification`-flaggan spelar ingen roll här — det här är inga notiser till handläggare, utan meddelanden till en process.
+`ProcessEventPublisher.publish(errandEntity, eventType, eventSubType, executedBy, requestGroupId, command)` anropas sist i `EventService.createErrandEvent` och kör i samma transaktion. Kommandona i §5.9 och §5.10 går in bredvid, genom `EventService.createProcessCommandEvent`: ett kommando ändrar inte ärendet, så händelsen pekar inte på någon revision, och det som kommandot bär — den valda nyckeln eller signalens namn — följer med till publiceringen. `sendNotification`-flaggan spelar ingen roll här — det här är inga notiser till handläggare, utan meddelanden till en process.
 
 ```
 1. PROCESS_CONSUMER för (municipalityId, namespace)?      nej -> return

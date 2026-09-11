@@ -48,14 +48,15 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  * <p>
  * Hung last in {@link EventService#createErrandEvent}, which is the one passage every errand event goes through -
  * the email intake and the web messages included, neither of which writes a revision. Hanging it off the errand service
- * and comparing revisions instead would have left the process blind to exactly those.
+ * and comparing revisions instead would have left the process blind to exactly those. A command comes in beside it,
+ * through {@link EventService#createProcessCommandEvent}.
  * <p>
  * The rule it applies, step by step:
  *
  * <pre>
  * 1. process consumer for (municipalityId, namespace)?   no   -&gt; return
  * 2. X-Trigger-Process: false, from a non ad identity?   yes  -&gt; return                 (loop guard, layer 1)
- *                    commands (PROCESS, SIGNAL) skip steps 3 and 4
+ *                    commands (PROCESS, SIGNAL) skip steps 2, 3 and 4
  * 3. delivered events for the errand in the window?      over -&gt; error entry, return    (layer 3)
  * 4. event sub type among the process triggers?          no   -&gt; return                 (layer 2)
  * 5. process key: the command's own first, then the instance's, and the labels last
