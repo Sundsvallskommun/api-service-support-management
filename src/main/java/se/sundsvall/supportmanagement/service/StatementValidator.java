@@ -26,15 +26,22 @@ public class StatementValidator {
 	private static final String ACTIVE_REQUIRES_SENT_AT = "A statement cannot be ACTIVE without sentAt being set";
 	private static final String COMPLETED_REQUIRES_OUTCOME = "A statement cannot be COMPLETED without an outcome";
 	private static final String COMPLETED_REQUIRES_RESPONDED_AT = "A statement with outcome '%s' cannot be COMPLETED without respondedAt being set";
+	private static final String OUTCOME_REQUIRES_COMPLETED = "A statement cannot have an outcome while it is %s";
 
 	/**
 	 * Rejects a statement whose life cycle does not add up.
+	 * <p>
+	 * An outcome belongs to a completed statement only. A patch cannot clear a value, so a statement that has been given
+	 * one stays COMPLETED - which is what the life cycle says: a statement is withdrawn before it is answered, not after.
 	 *
 	 * @param entity the statement as it would be stored.
 	 */
 	public void validate(final StatementEntity entity) {
 		if ((entity.getStatus() == ACTIVE) && (entity.getSentAt() == null)) {
 			throw Problem.valueOf(BAD_REQUEST, ACTIVE_REQUIRES_SENT_AT);
+		}
+		if ((entity.getStatus() != COMPLETED) && (entity.getOutcome() != null)) {
+			throw Problem.valueOf(BAD_REQUEST, OUTCOME_REQUIRES_COMPLETED.formatted(entity.getStatus()));
 		}
 		if (entity.getStatus() == COMPLETED) {
 			validateCompleted(entity);

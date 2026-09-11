@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
@@ -9,6 +11,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.StatementOutcom
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 
 class StatementValidatorTest {
 
@@ -76,6 +79,23 @@ class StatementValidatorTest {
 		assertThatCode(() -> validator.validate(StatementEntity.create()
 			.withStatus(ItemStatus.COMPLETED)
 			.withOutcome(StatementOutcome.NO_RESPONSE))).doesNotThrowAnyException();
+	}
+
+	/**
+	 * Only an answered statement has an outcome: one drafted, sent or withdrawn has not been answered yet, and one that
+	 * has been answered cannot be moved back out of COMPLETED with its outcome still on it.
+	 */
+	@ParameterizedTest
+	@EnumSource(value = ItemStatus.class, names = "COMPLETED", mode = EXCLUDE)
+	void anOutcomeRequiresCompleted(final ItemStatus status) {
+
+		// Act & Assert
+		assertThatThrownBy(() -> validator.validate(StatementEntity.create()
+			.withStatus(status)
+			.withSentAt(now())
+			.withOutcome(StatementOutcome.SUPPORTS)))
+			.isInstanceOf(Problem.class)
+			.hasMessageContaining("A statement cannot have an outcome while it is " + status);
 	}
 
 	@Test
