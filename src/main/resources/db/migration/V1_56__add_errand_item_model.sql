@@ -77,6 +77,9 @@ create index if not exists idx_investigation_errand_id
 create index if not exists idx_investigation_ns_status
     on investigation (municipality_id, namespace, status);
 
+create index if not exists idx_investigation_due_at
+    on investigation (due_at);
+
 create table if not exists investigation_section (
     id               varchar(255) not null,
     investigation_id varchar(255) not null,
@@ -144,6 +147,9 @@ create index if not exists idx_decision_ns_outcome
 
 create index if not exists idx_decision_valid_to
     on decision (valid_to);
+
+create index if not exists idx_decision_due_at
+    on decision (due_at);
 
 create table if not exists decision_term (
     id          varchar(255) not null,

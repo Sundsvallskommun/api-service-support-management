@@ -44,7 +44,8 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
 	indexes = {
 		@Index(name = "idx_decision_errand_id", columnList = "errand_id"),
 		@Index(name = "idx_decision_ns_outcome", columnList = "municipality_id,namespace,outcome"),
-		@Index(name = "idx_decision_valid_to", columnList = "valid_to")
+		@Index(name = "idx_decision_valid_to", columnList = "valid_to"),
+		@Index(name = "idx_decision_due_at", columnList = "due_at")
 	})
 @AssociationOverride(name = "errandEntity",
 	joinColumns = @JoinColumn(name = "errand_id", nullable = false),

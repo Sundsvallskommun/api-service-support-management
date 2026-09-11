@@ -35,7 +35,8 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
 @Table(name = "investigation",
 	indexes = {
 		@Index(name = "idx_investigation_errand_id", columnList = "errand_id"),
-		@Index(name = "idx_investigation_ns_status", columnList = "municipality_id,namespace,status")
+		@Index(name = "idx_investigation_ns_status", columnList = "municipality_id,namespace,status"),
+		@Index(name = "idx_investigation_due_at", columnList = "due_at")
 	})
 @AssociationOverride(name = "errandEntity",
 	joinColumns = @JoinColumn(name = "errand_id", nullable = false),

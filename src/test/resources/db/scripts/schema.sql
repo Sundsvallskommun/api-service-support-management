@@ -977,6 +977,9 @@
     create index idx_decision_valid_to 
        on decision (valid_to);
 
+    create index idx_decision_due_at 
+       on decision (due_at);
+
     create index idx_decision_attachment_decision_id 
        on decision_attachment (decision_id);
 
@@ -1126,6 +1129,9 @@
 
     create index idx_investigation_ns_status 
        on investigation (municipality_id, namespace, status);
+
+    create index idx_investigation_due_at 
+       on investigation (due_at);
 
     create index idx_investigation_attachment_investigation_id 
        on investigation_attachment (investigation_id);
