@@ -26,6 +26,7 @@ class ErrandAccessIT extends AbstractAppTest {
 
 	private static final String UNRESTRICTED_ERRAND = "/2281/NAMESPACE-1/errands/ec677eb3-604c-4935-bff7-f8f0b500c8f4/access";
 	private static final String ACCESS_CONTROLLED_ERRAND = "/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/access";
+	private static final String RESOURCE_CONTROLLED_ERRAND = "/2506/NAMESPACE-2507/errands/9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b/access";
 
 	/**
 	 * A namespace that has not switched access control on restricts nobody, which is reported as every field and every
@@ -93,6 +94,25 @@ class ErrandAccessIT extends AbstractAppTest {
 			.withServicePath("/2281/NAMESPACE-1/errands/f8f0b500-c8f4-4935-bff7-ec677eb3604c/access")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A first line officer of a namespace weighing resource grants, whose labels reach the errand at read while the
+	 * access mapper grants them the messages of its conversations at read/write.
+	 * <p>
+	 * The errand is reported at read, since no grant vouches for writing the errand itself, and the resource at
+	 * read/write, which is what the endpoint serving it accepts. Only the resources the access mapper grants are
+	 * reported at all - the rest are out of reach whatever the labels say.
+	 */
+	@Test
+	void test07_resourceGrantCarriesTheWrite() {
+		setupCall()
+			.withServicePath(RESOURCE_CONTROLLED_ERRAND)
+			.withHttpMethod(GET)
+			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 

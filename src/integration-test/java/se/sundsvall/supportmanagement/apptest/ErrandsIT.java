@@ -583,4 +583,19 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(BAD_REQUEST)
 			.sendRequest();
 	}
+
+	/**
+	 * The other half of the pair {@code ErrandCommunicationIT} holds: a resource grant carrying the write of one resource
+	 * of an errand leaves the errand itself refused, since no grant vouches for writing what the labels are held against.
+	 */
+	@Test
+	void test38_patchErrandOnAnErrandHeldAtReadIsNotAllowed() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2507/errands/9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b")
+			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequestAndVerifyResponse();
+	}
 }

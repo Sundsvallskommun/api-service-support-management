@@ -1,0 +1,101 @@
+{
+	"level": "R",
+	"fields": [
+		{
+			"field": "id"
+		},
+		{
+			"field": "errandNumber"
+		},
+		{
+			"field": "title"
+		},
+		{
+			"field": "status"
+		},
+		{
+			"field": "resolution"
+		},
+		{
+			"field": "channel"
+		},
+		{
+			"field": "created"
+		},
+		{
+			"field": "modified"
+		},
+		{
+			"field": "touched"
+		},
+		{
+			"field": "priority"
+		},
+		{
+			"field": "description"
+		},
+		{
+			"field": "classification"
+		},
+		{
+			"field": "reporterUserId"
+		},
+		{
+			"field": "assignedUserId"
+		},
+		{
+			"field": "assignedGroupId"
+		},
+		{
+			"field": "businessRelated"
+		},
+		{
+			"field": "suspension"
+		},
+		{
+			"field": "contactReason"
+		},
+		{
+			"field": "contactReasonDescription"
+		},
+		{
+			"field": "escalationEmail"
+		},
+		{
+			"field": "labels"
+		},
+		{
+			"field": "stakeholders"
+		},
+		{
+			"field": "measures"
+		},
+		{
+			"field": "activeNotifications"
+		},
+		{
+			"field": "version"
+		},
+		{
+			"field": "parameters",
+			"allKeys": true,
+			"keys": []
+		},
+		{
+			"field": "jsonParameters",
+			"allKeys": true,
+			"keys": []
+		},
+		{
+			"field": "externalTags",
+			"allKeys": true,
+			"keys": []
+		}
+	],
+	"resources": [
+		{
+			"resource": "errand/conversation/message",
+			"level": "RW"
+		}
+	]
+}

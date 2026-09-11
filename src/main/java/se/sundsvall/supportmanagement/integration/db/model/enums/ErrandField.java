@@ -36,16 +36,22 @@ public enum ErrandField {
 	MEASURES("measures", false),
 	ACTIVE_NOTIFICATIONS("activeNotifications", false),
 	VERSION("version", false),
-	PARAMETERS("parameters", true),
-	JSON_PARAMETERS("jsonParameters", true),
+	PARAMETERS("parameters", true, ProtectedResource.PARAMETER),
+	JSON_PARAMETERS("jsonParameters", true, ProtectedResource.JSON_PARAMETER),
 	EXTERNAL_TAGS("externalTags", true);
 
 	private final String propertyName;
 	private final boolean keyed;
+	private final ProtectedResource writeResource;
 
 	ErrandField(final String propertyName, final boolean keyed) {
+		this(propertyName, keyed, null);
+	}
+
+	ErrandField(final String propertyName, final boolean keyed, final ProtectedResource writeResource) {
 		this.propertyName = propertyName;
 		this.keyed = keyed;
+		this.writeResource = writeResource;
 	}
 
 	/**
@@ -57,5 +63,14 @@ public enum ErrandField {
 
 	public boolean isKeyed() {
 		return keyed;
+	}
+
+	/**
+	 * The resource a write to this field is guarded on where it has an endpoint of its own, null for the fields only
+	 * ever written through the errand. What the caller may do with such a field follows that resource rather than the
+	 * errand, since that is what the endpoint accepting the write is guarded on.
+	 */
+	public ProtectedResource getWriteResource() {
+		return writeResource;
 	}
 }
