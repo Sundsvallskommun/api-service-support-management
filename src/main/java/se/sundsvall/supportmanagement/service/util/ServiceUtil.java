@@ -72,6 +72,19 @@ public class ServiceUtil {
 	}
 
 	/**
+	 * Who wrote the request, whoever they are - an ad account when a caseworker writes, a consumer name when a process
+	 * does. Unlike {@link #getAdUser()} this does not insist on a person, since the handling artefacts are written by
+	 * both and recording only one of them would leave half the writes unattributed.
+	 *
+	 * @return the identity of the caller, or null when the request carries none.
+	 */
+	public static String getCallerIdentity() {
+		return ofNullable(Identifier.get())
+			.map(Identifier::getValue)
+			.orElse(null);
+	}
+
+	/**
 	 * Signals if sent in identifier belongs to the user making the request, which is what ownership of a subscriber, a
 	 * subscription or a notification is decided on. The access mapper says nothing about ownership - being allowed to
 	 * reach an errand does not make someone the owner of another user's settings for it.

@@ -1,0 +1,10 @@
+[
+	{
+		"key": "decisionForm",
+		"schemaId": "test-schema-1.0",
+		"value": {
+			"answer": "pending"
+		},
+		"version": 0
+	}
+]

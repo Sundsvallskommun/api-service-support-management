@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import se.sundsvall.supportmanagement.api.model.metadata.AttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
@@ -19,6 +20,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
@@ -592,6 +594,51 @@ public class MetadataMapper {
 		ofNullable(measureType.getMeasureGroup()).ifPresent(entity::setMeasureGroup);
 		ofNullable(measureType.getSortOrder()).ifPresent(entity::setSortOrder);
 		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
+
+		return entity;
+	}
+
+	// =================================================================
+	// AttachmentPurpose operations
+	// =================================================================
+
+	public static AttachmentPurpose toAttachmentPurpose(final AttachmentPurposeEntity entity) {
+		return ofNullable(entity)
+			.map(e -> AttachmentPurpose.create()
+				.withId(e.getId())
+				.withCreated(e.getCreated())
+				.withModified(e.getModified())
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName())
+				.withDeprecated(e.isDeprecated())
+				.withSortOrder(e.getSortOrder()))
+			.orElse(null);
+	}
+
+	public static AttachmentPurposeEntity toAttachmentPurposeEntity(final String namespace, final String municipalityId, final AttachmentPurpose attachmentPurpose) {
+		if (anyNull(namespace, municipalityId, attachmentPurpose)) {
+			return null;
+		}
+
+		final var entity = AttachmentPurposeEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(attachmentPurpose.getName())
+			.withDisplayName(attachmentPurpose.getDisplayName())
+			.withSortOrder(attachmentPurpose.getSortOrder())
+			.withNamespace(namespace);
+		ofNullable(attachmentPurpose.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
+	}
+
+	public static AttachmentPurposeEntity updateAttachmentPurposeEntity(final AttachmentPurposeEntity entity, final AttachmentPurpose attachmentPurpose) {
+		if (isNull(attachmentPurpose)) {
+			return entity;
+		}
+
+		ofNullable(attachmentPurpose.getName()).ifPresent(entity::setName);
+		ofNullable(attachmentPurpose.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(attachmentPurpose.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(attachmentPurpose.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}

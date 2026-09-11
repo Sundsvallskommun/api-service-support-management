@@ -399,7 +399,8 @@ VALUES (1, '2281', 'NAMESPACE-1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:5
        (2, '2281', 'CONTACTCENTER', '2024-06-12 15:23:59.999', null),
        (3, '2281', 'NAMESPACE-3', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
        (4, '2262', 'CONTACTCENTER', '2024-06-12 15:24:00.001', null),
-       (5, '2506', 'NAMESPACE-2506', '2024-06-12 15:24:00.001', null);
+       (5, '2506', 'NAMESPACE-2506', '2024-06-12 15:24:00.001', null),
+       (6, '2281', 'NAMESPACE-ARTEFACT', '2024-01-10 12:00:00.000', null);
 
 INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
 VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
@@ -436,7 +437,14 @@ VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
        (5, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
        (5, 'NOTIFY_REPORTER', 'true', 'BOOLEAN'),
        (5, 'ROLE_BASED_MAPPING', 'true', 'BOOLEAN'),
-       (5, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN');
+       (5, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (6, 'DISPLAY_NAME', 'Artefact namespace', 'STRING'),
+       (6, 'SHORT_CODE', 'AR', 'STRING'),
+       (6, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
+       (6, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (6, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (6, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (6, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN');
 
 INSERT INTO namespace_config_access_grant(namespace_config_id, `scope`, `type`, `value`, access_level)
 VALUES (5, 'LIMITED', 'RESOURCE', 'COMMUNICATION', null),
@@ -642,6 +650,151 @@ VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 'GROUP-A', 1,
 -- -----------------------------------
 -- Measure (errand measures)
 -- -----------------------------------
-INSERT INTO measure(id, errand_id, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, rework_goal, rework_description, created, modified)
-VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, null, null, '2024-01-10 12:00:00.000', null),
-       ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', null, null, '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');
+INSERT INTO measure(id, errand_id, municipality_id, namespace, status, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, rework_goal, rework_description, created, modified)
+VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'ACTIVE', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, null, null, '2024-01-10 12:00:00.000', null),
+       ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'COMPLETED', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', null, null, '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');
+
+-- -----------------------------------
+-- An errand of its own for the handling artefacts.
+--
+-- Kept out of NAMESPACE-1 on purpose: the tests there count what an errand carries, and seeding statements,
+-- decisions and their attachments onto the shared errand would move those numbers for tests about something else.
+-- -----------------------------------
+INSERT INTO errand(municipality_id, id, namespace, priority, status, title, type, created, errand_number, business_related, touched)
+VALUES ('2281', 'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', 'LOW', 'STATUS-1', 'Ansökan om serveringstillstånd', 'TYPE-1',
+        '2024-01-10 12:00:00.000', 'AR-24010001', false, '2024-01-10 12:00:00.000');
+
+-- -----------------------------------
+-- Attachment purpose (metadata)
+-- -----------------------------------
+INSERT INTO attachment_purpose(id, name, display_name, sort_order, deprecated, namespace, municipality_id, created)
+VALUES ('f6000000-0000-0000-0000-000000000001', 'SUPPORTING', 'Underlag', 1, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('f6000000-0000-0000-0000-000000000002', 'RESPONSE', 'Inkommen handling', 2, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('f6000000-0000-0000-0000-000000000003', 'DECISION', 'Beslutshandling', 3, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('f6000000-0000-0000-0000-000000000004', 'APPENDIX', 'Bilaga', 4, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('f6000000-0000-0000-0000-000000000005', 'PROTOCOL', 'Protokoll', 5, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000');
+
+-- -----------------------------------
+-- An attachment of its own for the cascade tests.
+--
+-- The attachments seeded for NAMESPACE-1 share their data rows with communications, and removing one of those takes
+-- the file a communication still points at. A test about what happens when an attachment goes needs one nothing
+-- else holds.
+-- -----------------------------------
+INSERT INTO attachment_data(id, file)
+VALUES ('100', '68656a');
+
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id)
+VALUES ('a5000000-0000-0000-0000-000000000001', '100', 'yttrande.txt', 'text/plain',
+        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000001');
+
+-- -----------------------------------
+-- Statement (remiss)
+-- -----------------------------------
+INSERT INTO statement(id, errand_id, municipality_id, namespace, type, status, title, description, due_at,
+                             counterparty_name, counterparty_external_id, counterparty_external_id_type, counterparty_reference,
+                             question, sent_at, outcome, response_text, created_by, created, version)
+VALUES ('f1000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', '2281', 'NAMESPACE-ARTEFACT', 'REFERRAL', 'ACTIVE',
+        'Remiss till miljökontoret', 'Remiss avseende serveringstillstånd', '2024-03-01 12:00:00.000',
+        'Miljökontoret', '2120002411', 'ORGANIZATION_NUMBER', 'MK-2024-0042',
+        'Finns det hinder mot serveringstillstånd på adressen?', '2024-01-15 10:00:00.000', null, null, 'joe01doe', '2024-01-10 12:00:00.000', 0),
+       ('f1000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', '2281', 'NAMESPACE-ARTEFACT', 'REFERRAL', 'DRAFT',
+        'Remiss till räddningstjänsten', null, null,
+        'Räddningstjänsten', null, null, null,
+        'Uppfyller lokalen brandkraven?', null, null, null, 'joe01doe', '2024-01-10 12:00:00.000', 0);
+
+-- -----------------------------------
+-- Investigation (utredning) and its sections
+-- -----------------------------------
+INSERT INTO investigation(id, errand_id, municipality_id, namespace, type, status, title, investigator_user_id,
+                                 started_at, summary, conclusion, recommendation, created_by, created, version)
+VALUES ('f2000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', '2281', 'NAMESPACE-ARTEFACT', 'SUITABILITY', 'ACTIVE',
+        'Utredning av personlig lämplighet', 'joe01doe', '2024-01-16 09:00:00.000',
+        'Kontroll av ekonomi och lokal har genomförts.', null, null, 'joe01doe', '2024-01-10 12:00:00.000', 0);
+
+INSERT INTO investigation_section(id, investigation_id, section_key, heading, sort_order, assessment, text)
+VALUES ('f3000000-0000-0000-0000-000000000001', 'f2000000-0000-0000-0000-000000000001', 'financial', 'Ekonomisk skötsamhet', 1, 'APPROVED',
+        'Inga betalningsanmärkningar finns registrerade.'),
+       ('f3000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'premises', 'Lokalen', 2, 'PENDING', null);
+
+-- -----------------------------------
+-- Decision (beslut) and its terms
+-- -----------------------------------
+INSERT INTO decision(id, errand_id, municipality_id, namespace, type, status, title, outcome, method, decided_by,
+                            decided_by_role, decided_at, legal_basis, delegation_reference, justification, appealable,
+                            valid_from, valid_to, investigation_id, created_by, created, version)
+VALUES ('f4000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', '2281', 'NAMESPACE-ARTEFACT', 'PERMIT', 'COMPLETED',
+        'Beslut om serveringstillstånd', 'APPROVAL', 'MANUAL', 'joe01doe',
+        'DELEGATE', '2024-02-01 10:12:00.000', '8 kap. 12 § alkohollagen', '3.2.1', 'Sökanden uppfyller kraven på lämplighet.', true,
+        '2024-03-01', '2025-02-28', 'f2000000-0000-0000-0000-000000000001', 'joe01doe', '2024-01-10 12:00:00.000', 0);
+
+INSERT INTO decision_term(id, decision_id, sort_order, category, text)
+VALUES ('f5000000-0000-0000-0000-000000000001', 'f4000000-0000-0000-0000-000000000001', 1, 'serveringstid', 'Servering får ske mellan 11.00 och 01.00.'),
+       ('f5000000-0000-0000-0000-000000000002', 'f4000000-0000-0000-0000-000000000001', 2, 'brandskydd', 'Högst 120 gäster får vistas i lokalen samtidigt.');
+
+-- -----------------------------------
+-- Attachment links
+-- -----------------------------------
+INSERT INTO statement_attachment(id, statement_id, attachment_id, sort_order, created, created_by)
+VALUES ('f7000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001',
+        1, '2024-01-15 10:00:00.000', 'joe01doe');
+
+-- -----------------------------------
+-- JSON parameter links
+--
+-- The parameter row hangs on the errand like any other; the link is what makes it the content of the statement.
+-- -----------------------------------
+-- One the errand owns itself, so that a test can tell the two kinds apart.
+INSERT INTO json_parameter(id, errand_id, parameter_key, schema_id, value, version)
+VALUES ('f8000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', 'formData', 'test-schema-1.0', '{"firstName":"John"}', 0);
+
+INSERT INTO json_parameter(id, errand_id, parameter_key, schema_id, value, version)
+VALUES ('f8000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'responseForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
+
+INSERT INTO statement_json_parameter(id, statement_id, json_parameter_id)
+VALUES ('f9000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'f8000000-0000-0000-0000-000000000001');
+
+-- -----------------------------------
+-- What the link and JSON parameter operations of the other three artefacts work on: the attachment above linked to
+-- each of them, one parameter each, and a second attachment linked to nothing.
+-- -----------------------------------
+INSERT INTO attachment_data(id, file)
+VALUES ('110', '68656a');
+
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id)
+VALUES ('a5000000-0000-0000-0000-000000000002', '110', 'protokoll.txt', 'text/plain',
+        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000005');
+
+INSERT INTO measure(id, errand_id, municipality_id, namespace, status, type, title, created_by, created, version)
+VALUES ('ee000000-0000-0000-0000-000000000200', 'a0000000-0000-0000-0000-000000000001', '2281', 'NAMESPACE-ARTEFACT', 'ACTIVE', 'MEASURE-1',
+        'Tillsynsbesök', 'joe01doe', '2024-01-10 12:00:00.000', 0);
+
+INSERT INTO investigation_attachment(id, investigation_id, attachment_id, sort_order, created, created_by)
+VALUES ('f7000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001',
+        1, '2024-01-15 10:00:00.000', 'joe01doe');
+
+INSERT INTO decision_attachment(id, decision_id, attachment_id, sort_order, created, created_by)
+VALUES ('f7000000-0000-0000-0000-000000000003', 'f4000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001',
+        1, '2024-01-15 10:00:00.000', 'joe01doe');
+
+INSERT INTO measure_attachment(id, measure_id, attachment_id, sort_order, created, created_by)
+VALUES ('f7000000-0000-0000-0000-000000000004', 'ee000000-0000-0000-0000-000000000200', 'a5000000-0000-0000-0000-000000000001',
+        1, '2024-01-15 10:00:00.000', 'joe01doe');
+
+INSERT INTO json_parameter(id, errand_id, parameter_key, schema_id, value, version)
+VALUES ('f8000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', 'investigationForm', 'test-schema-1.0', '{"answer":"pending"}', 0),
+       ('f8000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000001', 'sectionForm', 'test-schema-1.0', '{"answer":"pending"}', 0),
+       ('f8000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000001', 'decisionForm', 'test-schema-1.0', '{"answer":"pending"}', 0),
+       ('f8000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000001', 'measureForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
+
+INSERT INTO investigation_json_parameter(id, investigation_id, json_parameter_id)
+VALUES ('f9000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'f8000000-0000-0000-0000-000000000003');
+
+INSERT INTO investigation_section_json_parameter(id, investigation_section_id, json_parameter_id)
+VALUES ('f9000000-0000-0000-0000-000000000003', 'f3000000-0000-0000-0000-000000000002', 'f8000000-0000-0000-0000-000000000004');
+
+INSERT INTO decision_json_parameter(id, decision_id, json_parameter_id)
+VALUES ('f9000000-0000-0000-0000-000000000004', 'f4000000-0000-0000-0000-000000000001', 'f8000000-0000-0000-0000-000000000005');
+
+INSERT INTO measure_json_parameter(id, measure_id, json_parameter_id)
+VALUES ('f9000000-0000-0000-0000-000000000005', 'ee000000-0000-0000-0000-000000000200', 'f8000000-0000-0000-0000-000000000006');

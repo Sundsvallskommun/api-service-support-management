@@ -87,13 +87,13 @@ class NamespaceConfigTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl").satisfies(namespaceConfig -> {
+		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand").satisfies(namespaceConfig -> {
 			assertThat(namespaceConfig.isAccessControl()).isFalse();
 			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
 			assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
 			assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
 		});
-		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl").satisfies(namespaceConfig -> {
+		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand").satisfies(namespaceConfig -> {
 			assertThat(namespaceConfig.isAccessControl()).isFalse();
 			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
 			assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();

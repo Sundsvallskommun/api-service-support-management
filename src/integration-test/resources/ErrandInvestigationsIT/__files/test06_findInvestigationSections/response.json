@@ -1,0 +1,17 @@
+[
+	{
+		"id": "f3000000-0000-0000-0000-000000000001",
+		"sectionKey": "financial",
+		"heading": "Ekonomisk skötsamhet",
+		"sortOrder": 1,
+		"assessment": "APPROVED",
+		"text": "Inga betalningsanmärkningar finns registrerade."
+	},
+	{
+		"id": "f3000000-0000-0000-0000-000000000002",
+		"sectionKey": "premises",
+		"heading": "Lokalen",
+		"sortOrder": 2,
+		"assessment": "PENDING"
+	}
+]

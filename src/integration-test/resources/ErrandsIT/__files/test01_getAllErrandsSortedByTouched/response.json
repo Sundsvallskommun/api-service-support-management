@@ -521,6 +521,8 @@
 			"measures": [
 				{
 					"id": "ee000000-0000-0000-0000-000000000100",
+					"status": "ACTIVE",
+					"version": 0,
 					"responsibleUser": "joe01doe",
 					"type": "MEASURE-1",
 					"plannedStart": "2024-01-15T10:00:00+01:00",
@@ -533,6 +535,8 @@
 				},
 				{
 					"id": "ee000000-0000-0000-0000-000000000101",
+					"status": "COMPLETED",
+					"version": 0,
 					"responsibleUser": "jane11dane",
 					"type": "MEASURE-2",
 					"plannedStart": "2024-03-01T08:00:00+01:00",

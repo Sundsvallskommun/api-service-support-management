@@ -1,0 +1,42 @@
+[
+	{
+		"id": "f6000000-0000-0000-0000-000000000001",
+		"name": "SUPPORTING",
+		"displayName": "Underlag",
+		"sortOrder": 1,
+		"deprecated": false,
+		"created": "2024-01-10T12:00:00+01:00"
+	},
+	{
+		"id": "f6000000-0000-0000-0000-000000000002",
+		"name": "RESPONSE",
+		"displayName": "Inkommen handling",
+		"sortOrder": 2,
+		"deprecated": false,
+		"created": "2024-01-10T12:00:00+01:00"
+	},
+	{
+		"id": "f6000000-0000-0000-0000-000000000003",
+		"name": "DECISION",
+		"displayName": "Beslutshandling",
+		"sortOrder": 3,
+		"deprecated": false,
+		"created": "2024-01-10T12:00:00+01:00"
+	},
+	{
+		"id": "f6000000-0000-0000-0000-000000000004",
+		"name": "APPENDIX",
+		"displayName": "Bilaga",
+		"sortOrder": 4,
+		"deprecated": false,
+		"created": "2024-01-10T12:00:00+01:00"
+	},
+	{
+		"id": "f6000000-0000-0000-0000-000000000005",
+		"name": "PROTOCOL",
+		"displayName": "Protokoll",
+		"sortOrder": 5,
+		"deprecated": false,
+		"created": "2024-01-10T12:00:00+01:00"
+	}
+]

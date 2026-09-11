@@ -38,6 +38,9 @@ public class ErrandAttachment {
 	@Schema(description = "SHA-256 hash (hex encoded) of the attachment's raw content", accessMode = READ_ONLY, examples = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 	private String hash;
 
+	@Schema(description = "What the attachment is for. Left out for an attachment without a purpose")
+	private ErrandAttachmentPurpose purpose;
+
 	public static ErrandAttachment create() {
 		return new ErrandAttachment();
 	}
@@ -120,17 +123,31 @@ public class ErrandAttachment {
 		return this;
 	}
 
+	public ErrandAttachmentPurpose getPurpose() {
+		return purpose;
+	}
+
+	public void setPurpose(final ErrandAttachmentPurpose purpose) {
+		this.purpose = purpose;
+	}
+
+	public ErrandAttachment withPurpose(final ErrandAttachmentPurpose purpose) {
+		this.purpose = purpose;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final ErrandAttachment that = (ErrandAttachment) o;
-		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(created, that.created) && Objects.equals(hash, that.hash);
+		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(created, that.created) && Objects.equals(hash, that.hash) && Objects
+			.equals(purpose, that.purpose);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, fileName, mimeType, channel, created, hash);
+		return Objects.hash(id, fileName, mimeType, channel, created, hash, purpose);
 	}
 
 	@Override
@@ -142,6 +159,7 @@ public class ErrandAttachment {
 			", channel='" + channel + '\'' +
 			", created=" + created +
 			", hash='" + hash + '\'' +
+			", purpose=" + purpose +
 			'}';
 	}
 }

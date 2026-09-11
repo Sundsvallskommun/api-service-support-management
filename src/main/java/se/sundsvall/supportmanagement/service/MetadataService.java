@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.metadata.AttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
@@ -25,6 +26,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -48,6 +51,8 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurpose;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurposeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReason;
@@ -65,6 +70,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRol
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateAttachmentPurposeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateExternalIdTypeEntity;
@@ -86,6 +92,8 @@ public class MetadataService {
 	private static final String PHASE = "Phase";
 	private static final String PHASE_TRANSITION = "PhaseTransition";
 	private static final String MEASURE_TYPE = "MeasureType";
+	private static final String ATTACHMENT_PURPOSE = "AttachmentPurpose";
+	private static final String ATTACHMENT_PURPOSE_IN_USE = "AttachmentPurpose '%s' cannot be deleted because it is referenced by one or more attachments";
 	private static final String ROLE = "Role";
 	private static final String STATUS = "Status";
 	private static final String SORT_ORDER = "sortOrder";
@@ -94,6 +102,8 @@ public class MetadataService {
 	private final ErrandsRepository errandsRepository;
 	private final ExternalIdTypeRepository externalIdTypeRepository;
 	private final MeasureTypeRepository measureTypeRepository;
+	private final AttachmentPurposeRepository attachmentPurposeRepository;
+	private final AttachmentRepository attachmentRepository;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final PhaseRepository phaseRepository;
 	private final RoleRepository roleRepository;
@@ -106,6 +116,8 @@ public class MetadataService {
 		final ErrandsRepository errandsRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
 		final MeasureTypeRepository measureTypeRepository,
+		final AttachmentPurposeRepository attachmentPurposeRepository,
+		final AttachmentRepository attachmentRepository,
 		final MetadataLabelRepository metadataLabelRepository,
 		final PhaseRepository phaseRepository,
 		final RoleRepository roleRepository,
@@ -116,6 +128,8 @@ public class MetadataService {
 		this.errandsRepository = errandsRepository;
 		this.externalIdTypeRepository = externalIdTypeRepository;
 		this.measureTypeRepository = measureTypeRepository;
+		this.attachmentPurposeRepository = attachmentPurposeRepository;
+		this.attachmentRepository = attachmentRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.phaseRepository = phaseRepository;
 		this.roleRepository = roleRepository;
@@ -137,6 +151,7 @@ public class MetadataService {
 			.withStatuses(findStatuses(namespace, municipalityId, Sort.unsorted()))
 			.withRoles(findRoles(namespace, municipalityId, Sort.unsorted()))
 			.withMeasureTypes(findMeasureTypes(namespace, municipalityId, null, Sort.unsorted()))
+			.withAttachmentPurposes(findAttachmentPurposes(namespace, municipalityId, Sort.unsorted()))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId, Sort.unsorted()))
 			.withContactReasons(findContactReasons(namespace, municipalityId, Sort.unsorted()))
 			.withPhases(findPhases(namespace, municipalityId));
@@ -664,5 +679,52 @@ public class MetadataService {
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {
 		return (Objects.isNull(sort) || sort.isUnsorted()) ? Sort.by(SORT_ORDER) : sort;
+	}
+
+	// =================================================================
+	// AttachmentPurpose operations
+	// =================================================================
+
+	public String createAttachmentPurpose(final String namespace, final String municipalityId, final AttachmentPurpose attachmentPurpose) {
+		if (attachmentPurposeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, attachmentPurpose.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, attachmentPurpose.getName(), namespace, municipalityId));
+		}
+
+		return attachmentPurposeRepository.save(toAttachmentPurposeEntity(namespace, municipalityId, attachmentPurpose)).getId();
+	}
+
+	public AttachmentPurpose getAttachmentPurpose(final String namespace, final String municipalityId, final String id) {
+		if (!attachmentPurposeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, id, namespace, municipalityId));
+		}
+
+		return toAttachmentPurpose(attachmentPurposeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
+	}
+
+	public List<AttachmentPurpose> findAttachmentPurposes(final String namespace, final String municipalityId, final Sort sort) {
+		return attachmentPurposeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
+			.stream()
+			.map(MetadataMapper::toAttachmentPurpose)
+			.toList();
+	}
+
+	public void deleteAttachmentPurpose(final String namespace, final String municipalityId, final String id) {
+		if (!attachmentPurposeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, id, namespace, municipalityId));
+		}
+
+		if (attachmentRepository.existsByPurposeId(id)) {
+			throw Problem.valueOf(BAD_REQUEST, ATTACHMENT_PURPOSE_IN_USE.formatted(id));
+		}
+
+		attachmentPurposeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public AttachmentPurpose updateAttachmentPurpose(final String namespace, final String municipalityId, final String id, final AttachmentPurpose attachmentPurpose) {
+		if (!attachmentPurposeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, id, namespace, municipalityId));
+		}
+		final var entity = updateAttachmentPurposeEntity(attachmentPurposeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), attachmentPurpose);
+		return toAttachmentPurpose(attachmentPurposeRepository.save(entity));
 	}
 }

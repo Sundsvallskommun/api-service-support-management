@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.metadata.AttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
@@ -19,6 +20,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -29,6 +32,7 @@ import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
@@ -68,6 +72,12 @@ class MetadataServiceTest {
 
 	@Mock
 	private MeasureTypeRepository measureTypeRepositoryMock;
+
+	@Mock
+	private AttachmentPurposeRepository attachmentPurposeRepositoryMock;
+
+	@Mock
+	private AttachmentRepository attachmentRepositoryMock;
 
 	@Mock
 	private MetadataLabelRepository metadataLabelRepositoryMock;
@@ -1938,5 +1948,207 @@ class MetadataServiceTest {
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(measureTypeRepositoryMock);
+	}
+
+	// =================================================================
+	// AttachmentPurpose tests
+	// =================================================================
+
+	@Test
+	void createAttachmentPurpose() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "RESPONSE";
+		final var id = "generated-id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.save(any())).thenReturn(AttachmentPurposeEntity.create().withId(id).withName(name));
+
+		// Call
+		final var result = metadataService.createAttachmentPurpose(namespace, municipalityId, AttachmentPurpose.create().withName(name).withDisplayName("Inkommen handling"));
+
+		// Verifications
+		assertThat(result).isEqualTo(id);
+		verify(attachmentPurposeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(attachmentPurposeRepositoryMock).save(any());
+	}
+
+	@Test
+	void createAttachmentPurposeDuplicate() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "RESPONSE";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
+
+		// Call
+		final var attachmentPurpose = AttachmentPurpose.create().withName(name);
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.createAttachmentPurpose(namespace, municipalityId, attachmentPurpose));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		verify(attachmentPurposeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void getAttachmentPurpose() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentPurposeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(AttachmentPurposeEntity.create().withId(id).withName("RESPONSE"));
+
+		// Call
+		final var result = metadataService.getAttachmentPurpose(namespace, municipalityId, id);
+
+		// Verifications
+		assertThat(result.getId()).isEqualTo(id);
+		assertThat(result.getName()).isEqualTo("RESPONSE");
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(attachmentPurposeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void getAttachmentPurposeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.getAttachmentPurpose(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void findAttachmentPurposes() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var entities = List.of(
+			AttachmentPurposeEntity.create().withName("SUPPORTING"),
+			AttachmentPurposeEntity.create().withName("RESPONSE"));
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(entities);
+
+		// Call
+		final var result = metadataService.findAttachmentPurposes(namespace, municipalityId, Sort.unsorted());
+
+		// Verifications
+		assertThat(result).extracting(AttachmentPurpose::getName).containsExactly("SUPPORTING", "RESPONSE");
+		verify(attachmentPurposeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+	}
+
+	@Test
+	void deleteAttachmentPurpose() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+
+		// Call
+		metadataService.deleteAttachmentPurpose(namespace, municipalityId, id);
+
+		// Verifications
+		verify(attachmentRepositoryMock).existsByPurposeId(id);
+		verify(attachmentPurposeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	@Test
+	void deleteAttachmentPurposeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteAttachmentPurpose(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+		verifyNoInteractions(attachmentRepositoryMock);
+	}
+
+	/**
+	 * A purpose still given to an attachment stays, the way a label still on an errand does. Clearing it from the
+	 * attachments comes first.
+	 */
+	@Test
+	void deleteAttachmentPurposeInUse() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentRepositoryMock.existsByPurposeId(id)).thenReturn(true);
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteAttachmentPurpose(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("AttachmentPurpose 'id' cannot be deleted because it is referenced by one or more attachments");
+		verify(attachmentPurposeRepositoryMock, never()).deleteByIdAndNamespaceAndMunicipalityId(any(), any(), any());
+	}
+
+	@Test
+	void updateAttachmentPurpose() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = AttachmentPurposeEntity.create().withId(id).withName("RESPONSE").withDisplayName("Svar");
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentPurposeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(attachmentPurposeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateAttachmentPurpose(namespace, municipalityId, id, AttachmentPurpose.create().withDisplayName("Inkommen handling"));
+
+		// Verifications
+		assertThat(result.getDisplayName()).isEqualTo("Inkommen handling");
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(attachmentPurposeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(attachmentPurposeRepositoryMock).save(entity);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void updateAttachmentPurposeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var attachmentPurpose = AttachmentPurpose.create().withDisplayName("Inkommen handling");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateAttachmentPurpose(namespace, municipalityId, id, attachmentPurpose));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
 	}
 }

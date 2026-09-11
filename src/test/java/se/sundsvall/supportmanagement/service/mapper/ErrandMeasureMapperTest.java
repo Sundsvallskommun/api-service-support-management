@@ -4,15 +4,24 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasure;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasureEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasures;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasuresWithoutAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.updateMeasureEntity;
 
 class ErrandMeasureMapperTest {
@@ -203,6 +212,51 @@ class ErrandMeasureMapperTest {
 	}
 
 	@Test
+	void testToMeasureIncludesAttachments() {
+
+		// Arrange
+		final var entity = MeasureEntity.create().withId("id")
+			.withAttachments(List.of(MeasureAttachmentEntity.create().withAttachmentEntity(AttachmentEntity.create().withId("attachment-id")).withSortOrder(1)));
+
+		// Act
+		final var result = toMeasure(entity);
+
+		// Assert
+		assertThat(result.getAttachments()).extracting(ArtefactAttachment::getAttachmentId).containsExactly("attachment-id");
+	}
+
+	/**
+	 * The measure as the errand carries it never reaches for its attachments, which is what spares a listing of errands a
+	 * query per measure.
+	 */
+	@Test
+	void testToMeasuresWithoutAttachments() {
+
+		// Arrange
+		final var entity = spy(MeasureEntity.create().withId("id-1").withType("TYPE_1"));
+
+		// Act
+		final var result = toMeasuresWithoutAttachments(List.of(entity));
+
+		// Assert
+		assertThat(result).singleElement().satisfies(measure -> {
+			assertThat(measure.getId()).isEqualTo("id-1");
+			assertThat(measure.getAttachments()).isNull();
+		});
+		verify(entity, never()).getAttachments();
+	}
+
+	@Test
+	void testToMeasuresWithoutAttachmentsWithNull() {
+
+		// Act
+		final var result = toMeasuresWithoutAttachments(null);
+
+		// Assert
+		assertThat(result).isEmpty();
+	}
+
+	@Test
 	void testMergeMeasuresKeepsIdAndUpdatesInPlace() {
 
 		// Arrange
@@ -283,5 +337,55 @@ class ErrandMeasureMapperTest {
 
 		// Assert
 		assertThat(errandEntity.getMeasures()).isEmpty();
+	}
+
+	/**
+	 * A measure dropped by an errand patch takes its own business content with it, exactly as deleting it through the
+	 * measure resource does. The parameter row belongs to the errand, so nothing else would remove it - and the key it
+	 * held would go on blocking the next measure asking for it.
+	 */
+	@Test
+	void testMergeMeasuresRemovesTheParametersOfADroppedMeasure() {
+
+		// Arrange
+		final var owned = JsonParameterEntity.create().withId("parameter-1").withKey("inspectionReport");
+		final var errandOwned = JsonParameterEntity.create().withId("parameter-2").withKey("formData");
+
+		final var dropped = MeasureEntity.create().withId("dropped-id")
+			.withJsonParameterLinks(new ArrayList<>(List.of(MeasureJsonParameterEntity.create().withJsonParameterEntity(owned))));
+		final var retained = MeasureEntity.create().withId("retained-id");
+
+		final var errandEntity = ErrandEntity.create()
+			.withMeasures(new ArrayList<>(List.of(dropped, retained)))
+			.withJsonParameters(new ArrayList<>(List.of(owned, errandOwned)));
+
+		// Act
+		ErrandMeasureMapper.mergeMeasures(errandEntity, List.of(new Measure().withId("retained-id")));
+
+		// Assert
+		assertThat(errandEntity.getMeasures()).extracting(MeasureEntity::getId).containsExactly("retained-id");
+		assertThat(errandEntity.getJsonParameters())
+			.as("what the dropped measure owned went with it, what the errand owned itself stayed")
+			.extracting(JsonParameterEntity::getKey)
+			.containsExactly("formData");
+	}
+
+	@Test
+	void testMergeMeasuresLeavesParametersOfRetainedMeasuresAlone() {
+
+		// Arrange
+		final var owned = JsonParameterEntity.create().withId("parameter-1").withKey("inspectionReport");
+		final var retained = MeasureEntity.create().withId("retained-id")
+			.withJsonParameterLinks(new ArrayList<>(List.of(MeasureJsonParameterEntity.create().withJsonParameterEntity(owned))));
+
+		final var errandEntity = ErrandEntity.create()
+			.withMeasures(new ArrayList<>(List.of(retained)))
+			.withJsonParameters(new ArrayList<>(List.of(owned)));
+
+		// Act
+		ErrandMeasureMapper.mergeMeasures(errandEntity, List.of(new Measure().withId("retained-id")));
+
+		// Assert
+		assertThat(errandEntity.getJsonParameters()).extracting(JsonParameterEntity::getKey).containsExactly("inspectionReport");
 	}
 }

@@ -1,0 +1,12 @@
+{
+	"type": "PERMIT",
+	"status": "COMPLETED",
+	"title": "Interimistiskt beslut",
+	"outcome": "PARTIAL_APPROVAL",
+	"method": "MANUAL",
+	"decidedBy": "joe01doe",
+	"decidedByRole": "DELEGATE",
+	"decidedAt": "2024-02-10T10:00:00+01:00",
+	"legalBasis": "8 kap. 12 § alkohollagen",
+	"appealable": true
+}

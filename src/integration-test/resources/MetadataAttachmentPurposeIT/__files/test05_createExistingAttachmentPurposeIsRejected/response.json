@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "AttachmentPurpose 'RESPONSE' already exists in namespace 'NAMESPACE-ARTEFACT' for municipalityId '2281'"
+}

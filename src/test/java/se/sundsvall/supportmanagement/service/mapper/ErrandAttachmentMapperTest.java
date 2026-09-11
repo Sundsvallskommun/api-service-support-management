@@ -17,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -62,7 +64,7 @@ class ErrandAttachmentMapperTest {
 
 			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, null);
 
-			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "attachmentDataId");
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "purpose", "attachmentDataId", "statementLinks", "investigationLinks", "decisionLinks", "measureLinks");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
@@ -106,7 +108,7 @@ class ErrandAttachmentMapperTest {
 
 			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, FILE_NAME, fileSize, "MY_PAGES");
 
-			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "attachmentDataId");
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "purpose", "attachmentDataId", "statementLinks", "investigationLinks", "decisionLinks", "measureLinks");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
@@ -160,6 +162,29 @@ class ErrandAttachmentMapperTest {
 	@Test
 	void toErrandAttachmentFromNull() {
 		assertThat(ErrandAttachmentMapper.toErrandAttachment(null)).isNull();
+	}
+
+	@Test
+	void toErrandAttachmentMapsPurpose() {
+		final var entity = buildAttachmentEntity(buildErrandEntity())
+			.withPurpose(AttachmentPurposeEntity.create().withId("purposeId").withName("RESPONSE").withDisplayName("Inkommen handling").withNamespace("namespace"));
+
+		final var result = ErrandAttachmentMapper.toErrandAttachment(entity);
+
+		assertThat(result.getPurpose()).isEqualTo(ErrandAttachmentPurpose.create().withId("purposeId").withName("RESPONSE").withDisplayName("Inkommen handling"));
+	}
+
+	@Test
+	void toErrandAttachmentWithoutPurpose() {
+		final var result = ErrandAttachmentMapper.toErrandAttachment(buildAttachmentEntity(buildErrandEntity()));
+
+		assertThat(result.getId()).isEqualTo(ATTACHMENT_ID);
+		assertThat(result.getPurpose()).isNull();
+	}
+
+	@Test
+	void toErrandAttachmentPurposeFromNull() {
+		assertThat(ErrandAttachmentMapper.toErrandAttachmentPurpose(null)).isNull();
 	}
 
 	@Test

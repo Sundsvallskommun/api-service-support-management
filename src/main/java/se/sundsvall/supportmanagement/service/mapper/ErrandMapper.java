@@ -516,7 +516,7 @@ public final class ErrandMapper {
 	}
 
 	private static List<Measure> toMeasures(final List<MeasureEntity> entities) {
-		return ErrandMeasureMapper.toMeasures(entities);
+		return ErrandMeasureMapper.toMeasuresWithoutAttachments(entities);
 	}
 
 	private static List<ErrandAction> toErrandActions(final List<ErrandActionEntity> entities) {
