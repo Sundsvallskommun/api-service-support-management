@@ -96,7 +96,7 @@ class ErrandMeasureServiceArtefactTest {
 		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
 		errandWithMeasure(measureEntity);
 		final var file = new MockMultipartFile("attachment", "protokoll.pdf", "application/pdf", "content".getBytes());
-		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), any(), any(), any()))
+		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), any()))
 			.thenReturn(ATTACHMENT_ID);
 
 		// Act
@@ -113,7 +113,7 @@ class ErrandMeasureServiceArtefactTest {
 		// Arrange
 		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
 		errandWithMeasure(measureEntity);
-		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any(), any(), any()))
+		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any()))
 			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
 
 		// Act

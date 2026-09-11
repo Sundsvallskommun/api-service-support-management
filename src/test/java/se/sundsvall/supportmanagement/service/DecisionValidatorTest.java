@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -43,6 +44,10 @@ class DecisionValidatorTest {
 	@InjectMocks
 	private DecisionValidator validator;
 
+	/**
+	 * The identifier is bound to the thread, which the test classes run before this one share.
+	 */
+	@BeforeEach
 	@AfterEach
 	void clearIdentifier() {
 		Identifier.remove();

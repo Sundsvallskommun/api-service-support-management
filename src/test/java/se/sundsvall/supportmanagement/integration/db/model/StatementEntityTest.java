@@ -112,34 +112,21 @@ class StatementEntityTest {
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
-		assertThat(result.getId()).isEqualTo(id);
-		assertThat(result.getErrandEntity()).isEqualTo(errandEntity);
-		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(result.getNamespace()).isEqualTo(namespace);
-		assertThat(result.getType()).isEqualTo(type);
-		assertThat(result.getStatus()).isEqualTo(status);
-		assertThat(result.getTitle()).isEqualTo(title);
-		assertThat(result.getDescription()).isEqualTo(description);
-		assertThat(result.getDueAt()).isEqualTo(dueAt);
-		assertThat(result.getCompletedAt()).isEqualTo(completedAt);
-		assertThat(result.getCreatedBy()).isEqualTo(createdBy);
-		assertThat(result.getModifiedBy()).isEqualTo(modifiedBy);
-		assertThat(result.getCreated()).isEqualTo(created);
-		assertThat(result.getModified()).isEqualTo(modified);
-		assertThat(result.getVersion()).isEqualTo(version);
-		assertThat(result.getCounterpartyName()).isEqualTo(counterpartyName);
-		assertThat(result.getCounterpartyExternalId()).isEqualTo(counterpartyExternalId);
-		assertThat(result.getCounterpartyExternalIdType()).isEqualTo(counterpartyExternalIdType);
-		assertThat(result.getCounterpartyReference()).isEqualTo(counterpartyReference);
-		assertThat(result.getQuestion()).isEqualTo(question);
-		assertThat(result.getSentAt()).isEqualTo(sentAt);
-		assertThat(result.getRemindedAt()).isEqualTo(remindedAt);
-		assertThat(result.getRespondedAt()).isEqualTo(respondedAt);
-		assertThat(result.getOutcome()).isEqualTo(outcome);
-		assertThat(result.getResponseText()).isEqualTo(responseText);
-		assertThat(result.getCommunicationId()).isEqualTo(communicationId);
-		assertThat(result.getAttachments()).isEqualTo(attachments);
-		assertThat(result.getJsonParameterLinks()).isEqualTo(jsonParameterLinks);
+		assertThat(result)
+			.extracting(StatementEntity::getId, StatementEntity::getErrandEntity, StatementEntity::getMunicipalityId, StatementEntity::getNamespace, StatementEntity::getType, StatementEntity::getStatus)
+			.containsExactly(id, errandEntity, municipalityId, namespace, type, status);
+		assertThat(result)
+			.extracting(StatementEntity::getTitle, StatementEntity::getDescription, StatementEntity::getDueAt, StatementEntity::getCompletedAt, StatementEntity::getCreatedBy, StatementEntity::getModifiedBy)
+			.containsExactly(title, description, dueAt, completedAt, createdBy, modifiedBy);
+		assertThat(result)
+			.extracting(StatementEntity::getCreated, StatementEntity::getModified, StatementEntity::getVersion, StatementEntity::getCounterpartyName, StatementEntity::getCounterpartyExternalId, StatementEntity::getCounterpartyExternalIdType)
+			.containsExactly(created, modified, version, counterpartyName, counterpartyExternalId, counterpartyExternalIdType);
+		assertThat(result)
+			.extracting(StatementEntity::getCounterpartyReference, StatementEntity::getQuestion, StatementEntity::getSentAt, StatementEntity::getRemindedAt, StatementEntity::getRespondedAt, StatementEntity::getOutcome)
+			.containsExactly(counterpartyReference, question, sentAt, remindedAt, respondedAt, outcome);
+		assertThat(result)
+			.extracting(StatementEntity::getResponseText, StatementEntity::getCommunicationId, StatementEntity::getAttachments, StatementEntity::getJsonParameterLinks)
+			.containsExactly(responseText, communicationId, attachments, jsonParameterLinks);
 	}
 
 	@Test

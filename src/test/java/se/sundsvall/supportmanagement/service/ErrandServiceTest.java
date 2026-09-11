@@ -151,6 +151,11 @@ class ErrandServiceTest {
 	@Captor
 	private ArgumentCaptor<Specification<ErrandEntity>> specificationCaptor;
 
+	@AfterEach
+	void clearIdentifier() {
+		Identifier.remove();
+	}
+
 	@Test
 	void createErrand() {
 		final var errand = buildErrand();

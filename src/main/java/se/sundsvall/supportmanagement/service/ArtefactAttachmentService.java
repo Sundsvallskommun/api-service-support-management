@@ -24,9 +24,9 @@ import static se.sundsvall.supportmanagement.service.mapper.ArtefactAttachmentMa
  * Linking attachments of the errand to a handling artefact, written once for all four of them.
  * <p>
  * The four link entities differ only in the column naming their owner, and nothing here depends on which one it is -
- * the caller passes in its own typed collection, a factory for its own link type and its own repository, and gets the
- * lookup, the invariant and the duplicate check from here. What that buys is that the rule about an attachment
- * belonging to the same errand as the artefact holds in one place rather than in four.
+ * the caller passes in its own {@link ArtefactLinks}, and gets the lookup, the invariant and the duplicate check from
+ * here. What that buys is that the rule about an attachment belonging to the same errand as the artefact holds in one
+ * place rather than in four.
  * <p>
  * What the attachment is for is not among the things written here. That belongs to the attachment rather than to any
  * one link to it, and is written through the attachment resource of the errand.
@@ -45,6 +45,12 @@ public class ArtefactAttachmentService {
 	private final AttachmentRepository attachmentRepository;
 	private final ErrandAttachmentService errandAttachmentService;
 
+	/**
+	 * The attachment links of one artefact: the typed collection they are held in, how a new one is built from the
+	 * attachment it is to point at, and the repository it is saved through.
+	 */
+	public record ArtefactLinks<L extends AttachmentLink>(List<L> links, Function<AttachmentEntity, L> factory, JpaRepository<L, String> repository) {}
+
 	ArtefactAttachmentService(final AttachmentRepository attachmentRepository, final ErrandAttachmentService errandAttachmentService) {
 		this.attachmentRepository = attachmentRepository;
 		this.errandAttachmentService = errandAttachmentService;
@@ -56,15 +62,14 @@ public class ArtefactAttachmentService {
 	 * The attachment becomes an ordinary attachment of the errand - it is read, content and all, through the attachment
 	 * resource of the errand, and it survives the artefact being removed.
 	 *
-	 * @param  linkFactory builds the link for the artefact from the attachment it is to point at.
-	 * @return             the id of the attachment that was created.
+	 * @return the id of the attachment that was created.
 	 */
 	@Transactional
 	public <L extends AttachmentLink> String uploadAndLink(final String namespace, final String municipalityId, final String errandId, final MultipartFile file,
-		final Integer sortOrder, final List<L> links, final Function<AttachmentEntity, L> linkFactory, final JpaRepository<L, String> linkRepository) {
+		final Integer sortOrder, final ArtefactLinks<L> artefactLinks) {
 
 		final var attachmentId = errandAttachmentService.createErrandAttachment(namespace, municipalityId, errandId, file, null);
-		link(namespace, municipalityId, errandId, attachmentId, sortOrder, links, linkFactory, linkRepository);
+		addLink(namespace, municipalityId, errandId, attachmentId, sortOrder, artefactLinks);
 
 		return attachmentId;
 	}
@@ -79,22 +84,9 @@ public class ArtefactAttachmentService {
 	 */
 	@Transactional
 	public <L extends AttachmentLink> ArtefactAttachment link(final String namespace, final String municipalityId, final String errandId, final String attachmentId,
-		final Integer sortOrder, final List<L> links, final Function<AttachmentEntity, L> linkFactory, final JpaRepository<L, String> linkRepository) {
+		final Integer sortOrder, final ArtefactLinks<L> artefactLinks) {
 
-		final var attachmentEntity = attachmentRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(namespace, municipalityId, errandId, attachmentId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_NOT_FOUND.formatted(attachmentId, errandId)));
-
-		if (findLink(links, attachmentId).isPresent()) {
-			throw Problem.valueOf(CONFLICT, ALREADY_LINKED.formatted(attachmentId));
-		}
-
-		final var link = linkFactory.apply(attachmentEntity);
-		link.setSortOrder(sortOrder);
-
-		final var saved = linkRepository.save(link);
-		links.add(saved);
-
-		return toArtefactAttachment(saved);
+		return addLink(namespace, municipalityId, errandId, attachmentId, sortOrder, artefactLinks);
 	}
 
 	@Transactional
@@ -115,6 +107,25 @@ public class ArtefactAttachmentService {
 	@Transactional
 	public <L extends AttachmentLink> void unlink(final String attachmentId, final List<L> links) {
 		links.remove(findLinkOrElseThrow(links, attachmentId));
+	}
+
+	private <L extends AttachmentLink> ArtefactAttachment addLink(final String namespace, final String municipalityId, final String errandId, final String attachmentId,
+		final Integer sortOrder, final ArtefactLinks<L> artefactLinks) {
+
+		final var attachmentEntity = attachmentRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(namespace, municipalityId, errandId, attachmentId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_NOT_FOUND.formatted(attachmentId, errandId)));
+
+		if (findLink(artefactLinks.links(), attachmentId).isPresent()) {
+			throw Problem.valueOf(CONFLICT, ALREADY_LINKED.formatted(attachmentId));
+		}
+
+		final var link = artefactLinks.factory().apply(attachmentEntity);
+		link.setSortOrder(sortOrder);
+
+		final var saved = artefactLinks.repository().save(link);
+		artefactLinks.links().add(saved);
+
+		return toArtefactAttachment(saved);
 	}
 
 	private <L extends AttachmentLink> L findLinkOrElseThrow(final List<L> links, final String attachmentId) {

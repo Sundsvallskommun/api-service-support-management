@@ -122,37 +122,24 @@ class DecisionEntityTest {
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
-		assertThat(result.getId()).isEqualTo(id);
-		assertThat(result.getErrandEntity()).isEqualTo(errandEntity);
-		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(result.getNamespace()).isEqualTo(namespace);
-		assertThat(result.getType()).isEqualTo(type);
-		assertThat(result.getStatus()).isEqualTo(status);
-		assertThat(result.getTitle()).isEqualTo(title);
-		assertThat(result.getDescription()).isEqualTo(description);
-		assertThat(result.getDueAt()).isEqualTo(dueAt);
-		assertThat(result.getCompletedAt()).isEqualTo(completedAt);
-		assertThat(result.getCreatedBy()).isEqualTo(createdBy);
-		assertThat(result.getModifiedBy()).isEqualTo(modifiedBy);
-		assertThat(result.getCreated()).isEqualTo(created);
-		assertThat(result.getModified()).isEqualTo(modified);
-		assertThat(result.getVersion()).isEqualTo(version);
-		assertThat(result.getOutcome()).isEqualTo(outcome);
-		assertThat(result.getMethod()).isEqualTo(method);
-		assertThat(result.getDecidedBy()).isEqualTo(decidedBy);
-		assertThat(result.getDecidedByRole()).isEqualTo(decidedByRole);
-		assertThat(result.getDecidedAt()).isEqualTo(decidedAt);
-		assertThat(result.getLegalBasis()).isEqualTo(legalBasis);
-		assertThat(result.getDelegationReference()).isEqualTo(delegationReference);
-		assertThat(result.getJustification()).isEqualTo(justification);
-		assertThat(result.getAppealable()).isEqualTo(appealable);
-		assertThat(result.getValidFrom()).isEqualTo(validFrom);
-		assertThat(result.getValidTo()).isEqualTo(validTo);
-		assertThat(result.getInvestigationEntity()).isEqualTo(investigationEntity);
-		assertThat(result.getErrandProcessId()).isEqualTo(errandProcessId);
-		assertThat(result.getTerms()).isEqualTo(terms);
-		assertThat(result.getAttachments()).isEqualTo(attachments);
-		assertThat(result.getJsonParameterLinks()).isEqualTo(jsonParameterLinks);
+		assertThat(result)
+			.extracting(DecisionEntity::getId, DecisionEntity::getErrandEntity, DecisionEntity::getMunicipalityId, DecisionEntity::getNamespace, DecisionEntity::getType, DecisionEntity::getStatus)
+			.containsExactly(id, errandEntity, municipalityId, namespace, type, status);
+		assertThat(result)
+			.extracting(DecisionEntity::getTitle, DecisionEntity::getDescription, DecisionEntity::getDueAt, DecisionEntity::getCompletedAt, DecisionEntity::getCreatedBy, DecisionEntity::getModifiedBy)
+			.containsExactly(title, description, dueAt, completedAt, createdBy, modifiedBy);
+		assertThat(result)
+			.extracting(DecisionEntity::getCreated, DecisionEntity::getModified, DecisionEntity::getVersion, DecisionEntity::getOutcome, DecisionEntity::getMethod, DecisionEntity::getDecidedBy)
+			.containsExactly(created, modified, version, outcome, method, decidedBy);
+		assertThat(result)
+			.extracting(DecisionEntity::getDecidedByRole, DecisionEntity::getDecidedAt, DecisionEntity::getLegalBasis, DecisionEntity::getDelegationReference, DecisionEntity::getJustification, DecisionEntity::getAppealable)
+			.containsExactly(decidedByRole, decidedAt, legalBasis, delegationReference, justification, appealable);
+		assertThat(result)
+			.extracting(DecisionEntity::getValidFrom, DecisionEntity::getValidTo, DecisionEntity::getInvestigationEntity, DecisionEntity::getErrandProcessId)
+			.containsExactly(validFrom, validTo, investigationEntity, errandProcessId);
+		assertThat(result)
+			.extracting(DecisionEntity::getTerms, DecisionEntity::getAttachments, DecisionEntity::getJsonParameterLinks)
+			.containsExactly(terms, attachments, jsonParameterLinks);
 	}
 
 	@Test

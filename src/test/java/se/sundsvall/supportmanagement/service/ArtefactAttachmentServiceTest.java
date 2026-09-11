@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.integration.db.StatementAttachmentReposito
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementAttachmentEntity;
+import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
@@ -71,7 +72,7 @@ class ArtefactAttachmentServiceTest {
 		mockLinkSave();
 
 		// Act
-		final var result = service.link(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, 2, links, LINK_FACTORY, linkRepositoryMock);
+		final var result = service.link(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, 2, new ArtefactLinks<>(links, LINK_FACTORY, linkRepositoryMock));
 
 		// Verify
 		assertThat(links).hasSize(1);
@@ -93,7 +94,7 @@ class ArtefactAttachmentServiceTest {
 
 		// Act
 		final var problem = catchThrowableOfType(ThrowableProblem.class,
-			() -> service.link(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, null, links, LINK_FACTORY, linkRepositoryMock));
+			() -> service.link(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, null, new ArtefactLinks<>(links, LINK_FACTORY, linkRepositoryMock)));
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
@@ -111,7 +112,7 @@ class ArtefactAttachmentServiceTest {
 
 		// Act
 		final var problem = catchThrowableOfType(ThrowableProblem.class,
-			() -> service.link(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, null, links, LINK_FACTORY, linkRepositoryMock));
+			() -> service.link(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, null, new ArtefactLinks<>(links, LINK_FACTORY, linkRepositoryMock)));
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
@@ -130,7 +131,7 @@ class ArtefactAttachmentServiceTest {
 		mockLinkSave();
 
 		// Act
-		final var result = service.uploadAndLink(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, file, 1, links, LINK_FACTORY, linkRepositoryMock);
+		final var result = service.uploadAndLink(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, file, 1, new ArtefactLinks<>(links, LINK_FACTORY, linkRepositoryMock));
 
 		// Verify
 		assertThat(result).isEqualTo(ATTACHMENT_ID);

@@ -100,33 +100,21 @@ class DecisionTest {
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
-		assertThat(result.getId()).isEqualTo(id);
-		assertThat(result.getType()).isEqualTo(type);
-		assertThat(result.getStatus()).isEqualTo(status);
-		assertThat(result.getTitle()).isEqualTo(title);
-		assertThat(result.getDescription()).isEqualTo(description);
-		assertThat(result.getDueAt()).isEqualTo(dueAt);
-		assertThat(result.getCompletedAt()).isEqualTo(completedAt);
-		assertThat(result.getOutcome()).isEqualTo(outcome);
-		assertThat(result.getMethod()).isEqualTo(method);
-		assertThat(result.getDecidedBy()).isEqualTo(decidedBy);
-		assertThat(result.getDecidedByRole()).isEqualTo(decidedByRole);
-		assertThat(result.getDecidedAt()).isEqualTo(decidedAt);
-		assertThat(result.getLegalBasis()).isEqualTo(legalBasis);
-		assertThat(result.getDelegationReference()).isEqualTo(delegationReference);
-		assertThat(result.getJustification()).isEqualTo(justification);
-		assertThat(result.getAppealable()).isEqualTo(appealable);
-		assertThat(result.getValidFrom()).isEqualTo(validFrom);
-		assertThat(result.getValidTo()).isEqualTo(validTo);
-		assertThat(result.getInvestigationId()).isEqualTo(investigationId);
-		assertThat(result.getErrandProcessId()).isEqualTo(errandProcessId);
-		assertThat(result.getTerms()).isEqualTo(terms);
-		assertThat(result.getAttachments()).isEqualTo(attachments);
-		assertThat(result.getCreatedBy()).isEqualTo(createdBy);
-		assertThat(result.getModifiedBy()).isEqualTo(modifiedBy);
-		assertThat(result.getCreated()).isEqualTo(created);
-		assertThat(result.getModified()).isEqualTo(modified);
-		assertThat(result.getVersion()).isEqualTo(version);
+		assertThat(result)
+			.extracting(Decision::getId, Decision::getType, Decision::getStatus, Decision::getTitle, Decision::getDescription, Decision::getDueAt)
+			.containsExactly(id, type, status, title, description, dueAt);
+		assertThat(result)
+			.extracting(Decision::getCompletedAt, Decision::getOutcome, Decision::getMethod, Decision::getDecidedBy, Decision::getDecidedByRole, Decision::getDecidedAt)
+			.containsExactly(completedAt, outcome, method, decidedBy, decidedByRole, decidedAt);
+		assertThat(result)
+			.extracting(Decision::getLegalBasis, Decision::getDelegationReference, Decision::getJustification, Decision::getAppealable, Decision::getValidFrom, Decision::getValidTo)
+			.containsExactly(legalBasis, delegationReference, justification, appealable, validFrom, validTo);
+		assertThat(result)
+			.extracting(Decision::getInvestigationId, Decision::getErrandProcessId, Decision::getTerms, Decision::getAttachments, Decision::getCreatedBy, Decision::getModifiedBy)
+			.containsExactly(investigationId, errandProcessId, terms, attachments, createdBy, modifiedBy);
+		assertThat(result)
+			.extracting(Decision::getCreated, Decision::getModified, Decision::getVersion)
+			.containsExactly(created, modified, version);
 	}
 
 	@Test

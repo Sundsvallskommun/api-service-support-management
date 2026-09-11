@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,13 +20,13 @@ import se.sundsvall.supportmanagement.integration.db.InvestigationAttachmentRepo
 import se.sundsvall.supportmanagement.integration.db.InvestigationJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationSectionJsonParameterRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -215,7 +214,7 @@ public class ErrandInvestigationService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, attachmentLinks(entity), linkFactory(entity), investigationAttachmentRepository);
+		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, artefactLinks(entity));
 	}
 
 	@Transactional
@@ -224,8 +223,7 @@ public class ErrandInvestigationService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), attachmentLinks(entity), linkFactory(entity),
-			investigationAttachmentRepository);
+		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), artefactLinks(entity));
 	}
 
 	@Transactional
@@ -309,11 +307,11 @@ public class ErrandInvestigationService {
 		artefactJsonParameterService.delete(errandEntity, sectionJsonParameterLinks(findSectionOrElseThrow(investigationEntity, sectionId)), key, ifMatch);
 	}
 
-	private Function<AttachmentEntity, InvestigationAttachmentEntity> linkFactory(final InvestigationEntity entity) {
-		return attachment -> InvestigationAttachmentEntity.create()
+	private ArtefactLinks<InvestigationAttachmentEntity> artefactLinks(final InvestigationEntity entity) {
+		return new ArtefactLinks<>(attachmentLinks(entity), attachment -> InvestigationAttachmentEntity.create()
 			.withInvestigationEntity(entity)
 			.withAttachmentEntity(attachment)
-			.withCreatedBy(getCallerIdentity());
+			.withCreatedBy(getCallerIdentity()), investigationAttachmentRepository);
 	}
 
 	private List<InvestigationAttachmentEntity> attachmentLinks(final InvestigationEntity entity) {

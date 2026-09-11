@@ -121,38 +121,24 @@ class MeasureEntityTest {
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
-		assertThat(result.getId()).isEqualTo(id);
-		assertThat(result.getErrandEntity()).isEqualTo(errandEntity);
-		assertThat(result.getResponsibleUser()).isEqualTo(responsibleUser);
-		assertThat(result.getType()).isEqualTo(type);
-		assertThat(result.getPlannedStart()).isEqualTo(plannedStart);
-		assertThat(result.getPlannedComplete()).isEqualTo(plannedComplete);
-		assertThat(result.getExecuted()).isEqualTo(executed);
-		assertThat(result.getAddedByUser()).isEqualTo(addedByUser);
-		assertThat(result.getAddedByRole()).isEqualTo(addedByRole);
-		assertThat(result.getGoal()).isEqualTo(goal);
-		assertThat(result.getDescription()).isEqualTo(description);
-		assertThat(result.getAccept()).isEqualTo(accept);
-		assertThat(result.getAcceptMotivation()).isEqualTo(acceptMotivation);
-		assertThat(result.getReworkGoal()).isEqualTo(reworkGoal);
-		assertThat(result.getReworkDescription()).isEqualTo(reworkDescription);
-		assertThat(result.getCreated()).isEqualTo(created);
-		assertThat(result.getModified()).isEqualTo(modified);
-		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(result.getNamespace()).isEqualTo(namespace);
-		assertThat(result.getStatus()).isEqualTo(status);
-		assertThat(result.getTitle()).isEqualTo(title);
-		assertThat(result.getDueAt()).isEqualTo(dueAt);
-		assertThat(result.getCompletedAt()).isEqualTo(completedAt);
-		assertThat(result.getCreatedBy()).isEqualTo(createdBy);
-		assertThat(result.getModifiedBy()).isEqualTo(modifiedBy);
-		assertThat(result.getVersion()).isEqualTo(version);
-		assertThat(result.getResult()).isEqualTo(measureResult);
-		assertThat(result.getResultText()).isEqualTo(resultText);
-		assertThat(result.getDecisionEntity()).isEqualTo(decisionEntity);
-		assertThat(result.getStatementEntity()).isEqualTo(statementEntity);
-		assertThat(result.getAttachments()).isEqualTo(attachments);
-		assertThat(result.getJsonParameterLinks()).isEqualTo(jsonParameterLinks);
+		assertThat(result)
+			.extracting(MeasureEntity::getId, MeasureEntity::getErrandEntity, MeasureEntity::getResponsibleUser, MeasureEntity::getType, MeasureEntity::getPlannedStart, MeasureEntity::getPlannedComplete)
+			.containsExactly(id, errandEntity, responsibleUser, type, plannedStart, plannedComplete);
+		assertThat(result)
+			.extracting(MeasureEntity::getExecuted, MeasureEntity::getAddedByUser, MeasureEntity::getAddedByRole, MeasureEntity::getGoal, MeasureEntity::getDescription, MeasureEntity::getAccept)
+			.containsExactly(executed, addedByUser, addedByRole, goal, description, accept);
+		assertThat(result)
+			.extracting(MeasureEntity::getAcceptMotivation, MeasureEntity::getReworkGoal, MeasureEntity::getReworkDescription, MeasureEntity::getCreated, MeasureEntity::getModified, MeasureEntity::getMunicipalityId)
+			.containsExactly(acceptMotivation, reworkGoal, reworkDescription, created, modified, municipalityId);
+		assertThat(result)
+			.extracting(MeasureEntity::getNamespace, MeasureEntity::getStatus, MeasureEntity::getTitle, MeasureEntity::getDueAt, MeasureEntity::getCompletedAt, MeasureEntity::getCreatedBy)
+			.containsExactly(namespace, status, title, dueAt, completedAt, createdBy);
+		assertThat(result)
+			.extracting(MeasureEntity::getModifiedBy, MeasureEntity::getVersion, MeasureEntity::getResult, MeasureEntity::getResultText, MeasureEntity::getDecisionEntity, MeasureEntity::getStatementEntity)
+			.containsExactly(modifiedBy, version, measureResult, resultText, decisionEntity, statementEntity);
+		assertThat(result)
+			.extracting(MeasureEntity::getAttachments, MeasureEntity::getJsonParameterLinks)
+			.containsExactly(attachments, jsonParameterLinks);
 	}
 
 	@Test

@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,12 +17,12 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MeasureAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.MeasureJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -144,7 +143,7 @@ public class ErrandMeasureService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		final var entity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 
-		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, attachmentLinks(entity), linkFactory(entity), measureAttachmentRepository);
+		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, artefactLinks(entity));
 	}
 
 	@Transactional
@@ -153,8 +152,7 @@ public class ErrandMeasureService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		final var entity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 
-		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), attachmentLinks(entity), linkFactory(entity),
-			measureAttachmentRepository);
+		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), artefactLinks(entity));
 	}
 
 	@Transactional
@@ -219,11 +217,11 @@ public class ErrandMeasureService {
 				.orElseThrow(() -> Problem.valueOf(NOT_FOUND, STATEMENT_NOT_FOUND.formatted(id, errandId)))));
 	}
 
-	private Function<AttachmentEntity, MeasureAttachmentEntity> linkFactory(final MeasureEntity entity) {
-		return attachment -> MeasureAttachmentEntity.create()
+	private ArtefactLinks<MeasureAttachmentEntity> artefactLinks(final MeasureEntity entity) {
+		return new ArtefactLinks<>(attachmentLinks(entity), attachment -> MeasureAttachmentEntity.create()
 			.withMeasureEntity(entity)
 			.withAttachmentEntity(attachment)
-			.withCreatedBy(getCallerIdentity());
+			.withCreatedBy(getCallerIdentity()), measureAttachmentRepository);
 	}
 
 	private List<MeasureAttachmentEntity> attachmentLinks(final MeasureEntity entity) {

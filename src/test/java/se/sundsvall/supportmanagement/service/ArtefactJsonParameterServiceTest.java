@@ -20,6 +20,7 @@ import tools.jackson.databind.node.JsonNodeFactory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -221,7 +222,7 @@ class ArtefactJsonParameterServiceTest {
 		// Verify
 		assertThat(links).extracting(link -> link.getJsonParameterEntity().getKey()).containsExactly("other");
 		assertThat(errandEntity.getJsonParameters()).extracting(JsonParameterEntity::getKey).containsExactly("errandOwned");
-		verify(entityManagerMock, org.mockito.Mockito.times(2)).flush();
+		verify(entityManagerMock, times(2)).flush();
 	}
 
 	/**

@@ -48,10 +48,10 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
  * The association to the errand is declared here but named per subclass with {@code @AssociationOverride}: InnoDB has
  * one namespace for foreign keys across the whole schema, so four subclasses sharing a constraint name would collide.
  *
- * @param <SELF> the concrete subclass, so that the fluent setters return it.
+ * @param <T> the concrete subclass, so that the fluent setters return it.
  */
 @MappedSuperclass
-public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEntity<SELF>> {
+public abstract class AbstractErrandItemEntity<T extends AbstractErrandItemEntity<T>> {
 
 	@Id
 	@UuidGenerator
@@ -130,8 +130,8 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 	}
 
 	@SuppressWarnings("unchecked")
-	private SELF self() {
-		return (SELF) this;
+	private T self() {
+		return (T) this;
 	}
 
 	public String getId() {
@@ -142,7 +142,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.id = id;
 	}
 
-	public SELF withId(final String id) {
+	public T withId(final String id) {
 		this.id = id;
 		return self();
 	}
@@ -155,7 +155,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.errandEntity = errandEntity;
 	}
 
-	public SELF withErrandEntity(final ErrandEntity errandEntity) {
+	public T withErrandEntity(final ErrandEntity errandEntity) {
 		this.errandEntity = errandEntity;
 		return self();
 	}
@@ -168,7 +168,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.municipalityId = municipalityId;
 	}
 
-	public SELF withMunicipalityId(final String municipalityId) {
+	public T withMunicipalityId(final String municipalityId) {
 		this.municipalityId = municipalityId;
 		return self();
 	}
@@ -181,7 +181,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.namespace = namespace;
 	}
 
-	public SELF withNamespace(final String namespace) {
+	public T withNamespace(final String namespace) {
 		this.namespace = namespace;
 		return self();
 	}
@@ -194,7 +194,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.type = type;
 	}
 
-	public SELF withType(final String type) {
+	public T withType(final String type) {
 		this.type = type;
 		return self();
 	}
@@ -207,7 +207,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.status = status;
 	}
 
-	public SELF withStatus(final ItemStatus status) {
+	public T withStatus(final ItemStatus status) {
 		this.status = status;
 		return self();
 	}
@@ -220,7 +220,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.title = title;
 	}
 
-	public SELF withTitle(final String title) {
+	public T withTitle(final String title) {
 		this.title = title;
 		return self();
 	}
@@ -233,7 +233,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.description = description;
 	}
 
-	public SELF withDescription(final String description) {
+	public T withDescription(final String description) {
 		this.description = description;
 		return self();
 	}
@@ -246,7 +246,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.dueAt = dueAt;
 	}
 
-	public SELF withDueAt(final OffsetDateTime dueAt) {
+	public T withDueAt(final OffsetDateTime dueAt) {
 		this.dueAt = dueAt;
 		return self();
 	}
@@ -259,7 +259,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.completedAt = completedAt;
 	}
 
-	public SELF withCompletedAt(final OffsetDateTime completedAt) {
+	public T withCompletedAt(final OffsetDateTime completedAt) {
 		this.completedAt = completedAt;
 		return self();
 	}
@@ -272,7 +272,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.createdBy = createdBy;
 	}
 
-	public SELF withCreatedBy(final String createdBy) {
+	public T withCreatedBy(final String createdBy) {
 		this.createdBy = createdBy;
 		return self();
 	}
@@ -285,7 +285,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.modifiedBy = modifiedBy;
 	}
 
-	public SELF withModifiedBy(final String modifiedBy) {
+	public T withModifiedBy(final String modifiedBy) {
 		this.modifiedBy = modifiedBy;
 		return self();
 	}
@@ -298,7 +298,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.created = created;
 	}
 
-	public SELF withCreated(final OffsetDateTime created) {
+	public T withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return self();
 	}
@@ -311,7 +311,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.modified = modified;
 	}
 
-	public SELF withModified(final OffsetDateTime modified) {
+	public T withModified(final OffsetDateTime modified) {
 		this.modified = modified;
 		return self();
 	}
@@ -324,7 +324,7 @@ public abstract class AbstractErrandItemEntity<SELF extends AbstractErrandItemEn
 		this.version = version;
 	}
 
-	public SELF withVersion(final Long version) {
+	public T withVersion(final Long version) {
 		this.version = version;
 		return self();
 	}

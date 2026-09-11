@@ -100,34 +100,21 @@ class MeasureTest {
 
 		// Assert
 		assertThat(measure).hasNoNullFieldsOrProperties();
-		assertThat(measure.getId()).isEqualTo(id);
-		assertThat(measure.getResponsibleUser()).isEqualTo(responsibleUser);
-		assertThat(measure.getType()).isEqualTo(type);
-		assertThat(measure.getPlannedStart()).isEqualTo(plannedStart);
-		assertThat(measure.getPlannedComplete()).isEqualTo(plannedComplete);
-		assertThat(measure.getExecuted()).isEqualTo(executed);
-		assertThat(measure.getAddedByUser()).isEqualTo(addedByUser);
-		assertThat(measure.getAddedByRole()).isEqualTo(addedByRole);
-		assertThat(measure.getGoal()).isEqualTo(goal);
-		assertThat(measure.getDescription()).isEqualTo(description);
-		assertThat(measure.getAccept()).isEqualTo(accept);
-		assertThat(measure.getAcceptMotivation()).isEqualTo(acceptMotivation);
-		assertThat(measure.getReworkGoal()).isEqualTo(reworkGoal);
-		assertThat(measure.getReworkDescription()).isEqualTo(reworkDescription);
-		assertThat(measure.getStatus()).isEqualTo(status);
-		assertThat(measure.getTitle()).isEqualTo(title);
-		assertThat(measure.getDueAt()).isEqualTo(dueAt);
-		assertThat(measure.getCompletedAt()).isEqualTo(completedAt);
-		assertThat(measure.getResult()).isEqualTo(result);
-		assertThat(measure.getResultText()).isEqualTo(resultText);
-		assertThat(measure.getDecisionId()).isEqualTo(decisionId);
-		assertThat(measure.getStatementId()).isEqualTo(statementId);
-		assertThat(measure.getAttachments()).isEqualTo(attachments);
-		assertThat(measure.getCreatedBy()).isEqualTo(createdBy);
-		assertThat(measure.getModifiedBy()).isEqualTo(modifiedBy);
-		assertThat(measure.getVersion()).isEqualTo(version);
-		assertThat(measure.getCreated()).isEqualTo(created);
-		assertThat(measure.getModified()).isEqualTo(modified);
+		assertThat(measure)
+			.extracting(Measure::getId, Measure::getResponsibleUser, Measure::getType, Measure::getPlannedStart, Measure::getPlannedComplete, Measure::getExecuted)
+			.containsExactly(id, responsibleUser, type, plannedStart, plannedComplete, executed);
+		assertThat(measure)
+			.extracting(Measure::getAddedByUser, Measure::getAddedByRole, Measure::getGoal, Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation)
+			.containsExactly(addedByUser, addedByRole, goal, description, accept, acceptMotivation);
+		assertThat(measure)
+			.extracting(Measure::getReworkGoal, Measure::getReworkDescription, Measure::getStatus, Measure::getTitle, Measure::getDueAt, Measure::getCompletedAt)
+			.containsExactly(reworkGoal, reworkDescription, status, title, dueAt, completedAt);
+		assertThat(measure)
+			.extracting(Measure::getResult, Measure::getResultText, Measure::getDecisionId, Measure::getStatementId, Measure::getAttachments, Measure::getCreatedBy)
+			.containsExactly(result, resultText, decisionId, statementId, attachments, createdBy);
+		assertThat(measure)
+			.extracting(Measure::getModifiedBy, Measure::getVersion, Measure::getCreated, Measure::getModified)
+			.containsExactly(modifiedBy, version, created, modified);
 	}
 
 	@Test

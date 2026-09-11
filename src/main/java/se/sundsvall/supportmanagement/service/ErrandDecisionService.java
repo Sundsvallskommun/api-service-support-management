@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,6 @@ import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterReposi
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
@@ -28,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -213,7 +212,7 @@ public class ErrandDecisionService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
-		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, attachmentLinks(entity), linkFactory(entity), decisionAttachmentRepository);
+		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, artefactLinks(entity));
 	}
 
 	@Transactional
@@ -222,8 +221,7 @@ public class ErrandDecisionService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
-		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), attachmentLinks(entity), linkFactory(entity),
-			decisionAttachmentRepository);
+		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), artefactLinks(entity));
 	}
 
 	@Transactional
@@ -274,11 +272,11 @@ public class ErrandDecisionService {
 		artefactJsonParameterService.delete(errandEntity, jsonParameterLinks(entity), key, ifMatch);
 	}
 
-	private Function<AttachmentEntity, DecisionAttachmentEntity> linkFactory(final DecisionEntity entity) {
-		return attachment -> DecisionAttachmentEntity.create()
+	private ArtefactLinks<DecisionAttachmentEntity> artefactLinks(final DecisionEntity entity) {
+		return new ArtefactLinks<>(attachmentLinks(entity), attachment -> DecisionAttachmentEntity.create()
 			.withDecisionEntity(entity)
 			.withAttachmentEntity(attachment)
-			.withCreatedBy(getCallerIdentity());
+			.withCreatedBy(getCallerIdentity()), decisionAttachmentRepository);
 	}
 
 	private List<DecisionAttachmentEntity> attachmentLinks(final DecisionEntity entity) {

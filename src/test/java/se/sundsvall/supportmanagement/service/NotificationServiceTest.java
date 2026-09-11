@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.employee.PortalPersonData;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,6 +72,11 @@ class NotificationServiceTest {
 	@BeforeEach
 	void beforeEach() {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("executingUserId"));
+	}
+
+	@AfterEach
+	void clearIdentifier() {
+		Identifier.remove();
 	}
 
 	@Test

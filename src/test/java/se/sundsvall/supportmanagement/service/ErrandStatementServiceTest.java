@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -34,6 +35,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -98,7 +100,7 @@ class ErrandStatementServiceTest {
 	private ArgumentCaptor<StatementEntity> statementEntityCaptor;
 
 	@Captor
-	private ArgumentCaptor<Function<AttachmentEntity, StatementAttachmentEntity>> attachmentLinkFactoryCaptor;
+	private ArgumentCaptor<ArtefactLinks<StatementAttachmentEntity>> artefactLinksCaptor;
 
 	@Captor
 	private ArgumentCaptor<Function<JsonParameterEntity, StatementJsonParameterEntity>> jsonParameterLinkFactoryCaptor;
@@ -106,6 +108,10 @@ class ErrandStatementServiceTest {
 	@InjectMocks
 	private ErrandStatementService service;
 
+	/**
+	 * The identifier is bound to the thread, which the test classes run before this one share.
+	 */
+	@BeforeEach
 	@AfterEach
 	void clearIdentifier() {
 		Identifier.remove();
@@ -327,12 +333,12 @@ class ErrandStatementServiceTest {
 			.withJsonParameterLinks(new ArrayList<>(List.of(StatementJsonParameterEntity.create().withJsonParameterEntity(owned))));
 
 		final var heldWhenFlushed = new ArrayList<JsonParameterEntity>();
-		doAnswer(invocation -> {
+		doAnswer(_ -> {
 			heldWhenFlushed.addAll(errandEntity.getJsonParameters());
 			return null;
 		}).when(statementRepositoryMock).flush();
 		final var heldWhenSaved = new ArrayList<JsonParameterEntity>();
-		when(errandsRepositoryMock.saveAndFlush(errandEntity)).thenAnswer(invocation -> {
+		when(errandsRepositoryMock.saveAndFlush(errandEntity)).thenAnswer(_ -> {
 			heldWhenSaved.addAll(errandEntity.getJsonParameters());
 			return errandEntity;
 		});
@@ -389,7 +395,7 @@ class ErrandStatementServiceTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(USER));
 		final var entity = mockStatement();
 		final var file = new MockMultipartFile("attachment", "remissvar.pdf", "application/pdf", "content".getBytes());
-		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), any(), any(), any()))
+		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), any()))
 			.thenReturn(ATTACHMENT_ID);
 
 		// Act
@@ -399,11 +405,13 @@ class ErrandStatementServiceTest {
 		assertThat(result).isEqualTo(ATTACHMENT_ID);
 		assertThat(entity.getAttachments()).isNotNull();
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-		verify(artefactAttachmentServiceMock).uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), same(entity.getAttachments()),
-			attachmentLinkFactoryCaptor.capture(), same(statementAttachmentRepositoryMock));
+		verify(artefactAttachmentServiceMock).uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), artefactLinksCaptor.capture());
 
+		final var artefactLinks = artefactLinksCaptor.getValue();
 		final var attachmentEntity = AttachmentEntity.create().withId(ATTACHMENT_ID);
-		assertThat(attachmentLinkFactoryCaptor.getValue().apply(attachmentEntity)).satisfies(link -> {
+		assertThat(artefactLinks.links()).isSameAs(entity.getAttachments());
+		assertThat(artefactLinks.repository()).isSameAs(statementAttachmentRepositoryMock);
+		assertThat(artefactLinks.factory().apply(attachmentEntity)).satisfies(link -> {
 			assertThat(link.getStatementEntity()).isSameAs(entity);
 			assertThat(link.getAttachmentEntity()).isSameAs(attachmentEntity);
 			assertThat(link.getCreatedBy()).isEqualTo(USER);
@@ -420,7 +428,7 @@ class ErrandStatementServiceTest {
 		// Arrange
 		final var links = new ArrayList<StatementAttachmentEntity>();
 		final var entity = mockStatement().withAttachments(links);
-		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any(), any(), any()))
+		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any()))
 			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
 
 		// Act
@@ -430,11 +438,13 @@ class ErrandStatementServiceTest {
 		// Verify
 		assertThat(result.getAttachmentId()).isEqualTo(ATTACHMENT_ID);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-		verify(artefactAttachmentServiceMock).link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), same(links), attachmentLinkFactoryCaptor.capture(),
-			same(statementAttachmentRepositoryMock));
+		verify(artefactAttachmentServiceMock).link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), artefactLinksCaptor.capture());
 
+		final var artefactLinks = artefactLinksCaptor.getValue();
 		final var attachmentEntity = AttachmentEntity.create().withId(ATTACHMENT_ID);
-		assertThat(attachmentLinkFactoryCaptor.getValue().apply(attachmentEntity)).satisfies(link -> {
+		assertThat(artefactLinks.links()).isSameAs(links);
+		assertThat(artefactLinks.repository()).isSameAs(statementAttachmentRepositoryMock);
+		assertThat(artefactLinks.factory().apply(attachmentEntity)).satisfies(link -> {
 			assertThat(link.getStatementEntity()).isSameAs(entity);
 			assertThat(link.getAttachmentEntity()).isSameAs(attachmentEntity);
 		});

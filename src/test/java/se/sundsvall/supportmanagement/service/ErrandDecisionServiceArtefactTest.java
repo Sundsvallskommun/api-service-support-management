@@ -96,7 +96,7 @@ class ErrandDecisionServiceArtefactTest {
 		mockErrand();
 		final var entity = mockDecision();
 		final var file = new MockMultipartFile("attachment", "beslut.pdf", "application/pdf", "content".getBytes());
-		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(0), any(), any(), any()))
+		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(0), any()))
 			.thenReturn(ATTACHMENT_ID);
 
 		// Act
@@ -113,7 +113,7 @@ class ErrandDecisionServiceArtefactTest {
 		// Arrange
 		mockErrand();
 		mockDecision();
-		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any(), any(), any()))
+		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any()))
 			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
 
 		// Act
