@@ -12,10 +12,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterLink;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
 
@@ -35,6 +37,10 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMat
  * the content of an artefact is the link. That arrangement is why a parameter is both visible on the errand and removed
  * when its artefact is: the errand owns the row, the artefact owns the reason it exists.
  * <p>
+ * <b>What a caller may do with a key is decided as on the errand.</b> The parameter is one of the JSON parameters of
+ * the errand, so a key the namespace keeps from a role is kept from it here too: left out of what is read, refused when
+ * named, and refused when it would be changed - otherwise the artefact would be a way around what the errand upholds.
+ * <p>
  * <b>Keys are unique per errand</b>, which the database enforces - and compares without regard to case, which is why
  * they are compared that way here too. An artefact asking for a key another owner already holds is answered with a
  * conflict rather than by quietly taking it over. Where two artefacts of one errand need the same kind of content, the
@@ -49,37 +55,52 @@ public class ArtefactJsonParameterService {
 	private static final String PARAMETER_NOT_FOUND = "A JSON parameter with key '%s' could not be found on this artefact";
 	private static final String KEY_TAKEN = "A JSON parameter with key '%s' already exists in errand with id '%s' and belongs to something else";
 
+	private final AccessControlService accessControlService;
 	private final EntityManager entityManager;
 
-	ArtefactJsonParameterService(final EntityManager entityManager) {
+	ArtefactJsonParameterService(final AccessControlService accessControlService, final EntityManager entityManager) {
+		this.accessControlService = accessControlService;
 		this.entityManager = entityManager;
 	}
 
-	public List<JsonParameter> readAll(final List<? extends JsonParameterLink> links) {
+	/**
+	 * The parameters of the artefact whose keys the caller may see.
+	 */
+	public List<JsonParameter> readAll(final ErrandEntity errandEntity, final List<? extends JsonParameterLink> links) {
+		final var readableKey = accessControlService.readableKeyPredicate(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), Identifier.get(), errandEntity,
+			ErrandField.JSON_PARAMETERS);
+
 		return ofNullable(links).orElse(emptyList()).stream()
 			.map(JsonParameterLink::getJsonParameterEntity)
 			.filter(Objects::nonNull)
+			.filter(entity -> readableKey.test(entity.getKey()))
 			.sorted(Comparator.comparing(JsonParameterEntity::getKey))
 			.map(ErrandMapper::toJsonParameter)
 			.toList();
 	}
 
-	public JsonParameter read(final List<? extends JsonParameterLink> links, final String key) {
+	public JsonParameter read(final ErrandEntity errandEntity, final List<? extends JsonParameterLink> links, final String key) {
+		accessControlService.verifyAccessibleKey(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity, ErrandField.JSON_PARAMETERS, key);
 		return toJsonParameter(findParameterOrElseThrow(links, key));
 	}
 
 	/**
 	 * Writes the parameter, creating it and its link when the artefact does not hold the key yet.
 	 *
-	 * @param linkFactory builds the link for the artefact from the parameter it is to point at.
+	 * @param jsonParameter the parameter to write, carrying its key.
+	 * @param linkFactory   builds the link for the artefact from the parameter it is to point at.
 	 */
 	@Transactional
-	public <L extends JsonParameterLink> UpsertResult upsert(final ErrandEntity errandEntity, final String key, final String ifMatch, final JsonParameter jsonParameter,
+	public <L extends JsonParameterLink> UpsertResult upsert(final ErrandEntity errandEntity, final String ifMatch, final JsonParameter jsonParameter,
 		final List<L> links, final Function<JsonParameterEntity, L> linkFactory, final JpaRepository<L, String> linkRepository) {
 
+		final var key = jsonParameter.getKey();
+		final var keyAccess = accessControlService.verifyJsonParameterAccess(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity, key, jsonParameter);
+		final var writable = keyAccess.writableKey().test(key);
+
 		return findParameter(links, key)
-			.map(entity -> replace(entity, ifMatch, jsonParameter))
-			.orElseGet(() -> create(errandEntity, key, jsonParameter, links, linkFactory, linkRepository));
+			.map(entity -> replace(entity, ifMatch, jsonParameter, writable))
+			.orElseGet(() -> create(errandEntity, jsonParameter, links, linkFactory, linkRepository));
 	}
 
 	/**
@@ -92,6 +113,8 @@ public class ArtefactJsonParameterService {
 	 */
 	@Transactional
 	public void delete(final ErrandEntity errandEntity, final List<? extends JsonParameterLink> links, final String key, final String ifMatch) {
+		accessControlService.verifyWritableKey(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity, ErrandField.JSON_PARAMETERS, key);
+
 		final var entity = findParameterOrElseThrow(links, key);
 		validateIfMatch(ifMatch, entity.getVersion());
 
@@ -102,8 +125,16 @@ public class ArtefactJsonParameterService {
 		entityManager.flush();
 	}
 
-	private UpsertResult replace(final JsonParameterEntity entity, final String ifMatch, final JsonParameter jsonParameter) {
+	/**
+	 * A caller who may not change the key only gets here by sending what is already stored, since anything else was
+	 * refused. Writing it again would bump the version of a parameter they may not change, so it is answered as it stands.
+	 */
+	private UpsertResult replace(final JsonParameterEntity entity, final String ifMatch, final JsonParameter jsonParameter, final boolean writable) {
 		validateIfMatch(ifMatch, entity.getVersion());
+
+		if (!writable) {
+			return new UpsertResult(toJsonParameter(entity), false);
+		}
 
 		entity.setSchemaId(jsonParameter.getSchemaId());
 		entity.setValue(toJsonString(jsonParameter.getValue()));
@@ -112,14 +143,14 @@ public class ArtefactJsonParameterService {
 		return new UpsertResult(toJsonParameter(entity), false);
 	}
 
-	private <L extends JsonParameterLink> UpsertResult create(final ErrandEntity errandEntity, final String key, final JsonParameter jsonParameter,
+	private <L extends JsonParameterLink> UpsertResult create(final ErrandEntity errandEntity, final JsonParameter jsonParameter,
 		final List<L> links, final Function<JsonParameterEntity, L> linkFactory, final JpaRepository<L, String> linkRepository) {
 
-		verifyKeyIsFree(errandEntity, key);
+		verifyKeyIsFree(errandEntity, jsonParameter.getKey());
 
 		final var entity = JsonParameterEntity.create()
 			.withErrandEntity(errandEntity)
-			.withKey(key)
+			.withKey(jsonParameter.getKey())
 			.withSchemaId(jsonParameter.getSchemaId())
 			.withValue(toJsonString(jsonParameter.getValue()));
 

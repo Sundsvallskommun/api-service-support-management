@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -159,8 +160,9 @@ class ErrandDecisionServiceArtefactTest {
 	void readDecisionJsonParameters() {
 
 		// Arrange
+		final var errandEntity = mockErrand();
 		mockDecision();
-		when(artefactJsonParameterServiceMock.readAll(any())).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
+		when(artefactJsonParameterServiceMock.readAll(same(errandEntity), any())).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
 
 		// Act
 		final var result = service.readDecisionJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID);
@@ -173,8 +175,9 @@ class ErrandDecisionServiceArtefactTest {
 	void readDecisionJsonParameter() {
 
 		// Arrange
+		final var errandEntity = mockErrand();
 		mockDecision();
-		when(artefactJsonParameterServiceMock.read(any(), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
+		when(artefactJsonParameterServiceMock.read(same(errandEntity), any(), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
 
 		// Act
 		final var result = service.readDecisionJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, KEY);
@@ -190,10 +193,10 @@ class ErrandDecisionServiceArtefactTest {
 		final var errandEntity = mockErrand();
 		final var entity = mockDecision();
 		final var body = JsonParameter.create().withKey(KEY);
-		when(artefactJsonParameterServiceMock.upsert(eq(errandEntity), eq(KEY), isNull(), eq(body), any(), any(), any())).thenReturn(new UpsertResult(body, true));
+		when(artefactJsonParameterServiceMock.upsert(eq(errandEntity), isNull(), eq(body), any(), any(), any())).thenReturn(new UpsertResult(body, true));
 
 		// Act
-		final var result = service.updateDecisionJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, KEY, null, body);
+		final var result = service.updateDecisionJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, null, body);
 
 		// Verify
 		assertThat(result.created()).isTrue();

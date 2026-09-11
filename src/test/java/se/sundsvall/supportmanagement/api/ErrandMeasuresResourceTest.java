@@ -26,6 +26,7 @@ import tools.jackson.databind.node.JsonNodeFactory;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -300,7 +301,7 @@ class ErrandMeasuresResourceTest {
 
 		// Arrange
 		final var created = JsonParameter.create().withKey(KEY).withSchemaId("test-schema-1.0").withValue(JsonNodeFactory.instance.objectNode()).withVersion(0L);
-		when(serviceMock.updateMeasureJsonParameter(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), eq(KEY), any(), any(JsonParameter.class)))
+		when(serviceMock.updateMeasureJsonParameter(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any(), argThat(parameter -> KEY.equals(parameter.getKey()))))
 			.thenReturn(new UpsertResult(created, true));
 
 		// Act & Verify
@@ -318,7 +319,7 @@ class ErrandMeasuresResourceTest {
 
 		// Arrange
 		final var replaced = JsonParameter.create().withKey(KEY).withSchemaId("test-schema-1.0").withValue(JsonNodeFactory.instance.objectNode()).withVersion(8L);
-		when(serviceMock.updateMeasureJsonParameter(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), eq(KEY), any(), any(JsonParameter.class)))
+		when(serviceMock.updateMeasureJsonParameter(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(MEASURE_ID), any(), argThat(parameter -> KEY.equals(parameter.getKey()))))
 			.thenReturn(new UpsertResult(replaced, false));
 
 		// Act & Verify

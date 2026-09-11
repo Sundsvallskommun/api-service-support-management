@@ -277,7 +277,7 @@ class ErrandMeasuresResource {
 
 		verifyKeyMatchesPath(jsonParameter, key);
 
-		return toUpsertResponse(service.updateMeasureJsonParameter(namespace, municipalityId, errandId, measureId, key, ifMatch, jsonParameter));
+		return toUpsertResponse(service.updateMeasureJsonParameter(namespace, municipalityId, errandId, measureId, ifMatch, jsonParameter));
 	}
 
 	@DeleteMapping(path = "/{measureId}/json-parameters/{key}", produces = ALL_VALUE)

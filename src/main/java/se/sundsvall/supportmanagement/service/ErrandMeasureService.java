@@ -176,22 +176,21 @@ public class ErrandMeasureService {
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readMeasureJsonParameters(final String namespace, final String municipalityId, final String errandId, final String measureId) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.MEASURE, LR);
-		return artefactJsonParameterService.readAll(findMeasureEntityOrElseThrow(errandEntity, measureId).getJsonParameterLinks());
+		return artefactJsonParameterService.readAll(errandEntity, findMeasureEntityOrElseThrow(errandEntity, measureId).getJsonParameterLinks());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readMeasureJsonParameter(final String namespace, final String municipalityId, final String errandId, final String measureId, final String key) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.MEASURE, LR);
-		return artefactJsonParameterService.read(findMeasureEntityOrElseThrow(errandEntity, measureId).getJsonParameterLinks(), key);
+		return artefactJsonParameterService.read(errandEntity, findMeasureEntityOrElseThrow(errandEntity, measureId).getJsonParameterLinks(), key);
 	}
 
 	@Transactional
-	public UpsertResult updateMeasureJsonParameter(final String namespace, final String municipalityId, final String errandId, final String measureId, final String key,
-		final String ifMatch, final JsonParameter jsonParameter) {
+	public UpsertResult updateMeasureJsonParameter(final String namespace, final String municipalityId, final String errandId, final String measureId, final String ifMatch, final JsonParameter jsonParameter) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		final var entity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 
-		return artefactJsonParameterService.upsert(errandEntity, key, ifMatch, jsonParameter, jsonParameterLinks(entity),
+		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, jsonParameterLinks(entity),
 			parameter -> MeasureJsonParameterEntity.create().withMeasureEntity(entity).withJsonParameterEntity(parameter), measureJsonParameterRepository);
 	}
 

@@ -486,32 +486,34 @@ class ErrandStatementServiceTest {
 	void readStatementJsonParameters() {
 
 		// Arrange
+		final var errandEntity = mockErrand();
 		final var links = List.of(StatementJsonParameterEntity.create());
 		mockStatement().withJsonParameterLinks(links);
-		when(artefactJsonParameterServiceMock.readAll(same(links))).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
+		when(artefactJsonParameterServiceMock.readAll(same(errandEntity), same(links))).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
 
 		// Act
 		final var result = service.readStatementJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID);
 
 		// Verify
 		assertThat(result).extracting(JsonParameter::getKey).containsExactly(KEY);
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.STATEMENT, LR);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.STATEMENT, LR);
 	}
 
 	@Test
 	void readStatementJsonParameter() {
 
 		// Arrange
+		final var errandEntity = mockErrand();
 		final var links = List.of(StatementJsonParameterEntity.create());
 		mockStatement().withJsonParameterLinks(links);
-		when(artefactJsonParameterServiceMock.read(same(links), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
+		when(artefactJsonParameterServiceMock.read(same(errandEntity), same(links), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
 
 		// Act
 		final var result = service.readStatementJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, KEY);
 
 		// Verify
 		assertThat(result.getKey()).isEqualTo(KEY);
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.STATEMENT, LR);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.STATEMENT, LR);
 	}
 
 	@Test
@@ -521,16 +523,16 @@ class ErrandStatementServiceTest {
 		final var errandEntity = mockErrand();
 		final var entity = mockStatement();
 		final var body = JsonParameter.create().withKey(KEY);
-		when(artefactJsonParameterServiceMock.upsert(same(errandEntity), eq(KEY), eq(IF_MATCH), same(body), any(), any(), any())).thenReturn(new UpsertResult(body, true));
+		when(artefactJsonParameterServiceMock.upsert(same(errandEntity), eq(IF_MATCH), same(body), any(), any(), any())).thenReturn(new UpsertResult(body, true));
 
 		// Act
-		final var result = service.updateStatementJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, KEY, IF_MATCH, body);
+		final var result = service.updateStatementJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, IF_MATCH, body);
 
 		// Verify - the collection is created on the way, so the link has somewhere to go
 		assertThat(result.created()).isTrue();
 		assertThat(entity.getJsonParameterLinks()).isNotNull();
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-		verify(artefactJsonParameterServiceMock).upsert(same(errandEntity), eq(KEY), eq(IF_MATCH), same(body), same(entity.getJsonParameterLinks()),
+		verify(artefactJsonParameterServiceMock).upsert(same(errandEntity), eq(IF_MATCH), same(body), same(entity.getJsonParameterLinks()),
 			jsonParameterLinkFactoryCaptor.capture(), same(statementJsonParameterRepositoryMock));
 
 		final var parameter = JsonParameterEntity.create().withId("parameter-id").withKey(KEY);

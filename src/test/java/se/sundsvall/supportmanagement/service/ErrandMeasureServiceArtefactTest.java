@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -159,8 +160,8 @@ class ErrandMeasureServiceArtefactTest {
 	void readMeasureJsonParameters() {
 
 		// Arrange
-		errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID));
-		when(artefactJsonParameterServiceMock.readAll(any())).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
+		final var errandEntity = errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID));
+		when(artefactJsonParameterServiceMock.readAll(same(errandEntity), any())).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
 
 		// Act
 		final var result = service.readMeasureJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID);
@@ -173,8 +174,8 @@ class ErrandMeasureServiceArtefactTest {
 	void readMeasureJsonParameter() {
 
 		// Arrange
-		errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID));
-		when(artefactJsonParameterServiceMock.read(any(), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
+		final var errandEntity = errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID));
+		when(artefactJsonParameterServiceMock.read(same(errandEntity), any(), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
 
 		// Act
 		final var result = service.readMeasureJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, KEY);
@@ -190,11 +191,11 @@ class ErrandMeasureServiceArtefactTest {
 		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
 		final var errandEntity = errandWithMeasure(measureEntity);
 		final var body = JsonParameter.create().withKey(KEY);
-		when(artefactJsonParameterServiceMock.upsert(eq(errandEntity), eq(KEY), isNull(), eq(body), any(), any(), any()))
+		when(artefactJsonParameterServiceMock.upsert(eq(errandEntity), isNull(), eq(body), any(), any(), any()))
 			.thenReturn(new UpsertResult(body, true));
 
 		// Act
-		final var result = service.updateMeasureJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, KEY, null, body);
+		final var result = service.updateMeasureJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, null, body);
 
 		// Verify
 		assertThat(result.created()).isTrue();

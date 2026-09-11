@@ -281,7 +281,7 @@ class ErrandInvestigationsResource {
 
 		verifyKeyMatchesPath(jsonParameter, key);
 
-		return toUpsertResponse(service.updateInvestigationJsonParameter(namespace, municipalityId, errandId, investigationId, key, ifMatch, jsonParameter));
+		return toUpsertResponse(service.updateInvestigationJsonParameter(namespace, municipalityId, errandId, investigationId, ifMatch, jsonParameter));
 	}
 
 	@DeleteMapping(path = "/{investigationId}/json-parameters/{key}", produces = ALL_VALUE)
@@ -435,7 +435,7 @@ class ErrandInvestigationsResource {
 
 		verifyKeyMatchesPath(jsonParameter, key);
 
-		return toUpsertResponse(service.updateSectionJsonParameter(namespace, municipalityId, errandId, investigationId, sectionId, key, ifMatch, jsonParameter));
+		return toUpsertResponse(service.updateSectionJsonParameter(namespace, municipalityId, errandId, investigationId, sectionId, ifMatch, jsonParameter));
 	}
 
 	@DeleteMapping(path = "/{investigationId}/sections/{sectionId}/json-parameters/{key}", produces = ALL_VALUE)

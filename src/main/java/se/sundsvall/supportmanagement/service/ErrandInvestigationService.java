@@ -246,23 +246,22 @@ public class ErrandInvestigationService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readInvestigationJsonParameters(final String namespace, final String municipalityId, final String errandId, final String investigationId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.INVESTIGATION, LR);
-		return artefactJsonParameterService.readAll(findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId).getJsonParameterLinks());
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.INVESTIGATION, LR);
+		return artefactJsonParameterService.readAll(errandEntity, findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId).getJsonParameterLinks());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readInvestigationJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String key) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.INVESTIGATION, LR);
-		return artefactJsonParameterService.read(findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId).getJsonParameterLinks(), key);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.INVESTIGATION, LR);
+		return artefactJsonParameterService.read(errandEntity, findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId).getJsonParameterLinks(), key);
 	}
 
 	@Transactional
-	public UpsertResult updateInvestigationJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String key,
-		final String ifMatch, final JsonParameter jsonParameter) {
+	public UpsertResult updateInvestigationJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String ifMatch, final JsonParameter jsonParameter) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		return artefactJsonParameterService.upsert(errandEntity, key, ifMatch, jsonParameter, jsonParameterLinks(entity),
+		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, jsonParameterLinks(entity),
 			parameter -> InvestigationJsonParameterEntity.create().withInvestigationEntity(entity).withJsonParameterEntity(parameter), investigationJsonParameterRepository);
 	}
 
@@ -276,26 +275,25 @@ public class ErrandInvestigationService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readSectionJsonParameters(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.INVESTIGATION, LR);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.INVESTIGATION, LR);
 		final var investigationEntity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
-		return artefactJsonParameterService.readAll(findSectionOrElseThrow(investigationEntity, sectionId).getJsonParameterLinks());
+		return artefactJsonParameterService.readAll(errandEntity, findSectionOrElseThrow(investigationEntity, sectionId).getJsonParameterLinks());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readSectionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId, final String key) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.INVESTIGATION, LR);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.INVESTIGATION, LR);
 		final var investigationEntity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
-		return artefactJsonParameterService.read(findSectionOrElseThrow(investigationEntity, sectionId).getJsonParameterLinks(), key);
+		return artefactJsonParameterService.read(errandEntity, findSectionOrElseThrow(investigationEntity, sectionId).getJsonParameterLinks(), key);
 	}
 
 	@Transactional
-	public UpsertResult updateSectionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId, final String key,
-		final String ifMatch, final JsonParameter jsonParameter) {
+	public UpsertResult updateSectionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId, final String ifMatch, final JsonParameter jsonParameter) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var investigationEntity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 		final var entity = findSectionOrElseThrow(investigationEntity, sectionId);
 
-		return artefactJsonParameterService.upsert(errandEntity, key, ifMatch, jsonParameter, sectionJsonParameterLinks(entity),
+		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, sectionJsonParameterLinks(entity),
 			parameter -> InvestigationSectionJsonParameterEntity.create().withInvestigationSectionEntity(entity).withJsonParameterEntity(parameter), investigationSectionJsonParameterRepository);
 	}
 

@@ -167,23 +167,23 @@ public class ErrandStatementService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readStatementJsonParameters(final String namespace, final String municipalityId, final String errandId, final String statementId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.STATEMENT, LR);
-		return artefactJsonParameterService.readAll(findStatementOrElseThrow(namespace, municipalityId, errandId, statementId).getJsonParameterLinks());
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.STATEMENT, LR);
+		return artefactJsonParameterService.readAll(errandEntity, findStatementOrElseThrow(namespace, municipalityId, errandId, statementId).getJsonParameterLinks());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readStatementJsonParameter(final String namespace, final String municipalityId, final String errandId, final String statementId, final String key) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.STATEMENT, LR);
-		return artefactJsonParameterService.read(findStatementOrElseThrow(namespace, municipalityId, errandId, statementId).getJsonParameterLinks(), key);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.STATEMENT, LR);
+		return artefactJsonParameterService.read(errandEntity, findStatementOrElseThrow(namespace, municipalityId, errandId, statementId).getJsonParameterLinks(), key);
 	}
 
 	@Transactional
-	public UpsertResult updateStatementJsonParameter(final String namespace, final String municipalityId, final String errandId, final String statementId, final String key, final String ifMatch,
+	public UpsertResult updateStatementJsonParameter(final String namespace, final String municipalityId, final String errandId, final String statementId, final String ifMatch,
 		final JsonParameter jsonParameter) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 
-		return artefactJsonParameterService.upsert(errandEntity, key, ifMatch, jsonParameter, jsonParameterLinks(entity),
+		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, jsonParameterLinks(entity),
 			parameter -> StatementJsonParameterEntity.create().withStatementEntity(entity).withJsonParameterEntity(parameter), statementJsonParameterRepository);
 	}
 

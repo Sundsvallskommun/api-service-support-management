@@ -244,23 +244,23 @@ public class ErrandDecisionService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readDecisionJsonParameters(final String namespace, final String municipalityId, final String errandId, final String decisionId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.DECISION, LR);
-		return artefactJsonParameterService.readAll(findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId).getJsonParameterLinks());
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.DECISION, LR);
+		return artefactJsonParameterService.readAll(errandEntity, findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId).getJsonParameterLinks());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readDecisionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String key) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.DECISION, LR);
-		return artefactJsonParameterService.read(findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId).getJsonParameterLinks(), key);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.DECISION, LR);
+		return artefactJsonParameterService.read(errandEntity, findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId).getJsonParameterLinks(), key);
 	}
 
 	@Transactional
-	public UpsertResult updateDecisionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String key, final String ifMatch,
+	public UpsertResult updateDecisionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String ifMatch,
 		final JsonParameter jsonParameter) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
-		return artefactJsonParameterService.upsert(errandEntity, key, ifMatch, jsonParameter, jsonParameterLinks(entity),
+		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, jsonParameterLinks(entity),
 			parameter -> DecisionJsonParameterEntity.create().withDecisionEntity(entity).withJsonParameterEntity(parameter), decisionJsonParameterRepository);
 	}
 
