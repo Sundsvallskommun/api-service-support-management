@@ -151,11 +151,6 @@ class ErrandServiceTest {
 	@Captor
 	private ArgumentCaptor<Specification<ErrandEntity>> specificationCaptor;
 
-	@AfterEach
-	void clearIdentifier() {
-		Identifier.remove();
-	}
-
 	@Test
 	void createErrand() {
 		final var errand = buildErrand();
@@ -652,7 +647,8 @@ class ErrandServiceTest {
 	// have to verify it. That it is consulted on both paths is asserted by createErrandWithInvalidMeasureType and
 	// updateErrandWithInvalidMeasureType, and what it accepts is MeasureValidatorTest's business.
 	@AfterEach
-	void verifyNoMoreInteractionsOnMocks() {
+	void tearDown() {
+		Identifier.remove();
 		verifyNoMoreInteractions(errandRepositoryMock, revisionServiceMock, eventServiceMock, errandLabelServiceMock, errandPhaseServiceMock);
 	}
 }
