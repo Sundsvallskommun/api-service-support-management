@@ -3,12 +3,16 @@ package se.sundsvall.supportmanagement.apptest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -183,8 +187,58 @@ class ArtefactJsonParameterCascadeIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
+	/**
+	 * The errand holds the parameters of its artefacts, but a patch replacing its own leaves theirs as they stand -
+	 * otherwise it would take the content of every artefact with it.
+	 */
+	@Test
+	void test08_patchingTheErrandLeavesArtefactParametersAlone() {
+
+		setupCall()
+			.withServicePath(ERRAND_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest("request.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select value from json_parameter where errand_id = ? and parameter_key = ?", String.class, ERRAND_ID, ERRAND_OWNED_KEY))
+			.as("the errand wrote its own parameter").contains("Jane");
+		assertThat(List.of(PARAMETER_KEY, "investigationForm", "sectionForm", "decisionForm", "measureForm"))
+			.as("every artefact kept its parameter").allSatisfy(key -> assertThat(errandParameters(key)).as(key).isOne());
+		assertThat(linkCounts()).as("and its link").allSatisfy((table, count) -> assertThat(count).as(table).isOne());
+	}
+
+	/**
+	 * Changing the content of an artefact through the errand is refused rather than ignored, so the caller learns where
+	 * it is written. Nothing of the patch is applied - including the removal of the parameter of the errand it left out.
+	 */
+	@Test
+	void test09_changingAnArtefactParameterThroughTheErrandIsAConflict() {
+
+		setupCall()
+			.withServicePath(ERRAND_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest("request.json")
+			.withExpectedResponseStatus(CONFLICT)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select value from json_parameter where id = ?", String.class, PARAMETER_ID))
+			.as("the content of the statement stayed as it was").contains("pending");
+		assertThat(errandParameters(ERRAND_OWNED_KEY)).as("and the errand kept its own parameter").isOne();
+	}
+
 	private int links() {
 		return jdbcTemplate.queryForObject("select count(*) from statement_json_parameter where statement_id = ?", Integer.class, STATEMENT_ID);
+	}
+
+	/** The links of the parameters the artefacts of the errand own - one of each kind is seeded. */
+	private Map<String, Integer> linkCounts() {
+		return Map.of(
+			"statement_json_parameter", jdbcTemplate.queryForObject("select count(*) from statement_json_parameter", Integer.class),
+			"investigation_json_parameter", jdbcTemplate.queryForObject("select count(*) from investigation_json_parameter", Integer.class),
+			"investigation_section_json_parameter", jdbcTemplate.queryForObject("select count(*) from investigation_section_json_parameter", Integer.class),
+			"decision_json_parameter", jdbcTemplate.queryForObject("select count(*) from decision_json_parameter", Integer.class),
+			"measure_json_parameter", jdbcTemplate.queryForObject("select count(*) from measure_json_parameter", Integer.class));
 	}
 
 	private int parameters() {

@@ -13,6 +13,7 @@ import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -57,19 +58,24 @@ public class JsonParameterEntity {
 	// and nothing else, as on the attachment: the parameter tears its link down before it goes itself. Without it a
 	// parameter removed in the same flush as the measure owning it goes first - the errand cascades its parameters before
 	// its measures - and Hibernate then nulls the reference of the link to it before deleting the link, which the column
-	// refuses.
+	// refuses. Batched, since a patch of the errand asks each of its parameters whether an artefact owns it.
+	@BatchSize(size = 50)
 	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
 	private List<StatementJsonParameterEntity> statementLinks;
 
+	@BatchSize(size = 50)
 	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
 	private List<InvestigationJsonParameterEntity> investigationLinks;
 
+	@BatchSize(size = 50)
 	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
 	private List<InvestigationSectionJsonParameterEntity> investigationSectionLinks;
 
+	@BatchSize(size = 50)
 	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
 	private List<DecisionJsonParameterEntity> decisionLinks;
 
+	@BatchSize(size = 50)
 	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
 	private List<MeasureJsonParameterEntity> measureLinks;
 

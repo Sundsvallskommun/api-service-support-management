@@ -6785,7 +6785,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: Conflict — resource modified concurrently
+          description: "Conflict — resource modified concurrently, or the patch changes\
+            \ a JSON parameter a handling artefact owns"
           content:
             application/problem+json:
               schema:
