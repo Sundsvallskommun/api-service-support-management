@@ -1,0 +1,47 @@
+[
+	{
+		"id": "f1000000-0000-0000-0000-000000000001",
+		"type": "REFERRAL",
+		"status": "ACTIVE",
+		"title": "Remiss till miljökontoret",
+		"description": "Remiss avseende serveringstillstånd",
+		"dueAt": "2024-03-01T12:00:00+01:00",
+		"counterpartyName": "Miljökontoret",
+		"counterpartyExternalId": "2120002411",
+		"counterpartyExternalIdType": "ORGANIZATION_NUMBER",
+		"counterpartyReference": "MK-2024-0042",
+		"question": "Finns det hinder mot serveringstillstånd på adressen?",
+		"sentAt": "2024-01-15T10:00:00+01:00",
+		"attachments": [
+			{
+				"attachmentId": "a5000000-0000-0000-0000-000000000001",
+				"fileName": "yttrande.txt",
+				"mimeType": "text/plain",
+				"fileSize": 3,
+				"purpose": {
+					"id": "f6000000-0000-0000-0000-000000000001",
+					"name": "SUPPORTING",
+					"displayName": "Underlag"
+				},
+				"sortOrder": 1,
+				"created": "2024-01-15T10:00:00+01:00",
+				"createdBy": "joe01doe"
+			}
+		],
+		"createdBy": "joe01doe",
+		"created": "2024-01-10T12:00:00+01:00",
+		"version": 0
+	},
+	{
+		"id": "f1000000-0000-0000-0000-000000000002",
+		"type": "REFERRAL",
+		"status": "DRAFT",
+		"title": "Remiss till räddningstjänsten",
+		"counterpartyName": "Räddningstjänsten",
+		"question": "Uppfyller lokalen brandkraven?",
+		"attachments": [],
+		"createdBy": "joe01doe",
+		"created": "2024-01-10T12:00:00+01:00",
+		"version": 0
+	}
+]

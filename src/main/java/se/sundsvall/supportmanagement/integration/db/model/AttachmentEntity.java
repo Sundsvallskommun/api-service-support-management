@@ -8,19 +8,23 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
 import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.CascadeType.REMOVE;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.Optional.ofNullable;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
@@ -28,7 +32,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 	indexes = {
 		@Index(name = "idx_attachment_file_name", columnList = "file_name"),
 		@Index(name = "idx_attachment_municipality_id", columnList = "municipality_id"),
-		@Index(name = "idx_attachment_namespace", columnList = "namespace")
+		@Index(name = "idx_attachment_namespace", columnList = "namespace"),
+		@Index(name = "idx_attachment_attachment_purpose_id", columnList = "attachment_purpose_id")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {
@@ -63,6 +68,22 @@ public class AttachmentEntity {
 	@Column(name = "hash", length = 64)
 	private String hash;
 
+	/**
+	 * What the attachment is for, as registered for the namespace. Optional - an attachment without one is shown as any
+	 * other.
+	 * <p>
+	 * A property of the file rather than of any link to it, so the errand can show it in its own attachment list and an
+	 * attachment belonging to no handling artefact can still carry one. The consequence is that it is a single value: an
+	 * attachment serving one purpose for a statement serves the same purpose everywhere it is linked.
+	 * <p>
+	 * A reference rather than a copy of the name, the way the labels of an errand are, so a purpose given a new name or
+	 * display name in the metadata is shown as such wherever it is used. Nothing cascades either way: clearing the
+	 * reference leaves the purpose in the metadata, and a purpose still referenced cannot be removed from it.
+	 */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "attachment_purpose_id", foreignKey = @ForeignKey(name = "fk_attachment_attachment_purpose_id"))
+	private AttachmentPurposeEntity purpose;
+
 	@ManyToOne(fetch = FetchType.LAZY, cascade = ALL)
 	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_attachment_data_attachment"))
 	private AttachmentDataEntity attachmentData;
@@ -85,6 +106,21 @@ public class AttachmentEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_attachment_errand_id"))
 	private ErrandEntity errandEntity;
+
+	// The links to the handling artefacts this attachment is used by. cascade = REMOVE and nothing else: the attachment
+	// tears down its links when it dies itself, but does not own them. A PERSIST cascade from here would resurrect
+	// links the artefact side had just removed, which is the attachment resurrection of DRAKEN-4801 one level down.
+	@OneToMany(mappedBy = "attachmentEntity", cascade = REMOVE)
+	private List<StatementAttachmentEntity> statementLinks;
+
+	@OneToMany(mappedBy = "attachmentEntity", cascade = REMOVE)
+	private List<InvestigationAttachmentEntity> investigationLinks;
+
+	@OneToMany(mappedBy = "attachmentEntity", cascade = REMOVE)
+	private List<DecisionAttachmentEntity> decisionLinks;
+
+	@OneToMany(mappedBy = "attachmentEntity", cascade = REMOVE)
+	private List<MeasureAttachmentEntity> measureLinks;
 
 	public static AttachmentEntity create() {
 		return new AttachmentEntity();
@@ -214,6 +250,58 @@ public class AttachmentEntity {
 		return this;
 	}
 
+	public List<StatementAttachmentEntity> getStatementLinks() {
+		return statementLinks;
+	}
+
+	public void setStatementLinks(final List<StatementAttachmentEntity> statementLinks) {
+		this.statementLinks = statementLinks;
+	}
+
+	public AttachmentEntity withStatementLinks(final List<StatementAttachmentEntity> statementLinks) {
+		this.statementLinks = statementLinks;
+		return this;
+	}
+
+	public List<InvestigationAttachmentEntity> getInvestigationLinks() {
+		return investigationLinks;
+	}
+
+	public void setInvestigationLinks(final List<InvestigationAttachmentEntity> investigationLinks) {
+		this.investigationLinks = investigationLinks;
+	}
+
+	public AttachmentEntity withInvestigationLinks(final List<InvestigationAttachmentEntity> investigationLinks) {
+		this.investigationLinks = investigationLinks;
+		return this;
+	}
+
+	public List<DecisionAttachmentEntity> getDecisionLinks() {
+		return decisionLinks;
+	}
+
+	public void setDecisionLinks(final List<DecisionAttachmentEntity> decisionLinks) {
+		this.decisionLinks = decisionLinks;
+	}
+
+	public AttachmentEntity withDecisionLinks(final List<DecisionAttachmentEntity> decisionLinks) {
+		this.decisionLinks = decisionLinks;
+		return this;
+	}
+
+	public List<MeasureAttachmentEntity> getMeasureLinks() {
+		return measureLinks;
+	}
+
+	public void setMeasureLinks(final List<MeasureAttachmentEntity> measureLinks) {
+		this.measureLinks = measureLinks;
+	}
+
+	public AttachmentEntity withMeasureLinks(final List<MeasureAttachmentEntity> measureLinks) {
+		this.measureLinks = measureLinks;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -266,13 +354,27 @@ public class AttachmentEntity {
 		return this;
 	}
 
+	public AttachmentPurposeEntity getPurpose() {
+		return purpose;
+	}
+
+	public void setPurpose(final AttachmentPurposeEntity purpose) {
+		this.purpose = purpose;
+	}
+
+	public AttachmentEntity withPurpose(final AttachmentPurposeEntity purpose) {
+		this.purpose = purpose;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final AttachmentEntity that = (AttachmentEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(
-			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(hash, that.hash) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(
+			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(hash, that.hash) && Objects.equals(attachmentData, that.attachmentData)
+			&& Objects.equals(
 				created, that.created) && Objects.equals(modified, that.modified)
 			&& Objects.equals(errandEntity, that.errandEntity);
 	}
@@ -293,6 +395,7 @@ public class AttachmentEntity {
 			", channel='" + channel + '\'' +
 			", fileSize=" + fileSize +
 			", hash='" + hash + '\'' +
+			", purpose=" + ofNullable(purpose).map(AttachmentPurposeEntity::getId).orElse(null) +
 			", attachmentData=" + attachmentData +
 			", created=" + created +
 			", modified=" + modified +

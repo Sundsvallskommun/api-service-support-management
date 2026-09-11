@@ -1,0 +1,14 @@
+{
+	"attachmentId": "a5000000-0000-0000-0000-000000000001",
+	"fileName": "yttrande.txt",
+	"mimeType": "text/plain",
+	"fileSize": 3,
+	"purpose": {
+		"id": "f6000000-0000-0000-0000-000000000001",
+		"name": "SUPPORTING",
+		"displayName": "Underlag"
+	},
+	"sortOrder": 5,
+	"created": "2024-01-15T10:00:00+01:00",
+	"createdBy": "joe01doe"
+}

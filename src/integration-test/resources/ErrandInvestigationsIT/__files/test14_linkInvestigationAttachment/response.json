@@ -1,0 +1,14 @@
+{
+	"attachmentId": "a5000000-0000-0000-0000-000000000002",
+	"fileName": "protokoll.txt",
+	"mimeType": "text/plain",
+	"fileSize": 3,
+	"purpose": {
+		"id": "f6000000-0000-0000-0000-000000000005",
+		"name": "PROTOCOL",
+		"displayName": "Protokoll"
+	},
+	"sortOrder": 2,
+	"created": "${json-unit.any-string}",
+	"createdBy": "joe01doe"
+}

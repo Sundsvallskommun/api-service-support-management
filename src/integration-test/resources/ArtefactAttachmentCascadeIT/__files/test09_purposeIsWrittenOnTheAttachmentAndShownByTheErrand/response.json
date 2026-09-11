@@ -1,0 +1,20 @@
+[
+	{
+		"id": "a5000000-0000-0000-0000-000000000001",
+		"fileName": "yttrande.txt",
+		"purpose": {
+			"id": "f6000000-0000-0000-0000-000000000002",
+			"name": "RESPONSE",
+			"displayName": "Inkommen handling"
+		}
+	},
+	{
+		"id": "a5000000-0000-0000-0000-000000000002",
+		"fileName": "protokoll.txt",
+		"purpose": {
+			"id": "f6000000-0000-0000-0000-000000000005",
+			"name": "PROTOCOL",
+			"displayName": "Protokoll"
+		}
+	}
+]

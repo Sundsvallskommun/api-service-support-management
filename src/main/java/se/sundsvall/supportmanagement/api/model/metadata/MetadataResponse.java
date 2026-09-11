@@ -25,6 +25,9 @@ public class MetadataResponse {
 	@ArraySchema(schema = @Schema(implementation = Role.class))
 	private List<Role> roles;
 
+	@ArraySchema(schema = @Schema(implementation = AttachmentPurpose.class))
+	private List<AttachmentPurpose> attachmentPurposes;
+
 	@ArraySchema(schema = @Schema(implementation = MeasureType.class))
 	private List<MeasureType> measureTypes;
 
@@ -129,6 +132,19 @@ public class MetadataResponse {
 		return this;
 	}
 
+	public List<AttachmentPurpose> getAttachmentPurposes() {
+		return attachmentPurposes;
+	}
+
+	public void setAttachmentPurposes(final List<AttachmentPurpose> attachmentPurposes) {
+		this.attachmentPurposes = attachmentPurposes;
+	}
+
+	public MetadataResponse withAttachmentPurposes(final List<AttachmentPurpose> attachmentPurposes) {
+		this.attachmentPurposes = attachmentPurposes;
+		return this;
+	}
+
 	public List<MeasureType> getMeasureTypes() {
 		return measureTypes;
 	}
@@ -151,6 +167,7 @@ public class MetadataResponse {
 			", statuses=" + statuses +
 			", roles=" + roles +
 			", measureTypes=" + measureTypes +
+			", attachmentPurposes=" + attachmentPurposes +
 			", contactReasons=" + contactReasons +
 			", phases=" + phases +
 			'}';
@@ -164,11 +181,11 @@ public class MetadataResponse {
 			return false;
 		final MetadataResponse that = (MetadataResponse) o;
 		return Objects.equals(categories, that.categories) && Objects.equals(externalIdTypes, that.externalIdTypes) && Objects.equals(labels, that.labels) && Objects.equals(statuses, that.statuses) && Objects.equals(roles, that.roles)
-			&& Objects.equals(measureTypes, that.measureTypes) && Objects.equals(contactReasons, that.contactReasons) && Objects.equals(phases, that.phases);
+			&& Objects.equals(measureTypes, that.measureTypes) && Objects.equals(attachmentPurposes, that.attachmentPurposes) && Objects.equals(contactReasons, that.contactReasons) && Objects.equals(phases, that.phases);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(categories, externalIdTypes, labels, measureTypes, phases, statuses, roles, contactReasons);
+		return Objects.hash(categories, externalIdTypes, labels, measureTypes, attachmentPurposes, phases, statuses, roles, contactReasons);
 	}
 }

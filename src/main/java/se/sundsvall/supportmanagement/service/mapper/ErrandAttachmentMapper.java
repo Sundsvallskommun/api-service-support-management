@@ -13,8 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 import static java.util.Collections.emptyList;
@@ -89,8 +91,17 @@ public final class ErrandAttachmentMapper {
 				.withId(e.getId())
 				.withMimeType(e.getMimeType())
 				.withChannel(e.getChannel())
-				.withHash(e.getHash()))
+				.withHash(e.getHash())
+				.withPurpose(toErrandAttachmentPurpose(e.getPurpose())))
 			.orElse(null);
 	}
 
+	public static ErrandAttachmentPurpose toErrandAttachmentPurpose(final AttachmentPurposeEntity attachmentPurposeEntity) {
+		return ofNullable(attachmentPurposeEntity)
+			.map(e -> ErrandAttachmentPurpose.create()
+				.withId(e.getId())
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName()))
+			.orElse(null);
+	}
 }

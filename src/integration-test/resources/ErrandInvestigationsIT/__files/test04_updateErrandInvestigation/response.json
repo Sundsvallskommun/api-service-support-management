@@ -1,0 +1,49 @@
+{
+	"id": "f2000000-0000-0000-0000-000000000001",
+	"type": "SUITABILITY",
+	"status": "COMPLETED",
+	"title": "Utredning av personlig lämplighet",
+	"investigatorUserId": "joe01doe",
+	"startedAt": "2024-01-16T09:00:00+01:00",
+	"summary": "Kontroll av ekonomi och lokal har genomförts.",
+	"conclusion": "Sökanden bedöms uppfylla kraven.",
+	"recommendation": "APPROVAL",
+	"recommendationMotivation": "Inga brister har konstaterats.",
+	"sections": [
+		{
+			"id": "f3000000-0000-0000-0000-000000000001",
+			"sectionKey": "financial",
+			"heading": "Ekonomisk skötsamhet",
+			"sortOrder": 1,
+			"assessment": "APPROVED",
+			"text": "Inga betalningsanmärkningar finns registrerade."
+		},
+		{
+			"id": "f3000000-0000-0000-0000-000000000002",
+			"sectionKey": "premises",
+			"heading": "Lokalen",
+			"sortOrder": 2,
+			"assessment": "PENDING"
+		}
+	],
+	"attachments": [
+		{
+			"attachmentId": "a5000000-0000-0000-0000-000000000001",
+			"fileName": "yttrande.txt",
+			"mimeType": "text/plain",
+			"fileSize": 3,
+			"purpose": {
+				"id": "f6000000-0000-0000-0000-000000000001",
+				"name": "SUPPORTING",
+				"displayName": "Underlag"
+			},
+			"sortOrder": 1,
+			"created": "2024-01-15T10:00:00+01:00",
+			"createdBy": "joe01doe"
+		}
+	],
+	"createdBy": "joe01doe",
+	"created": "2024-01-10T12:00:00+01:00",
+	"modified": "${json-unit.any-string}",
+	"version": 1
+}

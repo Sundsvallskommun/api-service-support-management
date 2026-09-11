@@ -7,13 +7,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 
+import static jakarta.persistence.CascadeType.REMOVE;
 import static jakarta.persistence.FetchType.LAZY;
 import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
 
@@ -49,6 +53,31 @@ public class JsonParameterEntity {
 	@JdbcTypeCode(LONG32VARCHAR)
 	@Column(name = "value", columnDefinition = "longtext")
 	private String value;
+
+	// The link to the handling artefact this parameter is the content of, at most one across the five. cascade = REMOVE
+	// and nothing else, as on the attachment: the parameter tears its link down before it goes itself. Without it a
+	// parameter removed in the same flush as the measure owning it goes first - the errand cascades its parameters before
+	// its measures - and Hibernate then nulls the reference of the link to it before deleting the link, which the column
+	// refuses. Batched, since a patch of the errand asks each of its parameters whether an artefact owns it.
+	@BatchSize(size = 50)
+	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
+	private List<StatementJsonParameterEntity> statementLinks;
+
+	@BatchSize(size = 50)
+	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
+	private List<InvestigationJsonParameterEntity> investigationLinks;
+
+	@BatchSize(size = 50)
+	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
+	private List<InvestigationSectionJsonParameterEntity> investigationSectionLinks;
+
+	@BatchSize(size = 50)
+	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
+	private List<DecisionJsonParameterEntity> decisionLinks;
+
+	@BatchSize(size = 50)
+	@OneToMany(mappedBy = "jsonParameterEntity", cascade = REMOVE)
+	private List<MeasureJsonParameterEntity> measureLinks;
 
 	public static JsonParameterEntity create() {
 		return new JsonParameterEntity();
@@ -129,6 +158,71 @@ public class JsonParameterEntity {
 
 	public JsonParameterEntity withVersion(final Long version) {
 		this.version = version;
+		return this;
+	}
+
+	public List<StatementJsonParameterEntity> getStatementLinks() {
+		return statementLinks;
+	}
+
+	public void setStatementLinks(final List<StatementJsonParameterEntity> statementLinks) {
+		this.statementLinks = statementLinks;
+	}
+
+	public JsonParameterEntity withStatementLinks(final List<StatementJsonParameterEntity> statementLinks) {
+		this.statementLinks = statementLinks;
+		return this;
+	}
+
+	public List<InvestigationJsonParameterEntity> getInvestigationLinks() {
+		return investigationLinks;
+	}
+
+	public void setInvestigationLinks(final List<InvestigationJsonParameterEntity> investigationLinks) {
+		this.investigationLinks = investigationLinks;
+	}
+
+	public JsonParameterEntity withInvestigationLinks(final List<InvestigationJsonParameterEntity> investigationLinks) {
+		this.investigationLinks = investigationLinks;
+		return this;
+	}
+
+	public List<InvestigationSectionJsonParameterEntity> getInvestigationSectionLinks() {
+		return investigationSectionLinks;
+	}
+
+	public void setInvestigationSectionLinks(final List<InvestigationSectionJsonParameterEntity> investigationSectionLinks) {
+		this.investigationSectionLinks = investigationSectionLinks;
+	}
+
+	public JsonParameterEntity withInvestigationSectionLinks(final List<InvestigationSectionJsonParameterEntity> investigationSectionLinks) {
+		this.investigationSectionLinks = investigationSectionLinks;
+		return this;
+	}
+
+	public List<DecisionJsonParameterEntity> getDecisionLinks() {
+		return decisionLinks;
+	}
+
+	public void setDecisionLinks(final List<DecisionJsonParameterEntity> decisionLinks) {
+		this.decisionLinks = decisionLinks;
+	}
+
+	public JsonParameterEntity withDecisionLinks(final List<DecisionJsonParameterEntity> decisionLinks) {
+		this.decisionLinks = decisionLinks;
+		return this;
+	}
+
+	public List<MeasureJsonParameterEntity> getMeasureLinks() {
+		return measureLinks;
+	}
+
+	public void setMeasureLinks(final List<MeasureJsonParameterEntity> measureLinks) {
+		this.measureLinks = measureLinks;
+	}
+
+	public JsonParameterEntity withMeasureLinks(final List<MeasureJsonParameterEntity> measureLinks) {
+		this.measureLinks = measureLinks;
 		return this;
 	}
 

@@ -1,0 +1,9 @@
+{
+	"id": "f6000000-0000-0000-0000-000000000004",
+	"name": "APPENDIX",
+	"displayName": "Bilaga till beslut",
+	"sortOrder": 42,
+	"deprecated": true,
+	"created": "2024-01-10T12:00:00+01:00",
+	"modified": "${json-unit.ignore}"
+}

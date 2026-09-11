@@ -1,0 +1,51 @@
+{
+	"id": "f4000000-0000-0000-0000-000000000001",
+	"type": "PERMIT",
+	"status": "COMPLETED",
+	"title": "Beslut om serveringstillstånd",
+	"outcome": "APPROVAL",
+	"method": "MANUAL",
+	"decidedBy": "joe01doe",
+	"decidedByRole": "DELEGATE",
+	"decidedAt": "2024-02-01T10:12:00+01:00",
+	"legalBasis": "8 kap. 12 § alkohollagen",
+	"delegationReference": "3.2.1",
+	"justification": "Sökanden uppfyller kraven på lämplighet.",
+	"appealable": true,
+	"validFrom": "2024-03-01",
+	"validTo": "2025-02-28",
+	"investigationId": "f2000000-0000-0000-0000-000000000001",
+	"terms": [
+		{
+			"id": "f5000000-0000-0000-0000-000000000001",
+			"sortOrder": 1,
+			"category": "serveringstid",
+			"text": "Servering får ske mellan 11.00 och 01.00."
+		},
+		{
+			"id": "f5000000-0000-0000-0000-000000000002",
+			"sortOrder": 2,
+			"category": "brandskydd",
+			"text": "Högst 120 gäster får vistas i lokalen samtidigt."
+		}
+	],
+	"attachments": [
+		{
+			"attachmentId": "a5000000-0000-0000-0000-000000000001",
+			"fileName": "yttrande.txt",
+			"mimeType": "text/plain",
+			"fileSize": 3,
+			"purpose": {
+				"id": "f6000000-0000-0000-0000-000000000001",
+				"name": "SUPPORTING",
+				"displayName": "Underlag"
+			},
+			"sortOrder": 1,
+			"created": "2024-01-15T10:00:00+01:00",
+			"createdBy": "joe01doe"
+		}
+	],
+	"createdBy": "joe01doe",
+	"created": "2024-01-10T12:00:00+01:00",
+	"version": 0
+}

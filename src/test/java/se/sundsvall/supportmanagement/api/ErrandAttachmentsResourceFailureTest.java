@@ -14,6 +14,8 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
+import se.sundsvall.supportmanagement.api.model.attachment.UpdateErrandAttachmentRequest;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
 import static java.util.UUID.randomUUID;
@@ -27,6 +29,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 
@@ -415,6 +418,57 @@ class ErrandAttachmentsResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("deleteErrandAttachment.attachmentId", "not a valid UUID"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void updateErrandAttachmentWithInvalidPurposeId() {
+
+		// Parameters
+		final var body = UpdateErrandAttachmentRequest.create().withPurpose(ErrandAttachmentPurpose.create().withId(INVALID));
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(tuple("purpose.id", "not a valid UUID"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void deleteErrandAttachmentPurposeWithInvalidAttachmentId() {
+
+		// Call
+		final var response = webTestClient.delete()
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}/purpose")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "attachmentId", INVALID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(tuple("deleteErrandAttachmentPurpose.attachmentId", "not a valid UUID"));
 
 		// Verification
 		verifyNoInteractions(errandAttachmentServiceMock);
