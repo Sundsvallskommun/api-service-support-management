@@ -198,18 +198,20 @@ Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_eve
 
 ### 2.2 När en händelse blir en outbox-rad
 
-`ProcessEventPublisher.publish(errandEntity, eventType, eventSubType, executedBy, requestGroupId)` anropas sist i `EventService.createErrandEvent` och kör i samma transaktion. `sendNotification`-flaggan spelar ingen roll här — det här är inga notiser till handläggare, utan meddelanden till en process.
+`ProcessEventPublisher.publish(errandEntity, eventType, eventSubType, executedBy, requestGroupId, command)` anropas sist i `EventService.createErrandEvent` och kör i samma transaktion. Kommandona i §5.9 och §5.10 går in bredvid, genom `EventService.createProcessCommandEvent`: ett kommando ändrar inte ärendet, så händelsen pekar inte på någon revision, och det som kommandot bär — den valda nyckeln eller signalens namn — följer med till publiceringen. `sendNotification`-flaggan spelar ingen roll här — det här är inga notiser till handläggare, utan meddelanden till en process.
 
 ```
 1. PROCESS_CONSUMER för (municipalityId, namespace)?      nej -> return
 2. X-Trigger-Process: false, icke-AD-identitet?           ja  -> return        (loop-skydd, lager 1)
-                       kommandon (PROCESS, SIGNAL) hoppar over steg 3 och 4, 6.5
+                       kommandon (PROCESS, SIGNAL) hoppar over steg 2, 3 och 4, 6.5
 3. Levererade event för ärendet i fönstret > tröskel?      ja  -> ERROR-aktivitet, return  (lager 3)
 4. eventSubType i PROCESS_TRIGGER?                        nej -> return        (lager 2)
 5. processKey: kommandots egen forst, sedan instansens, sist ur etiketterna
-                       0 -> DELETE publiceras anda, ovriga return; >1 -> ERROR-aktivitet, return
-6. startAllowed: kommando -> ja; annars ingen levande instans && ingen COMPLETED
-                 && etikettens processStartMode == AUTOMATIC                    (7.7)
+                       0 -> DELETE publiceras anda, ovriga return
+                       >1 -> ERROR-aktivitet, return
+                       langre an kolumnen -> ERROR-aktivitet, return
+6. startAllowed: startkommando (subtyp PROCESS) -> ja; annars ingen levande instans
+                 && ingen COMPLETED && etikettens processStartMode == AUTOMATIC (7.7)
 7. INSERT process_event_outbox (process_service = namespacets PROCESS_CONSUMER, 7.6)
 ```
 
@@ -222,6 +224,13 @@ tvetydiga etiketter är ett läge ett ärende kan ligga och vänta i tills någo
 (§5.10) — annars lägger varje meddelande och varje bilaga en ny ERROR-rad i loggen, och felet dränker den
 logg det rapporteras i. `uq_epa_idempotency` räddar oss inte: både `errand_process_id` och
 `external_task_id` är NULL för de här posterna, och NULL är distinkt i unika index.
+
+**"Fönstret" är nödbromsens fönster, också för posterna som inte har med nödbromsen att göra.**
+`process-engine.loop-guard.window` är alltså en inställning för två saker: höjs den till en timme börjar
+ett tvetydigt ärende rapportera sig en gång i timmen. Det är avsiktligt — det finns ingen anledning att
+tvinga fram två tal som ändå ska betyda samma sak — men kopplingen är dold i konfigurationen och står
+därför utskriven här och i publicerarens `dedupeWindowStart`, som är den enda punkt där de skulle behöva
+skiljas åt.
 
 **Steg 6 är hela skillnaden mellan en händelse som väcker en process och en som startar den.** SM räknar ut
 lovet en gång, vid publiceringen, och skickar med svaret. pw behöver därmed varken känna till etiketternas
@@ -243,6 +252,19 @@ ska radera (§9.3), så fältet är informationsbärande för `DELETE` och oblig
 `UPDATE`. Det gör också publiceringen okänslig för att instansraden redan kaskaderats bort när
 `ErrandService.deleteErrand` anropar `createErrandEvent` efter `repository.deleteById`.
 
+**En nyckel som inte får plats i kolumnen är ett konfigurationsfel, inte ett publiceringsfel.**
+`metadata_label_attribute.value` är `text` och alltså obegränsad, medan `process_event_outbox.process_key`
+är `varchar(128)`. Överlämnas den längdkontrollen till databasen blir en felskriven etikett en misslyckad
+publicering — och en misslyckad publicering drar med sig ärendeändringen. Följden vore att **varje**
+skrivning till **varje** ärende som bär etiketten svarar `500` för alltid, med ett felmeddelande som inte
+pekar ut etiketten. Steg 5 mäter därför nyckeln själv och skriver en ERROR-aktivitet som namnger längden
+och nyckelns början, precis som vid tvetydighet. Ärendet förblir skrivbart och processen går att starta för
+hand. Samma resonemang gäller inte `signal_name`: ett kommando kan inte göra ett ärende oskrivbart, och en
+avkortad signal skulle korrelera fel grind, så där får skrivningen fallera högljutt i stället.
+
+**Steg 6 säger ja bara till startkommandot.** En signal (§5.9) riktas mot en instans som redan kör och bär
+därför aldrig lovet att föda en ny — formeln i §7.7 är den som gäller.
+
 **Publiceringen får inte kunna svälja sitt eget fel.** Alla åtta anropsställen fångar `Exception` (§1.7),
 och en överenskommelse om att inte lägga till ett nionde är ingen garanti. Därför:
 
@@ -257,6 +279,15 @@ throw ...;   // anroparen far svalja detta; transaktionen gar anda inte att spar
 Poängen är att en utebliven outbox-rad drar med sig hela ärendeändringen
 (`UnexpectedRollbackException` när transaktionen ska sparas), oavsett vad anropsstället gör med
 undantaget. Namespace utan `PROCESS_CONSUMER` vänder redan i steg 1 och märker aldrig något av det här.
+
+**`publish` måste bära `@Transactional(propagation = SUPPORTS)` för att raden ovan ska fungera.**
+`currentTransactionStatus()` läser den status som *transaktionsaspekten* lagt undan, inte den som finns.
+Nås publiceringen från en anropare som kör sin egen `TransactionTemplate` — som `ErrandProcessService`
+redan gör för sin kollisionsåterhämtning, och som kommandona i §5.9 och §5.10 därför kommer att göra —
+finns ingen sådan status, och raden kastar `NoTransactionException` i stället för att märka transaktionen.
+Då är skyddet borta, och det ursprungliga felet är dessutom överskrivet. Med annotationen binder aspekten
+en status även när publiceringen bara hakar på någon annans transaktion. `SUPPORTS` och inte `REQUIRED`,
+eftersom en skrivning utan transaktion ska rapporteras och inte tilldelas en.
 
 Finns det ingen transaktion alls går det förstås inte att rulla tillbaka någonting — då är ärendet redan
 sparat. Det loggas som ERROR (§8.1). I dag har varje väg in en
@@ -1527,10 +1558,12 @@ om till unhealthy.
 
 **Alla tre lagren gäller härledda händelser — kommandon passerar dem.** Handläggarens signal (§5.9) och
 manuella start (§5.10) är inte något som hänt med ärendet, utan begäranden riktade rakt till processen.
-Lager 1 släpper dem redan i dag eftersom headern inte hedras för AD-identiteter, och eftersom
-kommandoendpointerna kräver ett AD-konto är det garanterat i stället för en tillfällighet. Lager 2 och 3
-undantar dem uttryckligen: ett kommando är ingen ärendeändring, och en människa som trycker på en knapp är
-ingen loop.
+**Alla tre lagren undantar dem uttryckligen**, lager 1 inräknat: ett kommando är ingen ärendeändring, och en
+människa som trycker på en knapp är ingen loop. Lager 1 hade visserligen släppt dem ändå — headern hedras
+inte för AD-identiteter, och kommandoendpointerna kräver ett AD-konto — men att förlita sig på den kedjan
+gör knappen beroende av att `403`-kontrollen i §5.10 finns kvar. Glömdes den skulle kommandot tystas i
+stället för att avvisas, alltså den tystaste av felvägar. Undantaget i publiceraren kostar ingenting och
+tar bort beroendet.
 
 Undantaget för **lager 3** är det som är lätt att missa och dyrast att glömma. Ett ärende med livlig trafik
 under intaget kan trippa bromsen, och eftersom bromsen ligger före triggerfiltret i §2.2 skulle
@@ -2466,7 +2499,7 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T5 — Publicering (SM)
 
-**Bygg:** `ProcessEventPublisher` anropad från `EventService.createErrandEvent`, med `setRollbackOnly` före kast (§2.2); `TriggerProcessFilter` med ThreadLocal i `ServiceUtil` och headern dokumenterad i `OpenApiConfig`, efter mönstret från `X-Request-Group-Id` (§6.5); `ProcessKeySelector` (§7.3); nödbromsen.
+**Bygg:** `ProcessEventPublisher` anropad från `EventService.createErrandEvent`, med `setRollbackOnly` före kast (§2.2); `TriggerProcessFilter` med ThreadLocal i `ServiceUtil` och headern dokumenterad i `OpenApiConfig`, efter mönstret från `X-Request-Group-Id` (§6.5); `ProcessKeySelector` (§7.3); nödbromsen; uträkningen av `startAllowed` och kolumnen `start_allowed` (§7.7); kommandonas undantag från triggerfiltret och nödbromsen samt `signal_name` på raden (§6.5); värdena `PROCESS` och `SIGNAL` i `EventSubType`; regenerera `openapi.yaml`.
 
 **Acceptans:**
 - **IT som verifierar att ett e-postintag ger en outbox-rad.** Intaget skapar inga revisioner och går förbi den gemensamma passagen (§1.1) — tappas det där märks det inte av något annat test.
@@ -2477,7 +2510,8 @@ pw-alkt) följer tjänst i stället för ordning.
 - **`DELETE` av ett ärende vars etikett tagits bort ⇒ raden publiceras ändå**, med `process_key` null. Utan det blir processinstansen föräldralös i Operaton.
 - Ärende med processinstans: `process_key` i raden kommer från instansen, inte från etiketterna. Verifieras genom att ändra etiketten i testdata och se att nyckeln står still.
 - `ProcessKeySelectorTest`: en tagg ⇒ en nyckel; två med samma ⇒ en; två med olika ⇒ ERROR-aktivitet och ingen rad; `deprecated` ignoreras; **namnbyte och omflyttning av labeln lämnar upplösningen oförändrad**.
-- Selektorn lämnar nyckel **och** startläge som ett par, ur samma etikett. Lovet räknas ut först i T12, men paret ska inte behöva byggas om då (§7.7).
+- Selektorn lämnar nyckel **och** startläge som ett par, ur samma etikett (§7.7).
+- `startAllowed` blir falskt för ett ärende med avslutad instans och sant för ett vars enda instans är misslyckad. Verifierat på raden i databasen.
 - **Publisher kastar ⇒ ärendeskrivningen är inte committad**, trots att anropsstället sväljer undantaget (§1.7). Verifieras genom att PATCH:a och sedan läsa tillbaka ärendet — inte genom att inspektera loggen.
 - Utan aktiv transaktion: ERROR-logg, inget kast som spräcker anropet.
 - Nödbromsen slår över tröskeln med rader som har `delivered_at` satt, och dess ERROR-aktivitet skrivs **utan** instans.
@@ -2540,7 +2574,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### T11 — Manuell stegning med signaler (SM)
 
-**Bygg:** `V1_58`-migreringen med `errand_process_signal` (§3.1), entitet och repository; `ProcessSignal` i API:et och `awaitingSignals` på `ErrandProcess` (§5.3); `POST .../processes/{processInstanceId}/signals` (§5.9); aktivitetspost med `activityType = SIGNAL`; värdet `SIGNAL` i `EventSubType`; signalnamnet i outbox-raden och i händelsemodellen — kolumnen `signal_name` skapas redan i T1:s `V1_56` (§3.1), här fylls den i; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
+**Bygg:** `V1_58`-migreringen med `errand_process_signal` (§3.1), entitet och repository; `ProcessSignal` i API:et och `awaitingSignals` på `ErrandProcess` (§5.3); `POST .../processes/{processInstanceId}/signals` (§5.9); aktivitetspost med `activityType = SIGNAL`; signalnamnet i händelsemodellen — värdet `SIGNAL` i `EventSubType` och kolumnen `signal_name` fylls redan i T5; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
 
 **Acceptans:**
 - **Outbox-raden bär signalens namn i `signal_name`, och det följer med ut i `signalName` på händelsen.** Ett test som bara kontrollerar att en rad skrevs missar poängen — det är namnet pw korrelerar på (§5.4).
@@ -2556,7 +2590,9 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### T12 — Automatisk och manuell start (SM)
 
-**Bygg:** `start_allowed` i outbox-raden och `startAllowed` i händelsemodellen — kolumnen skapas i T1:s `V1_56` (§3.1), här fylls den i (§5.4); attributet `processStartMode` med validering vid etikettskrivning (§7.7); `ProcessKeySelector` som lämnar nyckel och läge som ett par; startlovet i publiceringens steg 6 och kommandonas undantag från triggerfiltret (§2.2); `startable` i kuvertet runt `GET .../processes` (§5.10); `POST .../processes/start` med `ProcessStartRequest`; värdet `PROCESS` i `EventSubType`; aktivitetspost med `activityType = START`; regenerera `openapi.yaml`.
+**Bygg:** `startAllowed` i händelsemodellen (§5.4) — kolumnen skapas i T1:s `V1_56` och fylls redan i T5; attributet `processStartMode` med validering vid etikettskrivning (§7.7); `startable` i kuvertet runt `GET .../processes` (§5.10); `POST .../processes/start` med `ProcessStartRequest`; aktivitetspost med `activityType = START`; regenerera `openapi.yaml`.
+
+`ProcessKeySelector` med paret nyckel och läge, uträkningen av startlovet i publiceringens steg 6 och kommandonas undantag från triggerfiltret och nödbromsen byggdes i T5. Kvar här är reglerna runt attributet och vägen in för handläggaren.
 
 **Acceptans:**
 - Etikett med `processStartMode: MANUAL` ⇒ `POST /errands` skapar ärendet, publicerar en rad med `start_allowed = 0`, och ingen process startar. Samma etikett med `AUTOMATIC` ⇒ `start_allowed = 1` och processen startar.
@@ -2695,6 +2731,6 @@ den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. U
 ### Vad som inte går att verifiera automatiskt
 
 - Att WSO2 släpper igenom med rätt scope, och att `If-Match`/`ETag` passerar oförvanskade.
-- Verklig samtidighet mellan poddar — ShedLock täcks indirekt av `ShedlockConfigurationIT`.
+- Verklig samtidighet mellan poddar — ShedLock täcks indirekt av `ShedlockConfigurationTest`.
 - Långtidsbeteende hos outbox och aktivitetslogg. Kompensation: hälsoindikatorn (§8.3).
 

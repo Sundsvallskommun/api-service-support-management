@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.apptest;
+package se.sundsvall.supportmanagement.integration.db;
 
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -9,9 +9,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
@@ -30,20 +27,24 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 /**
  * The rules the process tables lean on live in the database rather than in the code: the errand cascade that keeps
  * orphans out, and the unique index that lets an errand carry one live process instance and any number of finished
- * ones. None of them exist in a schema generated from the entities, so they can only be verified where Flyway has run -
- * which is the same reason {@code ShedlockConfigurationIT} sits here.
+ * ones. None of them exist in a schema generated from the entities, so they can only be verified where Flyway has run,
+ * and that is what the dbtest profile is for - unlike the repository tests beside it, which run on the schema the junit
+ * profile builds from the entity metadata.
  * <p>
- * That the context starts at all is a check in itself: the IT profile validates the mapped entities against the
- * migrated schema.
+ * That the context starts at all is a check in itself: the profile holds the mapped entities against the migrated
+ * schema rather than letting them alter it.
  * <p>
- * What a cascade left behind is asked with {@code existsById}, which runs a count against the database. {@code findById}
+ * What a cascade left behind is asked with {@code existsById}, which runs a count against the database.
+ * {@code findById}
  * would answer out of the persistence context, which still holds the instance it loaded and would report a row the
  * database removed without telling JPA.
  */
 @SpringBootTest(classes = Application.class)
-@ActiveProfiles("it")
+@ActiveProfiles({
+	"junit", "dbtest"
+})
 @Transactional
-class ProcessIntegrationDataModelIT {
+class ProcessIntegrationDataModelTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "PROCESS-DATA-MODEL-IT";

@@ -1,9 +1,11 @@
 package se.sundsvall.supportmanagement.service.config;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.EnumUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -66,7 +68,8 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
 	})
 	public void create(NamespaceConfig request, String namespace, String municipalityId) {
 		if (configRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
@@ -204,7 +207,8 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
@@ -256,6 +260,24 @@ public class NamespaceConfigService {
 			.map(entity -> ConfigPropertyExtractor.<String>getNullableValue(entity, PROPERTY_PROCESS_CONSUMER));
 	}
 
+	/**
+	 * The event sub types that wake the process of the namespace, and an empty set for a namespace that has named none.
+	 * <p>
+	 * Cached and answered on its own for the same reason as {@link #getProcessConsumer(String, String)}: it is asked on
+	 * every errand event of a namespace that runs a process.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @return                the sub types configured as process triggers for the namespace
+	 */
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
+	public Set<EventSubType> getProcessTriggers(String namespace, String municipalityId) {
+		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.map(mapper::toProcessTriggers)
+			.map(Set::copyOf)
+			.orElseGet(Collections::emptySet);
+	}
+
 	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public NamespaceConfig get(String namespace, String municipalityId) {
 		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
@@ -273,7 +295,8 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
 	})
 	public void delete(String namespace, String municipalityId) {
 		if (configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {

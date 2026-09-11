@@ -133,7 +133,7 @@ public class NamespaceConfigMapper {
 	 * Values that no longer resolve to a known event sub type are skipped, so a stale row cannot make the whole
 	 * configuration unreadable.
 	 */
-	private List<EventSubType> toProcessTriggers(final NamespaceConfigEntity entity) {
+	public List<EventSubType> toProcessTriggers(final NamespaceConfigEntity entity) {
 		final var triggers = ConfigPropertyExtractor.<String>getValues(entity, PROPERTY_PROCESS_TRIGGER).stream()
 			.map(value -> {
 				final var trigger = EnumUtils.getEnum(EventSubType.class, value);
