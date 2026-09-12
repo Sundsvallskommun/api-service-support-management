@@ -35,6 +35,8 @@ public enum ErrandField {
 	STAKEHOLDERS("stakeholders", false),
 	MEASURES("measures", false),
 	ACTIVE_NOTIFICATIONS("activeNotifications", false),
+	PHASES("phases", false),
+	ACTIONS("actions", false),
 	VERSION("version", false),
 	PARAMETERS("parameters", true, ProtectedResource.PARAMETER),
 	JSON_PARAMETERS("jsonParameters", true, ProtectedResource.JSON_PARAMETER),
