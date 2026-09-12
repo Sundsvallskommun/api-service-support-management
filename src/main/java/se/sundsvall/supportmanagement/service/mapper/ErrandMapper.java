@@ -314,6 +314,8 @@ public final class ErrandMapper {
 		entry(ErrandField.STAKEHOLDERS, (errand, e, _) -> errand.setStakeholders(toStakeholders(e.getStakeholders()))),
 		entry(ErrandField.MEASURES, (errand, e, _) -> errand.setMeasures(toMeasures(e.getMeasures()))),
 		entry(ErrandField.ACTIVE_NOTIFICATIONS, (errand, e, _) -> errand.setActiveNotifications(toActiveNotifications(e.getNotifications()))),
+		entry(ErrandField.PHASES, (errand, e, _) -> errand.setPhases(toErrandPhases(e.getPhases()))),
+		entry(ErrandField.ACTIONS, (errand, e, _) -> errand.setActions(toErrandActions(e.getActions()))),
 		entry(ErrandField.VERSION, (errand, e, _) -> errand.setVersion(e.getVersion())),
 		entry(ErrandField.PARAMETERS, (errand, e, keys) -> errand.setParameters(filterByKey(toParameterList(e.getParameters()), Parameter::getKey, keys))),
 		entry(ErrandField.JSON_PARAMETERS, (errand, e, keys) -> errand.setJsonParameters(filterByKey(toJsonParameters(e.getJsonParameters()), JsonParameter::getKey, keys))),
@@ -377,18 +379,20 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys, plus the
-	 * properties no {@link ErrandField} names and which therefore cannot be restricted. Built from the same mappers as a
-	 * role mapped errand, so a conversion exists in one place only and the two projections cannot drift apart.
+	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys. The same
+	 * mappers a role mapped errand is built from, so a conversion exists in one place only and the two projections
+	 * cannot drift apart - nor can a field reach one of them and not the other, which is what left phases and actions
+	 * served to an unrestricted user and dropped from every restricted one.
+	 * <p>
+	 * The one property left out is activePhaseId, which is inbound only: a request names the phase to move the errand
+	 * into, and the response carries the phases themselves, of which the active one is the phase not yet ended.
 	 */
 	public static Errand toErrand(final ErrandEntity entity) {
 		if (isNull(entity)) {
 			return null;
 		}
 
-		return toRoleMappedErrand(entity, ALL_FIELDS)
-			.withPhases(toErrandPhases(entity.getPhases()))
-			.withActions(toErrandActions(entity.getActions()));
+		return toRoleMappedErrand(entity, ALL_FIELDS);
 	}
 
 	public static List<ErrandLabel> toErrandLabels(final List<ErrandLabelEmbeddable> errandLabelEmbeddables) {

@@ -519,8 +519,10 @@ a jsonSchema driven form is editable before any data has been saved to it, which
   the published contract alone. One that is not listed is not shown to them. Fields carry **no level of
   their own** — a namespace may only hold an individual key to read, never a whole field, so a field is writable exactly
   when what serves it is: the errand for most of them, and for `parameters` and `jsonParameters` the resource carrying
-  their own write endpoint. Fields no `ErrandField` names, such as phases and actions, are never listed and are always
-  readable. Whether a property is writable *at all* is a separate question answered by `readOnly` in the schema.
+  their own write endpoint. Every property a response carries is a field, `phases` and `actions` included — the one
+  exception is `activePhaseId`, which is inbound only: a request names the phase to move the errand into, and the
+  response carries the phases themselves, of which the active one is the phase not yet ended. Whether a property is
+  writable *at all* is a separate question answered by `readOnly` in the schema.
 - A key restriction is all or nothing. `allKeys: true` means the field carries no key restriction and every key of it
   follows the errand, including keys that may be added. `allKeys: false` means `keys` is exhaustive: those are the only
   keys the caller reaches, each with its own level, already held against the level of the errand.

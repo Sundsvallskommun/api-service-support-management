@@ -419,10 +419,33 @@ class ErrandMapperTest {
 		final var entity = createEntity();
 		final var allFields = Arrays.stream(ErrandField.values()).collect(toMap(identity(), _ -> Set.<String>of()));
 
-		// The full errand is the role mapped errand of every field, plus the properties no ErrandField names.
+		// The full errand is exactly the role mapped errand of every field - nothing is added to it afterwards, which is
+		// what keeps a field from reaching one projection and not the other.
 		assertThat(toErrand(entity)).usingRecursiveComparison()
-			.ignoringFields("phases", "actions")
 			.isEqualTo(toErrandWithAccessControl(entity, _ -> allFields));
+	}
+
+	/**
+	 * Phases and actions were served to a caller nothing restricted and dropped from every restricted one, with no grant
+	 * that could give them back. They are fields like any other now, so a restriction naming them carries them.
+	 */
+	@Test
+	void testToErrandWithAccessControlMapsPhasesAndActionsWhenTheyAreGranted() {
+		final var entity = createEntity();
+
+		final var granted = toErrandWithAccessControl(entity, _ -> Map.of(ErrandField.PHASES, Set.of(), ErrandField.ACTIONS, Set.of()));
+
+		assertThat(granted.getPhases()).isNotEmpty().isEqualTo(toErrand(entity).getPhases());
+		assertThat(granted.getActions()).isNotEmpty().isEqualTo(toErrand(entity).getActions());
+		assertThat(granted).hasAllNullFieldsOrPropertiesExcept("phases", "actions");
+	}
+
+	@Test
+	void testToErrandWithAccessControlOmitsPhasesAndActionsWhenTheyAreNotGranted() {
+		final var granted = toErrandWithAccessControl(createEntity(), _ -> Map.of(ErrandField.ID, Set.of()));
+
+		assertThat(granted.getPhases()).isNull();
+		assertThat(granted.getActions()).isNull();
 	}
 
 	@Test

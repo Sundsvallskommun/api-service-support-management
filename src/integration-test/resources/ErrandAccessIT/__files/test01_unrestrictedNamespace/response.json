@@ -74,6 +74,12 @@
 			"field": "activeNotifications"
 		},
 		{
+			"field": "phases"
+		},
+		{
+			"field": "actions"
+		},
+		{
 			"field": "version"
 		},
 		{

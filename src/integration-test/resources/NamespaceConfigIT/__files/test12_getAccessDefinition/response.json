@@ -121,6 +121,16 @@
 			"keyed": false
 		},
 		{
+			"field": "PHASES",
+			"property": "phases",
+			"keyed": false
+		},
+		{
+			"field": "ACTIONS",
+			"property": "actions",
+			"keyed": false
+		},
+		{
 			"field": "VERSION",
 			"property": "version",
 			"keyed": false

@@ -81,10 +81,14 @@ class ErrandFieldTest {
 	}
 
 	/**
-	 * Properties of the errand deliberately left unrestrictable. They are served to everyone reaching the errand and
-	 * carry no grant of their own, which is why no field names them.
+	 * Properties of the errand deliberately left unrestrictable. Only the phase a request names to move the errand into
+	 * is left, which no response ever carries - the phases themselves are restrictable, and the active one is the phase
+	 * among them not yet ended.
+	 * <p>
+	 * A property a response does carry belongs in a field instead. Left out of one, it is not merely unrestricted: it
+	 * reaches a caller nothing restricts and is dropped from every restricted one, with no grant that can give it back.
 	 */
-	private static final Set<String> UNRESTRICTABLE = Set.of("phases", "activePhaseId", "actions");
+	private static final Set<String> UNRESTRICTABLE = Set.of("activePhaseId");
 
 	/**
 	 * The direction the other tests do not cover: a property added to the errand has to be named by a field, or named
