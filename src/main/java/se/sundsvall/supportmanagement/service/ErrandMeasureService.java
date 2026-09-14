@@ -33,6 +33,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.updateMeasureEntity;
 import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.ownedParameterIds;
 import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.removeParameters;
+import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 
 @Service
@@ -99,27 +100,34 @@ public class ErrandMeasureService {
 		return toMeasures(errandEntity.getMeasures());
 	}
 
+	/**
+	 * Flushed before the measure is mapped, so that the response carries the version just written - which is what its
+	 * ETag is taken from.
+	 */
 	@Transactional
-	public Measure updateErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final Measure measure) {
+	public Measure updateErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final String ifMatch, final Measure measure) {
 		measureValidator.validate(measure, namespace, municipalityId);
 
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
+		validateIfMatch(ifMatch, measureEntity.getVersion());
+
 		updateMeasureEntity(measureEntity, measure).setModifiedBy(getCallerIdentity());
 		applyProvenance(namespace, municipalityId, errandId, measure, measureEntity);
 
-		errandsRepository.save(errandEntity);
+		errandsRepository.saveAndFlush(errandEntity);
 		return toMeasure(measureEntity);
 	}
 
 	@Transactional
-	public void deleteErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId) {
+	public void deleteErrandMeasure(final String namespace, final String municipalityId, final String errandId, final String measureId, final String ifMatch) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		entityManager.lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
+		validateIfMatch(ifMatch, measureEntity.getVersion());
 
 		// Named now: the links that name them go with the measure.
 		final var ownedParameters = ownedParameterIds(measureEntity.getJsonParameterLinks());

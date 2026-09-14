@@ -11,6 +11,7 @@ import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
@@ -111,11 +112,15 @@ class ErrandMeasuresIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(PATH + "/" + MEASURE_ID)
 			.withHttpMethod(PATCH)
+			.withHeader("If-Match", "\"0\"")
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select version from measure where id = ?", Long.class, MEASURE_ID))
+			.as("the version moved, which is what the ETag carries").isEqualTo(1L);
 	}
 
 	@Test
@@ -132,6 +137,37 @@ class ErrandMeasuresIT extends AbstractAppTest {
 
 		final var updatedErrand = errandsRepository.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_2281).orElseThrow();
 		assertThat(updatedErrand.getMeasures()).hasSize(1);
+	}
+
+	/**
+	 * An ETag that has moved on says so rather than overwriting what somebody else wrote.
+	 */
+	@Test
+	void test17_staleIfMatchIsRejectedOnUpdate() {
+		setupCall()
+			.withServicePath(PATH + "/" + MEASURE_ID)
+			.withHttpMethod(PATCH)
+			.withHeader("If-Match", "\"7\"")
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(PRECONDITION_FAILED)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select goal from measure where id = ?", String.class, MEASURE_ID)).isNotEqualTo("Updated goal");
+	}
+
+	/**
+	 * Nor is a measure somebody else has changed since removed on the strength of an old ETag.
+	 */
+	@Test
+	void test18_staleIfMatchIsRejectedOnDelete() {
+		setupCall()
+			.withServicePath(PATH + "/" + MEASURE_ID)
+			.withHttpMethod(DELETE)
+			.withHeader("If-Match", "\"7\"")
+			.withExpectedResponseStatus(PRECONDITION_FAILED)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select count(*) from measure where id = ?", Integer.class, MEASURE_ID)).isOne();
 	}
 
 	/**

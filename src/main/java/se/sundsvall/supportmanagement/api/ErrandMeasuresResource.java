@@ -97,7 +97,7 @@ class ErrandMeasuresResource {
 
 	@GetMapping(path = "/{measureId}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read errand measure", description = "Fetches the measure matching the provided errand id and measure id", responses = {
-		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "200", description = "Successful operation", headers = @Header(name = ETAG, schema = @Schema(type = "string")), useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Measure> readErrandMeasure(
@@ -106,7 +106,7 @@ class ErrandMeasuresResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "measureId", description = "Measure id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String measureId) {
 
-		return ok(service.readErrandMeasure(namespace, municipalityId, errandId, measureId));
+		return withETag(service.readErrandMeasure(namespace, municipalityId, errandId, measureId));
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -123,31 +123,35 @@ class ErrandMeasuresResource {
 
 	@PatchMapping(path = "/{measureId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update errand measure", description = "Updates the measure matching the provided errand id and measure id", responses = {
-		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
-		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		@ApiResponse(responseCode = "200", description = "Successful operation", headers = @Header(name = ETAG, schema = @Schema(type = "string")), useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "412", description = "Precondition Failed - If-Match version mismatch", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Measure> updateErrandMeasure(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "measureId", description = "Measure id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String measureId,
+		@Parameter(name = "If-Match", description = "Optional ETag of the measure for optimistic locking - omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@Validated(OnUpdate.class) @NotNull @RequestBody final Measure measure) {
 
-		return ok(service.updateErrandMeasure(namespace, municipalityId, errandId, measureId, measure));
+		return withETag(service.updateErrandMeasure(namespace, municipalityId, errandId, measureId, ifMatch, measure));
 	}
 
 	@DeleteMapping(path = "/{measureId}", produces = ALL_VALUE)
 	@Operation(summary = "Delete errand measure", description = "Deletes the measure matching the provided errand id and measure id", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
-		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "412", description = "Precondition Failed - If-Match version mismatch", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Void> deleteErrandMeasure(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Parameter(name = "measureId", description = "Measure id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String measureId) {
+		@Parameter(name = "measureId", description = "Measure id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String measureId,
+		@Parameter(name = "If-Match", description = "Optional ETag of the measure for optimistic locking - omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch) {
 
-		service.deleteErrandMeasure(namespace, municipalityId, errandId, measureId);
+		service.deleteErrandMeasure(namespace, municipalityId, errandId, measureId, ifMatch);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)
 			.build();
@@ -278,4 +282,7 @@ class ErrandMeasuresResource {
 		return noContent().header(CONTENT_TYPE, ALL_VALUE).build();
 	}
 
+	private static ResponseEntity<Measure> withETag(final Measure measure) {
+		return ok().header(ETAG, formatOrNull(measure.getVersion())).body(measure);
+	}
 }

@@ -146,8 +146,7 @@ public class Measure {
 	@Schema(description = "User who last modified the measure", examples = "jo12doe", accessMode = READ_ONLY)
 	private String modifiedBy;
 
-	@Schema(description = "Version of the measure. Unlike the other handling artefacts a measure is part of the errand, so it carries no ETag of "
-		+ "its own and writes are serialised through the version of the errand", examples = "0", accessMode = READ_ONLY)
+	@Schema(description = "Version of the measure, carried as the ETag of the resource", examples = "0", accessMode = READ_ONLY)
 	private Long version;
 
 	public static Measure create() {
