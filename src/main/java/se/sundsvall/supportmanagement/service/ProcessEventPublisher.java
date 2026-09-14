@@ -8,16 +8,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
@@ -26,17 +25,14 @@ import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.EXECUTED_BY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
@@ -65,7 +61,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  *                    too long      -&gt; error entry, return
  * 6. start permission: a start command -&gt; yes
  *                    otherwise no live instance, no completed instance, and an AUTOMATIC label
- * 7. insert the row, addressed to the process consumer of the namespace
+ * 7. insert the row, addressed to the process consumer of the namespace, and signal that it is there
  * </pre>
  *
  * Layer 1 goes on intent rather than on identity: a process saying itself that it does not want to be woken is what
@@ -108,27 +104,30 @@ public class ProcessEventPublisher {
 	private final NamespaceConfigService namespaceConfigService;
 	private final ProcessEventOutboxRepository outboxRepository;
 	private final ErrandProcessRepository processRepository;
-	private final ErrandProcessActivityRepository activityRepository;
 	private final ProcessKeySelector processKeySelector;
+	private final ProcessErrorLog errorLog;
 	private final ProcessEngineProperties processEngineProperties;
 	private final Clock clock;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 	public ProcessEventPublisher(
 		final NamespaceConfigService namespaceConfigService,
 		final ProcessEventOutboxRepository outboxRepository,
 		final ErrandProcessRepository processRepository,
-		final ErrandProcessActivityRepository activityRepository,
 		final ProcessKeySelector processKeySelector,
+		final ProcessErrorLog errorLog,
 		final ProcessEngineProperties processEngineProperties,
-		final Clock clock) {
+		final Clock clock,
+		final ApplicationEventPublisher applicationEventPublisher) {
 
 		this.namespaceConfigService = namespaceConfigService;
 		this.outboxRepository = outboxRepository;
 		this.processRepository = processRepository;
-		this.activityRepository = activityRepository;
 		this.processKeySelector = processKeySelector;
+		this.errorLog = errorLog;
 		this.processEngineProperties = processEngineProperties;
 		this.clock = clock;
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
 	/**
@@ -222,6 +221,8 @@ public class ProcessEventPublisher {
 			// rather than a value anything is decided on, so a shortened one is worth more than a failed write.
 			.withExecutedBy(StringUtils.truncate(executedBy, EXECUTED_BY_LENGTH))
 			.withRequestGroupId(requestGroupId));
+
+		applicationEventPublisher.publishEvent(new ProcessEventWritten(errand.getId()));
 	}
 
 	/**
@@ -322,46 +323,18 @@ public class ProcessEventPublisher {
 	}
 
 	/**
-	 * Writes an error entry on the errand, once per errand and window rather than once per discarded event.
+	 * Writes an error entry on the errand for a fault that keeps the event from being published, once per errand and
+	 * window rather than once per discarded event.
 	 * <p>
-	 * A loop producing hundreds of events would otherwise lay down hundreds of entries, and an ambiguous errand is a
-	 * state it can sit in until somebody starts the process by hand. The idempotency key of the log does not help: both
-	 * the instance and the external task are null for these entries, and null is distinct in a unique index. The fault
-	 * being reported would drown the log it is reported in.
-	 * <p>
-	 * Written without a process instance, since they happen precisely when there is none - which is also why nothing is
-	 * written for a deletion. An entry hangs on the errand alone, and the errand row is normally gone by then.
+	 * Written without a process instance, since these faults happen precisely when there is none - which is also why
+	 * nothing is written for a deletion. An entry hangs on the errand alone, and the errand row is normally gone by then.
 	 */
 	private void writeOncePerWindow(final ErrandEntity errand, final EventType eventType, final String activityType, final String errorCode, final String message) {
 		if (DELETE == eventType) {
 			return;
 		}
 
-		final var now = OffsetDateTime.now(clock).truncatedTo(MILLIS);
-
-		if (activityRepository.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(errand.getId(), activityType, ERROR, dedupeWindowStart(now))) {
-			return;
-		}
-
-		activityRepository.save(ErrandProcessActivityEntity.create()
-			.withErrandId(errand.getId())
-			.withActivityType(activityType)
-			.withSeverity(ERROR)
-			.withMessage(StringUtils.truncate(message, MESSAGE_LENGTH))
-			.withErrorCode(errorCode)
-			.withOccurredAt(now));
-	}
-
-	/**
-	 * How far back the log is asked before another entry of the same kind is written.
-	 * <p>
-	 * Deliberately the window of the emergency brake, and named here so that the sharing is visible rather than read out
-	 * of an expression. It is one setting for two things: raising the brake window to an hour also makes an ambiguous
-	 * errand report itself once an hour. That is the intended reading of "once per errand and window", and if the two
-	 * ever need to differ this is the one place to split them.
-	 */
-	private OffsetDateTime dedupeWindowStart(final OffsetDateTime now) {
-		return now.minus(processEngineProperties.loopGuard().window());
+		errorLog.writeOncePerWindow(errand.getId(), null, activityType, errorCode, message);
 	}
 
 	/**

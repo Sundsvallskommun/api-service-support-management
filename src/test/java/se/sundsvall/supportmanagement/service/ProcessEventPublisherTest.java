@@ -21,6 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -97,7 +98,7 @@ class ProcessEventPublisherTest {
 	private static final Duration WINDOW = Duration.ofMinutes(10);
 
 	private final Clock clock = Clock.fixed(Instant.parse("2026-09-09T08:00:00Z"), ZoneId.of("UTC"));
-	private final ProcessEngineProperties properties = new ProcessEngineProperties(List.of(PROCESS_SERVICE), new LoopGuard(THRESHOLD, WINDOW));
+	private final ProcessEngineProperties properties = new ProcessEngineProperties(List.of(PROCESS_SERVICE), new LoopGuard(THRESHOLD, WINDOW), new ProcessEngineProperties.DirectRun(true, 2, 4, 500));
 
 	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
@@ -113,6 +114,9 @@ class ProcessEventPublisherTest {
 
 	@Mock
 	private ProcessKeySelector processKeySelectorMock;
+
+	@Mock
+	private ApplicationEventPublisher applicationEventPublisherMock;
 
 	@Captor
 	private ArgumentCaptor<ProcessEventOutboxEntity> outboxCaptor;
@@ -142,7 +146,8 @@ class ProcessEventPublisherTest {
 
 	@BeforeEach
 	void setUp() {
-		publisher = new ProcessEventPublisher(namespaceConfigServiceMock, outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, processKeySelectorMock, properties, clock);
+		publisher = new ProcessEventPublisher(namespaceConfigServiceMock, outboxRepositoryMock, processRepositoryMock, processKeySelectorMock, new ProcessErrorLog(activityRepositoryMock, properties, clock), properties, clock,
+			applicationEventPublisherMock);
 	}
 
 	@AfterEach
@@ -158,7 +163,7 @@ class ProcessEventPublisherTest {
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
 
-		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, processKeySelectorMock);
+		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, processKeySelectorMock, applicationEventPublisherMock);
 	}
 
 	@Test
@@ -560,6 +565,18 @@ class ProcessEventPublisherTest {
 			assertThat(row.getRequestGroupId()).isEqualTo(REQUEST_GROUP_ID);
 			assertThat(row.getSignalName()).isNull();
 		});
+		verify(applicationEventPublisherMock).publishEvent(new ProcessEventWritten(ERRAND_ID));
+	}
+
+	@Test
+	@DisplayName("Verification that no signal goes out for a row that was never written, since there would be nothing for the relay to deliver")
+	void noSignalWithoutARow() {
+		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE);
+
+		publisher.publish(errand(), UPDATE, ATTACHMENT, EXECUTED_BY, REQUEST_GROUP_ID, null);
+
+		verifyNoInteractions(applicationEventPublisherMock);
 	}
 
 	@Test
@@ -587,6 +604,7 @@ class ProcessEventPublisherTest {
 		}
 
 		verify(status).setRollbackOnly();
+		verifyNoInteractions(applicationEventPublisherMock);
 	}
 
 	@Test

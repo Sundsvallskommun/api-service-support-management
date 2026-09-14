@@ -51,7 +51,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Protecte
 class NamespaceConfigServiceTest {
 
 	// The register of process consumers the service validates against, as it is configured in application.yml
-	private static final ProcessEngineProperties PROCESS_ENGINE_PROPERTIES = new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, Duration.ofMinutes(10)));
+	private static final ProcessEngineProperties PROCESS_ENGINE_PROPERTIES = new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, Duration.ofMinutes(10)), new ProcessEngineProperties.DirectRun(true, 2, 4, 500));
 
 	@Mock
 	private NamespaceConfigRepository configRepositoryMock;

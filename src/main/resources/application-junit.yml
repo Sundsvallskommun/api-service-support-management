@@ -29,6 +29,12 @@ integration:
     url: http://relation.url
   json-schema:
     url: http://json-schema.url
+  pw-alkt:
+    url: http://pw-alkt.url
+process-engine:
+  direct-run:
+    # Off, since there is no pw-alkt to reach, and a direct run would try after every publication a test makes
+    enabled: false
 spring:
   cache:
     type: none
@@ -83,6 +89,8 @@ spring:
             token-uri: http://token.url
           json-schema:
             token-uri: http://token.url
+          pw-alkt:
+            token-uri: http://token.url
         registration:
           accessmapper:
             client-id: the-client-id
@@ -118,6 +126,9 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           json-schema:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          pw-alkt:
             client-id: the-client-id
             client-secret: the-client-secret
 scheduler:

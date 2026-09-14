@@ -1,0 +1,83 @@
+package se.sundsvall.supportmanagement.service.scheduler.processevent;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties.DirectRun;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties.LoopGuard;
+import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class ProcessEventCleanupTest {
+
+	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-14T02:30:00Z"), ZoneId.of("UTC"));
+	private static final OffsetDateTime NOW = OffsetDateTime.now(CLOCK);
+	private static final int BATCH_SIZE = 2;
+
+	@Mock
+	private ProcessEventOutboxRepository outboxRepositoryMock;
+
+	@Test
+	@DisplayName("Verification that delivered rows are removed a batch at a time, until a batch comes back short")
+	void deliveredRowsAreRemovedBatchByBatch() {
+		final var first = List.of(row("row-1"), row("row-2"));
+		final var last = List.of(row("row-3"));
+		when(outboxRepositoryMock.findByDeliveredAtBefore(NOW.minus(Duration.ofDays(1)), PageRequest.of(0, BATCH_SIZE))).thenReturn(first, last);
+
+		assertThat(cleanup(Duration.ofMinutes(10)).removeDelivered()).isEqualTo(3);
+
+		verify(outboxRepositoryMock).deleteAllByIdInBatch(List.of("row-1", "row-2"));
+		verify(outboxRepositoryMock).deleteAllByIdInBatch(List.of("row-3"));
+	}
+
+	@Test
+	@DisplayName("Verification that a cleanup with nothing to remove asks once and removes nothing")
+	void nothingToRemove() {
+		when(outboxRepositoryMock.findByDeliveredAtBefore(NOW.minus(Duration.ofDays(1)), PageRequest.of(0, BATCH_SIZE))).thenReturn(List.of());
+
+		assertThat(cleanup(Duration.ofMinutes(10)).removeDelivered()).isZero();
+
+		verify(outboxRepositoryMock).deleteAllByIdInBatch(List.of());
+	}
+
+	@Test
+	@DisplayName("Verification that a delivered row is kept for a day at the least, however short the window of the emergency brake")
+	void theRetentionIsADayAtTheLeast() {
+		assertThat(cleanup(Duration.ofMinutes(10)).retention()).isEqualTo(Duration.ofDays(1));
+		assertThat(cleanup(Duration.ofHours(4)).retention()).isEqualTo(Duration.ofDays(1));
+	}
+
+	@Test
+	@DisplayName("Verification that a delivered row outlives six windows of the emergency brake, which counts delivered rows inside its window")
+	void theRetentionIsSixWindowsWhenThatIsLonger() {
+		assertThat(cleanup(Duration.ofHours(5)).retention()).isEqualTo(Duration.ofHours(30));
+	}
+
+	private ProcessEventCleanup cleanup(final Duration window) {
+		final var properties = new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, window), new DirectRun(true, 2, 4, 500));
+		final var cleanup = new ProcessEventCleanup(outboxRepositoryMock, properties, CLOCK);
+		ReflectionTestUtils.setField(cleanup, "batchSize", BATCH_SIZE);
+
+		return cleanup;
+	}
+
+	private static ProcessEventOutboxEntity row(final String id) {
+		return ProcessEventOutboxEntity.create().withId(id);
+	}
+}

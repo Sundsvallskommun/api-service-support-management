@@ -47,6 +47,9 @@ class AccessControlChokePointTest {
 		se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker.class,
+		// The process event relay reads nothing out of the errand. It locks the row only so that failing the process of an
+		// errand after a refusal for good is serialised against the reports of that process.
+		se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventDelivery.class,
 		se.sundsvall.supportmanagement.service.scheduler.supensions.SuspensionWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.webmessagecollector.WebMessageCollectorWorker.class,
 		se.sundsvall.supportmanagement.service.MessageExchangeSyncService.class,

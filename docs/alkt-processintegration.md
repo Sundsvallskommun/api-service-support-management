@@ -47,7 +47,7 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 28 | **Manuell stegning sker med namngivna signaler, och valet manuellt eller automatiskt ligger i processmodellen**                 | En inställning per namespace; att handläggaren sätter processens läge direkt                                                                | En inställning i SM kan säga en sak medan modellen gör en annan. Signalen är dessutom en begäran, inte ett kommando — processen avgör, så lagstadgade steg går inte att kliva förbi (§5.9)                                                                                                                                                                                                                   |
 | 29 | **Signalen bär bara ett namn, ingen fritext**                                                                                   | Ett kommentarsfält på signalen                                                                                                              | Aktivitetsloggen gallras efter 365 dagar medan ärendet lever längre, och `message` får inte innehålla personuppgifter. Motiveringen hör hemma i ärendeanteckningar (§5.9)                                                                                                                                                                                                                                    |
 | 30 | **Ingen retry-räknare och ingen dead letter. Raden ligger kvar tills den gått igenom**                                          | Egen backoff med `retry_count`/`next_retry_at`/`dead_letter`, som `notification_dispatch` hade före `V1_48__simplify_notification_dispatch` | Leverans och radering i samma transaktion ger samma sak utan bokföring, och den bokföringen har kodbasen medvetet gjort sig av med. Kvar blir `delivered_at`, som nödbromsen behöver — §8.3                                                                                                                                                                                                                  |
-| 31 | **Outbox-raden bär sitt eget mål i `process_service`, satt vid publicering**                                                    | Att relayet slår upp `PROCESS_CONSUMER` på nytt vid leverans                                                                                | Ett namespace har exakt en processkonsument, men konfigurationen kan ändras mellan publicering och leverans. Raden ska gå dit den var adresserad. Kolumnen är dessutom det relayet grupperar på för att en långsam konsument inte ska svälta de andra — §7.6                                                                                                                                                 |
+| 31 | **Outbox-raden bär sitt eget mål i `process_service`, satt vid publicering**                                                    | Att relayet slår upp `PROCESS_CONSUMER` på nytt vid leverans                                                                                | Ett namespace har exakt en processkonsument, men konfigurationen kan ändras mellan publicering och leverans. Raden ska gå dit den var adresserad. Relayet hämtar på kolumnen, och en rad adresserad någon annanstans än pw-alkt syns i hälsoindikatorn — §7.6                                                                                                                                                |
 | 32 | **`process` och `decision` är `ErrandField`-värden**                                                                            | Att låta dem stå utanför den rollbaserade fältfiltreringen                                                                                  | `justification` är fritext med personuppgifter, och alla andra känsliga fält på ärendet går genom `roleBasedFieldResolver`. Att ALKT kör utan åtkomstkontroll döljer bara problemet till nästa namespace — §5.3                                                                                                                                                                                              |
 | 33 | **AoT använder inte AccessMapper, och ett namespace med `PROCESS_CONSUMER` får inte ha aktiv `access_control`**                 | Att lita på att ingen slår på den; att låta `AccessControlService` gå förbi kontrollen för konsumenten utpekad med `X-Sent-By`              | AccessMapper svarar bara på AD-konton, och pw är ingen människa. Slås kontrollen på får pw `401` på allt, och det syns som ärenden som står stilla. En header som anroparen sätter själv duger inte som behörighetsgrund — §7.1                                                                                                                                                                              |
 | 34 | **Tre nya `ProtectedResource`: `PROCESS`, `PROCESS_ACTIVITY`, `DECISION`**                                                      | Att återanvända `ERRAND`                                                                                                                    | `getErrand` och `verifyExistingErrandAndAuthorization` kräver en resurs, så valet går inte att skjuta upp. `ERRAND` hade gett processens rapporter samma behörighet som ärendet självt — §5.6                                                                                                                                                                                                                |
@@ -57,6 +57,7 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 38 | **`GET .../processes` svarar med ett kuvert: `startable` + `processes`**                                                        | En naken lista; ett fält på ärendeprojektionen                                                                                              | Det intressanta fallet är när listan är tom, och en tom lista kan inte bära *varför*. Ärendeprojektionen är tjänstens varmaste läsväg och hade dragit med sig en uppslagning per ärende i listsvar — §5.10                                                                                                                                                                                                   |
 | 39 | **`decision` reduceras i listsvar till `outcome`, `method` och `decidedAt`; `process` reduceras inte**                          | Hela beslutet i varje träff; en egen listmodell för beslutet                                                                                | `justification` är fritext med personuppgifter, och en träfflista hade burit en per rad till en klient som bara visar utfallet. Reduceringen görs i mapparen så att modellen förblir en — §5.3                                                                                                                                                                                                               |
 | 40 | **Kontrollen av processrapportens avsändare är validering och svarar `400`, inte `403`**                                        | `403` enligt §5.6:s ursprungliga tabell                                                                                                     | SM autentiserar ingenting inkommande och `X-Sent-By` sätts av anroparen själv, så ett `403` hade påstått en behörighetsprövning som aldrig gjordes och skickat felsökningen till WSO2 i stället för till fältet i kroppen. Reglerna gör `process_service` garanterad, hindrar rader i namespace utan processmotor och ger loggen en avsändare — §5.6, beslut 33                                              |
+| 41 | **Relayet levererar bara till pw-alkt, med en statisk Feign-klient byggd som tjänstens övriga**                                 | En uppslagningstabell namn → klient byggd ur `process-engine.consumers` med `FeignClientBuilder`                                            | Det finns en processmotor, och REST ska ersättas av RabbitMQ. En ny konsument kräver en release ändå, och en statisk klient ser ut som resten av tjänsten. En rad adresserad någon annanstans syns i hälsoindikatorn — §7.6                                                                                                                                                                                  |
 
 ---
 
@@ -229,7 +230,7 @@ logg det rapporteras i. `uq_epa_idempotency` räddar oss inte: både `errand_pro
 `process-engine.loop-guard.window` är alltså en inställning för två saker: höjs den till en timme börjar
 ett tvetydigt ärende rapportera sig en gång i timmen. Det är avsiktligt — det finns ingen anledning att
 tvinga fram två tal som ändå ska betyda samma sak — men kopplingen är dold i konfigurationen och står
-därför utskriven här och i publicerarens `dedupeWindowStart`, som är den enda punkt där de skulle behöva
+därför utskriven här och i `ProcessErrorLog.windowStart`, som är den enda punkt där de skulle behöva
 skiljas åt.
 
 **Steg 6 är hela skillnaden mellan en händelse som väcker en process och en som startar den.** SM räknar ut
@@ -317,9 +318,11 @@ Tre saker är lätta att blanda ihop:
 Direktkörningen **väcker relayet, inte processen**. Att väcka processen är något helt annat och sker längre
 fram i kedjan, när pw korrelerar ett meddelande in i Operaton (§9.3).
 
-Mekaniken: `@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` tillsammans med
-`@Async("processEventExecutor")` (2 trådar normalt, 4 som mest, kö på 500). Samma mönster används redan i
-`SubscriptionService.handleAutoSubscribeEvent`.
+Mekaniken: `@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` i `ProcessEventDirectRun`, som
+lägger körningen på trådpoolen `processEventExecutor` (2 trådar normalt, 4 som mest, kö på 500 —
+`process-engine.direct-run`). Lyssnaren följer mönstret i `SubscriptionService.handleAutoSubscribeEvent`, men
+körningen lämnas direkt till poolen i stället för genom `@Async`, som utan `@EnableAsync` tyst hade kört leveransen
+i den tråd som just sparat ärendet.
 
 **Blir kön full ska direktkörningen hoppas över, inte anropet fällas.** Standardbeteendet `AbortPolicy`
 kastar ett `RejectedExecutionException` i den tråd som just sparat ärendet, och det når hela vägen ut till
@@ -328,11 +331,19 @@ bort signalen, logga att det hände och lägg try/catch runt lyssnaren, precis s
 `handleAutoSubscribeEvent` redan gör. Cronjobbet är skyddsnätet: en missad direktkörning kostar upp till en
 minut, aldrig ett fel.
 
-Cronjobbet går genom samma kod och tar bara med rader som är minst fem sekunder gamla, så att det inte
-krockar med en transaktion som håller på att sparas. Krockar de ändå — direktkörning och cronjobb på samma
-rad — är det ofarligt: båda tar radgruppen med `@Lock(PESSIMISTIC_WRITE)` sorterad på `created, id` och
-plockar bara rader utan `delivered_at`, så den som kommer sist hittar ingenting att göra. Samma lås är det
-som håller ordningen inom ett ärende.
+Cronjobbet går genom samma kod och tar bara med rader som är minst fem sekunder gamla
+(`scheduler.process-event.transaction-buffer`), så att det inte krockar med en transaktion som håller på att
+sparas. Krockar de ändå — direktkörning och cronjobb på samma rad — är det ofarligt: båda läser om radgruppen med
+`@Lock(PESSIMISTIC_WRITE)` och tar bara rader utan `delivered_at`, så den som kommer sist väntar in den första och
+hittar sedan ingenting att göra. Samma lås är det som håller ordningen inom ett ärende. Att vänta är avsiktligt:
+`SKIP LOCKED` hade släppt förbi en senare rad medan en tidigare fortfarande levereras.
+
+**Låset tas på id, i läsnivån `READ COMMITTED`, och raderna sorteras i Java.** Under MariaDB:s `REPEATABLE READ`
+låser en låsande läsning även glappen mellan de indexposter den passerar. Gick den via indexet över oskickade rader
+skulle den låsa just det glapp där publiceringen skriver sin nya rad, och varje ärendeskrivning stå och vänta tills
+pw-alkt svarat. En uppslagning på primärnyckeln utan `ORDER BY` ger optimeraren inget skäl att välja den vägen, och
+`READ COMMITTED` tar inga glapplås om den ändå skulle göra det. Rader som åldrats ur hittas på samma sätt: utan lås
+först, sedan låsta på id.
 
 ### 2.4 Hur händelserna tar sig över till pw
 
@@ -341,8 +352,8 @@ bevisat driftklar. Det är det enda som saknas — testmässigt är det ingen tr
 Testcontainers (§1.6) och en `RabbitMQContainer` är några rader kod.
 
 **Men målbilden är AMQP.** Med REST kräver varje ny PW-tjänst en OAuth2-registrering, en url och ett
-Feign-mål i SM — vad det innebär i praktiken står i §7.6. Själva bytet är däremot litet: allt utbyte sker
-i en enda metod, `ProcessEventDelivery.deliver(row, client)`. Varje REST-konsument vi bygger innan bytet är arbete vi slänger.
+Feign-mål i SM — vad det innebär i praktiken står i §7.6. Själva bytet är däremot litet: allt utbyte med pw-alkt
+sker i `PwAlktIntegration`, och det är den klassen som byts ut. Relayet, leveransen och kvitteringen står kvar.
 
 Med *driftklar* menar vi: quorum queues på minst tre noder, DLX/DLQ med `x-delivery-limit`, egen vhost per
 miljö, en användare per tjänst med rättighetsregler, TLS, övervakning av kölängd, obekräftade meddelanden,
@@ -386,7 +397,7 @@ create table if not exists process_event_outbox (
     namespace         varchar(32)  not null,
     errand_id         varchar(36)  not null,
     -- Radens mal, satt vid publicering ur namespacets PROCESS_CONSUMER. Relayet slar inte
-    -- upp konfigurationen pa nytt, och grupperar pa den har kolumnen. Se 7.6.
+    -- upp konfigurationen pa nytt, och hamtar bara rader for pw-alkt. Se 7.6.
     process_service   varchar(64)  not null,
     -- Nullbar: kravs for CREATE och UPDATE, irrelevant for DELETE dar pw matchar
     -- pa businessKey. Se 2.2 steg 5.
@@ -1691,28 +1702,38 @@ integration:
 process-engine:
   loop-guard: { max-events-per-errand: 20, window: PT10M }
   consumers: [pw-alkt]                      # registret; namnet ar Feign-malet
+  direct-run: { enabled: true, core-pool-size: 2, max-pool-size: 4, queue-capacity: 500 }   # 2.3
 scheduler:                                  # nyckelnamnen foljer notification-dispatch
   process-event:
     name: process_event_relay
     cron: "0 * * * * *"
     shedlock-lock-at-most-for: PT2M
     maximum-execution-time: PT1M
+    transaction-buffer: PT5S                # cronjobbet tar inga yngre rader an sa, 2.3
     max-age: P30D                           # sista utvagen for en rad som aldrig gar igenom, 8.3
     unhealthy-after: PT15M                  # aldern pa aldsta oskickade raden, 8.3
-    batch-size: 200                         # tak per konsument och korning, 7.6
+    batch-size: 200                         # tak per korning, 7.6
   process-cleanup:
     name: process_event_cleanup
     cron: "0 30 2 * * *"
     shedlock-lock-at-most-for: PT10M
     maximum-execution-time: PT5M
+    batch-size: 1000                        # rader per borttagning, var sin transaktion
+resilience4j.circuitbreaker.instances:
+  pw-alkt:                                  # raknar bara anrop utan svar och oppnar efter tre, 7.6
+    ignoreExceptions:                       # svar om en enskild handelse raknas inte
+      - se.sundsvall.dept44.exception.ClientProblem
+      - se.sundsvall.dept44.exception.ServerProblem
+    slidingWindowSize: 5
+    minimumNumberOfCalls: 3
+    waitDurationInOpenState: PT30S
 ```
 
-`consumers` är **registret över kända processkonsumenter**, och det är också uppslagningstabellen relayet
-använder för att hitta rätt klient (§7.6). Namnet är adressen:
-det är samma sträng som Feign-målet under `integration`, som OAuth2-registreringen och som
-`PROCESS_CONSUMER` i `namespace_config` pekar ut. Loop-skyddet läser det inte (§6.5). Registret finns
-för att en felstavad `PROCESS_CONSUMER` ska avvisas vid skrivning i stället för att tyst sluta fungera —
-utan det går processkonsumenter inte att skilja från övriga poster under `integration`.
+`consumers` är **registret över kända processkonsumenter**. Namnet är adressen: det är samma sträng som
+Feign-målet under `integration`, som OAuth2-registreringen och som `PROCESS_CONSUMER` i `namespace_config` pekar
+ut. Loop-skyddet läser det inte (§6.5), och relayet slår inte upp något i det — det levererar bara till pw-alkt
+(§7.6). Registret finns för att en felstavad `PROCESS_CONSUMER` ska avvisas vid skrivning i stället för att tyst
+sluta fungera — utan det går processkonsumenter inte att skilja från övriga poster under `integration`.
 
 I `application-it.yml` sätts samtliga cron till `"-"`.
 
@@ -1875,68 +1896,59 @@ Det är det allvarligaste misstag man kan göra i den här lösningen, och ingen
 
 ### 7.6 Fler namespace och fler processmotorer
 
-Designen är byggd för att ALKT ska vara det första namespacet, inte det enda. Det mesta av det som skiljer
-ett namespace från ett annat är därför data: `PROCESS_CONSUMER` och `PROCESS_TRIGGER` i `namespace_config`
-(§7.1), `processKey` på etiketterna (§7.3), och processmodellerna i pw. Ingenting av det kräver en release.
+Det mesta av det som skiljer ett namespace från ett annat är data: `PROCESS_CONSUMER` och `PROCESS_TRIGGER` i
+`namespace_config` (§7.1), `processKey` på etiketterna (§7.3), och processmodellerna i pw. Ingenting av det kräver
+en release.
 
 **Ett namespace har exakt en processkonsument.** `namespace_config_value` tillåter tekniskt flera värden
 per nyckel (§1.5), men `PROCESS_CONSUMER` läses som ett. Ett namespace är en verksamhet, och en verksamhet
 har en processmotor. Behövs två är det två namespace.
 
-#### Vad en ny pw-tjänst kostar
+#### Relayet levererar bara till pw-alkt
+
+Relayet har **en** klient, `PwAlktClient`, byggd som tjänstens övriga Feign-klienter, och ingen uppslagning från
+namn till klient (beslut 41). Det finns en processmotor, och REST-transporten ska ersättas av RabbitMQ (§2.4). En
+uppslagningstabell byggd ur registret hade gett en klient som inte ser ut som de andra, för att spara ett arbete som
+ändå kräver en release — se tabellen nedan.
+
+`process_service` sätts fortfarande på outbox-raden vid publicering, ur namespacets `PROCESS_CONSUMER` (§2.2 steg
+7). Relayet hämtar bara rader adresserade till pw-alkt, och **en oskickad rad adresserad någon annanstans slår om
+hälsoindikatorn direkt** (§8.3), eftersom ingen körning någonsin kommer att ta den. Registret avvisar en okänd
+konsument vid skrivning (§7.2), så det krävs en release som lägger till ett namn utan att bygga en klient för det.
+
+#### Vad en ny pw-tjänst skulle kosta
 
 |                          Steg                           |            Var             |      Release?      |
 |---------------------------------------------------------|----------------------------|--------------------|
 | `PROCESS_CONSUMER` och `PROCESS_TRIGGER` för namespacet | `namespace_config`         | Nej                |
 | `processKey` på etiketterna                             | `metadata_label_attribute` | Nej                |
 | OAuth2-registrering och provider                        | `application.yml`          | **Ja**             |
-| Feign-mål under `integration`                           | `application.yml`          | **Ja**             |
+| Feign-klient med konfiguration och inställningar        | kod, `application.yml`     | **Ja**             |
 | Namnet i `process-engine.consumers`                     | `application.yml`          | **Ja**             |
+| Relayet hämtar och levererar även konsumentens rader    | kod                        | **Ja**             |
 | Eget API i WSO2                                         | WSO2                       | **Ja**, utanför SM |
 
-Att halva listan kräver en release är inte ett fel, men det ska sägas rakt ut: **en ny processkonsument är
-en driftsättning av SM, inte en konfigurationsändring.** Det som är konfiguration är att *koppla ett
-namespace* till en konsument som redan finns.
+**En ny processkonsument är en driftsättning av SM, inte en konfigurationsändring** — och med AMQP som målbild är
+det bytet som bör göras först. Det som är konfiguration är att *koppla ett namespace* till pw-alkt.
 
-#### Hur raden hittar rätt tjänst
+#### Att pw-alkt är nere får inte hålla körningen
 
-`process_service` sätts på outbox-raden vid publicering, ur namespacets `PROCESS_CONSUMER` (§2.2 steg 6).
-Relayet läser alltså aldrig om konfigurationen — raden går dit den var adresserad när den skrevs. Ändras
-`PROCESS_CONSUMER` medan rader ligger oskickade går de till den gamla tjänsten, vilket är rätt: de
-adresserades dit, och den nya konsumenten känner inte till dem.
+Leveransen håller ett HTTP-anrop inne i transaktionen (§8.3), och jobbet har en `maximum-execution-time`. Tre saker
+håller körningen kort när pw-alkt inte svarar:
 
-Namnet blir en klient genom en uppslagningstabell byggd vid uppstart ur `process-engine.consumers`
-(§7.2) — inte en injicerad `ProcessEngineClient`, för det finns fler än en:
+1. **Hämtningen är begränsad.** `batch-size` (§7.2) är ett tak per körning. Det är också svaret på fallgropen i
+   §1.2: `findProcessable` saknar `LIMIT`, och den bristen får inte ärvas hit.
+2. **Circuit breaker.** `@CircuitBreaker` på klienten, som på tjänstens övriga klienter, men den räknar bara anrop
+   som aldrig fick svar — timeout, anslutningsfel, en token som inte går att hämta — och öppnar efter tre sådana. Öppnar den avbryts körningen,
+   eftersom varje ärende efter det skulle få samma svar. Ett felsvar om en enskild händelse, 5xx inräknat, betyder att
+   pw-alkt finns där. Räknades det skulle några händelser som pw-alkt aldrig tar kunna hålla breakern öppen för alla
+   ärenden, eftersom hämtningen börjar med samma rader varje körning. Varje timeout görs två gånger av den
+   token-retryer som tjänstens alla klienter har, så tre timeouts kostar körningen en minut.
+3. **Kort read-timeout** (§7.2). pw svarar `202` så snart händelsen tagits emot, så anropet är kort i alla normala
+   fall — och ett långt anrop håller en databastransaktion öppen.
 
-```java
-/** Namn -> klient. Byggd vid uppstart; ett namn utan klient ar ett konfigurationsfel som ska smalla da. */
-private final Map<String, ProcessEngineClient> clientsByConsumer;
-```
-
-Varje klient bär sin egen url, sina egna timeouts och sin egen `clientRegistrationId` för OAuth2. Ett namn
-i `namespace_config` som inte finns i registret avvisas redan vid skrivning med `400` (§7.2), så det fallet
-ska aldrig nå relayet — men uppslagningen ska ändå smälla högt i stället för att tyst hoppa över raden.
-
-#### Att en konsument är nere får inte stoppa de andra
-
-Det här är den punkt där flera konsumenter skiljer sig mest från en. Leveransen håller ett HTTP-anrop inne
-i transaktionen (§8.3), hämtningen sorterar deterministiskt, och jobbet har en `maximum-execution-time`.
-Utan motmedel räcker det med att en pw-tjänst timeoutar för att körningen ska ta slut innan den hunnit
-fram till de andra namespacens rader — och eftersom ordningen är densamma nästa körning hamnar samma
-stockade rader först igen. Fyra saker håller isär dem:
-
-1. **Hämtningen är per konsument och begränsad.** `batch-size` (§7.2) är ett tak per konsument och körning.
-   Det är också svaret på fallgropen i §1.2: `findProcessable` saknar `LIMIT`, och den bristen får inte
-   ärvas hit.
-2. **Konsumenterna levereras oberoende av varandra**, med `idx_peo_consumer` som stöd. En konsument som
-   inte svarar förbrukar sin egen andel av körningen, inte hela.
-3. **Circuit breaker per konsument.** `@CircuitBreaker` används redan på ett fyrtiotal ställen i kodbasen.
-   En konsument som är nere ska sluta anropas en stund i stället för att äta upp timeout efter timeout.
-4. **Kort read-timeout för relayet** (§7.2). pw svarar `202` så snart händelsen tagits emot, så anropet är
-   kort i alla normala fall — och ett långt anrop håller en databastransaktion öppen.
-
-Ordningen inom ett ärende hålls fortfarande, eftersom grupperingen sker per ärende inne i varje konsuments
-andel (§8.3).
+Ett ärende vars leverans fallerar håller inte tillbaka de andra, eftersom raderna levereras grupperade per ärende
+med en transaktion per grupp (§8.3).
 
 #### Det som inte är delat, men borde diskuteras
 
@@ -2520,7 +2532,7 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T6 — Relay och leverans (SM)
 
-**Bygg:** paketet `service/scheduler/processevent/` med schemaläggare, jobb och relay efter mönstret i `service/scheduler/notificationdispatch/` — leverans och kvittering i samma transaktion, ingen retry-bokföring; direktkörningen efter commit tillsammans med en trådpool med tak; `ProcessEngineClient` med ett lager som översätter felen; `422` som permanent fel och `5xx` som tillfälligt; `max-age`, röjningen av levererade rader och hälsoindikatorn (§8.3).
+**Bygg:** paketet `service/scheduler/processevent/` med schemaläggare, jobb och relay efter mönstret i `service/scheduler/notificationdispatch/` — leverans och kvittering i samma transaktion, ingen retry-bokföring; direktkörningen efter commit tillsammans med en trådpool med tak; `PwAlktClient` med ett lager som översätter felen (`PwAlktIntegration`); `422` som permanent fel och `5xx` som tillfälligt; `max-age`, röjningen av levererade rader och hälsoindikatorn (§8.3).
 
 **Acceptans:**
 - WireMock svarar `202` / `422` / `503` / timeout — samtliga fyra vägar verifierade, inklusive att `422` **inte** görs om, utan konsumerar raden och skriver `FAILED` + ERROR-aktivitet.
@@ -2528,9 +2540,8 @@ pw-alkt) följer tjänst i stället för ordning.
 - Rad som passerat `max-age` släpps oskickad och loggas som ERROR.
 - Röjningen tar levererade rader på `delivered_at` (§4) och lämnar **oskickade** rader i fred.
 - **Hälsoindikatorn är grön direkt efter en publicering** och slår om först när äldsta oskickade rad passerat `unhealthy-after` (§8.3). Ett test som bara skriver en rad och läser indikatorn får inte se unhealthy.
-- **Två konsumenter, en nere:** den friska konsumentens rader levereras i samma körning (§7.6). Utan det svälter ett namespace ett annat.
-- `batch-size` respekteras per konsument och körning; hämtningen har ett `LIMIT` (§1.2).
-- Raden levereras till den tjänst som står i `process_service`, även om `PROCESS_CONSUMER` hunnit ändras efter publiceringen.
+- **En oskickad rad adresserad till annat än pw-alkt slår om hälsoindikatorn direkt** (§7.6). Ingen körning tar den, och utan det ligger den kvar osynlig.
+- `batch-size` respekteras per körning; hämtningen har ett `LIMIT` (§1.2).
 - Ordning per ärende hålls när flera rader finns, och en grupp som fallerar rullas tillbaka i sin helhet.
 - Full trådpool ⇒ direktkörningen hoppas över och cronjobbet levererar i stället. **Inget undantag når anroparen** — testet ska fylla kön och kontrollera att ärendeskrivningen ändå svarar `200` (§2.3).
 - Samma händelse levererad två gånger, efter en återrullad transaktion, ger inte två processinstanser — idempotensen ligger hos pw (§8.3, §9.3).
@@ -2719,7 +2730,8 @@ den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. U
 | **Oskickad rad som ingen upptäcker**                            | Utan dead letter-flagga finns ingenting att larma på i tabellen. Hälsoindikatorn och ERROR-loggen när en rad åldras ur är det som gör raden synlig (§8.3)                                                                                                                                 |
 | **Återlevererad händelse efter återrullad transaktion**         | Leverans och kvittering delar transaktion, så ett fel efter att pw tagit emot händelsen ger en till. pw:s event-endpoint måste vara idempotent — annars blir följden dubbla processinstanser (§8.3)                                                                                       |
 | **Routingen går att ändra i drift, utan granskning**            | Priset för att slippa en release varje gång. Validering av `PROCESS_CONSUMER`; överväg ändringslogg                                                                                                                                                                                       |
-| **En långsam pw svälter de andra**                              | Ett jobb levererar åt alla namespace, och hämtningen sorterar deterministiskt. Motmedlen är `batch-size` per konsument, oberoende leverans, circuit breaker per konsument och kort read-timeout (§7.6)                                                                                    |
+| **En långsam pw-alkt håller körningen**                         | Leveransen håller anropet inne i transaktionen. Motmedlen är `batch-size`, en circuit breaker som bara räknar anrop utan svar, och kort read-timeout (§7.6)                                                                                                                               |
+| **Händelser som pw-alkt aldrig tar fyller batchen**             | Ett ärende vars äldsta rad alltid fallerar samlar rader bakom sig. Blir de fler än `batch-size` når cronjobbet inga andra rader, men direktkörningen levererar nya händelser. Syns i hälsoindikatorn (§8.3)                                                                               |
 | **Nödbromsen tolkar ett leveransavbrott som en loop**           | Skulle förvandla en fördröjning till permanent händelseförlust. Bromsen räknar därför bara rader med `delivered_at` satt (§6.5)                                                                                                                                                           |
 | **Hälsoindikatorn på existens i stället för ålder**             | Tjänsten står unhealthy under normal drift och indikatorn slutar betyda något. Villkoret är `unhealthy-after` (§8.3)                                                                                                                                                                      |
 | **`justification` utanför fältfiltreringen**                    | Beslutsmotiveringen är fritext med personuppgifter. `PROCESS` och `DECISION` är `ErrandField`-värden och stängda som utgångsläge för begränsade användare (§5.3). Att ALKT saknar åtkomstkontroll döljer bara felet till nästa namespace                                                  |

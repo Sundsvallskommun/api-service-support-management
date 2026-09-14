@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.integration.db;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,60 @@ class ProcessEventOutboxRepositoryTest {
 
 		assertThat(processEventOutboxRepository.findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore("pw-alkt", at("2026-01-01T12:00:00"), PageRequest.of(0, 1)))
 			.hasSize(1);
+	}
+
+	@Test
+	@DisplayName("Verification that a direct run takes the undelivered rows of its own errand, oldest first, and leaves those that have aged out")
+	void findByProcessServiceAndErrandIdAndDeliveredAtIsNullAndCreatedAfter() {
+		assertThat(processEventOutboxRepository.findByProcessServiceAndErrandIdAndDeliveredAtIsNullAndCreatedAfterOrderByCreatedAscIdAsc("pw-alkt", "ERRAND_ID-1", at("2026-01-01T11:00:00"), PageRequest.of(0, 100)))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactly("peo-waiting", "peo-just-written");
+
+		assertThat(processEventOutboxRepository.findByProcessServiceAndErrandIdAndDeliveredAtIsNullAndCreatedAfterOrderByCreatedAscIdAsc("pw-alkt", "ERRAND_ID-1", at("2026-01-01T11:55:00"), PageRequest.of(0, 100)))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactly("peo-just-written");
+	}
+
+	@Test
+	@DisplayName("Verification that the locking read keeps only the rows still undelivered, whatever ids it is handed")
+	void findByIdInAndDeliveredAtIsNull() {
+		assertThat(processEventOutboxRepository.findByIdInAndDeliveredAtIsNull(List.of("peo-waiting", "peo-delivered-in-window", "peo-other-consumer", "no-such-row")))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactlyInAnyOrder("peo-waiting", "peo-other-consumer");
+	}
+
+	@Test
+	@DisplayName("Verification that the rows that have aged out are found oldest first, whoever they are addressed to, and never a delivered one")
+	void findByDeliveredAtIsNullAndCreatedBefore() {
+		assertThat(processEventOutboxRepository.findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(at("2026-01-01T11:55:00"), PageRequest.of(0, 100)))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactly("peo-other-consumer", "peo-waiting");
+
+		assertThat(processEventOutboxRepository.findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(at("2026-01-01T11:55:00"), PageRequest.of(0, 1)))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactly("peo-other-consumer");
+	}
+
+	@Test
+	@DisplayName("Verification that the cleanup finds rows by when they were delivered, and never an undelivered one however old it is")
+	void findByDeliveredAtBefore() {
+		assertThat(processEventOutboxRepository.findByDeliveredAtBefore(at("2026-01-01T11:00:00"), PageRequest.of(0, 100)))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactly("peo-delivered-long-ago");
+
+		assertThat(processEventOutboxRepository.findByDeliveredAtBefore(at("2026-01-02T00:00:00"), PageRequest.of(0, 100)))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactlyInAnyOrder("peo-delivered-long-ago", "peo-delivered-in-window");
+	}
+
+	@Test
+	@DisplayName("Verification that an undelivered row addressed to another process consumer is noticed")
+	void existsByDeliveredAtIsNullAndProcessServiceNot() {
+		assertThat(processEventOutboxRepository.existsByDeliveredAtIsNullAndProcessServiceNot("pw-alkt")).isTrue();
+
+		processEventOutboxRepository.deleteById("peo-other-consumer");
+
+		assertThat(processEventOutboxRepository.existsByDeliveredAtIsNullAndProcessServiceNot("pw-alkt")).isFalse();
 	}
 
 	@Test
