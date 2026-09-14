@@ -16477,7 +16477,9 @@ components:
           description: Parameter key/name
           examples:
           - formData1
+          maxLength: 255
           minLength: 1
+          pattern: "[A-Za-z0-9._-]+"
         value:
           $ref: "#/components/schemas/JsonNode"
           description: JSON structure value
