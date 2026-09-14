@@ -16380,10 +16380,29 @@ components:
             on errands
           examples:
           - Classification change will occur
+        operationTypes:
+          type: array
+          description: "The operations on an errand that this config reacts to. Left\
+            \ empty the config reacts to every operation the action supports, which\
+            \ is how a config without this behaves. It may only narrow what the action\
+            \ supports, never widen it - the action definition publishes what that\
+            \ is."
+          examples:
+          - - CREATE
+          items:
+            $ref: "#/components/schemas/OperationType"
       required:
       - conditions
       - name
       - parameters
+    OperationType:
+      type: string
+      description: Type of operation
+      enum:
+      - CREATE
+      - UPDATE
+      - DELETE
+      - READ
     Label:
       type: object
       description: Label model

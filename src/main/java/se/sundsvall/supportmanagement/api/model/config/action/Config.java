@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -31,6 +32,11 @@ public class Config {
 
 	@Schema(description = "Display value for this action. Will be mapped to each action on errands", examples = "Classification change will occur")
 	private String displayValue;
+
+	@Schema(
+		description = "The operations on an errand that this config reacts to. Left empty the config reacts to every operation the action supports, which is how a config without this behaves. It may only narrow what the action supports, never widen it - the action definition publishes what that is.",
+		examples = "[\"CREATE\"]")
+	private List<OperationType> operationTypes;
 
 	public static Config create() {
 		return new Config();
@@ -114,18 +120,31 @@ public class Config {
 		return this;
 	}
 
+	public List<OperationType> getOperationTypes() {
+		return operationTypes;
+	}
+
+	public void setOperationTypes(final List<OperationType> operationTypes) {
+		this.operationTypes = operationTypes;
+	}
+
+	public Config withOperationTypes(final List<OperationType> operationTypes) {
+		this.operationTypes = operationTypes;
+		return this;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		Config config = (Config) o;
 		return Objects.equals(id, config.id) && Objects.equals(name, config.name) && Objects.equals(active, config.active) && Objects.equals(conditions, config.conditions) && Objects.equals(parameters, config.parameters) && Objects.equals(displayValue,
-			config.displayValue);
+			config.displayValue) && Objects.equals(operationTypes, config.operationTypes);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name, active, conditions, parameters, displayValue);
+		return Objects.hash(id, name, active, conditions, parameters, displayValue, operationTypes);
 	}
 
 	@Override
@@ -137,6 +156,7 @@ public class Config {
 			", conditions=" + conditions +
 			", parameters=" + parameters +
 			", displayValue='" + displayValue + '\'' +
+			", operationTypes=" + operationTypes +
 			'}';
 	}
 }

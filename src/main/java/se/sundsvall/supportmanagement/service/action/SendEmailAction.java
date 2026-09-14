@@ -14,7 +14,6 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.api.model.config.action.PossibleValue;
-import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
@@ -22,6 +21,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 

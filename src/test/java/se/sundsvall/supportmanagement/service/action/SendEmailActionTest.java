@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
-import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -35,6 +34,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
