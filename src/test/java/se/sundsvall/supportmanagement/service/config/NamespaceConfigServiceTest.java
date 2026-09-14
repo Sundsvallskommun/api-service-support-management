@@ -483,4 +483,31 @@ class NamespaceConfigServiceTest {
 
 		verify(configRepositoryMock).save(same(entity));
 	}
+
+	@Test
+	void getProcessTriggersReadsTheConfiguredOnes() {
+		final var entity = NamespaceConfigEntity.create();
+
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toProcessTriggers(same(entity))).thenReturn(List.of(EventSubType.ERRAND, EventSubType.MESSAGE));
+
+		assertThat(configService.getProcessTriggers("namespace", "municipalityId")).containsExactlyInAnyOrder(EventSubType.ERRAND, EventSubType.MESSAGE);
+	}
+
+	@Test
+	void getProcessTriggersOfANamespaceThatNamesNoneIsEmpty() {
+		final var entity = NamespaceConfigEntity.create();
+
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toProcessTriggers(same(entity))).thenReturn(null);
+
+		assertThat(configService.getProcessTriggers("namespace", "municipalityId")).isEmpty();
+	}
+
+	@Test
+	void getProcessTriggersOfANamespaceWithoutConfigurationIsEmpty() {
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.empty());
+
+		assertThat(configService.getProcessTriggers("namespace", "municipalityId")).isEmpty();
+	}
 }

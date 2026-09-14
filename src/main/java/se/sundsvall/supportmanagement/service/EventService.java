@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
+import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.util.Collections.emptyList;
@@ -48,38 +49,44 @@ public class EventService {
 	private final ApplicationEventPublisher eventPublisher;
 	private final NotificationDispatchRepository notificationDispatchRepository;
 	private final AccessControlService accessControlService;
+	private final ProcessEventPublisher processEventPublisher;
 
 	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository,
-		final AccessControlService accessControlService) {
+		final AccessControlService accessControlService, final ProcessEventPublisher processEventPublisher) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
 		this.eventPublisher = eventPublisher;
 		this.notificationDispatchRepository = notificationDispatchRepository;
 		this.accessControlService = accessControlService;
+		this.processEventPublisher = processEventPublisher;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
-		final var requestGroupId = getRequestGroupId();
-		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
-		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
-		String eventId = null;
-		try {
-			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event));
-		} catch (final Exception e) {
-			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
-		}
-		if (eventType != EventType.DELETE) {
-			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
-		}
-
-		if (sendNotification) {
-			createNotification(errandEntity, event);
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
-		}
+		writeErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype);
+		publishToProcess(errandEntity, eventType, subtype, null);
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {
 		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true, subtype);
+	}
+
+	/**
+	 * Writes the event of a command, and hands the command on to the process of the errand.
+	 * <p>
+	 * A command is a request aimed straight at the process rather than a change to the errand, so it makes no revision and
+	 * the event points at none. What it carries is what publication cannot work out on its own - the key a handler chose to
+	 * start, or the gate they stepped past.
+	 *
+	 * @param eventType        the type of the event.
+	 * @param message          the text of the event.
+	 * @param errandEntity     the errand the command is aimed at.
+	 * @param sendNotification whether the handler of the errand is to be notified. Says nothing about the process.
+	 * @param subtype          the kind of command.
+	 * @param command          what the command carries.
+	 */
+	public void createProcessCommandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final boolean sendNotification, final EventSubType subtype, final ProcessCommand command) {
+		writeErrandEvent(eventType, message, errandEntity, null, null, sendNotification, subtype);
+		publishToProcess(errandEntity, eventType, subtype, command);
 	}
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {
@@ -109,6 +116,35 @@ public class EventService {
 			.toList(), pageable, response.getTotalElements());
 	}
 
+	private void writeErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
+		final var requestGroupId = getRequestGroupId();
+		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
+		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
+		String eventId = null;
+		try {
+			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event));
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
+		}
+		if (eventType != EventType.DELETE) {
+			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
+		}
+
+		if (sendNotification) {
+			createNotification(errandEntity, event);
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
+		}
+	}
+
+	/**
+	 * Tells the process of the errand about the event, last and in the transaction of the change itself.
+	 * <p>
+	 * The notification flag has no say here - an outbox row is no notice to a handler but a message to a process.
+	 */
+	private void publishToProcess(final ErrandEntity errandEntity, final EventType eventType, final EventSubType subtype, final ProcessCommand command) {
+		processEventPublisher.publish(errandEntity, eventType, subtype, executingIdentity(), getRequestGroupId(), command);
+	}
+
 	private String extractId(final Revision currentRevision) {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
@@ -136,19 +172,20 @@ public class EventService {
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
 		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(_ -> {
-			final var notification = toNotification(event, errandEntity, notificationSender());
+			final var notification = toNotification(event, errandEntity, executingIdentity());
 			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
 		});
 	}
 
 	/**
-	 * Who the notification says it came from.
+	 * Who the write was made by, which is what the notification says it came from and what the outbox row is stamped
+	 * with.
 	 * <p>
 	 * Whatever the identifier of the request calls itself, whether that is an ad account or not - a process engine
 	 * reporting on an errand is no ad account, and asking only for one would leave the handler with a notification from
-	 * nobody.
+	 * nobody and the outbox row with no trace of who wrote it.
 	 */
-	private static String notificationSender() {
+	private static String executingIdentity() {
 		return ofNullable(getExecutingUser())
 			.map(Identifier::getValue)
 			.orElse(null);

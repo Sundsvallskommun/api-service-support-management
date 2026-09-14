@@ -116,6 +116,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -171,6 +181,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -229,6 +249,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -283,6 +313,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -342,6 +382,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -403,6 +453,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -463,6 +523,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -518,6 +588,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -570,6 +650,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -632,6 +722,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -688,6 +788,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -743,6 +853,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -802,6 +922,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -857,6 +987,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -916,6 +1056,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -990,6 +1140,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -1093,6 +1253,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -1164,6 +1334,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -1245,6 +1425,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -1350,6 +1540,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -1437,6 +1637,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: No content - Successful operation
@@ -1486,6 +1696,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -1545,6 +1765,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -1600,6 +1830,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -1659,6 +1899,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -1714,6 +1964,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -1768,6 +2028,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -1837,6 +2107,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -1891,6 +2171,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -1965,6 +2255,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -2036,6 +2336,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -2108,6 +2418,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -2162,6 +2482,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -2231,6 +2561,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -2285,6 +2625,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -2354,6 +2704,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -2408,6 +2768,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -2468,6 +2838,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -2522,6 +2902,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -2589,6 +2979,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -2650,6 +3050,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -2727,6 +3137,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -2781,6 +3201,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -2850,6 +3280,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -2904,6 +3344,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -2973,6 +3423,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -3027,6 +3487,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -3097,6 +3567,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -3151,6 +3631,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -3245,6 +3735,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -3304,6 +3804,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -3379,6 +3889,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -3451,6 +3971,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -3564,6 +4094,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -3631,6 +4171,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -3709,6 +4259,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -3768,6 +4328,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -3835,6 +4405,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -3896,6 +4476,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -3971,6 +4561,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -4054,6 +4654,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -4138,6 +4748,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -4200,6 +4820,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -4262,6 +4892,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -4324,6 +4964,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -4391,6 +5041,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -4490,6 +5150,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -4562,6 +5232,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           multipart/form-data:
@@ -4647,6 +5327,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -4716,6 +5406,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -4783,6 +5483,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           multipart/form-data:
@@ -4853,6 +5563,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -4916,6 +5636,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -4969,6 +5699,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -5036,6 +5776,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -5102,6 +5852,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -5166,6 +5926,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -5250,6 +6020,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -5310,6 +6090,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -5388,6 +6178,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -5460,6 +6260,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -5525,6 +6335,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -5586,6 +6406,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -5658,6 +6488,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -5723,6 +6563,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -5784,6 +6634,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -5856,6 +6716,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -5915,6 +6785,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -5976,6 +6856,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -6048,6 +6938,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -6113,6 +7013,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -6174,6 +7084,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -6246,6 +7166,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -6311,6 +7241,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -6372,6 +7312,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -6444,6 +7394,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -6503,6 +7463,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -6564,6 +7534,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -6636,6 +7616,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -6695,6 +7685,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -6756,6 +7756,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -6828,6 +7838,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -6899,6 +7919,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -6978,6 +8008,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -7062,6 +8102,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -7130,6 +8180,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -7227,6 +8287,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -7308,6 +8378,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -7397,6 +8477,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -7491,6 +8581,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -7564,6 +8664,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -7633,6 +8743,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -7713,6 +8833,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -7786,6 +8916,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -7855,6 +8995,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -7934,6 +9084,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -8006,6 +9166,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       requestBody:
         content:
           application/json:
@@ -8112,6 +9282,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8166,6 +9346,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -8227,6 +9417,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -8282,6 +9482,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8342,6 +9552,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8395,6 +9615,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8461,6 +9691,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8520,6 +9760,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8609,6 +9859,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8712,6 +9972,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8788,6 +10058,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -8860,6 +10140,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -8930,6 +10220,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -9026,6 +10326,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -9092,6 +10402,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -9186,6 +10506,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -9251,6 +10581,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: OK - Successful operation
@@ -9328,6 +10668,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -9395,6 +10745,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: OK - Successful operation
@@ -9479,6 +10839,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -9562,6 +10932,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -9632,6 +11012,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -9701,6 +11091,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -9764,6 +11164,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful operation
@@ -9809,6 +11219,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: Successful Operation
@@ -9848,6 +11268,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "200":
           description: OK
@@ -9904,6 +11334,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -9966,6 +11406,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -10035,6 +11485,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "204":
           description: Successful operation
@@ -10098,6 +11558,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       responses:
         "202":
           description: Successful operation
@@ -10405,6 +11875,8 @@ components:
             - HANDOVER_OUT
             - MESSAGE
             - NOTE
+            - PROCESS
+            - SIGNAL
             - SYSTEM
             - SUSPENSION
         limitedReadAccess:

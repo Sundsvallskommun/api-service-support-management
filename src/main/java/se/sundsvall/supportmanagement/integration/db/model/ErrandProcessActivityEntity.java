@@ -42,6 +42,12 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Activity
 	})
 public class ErrandProcessActivityEntity {
 
+	/**
+	 * Public and used by the annotation below, so that a writer building a message out of values it does not control can
+	 * cut it to fit rather than have the insert refused. An entry that reports a fault may not cause one.
+	 */
+	public static final int MESSAGE_LENGTH = 2048;
+
 	@Id
 	@UuidGenerator
 	@Column(name = "id", length = 36)
@@ -73,7 +79,7 @@ public class ErrandProcessActivityEntity {
 	@Column(name = "severity", nullable = false, length = 16)
 	private ActivitySeverity severity;
 
-	@Column(name = "message", length = 2048)
+	@Column(name = "message", length = MESSAGE_LENGTH)
 	private String message;
 
 	@Column(name = "error_code", length = 64)
