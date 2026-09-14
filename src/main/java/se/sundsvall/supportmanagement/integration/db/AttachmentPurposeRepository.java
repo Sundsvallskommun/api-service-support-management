@@ -16,6 +16,8 @@ public interface AttachmentPurposeRepository extends JpaRepository<AttachmentPur
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
 
+	boolean existsByNamespaceAndMunicipalityIdAndNameAndIdNot(String namespace, String municipalityId, String name, String id);
+
 	Optional<AttachmentPurposeEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);

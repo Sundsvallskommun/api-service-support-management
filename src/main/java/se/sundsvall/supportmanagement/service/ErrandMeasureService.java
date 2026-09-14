@@ -13,7 +13,6 @@ import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.MeasureJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -31,8 +30,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasureEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.toMeasures;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMeasureMapper.updateMeasureEntity;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.ownedParameterIds;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.removeParameters;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 
@@ -45,7 +42,6 @@ public class ErrandMeasureService {
 
 	private final ErrandsRepository errandsRepository;
 	private final MeasureValidator measureValidator;
-	private final MeasureJsonParameterRepository measureJsonParameterRepository;
 	private final DecisionRepository decisionRepository;
 	private final StatementRepository statementRepository;
 	private final ArtefactAttachmentService artefactAttachmentService;
@@ -53,12 +49,11 @@ public class ErrandMeasureService {
 	private final AccessControlService accessControlService;
 	private final EntityManager entityManager;
 
-	ErrandMeasureService(final ErrandsRepository errandsRepository, final MeasureValidator measureValidator, final MeasureJsonParameterRepository measureJsonParameterRepository,
-		final DecisionRepository decisionRepository, final StatementRepository statementRepository, final ArtefactAttachmentService artefactAttachmentService,
-		final ArtefactJsonParameterService artefactJsonParameterService, final AccessControlService accessControlService, final EntityManager entityManager) {
+	ErrandMeasureService(final ErrandsRepository errandsRepository, final MeasureValidator measureValidator, final DecisionRepository decisionRepository,
+		final StatementRepository statementRepository, final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService,
+		final AccessControlService accessControlService, final EntityManager entityManager) {
 		this.errandsRepository = errandsRepository;
 		this.measureValidator = measureValidator;
-		this.measureJsonParameterRepository = measureJsonParameterRepository;
 		this.decisionRepository = decisionRepository;
 		this.statementRepository = statementRepository;
 		this.artefactAttachmentService = artefactAttachmentService;
@@ -129,14 +124,7 @@ public class ErrandMeasureService {
 		final var measureEntity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 		validateIfMatch(ifMatch, measureEntity.getVersion());
 
-		// Named now: the links that name them go with the measure.
-		final var ownedParameters = ownedParameterIds(measureEntity.getJsonParameterLinks());
-
-		// Flushed here rather than left to the commit, so that the two removals reach the database in this order.
 		ofNullable(errandEntity.getMeasures()).ifPresent(measures -> measures.remove(measureEntity));
-		errandsRepository.saveAndFlush(errandEntity);
-
-		removeParameters(errandEntity, ownedParameters);
 		errandsRepository.save(errandEntity);
 	}
 
@@ -172,13 +160,13 @@ public class ErrandMeasureService {
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readMeasureJsonParameters(final String namespace, final String municipalityId, final String errandId, final String measureId) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.MEASURE, LR);
-		return artefactJsonParameterService.readAll(errandEntity, findMeasureEntityOrElseThrow(errandEntity, measureId).getJsonParameterLinks());
+		return artefactJsonParameterService.readAll(findMeasureEntityOrElseThrow(errandEntity, measureId).getJsonParameters());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readMeasureJsonParameter(final String namespace, final String municipalityId, final String errandId, final String measureId, final String key) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.MEASURE, LR);
-		return artefactJsonParameterService.read(errandEntity, findMeasureEntityOrElseThrow(errandEntity, measureId).getJsonParameterLinks(), key);
+		return artefactJsonParameterService.read(findMeasureEntityOrElseThrow(errandEntity, measureId).getJsonParameters(), key);
 	}
 
 	@Transactional
@@ -186,8 +174,7 @@ public class ErrandMeasureService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		final var entity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 
-		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, jsonParameterLinks(entity),
-			parameter -> MeasureJsonParameterEntity.create().withMeasureEntity(entity).withJsonParameterEntity(parameter), measureJsonParameterRepository);
+		return artefactJsonParameterService.upsert(jsonParameters(entity), () -> MeasureJsonParameterEntity.create().withMeasureEntity(entity), ifMatch, jsonParameter);
 	}
 
 	@Transactional
@@ -195,7 +182,7 @@ public class ErrandMeasureService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		final var entity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 
-		artefactJsonParameterService.delete(errandEntity, jsonParameterLinks(entity), key, ifMatch);
+		artefactJsonParameterService.delete(jsonParameters(entity), key, ifMatch);
 	}
 
 	/**
@@ -219,11 +206,11 @@ public class ErrandMeasureService {
 		return entity.getAttachments();
 	}
 
-	private List<MeasureJsonParameterEntity> jsonParameterLinks(final MeasureEntity entity) {
-		if (entity.getJsonParameterLinks() == null) {
-			entity.setJsonParameterLinks(new ArrayList<>());
+	private List<MeasureJsonParameterEntity> jsonParameters(final MeasureEntity entity) {
+		if (entity.getJsonParameters() == null) {
+			entity.setJsonParameters(new ArrayList<>());
 		}
-		return entity.getJsonParameterLinks();
+		return entity.getJsonParameters();
 	}
 
 	private MeasureEntity findMeasureEntityOrElseThrow(final ErrandEntity errandEntity, final String measureId) {

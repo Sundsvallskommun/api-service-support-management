@@ -13,20 +13,17 @@ import static org.hamcrest.Matchers.allOf;
 
 class MeasureJsonParameterEntityTest {
 
-	// A link carries nothing of its own beyond which two rows it joins, so its id is what identifies it. Comparing the
-	// two sides would walk back into the errand they both belong to.
-	private static final String[] RELATIONS = {
-		"measureEntity", "jsonParameterEntity"
-	};
+	// The measure holds the parameter in turn, so comparing it would walk back into the measure.
+	private static final String OWNER = "measureEntity";
 
 	@Test
 	void hasValidBean() {
 		MatcherAssert.assertThat(MeasureJsonParameterEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding(RELATIONS),
-			hasValidBeanEqualsExcluding(RELATIONS),
-			hasValidBeanToStringExcluding(RELATIONS)));
+			hasValidBeanHashCodeExcluding(OWNER),
+			hasValidBeanEqualsExcluding(OWNER),
+			hasValidBeanToStringExcluding(OWNER)));
 	}
 
 	@Test
@@ -35,19 +32,34 @@ class MeasureJsonParameterEntityTest {
 		// Arrange
 		final var id = "id";
 		final var owner = MeasureEntity.create().withId("ownerId");
-		final var jsonParameterEntity = JsonParameterEntity.create().withId("parameterId");
+		final var key = "measureForm";
+		final var schemaId = "schemaId";
+		final var value = "{\"answer\":\"pending\"}";
+		final var version = 3L;
 
 		// Act
 		final var result = MeasureJsonParameterEntity.create()
 			.withId(id)
 			.withMeasureEntity(owner)
-			.withJsonParameterEntity(jsonParameterEntity);
+			.withKey(key)
+			.withSchemaId(schemaId)
+			.withValue(value)
+			.withVersion(version);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
 		assertThat(result.getId()).isEqualTo(id);
 		assertThat(result.getMeasureEntity()).isEqualTo(owner);
-		assertThat(result.getJsonParameterEntity()).isEqualTo(jsonParameterEntity);
+		assertThat(result.getKey()).isEqualTo(key);
+		assertThat(result.getSchemaId()).isEqualTo(schemaId);
+		assertThat(result.getValue()).isEqualTo(value);
+		assertThat(result.getVersion()).isEqualTo(version);
+	}
+
+	@Test
+	void toStringNamesTheOwnerByItsIdOnly() {
+		assertThat(MeasureJsonParameterEntity.create().withMeasureEntity(MeasureEntity.create().withId("ownerId")).toString()).endsWith("measureEntity=ownerId}");
+		assertThat(MeasureJsonParameterEntity.create().toString()).endsWith("measureEntity=null}");
 	}
 
 	@Test

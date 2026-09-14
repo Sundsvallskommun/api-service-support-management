@@ -1,9 +1,13 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -11,14 +15,16 @@ import org.springframework.mock.web.MockMultipartFile;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +33,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -46,13 +53,7 @@ class ErrandDecisionServiceArtefactTest {
 	private static final String IF_MATCH = "\"3\"";
 
 	@Mock
-	private ErrandsRepository errandsRepositoryMock;
-
-	@Mock
 	private DecisionRepository decisionRepositoryMock;
-
-	@Mock
-	private DecisionJsonParameterRepository decisionJsonParameterRepositoryMock;
 
 	@Mock
 	private ArtefactAttachmentService artefactAttachmentServiceMock;
@@ -68,6 +69,9 @@ class ErrandDecisionServiceArtefactTest {
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
+
+	@Captor
+	private ArgumentCaptor<Supplier<DecisionJsonParameterEntity>> jsonParameterFactoryCaptor;
 
 	@InjectMocks
 	private ErrandDecisionService service;
@@ -137,65 +141,75 @@ class ErrandDecisionServiceArtefactTest {
 		verify(decisionRepositoryMock).saveAndFlush(entity);
 	}
 
+	/**
+	 * The parameters are the decision's, so reading them asks for the decision grant and nothing of the errand.
+	 */
 	@Test
 	void readDecisionJsonParameters() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
-		mockDecision();
-		when(artefactJsonParameterServiceMock.readAll(same(errandEntity), any())).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
+		final var parameters = List.of(DecisionJsonParameterEntity.create().withKey(KEY));
+		mockDecision().withJsonParameters(parameters);
+		when(artefactJsonParameterServiceMock.readAll(same(parameters))).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
 
 		// Act
 		final var result = service.readDecisionJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID);
 
 		// Verify
-		assertThat(result).hasSize(1);
+		assertThat(result).extracting(JsonParameter::getKey).containsExactly(KEY);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.DECISION, LR);
+		verifyNoMoreInteractions(accessControlServiceMock);
 	}
 
 	@Test
 	void readDecisionJsonParameter() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
-		mockDecision();
-		when(artefactJsonParameterServiceMock.read(same(errandEntity), any(), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
+		final var parameters = List.of(DecisionJsonParameterEntity.create().withKey(KEY));
+		mockDecision().withJsonParameters(parameters);
+		when(artefactJsonParameterServiceMock.read(same(parameters), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
 
 		// Act
 		final var result = service.readDecisionJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, KEY);
 
 		// Verify
 		assertThat(result.getKey()).isEqualTo(KEY);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.DECISION, LR);
+		verifyNoMoreInteractions(accessControlServiceMock);
 	}
 
 	@Test
 	void updateDecisionJsonParameter() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
 		final var entity = mockDecision();
 		final var body = JsonParameter.create().withKey(KEY);
-		when(artefactJsonParameterServiceMock.upsert(eq(errandEntity), isNull(), eq(body), any(), any(), any())).thenReturn(new UpsertResult(body, true));
+		when(artefactJsonParameterServiceMock.<DecisionJsonParameterEntity>upsert(any(), any(), isNull(), same(body))).thenReturn(new UpsertResult(body, true));
 
 		// Act
 		final var result = service.updateDecisionJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, null, body);
 
-		// Verify
+		// Verify - the collection is created on the way, so a new parameter has somewhere to go
 		assertThat(result.created()).isTrue();
-		assertThat(entity.getJsonParameterLinks()).isNotNull();
+		assertThat(entity.getJsonParameters()).isNotNull();
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
+		verify(artefactJsonParameterServiceMock).upsert(same(entity.getJsonParameters()), jsonParameterFactoryCaptor.capture(), isNull(), same(body));
+		assertThat(jsonParameterFactoryCaptor.getValue().get().getDecisionEntity()).as("a new parameter points at the decision").isSameAs(entity);
 	}
 
 	@Test
 	void deleteDecisionJsonParameter() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
-		mockDecision();
+		final var parameters = new ArrayList<DecisionJsonParameterEntity>();
+		mockDecision().withJsonParameters(parameters);
 
 		// Act
 		service.deleteDecisionJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, KEY, IF_MATCH);
 
 		// Verify
-		verify(artefactJsonParameterServiceMock).delete(eq(errandEntity), any(), eq(KEY), eq(IF_MATCH));
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
+		verify(artefactJsonParameterServiceMock).delete(same(parameters), eq(KEY), eq(IF_MATCH));
 	}
 
 	@Test

@@ -1167,9 +1167,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — resource modified concurrently, or the parameter\
-            \ belongs to a handling artefact of the errand and is written through\
-            \ that artefact"
+          description: Conflict — resource modified concurrently
           content:
             application/problem+json:
               schema:
@@ -1258,9 +1256,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — resource modified concurrently, or the parameter\
-            \ belongs to a handling artefact of the errand and is removed through\
-            \ that artefact"
+          description: Conflict — resource modified concurrently
           content:
             application/problem+json:
               schema:
@@ -6793,8 +6789,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — resource modified concurrently, or the patch changes\
-            \ a JSON parameter a handling artefact owns"
+          description: Conflict — resource modified concurrently
           content:
             application/problem+json:
               schema:
@@ -10922,12 +10917,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "409":
-          description: Conflict - the key belongs to something else on the errand
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "412":
           description: Precondition Failed - If-Match version mismatch
           content:
@@ -12339,12 +12328,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "409":
-          description: Conflict - the key belongs to something else on the errand
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "412":
           description: Precondition Failed - If-Match version mismatch
           content:
@@ -13142,12 +13125,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        "409":
-          description: Conflict - the key belongs to something else on the errand
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
         "412":
           description: Precondition Failed - If-Match version mismatch
           content:
@@ -13771,12 +13748,6 @@ paths:
                 $ref: "#/components/schemas/JsonParameter"
         "404":
           description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "409":
-          description: Conflict - the key belongs to something else on the errand
           content:
             application/problem+json:
               schema:
@@ -14794,12 +14765,6 @@ paths:
                 $ref: "#/components/schemas/JsonParameter"
         "404":
           description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "409":
-          description: Conflict - the key belongs to something else on the errand
           content:
             application/problem+json:
               schema:

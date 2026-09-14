@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +13,7 @@ import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.InvestigationJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
-import se.sundsvall.supportmanagement.integration.db.InvestigationSectionJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationJsonParameterEntity;
@@ -42,8 +38,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationM
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigations;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.updateInvestigationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.updateInvestigationSectionEntity;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.ownedParameterIds;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.removeParameters;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 
@@ -64,24 +58,17 @@ public class ErrandInvestigationService {
 	private static final String SECTION_NOT_FOUND = "A section with id '%s' could not be found in investigation with id '%s'";
 	private static final String SECTION_KEY_TAKEN = "A section with key '%s' already exists in investigation with id '%s'";
 
-	private final ErrandsRepository errandsRepository;
 	private final InvestigationRepository investigationRepository;
-	private final InvestigationJsonParameterRepository investigationJsonParameterRepository;
-	private final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository;
 	private final ArtefactAttachmentService artefactAttachmentService;
 	private final ArtefactJsonParameterService artefactJsonParameterService;
 	private final DecisionValidator decisionValidator;
 	private final AccessControlService accessControlService;
 	private final EntityManager entityManager;
 
-	ErrandInvestigationService(final ErrandsRepository errandsRepository, final InvestigationRepository investigationRepository,
-		final InvestigationJsonParameterRepository investigationJsonParameterRepository, final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository,
-		final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService, final DecisionValidator decisionValidator,
-		final AccessControlService accessControlService, final EntityManager entityManager) {
-		this.errandsRepository = errandsRepository;
+	ErrandInvestigationService(final InvestigationRepository investigationRepository, final ArtefactAttachmentService artefactAttachmentService,
+		final ArtefactJsonParameterService artefactJsonParameterService, final DecisionValidator decisionValidator, final AccessControlService accessControlService,
+		final EntityManager entityManager) {
 		this.investigationRepository = investigationRepository;
-		this.investigationJsonParameterRepository = investigationJsonParameterRepository;
-		this.investigationSectionJsonParameterRepository = investigationSectionJsonParameterRepository;
 		this.artefactAttachmentService = artefactAttachmentService;
 		this.artefactJsonParameterService = artefactJsonParameterService;
 		this.decisionValidator = decisionValidator;
@@ -129,22 +116,13 @@ public class ErrandInvestigationService {
 
 	@Transactional
 	public void deleteErrandInvestigation(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 		logMissingIfMatch(ifMatch, "DELETE", namespace, municipalityId, errandId, investigationId);
 		validateIfMatch(ifMatch, entity.getVersion());
 
-		// Named now: the links that name them go with the investigation, and so do those of its sections.
-		final var ownedParameters = new HashSet<>(ownedParameterIds(entity.getJsonParameterLinks()));
-		ofNullable(entity.getSections()).orElse(emptyList())
-			.forEach(section -> ownedParameters.addAll(ownedParameterIds(section.getJsonParameterLinks())));
-
 		investigationRepository.delete(entity);
-		investigationRepository.flush();
-
-		removeParameters(errandEntity, ownedParameters);
-		errandsRepository.saveAndFlush(errandEntity);
 	}
 
 	@Transactional
@@ -196,19 +174,13 @@ public class ErrandInvestigationService {
 
 	@Transactional
 	public void deleteInvestigationSection(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 
 		final var investigationEntity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
-		final var entity = findSectionOrElseThrow(investigationEntity, sectionId);
+		investigationEntity.getSections().remove(findSectionOrElseThrow(investigationEntity, sectionId));
 
-		final var ownedParameters = ownedParameterIds(entity.getJsonParameterLinks());
-
-		investigationEntity.getSections().remove(entity);
 		markChanged(investigationEntity);
 		investigationRepository.saveAndFlush(investigationEntity);
-
-		removeParameters(errandEntity, ownedParameters);
-		errandsRepository.saveAndFlush(errandEntity);
 	}
 
 	@Transactional
@@ -242,63 +214,61 @@ public class ErrandInvestigationService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readInvestigationJsonParameters(final String namespace, final String municipalityId, final String errandId, final String investigationId) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.INVESTIGATION, LR);
-		return artefactJsonParameterService.readAll(errandEntity, findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId).getJsonParameterLinks());
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.INVESTIGATION, LR);
+		return artefactJsonParameterService.readAll(findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId).getJsonParameters());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readInvestigationJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String key) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.INVESTIGATION, LR);
-		return artefactJsonParameterService.read(errandEntity, findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId).getJsonParameterLinks(), key);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.INVESTIGATION, LR);
+		return artefactJsonParameterService.read(findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId).getJsonParameters(), key);
 	}
 
 	@Transactional
 	public UpsertResult updateInvestigationJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String ifMatch, final JsonParameter jsonParameter) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, jsonParameterLinks(entity),
-			parameter -> InvestigationJsonParameterEntity.create().withInvestigationEntity(entity).withJsonParameterEntity(parameter), investigationJsonParameterRepository);
+		return artefactJsonParameterService.upsert(jsonParameters(entity), () -> InvestigationJsonParameterEntity.create().withInvestigationEntity(entity), ifMatch, jsonParameter);
 	}
 
 	@Transactional
 	public void deleteInvestigationJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String key, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		artefactJsonParameterService.delete(errandEntity, jsonParameterLinks(entity), key, ifMatch);
+		artefactJsonParameterService.delete(jsonParameters(entity), key, ifMatch);
 	}
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readSectionJsonParameters(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.INVESTIGATION, LR);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.INVESTIGATION, LR);
 		final var investigationEntity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
-		return artefactJsonParameterService.readAll(errandEntity, findSectionOrElseThrow(investigationEntity, sectionId).getJsonParameterLinks());
+		return artefactJsonParameterService.readAll(findSectionOrElseThrow(investigationEntity, sectionId).getJsonParameters());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readSectionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId, final String key) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.INVESTIGATION, LR);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.INVESTIGATION, LR);
 		final var investigationEntity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
-		return artefactJsonParameterService.read(errandEntity, findSectionOrElseThrow(investigationEntity, sectionId).getJsonParameterLinks(), key);
+		return artefactJsonParameterService.read(findSectionOrElseThrow(investigationEntity, sectionId).getJsonParameters(), key);
 	}
 
 	@Transactional
 	public UpsertResult updateSectionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId, final String ifMatch, final JsonParameter jsonParameter) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var investigationEntity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 		final var entity = findSectionOrElseThrow(investigationEntity, sectionId);
 
-		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, sectionJsonParameterLinks(entity),
-			parameter -> InvestigationSectionJsonParameterEntity.create().withInvestigationSectionEntity(entity).withJsonParameterEntity(parameter), investigationSectionJsonParameterRepository);
+		return artefactJsonParameterService.upsert(sectionJsonParameters(entity), () -> InvestigationSectionJsonParameterEntity.create().withInvestigationSectionEntity(entity), ifMatch, jsonParameter);
 	}
 
 	@Transactional
 	public void deleteSectionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String sectionId, final String key, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var investigationEntity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		artefactJsonParameterService.delete(errandEntity, sectionJsonParameterLinks(findSectionOrElseThrow(investigationEntity, sectionId)), key, ifMatch);
+		artefactJsonParameterService.delete(sectionJsonParameters(findSectionOrElseThrow(investigationEntity, sectionId)), key, ifMatch);
 	}
 
 	private List<AttachmentEntity> attachments(final InvestigationEntity entity) {
@@ -308,18 +278,18 @@ public class ErrandInvestigationService {
 		return entity.getAttachments();
 	}
 
-	private List<InvestigationJsonParameterEntity> jsonParameterLinks(final InvestigationEntity entity) {
-		if (entity.getJsonParameterLinks() == null) {
-			entity.setJsonParameterLinks(new ArrayList<>());
+	private List<InvestigationJsonParameterEntity> jsonParameters(final InvestigationEntity entity) {
+		if (entity.getJsonParameters() == null) {
+			entity.setJsonParameters(new ArrayList<>());
 		}
-		return entity.getJsonParameterLinks();
+		return entity.getJsonParameters();
 	}
 
-	private List<InvestigationSectionJsonParameterEntity> sectionJsonParameterLinks(final InvestigationSectionEntity entity) {
-		if (entity.getJsonParameterLinks() == null) {
-			entity.setJsonParameterLinks(new ArrayList<>());
+	private List<InvestigationSectionJsonParameterEntity> sectionJsonParameters(final InvestigationSectionEntity entity) {
+		if (entity.getJsonParameters() == null) {
+			entity.setJsonParameters(new ArrayList<>());
 		}
-		return entity.getJsonParameterLinks();
+		return entity.getJsonParameters();
 	}
 
 	private InvestigationEntity findInvestigationOrElseThrow(final String namespace, final String municipalityId, final String errandId, final String investigationId) {

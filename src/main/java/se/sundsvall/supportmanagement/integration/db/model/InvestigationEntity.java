@@ -18,7 +18,6 @@ import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 
 import static jakarta.persistence.CascadeType.ALL;
-import static jakarta.persistence.CascadeType.MERGE;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
@@ -90,9 +89,10 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 	@OrderBy("fileName")
 	private List<AttachmentEntity> attachments;
 
-	/** See {@link StatementEntity#getJsonParameterLinks()} for why nothing but MERGE cascades here. */
-	@OneToMany(mappedBy = "investigationEntity", cascade = MERGE)
-	private List<InvestigationJsonParameterEntity> jsonParameterLinks;
+	/** The JSON parameters of the investigation. See {@link StatementEntity#getJsonParameters()} for how they are held. */
+	@OneToMany(mappedBy = "investigationEntity", cascade = ALL, orphanRemoval = true)
+	@OrderBy("key")
+	private List<InvestigationJsonParameterEntity> jsonParameters;
 
 	public static InvestigationEntity create() {
 		return new InvestigationEntity();
@@ -202,16 +202,16 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 		return this;
 	}
 
-	public List<InvestigationJsonParameterEntity> getJsonParameterLinks() {
-		return jsonParameterLinks;
+	public List<InvestigationJsonParameterEntity> getJsonParameters() {
+		return jsonParameters;
 	}
 
-	public void setJsonParameterLinks(final List<InvestigationJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public void setJsonParameters(final List<InvestigationJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 	}
 
-	public InvestigationEntity withJsonParameterLinks(final List<InvestigationJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public InvestigationEntity withJsonParameters(final List<InvestigationJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 		return this;
 	}
 

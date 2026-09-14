@@ -306,8 +306,8 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Dropping a measure by patching the errand without it does what deleting it through the measure resource does:
-	 * its parameters go too, rather than being left behind to block the next measure asking for the same key.
+	 * Dropping a measure by patching the errand without it does what deleting it through the measure resource does: its
+	 * parameters go too.
 	 */
 	@Test
 	void test16_patchingErrandWithoutTheMeasureTakesItsParameter() {
@@ -320,7 +320,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 
 		assertThat(measures(ARTEFACT_MEASURE_ID)).isZero();
 		assertThat(parametersWithKey("measureForm")).as("the parameter went with the measure").isZero();
-		assertThat(parametersWithKey("formData")).as("the errand kept its own").isOne();
+		assertThat(errandParametersWithKey("formData")).as("the errand kept its own").isOne();
 	}
 
 	private int attachmentLinks() {
@@ -336,6 +336,10 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	}
 
 	private int parametersWithKey(final String key) {
+		return jdbcTemplate.queryForObject("select count(*) from measure_json_parameter where parameter_key = ?", Integer.class, key);
+	}
+
+	private int errandParametersWithKey(final String key) {
 		return jdbcTemplate.queryForObject("select count(*) from json_parameter where errand_id = ? and parameter_key = ?", Integer.class, ARTEFACT_ERRAND_ID, key);
 	}
 }

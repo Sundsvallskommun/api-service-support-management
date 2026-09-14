@@ -27,7 +27,7 @@ import org.hibernate.annotations.TimeZoneStorage;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 import se.sundsvall.supportmanagement.integration.db.model.enums.MeasureResult;
 
-import static jakarta.persistence.CascadeType.MERGE;
+import static jakarta.persistence.CascadeType.ALL;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import static org.hibernate.type.SqlTypes.VARCHAR;
@@ -144,9 +144,10 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 	@OrderBy("fileName")
 	private List<AttachmentEntity> attachments;
 
-	/** See {@link StatementEntity#getJsonParameterLinks()} for why nothing but MERGE cascades here. */
-	@OneToMany(mappedBy = "measureEntity", cascade = MERGE)
-	private List<MeasureJsonParameterEntity> jsonParameterLinks;
+	/** The JSON parameters of the measure. See {@link StatementEntity#getJsonParameters()} for how they are held. */
+	@OneToMany(mappedBy = "measureEntity", cascade = ALL, orphanRemoval = true)
+	@OrderBy("key")
+	private List<MeasureJsonParameterEntity> jsonParameters;
 
 	public static MeasureEntity create() {
 		return new MeasureEntity();
@@ -360,16 +361,16 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 		return this;
 	}
 
-	public List<MeasureJsonParameterEntity> getJsonParameterLinks() {
-		return jsonParameterLinks;
+	public List<MeasureJsonParameterEntity> getJsonParameters() {
+		return jsonParameters;
 	}
 
-	public void setJsonParameterLinks(final List<MeasureJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public void setJsonParameters(final List<MeasureJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 	}
 
-	public MeasureEntity withJsonParameterLinks(final List<MeasureJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public MeasureEntity withJsonParameters(final List<MeasureJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 		return this;
 	}
 

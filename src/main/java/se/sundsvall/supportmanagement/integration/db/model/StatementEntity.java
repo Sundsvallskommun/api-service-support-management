@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 
-import static jakarta.persistence.CascadeType.MERGE;
+import static jakarta.persistence.CascadeType.ALL;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
@@ -117,14 +117,12 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	private List<AttachmentEntity> attachments;
 
 	/**
-	 * Links to the JSON parameters of the errand that belong to this statement.
-	 * <p>
-	 * MERGE and nothing else. A link is saved through its repository, and removed by the database when its parameter or
-	 * its statement goes: were Hibernate to remove it in the same flush as the parameter, it would null the reference to
-	 * the parameter first, which the column refuses.
+	 * The JSON parameters of the statement, kept beside it rather than among those of the errand - see
+	 * {@link AbstractArtefactJsonParameterEntity}. Written through this collection, and removed with the statement.
 	 */
-	@OneToMany(mappedBy = "statementEntity", cascade = MERGE)
-	private List<StatementJsonParameterEntity> jsonParameterLinks;
+	@OneToMany(mappedBy = "statementEntity", cascade = ALL, orphanRemoval = true)
+	@OrderBy("key")
+	private List<StatementJsonParameterEntity> jsonParameters;
 
 	public static StatementEntity create() {
 		return new StatementEntity();
@@ -286,16 +284,16 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 		return this;
 	}
 
-	public List<StatementJsonParameterEntity> getJsonParameterLinks() {
-		return jsonParameterLinks;
+	public List<StatementJsonParameterEntity> getJsonParameters() {
+		return jsonParameters;
 	}
 
-	public void setJsonParameterLinks(final List<StatementJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public void setJsonParameters(final List<StatementJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 	}
 
-	public StatementEntity withJsonParameterLinks(final List<StatementJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public StatementEntity withJsonParameters(final List<StatementJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 		return this;
 	}
 

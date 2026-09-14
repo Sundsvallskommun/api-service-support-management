@@ -25,7 +25,7 @@ class InvestigationEntityTest {
 	// What the artefact points at rather than what it is. None of it identifies the artefact, and comparing it would
 	// walk back into the errand the artefact already hangs on.
 	private static final String[] RELATIONS = {
-		"errandEntity", "sections", "attachments", "jsonParameterLinks"
+		"errandEntity", "sections", "attachments", "jsonParameters"
 	};
 
 	@BeforeAll
@@ -71,7 +71,7 @@ class InvestigationEntityTest {
 		final var recommendationMotivation = "recommendationMotivation";
 		final var sections = List.of(InvestigationSectionEntity.create());
 		final var attachments = List.of(AttachmentEntity.create());
-		final var jsonParameterLinks = List.of(InvestigationJsonParameterEntity.create());
+		final var jsonParameters = List.of(InvestigationJsonParameterEntity.create());
 
 		// Act
 		final var result = InvestigationEntity.create()
@@ -98,7 +98,7 @@ class InvestigationEntityTest {
 			.withRecommendationMotivation(recommendationMotivation)
 			.withSections(sections)
 			.withAttachments(attachments)
-			.withJsonParameterLinks(jsonParameterLinks);
+			.withJsonParameters(jsonParameters);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -125,7 +125,7 @@ class InvestigationEntityTest {
 		assertThat(result.getRecommendationMotivation()).isEqualTo(recommendationMotivation);
 		assertThat(result.getSections()).isEqualTo(sections);
 		assertThat(result.getAttachments()).isEqualTo(attachments);
-		assertThat(result.getJsonParameterLinks()).isEqualTo(jsonParameterLinks);
+		assertThat(result.getJsonParameters()).isEqualTo(jsonParameters);
 	}
 
 	@Test

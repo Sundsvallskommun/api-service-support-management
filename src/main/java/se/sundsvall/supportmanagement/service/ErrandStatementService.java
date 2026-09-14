@@ -11,8 +11,6 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.StatementJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
@@ -28,8 +26,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandStatementMappe
 import static se.sundsvall.supportmanagement.service.mapper.ErrandStatementMapper.toStatementEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandStatementMapper.toStatements;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandStatementMapper.updateStatementEntity;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.ownedParameterIds;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.removeParameters;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 
@@ -50,20 +46,15 @@ public class ErrandStatementService {
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandStatementService.class);
 	private static final String STATEMENT_NOT_FOUND = "A statement with id '%s' could not be found in errand with id '%s'";
 
-	private final ErrandsRepository errandsRepository;
 	private final StatementRepository statementRepository;
-	private final StatementJsonParameterRepository statementJsonParameterRepository;
 	private final StatementValidator statementValidator;
 	private final ArtefactAttachmentService artefactAttachmentService;
 	private final ArtefactJsonParameterService artefactJsonParameterService;
 	private final AccessControlService accessControlService;
 
-	ErrandStatementService(final ErrandsRepository errandsRepository, final StatementRepository statementRepository, final StatementJsonParameterRepository statementJsonParameterRepository,
-		final StatementValidator statementValidator, final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService,
-		final AccessControlService accessControlService) {
-		this.errandsRepository = errandsRepository;
+	ErrandStatementService(final StatementRepository statementRepository, final StatementValidator statementValidator, final ArtefactAttachmentService artefactAttachmentService,
+		final ArtefactJsonParameterService artefactJsonParameterService, final AccessControlService accessControlService) {
 		this.statementRepository = statementRepository;
-		this.statementJsonParameterRepository = statementJsonParameterRepository;
 		this.statementValidator = statementValidator;
 		this.artefactAttachmentService = artefactAttachmentService;
 		this.artefactJsonParameterService = artefactJsonParameterService;
@@ -111,20 +102,13 @@ public class ErrandStatementService {
 
 	@Transactional
 	public void deleteErrandStatement(final String namespace, final String municipalityId, final String errandId, final String statementId, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
 
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 		logMissingIfMatch(ifMatch, "DELETE", namespace, municipalityId, errandId, statementId);
 		validateIfMatch(ifMatch, entity.getVersion());
 
-		// Named now: the links that name them go with the statement.
-		final var ownedParameters = ownedParameterIds(entity.getJsonParameterLinks());
-
 		statementRepository.delete(entity);
-		statementRepository.flush();
-
-		removeParameters(errandEntity, ownedParameters);
-		errandsRepository.saveAndFlush(errandEntity);
 	}
 
 	@Transactional
@@ -158,32 +142,31 @@ public class ErrandStatementService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readStatementJsonParameters(final String namespace, final String municipalityId, final String errandId, final String statementId) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.STATEMENT, LR);
-		return artefactJsonParameterService.readAll(errandEntity, findStatementOrElseThrow(namespace, municipalityId, errandId, statementId).getJsonParameterLinks());
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.STATEMENT, LR);
+		return artefactJsonParameterService.readAll(findStatementOrElseThrow(namespace, municipalityId, errandId, statementId).getJsonParameters());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readStatementJsonParameter(final String namespace, final String municipalityId, final String errandId, final String statementId, final String key) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.STATEMENT, LR);
-		return artefactJsonParameterService.read(errandEntity, findStatementOrElseThrow(namespace, municipalityId, errandId, statementId).getJsonParameterLinks(), key);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.STATEMENT, LR);
+		return artefactJsonParameterService.read(findStatementOrElseThrow(namespace, municipalityId, errandId, statementId).getJsonParameters(), key);
 	}
 
 	@Transactional
 	public UpsertResult updateStatementJsonParameter(final String namespace, final String municipalityId, final String errandId, final String statementId, final String ifMatch,
 		final JsonParameter jsonParameter) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 
-		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, jsonParameterLinks(entity),
-			parameter -> StatementJsonParameterEntity.create().withStatementEntity(entity).withJsonParameterEntity(parameter), statementJsonParameterRepository);
+		return artefactJsonParameterService.upsert(jsonParameters(entity), () -> StatementJsonParameterEntity.create().withStatementEntity(entity), ifMatch, jsonParameter);
 	}
 
 	@Transactional
 	public void deleteStatementJsonParameter(final String namespace, final String municipalityId, final String errandId, final String statementId, final String key, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 
-		artefactJsonParameterService.delete(errandEntity, jsonParameterLinks(entity), key, ifMatch);
+		artefactJsonParameterService.delete(jsonParameters(entity), key, ifMatch);
 	}
 
 	private List<AttachmentEntity> attachments(final StatementEntity entity) {
@@ -193,11 +176,11 @@ public class ErrandStatementService {
 		return entity.getAttachments();
 	}
 
-	private List<StatementJsonParameterEntity> jsonParameterLinks(final StatementEntity entity) {
-		if (entity.getJsonParameterLinks() == null) {
-			entity.setJsonParameterLinks(new ArrayList<>());
+	private List<StatementJsonParameterEntity> jsonParameters(final StatementEntity entity) {
+		if (entity.getJsonParameters() == null) {
+			entity.setJsonParameters(new ArrayList<>());
 		}
-		return entity.getJsonParameterLinks();
+		return entity.getJsonParameters();
 	}
 
 	private StatementEntity findStatementOrElseThrow(final String namespace, final String municipalityId, final String errandId, final String statementId) {

@@ -46,9 +46,9 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		// out. Anything else moved up into the base class has to be named here for the same reason.
 		Map.entry(AbstractErrandItemEntity.class, Set.of(ERRAND_ENTITY)),
 
-		// What the measure itself declares: the attachments it uses, which the errand already holds, the links to its
-		// parameters, and the artefact it follows from, which points back at the errand.
-		Map.entry(MeasureEntity.class, Set.of("attachments", "jsonParameterLinks", "decisionEntity", "statementEntity")),
+		// What the measure itself declares: the attachments it uses, which the errand already holds, its JSON parameters,
+		// which are the measure's rather than the errand's, and the artefact it follows from, which points back at the errand.
+		Map.entry(MeasureEntity.class, Set.of("attachments", "jsonParameters", "decisionEntity", "statementEntity")),
 		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)));
 
 	public static CircularReferenceExclusionStrategy create() {

@@ -752,19 +752,15 @@ INSERT INTO statement_attachment(statement_id, attachment_id)
 VALUES ('f1000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001');
 
 -- -----------------------------------
--- JSON parameter links
+-- JSON parameters
 --
--- The parameter row hangs on the errand like any other; the link is what makes it the content of the statement.
+-- The statement holds its own beside it, and the errand holds one of its own, so that a test can tell the two apart.
 -- -----------------------------------
--- One the errand owns itself, so that a test can tell the two kinds apart.
 INSERT INTO json_parameter(id, errand_id, parameter_key, schema_id, value, version)
 VALUES ('f8000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', 'formData', 'test-schema-1.0', '{"firstName":"John"}', 0);
 
-INSERT INTO json_parameter(id, errand_id, parameter_key, schema_id, value, version)
-VALUES ('f8000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'responseForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
-
-INSERT INTO statement_json_parameter(id, statement_id, json_parameter_id)
-VALUES ('f9000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'f8000000-0000-0000-0000-000000000001');
+INSERT INTO statement_json_parameter(id, statement_id, parameter_key, schema_id, value, version)
+VALUES ('f9000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'responseForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
 
 -- -----------------------------------
 -- What the link and JSON parameter operations of the other three artefacts work on: the attachment above linked to
@@ -790,20 +786,14 @@ VALUES ('f4000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-0000000
 INSERT INTO measure_attachment(measure_id, attachment_id)
 VALUES ('ee000000-0000-0000-0000-000000000200', 'a5000000-0000-0000-0000-000000000001');
 
-INSERT INTO json_parameter(id, errand_id, parameter_key, schema_id, value, version)
-VALUES ('f8000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', 'investigationForm', 'test-schema-1.0', '{"answer":"pending"}', 0),
-       ('f8000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000001', 'sectionForm', 'test-schema-1.0', '{"answer":"pending"}', 0),
-       ('f8000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000001', 'decisionForm', 'test-schema-1.0', '{"answer":"pending"}', 0),
-       ('f8000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000001', 'measureForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
+INSERT INTO investigation_json_parameter(id, investigation_id, parameter_key, schema_id, value, version)
+VALUES ('f9000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'investigationForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
 
-INSERT INTO investigation_json_parameter(id, investigation_id, json_parameter_id)
-VALUES ('f9000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'f8000000-0000-0000-0000-000000000003');
+INSERT INTO investigation_section_json_parameter(id, investigation_section_id, parameter_key, schema_id, value, version)
+VALUES ('f9000000-0000-0000-0000-000000000003', 'f3000000-0000-0000-0000-000000000002', 'sectionForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
 
-INSERT INTO investigation_section_json_parameter(id, investigation_section_id, json_parameter_id)
-VALUES ('f9000000-0000-0000-0000-000000000003', 'f3000000-0000-0000-0000-000000000002', 'f8000000-0000-0000-0000-000000000004');
+INSERT INTO decision_json_parameter(id, decision_id, parameter_key, schema_id, value, version)
+VALUES ('f9000000-0000-0000-0000-000000000004', 'f4000000-0000-0000-0000-000000000001', 'decisionForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
 
-INSERT INTO decision_json_parameter(id, decision_id, json_parameter_id)
-VALUES ('f9000000-0000-0000-0000-000000000004', 'f4000000-0000-0000-0000-000000000001', 'f8000000-0000-0000-0000-000000000005');
-
-INSERT INTO measure_json_parameter(id, measure_id, json_parameter_id)
-VALUES ('f9000000-0000-0000-0000-000000000005', 'ee000000-0000-0000-0000-000000000200', 'f8000000-0000-0000-0000-000000000006');
+INSERT INTO measure_json_parameter(id, measure_id, parameter_key, schema_id, value, version)
+VALUES ('f9000000-0000-0000-0000-000000000005', 'ee000000-0000-0000-0000-000000000200', 'measureForm', 'test-schema-1.0', '{"answer":"pending"}', 0);

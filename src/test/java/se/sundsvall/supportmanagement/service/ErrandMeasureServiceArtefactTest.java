@@ -3,8 +3,11 @@ package se.sundsvall.supportmanagement.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,14 +18,17 @@ import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.MeasureJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,9 +62,6 @@ class ErrandMeasureServiceArtefactTest {
 	private MeasureValidator measureValidatorMock;
 
 	@Mock
-	private MeasureJsonParameterRepository measureJsonParameterRepositoryMock;
-
-	@Mock
 	private DecisionRepository decisionRepositoryMock;
 
 	@Mock
@@ -75,6 +78,9 @@ class ErrandMeasureServiceArtefactTest {
 
 	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
+
+	@Captor
+	private ArgumentCaptor<Supplier<MeasureJsonParameterEntity>> jsonParameterFactoryCaptor;
 
 	@InjectMocks
 	private ErrandMeasureService service;
@@ -141,32 +147,39 @@ class ErrandMeasureServiceArtefactTest {
 		verify(errandsRepositoryMock).saveAndFlush(errandEntity);
 	}
 
+	/**
+	 * The measure is found through the errand, which is therefore read - but not locked.
+	 */
 	@Test
 	void readMeasureJsonParameters() {
 
 		// Arrange
-		final var errandEntity = errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID));
-		when(artefactJsonParameterServiceMock.readAll(same(errandEntity), any())).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
+		final var parameters = List.of(MeasureJsonParameterEntity.create().withKey(KEY));
+		errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID).withJsonParameters(parameters));
+		when(artefactJsonParameterServiceMock.readAll(same(parameters))).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
 
 		// Act
 		final var result = service.readMeasureJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID);
 
 		// Verify
-		assertThat(result).hasSize(1);
+		assertThat(result).extracting(JsonParameter::getKey).containsExactly(KEY);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.MEASURE, LR);
 	}
 
 	@Test
 	void readMeasureJsonParameter() {
 
 		// Arrange
-		final var errandEntity = errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID));
-		when(artefactJsonParameterServiceMock.read(same(errandEntity), any(), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
+		final var parameters = List.of(MeasureJsonParameterEntity.create().withKey(KEY));
+		errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID).withJsonParameters(parameters));
+		when(artefactJsonParameterServiceMock.read(same(parameters), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
 
 		// Act
 		final var result = service.readMeasureJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, KEY);
 
 		// Verify
 		assertThat(result.getKey()).isEqualTo(KEY);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.MEASURE, LR);
 	}
 
 	@Test
@@ -174,30 +187,34 @@ class ErrandMeasureServiceArtefactTest {
 
 		// Arrange
 		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
-		final var errandEntity = errandWithMeasure(measureEntity);
+		errandWithMeasure(measureEntity);
 		final var body = JsonParameter.create().withKey(KEY);
-		when(artefactJsonParameterServiceMock.upsert(eq(errandEntity), isNull(), eq(body), any(), any(), any()))
-			.thenReturn(new UpsertResult(body, true));
+		when(artefactJsonParameterServiceMock.<MeasureJsonParameterEntity>upsert(any(), any(), isNull(), same(body))).thenReturn(new UpsertResult(body, true));
 
 		// Act
 		final var result = service.updateMeasureJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, null, body);
 
-		// Verify
+		// Verify - the collection is created on the way, so a new parameter has somewhere to go
 		assertThat(result.created()).isTrue();
-		assertThat(measureEntity.getJsonParameterLinks()).isNotNull();
+		assertThat(measureEntity.getJsonParameters()).isNotNull();
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW);
+		verify(artefactJsonParameterServiceMock).upsert(same(measureEntity.getJsonParameters()), jsonParameterFactoryCaptor.capture(), isNull(), same(body));
+		assertThat(jsonParameterFactoryCaptor.getValue().get().getMeasureEntity()).as("a new parameter points at the measure").isSameAs(measureEntity);
 	}
 
 	@Test
 	void deleteMeasureJsonParameter() {
 
 		// Arrange
-		final var errandEntity = errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID));
+		final var parameters = new ArrayList<MeasureJsonParameterEntity>();
+		errandWithMeasure(MeasureEntity.create().withId(MEASURE_ID).withJsonParameters(parameters));
 
 		// Act
 		service.deleteMeasureJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, KEY, IF_MATCH);
 
 		// Verify
-		verify(artefactJsonParameterServiceMock).delete(eq(errandEntity), any(), eq(KEY), eq(IF_MATCH));
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW);
+		verify(artefactJsonParameterServiceMock).delete(same(parameters), eq(KEY), eq(IF_MATCH));
 	}
 
 	@Test

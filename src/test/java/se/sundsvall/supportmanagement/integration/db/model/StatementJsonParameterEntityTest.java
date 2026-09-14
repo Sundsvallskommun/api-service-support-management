@@ -13,20 +13,17 @@ import static org.hamcrest.Matchers.allOf;
 
 class StatementJsonParameterEntityTest {
 
-	// A link carries nothing of its own beyond which two rows it joins, so its id is what identifies it. Comparing the
-	// two sides would walk back into the errand they both belong to.
-	private static final String[] RELATIONS = {
-		"statementEntity", "jsonParameterEntity"
-	};
+	// The statement holds the parameter in turn, so comparing it would walk back into the statement.
+	private static final String OWNER = "statementEntity";
 
 	@Test
 	void hasValidBean() {
 		MatcherAssert.assertThat(StatementJsonParameterEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding(RELATIONS),
-			hasValidBeanEqualsExcluding(RELATIONS),
-			hasValidBeanToStringExcluding(RELATIONS)));
+			hasValidBeanHashCodeExcluding(OWNER),
+			hasValidBeanEqualsExcluding(OWNER),
+			hasValidBeanToStringExcluding(OWNER)));
 	}
 
 	@Test
@@ -35,19 +32,53 @@ class StatementJsonParameterEntityTest {
 		// Arrange
 		final var id = "id";
 		final var owner = StatementEntity.create().withId("ownerId");
-		final var jsonParameterEntity = JsonParameterEntity.create().withId("parameterId");
+		final var key = "responseForm";
+		final var schemaId = "schemaId";
+		final var value = "{\"answer\":\"pending\"}";
+		final var version = 3L;
 
 		// Act
 		final var result = StatementJsonParameterEntity.create()
 			.withId(id)
 			.withStatementEntity(owner)
-			.withJsonParameterEntity(jsonParameterEntity);
+			.withKey(key)
+			.withSchemaId(schemaId)
+			.withValue(value)
+			.withVersion(version);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
 		assertThat(result.getId()).isEqualTo(id);
 		assertThat(result.getStatementEntity()).isEqualTo(owner);
-		assertThat(result.getJsonParameterEntity()).isEqualTo(jsonParameterEntity);
+		assertThat(result.getKey()).isEqualTo(key);
+		assertThat(result.getSchemaId()).isEqualTo(schemaId);
+		assertThat(result.getValue()).isEqualTo(value);
+		assertThat(result.getVersion()).isEqualTo(version);
+	}
+
+	@Test
+	void toStringNamesTheOwnerByItsIdOnly() {
+		assertThat(StatementJsonParameterEntity.create().withStatementEntity(StatementEntity.create().withId("ownerId").withTitle("title")))
+			.hasToString("StatementJsonParameterEntity{id='null', key='null', schemaId='null', value='null', version=null, statementEntity=ownerId}");
+		assertThat(StatementJsonParameterEntity.create().toString()).endsWith("statementEntity=null}");
+	}
+
+	/**
+	 * The five kinds share their fields but not their tables, so a parameter of a statement is never equal to one of a
+	 * decision carrying the same values.
+	 */
+	@Test
+	void isNotEqualToAParameterOfAnotherKindOfOwner() {
+
+		// Arrange
+		final var statementParameter = StatementJsonParameterEntity.create().withId("id").withKey("key");
+		final var decisionParameter = DecisionJsonParameterEntity.create().withId("id").withKey("key");
+
+		// Act & Assert
+		assertThat(statementParameter)
+			.isEqualTo(statementParameter)
+			.isNotEqualTo(decisionParameter)
+			.isNotEqualTo(null);
 	}
 
 	@Test

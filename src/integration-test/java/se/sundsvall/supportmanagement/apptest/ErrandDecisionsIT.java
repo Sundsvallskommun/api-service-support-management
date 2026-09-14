@@ -375,7 +375,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 	}
 
 	private int parametersWithKey(final String key) {
-		return jdbcTemplate.queryForObject("select count(*) from json_parameter where errand_id = ? and parameter_key = ?", Integer.class, ERRAND_ID, key);
+		return jdbcTemplate.queryForObject("select count(*) from decision_json_parameter where parameter_key = ?", Integer.class, key);
 	}
 
 	private int attachmentLinks() {

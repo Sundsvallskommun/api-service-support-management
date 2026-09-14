@@ -25,7 +25,7 @@ class StatementEntityTest {
 	// What the artefact points at rather than what it is. None of it identifies the artefact, and comparing it would
 	// walk back into the errand the artefact already hangs on.
 	private static final String[] RELATIONS = {
-		"errandEntity", "attachments", "jsonParameterLinks"
+		"errandEntity", "attachments", "jsonParameters"
 	};
 
 	@BeforeAll
@@ -75,7 +75,7 @@ class StatementEntityTest {
 		final var responseText = "responseText";
 		final var communicationId = "communicationId";
 		final var attachments = List.of(AttachmentEntity.create());
-		final var jsonParameterLinks = List.of(StatementJsonParameterEntity.create());
+		final var jsonParameters = List.of(StatementJsonParameterEntity.create());
 
 		// Act
 		final var result = StatementEntity.create()
@@ -106,7 +106,7 @@ class StatementEntityTest {
 			.withResponseText(responseText)
 			.withCommunicationId(communicationId)
 			.withAttachments(attachments)
-			.withJsonParameterLinks(jsonParameterLinks);
+			.withJsonParameters(jsonParameters);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -123,8 +123,8 @@ class StatementEntityTest {
 			.extracting(StatementEntity::getCounterpartyReference, StatementEntity::getQuestion, StatementEntity::getSentAt, StatementEntity::getRemindedAt, StatementEntity::getRespondedAt, StatementEntity::getOutcome)
 			.containsExactly(counterpartyReference, question, sentAt, remindedAt, respondedAt, outcome);
 		assertThat(result)
-			.extracting(StatementEntity::getResponseText, StatementEntity::getCommunicationId, StatementEntity::getAttachments, StatementEntity::getJsonParameterLinks)
-			.containsExactly(responseText, communicationId, attachments, jsonParameterLinks);
+			.extracting(StatementEntity::getResponseText, StatementEntity::getCommunicationId, StatementEntity::getAttachments, StatementEntity::getJsonParameters)
+			.containsExactly(responseText, communicationId, attachments, jsonParameters);
 	}
 
 	@Test

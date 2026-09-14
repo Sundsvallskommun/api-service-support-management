@@ -186,8 +186,8 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(sections(SECTION_ID)).isZero();
-		assertThat(parametersWithKey("sectionForm")).as("the parameter of the section went with it").isZero();
-		assertThat(parametersWithKey("investigationForm")).as("the one of the investigation stayed").isOne();
+		assertThat(sectionParametersWithKey("sectionForm")).as("the parameter of the section went with it").isZero();
+		assertThat(investigationParametersWithKey("investigationForm")).as("the one of the investigation stayed").isOne();
 	}
 
 	/**
@@ -217,8 +217,8 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(investigationRepository.existsById(INVESTIGATION_ID)).isFalse();
-		assertThat(parametersWithKey("investigationForm")).isZero();
-		assertThat(parametersWithKey("sectionForm")).isZero();
+		assertThat(investigationParametersWithKey("investigationForm")).isZero();
+		assertThat(sectionParametersWithKey("sectionForm")).isZero();
 		assertThat(attachmentLinks()).as("the link went").isZero();
 		assertThat(attachments(LINKED_ATTACHMENT_ID)).as("the attachment stayed on the errand").isOne();
 		assertThat(jdbcTemplate.queryForObject("select investigation_id from decision where id = ?", String.class, DECISION_ID))
@@ -305,7 +305,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(parametersWithKey("dispatchLog")).isOne();
+		assertThat(investigationParametersWithKey("dispatchLog")).isOne();
 	}
 
 	@Test
@@ -316,7 +316,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(parametersWithKey("investigationForm")).isZero();
+		assertThat(investigationParametersWithKey("investigationForm")).isZero();
 		assertThat(investigationRepository.existsById(INVESTIGATION_ID)).as("the investigation stayed").isTrue();
 	}
 
@@ -351,7 +351,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(parametersWithKey("dispatchLog")).isOne();
+		assertThat(sectionParametersWithKey("dispatchLog")).isOne();
 	}
 
 	@Test
@@ -362,7 +362,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(parametersWithKey("sectionForm")).isZero();
+		assertThat(sectionParametersWithKey("sectionForm")).isZero();
 		assertThat(sections(SECTION_ID)).as("the section stayed").isOne();
 	}
 
@@ -396,8 +396,12 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 		return jdbcTemplate.queryForObject("select assessment from investigation_section where id = ?", String.class, sectionId);
 	}
 
-	private int parametersWithKey(final String key) {
-		return jdbcTemplate.queryForObject("select count(*) from json_parameter where errand_id = ? and parameter_key = ?", Integer.class, ERRAND_ID, key);
+	private int investigationParametersWithKey(final String key) {
+		return jdbcTemplate.queryForObject("select count(*) from investigation_json_parameter where parameter_key = ?", Integer.class, key);
+	}
+
+	private int sectionParametersWithKey(final String key) {
+		return jdbcTemplate.queryForObject("select count(*) from investigation_section_json_parameter where parameter_key = ?", Integer.class, key);
 	}
 
 	private int attachmentLinks() {

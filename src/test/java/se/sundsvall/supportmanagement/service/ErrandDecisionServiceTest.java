@@ -18,16 +18,13 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
-import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -75,13 +72,7 @@ class ErrandDecisionServiceTest {
 	private static final String STALE_IF_MATCH = "\"2\"";
 
 	@Mock
-	private ErrandsRepository errandsRepositoryMock;
-
-	@Mock
 	private DecisionRepository decisionRepositoryMock;
-
-	@Mock
-	private DecisionJsonParameterRepository decisionJsonParameterRepositoryMock;
 
 	@Mock
 	private ArtefactAttachmentService artefactAttachmentServiceMock;
@@ -537,70 +528,28 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * The links naming the parameters go with the decision, so the parameters are named before it is removed - the stubbed
-	 * delete takes the links away to hold the service to that. They leave the errand only once the delete is flushed, so
-	 * that they are unlinked by the time they are removed, and before the errand is saved.
+	 * The JSON parameters of the decision are its own and go with it, so removing the decision is all there is to it.
 	 */
 	@Test
 	void deleteErrandDecision() {
 
 		// Arrange
-		final var ownedParameter = JsonParameterEntity.create().withId("owned-parameter-id").withKey("decisionData");
-		final var otherParameter = JsonParameterEntity.create().withId("other-parameter-id").withKey("errandData");
-		final var errandEntity = mockErrand().withJsonParameters(new ArrayList<>(List.of(ownedParameter, otherParameter)));
-		final var entity = mockDecision().withJsonParameterLinks(new ArrayList<>(List.of(DecisionJsonParameterEntity.create().withJsonParameterEntity(ownedParameter))));
-		final var parametersWhenFlushed = new ArrayList<JsonParameterEntity>();
-		final var parametersWhenSaved = new ArrayList<JsonParameterEntity>();
-		doAnswer(_ -> {
-			entity.setJsonParameterLinks(null);
-			return null;
-		}).when(decisionRepositoryMock).delete(entity);
-		doAnswer(_ -> {
-			parametersWhenFlushed.addAll(errandEntity.getJsonParameters());
-			return null;
-		}).when(decisionRepositoryMock).flush();
-		when(errandsRepositoryMock.saveAndFlush(errandEntity)).thenAnswer(_ -> {
-			parametersWhenSaved.addAll(errandEntity.getJsonParameters());
-			return errandEntity;
-		});
-
-		// Act
-		service.deleteErrandDecision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, IF_MATCH);
-
-		// Verify
-		final var inOrder = inOrder(decisionRepositoryMock, errandsRepositoryMock);
-		inOrder.verify(decisionRepositoryMock).delete(entity);
-		inOrder.verify(decisionRepositoryMock).flush();
-		inOrder.verify(errandsRepositoryMock).saveAndFlush(errandEntity);
-		assertThat(parametersWhenFlushed).containsExactly(ownedParameter, otherParameter);
-		assertThat(parametersWhenSaved).containsExactly(otherParameter);
-		assertThat(errandEntity.getJsonParameters()).containsExactly(otherParameter);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
-		verifyNoMoreInteractions(accessControlServiceMock);
-	}
-
-	@Test
-	void deleteErrandDecisionWithoutJsonParameters() {
-
-		// Arrange
-		final var parameter = JsonParameterEntity.create().withId("other-parameter-id").withKey("errandData");
-		final var errandEntity = mockErrand().withJsonParameters(new ArrayList<>(List.of(parameter)));
-		final var entity = mockDecision();
+		final var entity = mockDecision().withJsonParameters(new ArrayList<>(List.of(DecisionJsonParameterEntity.create().withKey("decisionData"))));
 
 		// Act
 		service.deleteErrandDecision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, IF_MATCH);
 
 		// Verify
 		verify(decisionRepositoryMock).delete(entity);
-		verify(errandsRepositoryMock).saveAndFlush(errandEntity);
-		assertThat(errandEntity.getJsonParameters()).containsExactly(parameter);
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
+		verifyNoMoreInteractions(accessControlServiceMock);
+		verifyNoInteractions(artefactJsonParameterServiceMock);
 	}
 
 	@Test
 	void deleteErrandDecisionWithoutIfMatch() {
 
 		// Arrange
-		mockErrand();
 		final var entity = mockDecision();
 
 		// Act
@@ -614,7 +563,6 @@ class ErrandDecisionServiceTest {
 	void deleteErrandDecisionWithStaleIfMatch() {
 
 		// Arrange
-		mockErrand();
 		mockDecision();
 
 		// Act
@@ -623,14 +571,12 @@ class ErrandDecisionServiceTest {
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED);
 		verify(decisionRepositoryMock, never()).delete(any());
-		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
 	void deleteErrandDecisionNotFound() {
 
 		// Arrange
-		mockErrand();
 		mockMissingDecision();
 
 		// Act
@@ -640,7 +586,6 @@ class ErrandDecisionServiceTest {
 		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(problem.getMessage()).contains(DECISION_ID, ERRAND_ID);
 		verify(decisionRepositoryMock, never()).delete(any());
-		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	/**

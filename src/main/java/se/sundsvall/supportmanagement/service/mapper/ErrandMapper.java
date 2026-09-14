@@ -584,7 +584,7 @@ public final class ErrandMapper {
 		}
 	}
 
-	private static JsonNode toJsonNode(final String jsonString) {
+	static JsonNode toJsonNode(final String jsonString) {
 		if (isNull(jsonString)) {
 			return null;
 		}

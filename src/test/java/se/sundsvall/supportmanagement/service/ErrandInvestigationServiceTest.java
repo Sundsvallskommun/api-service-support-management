@@ -18,16 +18,12 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.InvestigationJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
-import se.sundsvall.supportmanagement.integration.db.InvestigationSectionJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionJsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
@@ -73,16 +69,7 @@ class ErrandInvestigationServiceTest {
 	private static final String CALLER = "jo12doe";
 
 	@Mock
-	private ErrandsRepository errandsRepositoryMock;
-
-	@Mock
 	private InvestigationRepository investigationRepositoryMock;
-
-	@Mock
-	private InvestigationJsonParameterRepository investigationJsonParameterRepositoryMock;
-
-	@Mock
-	private InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepositoryMock;
 
 	@Mock
 	private ArtefactAttachmentService artefactAttachmentServiceMock;
@@ -129,10 +116,6 @@ class ErrandInvestigationServiceTest {
 
 	private static InvestigationSectionEntity sectionEntity(final String id, final String sectionKey) {
 		return InvestigationSectionEntity.create().withId(id).withSectionKey(sectionKey).withAssessment(SectionAssessment.PENDING);
-	}
-
-	private static JsonParameterEntity parameter(final String id) {
-		return JsonParameterEntity.create().withId(id).withKey(id);
 	}
 
 	@Test
@@ -364,80 +347,51 @@ class ErrandInvestigationServiceTest {
 	}
 
 	/**
-	 * The parameters are named before the investigation goes, since removing it takes the links naming them
-	 * along - its own and those of its sections alike, as the stubbed removal does. They are taken out of the
-	 * errand, which owns the rows, only once the investigation has been flushed away, so that nothing reaches a
-	 * link row twice.
+	 * The JSON parameters of the investigation and of its sections are theirs and go with it, so removing the
+	 * investigation is all there is to it.
 	 */
 	@Test
 	void deleteErrandInvestigation() {
 
 		// Arrange
-		final var investigationParameter = parameter("investigation-parameter");
-		final var sectionParameter = parameter("section-parameter");
-		final var errandParameter = parameter("errand-parameter");
-		final var errandEntity = mockErrand().withJsonParameters(new ArrayList<>(List.of(investigationParameter, sectionParameter, errandParameter)));
-		final var investigationLink = InvestigationJsonParameterEntity.create().withJsonParameterEntity(investigationParameter);
-		final var sectionLink = InvestigationSectionJsonParameterEntity.create().withJsonParameterEntity(sectionParameter);
-		final var sectionWithParameter = sectionEntity(SECTION_ID, SECTION_KEY).withJsonParameterLinks(new ArrayList<>(List.of(sectionLink)));
-		final var sectionWithoutParameter = sectionEntity(OTHER_SECTION_ID, OTHER_SECTION_KEY);
+		final var section = sectionEntity(SECTION_ID, SECTION_KEY)
+			.withJsonParameters(new ArrayList<>(List.of(InvestigationSectionJsonParameterEntity.create().withKey("sectionData"))));
 		final var entity = mockInvestigation()
 			.withVersion(3L)
-			.withJsonParameterLinks(new ArrayList<>(List.of(investigationLink)))
-			.withSections(new ArrayList<>(List.of(sectionWithParameter, sectionWithoutParameter)));
-		doAnswer(_ -> {
-			entity.setJsonParameterLinks(null);
-			entity.getSections().forEach(section -> section.setJsonParameterLinks(null));
-			return null;
-		}).when(investigationRepositoryMock).delete(entity);
-		final var parametersAtFlush = new ArrayList<JsonParameterEntity>();
-		doAnswer(_ -> parametersAtFlush.addAll(errandEntity.getJsonParameters())).when(investigationRepositoryMock).flush();
+			.withJsonParameters(new ArrayList<>(List.of(InvestigationJsonParameterEntity.create().withKey("investigationData"))))
+			.withSections(new ArrayList<>(List.of(section, sectionEntity(OTHER_SECTION_ID, OTHER_SECTION_KEY))));
 
 		// Act
 		service.deleteErrandInvestigation(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID, IF_MATCH);
 
 		// Verify
-		final var inOrder = inOrder(investigationRepositoryMock, errandsRepositoryMock);
-		inOrder.verify(investigationRepositoryMock).delete(entity);
-		inOrder.verify(investigationRepositoryMock).flush();
-		inOrder.verify(errandsRepositoryMock).saveAndFlush(errandEntity);
-		assertThat(parametersAtFlush).containsExactlyInAnyOrder(investigationParameter, sectionParameter, errandParameter);
-		assertThat(errandEntity.getJsonParameters()).containsExactly(errandParameter);
+		verify(investigationRepositoryMock).delete(entity);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.INVESTIGATION, RW);
 		verifyNoMoreInteractions(accessControlServiceMock);
+		verifyNoInteractions(artefactJsonParameterServiceMock);
 	}
 
 	/**
-	 * Neither is required: an investigation that never got a section or a parameter is removed all the same, and
 	 * If-Match is opt-in.
 	 */
 	@Test
-	void deleteErrandInvestigationWithoutSectionsOrIfMatch() {
+	void deleteErrandInvestigationWithoutIfMatch() {
 
 		// Arrange
-		final var errandParameter = parameter("errand-parameter");
-		final var errandEntity = mockErrand().withJsonParameters(new ArrayList<>(List.of(errandParameter)));
 		final var entity = mockInvestigation();
 
 		// Act
 		service.deleteErrandInvestigation(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID, null);
 
 		// Verify
-		final var inOrder = inOrder(investigationRepositoryMock, errandsRepositoryMock);
-		inOrder.verify(investigationRepositoryMock).delete(entity);
-		inOrder.verify(investigationRepositoryMock).flush();
-		inOrder.verify(errandsRepositoryMock).saveAndFlush(errandEntity);
-		assertThat(errandEntity.getJsonParameters()).containsExactly(errandParameter);
+		verify(investigationRepositoryMock).delete(entity);
 	}
 
 	@Test
 	void deleteErrandInvestigationWithAStaleIfMatch() {
 
 		// Arrange
-		final var investigationParameter = parameter("investigation-parameter");
-		final var errandEntity = mockErrand().withJsonParameters(new ArrayList<>(List.of(investigationParameter)));
-		final var investigationLink = InvestigationJsonParameterEntity.create().withJsonParameterEntity(investigationParameter);
-		mockInvestigation().withVersion(4L).withJsonParameterLinks(new ArrayList<>(List.of(investigationLink)));
+		mockInvestigation().withVersion(4L);
 
 		// Act
 		final var problem = catchThrowableOfType(ThrowableProblem.class,
@@ -445,10 +399,7 @@ class ErrandInvestigationServiceTest {
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED);
-		assertThat(errandEntity.getJsonParameters()).containsExactly(investigationParameter);
 		verify(investigationRepositoryMock, never()).delete(any());
-		verify(investigationRepositoryMock, never()).flush();
-		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
@@ -466,7 +417,6 @@ class ErrandInvestigationServiceTest {
 		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(problem.getMessage()).contains(INVESTIGATION_ID, ERRAND_ID);
 		verify(investigationRepositoryMock, never()).delete(any());
-		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	/**
@@ -696,40 +646,29 @@ class ErrandInvestigationServiceTest {
 	}
 
 	/**
-	 * The parameters the section owns are named before it goes, since the links naming them go with it - as the stubbed
-	 * flush does. They are then taken out of the errand, which owns the rows.
+	 * The section leaves the collection of the investigation, which takes its JSON parameters with it, and the
+	 * investigation moves its version before it is flushed.
 	 */
 	@Test
 	void deleteInvestigationSection() {
 
 		// Arrange
-		final var sectionParameter = parameter("section-parameter");
-		final var errandParameter = parameter("errand-parameter");
-		final var errandEntity = mockErrand().withJsonParameters(new ArrayList<>(List.of(sectionParameter, errandParameter)));
-		final var sectionLink = InvestigationSectionJsonParameterEntity.create().withJsonParameterEntity(sectionParameter);
-		final var removedSection = sectionEntity(SECTION_ID, SECTION_KEY).withJsonParameterLinks(new ArrayList<>(List.of(sectionLink)));
+		final var removedSection = sectionEntity(SECTION_ID, SECTION_KEY)
+			.withJsonParameters(new ArrayList<>(List.of(InvestigationSectionJsonParameterEntity.create().withKey("sectionData"))));
 		final var remainingSection = sectionEntity(OTHER_SECTION_ID, OTHER_SECTION_KEY);
 		final var entity = mockInvestigation().withSections(new ArrayList<>(List.of(removedSection, remainingSection)));
-		final var parametersAtFlush = new ArrayList<JsonParameterEntity>();
-		when(investigationRepositoryMock.saveAndFlush(entity)).thenAnswer(_ -> {
-			removedSection.setJsonParameterLinks(null);
-			parametersAtFlush.addAll(errandEntity.getJsonParameters());
-			return entity;
-		});
 
 		// Act
 		service.deleteInvestigationSection(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID, SECTION_ID);
 
 		// Verify
-		final var inOrder = inOrder(investigationRepositoryMock, errandsRepositoryMock);
+		final var inOrder = inOrder(entityManagerMock, investigationRepositoryMock);
+		inOrder.verify(entityManagerMock).lock(entity, OPTIMISTIC_FORCE_INCREMENT);
 		inOrder.verify(investigationRepositoryMock).saveAndFlush(entity);
-		inOrder.verify(errandsRepositoryMock).saveAndFlush(errandEntity);
-		verify(entityManagerMock).lock(entity, OPTIMISTIC_FORCE_INCREMENT);
 		assertThat(entity.getSections()).containsExactly(remainingSection);
-		assertThat(parametersAtFlush).containsExactlyInAnyOrder(sectionParameter, errandParameter);
-		assertThat(errandEntity.getJsonParameters()).containsExactly(errandParameter);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.INVESTIGATION, RW);
 		verifyNoMoreInteractions(accessControlServiceMock);
+		verifyNoInteractions(artefactJsonParameterServiceMock);
 	}
 
 	@Test
@@ -746,6 +685,5 @@ class ErrandInvestigationServiceTest {
 		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(problem.getMessage()).contains(SECTION_ID, INVESTIGATION_ID);
 		verify(investigationRepositoryMock, never()).saveAndFlush(any());
-		verifyNoInteractions(errandsRepositoryMock);
 	}
 }

@@ -25,7 +25,6 @@ import org.hibernate.annotations.TimeZoneStorage;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 
 import static jakarta.persistence.CascadeType.ALL;
-import static jakarta.persistence.CascadeType.MERGE;
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static org.hibernate.Length.LONG32;
@@ -133,9 +132,10 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@OrderBy("fileName")
 	private List<AttachmentEntity> attachments;
 
-	/** See {@link StatementEntity#getJsonParameterLinks()} for why nothing but MERGE cascades here. */
-	@OneToMany(mappedBy = "decisionEntity", cascade = MERGE)
-	private List<DecisionJsonParameterEntity> jsonParameterLinks;
+	/** The JSON parameters of the decision. See {@link StatementEntity#getJsonParameters()} for how they are held. */
+	@OneToMany(mappedBy = "decisionEntity", cascade = ALL, orphanRemoval = true)
+	@OrderBy("key")
+	private List<DecisionJsonParameterEntity> jsonParameters;
 
 	public static DecisionEntity create() {
 		return new DecisionEntity();
@@ -336,16 +336,16 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 		return this;
 	}
 
-	public List<DecisionJsonParameterEntity> getJsonParameterLinks() {
-		return jsonParameterLinks;
+	public List<DecisionJsonParameterEntity> getJsonParameters() {
+		return jsonParameters;
 	}
 
-	public void setJsonParameterLinks(final List<DecisionJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public void setJsonParameters(final List<DecisionJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 	}
 
-	public DecisionEntity withJsonParameterLinks(final List<DecisionJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public DecisionEntity withJsonParameters(final List<DecisionJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 		return this;
 	}
 

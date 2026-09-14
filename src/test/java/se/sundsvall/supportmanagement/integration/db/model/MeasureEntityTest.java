@@ -26,7 +26,7 @@ class MeasureEntityTest {
 	// from, and the collections it links. None of them identifies a measure, and comparing them walks back into the
 	// errand this measure already hangs on.
 	private static final String[] RELATIONS = {
-		"errandEntity", "decisionEntity", "statementEntity", "attachments", "jsonParameterLinks"
+		"errandEntity", "decisionEntity", "statementEntity", "attachments", "jsonParameters"
 	};
 
 	@BeforeAll
@@ -82,7 +82,7 @@ class MeasureEntityTest {
 		final var decisionEntity = DecisionEntity.create().withId("decisionId");
 		final var statementEntity = StatementEntity.create().withId("statementId");
 		final var attachments = List.of(AttachmentEntity.create());
-		final var jsonParameterLinks = List.of(MeasureJsonParameterEntity.create());
+		final var jsonParameters = List.of(MeasureJsonParameterEntity.create());
 
 		// Act
 		final var result = MeasureEntity.create()
@@ -117,7 +117,7 @@ class MeasureEntityTest {
 			.withDecisionEntity(decisionEntity)
 			.withStatementEntity(statementEntity)
 			.withAttachments(attachments)
-			.withJsonParameterLinks(jsonParameterLinks);
+			.withJsonParameters(jsonParameters);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -137,8 +137,8 @@ class MeasureEntityTest {
 			.extracting(MeasureEntity::getModifiedBy, MeasureEntity::getVersion, MeasureEntity::getResult, MeasureEntity::getResultText, MeasureEntity::getDecisionEntity, MeasureEntity::getStatementEntity)
 			.containsExactly(modifiedBy, version, measureResult, resultText, decisionEntity, statementEntity);
 		assertThat(result)
-			.extracting(MeasureEntity::getAttachments, MeasureEntity::getJsonParameterLinks)
-			.containsExactly(attachments, jsonParameterLinks);
+			.extracting(MeasureEntity::getAttachments, MeasureEntity::getJsonParameters)
+			.containsExactly(attachments, jsonParameters);
 	}
 
 	@Test

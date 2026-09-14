@@ -3,463 +3,294 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
-import se.sundsvall.supportmanagement.integration.db.InvestigationJsonParameterRepository;
-import se.sundsvall.supportmanagement.integration.db.InvestigationSectionJsonParameterRepository;
-import se.sundsvall.supportmanagement.integration.db.MeasureJsonParameterRepository;
-import se.sundsvall.supportmanagement.integration.db.StatementJsonParameterRepository;
-import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.InvestigationJsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionJsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementJsonParameterEntity;
-import se.sundsvall.supportmanagement.service.AccessControlService.KeyAccess;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.doThrow;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.JSON_PARAMETERS;
 
 @ExtendWith(MockitoExtension.class)
 class ArtefactJsonParameterServiceTest {
 
-	private static final String NAMESPACE = "namespace";
-	private static final String MUNICIPALITY_ID = "2281";
-	private static final String ERRAND_ID = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 	private static final String KEY = "responseForm";
+	private static final String SCHEMA_ID = "test-schema-1.0";
+	private static final String NEW_SCHEMA_ID = "test-schema-2.0";
+	private static final String NEW_VALUE = "{\"answer\":\"given\"}";
 
-	private static final Function<JsonParameterEntity, StatementJsonParameterEntity> LINK_FACTORY = parameter -> StatementJsonParameterEntity.create().withJsonParameterEntity(parameter);
-	private static final KeyAccess MAY_CHANGE = new KeyAccess(_ -> true, _ -> true);
-
-	@Mock
-	private AccessControlService accessControlServiceMock;
+	private static final Supplier<StatementJsonParameterEntity> NOT_CALLED = () -> {
+		throw new AssertionError("a parameter the owner already holds is not created again");
+	};
 
 	@Mock
 	private EntityManager entityManagerMock;
 
-	@Mock
-	private StatementJsonParameterRepository linkRepositoryMock;
-
-	@Mock
-	private InvestigationJsonParameterRepository investigationLinkRepositoryMock;
-
-	@Mock
-	private InvestigationSectionJsonParameterRepository investigationSectionLinkRepositoryMock;
-
-	@Mock
-	private DecisionJsonParameterRepository decisionLinkRepositoryMock;
-
-	@Mock
-	private MeasureJsonParameterRepository measureLinkRepositoryMock;
-
 	@InjectMocks
 	private ArtefactJsonParameterService service;
 
-	private static JsonParameterEntity parameter(final String id, final String key) {
-		return JsonParameterEntity.create().withId(id).withKey(key).withSchemaId("test-schema-1.0").withValue("{}");
+	private static StatementJsonParameterEntity parameter(final String key) {
+		return StatementJsonParameterEntity.create()
+			.withId("id-" + key)
+			.withKey(key)
+			.withSchemaId(SCHEMA_ID)
+			.withValue("{\"answer\":\"pending\"}")
+			.withVersion(2L);
 	}
 
-	private static StatementJsonParameterEntity linkTo(final JsonParameterEntity parameter) {
-		return StatementJsonParameterEntity.create().withId("link-" + parameter.getId()).withJsonParameterEntity(parameter);
-	}
-
-	private static ErrandEntity errand(final JsonParameterEntity... parameters) {
-		return ErrandEntity.create().withId(ERRAND_ID).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withJsonParameters(new ArrayList<>(List.of(parameters)));
-	}
-
-	private static JsonParameter body() {
-		return JsonParameter.create().withKey(KEY).withSchemaId("test-schema-1.0").withValue(JsonNodeFactory.instance.objectNode().put("name", "test"));
-	}
-
-	private void mockReadableKeys(final ErrandEntity errandEntity, final String hiddenKey) {
-		when(accessControlServiceMock.readableKeyPredicate(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), same(errandEntity), eq(JSON_PARAMETERS)))
-			.thenReturn(key -> !key.equals(hiddenKey));
-	}
-
-	private void mockKeyAccess(final ErrandEntity errandEntity, final JsonParameter body, final KeyAccess keyAccess) {
-		when(accessControlServiceMock.verifyJsonParameterAccess(NAMESPACE, MUNICIPALITY_ID, errandEntity, KEY, body)).thenReturn(keyAccess);
-	}
-
-	@Test
-	void readAllSortsByKey() {
-
-		// Arrange
-		final var errandEntity = errand();
-		mockReadableKeys(errandEntity, null);
-		final var links = List.of(linkTo(parameter("2", "zeta")), linkTo(parameter("1", "alpha")));
-
-		// Act
-		final var result = service.readAll(errandEntity, links);
-
-		// Verify
-		assertThat(result).extracting(JsonParameter::getKey).containsExactly("alpha", "zeta");
+	private static JsonParameter body(final String key) {
+		return JsonParameter.create()
+			.withKey(key)
+			.withSchemaId(NEW_SCHEMA_ID)
+			.withValue(JsonNodeFactory.instance.objectNode().put("answer", "given"));
 	}
 
 	/**
-	 * The parameter is one of the errand's, so a key the namespace keeps from the caller on the errand is kept from them
-	 * here as well - otherwise the artefact would be a way around it.
+	 * The parameters are mapped in the order the owner holds them, which is the order of their keys.
 	 */
 	@Test
-	void readAllLeavesOutKeysTheCallerMayNotSee() {
+	void readAll() {
 
 		// Arrange
-		final var errandEntity = errand();
-		mockReadableKeys(errandEntity, "secret");
-		final var links = List.of(linkTo(parameter("1", "secret")), linkTo(parameter("2", KEY)));
+		final var parameters = List.of(parameter("alpha"), parameter("zeta"));
 
 		// Act
-		final var result = service.readAll(errandEntity, links);
+		final var result = service.readAll(parameters);
 
 		// Verify
-		assertThat(result).extracting(JsonParameter::getKey).containsExactly(KEY);
+		assertThat(result).extracting(JsonParameter::getKey, JsonParameter::getSchemaId, JsonParameter::getVersion)
+			.containsExactly(tuple("alpha", SCHEMA_ID, 2L), tuple("zeta", SCHEMA_ID, 2L));
+		assertThat(result.getFirst().getValue()).isEqualTo(JsonNodeFactory.instance.objectNode().put("answer", "pending"));
+		verifyNoInteractions(entityManagerMock);
 	}
 
 	/**
-	 * A link whose parameter has gone is skipped rather than mapped to a null.
+	 * An owner that has never held a parameter has no collection yet.
 	 */
-	@Test
-	void readAllSkipsLinksWithoutAParameter() {
-
-		// Arrange
-		final var errandEntity = errand();
-		mockReadableKeys(errandEntity, null);
-
-		// Act
-		final var result = service.readAll(errandEntity, List.of(StatementJsonParameterEntity.create(), linkTo(parameter("1", KEY))));
-
-		// Verify
-		assertThat(result).extracting(JsonParameter::getKey).containsExactly(KEY);
-	}
-
 	@Test
 	void readAllOfNothingIsEmpty() {
 
-		// Arrange
-		final var errandEntity = errand();
-		mockReadableKeys(errandEntity, null);
-
 		// Act & Verify
-		assertThat(service.readAll(errandEntity, null)).isEmpty();
+		assertThat(service.readAll(null)).isEmpty();
 	}
 
+	/**
+	 * Keys are compared the way the database compares them, without regard to case.
+	 */
 	@Test
 	void read() {
 
 		// Arrange
-		final var errandEntity = errand();
+		final var parameters = List.of(parameter("other"), parameter(KEY));
 
 		// Act
-		final var result = service.read(errandEntity, List.of(linkTo(parameter("1", KEY))), KEY);
+		final var result = service.read(parameters, "RESPONSEFORM");
 
 		// Verify
 		assertThat(result.getKey()).isEqualTo(KEY);
-		verify(accessControlServiceMock).verifyAccessibleKey(NAMESPACE, MUNICIPALITY_ID, errandEntity, JSON_PARAMETERS, KEY);
+		assertThat(result.getVersion()).isEqualTo(2L);
 	}
 
 	@Test
-	void readingAKeyTheCallerMayNotSeeIsRefused() {
+	void readingAKeyTheOwnerDoesNotHoldGivesNotFound() {
 
 		// Arrange
-		final var errandEntity = errand();
-		doThrow(Problem.valueOf(UNAUTHORIZED, "not accessible")).when(accessControlServiceMock).verifyAccessibleKey(NAMESPACE, MUNICIPALITY_ID, errandEntity, JSON_PARAMETERS, KEY);
-		final var links = List.of(linkTo(parameter("1", KEY)));
+		final var parameters = List.of(parameter("other"));
 
 		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.read(errandEntity, links, KEY));
-
-		// Verify
-		assertThat(problem.getStatus()).isEqualTo(UNAUTHORIZED);
-	}
-
-	/**
-	 * A key belonging to another artefact, or to nothing at all, is not this artefact's to read.
-	 */
-	@Test
-	void readingAKeyTheArtefactDoesNotOwnGivesNotFound() {
-
-		// Arrange
-		final var errandEntity = errand();
-		final var links = List.of(linkTo(parameter("1", "somethingElse")));
-
-		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.read(errandEntity, links, KEY));
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.read(parameters, KEY));
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(problem.getMessage()).contains(KEY);
 	}
 
-	/**
-	 * Which parameters of the errand an artefact owns is asked of the links of all five owners.
-	 */
 	@Test
-	void ownedParameterIdsAsksTheLinksOfAllFiveOwners() {
-
-		// Arrange
-		when(linkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID)).thenReturn(List.of(linkTo(parameter("1", "statementForm"))));
-		when(investigationLinkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID))
-			.thenReturn(List.of(InvestigationJsonParameterEntity.create().withJsonParameterEntity(parameter("2", "investigationForm"))));
-		when(investigationSectionLinkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID))
-			.thenReturn(List.of(InvestigationSectionJsonParameterEntity.create().withJsonParameterEntity(parameter("3", "sectionForm"))));
-		when(decisionLinkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID))
-			.thenReturn(List.of(DecisionJsonParameterEntity.create().withJsonParameterEntity(parameter("4", "decisionForm"))));
-		when(measureLinkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID))
-			.thenReturn(List.of(MeasureJsonParameterEntity.create().withJsonParameterEntity(parameter("5", "measureForm"))));
+	void readingFromAnOwnerWithoutParametersGivesNotFound() {
 
 		// Act
-		final var result = service.ownedParameterIds(ERRAND_ID);
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.read(null, KEY));
 
 		// Verify
-		assertThat(result).containsExactlyInAnyOrder("1", "2", "3", "4", "5");
-	}
-
-	@Test
-	void ownedParameterIdsOfAnErrandWhoseArtefactsOwnNothing() {
-
-		// Act & Verify - the repositories answer with nothing
-		assertThat(service.ownedParameterIds(ERRAND_ID)).isEmpty();
+		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
 	}
 
 	/**
-	 * Whether an artefact owns a parameter is asked of the owners in turn, and the first one naming it settles it.
+	 * The response is mapped once the flush has written the parameter, so that it carries the version the ETag is to be
+	 * taken from.
 	 */
 	@Test
-	void isOwnedByArtefactStopsAtTheFirstOwnerNamingIt() {
+	void upsertReplacesAKeyTheOwnerHolds() {
 
 		// Arrange
-		when(investigationLinkRepositoryMock.existsByJsonParameterEntityId("1")).thenReturn(true);
-
-		// Act & Verify
-		assertThat(service.isOwnedByArtefact("1")).isTrue();
-		verify(linkRepositoryMock).existsByJsonParameterEntityId("1");
-		verifyNoInteractions(investigationSectionLinkRepositoryMock, decisionLinkRepositoryMock, measureLinkRepositoryMock);
-	}
-
-	@Test
-	void isOwnedByArtefactAsksTheLastOwnerToo() {
-
-		// Arrange
-		when(measureLinkRepositoryMock.existsByJsonParameterEntityId("1")).thenReturn(true);
-
-		// Act & Verify
-		assertThat(service.isOwnedByArtefact("1")).isTrue();
-	}
-
-	@Test
-	void aParameterNoOwnerNamesIsNotOwnedByAnArtefact() {
-
-		// Act & Verify - the repositories answer with false
-		assertThat(service.isOwnedByArtefact("1")).isFalse();
-		verify(linkRepositoryMock).existsByJsonParameterEntityId("1");
-		verify(investigationLinkRepositoryMock).existsByJsonParameterEntityId("1");
-		verify(investigationSectionLinkRepositoryMock).existsByJsonParameterEntityId("1");
-		verify(decisionLinkRepositoryMock).existsByJsonParameterEntityId("1");
-		verify(measureLinkRepositoryMock).existsByJsonParameterEntityId("1");
-	}
-
-	@Test
-	void upsertReplacesAKeyTheArtefactAlreadyOwns() {
-
-		// Arrange
-		final var existing = parameter("1", KEY);
-		final var links = new ArrayList<>(List.of(linkTo(existing)));
-		final var errandEntity = errand(existing);
-		final var body = body();
-		mockKeyAccess(errandEntity, body, MAY_CHANGE);
+		final var existing = parameter(KEY);
+		final var parameters = new ArrayList<>(List.of(existing));
+		doAnswer(_ -> {
+			existing.setVersion(3L);
+			return null;
+		}).when(entityManagerMock).flush();
 
 		// Act
-		final var result = service.upsert(errandEntity, null, body, links, LINK_FACTORY, linkRepositoryMock);
+		final var result = service.upsert(parameters, NOT_CALLED, "\"2\"", body(KEY));
 
 		// Verify
 		assertThat(result.created()).isFalse();
-		assertThat(existing.getValue()).contains("test");
-		assertThat(links).as("no second link was written").hasSize(1);
+		assertThat(parameters).containsExactly(existing);
+		assertThat(existing.getSchemaId()).isEqualTo(NEW_SCHEMA_ID);
+		assertThat(existing.getValue()).isEqualTo(NEW_VALUE);
+		assertThat(result.jsonParameter().getKey()).isEqualTo(KEY);
+		assertThat(result.jsonParameter().getVersion()).as("the version the flush wrote").isEqualTo(3L);
 		verify(entityManagerMock).flush();
-		verifyNoInteractions(linkRepositoryMock);
 	}
 
 	/**
-	 * A caller who may see a key but not change it only gets past the access check by sending what is stored. That is
-	 * answered as it stands, without writing it again and bumping a version they may not move.
+	 * A key differing only in case is the one the owner holds - the database would refuse it as a second one - and the
+	 * parameter keeps the key it was stored under.
 	 */
 	@Test
-	void upsertOfAKeyTheCallerMayNotChangeLeavesItAsItStands() {
+	void upsertMatchesTheKeyWithoutRegardToCase() {
 
 		// Arrange
-		final var existing = parameter("1", KEY).withVersion(4L);
-		final var links = new ArrayList<>(List.of(linkTo(existing)));
-		final var errandEntity = errand(existing);
-		final var body = body();
-		mockKeyAccess(errandEntity, body, new KeyAccess(_ -> true, _ -> false));
+		final var existing = parameter(KEY);
+		final var parameters = new ArrayList<>(List.of(existing));
 
 		// Act
-		final var result = service.upsert(errandEntity, null, body, links, LINK_FACTORY, linkRepositoryMock);
+		final var result = service.upsert(parameters, NOT_CALLED, null, body("RESPONSEFORM"));
 
 		// Verify
 		assertThat(result.created()).isFalse();
-		assertThat(result.jsonParameter().getVersion()).isEqualTo(4L);
-		assertThat(existing.getValue()).isEqualTo("{}");
-		verifyNoInteractions(entityManagerMock, linkRepositoryMock);
+		assertThat(parameters).containsExactly(existing);
+		assertThat(existing.getKey()).isEqualTo(KEY);
+		assertThat(result.jsonParameter().getKey()).isEqualTo(KEY);
+		verify(entityManagerMock).flush();
 	}
 
+	/**
+	 * An ETag that has moved on says so rather than overwriting what somebody else just wrote.
+	 */
 	@Test
-	void upsertRefusedByTheKeyAccessWritesNothing() {
+	void upsertWithAStaleIfMatchIsRejected() {
 
 		// Arrange
-		final var errandEntity = errand();
-		final var links = new ArrayList<StatementJsonParameterEntity>();
-		final var body = body();
-		when(accessControlServiceMock.verifyJsonParameterAccess(NAMESPACE, MUNICIPALITY_ID, errandEntity, KEY, body)).thenThrow(Problem.valueOf(UNAUTHORIZED, "not writable"));
+		final var existing = parameter(KEY);
+		final var parameters = new ArrayList<>(List.of(existing));
 
 		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.upsert(errandEntity, null, body, links, LINK_FACTORY, linkRepositoryMock));
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.upsert(parameters, NOT_CALLED, "\"1\"", body(KEY)));
 
 		// Verify
-		assertThat(problem.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(errandEntity.getJsonParameters()).isEmpty();
-		assertThat(links).isEmpty();
-		verifyNoInteractions(entityManagerMock, linkRepositoryMock);
+		assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED);
+		assertThat(existing.getSchemaId()).isEqualTo(SCHEMA_ID);
+		assertThat(existing.getValue()).isEqualTo("{\"answer\":\"pending\"}");
+		verifyNoInteractions(entityManagerMock);
 	}
 
+	/**
+	 * A new parameter is created by the owner's factory, so that it points at the owner, and is added to the owner's
+	 * collection, which is what persists it.
+	 */
 	@Test
-	void upsertCreatesTheParameterAndItsLinkForANewKey() {
+	void upsertCreatesAKeyTheOwnerDoesNotHold() {
 
 		// Arrange
-		final var links = new ArrayList<StatementJsonParameterEntity>();
-		final var errandEntity = errand();
-		final var body = body();
-		mockKeyAccess(errandEntity, body, MAY_CHANGE);
-		when(linkRepositoryMock.save(any(StatementJsonParameterEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		final var owner = StatementEntity.create().withId("statement-id");
+		final var other = parameter("other");
+		final var parameters = new ArrayList<>(List.of(other));
 
 		// Act
-		final var result = service.upsert(errandEntity, null, body, links, LINK_FACTORY, linkRepositoryMock);
+		final var result = service.upsert(parameters, () -> StatementJsonParameterEntity.create().withStatementEntity(owner), null, body(KEY));
 
 		// Verify
 		assertThat(result.created()).isTrue();
 		assertThat(result.jsonParameter().getKey()).isEqualTo(KEY);
-		assertThat(errandEntity.getJsonParameters()).as("the parameter is the errand's too").hasSize(1);
-		assertThat(links).hasSize(1);
+		assertThat(parameters).hasSize(2);
+		assertThat(parameters.getLast()).satisfies(created -> {
+			assertThat(created.getStatementEntity()).isSameAs(owner);
+			assertThat(created.getKey()).isEqualTo(KEY);
+			assertThat(created.getSchemaId()).isEqualTo(NEW_SCHEMA_ID);
+			assertThat(created.getValue()).isEqualTo(NEW_VALUE);
+		});
+		assertThat(other.getSchemaId()).as("the other parameter is left as it was").isEqualTo(SCHEMA_ID);
+		verify(entityManagerMock).flush();
 	}
 
 	/**
-	 * An errand that has never held a parameter has no collection to add to yet.
+	 * There is nothing for an ETag to be held against before the parameter exists.
 	 */
 	@Test
-	void upsertFillsAnErrandWithoutAParameterCollection() {
+	void upsertOfANewKeyDoesNotHoldItToIfMatch() {
 
 		// Arrange
-		final var errandEntity = ErrandEntity.create().withId(ERRAND_ID).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID);
-		final var body = body();
-		mockKeyAccess(errandEntity, body, MAY_CHANGE);
-		when(linkRepositoryMock.save(any(StatementJsonParameterEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		final var parameters = new ArrayList<StatementJsonParameterEntity>();
 
 		// Act
-		service.upsert(errandEntity, null, body, new ArrayList<>(), LINK_FACTORY, linkRepositoryMock);
+		final var result = service.upsert(parameters, StatementJsonParameterEntity::create, "\"7\"", body(KEY));
 
 		// Verify
-		assertThat(errandEntity.getJsonParameters()).hasSize(1);
-	}
-
-	/**
-	 * Keys are unique per errand. An artefact asking for one something else on the errand already holds is told, rather
-	 * than quietly taking it over.
-	 */
-	@Test
-	void claimingAKeyTheErrandAlreadyHoldsIsAConflict() {
-
-		// Arrange
-		final var errandEntity = errand(parameter("9", KEY));
-		final var links = new ArrayList<StatementJsonParameterEntity>();
-		final var body = body();
-		mockKeyAccess(errandEntity, body, MAY_CHANGE);
-
-		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.upsert(errandEntity, null, body, links, LINK_FACTORY, linkRepositoryMock));
-
-		// Verify
-		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
-		assertThat(problem.getMessage()).contains(KEY, ERRAND_ID);
-		assertThat(links).isEmpty();
-		verifyNoInteractions(linkRepositoryMock);
-	}
-
-	@Test
-	void upsertHonoursIfMatch() {
-
-		// Arrange
-		final var existing = parameter("1", KEY).withVersion(3L);
-		final var links = new ArrayList<>(List.of(linkTo(existing)));
-		final var errandEntity = errand(existing);
-		final var body = body();
-		mockKeyAccess(errandEntity, body, MAY_CHANGE);
-
-		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.upsert(errandEntity, "\"2\"", body, links, LINK_FACTORY, linkRepositoryMock));
-
-		// Verify
-		assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED);
-	}
-
-	/**
-	 * The parameter goes through the collection of the errand, and the database takes the link with it. The link leaves
-	 * the collection of the artefact as well, so that nothing later in the same transaction still finds it there.
-	 */
-	@Test
-	void deleteRemovesTheParameterAndItsLink() {
-
-		// Arrange
-		final var existing = parameter("1", KEY);
-		final var links = new ArrayList<>(List.of(linkTo(existing), linkTo(parameter("2", "other"))));
-		final var errandEntity = errand(existing, parameter("3", "errandOwned"));
-
-		// Act
-		service.delete(errandEntity, links, KEY, null);
-
-		// Verify
-		assertThat(links).extracting(link -> link.getJsonParameterEntity().getKey()).containsExactly("other");
-		assertThat(errandEntity.getJsonParameters()).extracting(JsonParameterEntity::getKey).containsExactly("errandOwned");
-		verify(accessControlServiceMock).verifyWritableKey(NAMESPACE, MUNICIPALITY_ID, errandEntity, JSON_PARAMETERS, KEY);
+		assertThat(result.created()).isTrue();
+		assertThat(parameters).extracting(StatementJsonParameterEntity::getKey).containsExactly(KEY);
 		verify(entityManagerMock).flush();
 	}
 
 	@Test
-	void deletingAKeyTheCallerMayNotChangeIsRefused() {
+	void deleteRemovesTheParameterFromTheOwner() {
 
 		// Arrange
-		final var existing = parameter("1", KEY);
-		final var links = new ArrayList<>(List.of(linkTo(existing)));
-		final var errandEntity = errand(existing);
-		doThrow(Problem.valueOf(UNAUTHORIZED, "not writable")).when(accessControlServiceMock).verifyWritableKey(NAMESPACE, MUNICIPALITY_ID, errandEntity, JSON_PARAMETERS, KEY);
+		final var existing = parameter(KEY);
+		final var other = parameter("other");
+		final var parameters = new ArrayList<>(List.of(existing, other));
 
 		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.delete(errandEntity, links, KEY, null));
+		service.delete(parameters, "responseform", "\"2\"");
 
 		// Verify
-		assertThat(problem.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(links).hasSize(1);
-		assertThat(errandEntity.getJsonParameters()).hasSize(1);
+		assertThat(parameters).containsExactly(other);
+		verify(entityManagerMock).flush();
+	}
+
+	/**
+	 * If-Match is opt-in. A request without one is let through rather than turned away.
+	 */
+	@Test
+	void deleteWithoutIfMatch() {
+
+		// Arrange
+		final var parameters = new ArrayList<>(List.of(parameter(KEY)));
+
+		// Act
+		service.delete(parameters, KEY, null);
+
+		// Verify
+		assertThat(parameters).isEmpty();
+		verify(entityManagerMock).flush();
+	}
+
+	@Test
+	void deletingAKeyTheOwnerDoesNotHoldGivesNotFound() {
+
+		// Arrange
+		final var parameters = new ArrayList<>(List.of(parameter("other")));
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.delete(parameters, KEY, null));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(problem.getMessage()).contains(KEY);
+		assertThat(parameters).hasSize(1);
 		verifyNoInteractions(entityManagerMock);
 	}
 
@@ -470,48 +301,15 @@ class ArtefactJsonParameterServiceTest {
 	void deleteWithAStaleIfMatchIsRejected() {
 
 		// Arrange
-		final var existing = parameter("1", KEY).withVersion(2L);
-		final var links = new ArrayList<>(List.of(linkTo(existing)));
-		final var errandEntity = errand(existing);
+		final var existing = parameter(KEY);
+		final var parameters = new ArrayList<>(List.of(existing));
 
 		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.delete(errandEntity, links, KEY, "\"7\""));
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.delete(parameters, KEY, "\"7\""));
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED);
-		assertThat(links).hasSize(1);
-		assertThat(errandEntity.getJsonParameters()).hasSize(1);
+		assertThat(parameters).containsExactly(existing);
 		verifyNoInteractions(entityManagerMock);
-	}
-
-	@Test
-	void deletingAKeyTheArtefactDoesNotOwnGivesNotFound() {
-
-		// Arrange
-		final var errandEntity = errand();
-
-		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.delete(errandEntity, new ArrayList<>(), KEY, null));
-
-		// Verify
-		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
-		verifyNoInteractions(entityManagerMock);
-	}
-
-	/**
-	 * An errand whose parameters were never loaded is left alone rather than failing on a null collection.
-	 */
-	@Test
-	void deleteToleratesAnErrandWithoutAParameterCollection() {
-
-		// Arrange
-		final var existing = parameter("1", KEY);
-		final var links = new ArrayList<>(List.of(linkTo(existing)));
-
-		// Act
-		service.delete(ErrandEntity.create().withId(ERRAND_ID).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID), links, KEY, null);
-
-		// Verify
-		assertThat(links).isEmpty();
 	}
 }

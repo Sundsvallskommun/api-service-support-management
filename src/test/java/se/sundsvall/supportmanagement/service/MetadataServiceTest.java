@@ -2168,6 +2168,52 @@ class MetadataServiceTest {
 		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
 	}
 
+	@Test
+	void updateAttachmentPurposeRenamed() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = AttachmentPurposeEntity.create().withId(id).withName("RESPONSE");
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentPurposeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(attachmentPurposeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateAttachmentPurpose(namespace, municipalityId, id, AttachmentPurpose.create().withName("REPLY"));
+
+		// Verifications
+		assertThat(result.getName()).isEqualTo("REPLY");
+		verify(attachmentPurposeRepositoryMock).existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, "REPLY", id);
+		verify(attachmentPurposeRepositoryMock).save(entity);
+	}
+
+	/**
+	 * A name another purpose of the namespace already has is refused, rather than left to the unique key of the table.
+	 */
+	@Test
+	void updateAttachmentPurposeToANameAnotherPurposeHas() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentPurposeRepositoryMock.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, "RESPONSE", id)).thenReturn(true);
+
+		// Call
+		final var attachmentPurpose = AttachmentPurpose.create().withName("RESPONSE");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateAttachmentPurpose(namespace, municipalityId, id, attachmentPurpose));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("AttachmentPurpose 'RESPONSE' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(attachmentPurposeRepositoryMock, never()).save(any());
+	}
+
 	// =================================================================
 	// DecisionOutcome tests
 	// =================================================================

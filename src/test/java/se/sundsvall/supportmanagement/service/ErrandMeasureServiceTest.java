@@ -310,8 +310,8 @@ class ErrandMeasureServiceTest {
 		// Assert
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.MEASURE, RW);
 		verify(entityManagerMock).lock(errandEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
-		verify(errandsRepositoryMock).saveAndFlush(errandEntity);
 		verify(errandsRepositoryMock).save(errandEntity);
+		verify(errandsRepositoryMock, never()).saveAndFlush(any());
 		assertThat(errandEntity.getMeasures()).isEmpty();
 	}
 

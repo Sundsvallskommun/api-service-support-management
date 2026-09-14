@@ -224,9 +224,12 @@
     ) engine=InnoDB;
 
     create table decision_json_parameter (
+        version bigint default 0 not null,
         decision_id varchar(255) not null,
         id varchar(255) not null,
-        json_parameter_id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        value longtext,
         primary key (id)
     ) engine=InnoDB;
 
@@ -405,9 +408,12 @@
     ) engine=InnoDB;
 
     create table investigation_json_parameter (
+        version bigint default 0 not null,
         id varchar(255) not null,
         investigation_id varchar(255) not null,
-        json_parameter_id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        value longtext,
         primary key (id)
     ) engine=InnoDB;
 
@@ -425,9 +431,12 @@
     ) engine=InnoDB;
 
     create table investigation_section_json_parameter (
+        version bigint default 0 not null,
         id varchar(255) not null,
         investigation_section_id varchar(255) not null,
-        json_parameter_id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        value longtext,
         primary key (id)
     ) engine=InnoDB;
 
@@ -496,9 +505,12 @@
     ) engine=InnoDB;
 
     create table measure_json_parameter (
+        version bigint default 0 not null,
         id varchar(255) not null,
-        json_parameter_id varchar(255) not null,
         measure_id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        value longtext,
         primary key (id)
     ) engine=InnoDB;
 
@@ -757,9 +769,12 @@
     ) engine=InnoDB;
 
     create table statement_json_parameter (
+        version bigint default 0 not null,
         id varchar(255) not null,
-        json_parameter_id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
         statement_id varchar(255) not null,
+        value longtext,
         primary key (id)
     ) engine=InnoDB;
 
@@ -996,17 +1011,8 @@
     alter table if exists decision_attachment 
        add constraint uq_decision_attachment_decision_id_attachment_id unique (decision_id, attachment_id);
 
-    create index idx_decision_json_parameter_decision_id 
-       on decision_json_parameter (decision_id);
-
-    create index idx_decision_json_parameter_json_parameter_id 
-       on decision_json_parameter (json_parameter_id);
-
     alter table if exists decision_json_parameter 
-       add constraint uq_decision_json_parameter_decision_id_json_parameter_id unique (decision_id, json_parameter_id);
-
-    alter table if exists decision_json_parameter 
-       add constraint uq_decision_json_parameter_json_parameter_id unique (json_parameter_id);
+       add constraint uq_decision_json_parameter_decision_id_key unique (decision_id, parameter_key);
 
     create index idx_decision_outcome_namespace_municipality_id 
        on decision_outcome (namespace, municipality_id);
@@ -1155,17 +1161,8 @@
     alter table if exists investigation_attachment 
        add constraint uq_investigation_attachment_investigation_id_attachment_id unique (investigation_id, attachment_id);
 
-    create index idx_investigation_json_parameter_investigation_id 
-       on investigation_json_parameter (investigation_id);
-
-    create index idx_investigation_json_parameter_json_parameter_id 
-       on investigation_json_parameter (json_parameter_id);
-
     alter table if exists investigation_json_parameter 
-       add constraint uq_investigation_json_parameter_investigation_id_parameter_id unique (investigation_id, json_parameter_id);
-
-    alter table if exists investigation_json_parameter 
-       add constraint uq_investigation_json_parameter_json_parameter_id unique (json_parameter_id);
+       add constraint uq_investigation_json_parameter_investigation_id_key unique (investigation_id, parameter_key);
 
     create index idx_investigation_section_investigation_id 
        on investigation_section (investigation_id);
@@ -1173,17 +1170,8 @@
     alter table if exists investigation_section 
        add constraint uq_investigation_section_investigation_id_section_key unique (investigation_id, section_key);
 
-    create index idx_investigation_section_json_parameter_section_id 
-       on investigation_section_json_parameter (investigation_section_id);
-
-    create index idx_investigation_section_json_parameter_parameter_id 
-       on investigation_section_json_parameter (json_parameter_id);
-
     alter table if exists investigation_section_json_parameter 
-       add constraint uq_investigation_section_json_parameter_section_parameter unique (investigation_section_id, json_parameter_id);
-
-    alter table if exists investigation_section_json_parameter 
-       add constraint uq_investigation_section_json_parameter_parameter_id unique (json_parameter_id);
+       add constraint uq_investigation_section_json_parameter_section_id_key unique (investigation_section_id, parameter_key);
 
     create index idx_job_namespace_municipality_id_status 
        on job (namespace, municipality_id, status);
@@ -1215,17 +1203,8 @@
     alter table if exists measure_attachment 
        add constraint uq_measure_attachment_measure_id_attachment_id unique (measure_id, attachment_id);
 
-    create index idx_measure_json_parameter_measure_id 
-       on measure_json_parameter (measure_id);
-
-    create index idx_measure_json_parameter_json_parameter_id 
-       on measure_json_parameter (json_parameter_id);
-
     alter table if exists measure_json_parameter 
-       add constraint uq_measure_json_parameter_measure_id_json_parameter_id unique (measure_id, json_parameter_id);
-
-    alter table if exists measure_json_parameter 
-       add constraint uq_measure_json_parameter_json_parameter_id unique (json_parameter_id);
+       add constraint uq_measure_json_parameter_measure_id_key unique (measure_id, parameter_key);
 
     create index idx_measure_type_namespace_municipality_id 
        on measure_type (namespace, municipality_id);
@@ -1341,17 +1320,8 @@
     alter table if exists statement_attachment 
        add constraint uq_statement_attachment_statement_id_attachment_id unique (statement_id, attachment_id);
 
-    create index idx_statement_json_parameter_statement_id 
-       on statement_json_parameter (statement_id);
-
-    create index idx_statement_json_parameter_json_parameter_id 
-       on statement_json_parameter (json_parameter_id);
-
     alter table if exists statement_json_parameter 
-       add constraint uq_statement_json_parameter_statement_id_json_parameter_id unique (statement_id, json_parameter_id);
-
-    alter table if exists statement_json_parameter 
-       add constraint uq_statement_json_parameter_json_parameter_id unique (json_parameter_id);
+       add constraint uq_statement_json_parameter_statement_id_key unique (statement_id, parameter_key);
 
     create index idx_statement_outcome_namespace_municipality_id 
        on statement_outcome (namespace, municipality_id);
@@ -1513,12 +1483,6 @@
        references decision (id) 
        on delete cascade;
 
-    alter table if exists decision_json_parameter 
-       add constraint fk_decision_json_parameter_json_parameter_id 
-       foreign key (json_parameter_id) 
-       references json_parameter (id) 
-       on delete cascade;
-
     alter table if exists decision_term 
        add constraint fk_decision_term_decision_id 
        foreign key (decision_id) 
@@ -1595,12 +1559,6 @@
        references investigation (id) 
        on delete cascade;
 
-    alter table if exists investigation_json_parameter 
-       add constraint fk_investigation_json_parameter_json_parameter_id 
-       foreign key (json_parameter_id) 
-       references json_parameter (id) 
-       on delete cascade;
-
     alter table if exists investigation_section 
        add constraint fk_investigation_section_investigation_id 
        foreign key (investigation_id) 
@@ -1611,12 +1569,6 @@
        add constraint fk_investigation_section_json_parameter_section_id 
        foreign key (investigation_section_id) 
        references investigation_section (id) 
-       on delete cascade;
-
-    alter table if exists investigation_section_json_parameter 
-       add constraint fk_investigation_section_json_parameter_parameter_id 
-       foreign key (json_parameter_id) 
-       references json_parameter (id) 
        on delete cascade;
 
     alter table if exists json_parameter 
@@ -1652,12 +1604,6 @@
        add constraint fk_measure_attachment_measure_id 
        foreign key (measure_id) 
        references measure (id) 
-       on delete cascade;
-
-    alter table if exists measure_json_parameter 
-       add constraint fk_measure_json_parameter_json_parameter_id 
-       foreign key (json_parameter_id) 
-       references json_parameter (id) 
        on delete cascade;
 
     alter table if exists measure_json_parameter 
@@ -1742,12 +1688,6 @@
        add constraint fk_statement_attachment_statement_id 
        foreign key (statement_id) 
        references statement (id) 
-       on delete cascade;
-
-    alter table if exists statement_json_parameter 
-       add constraint fk_statement_json_parameter_json_parameter_id 
-       foreign key (json_parameter_id) 
-       references json_parameter (id) 
        on delete cascade;
 
     alter table if exists statement_json_parameter 

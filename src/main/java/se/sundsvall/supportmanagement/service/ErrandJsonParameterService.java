@@ -27,7 +27,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonParameter;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonString;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.verifyNotOwnedByArtefact;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 
 @Service
@@ -40,14 +39,11 @@ public class ErrandJsonParameterService {
 
 	private final ErrandsRepository errandsRepository;
 	private final AccessControlService accessControlService;
-	private final ArtefactJsonParameterService artefactJsonParameterService;
 	private final EntityManager entityManager;
 
-	ErrandJsonParameterService(final ErrandsRepository errandsRepository, final AccessControlService accessControlService, final ArtefactJsonParameterService artefactJsonParameterService,
-		final EntityManager entityManager) {
+	ErrandJsonParameterService(final ErrandsRepository errandsRepository, final AccessControlService accessControlService, final EntityManager entityManager) {
 		this.errandsRepository = errandsRepository;
 		this.accessControlService = accessControlService;
-		this.artefactJsonParameterService = artefactJsonParameterService;
 		this.entityManager = entityManager;
 	}
 
@@ -77,7 +73,6 @@ public class ErrandJsonParameterService {
 
 		final var existing = Optional.ofNullable(errandEntity.getJsonParameters())
 			.flatMap(list -> list.stream().filter(e -> Objects.equals(e.getKey(), key)).findFirst());
-		existing.ifPresent(e -> verifyNotOwnedByArtefact(e, artefactJsonParameterService::isOwnedByArtefact));
 
 		if (ifMatch == null) {
 			LOG.debug("PUT /errands/{}/json-parameters/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(key), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
@@ -128,7 +123,6 @@ public class ErrandJsonParameterService {
 		accessControlService.verifyWritableKey(namespace, municipalityId, errandEntity, ErrandField.JSON_PARAMETERS, key);
 
 		final var entityToRemove = findJsonParameterEntityOrElseThrow(errandEntity, key);
-		verifyNotOwnedByArtefact(entityToRemove, artefactJsonParameterService::isOwnedByArtefact);
 
 		if (ifMatch == null) {
 			LOG.debug("DELETE /errands/{}/json-parameters/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(errandId), sanitizeForLogging(key), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));

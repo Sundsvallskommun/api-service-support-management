@@ -46,7 +46,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.withoutArtefactParameters;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
@@ -74,7 +73,6 @@ public class ErrandService {
 	private final ErrandLabelService errandLabelService;
 	private final ErrandActionService errandActionService;
 	private final ErrandPhaseService errandPhaseService;
-	private final ArtefactJsonParameterService artefactJsonParameterService;
 	private final EntityManager entityManager;
 
 	public ErrandService(
@@ -91,7 +89,6 @@ public class ErrandService {
 		final ErrandLabelService errandLabelService,
 		final ErrandActionService errandActionService,
 		final ErrandPhaseService errandPhaseService,
-		final ArtefactJsonParameterService artefactJsonParameterService,
 		final EntityManager entityManager) {
 
 		this.repository = repository;
@@ -107,7 +104,6 @@ public class ErrandService {
 		this.errandLabelService = errandLabelService;
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
-		this.artefactJsonParameterService = artefactJsonParameterService;
 		this.entityManager = entityManager;
 	}
 
@@ -170,8 +166,6 @@ public class ErrandService {
 		// Verified and resolved before the errand is touched, so that patching it does not flush mid transaction, and so
 		// that the response is mapped by the same grants a plain read of the errand would be.
 		final var keyAccess = accessControlService.verifyKeyAccess(namespace, municipalityId, errandEntityToUpdate, errand);
-		final var writableKey = withoutArtefactParameters(errandEntityToUpdate, errand.getJsonParameters(), keyAccess.writableKey(),
-			() -> artefactJsonParameterService.ownedParameterIds(errandEntityToUpdate.getId()));
 
 		// Everything the patch is held to on its own, before the errand is touched by it.
 		requireMatchingVersion(ifMatch, errandEntityToUpdate.getVersion(), id, namespace, municipalityId);
@@ -181,7 +175,7 @@ public class ErrandService {
 
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		final var errandEntity = updateEntity(errandEntityToUpdate, errand, writableKey);
+		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
 		ofNullable(contactReason).ifPresent(errandEntity::withContactReason);
 
 		// Held against the status the errand ends up with rather than the one the patch carries, so that moving it into a

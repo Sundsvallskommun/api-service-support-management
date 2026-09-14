@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,12 +22,9 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.StatementJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
@@ -69,13 +66,7 @@ class ErrandStatementServiceTest {
 	private static final String COUNTERPARTY_NAME = "Miljokontoret";
 
 	@Mock
-	private ErrandsRepository errandsRepositoryMock;
-
-	@Mock
 	private StatementRepository statementRepositoryMock;
-
-	@Mock
-	private StatementJsonParameterRepository statementJsonParameterRepositoryMock;
 
 	@Mock
 	private StatementValidator statementValidatorMock;
@@ -93,7 +84,7 @@ class ErrandStatementServiceTest {
 	private ArgumentCaptor<StatementEntity> statementEntityCaptor;
 
 	@Captor
-	private ArgumentCaptor<Function<JsonParameterEntity, StatementJsonParameterEntity>> jsonParameterLinkFactoryCaptor;
+	private ArgumentCaptor<Supplier<StatementJsonParameterEntity>> jsonParameterFactoryCaptor;
 
 	@InjectMocks
 	private ErrandStatementService service;
@@ -347,49 +338,28 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * The owned parameters are named while the statement still holds the links naming them, and leave the errand once the
-	 * statement has been flushed away.
+	 * The JSON parameters of the statement are its own and go with it, so removing the statement is all there is to it.
 	 */
 	@Test
 	void deleteErrandStatement() {
 
 		// Arrange
-		final var owned = JsonParameterEntity.create().withId("owned-parameter").withKey(KEY);
-		final var errandOwned = JsonParameterEntity.create().withId("errand-parameter").withKey("errandData");
-		final var errandEntity = mockErrand().withJsonParameters(new ArrayList<>(List.of(owned, errandOwned)));
 		final var entity = mockStatement().withVersion(3L)
-			.withJsonParameterLinks(new ArrayList<>(List.of(StatementJsonParameterEntity.create().withJsonParameterEntity(owned))));
-
-		final var heldWhenFlushed = new ArrayList<JsonParameterEntity>();
-		doAnswer(_ -> {
-			heldWhenFlushed.addAll(errandEntity.getJsonParameters());
-			return null;
-		}).when(statementRepositoryMock).flush();
-		final var heldWhenSaved = new ArrayList<JsonParameterEntity>();
-		when(errandsRepositoryMock.saveAndFlush(errandEntity)).thenAnswer(_ -> {
-			heldWhenSaved.addAll(errandEntity.getJsonParameters());
-			return errandEntity;
-		});
+			.withJsonParameters(new ArrayList<>(List.of(StatementJsonParameterEntity.create().withKey(KEY))));
 
 		// Act
 		service.deleteErrandStatement(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, IF_MATCH);
 
 		// Verify
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-
-		final var inOrder = inOrder(statementRepositoryMock, errandsRepositoryMock);
-		inOrder.verify(statementRepositoryMock).delete(entity);
-		inOrder.verify(statementRepositoryMock).flush();
-		inOrder.verify(errandsRepositoryMock).saveAndFlush(errandEntity);
-		assertThat(heldWhenFlushed).as("still the errand's when the statement is flushed away").containsExactly(owned, errandOwned);
-		assertThat(heldWhenSaved).as("gone by the time the errand is saved").containsExactly(errandOwned);
+		verify(statementRepositoryMock).delete(entity);
+		verifyNoInteractions(artefactJsonParameterServiceMock);
 	}
 
 	@Test
 	void deleteErrandStatementWithoutIfMatch() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
 		final var entity = mockStatement().withVersion(3L);
 
 		// Act
@@ -397,8 +367,6 @@ class ErrandStatementServiceTest {
 
 		// Verify
 		verify(statementRepositoryMock).delete(entity);
-		verify(statementRepositoryMock).flush();
-		verify(errandsRepositoryMock).saveAndFlush(errandEntity);
 	}
 
 	@Test
@@ -413,7 +381,6 @@ class ErrandStatementServiceTest {
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED);
 		verify(statementRepositoryMock, never()).delete(any());
-		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	/**
@@ -481,79 +448,74 @@ class ErrandStatementServiceTest {
 		verify(statementRepositoryMock).saveAndFlush(entity);
 	}
 
+	/**
+	 * The parameters are the statement's, so reading them asks for the statement grant and nothing of the errand.
+	 */
 	@Test
 	void readStatementJsonParameters() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
-		final var links = List.of(StatementJsonParameterEntity.create());
-		mockStatement().withJsonParameterLinks(links);
-		when(artefactJsonParameterServiceMock.readAll(same(errandEntity), same(links))).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
+		final var parameters = List.of(StatementJsonParameterEntity.create().withKey(KEY));
+		mockStatement().withJsonParameters(parameters);
+		when(artefactJsonParameterServiceMock.readAll(same(parameters))).thenReturn(List.of(JsonParameter.create().withKey(KEY)));
 
 		// Act
 		final var result = service.readStatementJsonParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID);
 
 		// Verify
 		assertThat(result).extracting(JsonParameter::getKey).containsExactly(KEY);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.STATEMENT, LR);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.STATEMENT, LR);
+		verifyNoMoreInteractions(accessControlServiceMock);
 	}
 
 	@Test
 	void readStatementJsonParameter() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
-		final var links = List.of(StatementJsonParameterEntity.create());
-		mockStatement().withJsonParameterLinks(links);
-		when(artefactJsonParameterServiceMock.read(same(errandEntity), same(links), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
+		final var parameters = List.of(StatementJsonParameterEntity.create().withKey(KEY));
+		mockStatement().withJsonParameters(parameters);
+		when(artefactJsonParameterServiceMock.read(same(parameters), eq(KEY))).thenReturn(JsonParameter.create().withKey(KEY));
 
 		// Act
 		final var result = service.readStatementJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, KEY);
 
 		// Verify
 		assertThat(result.getKey()).isEqualTo(KEY);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.STATEMENT, LR);
+		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.STATEMENT, LR);
+		verifyNoMoreInteractions(accessControlServiceMock);
 	}
 
 	@Test
 	void updateStatementJsonParameter() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
 		final var entity = mockStatement();
 		final var body = JsonParameter.create().withKey(KEY);
-		when(artefactJsonParameterServiceMock.upsert(same(errandEntity), eq(IF_MATCH), same(body), any(), any(), any())).thenReturn(new UpsertResult(body, true));
+		when(artefactJsonParameterServiceMock.<StatementJsonParameterEntity>upsert(any(), any(), eq(IF_MATCH), same(body))).thenReturn(new UpsertResult(body, true));
 
 		// Act
 		final var result = service.updateStatementJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, IF_MATCH, body);
 
-		// Verify - the collection is created on the way, so the link has somewhere to go
+		// Verify - the collection is created on the way, so a new parameter has somewhere to go
 		assertThat(result.created()).isTrue();
-		assertThat(entity.getJsonParameterLinks()).isNotNull();
+		assertThat(entity.getJsonParameters()).isNotNull();
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-		verify(artefactJsonParameterServiceMock).upsert(same(errandEntity), eq(IF_MATCH), same(body), same(entity.getJsonParameterLinks()),
-			jsonParameterLinkFactoryCaptor.capture(), same(statementJsonParameterRepositoryMock));
-
-		final var parameter = JsonParameterEntity.create().withId("parameter-id").withKey(KEY);
-		assertThat(jsonParameterLinkFactoryCaptor.getValue().apply(parameter)).satisfies(link -> {
-			assertThat(link.getStatementEntity()).isSameAs(entity);
-			assertThat(link.getJsonParameterEntity()).isSameAs(parameter);
-		});
+		verify(artefactJsonParameterServiceMock).upsert(same(entity.getJsonParameters()), jsonParameterFactoryCaptor.capture(), eq(IF_MATCH), same(body));
+		assertThat(jsonParameterFactoryCaptor.getValue().get().getStatementEntity()).as("a new parameter points at the statement").isSameAs(entity);
 	}
 
 	@Test
 	void deleteStatementJsonParameter() {
 
 		// Arrange
-		final var errandEntity = mockErrand();
-		final var links = new ArrayList<StatementJsonParameterEntity>();
-		mockStatement().withJsonParameterLinks(links);
+		final var parameters = new ArrayList<StatementJsonParameterEntity>();
+		mockStatement().withJsonParameters(parameters);
 
 		// Act
 		service.deleteStatementJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, KEY, IF_MATCH);
 
 		// Verify
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-		verify(artefactJsonParameterServiceMock).delete(same(errandEntity), same(links), eq(KEY), eq(IF_MATCH));
+		verify(artefactJsonParameterServiceMock).delete(same(parameters), eq(KEY), eq(IF_MATCH));
 	}
 }

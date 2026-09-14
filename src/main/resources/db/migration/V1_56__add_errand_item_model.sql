@@ -299,119 +299,79 @@ create index if not exists idx_measure_attachment_attachment_id
     on measure_attachment (attachment_id);
 
 create table if not exists statement_json_parameter (
-    id                varchar(255) not null,
-    statement_id      varchar(255) not null,
-    json_parameter_id varchar(255) not null,
+    id            varchar(255) not null,
+    statement_id  varchar(255) not null,
+    parameter_key varchar(255) not null,
+    schema_id     varchar(255),
+    value         longtext,
+    version       bigint default 0 not null,
     primary key (id),
-    constraint uq_statement_json_parameter_statement_id_json_parameter_id
-        unique (statement_id, json_parameter_id),
-    constraint uq_statement_json_parameter_json_parameter_id
-        unique (json_parameter_id),
+    constraint uq_statement_json_parameter_statement_id_key
+        unique (statement_id, parameter_key),
     constraint fk_statement_json_parameter_statement_id
         foreign key (statement_id) references statement (id)
-        on delete cascade,
-    constraint fk_statement_json_parameter_json_parameter_id
-        foreign key (json_parameter_id) references json_parameter (id)
         on delete cascade
 ) engine=InnoDB;
-
-create index if not exists idx_statement_json_parameter_statement_id
-    on statement_json_parameter (statement_id);
-
-create index if not exists idx_statement_json_parameter_json_parameter_id
-    on statement_json_parameter (json_parameter_id);
 
 create table if not exists investigation_json_parameter (
-    id                varchar(255) not null,
-    investigation_id  varchar(255) not null,
-    json_parameter_id varchar(255) not null,
+    id               varchar(255) not null,
+    investigation_id varchar(255) not null,
+    parameter_key    varchar(255) not null,
+    schema_id        varchar(255),
+    value            longtext,
+    version          bigint default 0 not null,
     primary key (id),
-    constraint uq_investigation_json_parameter_investigation_id_parameter_id
-        unique (investigation_id, json_parameter_id),
-    constraint uq_investigation_json_parameter_json_parameter_id
-        unique (json_parameter_id),
+    constraint uq_investigation_json_parameter_investigation_id_key
+        unique (investigation_id, parameter_key),
     constraint fk_investigation_json_parameter_investigation_id
         foreign key (investigation_id) references investigation (id)
-        on delete cascade,
-    constraint fk_investigation_json_parameter_json_parameter_id
-        foreign key (json_parameter_id) references json_parameter (id)
         on delete cascade
 ) engine=InnoDB;
-
-create index if not exists idx_investigation_json_parameter_investigation_id
-    on investigation_json_parameter (investigation_id);
-
-create index if not exists idx_investigation_json_parameter_json_parameter_id
-    on investigation_json_parameter (json_parameter_id);
 
 create table if not exists investigation_section_json_parameter (
     id                       varchar(255) not null,
     investigation_section_id varchar(255) not null,
-    json_parameter_id        varchar(255) not null,
+    parameter_key            varchar(255) not null,
+    schema_id                varchar(255),
+    value                    longtext,
+    version                  bigint default 0 not null,
     primary key (id),
-    constraint uq_investigation_section_json_parameter_section_parameter
-        unique (investigation_section_id, json_parameter_id),
-    constraint uq_investigation_section_json_parameter_parameter_id
-        unique (json_parameter_id),
+    constraint uq_investigation_section_json_parameter_section_id_key
+        unique (investigation_section_id, parameter_key),
     constraint fk_investigation_section_json_parameter_section_id
         foreign key (investigation_section_id) references investigation_section (id)
-        on delete cascade,
-    constraint fk_investigation_section_json_parameter_parameter_id
-        foreign key (json_parameter_id) references json_parameter (id)
         on delete cascade
 ) engine=InnoDB;
-
-create index if not exists idx_investigation_section_json_parameter_section_id
-    on investigation_section_json_parameter (investigation_section_id);
-
-create index if not exists idx_investigation_section_json_parameter_parameter_id
-    on investigation_section_json_parameter (json_parameter_id);
 
 create table if not exists decision_json_parameter (
-    id                varchar(255) not null,
-    decision_id       varchar(255) not null,
-    json_parameter_id varchar(255) not null,
+    id            varchar(255) not null,
+    decision_id   varchar(255) not null,
+    parameter_key varchar(255) not null,
+    schema_id     varchar(255),
+    value         longtext,
+    version       bigint default 0 not null,
     primary key (id),
-    constraint uq_decision_json_parameter_decision_id_json_parameter_id
-        unique (decision_id, json_parameter_id),
-    constraint uq_decision_json_parameter_json_parameter_id
-        unique (json_parameter_id),
+    constraint uq_decision_json_parameter_decision_id_key
+        unique (decision_id, parameter_key),
     constraint fk_decision_json_parameter_decision_id
         foreign key (decision_id) references decision (id)
-        on delete cascade,
-    constraint fk_decision_json_parameter_json_parameter_id
-        foreign key (json_parameter_id) references json_parameter (id)
         on delete cascade
 ) engine=InnoDB;
-
-create index if not exists idx_decision_json_parameter_decision_id
-    on decision_json_parameter (decision_id);
-
-create index if not exists idx_decision_json_parameter_json_parameter_id
-    on decision_json_parameter (json_parameter_id);
 
 create table if not exists measure_json_parameter (
-    id                varchar(255) not null,
-    measure_id        varchar(255) not null,
-    json_parameter_id varchar(255) not null,
+    id            varchar(255) not null,
+    measure_id    varchar(255) not null,
+    parameter_key varchar(255) not null,
+    schema_id     varchar(255),
+    value         longtext,
+    version       bigint default 0 not null,
     primary key (id),
-    constraint uq_measure_json_parameter_measure_id_json_parameter_id
-        unique (measure_id, json_parameter_id),
-    constraint uq_measure_json_parameter_json_parameter_id
-        unique (json_parameter_id),
+    constraint uq_measure_json_parameter_measure_id_key
+        unique (measure_id, parameter_key),
     constraint fk_measure_json_parameter_measure_id
         foreign key (measure_id) references measure (id)
-        on delete cascade,
-    constraint fk_measure_json_parameter_json_parameter_id
-        foreign key (json_parameter_id) references json_parameter (id)
         on delete cascade
 ) engine=InnoDB;
-
-create index if not exists idx_measure_json_parameter_measure_id
-    on measure_json_parameter (measure_id);
-
-create index if not exists idx_measure_json_parameter_json_parameter_id
-    on measure_json_parameter (json_parameter_id);
 
 create table if not exists attachment_purpose (
     id              varchar(255) not null,

@@ -27,7 +27,7 @@ class DecisionEntityTest {
 	// What the artefact points at rather than what it is. None of it identifies the artefact, and comparing it would
 	// walk back into the errand the artefact already hangs on.
 	private static final String[] RELATIONS = {
-		"errandEntity", "investigationEntity", "terms", "attachments", "jsonParameterLinks"
+		"errandEntity", "investigationEntity", "terms", "attachments", "jsonParameters"
 	};
 
 	@BeforeAll
@@ -82,7 +82,7 @@ class DecisionEntityTest {
 		final var errandProcessId = "errandProcessId";
 		final var terms = List.of(DecisionTermEntity.create());
 		final var attachments = List.of(AttachmentEntity.create());
-		final var jsonParameterLinks = List.of(DecisionJsonParameterEntity.create());
+		final var jsonParameters = List.of(DecisionJsonParameterEntity.create());
 
 		// Act
 		final var result = DecisionEntity.create()
@@ -116,7 +116,7 @@ class DecisionEntityTest {
 			.withErrandProcessId(errandProcessId)
 			.withTerms(terms)
 			.withAttachments(attachments)
-			.withJsonParameterLinks(jsonParameterLinks);
+			.withJsonParameters(jsonParameters);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -136,8 +136,8 @@ class DecisionEntityTest {
 			.extracting(DecisionEntity::getValidFrom, DecisionEntity::getValidTo, DecisionEntity::getInvestigationEntity, DecisionEntity::getErrandProcessId)
 			.containsExactly(validFrom, validTo, investigationEntity, errandProcessId);
 		assertThat(result)
-			.extracting(DecisionEntity::getTerms, DecisionEntity::getAttachments, DecisionEntity::getJsonParameterLinks)
-			.containsExactly(terms, attachments, jsonParameterLinks);
+			.extracting(DecisionEntity::getTerms, DecisionEntity::getAttachments, DecisionEntity::getJsonParameters)
+			.containsExactly(terms, attachments, jsonParameters);
 	}
 
 	@Test

@@ -13,20 +13,17 @@ import static org.hamcrest.Matchers.allOf;
 
 class InvestigationSectionJsonParameterEntityTest {
 
-	// A link carries nothing of its own beyond which two rows it joins, so its id is what identifies it. Comparing the
-	// two sides would walk back into the errand they both belong to.
-	private static final String[] RELATIONS = {
-		"investigationSectionEntity", "jsonParameterEntity"
-	};
+	// The section holds the parameter in turn, so comparing it would walk back into the section.
+	private static final String OWNER = "investigationSectionEntity";
 
 	@Test
 	void hasValidBean() {
 		MatcherAssert.assertThat(InvestigationSectionJsonParameterEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding(RELATIONS),
-			hasValidBeanEqualsExcluding(RELATIONS),
-			hasValidBeanToStringExcluding(RELATIONS)));
+			hasValidBeanHashCodeExcluding(OWNER),
+			hasValidBeanEqualsExcluding(OWNER),
+			hasValidBeanToStringExcluding(OWNER)));
 	}
 
 	@Test
@@ -35,19 +32,35 @@ class InvestigationSectionJsonParameterEntityTest {
 		// Arrange
 		final var id = "id";
 		final var owner = InvestigationSectionEntity.create().withId("ownerId");
-		final var jsonParameterEntity = JsonParameterEntity.create().withId("parameterId");
+		final var key = "sectionForm";
+		final var schemaId = "schemaId";
+		final var value = "{\"answer\":\"pending\"}";
+		final var version = 3L;
 
 		// Act
 		final var result = InvestigationSectionJsonParameterEntity.create()
 			.withId(id)
 			.withInvestigationSectionEntity(owner)
-			.withJsonParameterEntity(jsonParameterEntity);
+			.withKey(key)
+			.withSchemaId(schemaId)
+			.withValue(value)
+			.withVersion(version);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
 		assertThat(result.getId()).isEqualTo(id);
 		assertThat(result.getInvestigationSectionEntity()).isEqualTo(owner);
-		assertThat(result.getJsonParameterEntity()).isEqualTo(jsonParameterEntity);
+		assertThat(result.getKey()).isEqualTo(key);
+		assertThat(result.getSchemaId()).isEqualTo(schemaId);
+		assertThat(result.getValue()).isEqualTo(value);
+		assertThat(result.getVersion()).isEqualTo(version);
+	}
+
+	@Test
+	void toStringNamesTheOwnerByItsIdOnly() {
+		assertThat(InvestigationSectionJsonParameterEntity.create().withInvestigationSectionEntity(InvestigationSectionEntity.create().withId("ownerId")).toString())
+			.endsWith("investigationSectionEntity=ownerId}");
+		assertThat(InvestigationSectionJsonParameterEntity.create().toString()).endsWith("investigationSectionEntity=null}");
 	}
 
 	@Test

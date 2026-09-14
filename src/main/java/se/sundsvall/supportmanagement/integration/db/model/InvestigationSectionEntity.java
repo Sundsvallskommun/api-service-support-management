@@ -9,6 +9,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
@@ -21,7 +22,7 @@ import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
 
-import static jakarta.persistence.CascadeType.MERGE;
+import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static org.hibernate.Length.LONG32;
@@ -82,10 +83,11 @@ public class InvestigationSectionEntity {
 
 	/**
 	 * Structured content when free text is not enough: a checklist, test results, measurements. See
-	 * {@link StatementEntity#getJsonParameterLinks()} for why nothing but MERGE cascades here.
+	 * {@link StatementEntity#getJsonParameters()} for how they are held.
 	 */
-	@OneToMany(mappedBy = "investigationSectionEntity", cascade = MERGE)
-	private List<InvestigationSectionJsonParameterEntity> jsonParameterLinks;
+	@OneToMany(mappedBy = "investigationSectionEntity", cascade = ALL, orphanRemoval = true)
+	@OrderBy("key")
+	private List<InvestigationSectionJsonParameterEntity> jsonParameters;
 
 	public static InvestigationSectionEntity create() {
 		return new InvestigationSectionEntity();
@@ -208,16 +210,16 @@ public class InvestigationSectionEntity {
 		return this;
 	}
 
-	public List<InvestigationSectionJsonParameterEntity> getJsonParameterLinks() {
-		return jsonParameterLinks;
+	public List<InvestigationSectionJsonParameterEntity> getJsonParameters() {
+		return jsonParameters;
 	}
 
-	public void setJsonParameterLinks(final List<InvestigationSectionJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public void setJsonParameters(final List<InvestigationSectionJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 	}
 
-	public InvestigationSectionEntity withJsonParameterLinks(final List<InvestigationSectionJsonParameterEntity> jsonParameterLinks) {
-		this.jsonParameterLinks = jsonParameterLinks;
+	public InvestigationSectionEntity withJsonParameters(final List<InvestigationSectionJsonParameterEntity> jsonParameters) {
+		this.jsonParameters = jsonParameters;
 		return this;
 	}
 

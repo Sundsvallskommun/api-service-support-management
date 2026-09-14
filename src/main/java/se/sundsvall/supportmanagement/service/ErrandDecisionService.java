@@ -13,9 +13,7 @@ import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
@@ -41,8 +39,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisions;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.updateDecisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.updateDecisionTermEntity;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.ownedParameterIds;
-import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.removeParameters;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 
@@ -64,9 +60,7 @@ public class ErrandDecisionService {
 	private static final String TERM_NOT_FOUND = "A term with id '%s' could not be found in decision with id '%s'";
 	private static final String INVESTIGATION_NOT_FOUND = "An investigation with id '%s' could not be found in errand with id '%s'";
 
-	private final ErrandsRepository errandsRepository;
 	private final DecisionRepository decisionRepository;
-	private final DecisionJsonParameterRepository decisionJsonParameterRepository;
 	private final ArtefactAttachmentService artefactAttachmentService;
 	private final ArtefactJsonParameterService artefactJsonParameterService;
 	private final InvestigationRepository investigationRepository;
@@ -74,12 +68,9 @@ public class ErrandDecisionService {
 	private final AccessControlService accessControlService;
 	private final EntityManager entityManager;
 
-	ErrandDecisionService(final ErrandsRepository errandsRepository, final DecisionRepository decisionRepository, final DecisionJsonParameterRepository decisionJsonParameterRepository,
-		final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService, final InvestigationRepository investigationRepository,
-		final DecisionValidator decisionValidator, final AccessControlService accessControlService, final EntityManager entityManager) {
-		this.errandsRepository = errandsRepository;
+	ErrandDecisionService(final DecisionRepository decisionRepository, final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService,
+		final InvestigationRepository investigationRepository, final DecisionValidator decisionValidator, final AccessControlService accessControlService, final EntityManager entityManager) {
 		this.decisionRepository = decisionRepository;
-		this.decisionJsonParameterRepository = decisionJsonParameterRepository;
 		this.artefactAttachmentService = artefactAttachmentService;
 		this.artefactJsonParameterService = artefactJsonParameterService;
 		this.investigationRepository = investigationRepository;
@@ -135,20 +126,13 @@ public class ErrandDecisionService {
 
 	@Transactional
 	public void deleteErrandDecision(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 		logMissingIfMatch(ifMatch, "DELETE", namespace, municipalityId, errandId, decisionId);
 		validateIfMatch(ifMatch, entity.getVersion());
 
-		// Named now: the links that name them go with the decision.
-		final var ownedParameters = ownedParameterIds(entity.getJsonParameterLinks());
-
 		decisionRepository.delete(entity);
-		decisionRepository.flush();
-
-		removeParameters(errandEntity, ownedParameters);
-		errandsRepository.saveAndFlush(errandEntity);
 	}
 
 	@Transactional
@@ -234,32 +218,31 @@ public class ErrandDecisionService {
 
 	@Transactional(readOnly = true)
 	public List<JsonParameter> readDecisionJsonParameters(final String namespace, final String municipalityId, final String errandId, final String decisionId) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.DECISION, LR);
-		return artefactJsonParameterService.readAll(errandEntity, findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId).getJsonParameterLinks());
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.DECISION, LR);
+		return artefactJsonParameterService.readAll(findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId).getJsonParameters());
 	}
 
 	@Transactional(readOnly = true)
 	public JsonParameter readDecisionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String key) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.DECISION, LR);
-		return artefactJsonParameterService.read(errandEntity, findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId).getJsonParameterLinks(), key);
+		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.DECISION, LR);
+		return artefactJsonParameterService.read(findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId).getJsonParameters(), key);
 	}
 
 	@Transactional
 	public UpsertResult updateDecisionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String ifMatch,
 		final JsonParameter jsonParameter) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
-		return artefactJsonParameterService.upsert(errandEntity, ifMatch, jsonParameter, jsonParameterLinks(entity),
-			parameter -> DecisionJsonParameterEntity.create().withDecisionEntity(entity).withJsonParameterEntity(parameter), decisionJsonParameterRepository);
+		return artefactJsonParameterService.upsert(jsonParameters(entity), () -> DecisionJsonParameterEntity.create().withDecisionEntity(entity), ifMatch, jsonParameter);
 	}
 
 	@Transactional
 	public void deleteDecisionJsonParameter(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String key, final String ifMatch) {
-		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
+		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
-		artefactJsonParameterService.delete(errandEntity, jsonParameterLinks(entity), key, ifMatch);
+		artefactJsonParameterService.delete(jsonParameters(entity), key, ifMatch);
 	}
 
 	private List<AttachmentEntity> attachments(final DecisionEntity entity) {
@@ -269,11 +252,11 @@ public class ErrandDecisionService {
 		return entity.getAttachments();
 	}
 
-	private List<DecisionJsonParameterEntity> jsonParameterLinks(final DecisionEntity entity) {
-		if (entity.getJsonParameterLinks() == null) {
-			entity.setJsonParameterLinks(new ArrayList<>());
+	private List<DecisionJsonParameterEntity> jsonParameters(final DecisionEntity entity) {
+		if (entity.getJsonParameters() == null) {
+			entity.setJsonParameters(new ArrayList<>());
 		}
-		return entity.getJsonParameterLinks();
+		return entity.getJsonParameters();
 	}
 
 	private DecisionEntity findDecisionOrElseThrow(final String namespace, final String municipalityId, final String errandId, final String decisionId) {
