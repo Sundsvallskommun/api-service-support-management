@@ -13,4 +13,6 @@ import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterE
 public interface MeasureJsonParameterRepository extends JpaRepository<MeasureJsonParameterEntity, String> {
 
 	List<MeasureJsonParameterEntity> findByJsonParameterEntityErrandEntityId(String errandId);
+
+	boolean existsByJsonParameterEntityId(String jsonParameterId);
 }

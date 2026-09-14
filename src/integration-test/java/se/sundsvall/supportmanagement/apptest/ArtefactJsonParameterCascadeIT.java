@@ -227,6 +227,40 @@ class ArtefactJsonParameterCascadeIT extends AbstractAppTest {
 		assertThat(errandParameters(ERRAND_OWNED_KEY)).as("and the errand kept its own parameter").isOne();
 	}
 
+	/**
+	 * The endpoints of the errand naming a single key refuse the content of an artefact outright, whatever they carry: it
+	 * is written through the artefact, rather than past the version the artefact answers with.
+	 */
+	@Test
+	void test10_writingAnArtefactParameterThroughTheErrandIsAConflict() {
+
+		setupCall()
+			.withServicePath(ERRAND_PATH + "/json-parameters/" + PARAMETER_KEY)
+			.withHttpMethod(PUT)
+			.withRequest("request.json")
+			.withExpectedResponseStatus(CONFLICT)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select value from json_parameter where id = ?", String.class, PARAMETER_ID))
+			.as("the content of the statement stayed as it was").contains("pending");
+	}
+
+	/**
+	 * Nor is it removed from under the artefact.
+	 */
+	@Test
+	void test11_deletingAnArtefactParameterThroughTheErrandIsAConflict() {
+
+		setupCall()
+			.withServicePath(ERRAND_PATH + "/json-parameters/" + PARAMETER_KEY)
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(CONFLICT)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(parameters()).as("the parameter stayed").isOne();
+		assertThat(links()).as("and so did its link").isOne();
+	}
+
 	private int links() {
 		return jdbcTemplate.queryForObject("select count(*) from statement_json_parameter where statement_id = ?", Integer.class, STATEMENT_ID);
 	}

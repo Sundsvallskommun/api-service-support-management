@@ -1163,7 +1163,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: Conflict — resource modified concurrently
+          description: "Conflict — resource modified concurrently, or the parameter\
+            \ belongs to a handling artefact of the errand and is written through\
+            \ that artefact"
           content:
             application/problem+json:
               schema:
@@ -1252,7 +1254,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: Conflict — resource modified concurrently
+          description: "Conflict — resource modified concurrently, or the parameter\
+            \ belongs to a handling artefact of the errand and is removed through\
+            \ that artefact"
           content:
             application/problem+json:
               schema:

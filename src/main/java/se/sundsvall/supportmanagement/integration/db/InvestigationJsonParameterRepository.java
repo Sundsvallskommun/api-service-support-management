@@ -13,4 +13,6 @@ import se.sundsvall.supportmanagement.integration.db.model.InvestigationJsonPara
 public interface InvestigationJsonParameterRepository extends JpaRepository<InvestigationJsonParameterEntity, String> {
 
 	List<InvestigationJsonParameterEntity> findByJsonParameterEntityErrandEntityId(String errandId);
+
+	boolean existsByJsonParameterEntityId(String jsonParameterId);
 }

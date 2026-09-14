@@ -13,4 +13,6 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameter
 public interface DecisionJsonParameterRepository extends JpaRepository<DecisionJsonParameterEntity, String> {
 
 	List<DecisionJsonParameterEntity> findByJsonParameterEntityErrandEntityId(String errandId);
+
+	boolean existsByJsonParameterEntityId(String jsonParameterId);
 }

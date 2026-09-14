@@ -128,6 +128,21 @@ public class ArtefactJsonParameterService {
 	}
 
 	/**
+	 * Whether one of the handling artefacts of the errand owns the parameter, asked of the links of the five owners in turn
+	 * until one of them names it.
+	 *
+	 * @param  parameterId the parameter asked about.
+	 * @return             true when an artefact owns it.
+	 */
+	public boolean isOwnedByArtefact(final String parameterId) {
+		return statementJsonParameterRepository.existsByJsonParameterEntityId(parameterId)
+			|| investigationJsonParameterRepository.existsByJsonParameterEntityId(parameterId)
+			|| investigationSectionJsonParameterRepository.existsByJsonParameterEntityId(parameterId)
+			|| decisionJsonParameterRepository.existsByJsonParameterEntityId(parameterId)
+			|| measureJsonParameterRepository.existsByJsonParameterEntityId(parameterId);
+	}
+
+	/**
 	 * Writes the parameter, creating it and its link when the artefact does not hold the key yet.
 	 *
 	 * @param jsonParameter the parameter to write, carrying its key.

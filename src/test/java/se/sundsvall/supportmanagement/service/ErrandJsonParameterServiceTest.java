@@ -30,8 +30,10 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +49,9 @@ class ErrandJsonParameterServiceTest {
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
+
+	@Mock
+	private ArtefactJsonParameterService artefactJsonParameterServiceMock;
 
 	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
@@ -141,6 +146,7 @@ class ErrandJsonParameterServiceTest {
 		assertThat(result.created()).isFalse();
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.JSON_PARAMETER, RW);
 		verify(accessControlServiceMock).verifyJsonParameterAccess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(entity), eq(KEY), any());
+		verify(artefactJsonParameterServiceMock).isOwnedByArtefact(entity.getJsonParameters().getFirst().getId());
 		verify(entityManagerMock).lock(same(entity), eq(OPTIMISTIC_FORCE_INCREMENT));
 		verify(errandsRepositoryMock).saveAndFlush(entity);
 		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock);
@@ -164,6 +170,7 @@ class ErrandJsonParameterServiceTest {
 		verify(errandsRepositoryMock).saveAndFlush(errandEntityCaptor.capture());
 		assertThat(errandEntityCaptor.getValue().getJsonParameters()).hasSize(1);
 		assertThat(errandEntityCaptor.getValue().getJsonParameters().getFirst().getKey()).isEqualTo("newKey");
+		verifyNoInteractions(artefactJsonParameterServiceMock);
 	}
 
 	@Test
@@ -190,11 +197,13 @@ class ErrandJsonParameterServiceTest {
 		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"test\"}");
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(errandsRepositoryMock.save(any())).thenAnswer(i -> i.getArgument(0));
+		final var parameterId = entity.getJsonParameters().getFirst().getId();
 
 		service.deleteJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null);
 
 		verify(errandsRepositoryMock).save(errandEntityCaptor.capture());
 		assertThat(errandEntityCaptor.getValue().getJsonParameters()).isEmpty();
+		verify(artefactJsonParameterServiceMock).isOwnedByArtefact(parameterId);
 		verify(entityManagerMock).lock(same(entity), eq(OPTIMISTIC_FORCE_INCREMENT));
 	}
 
@@ -206,6 +215,51 @@ class ErrandJsonParameterServiceTest {
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.deleteJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "missing", null))
 			.satisfies(p -> assertThat(p.getStatus()).isEqualTo(NOT_FOUND));
+	}
+
+	/**
+	 * The content of a handling artefact is written through the artefact. A key the errand holds on its behalf is refused
+	 * before anything is written.
+	 */
+	@Test
+	void updateJsonParameterOwnedByAnArtefactIsAConflict() {
+		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"old\"}");
+		final var parameter = entity.getJsonParameters().getFirst();
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyJsonParameterAccess(any(), any(), any(), any(), any())).thenReturn(new KeyAccess(_ -> true, _ -> true));
+		when(artefactJsonParameterServiceMock.isOwnedByArtefact(parameter.getId())).thenReturn(true);
+
+		final var request = JsonParameter.create()
+			.withKey(KEY)
+			.withSchemaId("schema-2.0")
+			.withValue(JsonNodeFactory.instance.objectNode().put("name", "new"));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, request))
+			.satisfies(p -> assertThat(p.getStatus()).isEqualTo(CONFLICT))
+			.withMessageContaining(KEY);
+
+		assertThat(parameter.getSchemaId()).as("the parameter is left as it was").isEqualTo("schema-1.0");
+		verifyNoInteractions(entityManagerMock, errandsRepositoryMock);
+	}
+
+	/**
+	 * Nor is it removed from under the artefact.
+	 */
+	@Test
+	void deleteJsonParameterOwnedByAnArtefactIsAConflict() {
+		final var entity = buildEntityWithJsonParameter(KEY, "schema-1.0", "{\"name\":\"test\"}");
+		final var parameter = entity.getJsonParameters().getFirst();
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(artefactJsonParameterServiceMock.isOwnedByArtefact(parameter.getId())).thenReturn(true);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.deleteJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null))
+			.satisfies(p -> assertThat(p.getStatus()).isEqualTo(CONFLICT))
+			.withMessageContaining(KEY);
+
+		assertThat(entity.getJsonParameters()).as("the parameter stayed").containsExactly(parameter);
+		verifyNoInteractions(entityManagerMock, errandsRepositoryMock);
 	}
 
 	@Test

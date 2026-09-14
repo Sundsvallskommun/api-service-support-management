@@ -20,4 +20,10 @@ public interface StatementJsonParameterRepository extends JpaRepository<Statemen
 	 * not change.
 	 */
 	List<StatementJsonParameterEntity> findByJsonParameterEntityErrandEntityId(String errandId);
+
+	/**
+	 * Whether a link names the parameter, which is what the JSON parameter endpoints of the errand ask before writing or
+	 * removing it.
+	 */
+	boolean existsByJsonParameterEntityId(String jsonParameterId);
 }

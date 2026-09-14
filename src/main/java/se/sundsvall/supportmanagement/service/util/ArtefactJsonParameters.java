@@ -23,8 +23,9 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.changedJsonParameterKeys;
 
 /**
- * The JSON parameters a handling artefact owns, as the errand holding them sees them: removed with the artefact, and
- * left alone by a patch of the errand. In one place, so that the services cannot drift apart on either.
+ * The JSON parameters a handling artefact owns, as the errand holding them sees them: removed with the artefact, left
+ * alone by a patch of the errand, and not written through the errand at all. In one place, so that the services cannot
+ * drift apart on any of it.
  */
 public final class ArtefactJsonParameters {
 
@@ -105,5 +106,24 @@ public final class ArtefactJsonParameters {
 			});
 
 		return field -> (field == ErrandField.JSON_PARAMETERS) ? writableKey.apply(field).and(key -> !ownedKeys.contains(key)) : writableKey.apply(field);
+	}
+
+	/**
+	 * Refuses writing or removing a parameter through the JSON parameter endpoints of the errand when a handling artefact
+	 * owns it.
+	 * <p>
+	 * Stricter than {@link #withoutArtefactParameters}, on purpose. A patch carries every parameter of the errand, so it
+	 * carries the ones the artefacts own as a matter of course, and is let through as long as it leaves them as they stand.
+	 * An endpoint naming a single key is asked for that key alone, so it is refused whatever it carries, and the caller is
+	 * pointed at the artefact. Without it, the content of an artefact could be rewritten past the version the artefact
+	 * answers with, or removed from under the artefact - the database takes the link with the parameter.
+	 *
+	 * @param parameter       the parameter of the errand about to be written or removed.
+	 * @param ownedByArtefact whether a handling artefact owns the parameter with the given id.
+	 */
+	public static void verifyNotOwnedByArtefact(final JsonParameterEntity parameter, final Predicate<String> ownedByArtefact) {
+		if (ownedByArtefact.test(parameter.getId())) {
+			throw Problem.valueOf(CONFLICT, OWNED_BY_ARTEFACT.formatted(parameter.getKey()));
+		}
 	}
 }

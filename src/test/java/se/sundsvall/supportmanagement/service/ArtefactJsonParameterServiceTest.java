@@ -242,6 +242,43 @@ class ArtefactJsonParameterServiceTest {
 		assertThat(service.ownedParameterIds(ERRAND_ID)).isEmpty();
 	}
 
+	/**
+	 * Whether an artefact owns a parameter is asked of the owners in turn, and the first one naming it settles it.
+	 */
+	@Test
+	void isOwnedByArtefactStopsAtTheFirstOwnerNamingIt() {
+
+		// Arrange
+		when(investigationLinkRepositoryMock.existsByJsonParameterEntityId("1")).thenReturn(true);
+
+		// Act & Verify
+		assertThat(service.isOwnedByArtefact("1")).isTrue();
+		verify(linkRepositoryMock).existsByJsonParameterEntityId("1");
+		verifyNoInteractions(investigationSectionLinkRepositoryMock, decisionLinkRepositoryMock, measureLinkRepositoryMock);
+	}
+
+	@Test
+	void isOwnedByArtefactAsksTheLastOwnerToo() {
+
+		// Arrange
+		when(measureLinkRepositoryMock.existsByJsonParameterEntityId("1")).thenReturn(true);
+
+		// Act & Verify
+		assertThat(service.isOwnedByArtefact("1")).isTrue();
+	}
+
+	@Test
+	void aParameterNoOwnerNamesIsNotOwnedByAnArtefact() {
+
+		// Act & Verify - the repositories answer with false
+		assertThat(service.isOwnedByArtefact("1")).isFalse();
+		verify(linkRepositoryMock).existsByJsonParameterEntityId("1");
+		verify(investigationLinkRepositoryMock).existsByJsonParameterEntityId("1");
+		verify(investigationSectionLinkRepositoryMock).existsByJsonParameterEntityId("1");
+		verify(decisionLinkRepositoryMock).existsByJsonParameterEntityId("1");
+		verify(measureLinkRepositoryMock).existsByJsonParameterEntityId("1");
+	}
+
 	@Test
 	void upsertReplacesAKeyTheArtefactAlreadyOwns() {
 

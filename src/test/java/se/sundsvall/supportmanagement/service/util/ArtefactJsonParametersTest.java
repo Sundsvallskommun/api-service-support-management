@@ -22,11 +22,13 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.ownedParameterIds;
 import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.removeParameters;
+import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.verifyNotOwnedByArtefact;
 import static se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters.withoutArtefactParameters;
 
 @ExtendWith(MockitoExtension.class)
@@ -253,6 +255,36 @@ class ArtefactJsonParametersTest {
 
 		// Verify
 		assertThat(result.apply(ErrandField.JSON_PARAMETERS)).rejects(ERRAND_KEY).accepts("another");
+	}
+
+	/**
+	 * The endpoints of the errand naming a single key refuse a parameter an artefact owns outright - unlike a patch, which
+	 * carries every parameter and may carry it as it stands - and the caller is told which key it is.
+	 */
+	@Test
+	void writingAnArtefactParameterThroughTheErrandIsAConflict() {
+
+		// Arrange
+		final var parameter = artefactOwned();
+		final Predicate<String> ownedByArtefact = OWNED.get()::contains;
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> verifyNotOwnedByArtefact(parameter, ownedByArtefact));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+		assertThat(problem.getMessage()).contains(ARTEFACT_KEY);
+	}
+
+	@Test
+	void aParameterNoArtefactOwnsIsTheErrandsToWrite() {
+
+		// Arrange
+		final var parameter = errandOwned();
+		final Predicate<String> ownedByArtefact = OWNED.get()::contains;
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> verifyNotOwnedByArtefact(parameter, ownedByArtefact));
 	}
 
 	private static JsonParameterEntity artefactOwned() {
