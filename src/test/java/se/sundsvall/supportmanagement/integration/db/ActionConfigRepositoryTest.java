@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.integration.db;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -11,6 +12,7 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +70,41 @@ class ActionConfigRepositoryTest {
 	void existsByIdAndNamespaceAndMunicipalityId() {
 		assertThat(repository.existsByIdAndNamespaceAndMunicipalityId("action-config-id-1", "namespace-1", "2281")).isTrue();
 		assertThat(repository.existsByIdAndNamespaceAndMunicipalityId("action-config-id-1", "namespace-99", "2281")).isFalse();
+	}
+
+	@Test
+	void createWithOperationTypes() {
+		final var condition = ActionConfigConditionEntity.create().withKey("status").withValues(List.of("OPEN"));
+		final var parameter = ActionConfigParameterEntity.create().withKey("target").withValues(List.of("value1"));
+
+		final var entity = ActionConfigEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("namespace-operation-types")
+			.withName("NEW_ACTION")
+			.withActive(true)
+			.withDisplayValue("Reacts to creation only")
+			.withConditions(List.of(condition))
+			.withParameters(List.of(parameter))
+			.withOperationTypes(Set.of(OperationType.CREATE));
+
+		condition.setActionConfigEntity(entity);
+		parameter.setActionConfigEntity(entity);
+
+		final var persisted = repository.saveAndFlush(entity);
+
+		assertThat(repository.findByIdAndNamespaceAndMunicipalityId(persisted.getId(), "namespace-operation-types", "2281"))
+			.isPresent().get()
+			.satisfies(found -> assertThat(found.getOperationTypes()).containsExactly(OperationType.CREATE));
+	}
+
+	@Test
+	void configWithoutOperationTypesReadsBackAsEmpty() {
+		// Every config seeded before operation types existed has no rows in the collection table, and an empty set is
+		// what the service reads as "every operation the action supports".
+		final var result = repository.findByIdAndNamespaceAndMunicipalityId("action-config-id-1", "namespace-1", "2281");
+
+		assertThat(result).isPresent().get()
+			.satisfies(entity -> assertThat(entity.getOperationTypes()).isEmpty());
 	}
 
 	@Test

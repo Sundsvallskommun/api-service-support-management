@@ -25,6 +25,12 @@ create table action_config_condition_values (
                                                 primary key (value_order, action_config_condition_id)
 ) engine=InnoDB;
 
+create table action_config_operation_type (
+                                              action_config_id varchar(255) not null,
+                                              operation_type enum ('CREATE','DELETE','READ','UPDATE') not null,
+                                              primary key (action_config_id, operation_type)
+) engine=InnoDB;
+
 create table action_config_parameter (
                                          action_config_id varchar(255) not null,
                                          id varchar(255) not null,
@@ -1029,6 +1035,11 @@ alter table if exists action_config_condition_values
     add constraint fk_action_config_condition_values_condition_id
     foreign key (action_config_condition_id)
     references action_config_condition (id);
+
+alter table if exists action_config_operation_type
+    add constraint fk_action_config_operation_type_action_config_id
+    foreign key (action_config_id)
+    references action_config (id);
 
 alter table if exists action_config_parameter
     add constraint fk_action_config_parameter_action_config_id

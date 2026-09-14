@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.api.model.config.action.enums;
+package se.sundsvall.supportmanagement.integration.db.model.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
