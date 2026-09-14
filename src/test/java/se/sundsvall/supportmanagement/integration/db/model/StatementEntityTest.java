@@ -7,7 +7,6 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.StatementOutcome;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
@@ -33,7 +32,6 @@ class StatementEntityTest {
 	static void setup() {
 		registerValueGenerator(() -> now().plusDays(new Random().nextInt()), OffsetDateTime.class);
 		registerValueGenerator(() -> ItemStatus.values()[new Random().nextInt(ItemStatus.values().length)], ItemStatus.class);
-		registerValueGenerator(() -> StatementOutcome.values()[new Random().nextInt(StatementOutcome.values().length)], StatementOutcome.class);
 	}
 
 	@Test
@@ -73,7 +71,7 @@ class StatementEntityTest {
 		final var sentAt = now().plusDays(1);
 		final var remindedAt = now().plusDays(2);
 		final var respondedAt = now().plusDays(3);
-		final var outcome = StatementOutcome.SUPPORTS;
+		final var outcome = "SUPPORTS";
 		final var responseText = "responseText";
 		final var communicationId = "communicationId";
 		final var attachments = List.of(AttachmentEntity.create());

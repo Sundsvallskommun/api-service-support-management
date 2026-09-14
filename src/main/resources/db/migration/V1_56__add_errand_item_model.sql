@@ -22,7 +22,7 @@ create table if not exists statement (
     sent_at                       datetime(6),
     reminded_at                   datetime(6),
     responded_at                  datetime(6),
-    outcome                       varchar(32),
+    outcome                       varchar(255),
     response_text                 longtext,
     communication_id              varchar(36),
     primary key (id),
@@ -63,7 +63,7 @@ create table if not exists investigation (
     started_at                datetime(6),
     summary                   longtext,
     conclusion                longtext,
-    recommendation            varchar(32),
+    recommendation            varchar(255),
     recommendation_motivation longtext,
     primary key (id),
     constraint fk_investigation_errand_id
@@ -117,7 +117,7 @@ create table if not exists decision (
     created              datetime(6),
     modified             datetime(6),
     version              bigint default 0 not null,
-    outcome              varchar(32)  not null,
+    outcome              varchar(255) not null,
     method               varchar(16)  not null,
     decided_by           varchar(255) not null,
     decided_by_role      varchar(128),
@@ -440,3 +440,40 @@ create index if not exists idx_attachment_attachment_purpose_id
 alter table if exists attachment
     add constraint fk_attachment_attachment_purpose_id
     foreign key if not exists (attachment_purpose_id) references attachment_purpose (id);
+
+create table if not exists decision_outcome (
+    id              varchar(255) not null,
+    name            varchar(255) not null,
+    display_name    varchar(255),
+    sort_order      integer,
+    deprecated      bit          not null,
+    municipality_id varchar(8)   not null,
+    namespace       varchar(32)  not null,
+    created         datetime(6),
+    modified        datetime(6),
+    primary key (id),
+    constraint uq_decision_outcome_namespace_municipality_id_name
+        unique (namespace, municipality_id, name)
+) engine=InnoDB;
+
+create index if not exists idx_decision_outcome_namespace_municipality_id
+    on decision_outcome (namespace, municipality_id);
+
+create table if not exists statement_outcome (
+    id              varchar(255) not null,
+    name            varchar(255) not null,
+    display_name    varchar(255),
+    sort_order      integer,
+    responded       bit          not null,
+    deprecated      bit          not null,
+    municipality_id varchar(8)   not null,
+    namespace       varchar(32)  not null,
+    created         datetime(6),
+    modified        datetime(6),
+    primary key (id),
+    constraint uq_statement_outcome_namespace_municipality_id_name
+        unique (namespace, municipality_id, name)
+) engine=InnoDB;
+
+create index if not exists idx_statement_outcome_namespace_municipality_id
+    on statement_outcome (namespace, municipality_id);

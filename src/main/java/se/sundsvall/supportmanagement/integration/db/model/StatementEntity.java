@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import jakarta.persistence.AssociationOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -16,15 +15,11 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.TimeZoneStorage;
-import se.sundsvall.supportmanagement.integration.db.model.enums.StatementOutcome;
 
 import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.EnumType.STRING;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
-import static org.hibernate.type.SqlTypes.VARCHAR;
 
 /**
  * A request for a statement and the statement that came back, in the same row.
@@ -82,10 +77,9 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime respondedAt;
 
-	@Enumerated(STRING)
-	@JdbcTypeCode(VARCHAR)
-	@Column(name = "outcome", length = 32)
-	private StatementOutcome outcome;
+	/** One of the statement outcomes the namespace has registered, see {@link StatementOutcomeEntity}. */
+	@Column(name = "outcome")
+	private String outcome;
 
 	@Column(name = "response_text", length = LONG32)
 	private String responseText;
@@ -240,15 +234,15 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 		return this;
 	}
 
-	public StatementOutcome getOutcome() {
+	public String getOutcome() {
 		return outcome;
 	}
 
-	public void setOutcome(final StatementOutcome outcome) {
+	public void setOutcome(final String outcome) {
 		this.outcome = outcome;
 	}
 
-	public StatementEntity withOutcome(final StatementOutcome outcome) {
+	public StatementEntity withOutcome(final String outcome) {
 		this.outcome = outcome;
 		return this;
 	}
@@ -322,7 +316,7 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 			&& Objects.equals(sentAt, that.sentAt)
 			&& Objects.equals(remindedAt, that.remindedAt)
 			&& Objects.equals(respondedAt, that.respondedAt)
-			&& (outcome == that.outcome)
+			&& Objects.equals(outcome, that.outcome)
 			&& Objects.equals(responseText, that.responseText)
 			&& Objects.equals(communicationId, that.communicationId);
 	}
@@ -344,7 +338,7 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 			", sentAt=" + sentAt +
 			", remindedAt=" + remindedAt +
 			", respondedAt=" + respondedAt +
-			", outcome=" + outcome +
+			", outcome='" + outcome + '\'' +
 			", responseText='" + responseText + '\'' +
 			", communicationId='" + communicationId + '\'' +
 			'}';

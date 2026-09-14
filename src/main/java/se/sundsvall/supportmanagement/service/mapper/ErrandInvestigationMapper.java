@@ -6,7 +6,6 @@ import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
 
@@ -33,7 +32,7 @@ public final class ErrandInvestigationMapper {
 			.withStartedAt(investigation.getStartedAt())
 			.withSummary(investigation.getSummary())
 			.withConclusion(investigation.getConclusion())
-			.withRecommendation(ofNullable(investigation.getRecommendation()).map(DecisionOutcome::valueOf).orElse(null))
+			.withRecommendation(investigation.getRecommendation())
 			.withRecommendationMotivation(investigation.getRecommendationMotivation());
 	}
 
@@ -48,7 +47,7 @@ public final class ErrandInvestigationMapper {
 		ofNullable(investigation.getStartedAt()).ifPresent(entity::setStartedAt);
 		ofNullable(investigation.getSummary()).ifPresent(entity::setSummary);
 		ofNullable(investigation.getConclusion()).ifPresent(entity::setConclusion);
-		ofNullable(investigation.getRecommendation()).map(DecisionOutcome::valueOf).ifPresent(entity::setRecommendation);
+		ofNullable(investigation.getRecommendation()).ifPresent(entity::setRecommendation);
 		ofNullable(investigation.getRecommendationMotivation()).ifPresent(entity::setRecommendationMotivation);
 		return entity;
 	}
@@ -67,7 +66,7 @@ public final class ErrandInvestigationMapper {
 				.withStartedAt(e.getStartedAt())
 				.withSummary(e.getSummary())
 				.withConclusion(e.getConclusion())
-				.withRecommendation(ofNullable(e.getRecommendation()).map(Enum::name).orElse(null))
+				.withRecommendation(e.getRecommendation())
 				.withRecommendationMotivation(e.getRecommendationMotivation())
 				.withSections(toInvestigationSections(e.getSections()))
 				.withAttachments(toArtefactAttachments(e.getAttachments()))

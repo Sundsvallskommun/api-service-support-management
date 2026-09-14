@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.integration.db.DecisionOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
@@ -22,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.AUTOMATIC;
@@ -37,6 +39,9 @@ class DecisionValidatorTest {
 
 	@Mock
 	private DecisionRepository decisionRepositoryMock;
+
+	@Mock
+	private DecisionOutcomeRepository decisionOutcomeRepositoryMock;
 
 	@Mock
 	private NamespaceConfigRepository namespaceConfigRepositoryMock;
@@ -196,5 +201,37 @@ class DecisionValidatorTest {
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(FORBIDDEN);
 		assertThat(problem.getMessage()).contains("AUTOMATIC");
+	}
+
+	/**
+	 * A patch that says nothing about the outcome leaves the stored one standing, so there is nothing to ask.
+	 */
+	@Test
+	void aMissingOutcomeIsLeftAlone() {
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateOutcome(NAMESPACE, MUNICIPALITY_ID, null));
+		verifyNoInteractions(decisionOutcomeRepositoryMock);
+	}
+
+	@Test
+	void anOutcomeTheNamespaceHasRegisteredIsAccepted() {
+
+		// Arrange
+		when(decisionOutcomeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_ID, "APPROVAL")).thenReturn(true);
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateOutcome(NAMESPACE, MUNICIPALITY_ID, "APPROVAL"));
+	}
+
+	@Test
+	void anOutcomeTheNamespaceHasNotRegisteredIsABadRequest() {
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateOutcome(NAMESPACE, MUNICIPALITY_ID, "UNKNOWN"));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(problem.getMessage()).contains("UNKNOWN", NAMESPACE, MUNICIPALITY_ID);
 	}
 }

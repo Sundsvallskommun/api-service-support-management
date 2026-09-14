@@ -6,7 +6,6 @@ import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
@@ -33,7 +32,6 @@ class InvestigationEntityTest {
 	static void setup() {
 		registerValueGenerator(() -> now().plusDays(new Random().nextInt()), OffsetDateTime.class);
 		registerValueGenerator(() -> ItemStatus.values()[new Random().nextInt(ItemStatus.values().length)], ItemStatus.class);
-		registerValueGenerator(() -> DecisionOutcome.values()[new Random().nextInt(DecisionOutcome.values().length)], DecisionOutcome.class);
 	}
 
 	@Test
@@ -69,7 +67,7 @@ class InvestigationEntityTest {
 		final var startedAt = now().plusDays(1);
 		final var summary = "summary";
 		final var conclusion = "conclusion";
-		final var recommendation = DecisionOutcome.APPROVAL;
+		final var recommendation = "APPROVAL";
 		final var recommendationMotivation = "recommendationMotivation";
 		final var sections = List.of(InvestigationSectionEntity.create());
 		final var attachments = List.of(AttachmentEntity.create());

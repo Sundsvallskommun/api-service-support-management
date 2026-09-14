@@ -9,7 +9,6 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEnti
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.StatementOutcome;
 
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,7 +53,7 @@ class ErrandStatementMapperTest {
 		assertThat(result.getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(result.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(result.getStatus()).isEqualTo(ItemStatus.ACTIVE);
-		assertThat(result.getOutcome()).isEqualTo(StatementOutcome.SUPPORTS);
+		assertThat(result.getOutcome()).isEqualTo("SUPPORTS");
 		assertThat(result.getDueAt()).isEqualTo(dueAt);
 		assertThat(result.getSentAt()).isEqualTo(sentAt);
 		assertThat(result.getCounterpartyName()).isEqualTo("Miljokontoret");
@@ -90,7 +89,7 @@ class ErrandStatementMapperTest {
 		// Assert
 		assertThat(result).isSameAs(entity);
 		assertThat(result.getStatus()).isEqualTo(ItemStatus.ACTIVE);
-		assertThat(result.getOutcome()).isEqualTo(StatementOutcome.NO_RESPONSE);
+		assertThat(result.getOutcome()).isEqualTo("NO_RESPONSE");
 		assertThat(result.getCounterpartyName()).isEqualTo("new name");
 	}
 
@@ -102,7 +101,7 @@ class ErrandStatementMapperTest {
 			.withStatus(ItemStatus.ACTIVE)
 			.withTitle("title")
 			.withCounterpartyName("name")
-			.withOutcome(StatementOutcome.SUPPORTS);
+			.withOutcome("SUPPORTS");
 
 		// Act - a patch that says nothing about anything
 		final var result = updateStatementEntity(entity, Statement.create());
@@ -111,7 +110,7 @@ class ErrandStatementMapperTest {
 		assertThat(result.getStatus()).isEqualTo(ItemStatus.ACTIVE);
 		assertThat(result.getTitle()).isEqualTo("title");
 		assertThat(result.getCounterpartyName()).isEqualTo("name");
-		assertThat(result.getOutcome()).isEqualTo(StatementOutcome.SUPPORTS);
+		assertThat(result.getOutcome()).isEqualTo("SUPPORTS");
 	}
 
 	@Test
@@ -125,7 +124,7 @@ class ErrandStatementMapperTest {
 			.withStatus(ItemStatus.COMPLETED)
 			.withTitle("title")
 			.withCounterpartyName("name")
-			.withOutcome(StatementOutcome.OPPOSES)
+			.withOutcome("OPPOSES")
 			.withCreatedBy("jo12doe")
 			.withCreated(created)
 			.withVersion(3L)

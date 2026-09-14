@@ -8,7 +8,6 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
@@ -35,7 +34,6 @@ class DecisionEntityTest {
 	static void setup() {
 		registerValueGenerator(() -> now().plusDays(new Random().nextInt()), OffsetDateTime.class);
 		registerValueGenerator(() -> ItemStatus.values()[new Random().nextInt(ItemStatus.values().length)], ItemStatus.class);
-		registerValueGenerator(() -> DecisionOutcome.values()[new Random().nextInt(DecisionOutcome.values().length)], DecisionOutcome.class);
 		registerValueGenerator(() -> DecisionMethod.values()[new Random().nextInt(DecisionMethod.values().length)], DecisionMethod.class);
 		registerValueGenerator(() -> LocalDate.now().plusDays(new Random().nextInt(1000)), LocalDate.class);
 	}
@@ -69,7 +67,7 @@ class DecisionEntityTest {
 		final var created = now();
 		final var modified = now();
 		final var version = 1L;
-		final var outcome = DecisionOutcome.APPROVAL;
+		final var outcome = "APPROVAL";
 		final var method = DecisionMethod.MANUAL;
 		final var decidedBy = "jo12doe";
 		final var decidedByRole = "DELEGATE";

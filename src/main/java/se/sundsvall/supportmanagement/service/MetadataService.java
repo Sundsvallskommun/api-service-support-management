@@ -16,6 +16,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.metadata.AttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
+import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
@@ -24,18 +25,21 @@ import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
+import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
+import se.sundsvall.supportmanagement.integration.db.DecisionOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
+import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
@@ -57,6 +61,8 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCat
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReasonEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toDecisionOutcome;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toDecisionOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabels;
@@ -68,16 +74,20 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPha
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhaseTransitionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatementOutcome;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatementOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateAttachmentPurposeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateDecisionOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMeasureTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMetadataLabelEntities;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updatePhaseEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateRoleEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatementOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatusEntity;
 
 @Service
@@ -88,6 +98,7 @@ public class MetadataService {
 
 	private static final String CONTACT_REASON = "ContactReason";
 	private static final String CATEGORY = "Category";
+	private static final String DECISION_OUTCOME = "DecisionOutcome";
 	private static final String EXTERNAL_ID_TYPE = "ExternalIdType";
 	private static final String PHASE = "Phase";
 	private static final String PHASE_TRANSITION = "PhaseTransition";
@@ -95,6 +106,7 @@ public class MetadataService {
 	private static final String ATTACHMENT_PURPOSE = "AttachmentPurpose";
 	private static final String ATTACHMENT_PURPOSE_IN_USE = "AttachmentPurpose '%s' cannot be deleted because it is referenced by one or more attachments";
 	private static final String ROLE = "Role";
+	private static final String STATEMENT_OUTCOME = "StatementOutcome";
 	private static final String STATUS = "Status";
 	private static final String SORT_ORDER = "sortOrder";
 
@@ -104,6 +116,8 @@ public class MetadataService {
 	private final MeasureTypeRepository measureTypeRepository;
 	private final AttachmentPurposeRepository attachmentPurposeRepository;
 	private final AttachmentRepository attachmentRepository;
+	private final DecisionOutcomeRepository decisionOutcomeRepository;
+	private final StatementOutcomeRepository statementOutcomeRepository;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final PhaseRepository phaseRepository;
 	private final RoleRepository roleRepository;
@@ -118,6 +132,8 @@ public class MetadataService {
 		final MeasureTypeRepository measureTypeRepository,
 		final AttachmentPurposeRepository attachmentPurposeRepository,
 		final AttachmentRepository attachmentRepository,
+		final DecisionOutcomeRepository decisionOutcomeRepository,
+		final StatementOutcomeRepository statementOutcomeRepository,
 		final MetadataLabelRepository metadataLabelRepository,
 		final PhaseRepository phaseRepository,
 		final RoleRepository roleRepository,
@@ -130,6 +146,8 @@ public class MetadataService {
 		this.measureTypeRepository = measureTypeRepository;
 		this.attachmentPurposeRepository = attachmentPurposeRepository;
 		this.attachmentRepository = attachmentRepository;
+		this.decisionOutcomeRepository = decisionOutcomeRepository;
+		this.statementOutcomeRepository = statementOutcomeRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.phaseRepository = phaseRepository;
 		this.roleRepository = roleRepository;
@@ -152,6 +170,8 @@ public class MetadataService {
 			.withRoles(findRoles(namespace, municipalityId, Sort.unsorted()))
 			.withMeasureTypes(findMeasureTypes(namespace, municipalityId, null, Sort.unsorted()))
 			.withAttachmentPurposes(findAttachmentPurposes(namespace, municipalityId, Sort.unsorted()))
+			.withDecisionOutcomes(findDecisionOutcomes(namespace, municipalityId, Sort.unsorted()))
+			.withStatementOutcomes(findStatementOutcomes(namespace, municipalityId, Sort.unsorted()))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId, Sort.unsorted()))
 			.withContactReasons(findContactReasons(namespace, municipalityId, Sort.unsorted()))
 			.withPhases(findPhases(namespace, municipalityId));
@@ -726,5 +746,105 @@ public class MetadataService {
 		}
 		final var entity = updateAttachmentPurposeEntity(attachmentPurposeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), attachmentPurpose);
 		return toAttachmentPurpose(attachmentPurposeRepository.save(entity));
+	}
+
+	// =================================================================
+	// DecisionOutcome operations
+	// =================================================================
+
+	public String createDecisionOutcome(final String namespace, final String municipalityId, final DecisionOutcome decisionOutcome) {
+		if (decisionOutcomeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, decisionOutcome.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, decisionOutcome.getName(), namespace, municipalityId));
+		}
+
+		return decisionOutcomeRepository.save(toDecisionOutcomeEntity(namespace, municipalityId, decisionOutcome)).getId();
+	}
+
+	public DecisionOutcome getDecisionOutcome(final String namespace, final String municipalityId, final String id) {
+		if (!decisionOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, id, namespace, municipalityId));
+		}
+
+		return toDecisionOutcome(decisionOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
+	}
+
+	public List<DecisionOutcome> findDecisionOutcomes(final String namespace, final String municipalityId, final Sort sort) {
+		return decisionOutcomeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
+			.stream()
+			.map(MetadataMapper::toDecisionOutcome)
+			.toList();
+	}
+
+	/**
+	 * Removes the outcome from what may be given from now on. The decisions and recommendations already given it keep it,
+	 * the way an errand keeps a status that has been removed.
+	 */
+	public void deleteDecisionOutcome(final String namespace, final String municipalityId, final String id) {
+		if (!decisionOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, id, namespace, municipalityId));
+		}
+
+		decisionOutcomeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public DecisionOutcome updateDecisionOutcome(final String namespace, final String municipalityId, final String id, final DecisionOutcome decisionOutcome) {
+		if (!decisionOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, id, namespace, municipalityId));
+		}
+		if ((decisionOutcome.getName() != null) && decisionOutcomeRepository.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, decisionOutcome.getName(), id)) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, decisionOutcome.getName(), namespace, municipalityId));
+		}
+		final var entity = updateDecisionOutcomeEntity(decisionOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), decisionOutcome);
+		return toDecisionOutcome(decisionOutcomeRepository.save(entity));
+	}
+
+	// =================================================================
+	// StatementOutcome operations
+	// =================================================================
+
+	public String createStatementOutcome(final String namespace, final String municipalityId, final StatementOutcome statementOutcome) {
+		if (statementOutcomeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, statementOutcome.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, statementOutcome.getName(), namespace, municipalityId));
+		}
+
+		return statementOutcomeRepository.save(toStatementOutcomeEntity(namespace, municipalityId, statementOutcome)).getId();
+	}
+
+	public StatementOutcome getStatementOutcome(final String namespace, final String municipalityId, final String id) {
+		if (!statementOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, id, namespace, municipalityId));
+		}
+
+		return toStatementOutcome(statementOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
+	}
+
+	public List<StatementOutcome> findStatementOutcomes(final String namespace, final String municipalityId, final Sort sort) {
+		return statementOutcomeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
+			.stream()
+			.map(MetadataMapper::toStatementOutcome)
+			.toList();
+	}
+
+	/**
+	 * Removes the outcome from what may be given from now on. The statements already given it keep it, the way an errand
+	 * keeps a status that has been removed.
+	 */
+	public void deleteStatementOutcome(final String namespace, final String municipalityId, final String id) {
+		if (!statementOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, id, namespace, municipalityId));
+		}
+
+		statementOutcomeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public StatementOutcome updateStatementOutcome(final String namespace, final String municipalityId, final String id, final StatementOutcome statementOutcome) {
+		if (!statementOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, id, namespace, municipalityId));
+		}
+		if ((statementOutcome.getName() != null) && statementOutcomeRepository.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, statementOutcome.getName(), id)) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, statementOutcome.getName(), namespace, municipalityId));
+		}
+		final var entity = updateStatementOutcomeEntity(statementOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), statementOutcome);
+		return toStatementOutcome(statementOutcomeRepository.save(entity));
 	}
 }

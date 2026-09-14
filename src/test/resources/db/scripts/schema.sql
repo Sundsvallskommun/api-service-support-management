@@ -199,7 +199,6 @@
         version bigint default 0 not null,
         method varchar(16) not null check ((method in ('MANUAL','AUTOMATIC'))),
         namespace varchar(32) not null,
-        outcome varchar(32) not null check ((outcome in ('APPROVAL','PARTIAL_APPROVAL','REJECTION','DISMISSAL','DISCONTINUATION','OTHER'))),
         status varchar(32) not null check ((status in ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))),
         errand_process_id varchar(36),
         delegation_reference varchar(64),
@@ -212,6 +211,7 @@
         investigation_id varchar(255),
         legal_basis varchar(255),
         modified_by varchar(255),
+        outcome varchar(255) not null,
         title varchar(255),
         description longtext,
         justification longtext,
@@ -227,6 +227,19 @@
         decision_id varchar(255) not null,
         id varchar(255) not null,
         json_parameter_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table decision_outcome (
+        deprecated bit not null,
+        sort_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -370,7 +383,6 @@
         started_at datetime(6),
         version bigint default 0 not null,
         namespace varchar(32) not null,
-        recommendation varchar(32) check ((recommendation in ('APPROVAL','PARTIAL_APPROVAL','REJECTION','DISMISSAL','DISCONTINUATION','OTHER'))),
         status varchar(32) not null check ((status in ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))),
         type varchar(128),
         created_by varchar(255),
@@ -378,6 +390,7 @@
         id varchar(255) not null,
         investigator_user_id varchar(255),
         modified_by varchar(255),
+        recommendation varchar(255),
         title varchar(255),
         conclusion longtext,
         description longtext,
@@ -719,7 +732,6 @@
         sent_at datetime(6),
         version bigint default 0 not null,
         namespace varchar(32) not null,
-        outcome varchar(32) check ((outcome in ('SUPPORTS','SUPPORTS_WITH_CONDITIONS','NO_OBJECTION','OPPOSES','NOT_APPLICABLE','NO_RESPONSE'))),
         status varchar(32) not null check ((status in ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))),
         communication_id varchar(36),
         counterparty_external_id_type varchar(128),
@@ -731,6 +743,7 @@
         errand_id varchar(255) not null,
         id varchar(255) not null,
         modified_by varchar(255),
+        outcome varchar(255),
         title varchar(255),
         description longtext,
         question longtext,
@@ -747,6 +760,20 @@
         id varchar(255) not null,
         json_parameter_id varchar(255) not null,
         statement_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table statement_outcome (
+        deprecated bit not null,
+        responded bit not null,
+        sort_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -980,6 +1007,12 @@
 
     alter table if exists decision_json_parameter 
        add constraint uq_decision_json_parameter_json_parameter_id unique (json_parameter_id);
+
+    create index idx_decision_outcome_namespace_municipality_id 
+       on decision_outcome (namespace, municipality_id);
+
+    alter table if exists decision_outcome 
+       add constraint uq_decision_outcome_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
     create index idx_decision_term_decision_id 
        on decision_term (decision_id);
@@ -1319,6 +1352,12 @@
 
     alter table if exists statement_json_parameter 
        add constraint uq_statement_json_parameter_json_parameter_id unique (json_parameter_id);
+
+    create index idx_statement_outcome_namespace_municipality_id 
+       on statement_outcome (namespace, municipality_id);
+
+    alter table if exists statement_outcome 
+       add constraint uq_statement_outcome_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
     create index idx_namespace_municipality_id 
        on status (namespace, municipality_id);

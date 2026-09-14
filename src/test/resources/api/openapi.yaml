@@ -28,6 +28,10 @@ tags:
   description: User notifications operations
 - name: Metadata for attachment purposes
   description: Attachment purpose metadata operations
+- name: Metadata for decision outcomes
+  description: Decision outcome metadata operations
+- name: Metadata for statement outcomes
+  description: Statement outcome metadata operations
 - name: Handover
   description: Errand handover operations
 - name: Errand JSON Parameters
@@ -15032,6 +15036,252 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/decisionoutcomes:
+    get:
+      tags:
+      - Metadata for decision outcomes
+      summary: Get decision outcomes
+      description: Get all decision outcomes for the namespace and municipality
+      operationId: getDecisionOutcomes
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DecisionOutcome"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for decision outcomes
+      summary: Create decision outcome
+      description: Create new decision outcome for the namespace and municipality
+      operationId: createDecisionOutcome
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionOutcome"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/statementoutcomes:
+    get:
+      tags:
+      - Metadata for statement outcomes
+      summary: Get statement outcomes
+      description: Get all statement outcomes for the namespace and municipality
+      operationId: getStatementOutcomes
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatementOutcome"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for statement outcomes
+      summary: Create statement outcome
+      description: Create new statement outcome for the namespace and municipality
+      operationId: createStatementOutcome
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementOutcome"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/attachmentpurposes/{id}:
     get:
       tags:
@@ -15232,6 +15482,404 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/decisionoutcomes/{id}:
+    get:
+      tags:
+      - Metadata for decision outcomes
+      summary: Get decision outcome
+      description: "Get decision outcome matching namespace, municipality and id"
+      operationId: getDecisionOutcome
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Decision outcome id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionOutcome"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for decision outcomes
+      summary: Delete decision outcome
+      description: "Delete decision outcome matching namespace, municipality and id"
+      operationId: deleteDecisionOutcome
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Decision outcome id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Metadata for decision outcomes
+      summary: Update decision outcome
+      description: "Update decision outcome matching namespace, municipality and id"
+      operationId: updateDecisionOutcome
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Decision outcome id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionOutcome"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionOutcome"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/statementoutcomes/{id}:
+    get:
+      tags:
+      - Metadata for statement outcomes
+      summary: Get statement outcome
+      description: "Get statement outcome matching namespace, municipality and id"
+      operationId: getStatementOutcome
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Statement outcome id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementOutcome"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for statement outcomes
+      summary: Delete statement outcome
+      description: "Delete statement outcome matching namespace, municipality and\
+        \ id"
+      operationId: deleteStatementOutcome
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Statement outcome id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Metadata for statement outcomes
+      summary: Update statement outcome
+      description: "Update statement outcome matching namespace, municipality and\
+        \ id"
+      operationId: updateStatementOutcome
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Statement outcome id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementOutcome"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementOutcome"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
 components:
   schemas:
     Problem:
@@ -15398,11 +16046,13 @@ components:
             - METADATA_ATTACHMENT_PURPOSE
             - METADATA_CATEGORY
             - METADATA_CONTACT_REASON
+            - METADATA_DECISION_OUTCOME
             - METADATA_EXTERNAL_ID_TYPE
             - METADATA_LABEL
             - METADATA_MEASURE_TYPE
             - METADATA_PHASE
             - METADATA_ROLE
+            - METADATA_STATEMENT_OUTCOME
             - METADATA_STATUS
             - SUBSCRIBER
             - SUBSCRIPTION
@@ -15569,11 +16219,13 @@ components:
           - METADATA_ATTACHMENT_PURPOSE
           - METADATA_CATEGORY
           - METADATA_CONTACT_REASON
+          - METADATA_DECISION_OUTCOME
           - METADATA_EXTERNAL_ID_TYPE
           - METADATA_LABEL
           - METADATA_MEASURE_TYPE
           - METADATA_PHASE
           - METADATA_ROLE
+          - METADATA_STATEMENT_OUTCOME
           - METADATA_STATUS
           - SUBSCRIBER
           - SUBSCRIPTION
@@ -18830,6 +19482,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MeasureType"
+        decisionOutcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DecisionOutcome"
+        statementOutcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatementOutcome"
         contactReasons:
           type: array
           items:
@@ -19623,7 +20283,8 @@ components:
           - 2021-10-01T12:00:00Z
         outcome:
           type: string
-          description: Outcome of the decision
+          description: "Outcome of the decision, one of the decision outcomes registered\
+            \ for the namespace"
           examples:
           - APPROVAL
         method:
@@ -19742,6 +20403,59 @@ components:
           examples:
           - 0
           readOnly: true
+    DecisionOutcome:
+      type: object
+      description: DecisionOutcome model
+      properties:
+        id:
+          type: string
+          description: DecisionOutcome ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        name:
+          type: string
+          description: Name for the decision outcome. Used as key
+          examples:
+          - APPROVAL
+          minLength: 1
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the decision outcome
+          examples:
+          - Bifall
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the decision outcome
+          examples:
+          - 1
+        deprecated:
+          type: boolean
+          default: false
+          description: Indicates if the decision outcome is deprecated
+          examples:
+          - true
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the decision outcome was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the decision outcome was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+      required:
+      - name
     DecisionTerm:
       type: object
       description: Decision term model
@@ -19860,7 +20574,8 @@ components:
           type:
           - string
           - "null"
-          description: "The proposed decision, expressed in the language of the decision"
+          description: "The proposed decision, one of the decision outcomes registered\
+            \ for the namespace"
           examples:
           - APPROVAL
         recommendationMotivation:
@@ -20059,7 +20774,8 @@ components:
           type:
           - string
           - "null"
-          description: Outcome of the response
+          description: "Outcome of the response, one of the statement outcomes registered\
+            \ for the namespace"
           examples:
           - SUPPORTS
         responseText:
@@ -20112,6 +20828,68 @@ components:
           examples:
           - 0
           readOnly: true
+    StatementOutcome:
+      type: object
+      description: StatementOutcome model
+      properties:
+        id:
+          type: string
+          description: StatementOutcome ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        name:
+          type: string
+          description: Name for the statement outcome. Used as key
+          examples:
+          - SUPPORTS
+          minLength: 1
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the statement outcome
+          examples:
+          - Tillstyrker
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the statement outcome
+          examples:
+          - 1
+        responded:
+          type: boolean
+          default: true
+          description: "Indicates if the outcome means that the counterparty responded.\
+            \ A statement completed with such an outcome needs respondedAt, one completed\
+            \ with an outcome that does not - such as no response within the deadline\
+            \ - does not"
+          examples:
+          - true
+        deprecated:
+          type: boolean
+          default: false
+          description: Indicates if the statement outcome is deprecated
+          examples:
+          - true
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the statement outcome was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the statement outcome was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+      required:
+      - name
     UpdateErrandAttachmentRequest:
       type: object
       description: Writable properties of an errand attachment

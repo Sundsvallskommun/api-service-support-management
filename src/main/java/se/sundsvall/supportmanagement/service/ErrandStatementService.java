@@ -73,10 +73,11 @@ public class ErrandStatementService {
 	@Transactional
 	public String createErrandStatement(final String namespace, final String municipalityId, final String errandId, final Statement statement) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
+		statementValidator.validateOutcome(namespace, municipalityId, statement.getOutcome());
 
 		final var entity = toStatementEntity(statement, errandEntity, namespace, municipalityId)
 			.withCreatedBy(getCallerIdentity());
-		statementValidator.validate(entity);
+		statementValidator.validate(entity, true);
 
 		return statementRepository.save(entity).getId();
 	}
@@ -100,9 +101,10 @@ public class ErrandStatementService {
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 		logMissingIfMatch(ifMatch, "PATCH", namespace, municipalityId, errandId, statementId);
 		validateIfMatch(ifMatch, entity.getVersion());
+		statementValidator.validateOutcome(namespace, municipalityId, statement.getOutcome());
 
 		updateStatementEntity(entity, statement).setModifiedBy(getCallerIdentity());
-		statementValidator.validate(entity);
+		statementValidator.validate(entity, (statement.getStatus() != null) || (statement.getOutcome() != null));
 
 		return toStatement(statementRepository.saveAndFlush(entity));
 	}

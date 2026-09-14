@@ -66,14 +66,9 @@ public class Decision {
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime completedAt;
 
-	@Schema(description = "Outcome of the decision", examples = "APPROVAL")
+	@Schema(description = "Outcome of the decision, one of the decision outcomes registered for the namespace", examples = "APPROVAL")
 	@NotNull(groups = {
 		Default.class, OnCreate.class
-	})
-	@OneOf(value = {
-		"APPROVAL", "PARTIAL_APPROVAL", "REJECTION", "DISMISSAL", "DISCONTINUATION", "OTHER"
-	}, nullable = true, groups = {
-		Default.class, OnCreate.class, OnUpdate.class
 	})
 	private String outcome;
 

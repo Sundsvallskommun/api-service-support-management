@@ -8,7 +8,6 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
 
@@ -53,7 +52,7 @@ class ErrandInvestigationMapperTest {
 		assertThat(result.getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(result.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(result.getStatus()).isEqualTo(ItemStatus.ACTIVE);
-		assertThat(result.getRecommendation()).isEqualTo(DecisionOutcome.APPROVAL);
+		assertThat(result.getRecommendation()).isEqualTo("APPROVAL");
 		assertThat(result.getStartedAt()).isEqualTo(startedAt);
 	}
 
@@ -83,7 +82,7 @@ class ErrandInvestigationMapperTest {
 		// Assert
 		assertThat(result).isSameAs(entity);
 		assertThat(result.getStatus()).isEqualTo(ItemStatus.COMPLETED);
-		assertThat(result.getRecommendation()).isEqualTo(DecisionOutcome.REJECTION);
+		assertThat(result.getRecommendation()).isEqualTo("REJECTION");
 		assertThat(result.getSummary()).isEqualTo("new");
 	}
 
@@ -108,7 +107,7 @@ class ErrandInvestigationMapperTest {
 		final var entity = InvestigationEntity.create()
 			.withId("id")
 			.withStatus(ItemStatus.ACTIVE)
-			.withRecommendation(DecisionOutcome.PARTIAL_APPROVAL)
+			.withRecommendation("PARTIAL_APPROVAL")
 			.withVersion(2L)
 			.withSections(List.of(InvestigationSectionEntity.create().withId("sectionId").withSectionKey("financial").withAssessment(SectionAssessment.APPROVED)))
 			.withAttachments(List.of(AttachmentEntity.create().withId("attachmentId")));

@@ -13,6 +13,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
@@ -40,12 +41,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
@@ -86,6 +89,9 @@ class ErrandInvestigationServiceTest {
 
 	@Mock
 	private ArtefactJsonParameterService artefactJsonParameterServiceMock;
+
+	@Mock
+	private DecisionValidator decisionValidatorMock;
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
@@ -138,7 +144,8 @@ class ErrandInvestigationServiceTest {
 		final var investigation = Investigation.create()
 			.withType("SUITABILITY")
 			.withStatus("ACTIVE")
-			.withTitle("Investigation of suitability");
+			.withTitle("Investigation of suitability")
+			.withRecommendation("APPROVAL");
 		when(investigationRepositoryMock.save(any(InvestigationEntity.class))).thenAnswer(invocation -> invocation.<InvestigationEntity>getArgument(0).withId(INVESTIGATION_ID));
 
 		// Act
@@ -148,6 +155,7 @@ class ErrandInvestigationServiceTest {
 		assertThat(result).isEqualTo(INVESTIGATION_ID);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.INVESTIGATION, RW);
 		verifyNoMoreInteractions(accessControlServiceMock);
+		verify(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "APPROVAL");
 		verify(investigationRepositoryMock).save(investigationCaptor.capture());
 		final var saved = investigationCaptor.getValue();
 		assertThat(saved.getErrandEntity()).isSameAs(errandEntity);
@@ -156,7 +164,28 @@ class ErrandInvestigationServiceTest {
 		assertThat(saved.getType()).isEqualTo("SUITABILITY");
 		assertThat(saved.getStatus()).isEqualTo(ItemStatus.ACTIVE);
 		assertThat(saved.getTitle()).isEqualTo("Investigation of suitability");
+		assertThat(saved.getRecommendation()).isEqualTo("APPROVAL");
 		assertThat(saved.getCreatedBy()).isEqualTo(CALLER);
+	}
+
+	/**
+	 * The recommendation proposes a decision, so one the namespace has not registered as a decision outcome is refused
+	 * before anything is written.
+	 */
+	@Test
+	void createErrandInvestigationWithARecommendationTheNamespaceHasNotRegistered() {
+
+		// Arrange
+		mockErrand();
+		doThrow(Problem.valueOf(BAD_REQUEST, "not a valid decision outcome")).when(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "UNKNOWN");
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class,
+			() -> service.createErrandInvestigation(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, Investigation.create().withStatus("DRAFT").withRecommendation("UNKNOWN")));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		verifyNoInteractions(investigationRepositoryMock);
 	}
 
 	/**
@@ -294,6 +323,25 @@ class ErrandInvestigationServiceTest {
 		assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED);
 		assertThat(entity.getTitle()).isEqualTo("Investigation of suitability");
 		assertThat(entity.getModifiedBy()).isNull();
+		verifyNoInteractions(decisionValidatorMock);
+		verify(investigationRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	void updateErrandInvestigationWithARecommendationTheNamespaceHasNotRegistered() {
+
+		// Arrange
+		final var entity = mockInvestigation().withRecommendation("APPROVAL");
+		doThrow(Problem.valueOf(BAD_REQUEST, "not a valid decision outcome")).when(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "UNKNOWN");
+		final var investigation = Investigation.create().withRecommendation("UNKNOWN");
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class,
+			() -> service.updateErrandInvestigation(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID, null, investigation));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(entity.getRecommendation()).as("the patch is not applied").isEqualTo("APPROVAL");
 		verify(investigationRepositoryMock, never()).saveAndFlush(any());
 	}
 

@@ -52,6 +52,9 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
  * <p>
  * The sections are reached through their investigation the same way the investigation is reached through its errand,
  * and are cascaded by it - they have no life outside the investigation they belong to.
+ * <p>
+ * The recommendation proposes a decision, so it is held to the decision outcomes of the namespace through
+ * {@link DecisionValidator}.
  */
 @Service
 public class ErrandInvestigationService {
@@ -67,19 +70,21 @@ public class ErrandInvestigationService {
 	private final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository;
 	private final ArtefactAttachmentService artefactAttachmentService;
 	private final ArtefactJsonParameterService artefactJsonParameterService;
+	private final DecisionValidator decisionValidator;
 	private final AccessControlService accessControlService;
 	private final EntityManager entityManager;
 
 	ErrandInvestigationService(final ErrandsRepository errandsRepository, final InvestigationRepository investigationRepository,
 		final InvestigationJsonParameterRepository investigationJsonParameterRepository, final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository,
-		final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService, final AccessControlService accessControlService,
-		final EntityManager entityManager) {
+		final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService, final DecisionValidator decisionValidator,
+		final AccessControlService accessControlService, final EntityManager entityManager) {
 		this.errandsRepository = errandsRepository;
 		this.investigationRepository = investigationRepository;
 		this.investigationJsonParameterRepository = investigationJsonParameterRepository;
 		this.investigationSectionJsonParameterRepository = investigationSectionJsonParameterRepository;
 		this.artefactAttachmentService = artefactAttachmentService;
 		this.artefactJsonParameterService = artefactJsonParameterService;
+		this.decisionValidator = decisionValidator;
 		this.accessControlService = accessControlService;
 		this.entityManager = entityManager;
 	}
@@ -87,6 +92,7 @@ public class ErrandInvestigationService {
 	@Transactional
 	public String createErrandInvestigation(final String namespace, final String municipalityId, final String errandId, final Investigation investigation) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
+		decisionValidator.validateOutcome(namespace, municipalityId, investigation.getRecommendation());
 
 		final var entity = toInvestigationEntity(investigation, errandEntity, namespace, municipalityId)
 			.withCreatedBy(getCallerIdentity());
@@ -114,6 +120,7 @@ public class ErrandInvestigationService {
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 		logMissingIfMatch(ifMatch, "PATCH", namespace, municipalityId, errandId, investigationId);
 		validateIfMatch(ifMatch, entity.getVersion());
+		decisionValidator.validateOutcome(namespace, municipalityId, investigation.getRecommendation());
 
 		updateInvestigationEntity(entity, investigation).setModifiedBy(getCallerIdentity());
 

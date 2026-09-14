@@ -28,7 +28,6 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.StatementOutcome;
 
 /**
  * Errand Statements IT tests.
@@ -117,7 +116,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 		assertThat(statementRepository.findById(STATEMENT_ID)).get()
 			.satisfies(statement -> {
 				assertThat(statement.getStatus()).isEqualTo(ItemStatus.COMPLETED);
-				assertThat(statement.getOutcome()).isEqualTo(StatementOutcome.SUPPORTS);
+				assertThat(statement.getOutcome()).isEqualTo("SUPPORTS");
 				assertThat(statement.getResponseText()).isEqualTo("Miljökontoret har inget att erinra.");
 				assertThat(statement.getVersion()).as("the version moved, which is what the ETag carries").isEqualTo(1L);
 			});
@@ -222,5 +221,77 @@ class ErrandStatementsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A statement completed with an outcome the namespace registered as meaning no response - the deadline passed - needs
+	 * no time of response.
+	 */
+	@Test
+	void test14_completedWithAnOutcomeWithoutAResponse() {
+		setupCall()
+			.withServicePath(PATH + "/" + STATEMENT_ID)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(statementRepository.findById(STATEMENT_ID)).get()
+			.satisfies(statement -> {
+				assertThat(statement.getStatus()).isEqualTo(ItemStatus.COMPLETED);
+				assertThat(statement.getOutcome()).isEqualTo("NO_RESPONSE");
+				assertThat(statement.getRespondedAt()).isNull();
+			});
+	}
+
+	/**
+	 * Whereas one completed with an outcome registered as meaning a response needs the time it came.
+	 */
+	@Test
+	void test15_completedWithAnOutcomeMeaningAResponseRequiresRespondedAt() {
+		setupCall()
+			.withServicePath(PATH + "/" + STATEMENT_ID)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * The outcomes are the namespace's to register, and one it has not registered is refused rather than written.
+	 */
+	@Test
+	void test16_anOutcomeTheNamespaceHasNotRegisteredIsRejected() {
+		setupCall()
+			.withServicePath(PATH + "/" + STATEMENT_ID)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(statementRepository.findById(STATEMENT_ID)).get()
+			.satisfies(statement -> assertThat(statement.getOutcome()).isNull());
+	}
+
+	/**
+	 * How the namespace registers an outcome can change after a statement was completed with it. A later change that sets
+	 * neither the status nor the outcome is not held to the registration as it stands now.
+	 */
+	@Test
+	void test17_aCompletedStatementIsNotHeldToALaterRegistrationOfItsOutcome() {
+		jdbcTemplate.update("update statement set status = 'COMPLETED', outcome = 'NO_RESPONSE' where id = ?", STATEMENT_ID);
+		jdbcTemplate.update("update statement_outcome set responded = true where name = 'NO_RESPONSE'");
+
+		setupCall()
+			.withServicePath(PATH + "/" + STATEMENT_ID)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(statementRepository.findById(STATEMENT_ID)).get()
+			.satisfies(statement -> assertThat(statement.getResponseText()).isEqualTo("Inget svar inkom inom fristen."));
 	}
 }

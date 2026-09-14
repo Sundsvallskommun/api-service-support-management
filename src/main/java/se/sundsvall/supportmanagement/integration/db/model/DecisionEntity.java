@@ -23,7 +23,6 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.CascadeType.MERGE;
@@ -54,10 +53,9 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
 	foreignKey = @ForeignKey(name = "fk_decision_errand_id"))
 public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 
-	@Enumerated(STRING)
-	@JdbcTypeCode(VARCHAR)
-	@Column(name = "outcome", length = 32, nullable = false)
-	private DecisionOutcome outcome;
+	/** One of the decision outcomes the namespace has registered, see {@link DecisionOutcomeEntity}. */
+	@Column(name = "outcome", nullable = false)
+	private String outcome;
 
 	/** MANUAL or AUTOMATIC. The difference has to be answerable afterwards. */
 	@Enumerated(STRING)
@@ -143,15 +141,15 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 		return new DecisionEntity();
 	}
 
-	public DecisionOutcome getOutcome() {
+	public String getOutcome() {
 		return outcome;
 	}
 
-	public void setOutcome(final DecisionOutcome outcome) {
+	public void setOutcome(final String outcome) {
 		this.outcome = outcome;
 	}
 
-	public DecisionEntity withOutcome(final DecisionOutcome outcome) {
+	public DecisionEntity withOutcome(final String outcome) {
 		this.outcome = outcome;
 		return this;
 	}
@@ -360,7 +358,7 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 			return false;
 		}
 		final DecisionEntity that = (DecisionEntity) o;
-		return (outcome == that.outcome)
+		return Objects.equals(outcome, that.outcome)
 			&& (method == that.method)
 			&& Objects.equals(decidedBy, that.decidedBy)
 			&& Objects.equals(decidedByRole, that.decidedByRole)
@@ -382,7 +380,7 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@Override
 	public String toString() {
 		return "DecisionEntity{" + super.toString() +
-			", outcome=" + outcome +
+			", outcome='" + outcome + '\'' +
 			", method=" + method +
 			", decidedBy='" + decidedBy + '\'' +
 			", decidedByRole='" + decidedByRole + '\'' +

@@ -94,6 +94,7 @@ public class ErrandDecisionService {
 
 		decisionValidator.validateCardinality(namespace, municipalityId, errandId);
 		decisionValidator.validateMethod(ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).orElse(null));
+		decisionValidator.validateOutcome(namespace, municipalityId, decision.getOutcome());
 
 		final var investigationEntity = resolveInvestigation(namespace, municipalityId, errandId, decision.getInvestigationId());
 		final var entity = toDecisionEntity(decision, errandEntity, investigationEntity, namespace, municipalityId)
@@ -123,6 +124,7 @@ public class ErrandDecisionService {
 		validateIfMatch(ifMatch, entity.getVersion());
 
 		decisionValidator.validateMethod(ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).orElse(entity.getMethod()));
+		decisionValidator.validateOutcome(namespace, municipalityId, decision.getOutcome());
 
 		updateDecisionEntity(entity, decision).setModifiedBy(getCallerIdentity());
 		ofNullable(decision.getInvestigationId())

@@ -45,6 +45,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -52,8 +53,6 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.MANUAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome.APPROVAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome.REJECTION;
 
 /**
  * The decision itself and its terms - the attachment and JSON parameter side is ErrandDecisionServiceArtefactTest's.
@@ -178,6 +177,7 @@ class ErrandDecisionServiceTest {
 		inOrder.verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
 		inOrder.verify(decisionValidatorMock).validateCardinality(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		inOrder.verify(decisionValidatorMock).validateMethod(MANUAL);
+		inOrder.verify(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "APPROVAL");
 		inOrder.verify(decisionRepositoryMock).save(decisionEntityCaptor.capture());
 		verifyNoMoreInteractions(accessControlServiceMock, decisionValidatorMock);
 
@@ -187,7 +187,7 @@ class ErrandDecisionServiceTest {
 		assertThat(saved.getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(saved.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(saved.getMethod()).isEqualTo(MANUAL);
-		assertThat(saved.getOutcome()).isEqualTo(APPROVAL);
+		assertThat(saved.getOutcome()).isEqualTo("APPROVAL");
 		assertThat(saved.getCreatedBy()).isEqualTo(USER);
 	}
 
@@ -265,6 +265,25 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
+	 * An outcome the namespace has not registered is refused before anything is looked up or written.
+	 */
+	@Test
+	void createErrandDecisionWithAnOutcomeTheNamespaceHasNotRegistered() {
+
+		// Arrange
+		mockErrand();
+		doThrow(Problem.valueOf(BAD_REQUEST, "not a valid decision outcome")).when(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "APPROVAL");
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class,
+			() -> service.createErrandDecision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, decision().withInvestigationId(INVESTIGATION_ID)));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		verifyNoInteractions(investigationRepositoryMock, decisionRepositoryMock);
+	}
+
+	/**
 	 * Access is settled before the cardinality rule of the namespace is consulted, so a caller without access to the errand
 	 * cannot learn from a 409 whether it already holds a decision.
 	 */
@@ -288,7 +307,7 @@ class ErrandDecisionServiceTest {
 		// Arrange
 		mockDecision()
 			.withMethod(MANUAL)
-			.withOutcome(APPROVAL)
+			.withOutcome("APPROVAL")
 			.withInvestigationEntity(InvestigationEntity.create().withId(INVESTIGATION_ID))
 			.withTerms(List.of(term(TERM_ID, "text")));
 
@@ -357,7 +376,7 @@ class ErrandDecisionServiceTest {
 		final var investigationEntity = InvestigationEntity.create().withId(INVESTIGATION_ID);
 		final var entity = mockDecision()
 			.withTitle("old title")
-			.withOutcome(REJECTION)
+			.withOutcome("REJECTION")
 			.withMethod(MANUAL)
 			.withInvestigationEntity(investigationEntity);
 		when(decisionRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
@@ -374,6 +393,7 @@ class ErrandDecisionServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
 		verifyNoMoreInteractions(accessControlServiceMock);
 		verify(decisionValidatorMock).validateMethod(MANUAL);
+		verify(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, null);
 		verifyNoMoreInteractions(decisionValidatorMock);
 		verifyNoInteractions(investigationRepositoryMock);
 	}
@@ -480,6 +500,23 @@ class ErrandDecisionServiceTest {
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(FORBIDDEN);
 		assertThat(entity.getMethod()).isEqualTo(MANUAL);
+		verify(decisionRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	void updateErrandDecisionWithAnOutcomeTheNamespaceHasNotRegistered() {
+
+		// Arrange
+		final var entity = mockDecision().withOutcome("APPROVAL");
+		doThrow(Problem.valueOf(BAD_REQUEST, "not a valid decision outcome")).when(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "UNKNOWN");
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class,
+			() -> service.updateErrandDecision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, IF_MATCH, Decision.create().withOutcome("UNKNOWN")));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(entity.getOutcome()).as("the patch is not applied").isEqualTo("APPROVAL");
 		verify(decisionRepositoryMock, never()).saveAndFlush(any());
 	}
 

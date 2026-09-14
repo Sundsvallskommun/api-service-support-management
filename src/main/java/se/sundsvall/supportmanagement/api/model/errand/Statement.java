@@ -106,12 +106,7 @@ public class Statement {
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime respondedAt;
 
-	@Schema(description = "Outcome of the response", examples = "SUPPORTS", nullable = true)
-	@OneOf(value = {
-		"SUPPORTS", "SUPPORTS_WITH_CONDITIONS", "NO_OBJECTION", "OPPOSES", "NOT_APPLICABLE", "NO_RESPONSE"
-	}, nullable = true, groups = {
-		Default.class, OnCreate.class, OnUpdate.class
-	})
+	@Schema(description = "Outcome of the response, one of the statement outcomes registered for the namespace", examples = "SUPPORTS", nullable = true)
 	private String outcome;
 
 	@Schema(description = "The response text", examples = "Miljökontoret har inget att erinra.")

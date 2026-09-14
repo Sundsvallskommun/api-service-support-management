@@ -7,6 +7,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -28,7 +29,6 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 
 /**
  * Errand Decisions IT tests, including the terms a decision carries, the attachments linked to it and the JSON
@@ -84,7 +84,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 		assertThat(decisionRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
 			.as("the errand now holds two decisions, which the namespace has not forbidden")
 			.hasSize(2)
-			.filteredOn(decision -> DecisionOutcome.PARTIAL_APPROVAL.equals(decision.getOutcome()))
+			.filteredOn(decision -> "PARTIAL_APPROVAL".equals(decision.getOutcome()))
 			.singleElement()
 			.satisfies(decision -> assertThat(decision.getCreatedBy()).isEqualTo("joe01doe"));
 	}
@@ -122,7 +122,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 
 		assertThat(decisionRepository.findById(DECISION_ID)).get()
 			.satisfies(decision -> {
-				assertThat(decision.getOutcome()).isEqualTo(DecisionOutcome.PARTIAL_APPROVAL);
+				assertThat(decision.getOutcome()).isEqualTo("PARTIAL_APPROVAL");
 				assertThat(decision.getJustification()).isEqualTo("Tillstånd ges för del av lokalen.");
 				assertThat(decision.getVersion()).isEqualTo(1L);
 			});
@@ -343,6 +343,23 @@ class ErrandDecisionsIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CONFLICT)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(decisionRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).hasSize(1);
+	}
+
+	/**
+	 * The outcomes are the namespace's to register, and one it has not registered is refused rather than written.
+	 */
+	@Test
+	void test22_anOutcomeTheNamespaceHasNotRegisteredIsRejected() {
+		setupCall()
+			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
+			.withServicePath(PATH)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
 		assertThat(decisionRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).hasSize(1);

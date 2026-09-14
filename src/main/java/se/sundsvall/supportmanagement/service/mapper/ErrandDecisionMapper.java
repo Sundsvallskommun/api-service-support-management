@@ -8,7 +8,6 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 
 import static java.util.Collections.emptyList;
@@ -35,7 +34,7 @@ public final class ErrandDecisionMapper {
 			.withDescription(decision.getDescription())
 			.withDueAt(decision.getDueAt())
 			.withCompletedAt(decision.getCompletedAt())
-			.withOutcome(ofNullable(decision.getOutcome()).map(DecisionOutcome::valueOf).orElse(null))
+			.withOutcome(decision.getOutcome())
 			.withMethod(ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).orElse(null))
 			.withDecidedBy(decision.getDecidedBy())
 			.withDecidedByRole(decision.getDecidedByRole())
@@ -56,7 +55,7 @@ public final class ErrandDecisionMapper {
 		ofNullable(decision.getDescription()).ifPresent(entity::setDescription);
 		ofNullable(decision.getDueAt()).ifPresent(entity::setDueAt);
 		ofNullable(decision.getCompletedAt()).ifPresent(entity::setCompletedAt);
-		ofNullable(decision.getOutcome()).map(DecisionOutcome::valueOf).ifPresent(entity::setOutcome);
+		ofNullable(decision.getOutcome()).ifPresent(entity::setOutcome);
 		ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).ifPresent(entity::setMethod);
 		ofNullable(decision.getDecidedBy()).ifPresent(entity::setDecidedBy);
 		ofNullable(decision.getDecidedByRole()).ifPresent(entity::setDecidedByRole);
@@ -80,7 +79,7 @@ public final class ErrandDecisionMapper {
 				.withDescription(e.getDescription())
 				.withDueAt(e.getDueAt())
 				.withCompletedAt(e.getCompletedAt())
-				.withOutcome(ofNullable(e.getOutcome()).map(Enum::name).orElse(null))
+				.withOutcome(e.getOutcome())
 				.withMethod(ofNullable(e.getMethod()).map(Enum::name).orElse(null))
 				.withDecidedBy(e.getDecidedBy())
 				.withDecidedByRole(e.getDecidedByRole())

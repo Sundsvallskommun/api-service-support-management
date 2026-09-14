@@ -78,12 +78,7 @@ public class Investigation {
 	@Schema(description = "The overall assessment", examples = "Sökanden bedöms uppfylla kraven.")
 	private String conclusion;
 
-	@Schema(description = "The proposed decision, expressed in the language of the decision", examples = "APPROVAL", nullable = true)
-	@OneOf(value = {
-		"APPROVAL", "PARTIAL_APPROVAL", "REJECTION", "DISMISSAL", "DISCONTINUATION", "OTHER"
-	}, nullable = true, groups = {
-		Default.class, OnCreate.class, OnUpdate.class
-	})
+	@Schema(description = "The proposed decision, one of the decision outcomes registered for the namespace", examples = "APPROVAL", nullable = true)
 	private String recommendation;
 
 	@Schema(description = "Motivation for the recommendation", examples = "Inga brister har konstaterats.")

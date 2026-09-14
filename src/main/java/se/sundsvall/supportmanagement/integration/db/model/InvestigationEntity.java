@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import jakarta.persistence.AssociationOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -16,16 +15,12 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.TimeZoneStorage;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.EnumType.STRING;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
-import static org.hibernate.type.SqlTypes.VARCHAR;
 
 /**
  * An investigation of an errand.
@@ -61,13 +56,12 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 	private String conclusion;
 
 	/**
-	 * The proposed decision, expressed in the language of the decision. The same enum as {@code DecisionEntity.outcome}
-	 * on purpose: it makes it answerable how often the decision follows what the investigation proposed.
+	 * The proposed decision, expressed in the language of the decision: one of the decision outcomes the namespace has
+	 * registered, like {@code DecisionEntity.outcome}. The same outcomes on purpose - it makes it answerable how often the
+	 * decision follows what the investigation proposed.
 	 */
-	@Enumerated(STRING)
-	@JdbcTypeCode(VARCHAR)
-	@Column(name = "recommendation", length = 32)
-	private DecisionOutcome recommendation;
+	@Column(name = "recommendation")
+	private String recommendation;
 
 	@Column(name = "recommendation_motivation", length = LONG32)
 	private String recommendationMotivation;
@@ -156,15 +150,15 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 		return this;
 	}
 
-	public DecisionOutcome getRecommendation() {
+	public String getRecommendation() {
 		return recommendation;
 	}
 
-	public void setRecommendation(final DecisionOutcome recommendation) {
+	public void setRecommendation(final String recommendation) {
 		this.recommendation = recommendation;
 	}
 
-	public InvestigationEntity withRecommendation(final DecisionOutcome recommendation) {
+	public InvestigationEntity withRecommendation(final String recommendation) {
 		this.recommendation = recommendation;
 		return this;
 	}
@@ -234,7 +228,7 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 			&& Objects.equals(startedAt, that.startedAt)
 			&& Objects.equals(summary, that.summary)
 			&& Objects.equals(conclusion, that.conclusion)
-			&& (recommendation == that.recommendation)
+			&& Objects.equals(recommendation, that.recommendation)
 			&& Objects.equals(recommendationMotivation, that.recommendationMotivation);
 	}
 
@@ -250,7 +244,7 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 			", startedAt=" + startedAt +
 			", summary='" + summary + '\'' +
 			", conclusion='" + conclusion + '\'' +
-			", recommendation=" + recommendation +
+			", recommendation='" + recommendation + '\'' +
 			", recommendationMotivation='" + recommendationMotivation + '\'' +
 			'}';
 	}

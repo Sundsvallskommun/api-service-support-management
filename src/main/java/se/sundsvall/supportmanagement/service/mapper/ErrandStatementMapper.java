@@ -5,7 +5,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.StatementOutcome;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -34,7 +33,7 @@ public final class ErrandStatementMapper {
 			.withSentAt(statement.getSentAt())
 			.withRemindedAt(statement.getRemindedAt())
 			.withRespondedAt(statement.getRespondedAt())
-			.withOutcome(ofNullable(statement.getOutcome()).map(StatementOutcome::valueOf).orElse(null))
+			.withOutcome(statement.getOutcome())
 			.withResponseText(statement.getResponseText())
 			.withCommunicationId(statement.getCommunicationId());
 	}
@@ -58,7 +57,7 @@ public final class ErrandStatementMapper {
 		ofNullable(statement.getSentAt()).ifPresent(entity::setSentAt);
 		ofNullable(statement.getRemindedAt()).ifPresent(entity::setRemindedAt);
 		ofNullable(statement.getRespondedAt()).ifPresent(entity::setRespondedAt);
-		ofNullable(statement.getOutcome()).map(StatementOutcome::valueOf).ifPresent(entity::setOutcome);
+		ofNullable(statement.getOutcome()).ifPresent(entity::setOutcome);
 		ofNullable(statement.getResponseText()).ifPresent(entity::setResponseText);
 		ofNullable(statement.getCommunicationId()).ifPresent(entity::setCommunicationId);
 		return entity;
@@ -82,7 +81,7 @@ public final class ErrandStatementMapper {
 				.withSentAt(e.getSentAt())
 				.withRemindedAt(e.getRemindedAt())
 				.withRespondedAt(e.getRespondedAt())
-				.withOutcome(ofNullable(e.getOutcome()).map(Enum::name).orElse(null))
+				.withOutcome(e.getOutcome())
 				.withResponseText(e.getResponseText())
 				.withCommunicationId(e.getCommunicationId())
 				.withAttachments(toArtefactAttachments(e.getAttachments()))

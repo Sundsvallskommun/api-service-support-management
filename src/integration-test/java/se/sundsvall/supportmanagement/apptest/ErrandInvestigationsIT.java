@@ -7,6 +7,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -27,7 +28,6 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
 
@@ -118,7 +118,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 		assertThat(investigationRepository.findById(INVESTIGATION_ID)).get()
 			.satisfies(investigation -> {
 				assertThat(investigation.getStatus()).isEqualTo(ItemStatus.COMPLETED);
-				assertThat(investigation.getRecommendation()).isEqualTo(DecisionOutcome.APPROVAL);
+				assertThat(investigation.getRecommendation()).isEqualTo("APPROVAL");
 				assertThat(investigation.getVersion()).isEqualTo(1L);
 			});
 	}
@@ -364,6 +364,23 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 
 		assertThat(parametersWithKey("sectionForm")).isZero();
 		assertThat(sections(SECTION_ID)).as("the section stayed").isOne();
+	}
+
+	/**
+	 * The recommendation proposes a decision, and is held to the decision outcomes the namespace has registered.
+	 */
+	@Test
+	void test25_aRecommendationTheNamespaceHasNotRegisteredIsRejected() {
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select recommendation from investigation where id = ?", String.class, INVESTIGATION_ID))
+			.as("the recommendation was not written").isNull();
 	}
 
 	/** Read with SQL rather than through JPA: the collections of a loaded entity are lazy, and the test has no session. */

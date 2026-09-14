@@ -137,7 +137,8 @@ class ErrandStatementServiceTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
 
 		final var inOrder = inOrder(statementValidatorMock, statementRepositoryMock);
-		inOrder.verify(statementValidatorMock).validate(statementEntityCaptor.capture());
+		inOrder.verify(statementValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, null);
+		inOrder.verify(statementValidatorMock).validate(statementEntityCaptor.capture(), eq(true));
 		inOrder.verify(statementRepositoryMock).save(same(statementEntityCaptor.getValue()));
 		assertThat(statementEntityCaptor.getValue()).satisfies(saved -> {
 			assertThat(saved.getErrandEntity()).isSameAs(errandEntity);
@@ -157,7 +158,7 @@ class ErrandStatementServiceTest {
 	void createErrandStatementRejectedByValidator() {
 
 		// Arrange
-		doThrow(Problem.valueOf(BAD_REQUEST, "A statement cannot be ACTIVE without sentAt being set")).when(statementValidatorMock).validate(any());
+		doThrow(Problem.valueOf(BAD_REQUEST, "A statement cannot be ACTIVE without sentAt being set")).when(statementValidatorMock).validate(any(), anyBoolean());
 
 		// Act
 		final var problem = catchThrowableOfType(ThrowableProblem.class,
@@ -165,6 +166,25 @@ class ErrandStatementServiceTest {
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		verifyNoInteractions(statementRepositoryMock);
+	}
+
+	/**
+	 * An outcome the namespace has not registered is refused before the statement is built, let alone saved.
+	 */
+	@Test
+	void createErrandStatementWithAnOutcomeTheNamespaceHasNotRegistered() {
+
+		// Arrange
+		doThrow(Problem.valueOf(BAD_REQUEST, "not a valid statement outcome")).when(statementValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "UNKNOWN");
+		final var statement = Statement.create().withStatus("COMPLETED").withOutcome("UNKNOWN").withCounterpartyName(COUNTERPARTY_NAME);
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.createErrandStatement(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, statement));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		verify(statementValidatorMock, never()).validate(any(), anyBoolean());
 		verifyNoInteractions(statementRepositoryMock);
 	}
 
@@ -233,7 +253,7 @@ class ErrandStatementServiceTest {
 		doAnswer(invocation -> {
 			statusWhenValidated.set(invocation.<StatementEntity>getArgument(0).getStatus());
 			return null;
-		}).when(statementValidatorMock).validate(entity);
+		}).when(statementValidatorMock).validate(entity, true);
 		when(statementRepositoryMock.saveAndFlush(entity)).thenAnswer(invocation -> invocation.<StatementEntity>getArgument(0).withVersion(4L));
 
 		// Act
@@ -247,7 +267,7 @@ class ErrandStatementServiceTest {
 		assertThat(entity.getModifiedBy()).isEqualTo(USER);
 
 		final var inOrder = inOrder(statementValidatorMock, statementRepositoryMock);
-		inOrder.verify(statementValidatorMock).validate(entity);
+		inOrder.verify(statementValidatorMock).validate(entity, true);
 		inOrder.verify(statementRepositoryMock).saveAndFlush(entity);
 		assertThat(result.getStatus()).isEqualTo("ACTIVE");
 		assertThat(result.getVersion()).as("the version the flush wrote, which the ETag of the response carries").isEqualTo(4L);
@@ -268,7 +288,7 @@ class ErrandStatementServiceTest {
 
 		// Verify
 		assertThat(result.getTitle()).isEqualTo("title");
-		verify(statementValidatorMock).validate(entity);
+		verify(statementValidatorMock).validate(entity, false);
 	}
 
 	/**
@@ -296,7 +316,7 @@ class ErrandStatementServiceTest {
 
 		// Arrange
 		final var entity = mockStatement();
-		doThrow(Problem.valueOf(BAD_REQUEST, "A statement cannot be ACTIVE without sentAt being set")).when(statementValidatorMock).validate(entity);
+		doThrow(Problem.valueOf(BAD_REQUEST, "A statement cannot be ACTIVE without sentAt being set")).when(statementValidatorMock).validate(entity, true);
 
 		// Act
 		final var problem = catchThrowableOfType(ThrowableProblem.class,
@@ -304,6 +324,25 @@ class ErrandStatementServiceTest {
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		verify(statementRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	void updateErrandStatementWithAnOutcomeTheNamespaceHasNotRegistered() {
+
+		// Arrange
+		final var entity = mockStatement().withStatus(ItemStatus.COMPLETED).withOutcome("SUPPORTS");
+		doThrow(Problem.valueOf(BAD_REQUEST, "not a valid statement outcome")).when(statementValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "UNKNOWN");
+		final var statement = Statement.create().withOutcome("UNKNOWN");
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class,
+			() -> service.updateErrandStatement(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, null, statement));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(entity.getOutcome()).as("the patch is not applied").isEqualTo("SUPPORTS");
+		verify(statementValidatorMock, never()).validate(any(), anyBoolean());
 		verify(statementRepositoryMock, never()).saveAndFlush(any());
 	}
 

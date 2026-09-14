@@ -675,6 +675,19 @@ VALUES ('f6000000-0000-0000-0000-000000000001', 'SUPPORTING', 'Underlag', 1, fal
        ('f6000000-0000-0000-0000-000000000005', 'PROTOCOL', 'Protokoll', 5, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000');
 
 -- -----------------------------------
+-- Decision and statement outcomes (metadata)
+-- -----------------------------------
+INSERT INTO decision_outcome(id, name, display_name, sort_order, deprecated, namespace, municipality_id, created)
+VALUES ('d0000000-0000-0000-0000-000000000001', 'APPROVAL', 'Bifall', 1, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('d0000000-0000-0000-0000-000000000002', 'PARTIAL_APPROVAL', 'Delvis bifall', 2, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('d0000000-0000-0000-0000-000000000003', 'REJECTION', 'Avslag', 3, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000');
+
+INSERT INTO statement_outcome(id, name, display_name, sort_order, responded, deprecated, namespace, municipality_id, created)
+VALUES ('d1000000-0000-0000-0000-000000000001', 'SUPPORTS', 'Tillstyrker', 1, true, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('d1000000-0000-0000-0000-000000000002', 'OPPOSES', 'Avstyrker', 2, true, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('d1000000-0000-0000-0000-000000000003', 'NO_RESPONSE', 'Inget svar inom fristen', 3, false, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000');
+
+-- -----------------------------------
 -- An attachment of its own for the cascade tests.
 --
 -- The attachments seeded for NAMESPACE-1 share their data rows with communications, and removing one of those takes

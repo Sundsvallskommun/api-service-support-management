@@ -78,5 +78,7 @@ TRUNCATE table investigation_section_json_parameter;
 TRUNCATE table decision_json_parameter;
 TRUNCATE table measure_json_parameter;
 TRUNCATE table attachment_purpose;
+TRUNCATE table decision_outcome;
+TRUNCATE table statement_outcome;
 TRUNCATE table job;
 SET FOREIGN_KEY_CHECKS = 1;

@@ -11,7 +11,6 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 
 import static java.time.OffsetDateTime.now;
@@ -61,7 +60,7 @@ class ErrandDecisionMapperTest {
 		assertThat(result.getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(result.getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(result.getStatus()).isEqualTo(ItemStatus.COMPLETED);
-		assertThat(result.getOutcome()).isEqualTo(DecisionOutcome.APPROVAL);
+		assertThat(result.getOutcome()).isEqualTo("APPROVAL");
 		assertThat(result.getMethod()).isEqualTo(DecisionMethod.MANUAL);
 		assertThat(result.getDecidedAt()).isEqualTo(decidedAt);
 		assertThat(result.getValidFrom()).isEqualTo(LocalDate.of(2024, 3, 1));
@@ -84,7 +83,7 @@ class ErrandDecisionMapperTest {
 	void testUpdateDecisionEntity() {
 
 		// Arrange
-		final var entity = DecisionEntity.create().withOutcome(DecisionOutcome.REJECTION).withJustification("old");
+		final var entity = DecisionEntity.create().withOutcome("REJECTION").withJustification("old");
 
 		// Act
 		final var result = updateDecisionEntity(entity, Decision.create()
@@ -95,7 +94,7 @@ class ErrandDecisionMapperTest {
 
 		// Assert
 		assertThat(result).isSameAs(entity);
-		assertThat(result.getOutcome()).isEqualTo(DecisionOutcome.APPROVAL);
+		assertThat(result.getOutcome()).isEqualTo("APPROVAL");
 		assertThat(result.getMethod()).isEqualTo(DecisionMethod.AUTOMATIC);
 		assertThat(result.getStatus()).isEqualTo(ItemStatus.COMPLETED);
 		assertThat(result.getJustification()).isEqualTo("new");
@@ -106,7 +105,7 @@ class ErrandDecisionMapperTest {
 
 		// Arrange
 		final var entity = DecisionEntity.create()
-			.withOutcome(DecisionOutcome.APPROVAL)
+			.withOutcome("APPROVAL")
 			.withMethod(DecisionMethod.MANUAL)
 			.withJustification("justification");
 
@@ -114,7 +113,7 @@ class ErrandDecisionMapperTest {
 		final var result = updateDecisionEntity(entity, Decision.create());
 
 		// Assert
-		assertThat(result.getOutcome()).isEqualTo(DecisionOutcome.APPROVAL);
+		assertThat(result.getOutcome()).isEqualTo("APPROVAL");
 		assertThat(result.getMethod()).isEqualTo(DecisionMethod.MANUAL);
 		assertThat(result.getJustification()).isEqualTo("justification");
 	}
@@ -126,7 +125,7 @@ class ErrandDecisionMapperTest {
 		final var entity = DecisionEntity.create()
 			.withId("id")
 			.withStatus(ItemStatus.COMPLETED)
-			.withOutcome(DecisionOutcome.DISMISSAL)
+			.withOutcome("DISMISSAL")
 			.withMethod(DecisionMethod.AUTOMATIC)
 			.withInvestigationEntity(InvestigationEntity.create().withId("investigationId"))
 			.withErrandProcessId("processId")
