@@ -10109,8 +10109,22 @@ paths:
               style: simple
               schema:
                 type: string
+        "403":
+          description: "Forbidden - the method does not match who writes the decision:\
+            \ MANUAL requires an AD account, AUTOMATIC a consumer"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict - the namespace allows a single decision per errand,\
+            \ and the errand already has one"
           content:
             application/problem+json:
               schema:
@@ -10361,6 +10375,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Decision"
+        "403":
+          description: "Forbidden - the method does not match who writes the decision:\
+            \ MANUAL requires an AD account, AUTOMATIC a consumer"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
           content:
