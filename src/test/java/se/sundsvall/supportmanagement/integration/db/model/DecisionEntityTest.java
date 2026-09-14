@@ -83,7 +83,7 @@ class DecisionEntityTest {
 		final var investigationEntity = InvestigationEntity.create().withId("investigationId");
 		final var errandProcessId = "errandProcessId";
 		final var terms = List.of(DecisionTermEntity.create());
-		final var attachments = List.of(DecisionAttachmentEntity.create());
+		final var attachments = List.of(AttachmentEntity.create());
 		final var jsonParameterLinks = List.of(DecisionJsonParameterEntity.create());
 
 		// Act

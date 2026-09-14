@@ -64,7 +64,7 @@ class ErrandAttachmentMapperTest {
 
 			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, null);
 
-			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "purpose", "attachmentDataId", "statementLinks", "investigationLinks", "decisionLinks", "measureLinks");
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "purpose", "attachmentDataId");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
@@ -108,7 +108,7 @@ class ErrandAttachmentMapperTest {
 
 			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, FILE_NAME, fileSize, "MY_PAGES");
 
-			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "purpose", "attachmentDataId", "statementLinks", "investigationLinks", "decisionLinks", "measureLinks");
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "purpose", "attachmentDataId");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);

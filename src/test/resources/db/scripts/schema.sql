@@ -219,13 +219,8 @@
     ) engine=InnoDB;
 
     create table decision_attachment (
-        sort_order integer,
-        created datetime(6),
         attachment_id varchar(255) not null,
-        created_by varchar(255),
-        decision_id varchar(255) not null,
-        id varchar(255) not null,
-        primary key (id)
+        decision_id varchar(255) not null
     ) engine=InnoDB;
 
     create table decision_json_parameter (
@@ -392,13 +387,8 @@
     ) engine=InnoDB;
 
     create table investigation_attachment (
-        sort_order integer,
-        created datetime(6),
         attachment_id varchar(255) not null,
-        created_by varchar(255),
-        id varchar(255) not null,
-        investigation_id varchar(255) not null,
-        primary key (id)
+        investigation_id varchar(255) not null
     ) engine=InnoDB;
 
     create table investigation_json_parameter (
@@ -488,13 +478,8 @@
     ) engine=InnoDB;
 
     create table measure_attachment (
-        sort_order integer,
-        created datetime(6),
         attachment_id varchar(255) not null,
-        created_by varchar(255),
-        id varchar(255) not null,
-        measure_id varchar(255) not null,
-        primary key (id)
+        measure_id varchar(255) not null
     ) engine=InnoDB;
 
     create table measure_json_parameter (
@@ -754,13 +739,8 @@
     ) engine=InnoDB;
 
     create table statement_attachment (
-        sort_order integer,
-        created datetime(6),
         attachment_id varchar(255) not null,
-        created_by varchar(255),
-        id varchar(255) not null,
-        statement_id varchar(255) not null,
-        primary key (id)
+        statement_id varchar(255) not null
     ) engine=InnoDB;
 
     create table statement_json_parameter (

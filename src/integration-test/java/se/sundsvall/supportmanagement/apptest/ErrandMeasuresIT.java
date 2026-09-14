@@ -169,7 +169,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	@Test
 	void test07_uploadMeasureAttachment() throws Exception {
 		setupCall()
-			.withServicePath(ARTEFACT_MEASURE_PATH + "/attachments?sortOrder=2")
+			.withServicePath(ARTEFACT_MEASURE_PATH + "/attachments")
 			.withHttpMethod(POST)
 			.withContentType(MULTIPART_FORM_DATA)
 			.withRequestFile("attachment", "test.txt")
@@ -186,27 +186,12 @@ class ErrandMeasuresIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
 			.withServicePath(ARTEFACT_MEASURE_PATH + "/attachments/" + UNLINKED_ATTACHMENT_ID)
 			.withHttpMethod(POST)
-			.withRequest("{\"sortOrder\":2}")
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(ARTEFACT_ERRAND_PATH + "/attachments/" + UNLINKED_ATTACHMENT_ID))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
 		assertThat(attachmentLinks()).isEqualTo(2);
-	}
-
-	@Test
-	void test09_updateMeasureAttachment() {
-		setupCall()
-			.withServicePath(ARTEFACT_MEASURE_PATH + "/attachments/" + LINKED_ATTACHMENT_ID)
-			.withHttpMethod(PATCH)
-			.withRequest("{\"sortOrder\":5}")
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-
-		assertThat(jdbcTemplate.queryForObject("select sort_order from measure_attachment where measure_id = ? and attachment_id = ?", Integer.class, ARTEFACT_MEASURE_ID, LINKED_ATTACHMENT_ID))
-			.as("the new order reached the database").isEqualTo(5);
 	}
 
 	@Test

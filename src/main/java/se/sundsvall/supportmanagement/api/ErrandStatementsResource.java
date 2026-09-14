@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,7 +31,6 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachmentLink;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameter;
@@ -62,7 +60,7 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.formatOrNull;
  * The attachments have no read operation here on purpose. An attachment linked to a statement <em>is</em> an attachment
  * of the errand, and is read - content and all - through
  * {@code GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}}. What this resource adds is
- * which attachments belong to the statement and in what order they are shown.
+ * which attachments belong to the statement.
  */
 @RestController
 @Validated
@@ -168,10 +166,9 @@ class ErrandStatementsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "statementId", description = "Statement id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String statementId,
-		@Parameter(name = "sortOrder", description = "Order the attachment is shown in") @RequestParam(required = false) final Integer sortOrder,
 		@NotNull @RequestPart("attachment") final MultipartFile attachment) {
 
-		final var attachmentId = service.createStatementAttachment(namespace, municipalityId, errandId, statementId, attachment, sortOrder);
+		final var attachmentId = service.createStatementAttachment(namespace, municipalityId, errandId, statementId, attachment);
 
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}")
 			.buildAndExpand(municipalityId, namespace, errandId, attachmentId).toUri())
@@ -179,7 +176,7 @@ class ErrandStatementsResource {
 			.build();
 	}
 
-	@PostMapping(path = "/{statementId}/attachments/{attachmentId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@PostMapping(path = "/{statementId}/attachments/{attachmentId}", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Link statement attachment", description = "Links an attachment already on the errand to the statement", responses = {
 		@ApiResponse(responseCode = "201", description = "Successful operation", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
@@ -190,29 +187,12 @@ class ErrandStatementsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "statementId", description = "Statement id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String statementId,
-		@Parameter(name = "attachmentId", description = "Attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String attachmentId,
-		@Valid @NotNull @RequestBody final ArtefactAttachmentLink link) {
+		@Parameter(name = "attachmentId", description = "Attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String attachmentId) {
 
-		final var result = service.linkStatementAttachment(namespace, municipalityId, errandId, statementId, attachmentId, link);
+		final var result = service.linkStatementAttachment(namespace, municipalityId, errandId, statementId, attachmentId);
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}")
 			.buildAndExpand(municipalityId, namespace, errandId, attachmentId).toUri())
 			.body(result);
-	}
-
-	@PatchMapping(path = "/{statementId}/attachments/{attachmentId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Update statement attachment link", description = "Updates the order a linked attachment is shown in", responses = {
-		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
-		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	})
-	ResponseEntity<ArtefactAttachment> updateStatementAttachment(
-		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Parameter(name = "statementId", description = "Statement id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String statementId,
-		@Parameter(name = "attachmentId", description = "Attachment id", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String attachmentId,
-		@Valid @NotNull @RequestBody final ArtefactAttachmentLink link) {
-
-		return ok(service.updateStatementAttachment(namespace, municipalityId, errandId, statementId, attachmentId, link));
 	}
 
 	@DeleteMapping(path = "/{statementId}/attachments/{attachmentId}", produces = ALL_VALUE)

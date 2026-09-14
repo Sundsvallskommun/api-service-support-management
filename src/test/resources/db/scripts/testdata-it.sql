@@ -735,9 +735,8 @@ VALUES ('f5000000-0000-0000-0000-000000000001', 'f4000000-0000-0000-0000-0000000
 -- -----------------------------------
 -- Attachment links
 -- -----------------------------------
-INSERT INTO statement_attachment(id, statement_id, attachment_id, sort_order, created, created_by)
-VALUES ('f7000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001',
-        1, '2024-01-15 10:00:00.000', 'joe01doe');
+INSERT INTO statement_attachment(statement_id, attachment_id)
+VALUES ('f1000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001');
 
 -- -----------------------------------
 -- JSON parameter links
@@ -769,17 +768,14 @@ INSERT INTO measure(id, errand_id, municipality_id, namespace, status, type, tit
 VALUES ('ee000000-0000-0000-0000-000000000200', 'a0000000-0000-0000-0000-000000000001', '2281', 'NAMESPACE-ARTEFACT', 'ACTIVE', 'MEASURE-1',
         'Tillsynsbesök', 'joe01doe', '2024-01-10 12:00:00.000', 0);
 
-INSERT INTO investigation_attachment(id, investigation_id, attachment_id, sort_order, created, created_by)
-VALUES ('f7000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001',
-        1, '2024-01-15 10:00:00.000', 'joe01doe');
+INSERT INTO investigation_attachment(investigation_id, attachment_id)
+VALUES ('f2000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001');
 
-INSERT INTO decision_attachment(id, decision_id, attachment_id, sort_order, created, created_by)
-VALUES ('f7000000-0000-0000-0000-000000000003', 'f4000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001',
-        1, '2024-01-15 10:00:00.000', 'joe01doe');
+INSERT INTO decision_attachment(decision_id, attachment_id)
+VALUES ('f4000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001');
 
-INSERT INTO measure_attachment(id, measure_id, attachment_id, sort_order, created, created_by)
-VALUES ('f7000000-0000-0000-0000-000000000004', 'ee000000-0000-0000-0000-000000000200', 'a5000000-0000-0000-0000-000000000001',
-        1, '2024-01-15 10:00:00.000', 'joe01doe');
+INSERT INTO measure_attachment(measure_id, attachment_id)
+VALUES ('ee000000-0000-0000-0000-000000000200', 'a5000000-0000-0000-0000-000000000001');
 
 INSERT INTO json_parameter(id, errand_id, parameter_key, schema_id, value, version)
 VALUES ('f8000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', 'investigationForm', 'test-schema-1.0', '{"answer":"pending"}', 0),

@@ -57,6 +57,9 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	private static final String SUPPORTING_PURPOSE_ID = "f6000000-0000-0000-0000-000000000001";
 	private static final String RESPONSE_PURPOSE_ID = "f6000000-0000-0000-0000-000000000002";
 
+	/** An attachment of the same errand that nothing is linked to. */
+	private static final String UNLINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000002";
+
 	/** An attachment of the other errand, used to show that a link across errands cannot be made. */
 	private static final String OTHER_ERRAND_ATTACHMENT_ID = "c697642d-4d8d-4b07-8816-025a2734b09a";
 
@@ -70,8 +73,9 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	 * Case 1 - the attachment is removed where Hibernate does not see it: the purge job, a manual correction, a bulk
 	 * removal still to be written. The foreign keys take every link with it, and none of the artefacts it was linked to.
 	 * <p>
-	 * This is the {@code on delete cascade} of the migration at work - the safety net rather than the mechanism - and the
-	 * only way to reach it is to go around the application, which is why the row is removed with SQL.
+	 * This is the {@code on delete cascade} of the migration at work, which is also what removes the links when the
+	 * attachment goes through the errand in case 4 - the only way to reach it on its own is to go around the application,
+	 * which is why the row is removed with SQL.
 	 */
 	@Test
 	void test01_deletingAttachmentOutsideHibernateRemovesLinksButKeepsArtefacts() {
@@ -124,8 +128,8 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 
 	/**
 	 * Case 4 - the attachment is removed through the attachment list of the errand, which is how the API removes one.
-	 * Orphan removal takes it off the errand and the cascade on the attachment continues to its links: every one of them
-	 * goes, and every artefact it was linked to stays.
+	 * Orphan removal takes it off the errand and the database takes its links with it: every one of them goes, and every
+	 * artefact it was linked to stays.
 	 */
 	@Test
 	void test04_deletingAttachmentViaErrandRemovesLinksButKeepsArtefacts() {
@@ -179,7 +183,6 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(STATEMENT_PATH + "/attachments/" + OTHER_ERRAND_ATTACHMENT_ID)
 			.withHttpMethod(POST)
-			.withRequest("{\"sortOrder\":1}")
 			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();
 
@@ -197,7 +200,6 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(STATEMENT_PATH + "/attachments/" + ATTACHMENT_ID)
 			.withHttpMethod(POST)
-			.withRequest("{\"sortOrder\":2}")
 			.withExpectedResponseStatus(CONFLICT)
 			.sendRequestAndVerifyResponse();
 
@@ -214,7 +216,7 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 		final var attachmentsBefore = attachmentsOf(ERRAND_ID);
 
 		setupCall()
-			.withServicePath(STATEMENT_PATH + "/attachments?sortOrder=2")
+			.withServicePath(STATEMENT_PATH + "/attachments")
 			.withHttpMethod(POST)
 			.withContentType(MULTIPART_FORM_DATA)
 			.withRequestFile("attachment", "test.txt")
@@ -285,6 +287,34 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 			.as("the purpose stayed").isOne();
 	}
 
+	/**
+	 * The statement owns its join table, so linking an attachment and unlinking it again are both changes to the statement,
+	 * and each moves the version its ETag carries - a caller holding the ETag from before is told the statement changed.
+	 */
+	@Test
+	void test12_linkingAndUnlinkingMoveTheVersionOfTheStatement() {
+
+		final var versionBefore = statementVersion();
+
+		setupCall()
+			.withServicePath(STATEMENT_PATH + "/attachments/" + UNLINKED_ATTACHMENT_ID)
+			.withHttpMethod(POST)
+			.withExpectedResponseStatus(CREATED)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(links()).as("linked").isEqualTo(2);
+		assertThat(statementVersion()).as("linking moved the version").isEqualTo(versionBefore + 1);
+
+		setupCall()
+			.withServicePath(STATEMENT_PATH + "/attachments/" + UNLINKED_ATTACHMENT_ID)
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(links()).as("unlinked").isOne();
+		assertThat(statementVersion()).as("unlinking moved it again").isEqualTo(versionBefore + 2);
+	}
+
 	/** The links to the attachment these cases own, per kind of artefact - it is linked to one of each. */
 	private Map<String, Integer> linkCounts() {
 		return Map.of(
@@ -305,6 +335,10 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 
 	private String purposeOf(final String attachmentId) {
 		return jdbcTemplate.queryForObject("select attachment_purpose_id from attachment where id = ?", String.class, attachmentId);
+	}
+
+	private long statementVersion() {
+		return jdbcTemplate.queryForObject("select version from statement where id = ?", Long.class, STATEMENT_ID);
 	}
 
 	private int links() {

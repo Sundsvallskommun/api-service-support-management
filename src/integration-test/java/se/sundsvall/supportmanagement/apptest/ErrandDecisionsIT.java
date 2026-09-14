@@ -245,7 +245,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 	@Test
 	void test13_uploadDecisionAttachment() throws Exception {
 		setupCall()
-			.withServicePath(DECISION_PATH + "/attachments?sortOrder=2")
+			.withServicePath(DECISION_PATH + "/attachments")
 			.withHttpMethod(POST)
 			.withContentType(MULTIPART_FORM_DATA)
 			.withRequestFile("attachment", "test.txt")
@@ -262,27 +262,12 @@ class ErrandDecisionsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
 			.withServicePath(DECISION_PATH + "/attachments/" + UNLINKED_ATTACHMENT_ID)
 			.withHttpMethod(POST)
-			.withRequest("{\"sortOrder\":2}")
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(ERRAND_PATH + "/attachments/" + UNLINKED_ATTACHMENT_ID))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
 		assertThat(attachmentLinks()).isEqualTo(2);
-	}
-
-	@Test
-	void test15_updateDecisionAttachment() {
-		setupCall()
-			.withServicePath(DECISION_PATH + "/attachments/" + LINKED_ATTACHMENT_ID)
-			.withHttpMethod(PATCH)
-			.withRequest("{\"sortOrder\":5}")
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-
-		assertThat(jdbcTemplate.queryForObject("select sort_order from decision_attachment where decision_id = ? and attachment_id = ?", Integer.class, DECISION_ID, LINKED_ATTACHMENT_ID))
-			.as("the new order reached the database").isEqualTo(5);
 	}
 
 	@Test

@@ -14,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachmentLink;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
@@ -178,7 +177,7 @@ class ErrandStatementsResourceTest {
 	void createStatementAttachment() {
 
 		// Arrange
-		when(serviceMock.createStatementAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(STATEMENT_ID), any(MultipartFile.class), eq(1)))
+		when(serviceMock.createStatementAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(STATEMENT_ID), any(MultipartFile.class)))
 			.thenReturn(ATTACHMENT_ID);
 
 		final var body = new MultipartBodyBuilder();
@@ -186,7 +185,7 @@ class ErrandStatementsResourceTest {
 
 		// Act
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH_WITH_ID + "/attachments").queryParam("sortOrder", 1).build(PATH_VARIABLES))
+			.uri(builder -> builder.path(PATH_WITH_ID + "/attachments").build(PATH_VARIABLES))
 			.contentType(MULTIPART_FORM_DATA)
 			.body(BodyInserters.fromMultipartData(body.build()))
 			.exchange()
@@ -198,42 +197,24 @@ class ErrandStatementsResourceTest {
 			.isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/attachments/" + ATTACHMENT_ID);
 	}
 
+	/**
+	 * A link carries nothing of its own, so there is no body to send.
+	 */
 	@Test
 	void linkStatementAttachment() {
 
 		// Arrange
-		when(serviceMock.linkStatementAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(STATEMENT_ID), eq(ATTACHMENT_ID), any(ArtefactAttachmentLink.class)))
+		when(serviceMock.linkStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, ATTACHMENT_ID))
 			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
 
 		// Act & Verify
 		webTestClient.post()
 			.uri(builder -> builder.path(PATH_WITH_ID + "/attachments/{attachmentId}").build(PATH_VARIABLES))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(ArtefactAttachmentLink.create().withSortOrder(1))
 			.exchange()
 			.expectStatus().isCreated()
 			.expectBody(ArtefactAttachment.class);
 
-		verify(serviceMock).linkStatementAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(STATEMENT_ID), eq(ATTACHMENT_ID), any(ArtefactAttachmentLink.class));
-	}
-
-	@Test
-	void updateStatementAttachment() {
-
-		// Arrange
-		when(serviceMock.updateStatementAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(STATEMENT_ID), eq(ATTACHMENT_ID), any(ArtefactAttachmentLink.class)))
-			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID).withSortOrder(1));
-
-		// Act & Verify
-		webTestClient.patch()
-			.uri(builder -> builder.path(PATH_WITH_ID + "/attachments/{attachmentId}").build(PATH_VARIABLES))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(ArtefactAttachmentLink.create().withSortOrder(1))
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody(ArtefactAttachment.class);
-
-		verify(serviceMock).updateStatementAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(STATEMENT_ID), eq(ATTACHMENT_ID), any(ArtefactAttachmentLink.class));
+		verify(serviceMock).linkStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, ATTACHMENT_ID);
 	}
 
 	@Test

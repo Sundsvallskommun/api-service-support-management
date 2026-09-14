@@ -10,9 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachmentLink;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.db.DecisionAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -52,9 +50,6 @@ class ErrandDecisionServiceArtefactTest {
 
 	@Mock
 	private DecisionRepository decisionRepositoryMock;
-
-	@Mock
-	private DecisionAttachmentRepository decisionAttachmentRepositoryMock;
 
 	@Mock
 	private DecisionJsonParameterRepository decisionJsonParameterRepositoryMock;
@@ -97,15 +92,16 @@ class ErrandDecisionServiceArtefactTest {
 		mockErrand();
 		final var entity = mockDecision();
 		final var file = new MockMultipartFile("attachment", "beslut.pdf", "application/pdf", "content".getBytes());
-		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(0), any()))
-			.thenReturn(ATTACHMENT_ID);
+		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), any())).thenReturn(ATTACHMENT_ID);
 
 		// Act
-		final var result = service.createDecisionAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, file, 0);
+		final var result = service.createDecisionAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, file);
 
-		// Verify - the collection is created on the way, so the link has somewhere to go
+		// Verify - the collection is created on the way, so the attachment has somewhere to go
 		assertThat(result).isEqualTo(ATTACHMENT_ID);
 		assertThat(entity.getAttachments()).isNotNull();
+		verify(artefactAttachmentServiceMock).uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), same(entity.getAttachments()));
+		verify(decisionRepositoryMock).saveAndFlush(entity);
 	}
 
 	@Test
@@ -113,32 +109,17 @@ class ErrandDecisionServiceArtefactTest {
 
 		// Arrange
 		mockErrand();
-		mockDecision();
-		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any()))
+		final var entity = mockDecision();
+		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), any()))
 			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
 
 		// Act
-		final var result = service.linkDecisionAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, ATTACHMENT_ID,
-			ArtefactAttachmentLink.create().withSortOrder(2));
+		final var result = service.linkDecisionAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, ATTACHMENT_ID);
 
 		// Verify
 		assertThat(result.getAttachmentId()).isEqualTo(ATTACHMENT_ID);
-	}
-
-	@Test
-	void updateDecisionAttachment() {
-
-		// Arrange
-		mockErrand();
-		mockDecision();
-		final var body = ArtefactAttachmentLink.create().withSortOrder(4);
-		when(artefactAttachmentServiceMock.update(eq(ATTACHMENT_ID), eq(body), any())).thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID).withSortOrder(4));
-
-		// Act
-		final var result = service.updateDecisionAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, ATTACHMENT_ID, body);
-
-		// Verify
-		assertThat(result.getSortOrder()).isEqualTo(4);
+		verify(artefactAttachmentServiceMock).link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), same(entity.getAttachments()));
+		verify(decisionRepositoryMock).saveAndFlush(entity);
 	}
 
 	@Test

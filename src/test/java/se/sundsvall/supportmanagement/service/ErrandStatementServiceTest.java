@@ -20,22 +20,18 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachmentLink;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.StatementAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StatementAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -79,9 +75,6 @@ class ErrandStatementServiceTest {
 	private StatementRepository statementRepositoryMock;
 
 	@Mock
-	private StatementAttachmentRepository statementAttachmentRepositoryMock;
-
-	@Mock
 	private StatementJsonParameterRepository statementJsonParameterRepositoryMock;
 
 	@Mock
@@ -98,9 +91,6 @@ class ErrandStatementServiceTest {
 
 	@Captor
 	private ArgumentCaptor<StatementEntity> statementEntityCaptor;
-
-	@Captor
-	private ArgumentCaptor<ArtefactLinks<StatementAttachmentEntity>> artefactLinksCaptor;
 
 	@Captor
 	private ArgumentCaptor<Function<JsonParameterEntity, StatementJsonParameterEntity>> jsonParameterLinkFactoryCaptor;
@@ -318,9 +308,8 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * The owned parameters leave the errand only after the statement and its links have been flushed away. The other way
-	 * round, the database would cascade the link rows away first, and removing the statement would then delete rows that
-	 * are no longer there.
+	 * The owned parameters are named while the statement still holds the links naming them, and leave the errand once the
+	 * statement has been flushed away.
 	 */
 	@Test
 	void deleteErrandStatement() {
@@ -388,83 +377,54 @@ class ErrandStatementServiceTest {
 		verifyNoInteractions(errandsRepositoryMock);
 	}
 
+	/**
+	 * The statement is flushed once the attachment is in its collection, so that the join table is written within the call
+	 * rather than at a commit the caller never sees fail.
+	 */
 	@Test
 	void createStatementAttachment() {
 
 		// Arrange
-		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(USER));
 		final var entity = mockStatement();
 		final var file = new MockMultipartFile("attachment", "remissvar.pdf", "application/pdf", "content".getBytes());
-		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), any()))
-			.thenReturn(ATTACHMENT_ID);
+		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), any())).thenReturn(ATTACHMENT_ID);
 
 		// Act
-		final var result = service.createStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, file, 1);
+		final var result = service.createStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, file);
 
-		// Verify - the collection is created on the way, so the link has somewhere to go
+		// Verify - the collection is created on the way, so the attachment has somewhere to go
 		assertThat(result).isEqualTo(ATTACHMENT_ID);
 		assertThat(entity.getAttachments()).isNotNull();
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-		verify(artefactAttachmentServiceMock).uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), artefactLinksCaptor.capture());
 
-		final var artefactLinks = artefactLinksCaptor.getValue();
-		final var attachmentEntity = AttachmentEntity.create().withId(ATTACHMENT_ID);
-		assertThat(artefactLinks.links()).isSameAs(entity.getAttachments());
-		assertThat(artefactLinks.repository()).isSameAs(statementAttachmentRepositoryMock);
-		assertThat(artefactLinks.factory().apply(attachmentEntity)).satisfies(link -> {
-			assertThat(link.getStatementEntity()).isSameAs(entity);
-			assertThat(link.getAttachmentEntity()).isSameAs(attachmentEntity);
-			assertThat(link.getCreatedBy()).isEqualTo(USER);
-		});
+		final var inOrder = inOrder(artefactAttachmentServiceMock, statementRepositoryMock);
+		inOrder.verify(artefactAttachmentServiceMock).uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), same(entity.getAttachments()));
+		inOrder.verify(statementRepositoryMock).saveAndFlush(entity);
 	}
 
 	/**
-	 * A collection the statement already has is handed on as it is. Hibernate tracks that one, and with orphan removal on
-	 * it a statement whose collection has been swapped for another fails to flush.
+	 * A collection the statement already has is handed on as it is. Hibernate tracks that one, and a statement whose
+	 * collection has been swapped for another has its join table written again from scratch.
 	 */
 	@Test
 	void linkStatementAttachment() {
 
 		// Arrange
-		final var links = new ArrayList<StatementAttachmentEntity>();
-		final var entity = mockStatement().withAttachments(links);
-		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any()))
+		final var attachments = new ArrayList<AttachmentEntity>();
+		final var entity = mockStatement().withAttachments(attachments);
+		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), same(attachments)))
 			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
 
 		// Act
-		final var result = service.linkStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, ATTACHMENT_ID,
-			ArtefactAttachmentLink.create().withSortOrder(2));
+		final var result = service.linkStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, ATTACHMENT_ID);
 
 		// Verify
 		assertThat(result.getAttachmentId()).isEqualTo(ATTACHMENT_ID);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-		verify(artefactAttachmentServiceMock).link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), artefactLinksCaptor.capture());
 
-		final var artefactLinks = artefactLinksCaptor.getValue();
-		final var attachmentEntity = AttachmentEntity.create().withId(ATTACHMENT_ID);
-		assertThat(artefactLinks.links()).isSameAs(links);
-		assertThat(artefactLinks.repository()).isSameAs(statementAttachmentRepositoryMock);
-		assertThat(artefactLinks.factory().apply(attachmentEntity)).satisfies(link -> {
-			assertThat(link.getStatementEntity()).isSameAs(entity);
-			assertThat(link.getAttachmentEntity()).isSameAs(attachmentEntity);
-		});
-	}
-
-	@Test
-	void updateStatementAttachment() {
-
-		// Arrange
-		final var entity = mockStatement();
-		final var body = ArtefactAttachmentLink.create().withSortOrder(4);
-		when(artefactAttachmentServiceMock.update(eq(ATTACHMENT_ID), same(body), any())).thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID).withSortOrder(4));
-
-		// Act
-		final var result = service.updateStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, ATTACHMENT_ID, body);
-
-		// Verify
-		assertThat(result.getSortOrder()).isEqualTo(4);
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.STATEMENT, RW);
-		verify(artefactAttachmentServiceMock).update(eq(ATTACHMENT_ID), same(body), same(entity.getAttachments()));
+		final var inOrder = inOrder(artefactAttachmentServiceMock, statementRepositoryMock);
+		inOrder.verify(artefactAttachmentServiceMock).link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), same(attachments));
+		inOrder.verify(statementRepositoryMock).saveAndFlush(entity);
 	}
 
 	@Test

@@ -18,7 +18,6 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.InvestigationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationSectionJsonParameterRepository;
@@ -75,9 +74,6 @@ class ErrandInvestigationServiceTest {
 
 	@Mock
 	private InvestigationRepository investigationRepositoryMock;
-
-	@Mock
-	private InvestigationAttachmentRepository investigationAttachmentRepositoryMock;
 
 	@Mock
 	private InvestigationJsonParameterRepository investigationJsonParameterRepositoryMock;
@@ -652,8 +648,8 @@ class ErrandInvestigationServiceTest {
 	}
 
 	/**
-	 * The parameters the section owns are named before it goes, since orphan removal takes the links naming them
-	 * along - as the stubbed flush does. They are then taken out of the errand, which owns the rows.
+	 * The parameters the section owns are named before it goes, since the links naming them go with it - as the stubbed
+	 * flush does. They are then taken out of the errand, which owns the rows.
 	 */
 	@Test
 	void deleteInvestigationSection() {

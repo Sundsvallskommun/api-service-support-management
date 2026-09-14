@@ -28,14 +28,11 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 	private static final String PHASE_ENTITY = "phaseEntity";
 
 	private static final Map<Class<?>, Set<String>> EXCLUDED_FIELDS = Map.ofEntries(
-		// The links to the handling artefacts, here and on the JSON parameter below, are left out rather than followed. Each
-		// points at an artefact that points back at the errand, and a revision is a copy of the errand, which the artefacts
-		// are deliberately not part of.
-		Map.entry(AttachmentEntity.class, Set.of(ERRAND_ENTITY, "statementLinks", "investigationLinks", "decisionLinks", "measureLinks")),
+		Map.entry(AttachmentEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(ErrandActionEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(ActionConfigConditionEntity.class, Set.of(ACTION_CONFIG_ENTITY)),
 		Map.entry(ActionConfigParameterEntity.class, Set.of(ACTION_CONFIG_ENTITY)),
-		Map.entry(JsonParameterEntity.class, Set.of(ERRAND_ENTITY, "statementLinks", "investigationLinks", "investigationSectionLinks", "decisionLinks", "measureLinks")),
+		Map.entry(JsonParameterEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(StakeholderEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(StakeholderParameterEntity.class, Set.of("stakeholderEntity")),
 		Map.entry(ParameterEntity.class, Set.of(ERRAND_ENTITY)),
@@ -49,8 +46,8 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		// out. Anything else moved up into the base class has to be named here for the same reason.
 		Map.entry(AbstractErrandItemEntity.class, Set.of(ERRAND_ENTITY)),
 
-		// What the measure itself declares: the links it holds, and the artefact it follows from, which points back at
-		// the errand.
+		// What the measure itself declares: the attachments it uses, which the errand already holds, the links to its
+		// parameters, and the artefact it follows from, which points back at the errand.
 		Map.entry(MeasureEntity.class, Set.of("attachments", "jsonParameterLinks", "decisionEntity", "statementEntity")),
 		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)));
 

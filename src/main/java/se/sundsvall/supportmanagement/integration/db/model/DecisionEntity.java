@@ -7,10 +7,13 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -24,7 +27,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.CascadeType.REMOVE;
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static org.hibernate.Length.LONG32;
@@ -114,16 +116,27 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@OrderBy("sortOrder")
 	private List<DecisionTermEntity> terms;
 
-	/** See {@link StatementEntity#getAttachments()} for why there is no PERSIST here. */
-	@OneToMany(mappedBy = "decisionEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
-	@OrderBy("sortOrder")
-	private List<DecisionAttachmentEntity> attachments;
+	/**
+	 * The attachments of the errand this decision uses. See {@link StatementEntity#getAttachments()} for how they are held.
+	 */
+	@ManyToMany
+	@JoinTable(name = "decision_attachment",
+		joinColumns = @JoinColumn(name = "decision_id"),
+		inverseJoinColumns = @JoinColumn(name = "attachment_id"),
+		foreignKey = @ForeignKey(name = "fk_decision_attachment_decision_id", options = "on delete cascade"),
+		inverseForeignKey = @ForeignKey(name = "fk_decision_attachment_attachment_id", options = "on delete cascade"),
+		uniqueConstraints = @UniqueConstraint(name = "uq_decision_attachment_decision_id_attachment_id", columnNames = {
+			"decision_id", "attachment_id"
+		}),
+		indexes = {
+			@Index(name = "idx_decision_attachment_decision_id", columnList = "decision_id"),
+			@Index(name = "idx_decision_attachment_attachment_id", columnList = "attachment_id")
+		})
+	@OrderBy("fileName")
+	private List<AttachmentEntity> attachments;
 
-	@OneToMany(mappedBy = "decisionEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
+	/** See {@link StatementEntity#getJsonParameterLinks()} for why nothing but MERGE cascades here. */
+	@OneToMany(mappedBy = "decisionEntity", cascade = MERGE)
 	private List<DecisionJsonParameterEntity> jsonParameterLinks;
 
 	public static DecisionEntity create() {
@@ -312,15 +325,15 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 		return this;
 	}
 
-	public List<DecisionAttachmentEntity> getAttachments() {
+	public List<AttachmentEntity> getAttachments() {
 		return attachments;
 	}
 
-	public void setAttachments(final List<DecisionAttachmentEntity> attachments) {
+	public void setAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 	}
 
-	public DecisionEntity withAttachments(final List<DecisionAttachmentEntity> attachments) {
+	public DecisionEntity withAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 		return this;
 	}

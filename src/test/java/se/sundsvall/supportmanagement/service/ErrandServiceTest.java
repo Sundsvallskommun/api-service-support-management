@@ -140,6 +140,9 @@ class ErrandServiceTest {
 	private ErrandPhaseService errandPhaseServiceMock;
 
 	@Mock
+	private ArtefactJsonParameterService artefactJsonParameterServiceMock;
+
+	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
 
 	@Spy

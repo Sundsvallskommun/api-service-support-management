@@ -8,20 +8,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
 import static jakarta.persistence.CascadeType.ALL;
-import static jakarta.persistence.CascadeType.REMOVE;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Optional.ofNullable;
@@ -106,21 +103,6 @@ public class AttachmentEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_attachment_errand_id"))
 	private ErrandEntity errandEntity;
-
-	// The links to the handling artefacts this attachment is used by. cascade = REMOVE and nothing else: the attachment
-	// tears down its links when it dies itself, but does not own them. A PERSIST cascade from here would resurrect
-	// links the artefact side had just removed, which is the attachment resurrection of DRAKEN-4801 one level down.
-	@OneToMany(mappedBy = "attachmentEntity", cascade = REMOVE)
-	private List<StatementAttachmentEntity> statementLinks;
-
-	@OneToMany(mappedBy = "attachmentEntity", cascade = REMOVE)
-	private List<InvestigationAttachmentEntity> investigationLinks;
-
-	@OneToMany(mappedBy = "attachmentEntity", cascade = REMOVE)
-	private List<DecisionAttachmentEntity> decisionLinks;
-
-	@OneToMany(mappedBy = "attachmentEntity", cascade = REMOVE)
-	private List<MeasureAttachmentEntity> measureLinks;
 
 	public static AttachmentEntity create() {
 		return new AttachmentEntity();
@@ -247,58 +229,6 @@ public class AttachmentEntity {
 
 	public AttachmentEntity withErrandEntity(final ErrandEntity errandEntity) {
 		this.errandEntity = errandEntity;
-		return this;
-	}
-
-	public List<StatementAttachmentEntity> getStatementLinks() {
-		return statementLinks;
-	}
-
-	public void setStatementLinks(final List<StatementAttachmentEntity> statementLinks) {
-		this.statementLinks = statementLinks;
-	}
-
-	public AttachmentEntity withStatementLinks(final List<StatementAttachmentEntity> statementLinks) {
-		this.statementLinks = statementLinks;
-		return this;
-	}
-
-	public List<InvestigationAttachmentEntity> getInvestigationLinks() {
-		return investigationLinks;
-	}
-
-	public void setInvestigationLinks(final List<InvestigationAttachmentEntity> investigationLinks) {
-		this.investigationLinks = investigationLinks;
-	}
-
-	public AttachmentEntity withInvestigationLinks(final List<InvestigationAttachmentEntity> investigationLinks) {
-		this.investigationLinks = investigationLinks;
-		return this;
-	}
-
-	public List<DecisionAttachmentEntity> getDecisionLinks() {
-		return decisionLinks;
-	}
-
-	public void setDecisionLinks(final List<DecisionAttachmentEntity> decisionLinks) {
-		this.decisionLinks = decisionLinks;
-	}
-
-	public AttachmentEntity withDecisionLinks(final List<DecisionAttachmentEntity> decisionLinks) {
-		this.decisionLinks = decisionLinks;
-		return this;
-	}
-
-	public List<MeasureAttachmentEntity> getMeasureLinks() {
-		return measureLinks;
-	}
-
-	public void setMeasureLinks(final List<MeasureAttachmentEntity> measureLinks) {
-		this.measureLinks = measureLinks;
-	}
-
-	public AttachmentEntity withMeasureLinks(final List<MeasureAttachmentEntity> measureLinks) {
-		this.measureLinks = measureLinks;
 		return this;
 	}
 

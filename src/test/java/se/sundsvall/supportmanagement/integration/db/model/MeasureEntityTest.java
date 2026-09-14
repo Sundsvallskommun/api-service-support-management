@@ -81,7 +81,7 @@ class MeasureEntityTest {
 		final var resultText = "resultText";
 		final var decisionEntity = DecisionEntity.create().withId("decisionId");
 		final var statementEntity = StatementEntity.create().withId("statementId");
-		final var attachments = List.of(MeasureAttachmentEntity.create());
+		final var attachments = List.of(AttachmentEntity.create());
 		final var jsonParameterLinks = List.of(MeasureJsonParameterEntity.create());
 
 		// Act

@@ -6,7 +6,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.InvestigationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome;
@@ -112,8 +111,7 @@ class ErrandInvestigationMapperTest {
 			.withRecommendation(DecisionOutcome.PARTIAL_APPROVAL)
 			.withVersion(2L)
 			.withSections(List.of(InvestigationSectionEntity.create().withId("sectionId").withSectionKey("financial").withAssessment(SectionAssessment.APPROVED)))
-			.withAttachments(List.of(InvestigationAttachmentEntity.create()
-				.withAttachmentEntity(AttachmentEntity.create().withId("attachmentId"))));
+			.withAttachments(List.of(AttachmentEntity.create().withId("attachmentId")));
 
 		// Act
 		final var result = toInvestigation(entity);

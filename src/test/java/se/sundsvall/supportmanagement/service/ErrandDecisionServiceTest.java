@@ -18,7 +18,6 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
-import se.sundsvall.supportmanagement.integration.db.DecisionAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -81,9 +80,6 @@ class ErrandDecisionServiceTest {
 
 	@Mock
 	private DecisionRepository decisionRepositoryMock;
-
-	@Mock
-	private DecisionAttachmentRepository decisionAttachmentRepositoryMock;
 
 	@Mock
 	private DecisionJsonParameterRepository decisionJsonParameterRepositoryMock;

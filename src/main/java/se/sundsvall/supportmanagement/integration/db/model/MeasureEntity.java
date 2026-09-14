@@ -10,10 +10,13 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +28,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 import se.sundsvall.supportmanagement.integration.db.model.enums.MeasureResult;
 
 import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.CascadeType.REMOVE;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import static org.hibernate.type.SqlTypes.VARCHAR;
@@ -123,16 +125,27 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 	@OnDelete(action = OnDeleteAction.SET_NULL)
 	private StatementEntity statementEntity;
 
-	/** See {@link StatementEntity#getAttachments()} for why there is no PERSIST here. */
-	@OneToMany(mappedBy = "measureEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
-	@OrderBy("sortOrder")
-	private List<MeasureAttachmentEntity> attachments;
+	/**
+	 * The attachments of the errand this measure uses. See {@link StatementEntity#getAttachments()} for how they are held.
+	 */
+	@ManyToMany
+	@JoinTable(name = "measure_attachment",
+		joinColumns = @JoinColumn(name = "measure_id"),
+		inverseJoinColumns = @JoinColumn(name = "attachment_id"),
+		foreignKey = @ForeignKey(name = "fk_measure_attachment_measure_id", options = "on delete cascade"),
+		inverseForeignKey = @ForeignKey(name = "fk_measure_attachment_attachment_id", options = "on delete cascade"),
+		uniqueConstraints = @UniqueConstraint(name = "uq_measure_attachment_measure_id_attachment_id", columnNames = {
+			"measure_id", "attachment_id"
+		}),
+		indexes = {
+			@Index(name = "idx_measure_attachment_measure_id", columnList = "measure_id"),
+			@Index(name = "idx_measure_attachment_attachment_id", columnList = "attachment_id")
+		})
+	@OrderBy("fileName")
+	private List<AttachmentEntity> attachments;
 
-	@OneToMany(mappedBy = "measureEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
+	/** See {@link StatementEntity#getJsonParameterLinks()} for why nothing but MERGE cascades here. */
+	@OneToMany(mappedBy = "measureEntity", cascade = MERGE)
 	private List<MeasureJsonParameterEntity> jsonParameterLinks;
 
 	public static MeasureEntity create() {
@@ -334,15 +347,15 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 		return this;
 	}
 
-	public List<MeasureAttachmentEntity> getAttachments() {
+	public List<AttachmentEntity> getAttachments() {
 		return attachments;
 	}
 
-	public void setAttachments(final List<MeasureAttachmentEntity> attachments) {
+	public void setAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 	}
 
-	public MeasureEntity withAttachments(final List<MeasureAttachmentEntity> attachments) {
+	public MeasureEntity withAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 		return this;
 	}

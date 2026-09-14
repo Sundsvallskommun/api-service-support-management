@@ -10,23 +10,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachmentLink;
 import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.db.DecisionAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.DecisionAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -69,7 +66,6 @@ public class ErrandDecisionService {
 
 	private final ErrandsRepository errandsRepository;
 	private final DecisionRepository decisionRepository;
-	private final DecisionAttachmentRepository decisionAttachmentRepository;
 	private final DecisionJsonParameterRepository decisionJsonParameterRepository;
 	private final ArtefactAttachmentService artefactAttachmentService;
 	private final ArtefactJsonParameterService artefactJsonParameterService;
@@ -78,13 +74,11 @@ public class ErrandDecisionService {
 	private final AccessControlService accessControlService;
 	private final EntityManager entityManager;
 
-	ErrandDecisionService(final ErrandsRepository errandsRepository, final DecisionRepository decisionRepository, final DecisionAttachmentRepository decisionAttachmentRepository,
-		final DecisionJsonParameterRepository decisionJsonParameterRepository, final ArtefactAttachmentService artefactAttachmentService,
-		final ArtefactJsonParameterService artefactJsonParameterService, final InvestigationRepository investigationRepository,
+	ErrandDecisionService(final ErrandsRepository errandsRepository, final DecisionRepository decisionRepository, final DecisionJsonParameterRepository decisionJsonParameterRepository,
+		final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService, final InvestigationRepository investigationRepository,
 		final DecisionValidator decisionValidator, final AccessControlService accessControlService, final EntityManager entityManager) {
 		this.errandsRepository = errandsRepository;
 		this.decisionRepository = decisionRepository;
-		this.decisionAttachmentRepository = decisionAttachmentRepository;
 		this.decisionJsonParameterRepository = decisionJsonParameterRepository;
 		this.artefactAttachmentService = artefactAttachmentService;
 		this.artefactJsonParameterService = artefactJsonParameterService;
@@ -208,29 +202,23 @@ public class ErrandDecisionService {
 	}
 
 	@Transactional
-	public String createDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final MultipartFile file, final Integer sortOrder) {
+	public String createDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final MultipartFile file) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
-		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, artefactLinks(entity));
+		final var attachmentId = artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, attachments(entity));
+		decisionRepository.saveAndFlush(entity);
+		return attachmentId;
 	}
 
 	@Transactional
-	public ArtefactAttachment linkDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String attachmentId,
-		final ArtefactAttachmentLink link) {
+	public ArtefactAttachment linkDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String attachmentId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
-		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), artefactLinks(entity));
-	}
-
-	@Transactional
-	public ArtefactAttachment updateDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String attachmentId,
-		final ArtefactAttachmentLink link) {
-		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
-		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
-
-		return artefactAttachmentService.update(attachmentId, link, attachmentLinks(entity));
+		final var result = artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, attachments(entity));
+		decisionRepository.saveAndFlush(entity);
+		return result;
 	}
 
 	@Transactional
@@ -238,7 +226,7 @@ public class ErrandDecisionService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
-		artefactAttachmentService.unlink(attachmentId, attachmentLinks(entity));
+		artefactAttachmentService.unlink(attachmentId, attachments(entity));
 		decisionRepository.saveAndFlush(entity);
 	}
 
@@ -272,14 +260,7 @@ public class ErrandDecisionService {
 		artefactJsonParameterService.delete(errandEntity, jsonParameterLinks(entity), key, ifMatch);
 	}
 
-	private ArtefactLinks<DecisionAttachmentEntity> artefactLinks(final DecisionEntity entity) {
-		return new ArtefactLinks<>(attachmentLinks(entity), attachment -> DecisionAttachmentEntity.create()
-			.withDecisionEntity(entity)
-			.withAttachmentEntity(attachment)
-			.withCreatedBy(getCallerIdentity()), decisionAttachmentRepository);
-	}
-
-	private List<DecisionAttachmentEntity> attachmentLinks(final DecisionEntity entity) {
+	private List<AttachmentEntity> attachments(final DecisionEntity entity) {
 		if (entity.getAttachments() == null) {
 			entity.setAttachments(new ArrayList<>());
 		}

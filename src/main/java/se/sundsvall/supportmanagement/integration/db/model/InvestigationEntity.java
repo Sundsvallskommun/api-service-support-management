@@ -7,9 +7,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -19,7 +22,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionOutcome
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.CascadeType.REMOVE;
 import static jakarta.persistence.EnumType.STRING;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
@@ -74,16 +76,28 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 	@OrderBy("sortOrder")
 	private List<InvestigationSectionEntity> sections;
 
-	/** See {@link StatementEntity#getAttachments()} for why there is no PERSIST here. */
-	@OneToMany(mappedBy = "investigationEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
-	@OrderBy("sortOrder")
-	private List<InvestigationAttachmentEntity> attachments;
+	/**
+	 * The attachments of the errand this investigation uses. See {@link StatementEntity#getAttachments()} for how they are
+	 * held.
+	 */
+	@ManyToMany
+	@JoinTable(name = "investigation_attachment",
+		joinColumns = @JoinColumn(name = "investigation_id"),
+		inverseJoinColumns = @JoinColumn(name = "attachment_id"),
+		foreignKey = @ForeignKey(name = "fk_investigation_attachment_investigation_id", options = "on delete cascade"),
+		inverseForeignKey = @ForeignKey(name = "fk_investigation_attachment_attachment_id", options = "on delete cascade"),
+		uniqueConstraints = @UniqueConstraint(name = "uq_investigation_attachment_investigation_id_attachment_id", columnNames = {
+			"investigation_id", "attachment_id"
+		}),
+		indexes = {
+			@Index(name = "idx_investigation_attachment_investigation_id", columnList = "investigation_id"),
+			@Index(name = "idx_investigation_attachment_attachment_id", columnList = "attachment_id")
+		})
+	@OrderBy("fileName")
+	private List<AttachmentEntity> attachments;
 
-	@OneToMany(mappedBy = "investigationEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
+	/** See {@link StatementEntity#getJsonParameterLinks()} for why nothing but MERGE cascades here. */
+	@OneToMany(mappedBy = "investigationEntity", cascade = MERGE)
 	private List<InvestigationJsonParameterEntity> jsonParameterLinks;
 
 	public static InvestigationEntity create() {
@@ -181,15 +195,15 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 		return this;
 	}
 
-	public List<InvestigationAttachmentEntity> getAttachments() {
+	public List<AttachmentEntity> getAttachments() {
 		return attachments;
 	}
 
-	public void setAttachments(final List<InvestigationAttachmentEntity> attachments) {
+	public void setAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 	}
 
-	public InvestigationEntity withAttachments(final List<InvestigationAttachmentEntity> attachments) {
+	public InvestigationEntity withAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 		return this;
 	}

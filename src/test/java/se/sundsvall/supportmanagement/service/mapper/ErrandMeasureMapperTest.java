@@ -9,7 +9,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.MeasureAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
@@ -216,7 +215,7 @@ class ErrandMeasureMapperTest {
 
 		// Arrange
 		final var entity = MeasureEntity.create().withId("id")
-			.withAttachments(List.of(MeasureAttachmentEntity.create().withAttachmentEntity(AttachmentEntity.create().withId("attachment-id")).withSortOrder(1)));
+			.withAttachments(List.of(AttachmentEntity.create().withId("attachment-id")));
 
 		// Act
 		final var result = toMeasure(entity);

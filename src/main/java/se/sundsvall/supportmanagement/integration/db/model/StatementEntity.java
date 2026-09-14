@@ -7,9 +7,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +21,6 @@ import org.hibernate.annotations.TimeZoneStorage;
 import se.sundsvall.supportmanagement.integration.db.model.enums.StatementOutcome;
 
 import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.CascadeType.REMOVE;
 import static jakarta.persistence.EnumType.STRING;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
@@ -96,19 +98,38 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	private String communicationId;
 
 	/**
-	 * Links to the attachments of the errand. MERGE and REMOVE, not ALL: without PERSIST a link the attachment side has
-	 * just removed cannot be written back by the next flush.
+	 * The attachments of the errand this statement uses.
+	 * <p>
+	 * A relation on top of the ownership of the errand rather than an ownership of its own: nothing cascades towards the
+	 * attachment, and a row of the join table is removed by the database when either side goes. The statement owns the
+	 * join table, so linking or unlinking an attachment moves its version like any other change to it.
+	 * <p>
+	 * A list rather than a set, since a set would hash the attachments, and an attachment hashes its file and its errand.
 	 */
-	@OneToMany(mappedBy = "statementEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
-	@OrderBy("sortOrder")
-	private List<StatementAttachmentEntity> attachments;
+	@ManyToMany
+	@JoinTable(name = "statement_attachment",
+		joinColumns = @JoinColumn(name = "statement_id"),
+		inverseJoinColumns = @JoinColumn(name = "attachment_id"),
+		foreignKey = @ForeignKey(name = "fk_statement_attachment_statement_id", options = "on delete cascade"),
+		inverseForeignKey = @ForeignKey(name = "fk_statement_attachment_attachment_id", options = "on delete cascade"),
+		uniqueConstraints = @UniqueConstraint(name = "uq_statement_attachment_statement_id_attachment_id", columnNames = {
+			"statement_id", "attachment_id"
+		}),
+		indexes = {
+			@Index(name = "idx_statement_attachment_statement_id", columnList = "statement_id"),
+			@Index(name = "idx_statement_attachment_attachment_id", columnList = "attachment_id")
+		})
+	@OrderBy("fileName")
+	private List<AttachmentEntity> attachments;
 
-	/** Links to the JSON parameters of the errand that belong to this statement. No PERSIST, for the same reason. */
-	@OneToMany(mappedBy = "statementEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
+	/**
+	 * Links to the JSON parameters of the errand that belong to this statement.
+	 * <p>
+	 * MERGE and nothing else. A link is saved through its repository, and removed by the database when its parameter or
+	 * its statement goes: were Hibernate to remove it in the same flush as the parameter, it would null the reference to
+	 * the parameter first, which the column refuses.
+	 */
+	@OneToMany(mappedBy = "statementEntity", cascade = MERGE)
 	private List<StatementJsonParameterEntity> jsonParameterLinks;
 
 	public static StatementEntity create() {
@@ -258,15 +279,15 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 		return this;
 	}
 
-	public List<StatementAttachmentEntity> getAttachments() {
+	public List<AttachmentEntity> getAttachments() {
 		return attachments;
 	}
 
-	public void setAttachments(final List<StatementAttachmentEntity> attachments) {
+	public void setAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 	}
 
-	public StatementEntity withAttachments(final List<StatementAttachmentEntity> attachments) {
+	public StatementEntity withAttachments(final List<AttachmentEntity> attachments) {
 		this.attachments = attachments;
 		return this;
 	}

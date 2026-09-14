@@ -72,7 +72,7 @@ class InvestigationEntityTest {
 		final var recommendation = DecisionOutcome.APPROVAL;
 		final var recommendationMotivation = "recommendationMotivation";
 		final var sections = List.of(InvestigationSectionEntity.create());
-		final var attachments = List.of(InvestigationAttachmentEntity.create());
+		final var attachments = List.of(AttachmentEntity.create());
 		final var jsonParameterLinks = List.of(InvestigationJsonParameterEntity.create());
 
 		// Act

@@ -8,21 +8,29 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
+import se.sundsvall.supportmanagement.integration.db.InvestigationJsonParameterRepository;
+import se.sundsvall.supportmanagement.integration.db.InvestigationSectionJsonParameterRepository;
+import se.sundsvall.supportmanagement.integration.db.MeasureJsonParameterRepository;
+import se.sundsvall.supportmanagement.integration.db.StatementJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterLink;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+import se.sundsvall.supportmanagement.service.util.ArtefactJsonParameters;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonParameter;
@@ -47,7 +55,8 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMat
  * caller qualifies the key.
  * <p>
  * <b>Removal always goes through the collection of the errand.</b> That collection cascades everything, so a row taken
- * out anywhere else is written back by the next flush - the attachment resurrection of DRAKEN-4801, one level down.
+ * out anywhere else is written back by the next flush - the attachment resurrection of DRAKEN-4801, one level down. The
+ * link is removed by the database together with its parameter.
  */
 @Service
 public class ArtefactJsonParameterService {
@@ -57,10 +66,23 @@ public class ArtefactJsonParameterService {
 
 	private final AccessControlService accessControlService;
 	private final EntityManager entityManager;
+	private final StatementJsonParameterRepository statementJsonParameterRepository;
+	private final InvestigationJsonParameterRepository investigationJsonParameterRepository;
+	private final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository;
+	private final DecisionJsonParameterRepository decisionJsonParameterRepository;
+	private final MeasureJsonParameterRepository measureJsonParameterRepository;
 
-	ArtefactJsonParameterService(final AccessControlService accessControlService, final EntityManager entityManager) {
+	ArtefactJsonParameterService(final AccessControlService accessControlService, final EntityManager entityManager,
+		final StatementJsonParameterRepository statementJsonParameterRepository, final InvestigationJsonParameterRepository investigationJsonParameterRepository,
+		final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository, final DecisionJsonParameterRepository decisionJsonParameterRepository,
+		final MeasureJsonParameterRepository measureJsonParameterRepository) {
 		this.accessControlService = accessControlService;
 		this.entityManager = entityManager;
+		this.statementJsonParameterRepository = statementJsonParameterRepository;
+		this.investigationJsonParameterRepository = investigationJsonParameterRepository;
+		this.investigationSectionJsonParameterRepository = investigationSectionJsonParameterRepository;
+		this.decisionJsonParameterRepository = decisionJsonParameterRepository;
+		this.measureJsonParameterRepository = measureJsonParameterRepository;
 	}
 
 	/**
@@ -85,6 +107,27 @@ public class ArtefactJsonParameterService {
 	}
 
 	/**
+	 * The ids of the JSON parameters of the errand that one of its handling artefacts owns.
+	 * <p>
+	 * Asked of the links of all five owners rather than of the artefacts, so that a patch of the errand does not have to
+	 * load its artefacts to learn which of its parameters it may not change.
+	 *
+	 * @param  errandId the errand whose parameters are asked about.
+	 * @return          the ids of those an artefact owns, empty when none does.
+	 */
+	public Set<String> ownedParameterIds(final String errandId) {
+		return Stream.<List<? extends JsonParameterLink>>of(
+			statementJsonParameterRepository.findByJsonParameterEntityErrandEntityId(errandId),
+			investigationJsonParameterRepository.findByJsonParameterEntityErrandEntityId(errandId),
+			investigationSectionJsonParameterRepository.findByJsonParameterEntityErrandEntityId(errandId),
+			decisionJsonParameterRepository.findByJsonParameterEntityErrandEntityId(errandId),
+			measureJsonParameterRepository.findByJsonParameterEntityErrandEntityId(errandId))
+			.map(ArtefactJsonParameters::ownedParameterIds)
+			.flatMap(Set::stream)
+			.collect(toSet());
+	}
+
+	/**
 	 * Writes the parameter, creating it and its link when the artefact does not hold the key yet.
 	 *
 	 * @param jsonParameter the parameter to write, carrying its key.
@@ -106,10 +149,8 @@ public class ArtefactJsonParameterService {
 	/**
 	 * Removes the parameter the artefact owns. The artefact itself is untouched.
 	 * <p>
-	 * The link goes first and the parameter second, and the order is not a matter of taste. Orphan removal on the
-	 * artefact is what deletes the link row; the database also cascades it away when the parameter goes. Removing the
-	 * parameter first would leave orphan removal deleting a row that is no longer there, which Hibernate reports as a
-	 * stale write on the next flush and the caller sees as a 412 it can do nothing about.
+	 * The row goes through the collection of the errand, and the database takes the link with it. The link is taken out
+	 * of the collection of the artefact as well, so that nothing read later in the same transaction still finds it there.
 	 */
 	@Transactional
 	public void delete(final ErrandEntity errandEntity, final List<? extends JsonParameterLink> links, final String key, final String ifMatch) {
@@ -119,8 +160,6 @@ public class ArtefactJsonParameterService {
 		validateIfMatch(ifMatch, entity.getVersion());
 
 		links.removeIf(link -> Objects.equals(ofNullable(link.getJsonParameterEntity()).map(JsonParameterEntity::getId).orElse(null), entity.getId()));
-		entityManager.flush();
-
 		removeParameters(errandEntity, Set.of(entity.getId()));
 		entityManager.flush();
 	}

@@ -22,7 +22,6 @@ import org.hibernate.annotations.UuidGenerator;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
 
 import static jakarta.persistence.CascadeType.MERGE;
-import static jakarta.persistence.CascadeType.REMOVE;
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static org.hibernate.Length.LONG32;
@@ -81,10 +80,11 @@ public class InvestigationSectionEntity {
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime completedAt;
 
-	/** Structured content when free text is not enough: a checklist, test results, measurements. */
-	@OneToMany(mappedBy = "investigationSectionEntity", cascade = {
-		MERGE, REMOVE
-	}, orphanRemoval = true)
+	/**
+	 * Structured content when free text is not enough: a checklist, test results, measurements. See
+	 * {@link StatementEntity#getJsonParameterLinks()} for why nothing but MERGE cascades here.
+	 */
+	@OneToMany(mappedBy = "investigationSectionEntity", cascade = MERGE)
 	private List<InvestigationSectionJsonParameterEntity> jsonParameterLinks;
 
 	public static InvestigationSectionEntity create() {

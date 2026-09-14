@@ -11,22 +11,19 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachmentLink;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.InvestigationAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationSectionJsonParameterRepository;
-import se.sundsvall.supportmanagement.integration.db.model.InvestigationAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -66,7 +63,6 @@ public class ErrandInvestigationService {
 
 	private final ErrandsRepository errandsRepository;
 	private final InvestigationRepository investigationRepository;
-	private final InvestigationAttachmentRepository investigationAttachmentRepository;
 	private final InvestigationJsonParameterRepository investigationJsonParameterRepository;
 	private final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository;
 	private final ArtefactAttachmentService artefactAttachmentService;
@@ -75,12 +71,11 @@ public class ErrandInvestigationService {
 	private final EntityManager entityManager;
 
 	ErrandInvestigationService(final ErrandsRepository errandsRepository, final InvestigationRepository investigationRepository,
-		final InvestigationAttachmentRepository investigationAttachmentRepository, final InvestigationJsonParameterRepository investigationJsonParameterRepository,
-		final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository, final ArtefactAttachmentService artefactAttachmentService,
-		final ArtefactJsonParameterService artefactJsonParameterService, final AccessControlService accessControlService, final EntityManager entityManager) {
+		final InvestigationJsonParameterRepository investigationJsonParameterRepository, final InvestigationSectionJsonParameterRepository investigationSectionJsonParameterRepository,
+		final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService, final AccessControlService accessControlService,
+		final EntityManager entityManager) {
 		this.errandsRepository = errandsRepository;
 		this.investigationRepository = investigationRepository;
-		this.investigationAttachmentRepository = investigationAttachmentRepository;
 		this.investigationJsonParameterRepository = investigationJsonParameterRepository;
 		this.investigationSectionJsonParameterRepository = investigationSectionJsonParameterRepository;
 		this.artefactAttachmentService = artefactAttachmentService;
@@ -210,29 +205,23 @@ public class ErrandInvestigationService {
 	}
 
 	@Transactional
-	public String createInvestigationAttachment(final String namespace, final String municipalityId, final String errandId, final String investigationId, final MultipartFile file, final Integer sortOrder) {
+	public String createInvestigationAttachment(final String namespace, final String municipalityId, final String errandId, final String investigationId, final MultipartFile file) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, artefactLinks(entity));
+		final var attachmentId = artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, attachments(entity));
+		investigationRepository.saveAndFlush(entity);
+		return attachmentId;
 	}
 
 	@Transactional
-	public ArtefactAttachment linkInvestigationAttachment(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String attachmentId,
-		final ArtefactAttachmentLink link) {
+	public ArtefactAttachment linkInvestigationAttachment(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String attachmentId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), artefactLinks(entity));
-	}
-
-	@Transactional
-	public ArtefactAttachment updateInvestigationAttachment(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String attachmentId,
-		final ArtefactAttachmentLink link) {
-		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
-		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
-
-		return artefactAttachmentService.update(attachmentId, link, attachmentLinks(entity));
+		final var result = artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, attachments(entity));
+		investigationRepository.saveAndFlush(entity);
+		return result;
 	}
 
 	@Transactional
@@ -240,7 +229,7 @@ public class ErrandInvestigationService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 
-		artefactAttachmentService.unlink(attachmentId, attachmentLinks(entity));
+		artefactAttachmentService.unlink(attachmentId, attachments(entity));
 		investigationRepository.saveAndFlush(entity);
 	}
 
@@ -305,14 +294,7 @@ public class ErrandInvestigationService {
 		artefactJsonParameterService.delete(errandEntity, sectionJsonParameterLinks(findSectionOrElseThrow(investigationEntity, sectionId)), key, ifMatch);
 	}
 
-	private ArtefactLinks<InvestigationAttachmentEntity> artefactLinks(final InvestigationEntity entity) {
-		return new ArtefactLinks<>(attachmentLinks(entity), attachment -> InvestigationAttachmentEntity.create()
-			.withInvestigationEntity(entity)
-			.withAttachmentEntity(attachment)
-			.withCreatedBy(getCallerIdentity()), investigationAttachmentRepository);
-	}
-
-	private List<InvestigationAttachmentEntity> attachmentLinks(final InvestigationEntity entity) {
+	private List<AttachmentEntity> attachments(final InvestigationEntity entity) {
 		if (entity.getAttachments() == null) {
 			entity.setAttachments(new ArrayList<>());
 		}

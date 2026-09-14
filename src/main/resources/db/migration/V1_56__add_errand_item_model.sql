@@ -223,13 +223,8 @@ alter table if exists measure
     on delete set null;
 
 create table if not exists statement_attachment (
-    id            varchar(255) not null,
     statement_id  varchar(255) not null,
     attachment_id varchar(255) not null,
-    sort_order    integer,
-    created       datetime(6),
-    created_by    varchar(255),
-    primary key (id),
     constraint uq_statement_attachment_statement_id_attachment_id
         unique (statement_id, attachment_id),
     constraint fk_statement_attachment_statement_id
@@ -247,13 +242,8 @@ create index if not exists idx_statement_attachment_attachment_id
     on statement_attachment (attachment_id);
 
 create table if not exists investigation_attachment (
-    id               varchar(255) not null,
     investigation_id varchar(255) not null,
     attachment_id    varchar(255) not null,
-    sort_order       integer,
-    created          datetime(6),
-    created_by       varchar(255),
-    primary key (id),
     constraint uq_investigation_attachment_investigation_id_attachment_id
         unique (investigation_id, attachment_id),
     constraint fk_investigation_attachment_investigation_id
@@ -271,13 +261,8 @@ create index if not exists idx_investigation_attachment_attachment_id
     on investigation_attachment (attachment_id);
 
 create table if not exists decision_attachment (
-    id            varchar(255) not null,
     decision_id   varchar(255) not null,
     attachment_id varchar(255) not null,
-    sort_order    integer,
-    created       datetime(6),
-    created_by    varchar(255),
-    primary key (id),
     constraint uq_decision_attachment_decision_id_attachment_id
         unique (decision_id, attachment_id),
     constraint fk_decision_attachment_decision_id
@@ -295,13 +280,8 @@ create index if not exists idx_decision_attachment_attachment_id
     on decision_attachment (attachment_id);
 
 create table if not exists measure_attachment (
-    id            varchar(255) not null,
     measure_id    varchar(255) not null,
     attachment_id varchar(255) not null,
-    sort_order    integer,
-    created       datetime(6),
-    created_by    varchar(255),
-    primary key (id),
     constraint uq_measure_attachment_measure_id_attachment_id
         unique (measure_id, attachment_id),
     constraint fk_measure_attachment_measure_id

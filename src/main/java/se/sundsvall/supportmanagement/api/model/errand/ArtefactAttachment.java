@@ -1,10 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.OffsetDateTime;
 import java.util.Objects;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
@@ -12,8 +9,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 /**
  * An attachment of the errand as it is used by a handling artefact.
  * <p>
- * Only ever an answer. The order it is shown in is written through {@link ArtefactAttachmentLink}, what it is for
- * through the attachment resource of the errand, and the file itself is read - content and all - through
+ * Only ever an answer. What it is for is written through the attachment resource of the errand, and the file itself is
+ * read - content and all - through
  * {@code GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}}.
  */
 @Schema(description = "Attachment of an errand linked to a handling artefact")
@@ -33,16 +30,6 @@ public class ArtefactAttachment {
 
 	@Schema(description = "What the attachment is for. Left out for an attachment without a purpose", accessMode = READ_ONLY)
 	private ErrandAttachmentPurpose purpose;
-
-	@Schema(description = "Order the attachment is shown in under the artefact", examples = "1", accessMode = READ_ONLY)
-	private Integer sortOrder;
-
-	@Schema(description = "Timestamp when the attachment was linked", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
-	@DateTimeFormat(iso = ISO.DATE_TIME)
-	private OffsetDateTime created;
-
-	@Schema(description = "User who linked the attachment", examples = "jo12doe", accessMode = READ_ONLY)
-	private String createdBy;
 
 	public static ArtefactAttachment create() {
 		return new ArtefactAttachment();
@@ -113,48 +100,9 @@ public class ArtefactAttachment {
 		return this;
 	}
 
-	public Integer getSortOrder() {
-		return sortOrder;
-	}
-
-	public void setSortOrder(final Integer sortOrder) {
-		this.sortOrder = sortOrder;
-	}
-
-	public ArtefactAttachment withSortOrder(final Integer sortOrder) {
-		this.sortOrder = sortOrder;
-		return this;
-	}
-
-	public OffsetDateTime getCreated() {
-		return created;
-	}
-
-	public void setCreated(final OffsetDateTime created) {
-		this.created = created;
-	}
-
-	public ArtefactAttachment withCreated(final OffsetDateTime created) {
-		this.created = created;
-		return this;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(final String createdBy) {
-		this.createdBy = createdBy;
-	}
-
-	public ArtefactAttachment withCreatedBy(final String createdBy) {
-		this.createdBy = createdBy;
-		return this;
-	}
-
 	@Override
 	public int hashCode() {
-		return Objects.hash(attachmentId, fileName, mimeType, fileSize, purpose, sortOrder, created, createdBy);
+		return Objects.hash(attachmentId, fileName, mimeType, fileSize, purpose);
 	}
 
 	@Override
@@ -169,10 +117,7 @@ public class ArtefactAttachment {
 			&& Objects.equals(fileName, other.fileName)
 			&& Objects.equals(mimeType, other.mimeType)
 			&& Objects.equals(fileSize, other.fileSize)
-			&& Objects.equals(purpose, other.purpose)
-			&& Objects.equals(sortOrder, other.sortOrder)
-			&& Objects.equals(created, other.created)
-			&& Objects.equals(createdBy, other.createdBy);
+			&& Objects.equals(purpose, other.purpose);
 	}
 
 	@Override
@@ -183,9 +128,6 @@ public class ArtefactAttachment {
 			", mimeType='" + mimeType + '\'' +
 			", fileSize=" + fileSize +
 			", purpose=" + purpose +
-			", sortOrder=" + sortOrder +
-			", created=" + created +
-			", createdBy='" + createdBy + '\'' +
 			'}';
 	}
 }

@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import com.google.code.beanmatchers.BeanMatchers;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -30,12 +29,10 @@ class AttachmentEntityTest {
 	// one it does not have.
 	private static final String READ_ONLY_PROPERTY = "attachmentDataId";
 
-	// The links to the handling artefacts are collections the attachment tears down but is not identified by, and the
-	// purpose is a reference into the metadata of the namespace, named by its id in the string form. None of them takes
-	// part in equality, and comparing the links would also walk back into the artefacts, which point at the errand this
-	// attachment already belongs to.
+	// The purpose is a reference into the metadata of the namespace, named by its id in the string form, and takes no part
+	// in equality.
 	private static final String[] NOT_COMPARED = {
-		"purpose", "statementLinks", "investigationLinks", "decisionLinks", "measureLinks"
+		"purpose"
 	};
 
 	private static String[] excluding(final String... properties) {
@@ -85,11 +82,7 @@ class AttachmentEntityTest {
 			.withModified(now().truncatedTo(SECONDS))
 			.withFileSize(fileSize)
 			.withHash(hash)
-			.withPurpose(purpose)
-			.withStatementLinks(List.of(StatementAttachmentEntity.create()))
-			.withInvestigationLinks(List.of(InvestigationAttachmentEntity.create()))
-			.withDecisionLinks(List.of(DecisionAttachmentEntity.create()))
-			.withMeasureLinks(List.of(MeasureAttachmentEntity.create()));
+			.withPurpose(purpose);
 
 		assertThat(attachmentEntity).hasNoNullFieldsOrPropertiesExcept(READ_ONLY_PROPERTY);
 		assertThat(attachmentEntity.getId()).isEqualTo(id);

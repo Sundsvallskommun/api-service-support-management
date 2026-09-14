@@ -197,25 +197,10 @@ class ErrandStatementsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
 			.withServicePath(PATH + "/" + STATEMENT_ID + "/attachments/" + UNLINKED_ATTACHMENT_ID)
 			.withHttpMethod(POST)
-			.withRequest("{\"sortOrder\":2}")
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/attachments/" + UNLINKED_ATTACHMENT_ID))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	void test11_updateStatementAttachment() {
-		setupCall()
-			.withServicePath(PATH + "/" + STATEMENT_ID + "/attachments/" + LINKED_ATTACHMENT_ID)
-			.withHttpMethod(PATCH)
-			.withRequest("{\"sortOrder\":5}")
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-
-		assertThat(jdbcTemplate.queryForObject("select sort_order from statement_attachment where statement_id = ? and attachment_id = ?", Integer.class, STATEMENT_ID, LINKED_ATTACHMENT_ID))
-			.as("the new order reached the database").isEqualTo(5);
 	}
 
 	@Test

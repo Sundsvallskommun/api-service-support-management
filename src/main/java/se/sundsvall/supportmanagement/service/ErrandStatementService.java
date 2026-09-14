@@ -9,18 +9,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachmentLink;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.StatementAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
-import se.sundsvall.supportmanagement.integration.db.model.StatementAttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.ArtefactAttachmentService.ArtefactLinks;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -55,19 +52,17 @@ public class ErrandStatementService {
 
 	private final ErrandsRepository errandsRepository;
 	private final StatementRepository statementRepository;
-	private final StatementAttachmentRepository statementAttachmentRepository;
 	private final StatementJsonParameterRepository statementJsonParameterRepository;
 	private final StatementValidator statementValidator;
 	private final ArtefactAttachmentService artefactAttachmentService;
 	private final ArtefactJsonParameterService artefactJsonParameterService;
 	private final AccessControlService accessControlService;
 
-	ErrandStatementService(final ErrandsRepository errandsRepository, final StatementRepository statementRepository, final StatementAttachmentRepository statementAttachmentRepository,
-		final StatementJsonParameterRepository statementJsonParameterRepository, final StatementValidator statementValidator, final ArtefactAttachmentService artefactAttachmentService,
-		final ArtefactJsonParameterService artefactJsonParameterService, final AccessControlService accessControlService) {
+	ErrandStatementService(final ErrandsRepository errandsRepository, final StatementRepository statementRepository, final StatementJsonParameterRepository statementJsonParameterRepository,
+		final StatementValidator statementValidator, final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService,
+		final AccessControlService accessControlService) {
 		this.errandsRepository = errandsRepository;
 		this.statementRepository = statementRepository;
-		this.statementAttachmentRepository = statementAttachmentRepository;
 		this.statementJsonParameterRepository = statementJsonParameterRepository;
 		this.statementValidator = statementValidator;
 		this.artefactAttachmentService = artefactAttachmentService;
@@ -131,29 +126,23 @@ public class ErrandStatementService {
 	}
 
 	@Transactional
-	public String createStatementAttachment(final String namespace, final String municipalityId, final String errandId, final String statementId, final MultipartFile file, final Integer sortOrder) {
+	public String createStatementAttachment(final String namespace, final String municipalityId, final String errandId, final String statementId, final MultipartFile file) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 
-		return artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, sortOrder, artefactLinks(entity));
+		final var attachmentId = artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, attachments(entity));
+		statementRepository.saveAndFlush(entity);
+		return attachmentId;
 	}
 
 	@Transactional
-	public ArtefactAttachment linkStatementAttachment(final String namespace, final String municipalityId, final String errandId, final String statementId, final String attachmentId,
-		final ArtefactAttachmentLink link) {
+	public ArtefactAttachment linkStatementAttachment(final String namespace, final String municipalityId, final String errandId, final String statementId, final String attachmentId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 
-		return artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, link.getSortOrder(), artefactLinks(entity));
-	}
-
-	@Transactional
-	public ArtefactAttachment updateStatementAttachment(final String namespace, final String municipalityId, final String errandId, final String statementId, final String attachmentId,
-		final ArtefactAttachmentLink link) {
-		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
-		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
-
-		return artefactAttachmentService.update(attachmentId, link, attachmentLinks(entity));
+		final var result = artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, attachments(entity));
+		statementRepository.saveAndFlush(entity);
+		return result;
 	}
 
 	@Transactional
@@ -161,7 +150,7 @@ public class ErrandStatementService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 
-		artefactAttachmentService.unlink(attachmentId, attachmentLinks(entity));
+		artefactAttachmentService.unlink(attachmentId, attachments(entity));
 		statementRepository.saveAndFlush(entity);
 	}
 
@@ -195,14 +184,7 @@ public class ErrandStatementService {
 		artefactJsonParameterService.delete(errandEntity, jsonParameterLinks(entity), key, ifMatch);
 	}
 
-	private ArtefactLinks<StatementAttachmentEntity> artefactLinks(final StatementEntity entity) {
-		return new ArtefactLinks<>(attachmentLinks(entity), attachment -> StatementAttachmentEntity.create()
-			.withStatementEntity(entity)
-			.withAttachmentEntity(attachment)
-			.withCreatedBy(getCallerIdentity()), statementAttachmentRepository);
-	}
-
-	private List<StatementAttachmentEntity> attachmentLinks(final StatementEntity entity) {
+	private List<AttachmentEntity> attachments(final StatementEntity entity) {
 		if (entity.getAttachments() == null) {
 			entity.setAttachments(new ArrayList<>());
 		}

@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
+import java.util.function.Supplier;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -16,7 +16,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
@@ -53,9 +52,9 @@ public final class ArtefactJsonParameters {
 	 * Removing them anywhere else would not work: {@code ErrandEntity.jsonParameters} cascades everything, so a row taken
 	 * out while that collection still holds it is written back by the next flush.
 	 * <p>
-	 * <b>Call this after the artefact has been removed, not before.</b> Removing the artefact takes its links with it,
-	 * and doing it in that order means the parameters are unlinked by the time they are removed - so nothing reaches a
-	 * link row twice.
+	 * The links naming them are left to the database, which removes a link together with its parameter. Hibernate is never
+	 * asked to remove one: doing so in the same flush as the parameter would null the reference to it first, which the
+	 * column refuses.
 	 *
 	 * @param errandEntity the errand owning the parameters.
 	 * @param parameterIds the parameters to remove, as named by {@link #ownedParameterIds(List)}.
@@ -78,20 +77,23 @@ public final class ArtefactJsonParameters {
 	 * <p>
 	 * Keys are compared without regard to case, as the database compares them.
 	 *
-	 * @param  errandEntity   the errand as it stands, before the patch is applied.
-	 * @param  jsonParameters the parameters of the patch, or null when it leaves them alone.
-	 * @param  writableKey    the keys the caller may change, per field.
-	 * @return                the keys the patch may change, per field: the same, less the ones artefacts own.
+	 * @param  errandEntity      the errand as it stands, before the patch is applied.
+	 * @param  jsonParameters    the parameters of the patch, or null when it leaves them alone.
+	 * @param  writableKey       the keys the caller may change, per field.
+	 * @param  ownedParameterIds the ids of the parameters the artefacts of the errand own, asked for only when the patch
+	 *                           touches the parameters.
+	 * @return                   the keys the patch may change, per field: the same, less the ones artefacts own.
 	 */
 	public static Function<ErrandField, Predicate<String>> withoutArtefactParameters(final ErrandEntity errandEntity, final List<JsonParameter> jsonParameters,
-		final Function<ErrandField, Predicate<String>> writableKey) {
+		final Function<ErrandField, Predicate<String>> writableKey, final Supplier<Set<String>> ownedParameterIds) {
 
 		if (isNull(jsonParameters)) {
 			return writableKey;
 		}
 
+		final var ownedIds = ownedParameterIds.get();
 		final var ownedKeys = ofNullable(errandEntity.getJsonParameters()).orElse(emptyList()).stream()
-			.filter(ArtefactJsonParameters::isOwnedByArtefact)
+			.filter(parameter -> ownedIds.contains(parameter.getId()))
 			.map(JsonParameterEntity::getKey)
 			.collect(toCollection(() -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER)));
 
@@ -103,11 +105,5 @@ public final class ArtefactJsonParameters {
 			});
 
 		return field -> (field == ErrandField.JSON_PARAMETERS) ? writableKey.apply(field).and(key -> !ownedKeys.contains(key)) : writableKey.apply(field);
-	}
-
-	private static boolean isOwnedByArtefact(final JsonParameterEntity parameter) {
-		return Stream.<List<?>>of(parameter.getStatementLinks(), parameter.getInvestigationLinks(), parameter.getInvestigationSectionLinks(),
-			parameter.getDecisionLinks(), parameter.getMeasureLinks())
-			.anyMatch(links -> nonNull(links) && !links.isEmpty());
 	}
 }

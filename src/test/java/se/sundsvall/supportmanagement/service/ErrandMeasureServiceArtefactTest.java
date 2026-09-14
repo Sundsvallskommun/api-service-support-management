@@ -11,12 +11,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachmentLink;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.MeasureAttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.MeasureJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
@@ -58,9 +56,6 @@ class ErrandMeasureServiceArtefactTest {
 	private MeasureValidator measureValidatorMock;
 
 	@Mock
-	private MeasureAttachmentRepository measureAttachmentRepositoryMock;
-
-	@Mock
 	private MeasureJsonParameterRepository measureJsonParameterRepositoryMock;
 
 	@Mock
@@ -90,22 +85,27 @@ class ErrandMeasureServiceArtefactTest {
 		return errandEntity;
 	}
 
+	/**
+	 * The measure is held by the errand, so it is the errand that is flushed once the attachment is in the collection of
+	 * the measure.
+	 */
 	@Test
 	void createMeasureAttachment() {
 
 		// Arrange
 		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
-		errandWithMeasure(measureEntity);
+		final var errandEntity = errandWithMeasure(measureEntity);
 		final var file = new MockMultipartFile("attachment", "protokoll.pdf", "application/pdf", "content".getBytes());
-		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), eq(1), any()))
-			.thenReturn(ATTACHMENT_ID);
+		when(artefactAttachmentServiceMock.uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), any())).thenReturn(ATTACHMENT_ID);
 
 		// Act
-		final var result = service.createMeasureAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, file, 1);
+		final var result = service.createMeasureAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, file);
 
-		// Verify - the collection is created on the way, so the link has somewhere to go
+		// Verify - the collection is created on the way, so the attachment has somewhere to go
 		assertThat(result).isEqualTo(ATTACHMENT_ID);
 		assertThat(measureEntity.getAttachments()).isNotNull();
+		verify(artefactAttachmentServiceMock).uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), same(measureEntity.getAttachments()));
+		verify(errandsRepositoryMock).saveAndFlush(errandEntity);
 	}
 
 	@Test
@@ -113,32 +113,17 @@ class ErrandMeasureServiceArtefactTest {
 
 		// Arrange
 		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
-		errandWithMeasure(measureEntity);
-		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), eq(2), any()))
+		final var errandEntity = errandWithMeasure(measureEntity);
+		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), any()))
 			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
 
 		// Act
-		final var result = service.linkMeasureAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, ATTACHMENT_ID,
-			ArtefactAttachmentLink.create().withSortOrder(2));
+		final var result = service.linkMeasureAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, ATTACHMENT_ID);
 
 		// Verify
 		assertThat(result.getAttachmentId()).isEqualTo(ATTACHMENT_ID);
-	}
-
-	@Test
-	void updateMeasureAttachment() {
-
-		// Arrange
-		final var measureEntity = MeasureEntity.create().withId(MEASURE_ID);
-		errandWithMeasure(measureEntity);
-		final var body = ArtefactAttachmentLink.create().withSortOrder(4);
-		when(artefactAttachmentServiceMock.update(eq(ATTACHMENT_ID), eq(body), any())).thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID).withSortOrder(4));
-
-		// Act
-		final var result = service.updateMeasureAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, MEASURE_ID, ATTACHMENT_ID, body);
-
-		// Verify
-		assertThat(result.getSortOrder()).isEqualTo(4);
+		verify(artefactAttachmentServiceMock).link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), same(measureEntity.getAttachments()));
+		verify(errandsRepositoryMock).saveAndFlush(errandEntity);
 	}
 
 	@Test

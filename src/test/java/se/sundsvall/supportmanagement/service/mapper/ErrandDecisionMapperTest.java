@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
-import se.sundsvall.supportmanagement.integration.db.model.DecisionAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -133,8 +132,7 @@ class ErrandDecisionMapperTest {
 			.withErrandProcessId("processId")
 			.withVersion(4L)
 			.withTerms(List.of(DecisionTermEntity.create().withId("termId").withText("text").withCategory("category")))
-			.withAttachments(List.of(DecisionAttachmentEntity.create()
-				.withAttachmentEntity(AttachmentEntity.create().withId("attachmentId"))));
+			.withAttachments(List.of(AttachmentEntity.create().withId("attachmentId")));
 
 		// Act
 		final var result = toDecision(entity);

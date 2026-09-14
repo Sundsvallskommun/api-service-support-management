@@ -7,7 +7,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StatementAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.StatementOutcome;
@@ -130,8 +129,7 @@ class ErrandStatementMapperTest {
 			.withCreatedBy("jo12doe")
 			.withCreated(created)
 			.withVersion(3L)
-			.withAttachments(List.of(StatementAttachmentEntity.create()
-				.withAttachmentEntity(AttachmentEntity.create().withId("attachmentId").withFileName("file.pdf").withPurpose(AttachmentPurposeEntity.create().withId("purposeId").withName("RESPONSE")))));
+			.withAttachments(List.of(AttachmentEntity.create().withId("attachmentId").withFileName("file.pdf").withPurpose(AttachmentPurposeEntity.create().withId("purposeId").withName("RESPONSE"))));
 
 		// Act
 		final var result = toStatement(entity);

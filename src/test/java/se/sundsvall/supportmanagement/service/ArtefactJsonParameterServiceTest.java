@@ -12,9 +12,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.integration.db.DecisionJsonParameterRepository;
+import se.sundsvall.supportmanagement.integration.db.InvestigationJsonParameterRepository;
+import se.sundsvall.supportmanagement.integration.db.InvestigationSectionJsonParameterRepository;
+import se.sundsvall.supportmanagement.integration.db.MeasureJsonParameterRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementJsonParameterRepository;
+import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.InvestigationJsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementJsonParameterEntity;
 import se.sundsvall.supportmanagement.service.AccessControlService.KeyAccess;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -25,7 +33,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -54,6 +61,18 @@ class ArtefactJsonParameterServiceTest {
 
 	@Mock
 	private StatementJsonParameterRepository linkRepositoryMock;
+
+	@Mock
+	private InvestigationJsonParameterRepository investigationLinkRepositoryMock;
+
+	@Mock
+	private InvestigationSectionJsonParameterRepository investigationSectionLinkRepositoryMock;
+
+	@Mock
+	private DecisionJsonParameterRepository decisionLinkRepositoryMock;
+
+	@Mock
+	private MeasureJsonParameterRepository measureLinkRepositoryMock;
 
 	@InjectMocks
 	private ArtefactJsonParameterService service;
@@ -190,6 +209,37 @@ class ArtefactJsonParameterServiceTest {
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(problem.getMessage()).contains(KEY);
+	}
+
+	/**
+	 * Which parameters of the errand an artefact owns is asked of the links of all five owners.
+	 */
+	@Test
+	void ownedParameterIdsAsksTheLinksOfAllFiveOwners() {
+
+		// Arrange
+		when(linkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID)).thenReturn(List.of(linkTo(parameter("1", "statementForm"))));
+		when(investigationLinkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID))
+			.thenReturn(List.of(InvestigationJsonParameterEntity.create().withJsonParameterEntity(parameter("2", "investigationForm"))));
+		when(investigationSectionLinkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID))
+			.thenReturn(List.of(InvestigationSectionJsonParameterEntity.create().withJsonParameterEntity(parameter("3", "sectionForm"))));
+		when(decisionLinkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID))
+			.thenReturn(List.of(DecisionJsonParameterEntity.create().withJsonParameterEntity(parameter("4", "decisionForm"))));
+		when(measureLinkRepositoryMock.findByJsonParameterEntityErrandEntityId(ERRAND_ID))
+			.thenReturn(List.of(MeasureJsonParameterEntity.create().withJsonParameterEntity(parameter("5", "measureForm"))));
+
+		// Act
+		final var result = service.ownedParameterIds(ERRAND_ID);
+
+		// Verify
+		assertThat(result).containsExactlyInAnyOrder("1", "2", "3", "4", "5");
+	}
+
+	@Test
+	void ownedParameterIdsOfAnErrandWhoseArtefactsOwnNothing() {
+
+		// Act & Verify - the repositories answer with nothing
+		assertThat(service.ownedParameterIds(ERRAND_ID)).isEmpty();
 	}
 
 	@Test
@@ -336,11 +386,11 @@ class ArtefactJsonParameterServiceTest {
 	}
 
 	/**
-	 * The link goes first and the parameter second. Removing the parameter first would leave orphan removal deleting a row
-	 * that is no longer there, which the caller would see as a 412 it can do nothing about.
+	 * The parameter goes through the collection of the errand, and the database takes the link with it. The link leaves
+	 * the collection of the artefact as well, so that nothing later in the same transaction still finds it there.
 	 */
 	@Test
-	void deleteRemovesTheLinkAndThenTheParameter() {
+	void deleteRemovesTheParameterAndItsLink() {
 
 		// Arrange
 		final var existing = parameter("1", KEY);
@@ -354,7 +404,7 @@ class ArtefactJsonParameterServiceTest {
 		assertThat(links).extracting(link -> link.getJsonParameterEntity().getKey()).containsExactly("other");
 		assertThat(errandEntity.getJsonParameters()).extracting(JsonParameterEntity::getKey).containsExactly("errandOwned");
 		verify(accessControlServiceMock).verifyWritableKey(NAMESPACE, MUNICIPALITY_ID, errandEntity, JSON_PARAMETERS, KEY);
-		verify(entityManagerMock, times(2)).flush();
+		verify(entityManagerMock).flush();
 	}
 
 	@Test

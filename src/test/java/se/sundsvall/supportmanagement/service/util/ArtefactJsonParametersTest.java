@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,7 +18,6 @@ import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.StatementJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import tools.jackson.databind.node.JsonNodeFactory;
 
@@ -39,8 +39,14 @@ class ArtefactJsonParametersTest {
 	private static final String ERRAND_KEY = "formData";
 	private static final String SCHEMA_ID = "test-schema-1.0";
 
+	/** The parameter {@link #artefactOwned()} builds is the one an artefact owns. */
+	private static final Supplier<Set<String>> OWNED = () -> Set.of(PARAMETER_ID_1);
+
 	@Mock
 	private ErrandEntity errandEntityMock;
+
+	@Mock
+	private Supplier<Set<String>> ownedParameterIdsMock;
 
 	private static DecisionJsonParameterEntity link(final JsonParameterEntity parameter) {
 		return DecisionJsonParameterEntity.create().withJsonParameterEntity(parameter);
@@ -141,7 +147,8 @@ class ArtefactJsonParametersTest {
 	}
 
 	/**
-	 * A patch leaving the parameters of the errand alone asks nothing of them, and loads none of their links.
+	 * A patch leaving the parameters of the errand alone asks nothing of them, and does not ask which of them the artefacts
+	 * own.
 	 */
 	@Test
 	void withoutArtefactParametersWhenThePatchLeavesThemAlone() {
@@ -150,11 +157,11 @@ class ArtefactJsonParametersTest {
 		final Function<ErrandField, Predicate<String>> writableKey = _ -> _ -> true;
 
 		// Act
-		final var result = withoutArtefactParameters(errandEntityMock, null, writableKey);
+		final var result = withoutArtefactParameters(errandEntityMock, null, writableKey, ownedParameterIdsMock);
 
 		// Verify
 		assertThat(result).isSameAs(writableKey);
-		verifyNoInteractions(errandEntityMock);
+		verifyNoInteractions(errandEntityMock, ownedParameterIdsMock);
 	}
 
 	/**
@@ -168,13 +175,30 @@ class ArtefactJsonParametersTest {
 		final var errandEntity = ErrandEntity.create().withJsonParameters(new ArrayList<>(List.of(artefactOwned(), errandOwned())));
 
 		// Act
-		final var result = withoutArtefactParameters(errandEntity, List.of(patched(ERRAND_KEY, "changed")), _ -> _ -> true);
+		final var result = withoutArtefactParameters(errandEntity, List.of(patched(ERRAND_KEY, "changed")), _ -> _ -> true, OWNED);
 
 		// Verify
 		assertThat(result.apply(ErrandField.JSON_PARAMETERS))
 			.accepts(ERRAND_KEY)
 			.rejects(ARTEFACT_KEY, ARTEFACT_KEY.toUpperCase());
 		assertThat(result.apply(ErrandField.PARAMETERS)).as("other fields are not the artefacts' business").accepts(ARTEFACT_KEY);
+	}
+
+	/**
+	 * Which parameters an artefact owns is what the links say, not what a key looks like: a parameter no link names is the
+	 * errand's to change, whatever it is called.
+	 */
+	@Test
+	void aParameterNoArtefactOwnsIsWritableThroughTheErrand() {
+
+		// Arrange
+		final var errandEntity = ErrandEntity.create().withJsonParameters(new ArrayList<>(List.of(artefactOwned(), errandOwned())));
+
+		// Act
+		final var result = withoutArtefactParameters(errandEntity, List.of(patched(ARTEFACT_KEY, "changed")), _ -> _ -> true, Set::of);
+
+		// Verify
+		assertThat(result.apply(ErrandField.JSON_PARAMETERS)).accepts(ARTEFACT_KEY, ERRAND_KEY);
 	}
 
 	/**
@@ -187,7 +211,7 @@ class ArtefactJsonParametersTest {
 		final var errandEntity = ErrandEntity.create().withJsonParameters(new ArrayList<>(List.of(artefactOwned(), errandOwned())));
 
 		// Act
-		final var result = withoutArtefactParameters(errandEntity, List.of(patched(ARTEFACT_KEY, "pending"), patched(ERRAND_KEY, "pending")), _ -> _ -> true);
+		final var result = withoutArtefactParameters(errandEntity, List.of(patched(ARTEFACT_KEY, "pending"), patched(ERRAND_KEY, "pending")), _ -> _ -> true, OWNED);
 
 		// Verify
 		assertThat(result.apply(ErrandField.JSON_PARAMETERS)).rejects(ARTEFACT_KEY);
@@ -208,7 +232,7 @@ class ArtefactJsonParametersTest {
 		final var jsonParameters = List.of(patched(key, "changed"));
 
 		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> withoutArtefactParameters(errandEntity, jsonParameters, _ -> _ -> true));
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> withoutArtefactParameters(errandEntity, jsonParameters, _ -> _ -> true, OWNED));
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
@@ -225,15 +249,14 @@ class ArtefactJsonParametersTest {
 		final var errandEntity = ErrandEntity.create().withJsonParameters(new ArrayList<>(List.of(errandOwned())));
 
 		// Act
-		final var result = withoutArtefactParameters(errandEntity, List.of(), _ -> key -> !ERRAND_KEY.equals(key));
+		final var result = withoutArtefactParameters(errandEntity, List.of(), _ -> key -> !ERRAND_KEY.equals(key), Set::of);
 
 		// Verify
 		assertThat(result.apply(ErrandField.JSON_PARAMETERS)).rejects(ERRAND_KEY).accepts("another");
 	}
 
 	private static JsonParameterEntity artefactOwned() {
-		return JsonParameterEntity.create().withId(PARAMETER_ID_1).withKey(ARTEFACT_KEY).withSchemaId(SCHEMA_ID).withValue("{\"answer\":\"pending\"}")
-			.withStatementLinks(List.of(StatementJsonParameterEntity.create()));
+		return JsonParameterEntity.create().withId(PARAMETER_ID_1).withKey(ARTEFACT_KEY).withSchemaId(SCHEMA_ID).withValue("{\"answer\":\"pending\"}");
 	}
 
 	private static JsonParameterEntity errandOwned() {

@@ -76,7 +76,7 @@ class StatementEntityTest {
 		final var outcome = StatementOutcome.SUPPORTS;
 		final var responseText = "responseText";
 		final var communicationId = "communicationId";
-		final var attachments = List.of(StatementAttachmentEntity.create());
+		final var attachments = List.of(AttachmentEntity.create());
 		final var jsonParameterLinks = List.of(StatementJsonParameterEntity.create());
 
 		// Act

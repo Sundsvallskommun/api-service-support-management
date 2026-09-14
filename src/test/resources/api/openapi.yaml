@@ -10385,13 +10385,6 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: sortOrder
-        in: query
-        description: Order the attachment is shown in
-        required: false
-        schema:
-          type: integer
-          format: int32
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -10494,12 +10487,6 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ArtefactAttachmentLink"
-        required: true
       responses:
         "201":
           description: Successful operation
@@ -10594,91 +10581,6 @@ paths:
       responses:
         "204":
           description: Successful operation
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    patch:
-      tags:
-      - Errand Decisions
-      summary: Update decision attachment link
-      description: Updates the order a linked attachment is shown in
-      operationId: updateDecisionAttachment
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: decisionId
-        in: path
-        description: Decision id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: attachmentId
-        in: path
-        description: Attachment id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ArtefactAttachmentLink"
-        required: true
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ArtefactAttachment"
         "404":
           description: Not found
           content:
@@ -11900,13 +11802,6 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: sortOrder
-        in: query
-        description: Order the attachment is shown in
-        required: false
-        schema:
-          type: integer
-          format: int32
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -12009,12 +11904,6 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ArtefactAttachmentLink"
-        required: true
       responses:
         "201":
           description: Successful operation
@@ -12109,91 +11998,6 @@ paths:
       responses:
         "204":
           description: Successful operation
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    patch:
-      tags:
-      - Errand Investigations
-      summary: Update investigation attachment link
-      description: Updates the order a linked attachment is shown in
-      operationId: updateInvestigationAttachment
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: investigationId
-        in: path
-        description: Investigation id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: attachmentId
-        in: path
-        description: Attachment id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ArtefactAttachmentLink"
-        required: true
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ArtefactAttachment"
         "404":
           description: Not found
           content:
@@ -13434,13 +13238,6 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: sortOrder
-        in: query
-        description: Order the attachment is shown in
-        required: false
-        schema:
-          type: integer
-          format: int32
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -13543,12 +13340,6 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ArtefactAttachmentLink"
-        required: true
       responses:
         "201":
           description: Successful operation
@@ -13643,91 +13434,6 @@ paths:
       responses:
         "204":
           description: Successful operation
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    patch:
-      tags:
-      - Errand Measures
-      summary: Update measure attachment link
-      description: Updates the order a linked attachment is shown in
-      operationId: updateMeasureAttachment
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: measureId
-        in: path
-        description: Measure id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: attachmentId
-        in: path
-        description: Attachment id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ArtefactAttachmentLink"
-        required: true
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ArtefactAttachment"
         "404":
           description: Not found
           content:
@@ -14555,13 +14261,6 @@ paths:
         schema:
           type: string
         example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: sortOrder
-        in: query
-        description: Order the attachment is shown in
-        required: false
-        schema:
-          type: integer
-          format: int32
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -14664,12 +14363,6 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ArtefactAttachmentLink"
-        required: true
       responses:
         "201":
           description: Successful operation
@@ -14764,91 +14457,6 @@ paths:
       responses:
         "204":
           description: Successful operation
-        "404":
-          description: Not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-    patch:
-      tags:
-      - Errand Statements
-      summary: Update statement attachment link
-      description: Updates the order a linked attachment is shown in
-      operationId: updateStatementAttachment
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: errandId
-        in: path
-        description: Errand id
-        required: true
-        schema:
-          type: string
-        example: b82bd8ac-1507-4d9a-958d-369261eecc15
-      - name: statementId
-        in: path
-        description: Statement id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: attachmentId
-        in: path
-        description: Attachment id
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ArtefactAttachmentLink"
-        required: true
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ArtefactAttachment"
         "404":
           description: Not found
           content:
@@ -19857,37 +19465,6 @@ components:
           description: What the attachment is for. Left out for an attachment without
             a purpose
           readOnly: true
-        sortOrder:
-          type: integer
-          format: int32
-          description: Order the attachment is shown in under the artefact
-          examples:
-          - 1
-          readOnly: true
-        created:
-          type: string
-          format: date-time
-          description: Timestamp when the attachment was linked
-          examples:
-          - 2000-10-31T01:30:00.000+02:00
-          readOnly: true
-        createdBy:
-          type: string
-          description: User who linked the attachment
-          examples:
-          - jo12doe
-          readOnly: true
-    ArtefactAttachmentLink:
-      type: object
-      description: Writable properties of a link between a handling artefact and an
-        attachment
-      properties:
-        sortOrder:
-          type: integer
-          format: int32
-          description: Order the attachment is shown in under the artefact
-          examples:
-          - 1
     AttachmentPurpose:
       type: object
       description: AttachmentPurpose model
