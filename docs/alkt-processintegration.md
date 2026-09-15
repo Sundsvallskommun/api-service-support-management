@@ -205,6 +205,7 @@ Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_eve
 
 ```
 1. PROCESS_CONSUMER för (municipalityId, namespace)?      nej -> return
+   eventType CREATE, UPDATE eller DELETE?                 nej -> kast, arendeandringen rullas tillbaka
 2. X-Trigger-Process: false, icke-AD-identitet?           ja  -> return        (loop-skydd, lager 1)
                        kommandon (PROCESS, SIGNAL) och DELETE hoppar over steg 2, 3 och 4, 6.5
 3. Levererade event för ärendet i fönstret >= tröskel?     ja  -> ERROR-aktivitet, return  (lager 3)
@@ -220,6 +221,8 @@ Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_eve
 ```
 
 Steg 1 är en uppslagning i en cachad map. Ett namespace utan process betalar alltså ingenting mer än så.
+
+Typkontrollen hör också till steg 1. pw-alkt tar bara emot `CREATE`, `UPDATE` och `DELETE`. En rad med någon annan typ kan relayet aldrig leverera, men läser den ändå först vid varje körning, och den håller tillbaka ärendets senare händelser tills den åldras ut. Publiceringen kastar därför i stället, medan anroparen finns kvar, och ärendeändringen rullas tillbaka. Inget anropsställe skickar någon annan typ idag, så kontrollen är till för nästa. Den ligger före loop-skyddet, så att ett sådant anrop fallerar i första testet och inte i produktion den dag någon lägger subtypen i `PROCESS_TRIGGER`. Ett namespace utan process når aldrig kontrollen.
 
 ERROR-aktiviteterna i steg 3 och 5 skrivs **utan processinstans** — de inträffar per definition när
 ingen instans finns (§3.1). Båda skrivs dessutom **en gång per ärende, felkod och fönster**, inte en gång per

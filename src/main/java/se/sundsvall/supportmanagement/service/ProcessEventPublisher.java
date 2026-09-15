@@ -51,6 +51,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  *
  * <pre>
  * 1. process consumer for (municipalityId, namespace)?   no   -&gt; return
+ *    event type CREATE, UPDATE or DELETE?                no   -&gt; throw, which takes the errand change down
  * 2. X-Trigger-Process: false, from a non ad identity?   yes  -&gt; return                 (loop guard, layer 1)
  *                    commands (PROCESS, SIGNAL) and deletions skip steps 2, 3 and 4
  * 3. delivered events for the errand in the window?      over -&gt; error entry, return    (layer 3)
@@ -104,6 +105,7 @@ public class ProcessEventPublisher {
 		the process key on the labels of this errand is %d characters long, and a process key may hold at most %d. No \
 		process is started for it, and no event about it reaches one. Shorten the processKey attribute of the label to \
 		the key the process is actually deployed under. The key begins '%s'""";
+	private static final String UNKNOWN_EVENT_TYPE = "a process is told of a creation, an update or a deletion, and an event of type %s is none of them";
 
 	private final NamespaceConfigService namespaceConfigService;
 	private final ProcessEventOutboxRepository outboxRepository;
@@ -162,6 +164,7 @@ public class ProcessEventPublisher {
 			return;
 		}
 
+		final var processEventType = toProcessEventType(eventType);
 		final var guarded = !eventSubType.isCommand() && DELETE != eventType;
 
 		if (guarded && isOptedOut()) {
@@ -203,7 +206,7 @@ public class ProcessEventPublisher {
 			.withErrandId(errand.getId())
 			.withProcessService(processService)
 			.withProcessKey(processKey)
-			.withEventType(eventType.getValue())
+			.withEventType(processEventType)
 			.withEventSubType(eventSubType.getValue())
 			.withStartAllowed(isStartAllowed(eventSubType, processKey, instances, selection))
 			// Never cut: a shortened name would correlate another gate, so one that does not fit fails the command loudly.
@@ -212,6 +215,24 @@ public class ProcessEventPublisher {
 			.withRequestGroupId(requestGroupId));
 
 		applicationEventPublisher.publishEvent(new ProcessEventWritten(errand.getId()));
+	}
+
+	/**
+	 * The event type a process is told, refusing one no process knows while the caller is still there to fail.
+	 * <p>
+	 * A process engine knows a creation, an update and a deletion, and nothing else. Left to the delivery, any other type
+	 * would be a row the relay can never turn into an event - read first again on every run, it would hold back every later
+	 * event of its errand until it aged out. Nothing publishes another type today; this is for the next call site that
+	 * does. It is asked before the loop guard and the triggers, so that such a call fails in the first test that reaches it
+	 * rather than in production on the day a namespace starts triggering on its sub type.
+	 * <p>
+	 * The switch has no default, so a type added to the event log does not compile until it has been decided here.
+	 */
+	private static String toProcessEventType(final EventType eventType) {
+		return switch (eventType) {
+			case CREATE, UPDATE, DELETE -> eventType.getValue();
+			case READ, ACCESS, EXECUTE, CANCEL, DROP -> throw new IllegalArgumentException(UNKNOWN_EVENT_TYPE.formatted(eventType.getValue()));
+		};
 	}
 
 	/**

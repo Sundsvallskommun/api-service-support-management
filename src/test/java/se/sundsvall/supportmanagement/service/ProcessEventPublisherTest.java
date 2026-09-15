@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.eventlog.EventType;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -47,9 +49,11 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -612,16 +616,7 @@ class ProcessEventPublisherTest {
 
 		final var status = mock(TransactionStatus.class);
 
-		try (var transactionAspect = mockStatic(TransactionAspectSupport.class)) {
-			transactionAspect.when(TransactionAspectSupport::currentTransactionStatus).thenReturn(status);
-			TransactionSynchronizationManager.setActualTransactionActive(true);
-
-			try {
-				assertThatThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null)).isSameAs(failure);
-			} finally {
-				TransactionSynchronizationManager.setActualTransactionActive(false);
-			}
-		}
+		inTransaction(status, () -> assertThatThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null)).isSameAs(failure));
 
 		verify(status).setRollbackOnly();
 		verifyNoInteractions(applicationEventPublisherMock);
@@ -637,6 +632,53 @@ class ProcessEventPublisherTest {
 		when(outboxRepositoryMock.save(any())).thenThrow(new IllegalStateException("the row could not be written"));
 
 		assertThatNoException().isThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null));
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = EventType.class, names = {
+		"CREATE", "UPDATE", "DELETE"
+	})
+	@DisplayName("Verification that the event types a process knows are written as they are, a deletion reading neither the triggers nor the labels")
+	void theEventTypesAProcessKnowsAreWrittenAsTheyAre(final EventType eventType) {
+		givenNamespaceRunsProcess();
+		lenient().when(namespaceConfigServiceMock.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(ERRAND));
+		lenient().when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(APPLICATION, AUTOMATIC, List.of(APPLICATION)));
+		givenNoInstances();
+
+		publisher.publish(errand(), eventType, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null);
+
+		verify(outboxRepositoryMock).save(outboxCaptor.capture());
+		assertThat(outboxCaptor.getValue().getEventType()).isEqualTo(eventType.getValue());
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = EventType.class, names = {
+		"CREATE", "UPDATE", "DELETE"
+	}, mode = EXCLUDE)
+	@DisplayName("Verification that an event type no process knows fails the publication and takes the errand change down, rather than leaving a row behind that can never be delivered")
+	void anEventTypeNoProcessKnowsFailsThePublication(final EventType eventType) {
+		givenNamespaceRunsProcess();
+		final var status = mock(TransactionStatus.class);
+
+		inTransaction(status, () -> assertThatIllegalArgumentException()
+			.isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null))
+			.withMessageContaining(eventType.getValue()));
+
+		verify(status).setRollbackOnly();
+		verify(namespaceConfigServiceMock, never()).getProcessTriggers(any(), any());
+		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, processKeySelectorMock, applicationEventPublisherMock);
+	}
+
+	@ParameterizedTest
+	@EnumSource(EventType.class)
+	@DisplayName("Verification that a namespace running no process never gets as far as the event type, so no event type can fail a write to its errands")
+	void aNamespaceWithoutAProcessConsumerTakesEveryEventType(final EventType eventType) {
+		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		final var status = mock(TransactionStatus.class);
+
+		inTransaction(status, () -> assertThatNoException().isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null)));
+
+		verifyNoInteractions(status, outboxRepositoryMock);
 	}
 
 	private boolean startAllowedFor(final List<ErrandProcessEntity> instances, final String labelKey, final ProcessStartMode startMode) {
@@ -677,6 +719,19 @@ class ProcessEventPublisherTest {
 
 	private void asMachine() {
 		Identifier.set(Identifier.create().withType(CUSTOM).withTypeString("processEngine").withValue(PROCESS_SERVICE));
+	}
+
+	private static void inTransaction(final TransactionStatus status, final Runnable call) {
+		try (var transactionAspect = mockStatic(TransactionAspectSupport.class)) {
+			transactionAspect.when(TransactionAspectSupport::currentTransactionStatus).thenReturn(status);
+			TransactionSynchronizationManager.setActualTransactionActive(true);
+
+			try {
+				call.run();
+			} finally {
+				TransactionSynchronizationManager.setActualTransactionActive(false);
+			}
+		}
 	}
 
 	private ErrandEntity errand() {

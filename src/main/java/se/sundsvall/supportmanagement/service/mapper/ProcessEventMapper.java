@@ -14,7 +14,7 @@ public final class ProcessEventMapper {
 	 * Copied from the row, with nothing worked out here. The process key, the start permission and the signal name were
 	 * settled when the row was written, and a delivery that decided any of them again could decide differently on a
 	 * retry. The id of the row is the id of the event, which is what lets pw-alkt recognise an event it has been given
-	 * before.
+	 * before. The event type needs no check either, since publication writes no type pw-alkt does not know.
 	 *
 	 * @param  row the row to deliver.
 	 * @return     the event for the row.
