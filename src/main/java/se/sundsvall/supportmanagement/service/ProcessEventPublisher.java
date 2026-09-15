@@ -94,7 +94,7 @@ public class ProcessEventPublisher {
 	private static final int KEY_EXCERPT_LENGTH = 64;
 
 	private static final String LOOP_GUARD_TRIPPED = """
-		emergency brake tripped: more than %d events have reached the process of this errand within %s, and further \
+		emergency brake tripped: %d events, the most allowed, have reached the process of this errand within %s, and further \
 		events are being dropped. Something is waking the errand in a loop - find what writes to it, and check that \
 		the process asks not to be woken by its own writes""";
 	private static final String AMBIGUOUS_KEYS = """
@@ -241,7 +241,7 @@ public class ProcessEventPublisher {
 		final var guard = processEngineProperties.loopGuard();
 		final var delivered = outboxRepository.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(errand.getId(), OffsetDateTime.now(clock).minus(guard.window()));
 
-		if (delivered <= guard.maxEventsPerErrand()) {
+		if (delivered < guard.maxEventsPerErrand()) {
 			return false;
 		}
 

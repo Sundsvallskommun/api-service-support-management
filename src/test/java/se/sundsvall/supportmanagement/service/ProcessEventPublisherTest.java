@@ -247,11 +247,23 @@ class ProcessEventPublisherTest {
 	}
 
 	@Test
-	void theBrakeLetsTheThresholdItselfThrough() {
+	@DisplayName("Verification that the maximum is the most that reaches the process: with that many delivered, the next event is dropped")
+	void theBrakeDropsTheEventThatWouldGoPastTheMaximum() {
+		givenNamespaceRunsProcess();
+		givenDeliveredCount(THRESHOLD);
+
+		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+
+		verify(outboxRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that an errand one event short of the maximum still gets its event through")
+	void theBrakeLetsTheEventThatReachesTheMaximumThrough() {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
 		givenLabels(APPLICATION, AUTOMATIC);
-		givenDeliveredCount(THRESHOLD);
+		givenDeliveredCount(THRESHOLD - 1L);
 
 		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
 

@@ -207,7 +207,7 @@ Handläggare/intag -> SM -> EventService -> ProcessEventPublisher -> process_eve
 1. PROCESS_CONSUMER för (municipalityId, namespace)?      nej -> return
 2. X-Trigger-Process: false, icke-AD-identitet?           ja  -> return        (loop-skydd, lager 1)
                        kommandon (PROCESS, SIGNAL) och DELETE hoppar over steg 2, 3 och 4, 6.5
-3. Levererade event för ärendet i fönstret > tröskel?      ja  -> ERROR-aktivitet, return  (lager 3)
+3. Levererade event för ärendet i fönstret >= tröskel?     ja  -> ERROR-aktivitet, return  (lager 3)
 4. eventSubType i PROCESS_TRIGGER?                        nej -> return        (lager 2)
 5. processKey: kommandots egen forst, sedan instansens, sist ur etiketterna
                        0 -> DELETE publiceras anda, ovriga return
@@ -1588,7 +1588,7 @@ Maskin-till-maskin-anropen — pw och kommande processmotorer — är just de so
 inte om vem som skrev, bara om vad som ändrades, och kompletterar därför lager 1.
 
 **Lager 3 — nödbromsen.** Den bryr sig varken om vem eller vad, utan bara om takten: räkna raderna med
-`errand_id = ? and delivered_at is not null and created > now() - fönstret`. Går det över tröskeln
+`errand_id = ? and delivered_at is not null and created > now() - fönstret`. Når det tröskeln
 (20 stycken på 10 minuter) skrivs ingen rad, en felpost (`LOOP_GUARD`, `EVENT_RATE_EXCEEDED`) hamnar i
 aktivitetsloggen och en ERROR-rad i applikationsloggen. Hälsoindikatorn rörs inte: bromsen gäller ett ärende, inte
 tjänsten.
@@ -2569,7 +2569,7 @@ pw-alkt) följer tjänst i stället för ordning.
 - `startAllowed` blir falskt för ett ärende med avslutad instans och sant för ett vars enda instans är misslyckad. Verifierat på raden i databasen.
 - **Publisher kastar ⇒ ärendeskrivningen är inte committad**, trots att anropsstället sväljer undantaget (§1.7). Verifieras genom att PATCH:a och sedan läsa tillbaka ärendet — inte genom att inspektera loggen.
 - Utan aktiv transaktion: ERROR-logg, inget kast som spräcker anropet.
-- Nödbromsen slår över tröskeln med rader som har `delivered_at` satt, och dess ERROR-aktivitet skrivs **utan** instans.
+- Nödbromsen slår till när tröskeln nås med rader som har `delivered_at` satt, och dess ERROR-aktivitet skrivs **utan** instans.
 - `ProcessKeySelector` med två skilda nycklar skriver ERROR-aktivitet **utan** instans — testet får inte förutsätta att en instansrad finns — och **en gång per ärende och fönster**: tio händelser på ett tvetydigt ärende ger en post, inte tio (§2.2).
 - Kommandon (subtyp `PROCESS`, `SIGNAL`) publiceras även när nödbromsen slagit till för ärendet och även när `PROCESS_TRIGGER` är tom (§6.5).
 
