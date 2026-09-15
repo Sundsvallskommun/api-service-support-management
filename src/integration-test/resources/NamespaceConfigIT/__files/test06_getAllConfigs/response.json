@@ -10,7 +10,8 @@
 		"accessControl": false,
 		"notifyReporter": false,
 		"roleBasedMapping": false,
-		"resourceAccessControl": false
+		"resourceAccessControl": false,
+		"singleDecisionPerErrand": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -22,7 +23,8 @@
 		"accessControl": false,
 		"notifyReporter": false,
 		"roleBasedMapping": false,
-		"resourceAccessControl": false
+		"resourceAccessControl": false,
+		"singleDecisionPerErrand": false
 	},
 	{
 		"namespace": "NAMESPACE-3",
@@ -35,7 +37,8 @@
 		"accessControl": false,
 		"notifyReporter": false,
 		"roleBasedMapping": false,
-		"resourceAccessControl": false
+		"resourceAccessControl": false,
+		"singleDecisionPerErrand": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -47,7 +50,8 @@
 		"accessControl": false,
 		"notifyReporter": false,
 		"roleBasedMapping": false,
-		"resourceAccessControl": false
+		"resourceAccessControl": false,
+		"singleDecisionPerErrand": false
 	},
 	{
 		"namespace": "NAMESPACE-2506",
@@ -95,6 +99,7 @@
 			}
 		],
 		"resourceAccessControl": false,
+		"singleDecisionPerErrand": false,
 		"reporterAccess": {
 			"resources": [
 				{
@@ -165,5 +170,18 @@
 				}
 			]
 		}
+	},
+	{
+		"municipalityId": "2281",
+		"created": "2024-01-10T12:00:00+01:00",
+		"displayName": "Artefact namespace",
+		"namespace": "NAMESPACE-ARTEFACT",
+		"shortCode": "AR",
+		"notificationTTLInDays": 10,
+		"accessControl": false,
+		"notifyReporter": false,
+		"roleBasedMapping": false,
+		"resourceAccessControl": false,
+		"singleDecisionPerErrand": false
 	}
 ]

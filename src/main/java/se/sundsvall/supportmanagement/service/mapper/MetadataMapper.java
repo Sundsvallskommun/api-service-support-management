@@ -7,8 +7,10 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import se.sundsvall.supportmanagement.api.model.metadata.AttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
+import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
@@ -17,10 +19,13 @@ import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
+import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DecisionOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
@@ -28,6 +33,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 
@@ -592,6 +598,148 @@ public class MetadataMapper {
 		ofNullable(measureType.getMeasureGroup()).ifPresent(entity::setMeasureGroup);
 		ofNullable(measureType.getSortOrder()).ifPresent(entity::setSortOrder);
 		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
+
+		return entity;
+	}
+
+	// =================================================================
+	// AttachmentPurpose operations
+	// =================================================================
+
+	public static AttachmentPurpose toAttachmentPurpose(final AttachmentPurposeEntity entity) {
+		return ofNullable(entity)
+			.map(e -> AttachmentPurpose.create()
+				.withId(e.getId())
+				.withCreated(e.getCreated())
+				.withModified(e.getModified())
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName())
+				.withDeprecated(e.isDeprecated())
+				.withSortOrder(e.getSortOrder()))
+			.orElse(null);
+	}
+
+	public static AttachmentPurposeEntity toAttachmentPurposeEntity(final String namespace, final String municipalityId, final AttachmentPurpose attachmentPurpose) {
+		if (anyNull(namespace, municipalityId, attachmentPurpose)) {
+			return null;
+		}
+
+		final var entity = AttachmentPurposeEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(attachmentPurpose.getName())
+			.withDisplayName(attachmentPurpose.getDisplayName())
+			.withSortOrder(attachmentPurpose.getSortOrder())
+			.withNamespace(namespace);
+		ofNullable(attachmentPurpose.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
+	}
+
+	public static AttachmentPurposeEntity updateAttachmentPurposeEntity(final AttachmentPurposeEntity entity, final AttachmentPurpose attachmentPurpose) {
+		if (isNull(attachmentPurpose)) {
+			return entity;
+		}
+
+		ofNullable(attachmentPurpose.getName()).ifPresent(entity::setName);
+		ofNullable(attachmentPurpose.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(attachmentPurpose.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(attachmentPurpose.getDeprecated()).ifPresent(entity::setDeprecated);
+
+		return entity;
+	}
+
+	// =================================================================
+	// DecisionOutcome operations
+	// =================================================================
+
+	public static DecisionOutcome toDecisionOutcome(final DecisionOutcomeEntity entity) {
+		return ofNullable(entity)
+			.map(e -> DecisionOutcome.create()
+				.withId(e.getId())
+				.withCreated(e.getCreated())
+				.withModified(e.getModified())
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName())
+				.withDeprecated(e.isDeprecated())
+				.withSortOrder(e.getSortOrder()))
+			.orElse(null);
+	}
+
+	public static DecisionOutcomeEntity toDecisionOutcomeEntity(final String namespace, final String municipalityId, final DecisionOutcome decisionOutcome) {
+		if (anyNull(namespace, municipalityId, decisionOutcome)) {
+			return null;
+		}
+
+		final var entity = DecisionOutcomeEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(decisionOutcome.getName())
+			.withDisplayName(decisionOutcome.getDisplayName())
+			.withSortOrder(decisionOutcome.getSortOrder())
+			.withNamespace(namespace);
+		ofNullable(decisionOutcome.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
+	}
+
+	public static DecisionOutcomeEntity updateDecisionOutcomeEntity(final DecisionOutcomeEntity entity, final DecisionOutcome decisionOutcome) {
+		if (isNull(decisionOutcome)) {
+			return entity;
+		}
+
+		ofNullable(decisionOutcome.getName()).ifPresent(entity::setName);
+		ofNullable(decisionOutcome.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(decisionOutcome.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(decisionOutcome.getDeprecated()).ifPresent(entity::setDeprecated);
+
+		return entity;
+	}
+
+	// =================================================================
+	// StatementOutcome operations
+	// =================================================================
+
+	public static StatementOutcome toStatementOutcome(final StatementOutcomeEntity entity) {
+		return ofNullable(entity)
+			.map(e -> StatementOutcome.create()
+				.withId(e.getId())
+				.withCreated(e.getCreated())
+				.withModified(e.getModified())
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName())
+				.withResponded(e.isResponded())
+				.withDeprecated(e.isDeprecated())
+				.withSortOrder(e.getSortOrder()))
+			.orElse(null);
+	}
+
+	/**
+	 * An outcome registered without saying whether it means a response is taken to mean one: the common case, and the one
+	 * that holds a statement completed with it to the time of the response rather than letting it go without.
+	 */
+	public static StatementOutcomeEntity toStatementOutcomeEntity(final String namespace, final String municipalityId, final StatementOutcome statementOutcome) {
+		if (anyNull(namespace, municipalityId, statementOutcome)) {
+			return null;
+		}
+
+		final var entity = StatementOutcomeEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(statementOutcome.getName())
+			.withDisplayName(statementOutcome.getDisplayName())
+			.withSortOrder(statementOutcome.getSortOrder())
+			.withResponded(ofNullable(statementOutcome.getResponded()).orElse(true))
+			.withNamespace(namespace);
+		ofNullable(statementOutcome.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
+	}
+
+	public static StatementOutcomeEntity updateStatementOutcomeEntity(final StatementOutcomeEntity entity, final StatementOutcome statementOutcome) {
+		if (isNull(statementOutcome)) {
+			return entity;
+		}
+
+		ofNullable(statementOutcome.getName()).ifPresent(entity::setName);
+		ofNullable(statementOutcome.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(statementOutcome.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(statementOutcome.getResponded()).ifPresent(entity::setResponded);
+		ofNullable(statementOutcome.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}

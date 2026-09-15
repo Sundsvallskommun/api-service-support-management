@@ -6,6 +6,7 @@ import generated.se.sundsvall.eventlog.Metadata;
 import generated.se.sundsvall.eventlog.PageEvent;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -82,6 +83,11 @@ class EventServiceTest {
 	void beforeEach() {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("executingUserId"));
 		lenient().when(eventLogClientMock.createEvent(any(), any(), any())).thenReturn(ResponseEntity.ok().build());
+	}
+
+	@AfterEach
+	void clearIdentifier() {
+		Identifier.remove();
 	}
 
 	@Test

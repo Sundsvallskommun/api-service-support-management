@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "AttachmentPurpose 'f6000000-0000-0000-0000-000000000001' cannot be deleted because it is referenced by one or more attachments"
+}

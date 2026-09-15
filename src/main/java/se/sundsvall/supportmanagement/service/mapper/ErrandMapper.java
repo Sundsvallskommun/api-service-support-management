@@ -516,7 +516,7 @@ public final class ErrandMapper {
 	}
 
 	private static List<Measure> toMeasures(final List<MeasureEntity> entities) {
-		return ErrandMeasureMapper.toMeasures(entities);
+		return ErrandMeasureMapper.toMeasuresWithoutAttachments(entities);
 	}
 
 	private static List<ErrandAction> toErrandActions(final List<ErrandActionEntity> entities) {
@@ -584,7 +584,7 @@ public final class ErrandMapper {
 		}
 	}
 
-	private static JsonNode toJsonNode(final String jsonString) {
+	static JsonNode toJsonNode(final String jsonString) {
 		if (isNull(jsonString)) {
 			return null;
 		}
