@@ -339,4 +339,21 @@ class MetadataLabelIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
+	@Test
+	@DisplayName("Verification that a real move to a destination with a multi-level ancestor chain succeeds, since the cycle check walks that chain through LAZY parent proxies and needs a session open to do it")
+	void test16_startLabelMoveToDeepDestinationSucceeds() {
+		// 8d0ac81c is SUBTYPE-1 (under TYPE-1 under CATEGORY-1); moved under f4d6e210, SUBTYPE-4 (under TYPE-2 under
+		// CATEGORY-1) — walking from SUBTYPE-4 up to CATEGORY-1 to check for a cycle crosses two LAZY parent hops
+		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/8d0ac81c-9c56-43b7-95cd-fa3c3592666d/move";
+
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(ACCEPTED)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
 }

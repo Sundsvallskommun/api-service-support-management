@@ -88,6 +88,7 @@ public class MetadataService {
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
+	private static final int RESOURCE_PATH_MAX_LENGTH = 255;
 
 	private static final String CONTACT_REASON = "ContactReason";
 	private static final String CATEGORY = "Category";
@@ -359,8 +360,8 @@ public class MetadataService {
 
 	@Transactional(readOnly = true)
 	public LabelMoveDryRunResponse moveLabel(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		var labelToMove = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
-		var allMovedIds = collectMovedLabelIds(namespace, municipalityId, labelToMove);
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var allMovedIds = collectMovedLabelIds(context.labelToMove().getId(), context.descendants());
 
 		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
 
@@ -382,17 +383,24 @@ public class MetadataService {
 	 * <p>
 	 * The re-stuvning (re-parenting of affected errand labels) that carries the move out is not wired up yet — the job
 	 * is created here and stays PENDING until a worker that performs it is added.
+	 * <p>
+	 * Kept transactional (not read-only, since {@link JobService#create} writes within it) so that the session
+	 * validation opens against stays open for as long as {@link #validateAndFindLabelToMove} needs it — the cycle
+	 * check walks LAZY {@code parent} proxies one hop at a time, and each hop past the first needs the session to
+	 * still be there to load from.
 	 */
+	@Transactional
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		var labelToMove = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var canonicalLabelId = context.labelToMove().getId();
 
-		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL, labelId)) {
-			throw Problem.valueOf(CONFLICT, "Label '%s' already has a move in progress".formatted(labelId));
+		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL, canonicalLabelId)) {
+			throw Problem.valueOf(CONFLICT, "Label '%s' already has a move in progress".formatted(canonicalLabelId));
 		}
 
-		var allMovedIds = collectMovedLabelIds(namespace, municipalityId, labelToMove);
+		var allMovedIds = collectMovedLabelIds(canonicalLabelId, context.descendants());
 		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
-		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, labelId);
+		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
 
 		return jobService.get(namespace, municipalityId, jobId);
 	}
@@ -402,15 +410,19 @@ public class MetadataService {
 	 * counts as affected — regardless of whether the ancestor-chain invariant every errand is meant to carry has actually
 	 * caught up with it yet.
 	 */
-	private Set<String> collectMovedLabelIds(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove) {
-		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
-			namespace, municipalityId, labelToMove.getResourcePath() + "/");
-
-		return Stream.concat(Stream.of(labelToMove.getId()), descendants.stream().map(MetadataLabelEntity::getId))
+	private static Set<String> collectMovedLabelIds(final String labelId, final List<MetadataLabelEntity> descendants) {
+		return Stream.concat(Stream.of(labelId), descendants.stream().map(MetadataLabelEntity::getId))
 			.collect(Collectors.toSet());
 	}
 
-	private MetadataLabelEntity validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
+	/**
+	 * A label found to move, together with the descendants a move carries along with it — fetched once here so that
+	 * validating the resulting resource paths and collecting the ids a move affects don't each ask the database for the
+	 * same subtree.
+	 */
+	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {}
+
+	private LabelMoveContext validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
 		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, labelId, namespace, municipalityId)));
 
@@ -421,10 +433,20 @@ public class MetadataService {
 		}
 
 		validateNotNoOp(labelToMove, newParentId);
-		validateNoCycle(labelId, newParent);
-		validateNoPathCollision(namespace, municipalityId, labelToMove, newParent);
+		validateNoCycle(labelToMove.getId(), newParent);
 
-		return labelToMove;
+		var newPath = newParent != null
+			? newParent.getResourcePath() + "/" + labelToMove.getResourceName()
+			: labelToMove.getResourceName();
+
+		validateNoPathCollision(namespace, municipalityId, labelToMove, newPath);
+
+		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
+			namespace, municipalityId, labelToMove.getResourcePath() + "/");
+
+		validateResourcePathLength(labelToMove, newPath, descendants);
+
+		return new LabelMoveContext(labelToMove, descendants);
 	}
 
 	private static void validateNotNoOp(final MetadataLabelEntity labelToMove, final String newParentId) {
@@ -434,6 +456,11 @@ public class MetadataService {
 		}
 	}
 
+	/**
+	 * {@code labelId} must be the moved label's id as stored, not the raw path variable — a client sending the same
+	 * UUID in a different case would otherwise never match {@code current.getId()} on the way up, since both sides
+	 * of the comparison have to come from the same, canonical source to line up.
+	 */
 	private static void validateNoCycle(final String labelId, final MetadataLabelEntity newParent) {
 		if (newParent == null) {
 			return;
@@ -451,16 +478,31 @@ public class MetadataService {
 		}
 	}
 
-	private void validateNoPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final MetadataLabelEntity newParent) {
-		var newPath = newParent != null
-			? newParent.getResourcePath() + "/" + labelToMove.getResourceName()
-			: labelToMove.getResourceName();
-
+	private void validateNoPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final String newPath) {
 		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, newPath)
 			.filter(existing -> !Objects.equals(existing.getId(), labelToMove.getId()))
 			.ifPresent(existing -> {
 				throw Problem.valueOf(CONFLICT, "A label with path '%s' already exists under the destination".formatted(newPath));
 			});
+	}
+
+	/**
+	 * The moved label's new path, and the new path every descendant it carries along would get, must each fit the
+	 * resource_path column — rejected here, before any row is touched, rather than surfacing as a database error
+	 * partway through the restructuring.
+	 */
+	private static void validateResourcePathLength(final MetadataLabelEntity labelToMove, final String newPath, final List<MetadataLabelEntity> descendants) {
+		rejectIfTooLong(newPath);
+
+		var oldPrefixLength = labelToMove.getResourcePath().length();
+		descendants.forEach(descendant -> rejectIfTooLong(newPath + descendant.getResourcePath().substring(oldPrefixLength)));
+	}
+
+	private static void rejectIfTooLong(final String resourcePath) {
+		if (resourcePath.length() > RESOURCE_PATH_MAX_LENGTH) {
+			throw Problem.valueOf(BAD_REQUEST,
+				"Resulting resource path '%s' (%d characters) exceeds the maximum of %d characters".formatted(resourcePath, resourcePath.length(), RESOURCE_PATH_MAX_LENGTH));
+		}
 	}
 
 	private static boolean isAffectedByMove(final ActionConfigEntity action, final Set<String> movedLabelIds) {

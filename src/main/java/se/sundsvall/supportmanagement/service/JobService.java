@@ -50,7 +50,7 @@ public class JobService {
 
 	@Transactional
 	public String create(final String namespace, final String municipalityId, final JobType type, final int total) {
-		return create(namespace, municipalityId, type, total, null);
+		return createJob(namespace, municipalityId, type, total, null);
 	}
 
 	/**
@@ -59,6 +59,15 @@ public class JobService {
 	 */
 	@Transactional
 	public String create(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
+		return createJob(namespace, municipalityId, type, total, labelId);
+	}
+
+	/**
+	 * Shared, un-annotated so that neither {@code create} overload above reaches its own {@code @Transactional} through
+	 * a plain {@code this} call rather than the proxy — a transaction is already open by the time either gets here,
+	 * started by whichever overload the caller actually invoked from outside.
+	 */
+	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
 		return jobRepository.save(JobEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
