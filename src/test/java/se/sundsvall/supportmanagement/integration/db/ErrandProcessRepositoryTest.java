@@ -58,6 +58,16 @@ class ErrandProcessRepositoryTest {
 			.isEqualTo("ep-live-1");
 	}
 
+	@Test
+	@DisplayName("Verification that an instance is found through its own errand only, so that narrowing the log of an errand to an instance of another reaches nothing")
+	void findByProcessInstanceIdAndErrandId() {
+		assertThat(errandProcessRepository.findByProcessInstanceIdAndErrandId("pi-live-1", "ERRAND_ID-1"))
+			.get()
+			.extracting(ErrandProcessEntity::getId)
+			.isEqualTo("ep-live-1");
+		assertThat(errandProcessRepository.findByProcessInstanceIdAndErrandId("pi-live-1", "ERRAND_ID-2")).isEmpty();
+	}
+
 	/**
 	 * The history carries the finished instances along with the live one, since a completed process is what ends the
 	 * process life of an errand and a live one is only part of the answer.

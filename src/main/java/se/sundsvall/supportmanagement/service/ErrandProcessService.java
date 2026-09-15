@@ -268,8 +268,7 @@ public class ErrandProcessService {
 			return page.map(entity -> toProcessActivity(entity, processInstanceIds));
 		}
 
-		return processRepository.findByProcessInstanceId(processInstanceId)
-			.filter(instance -> errandId.equals(instance.getErrandId()))
+		return processRepository.findByProcessInstanceIdAndErrandId(processInstanceId, errandId)
 			.map(instance -> activityRepository.findByErrandIdAndErrandProcessId(errandId, instance.getId(), pageable)
 				.map(entity -> toProcessActivity(entity, Map.of(instance.getId(), processInstanceId))))
 			.orElseGet(() -> Page.empty(pageable));

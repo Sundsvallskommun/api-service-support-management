@@ -763,7 +763,7 @@ class ErrandProcessServiceTest {
 	@Test
 	void narrowingTheLogToAnInstanceLeavesTheInstancelessEntriesOut() {
 		final var pageable = PageRequest.of(0, 50);
-		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId")));
+		when(processRepositoryMock.findByProcessInstanceIdAndErrandId(PROCESS_INSTANCE_ID, ERRAND_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId")));
 		when(activityRepositoryMock.findByErrandIdAndErrandProcessId(ERRAND_ID, "rowId", pageable))
 			.thenReturn(new PageImpl<>(List.of(ErrandProcessActivityEntity.create().withId("a").withErrandProcessId("rowId").withOccurredAt(now(systemDefault()))), pageable, 1));
 
@@ -776,20 +776,11 @@ class ErrandProcessServiceTest {
 	@Test
 	void narrowingTheLogToAnInstanceTheErrandNeverHadReturnsNothing() {
 		final var pageable = PageRequest.of(0, 50);
-		when(processRepositoryMock.findByProcessInstanceId("unknown")).thenReturn(Optional.empty());
+		when(processRepositoryMock.findByProcessInstanceIdAndErrandId("unknown", ERRAND_ID)).thenReturn(Optional.empty());
 
 		final var page = service.readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "unknown", pageable);
 
 		assertThat(page).isEmpty();
-		verifyNoInteractions(activityRepositoryMock);
-	}
-
-	@Test
-	void narrowingTheLogToAnInstanceOfAnotherErrandReturnsNothing() {
-		final var pageable = PageRequest.of(0, 50);
-		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING).withErrandId("anotherErrand")));
-
-		assertThat(service.readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, pageable)).isEmpty();
 		verifyNoInteractions(activityRepositoryMock);
 	}
 

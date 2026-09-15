@@ -1,46 +1,80 @@
 package se.sundsvall.supportmanagement.service.scheduler.processevent;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import generated.se.sundsvall.pwalkt.ErrandEvent;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties.DirectRun;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties.LoopGuard;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
+import se.sundsvall.supportmanagement.integration.pwalkt.PwAlktIntegration;
 import se.sundsvall.supportmanagement.integration.pwalkt.PwAlktUnavailableException;
+import se.sundsvall.supportmanagement.service.ProcessErrorLog;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED;
+import static org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
+import static se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventRelay.REJECTION_ACTIVITY_TYPE;
+import static se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventRelay.REJECTION_ERROR_CODE;
 
 @ExtendWith(MockitoExtension.class)
 class ProcessEventRelayTest {
 
-	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-14T08:00:00Z"), ZoneId.of("UTC"));
+	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-14T08:00:00.123456Z"), ZoneId.of("UTC"));
 	private static final OffsetDateTime NOW = OffsetDateTime.now(CLOCK);
+	private static final OffsetDateTime NOW_IN_MILLIS = NOW.truncatedTo(MILLIS);
 	private static final String PROCESS_SERVICE = "pw-alkt";
+	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String NAMESPACE = "ALKT";
+	private static final String PROCESS_KEY = "alkt-ansokan";
 	private static final int BATCH_SIZE = 3;
+	private static final Duration WINDOW = Duration.ofMinutes(10);
 	private static final Duration TRANSACTION_BUFFER = Duration.ofSeconds(5);
 	private static final Duration MAX_AGE = Duration.ofDays(30);
 	private static final Duration UNHEALTHY_AFTER = Duration.ofMinutes(15);
@@ -49,99 +83,374 @@ class ProcessEventRelayTest {
 	private ProcessEventOutboxRepository outboxRepositoryMock;
 
 	@Mock
-	private ProcessEventDelivery deliveryMock;
+	private ErrandsRepository errandsRepositoryMock;
+
+	@Mock
+	private ErrandProcessRepository processRepositoryMock;
+
+	@Mock
+	private ErrandProcessActivityRepository activityRepositoryMock;
+
+	@Mock
+	private PwAlktIntegration pwAlktIntegrationMock;
+
+	@Mock
+	private PlatformTransactionManager transactionManagerMock;
+
+	@Captor
+	private ArgumentCaptor<ErrandEvent> eventCaptor;
+
+	@Captor
+	private ArgumentCaptor<ErrandProcessActivityEntity> activityCaptor;
+
+	@Captor
+	private ArgumentCaptor<TransactionDefinition> definitionCaptor;
+
+	private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
 	private ProcessEventRelay relay;
 
 	@BeforeEach
 	void setUp() {
-		relay = new ProcessEventRelay(outboxRepositoryMock, deliveryMock, CLOCK);
+		final var properties = new ProcessEngineProperties(new LoopGuard(20, WINDOW), new DirectRun(true, 2, 4, 500));
+		relay = new ProcessEventRelay(outboxRepositoryMock, errandsRepositoryMock, processRepositoryMock, pwAlktIntegrationMock, new ProcessErrorLog(activityRepositoryMock, properties, CLOCK), transactionManagerMock, CLOCK);
 
 		ReflectionTestUtils.setField(relay, "batchSize", BATCH_SIZE);
 		ReflectionTestUtils.setField(relay, "transactionBuffer", TRANSACTION_BUFFER);
 		ReflectionTestUtils.setField(relay, "maxAge", MAX_AGE);
 		ReflectionTestUtils.setField(relay, "unhealthyAfter", UNHEALTHY_AFTER);
+
+		logAppender.start();
+		logger().addAppender(logAppender);
+	}
+
+	@AfterEach
+	void tearDown() {
+		logger().detachAppender(logAppender);
 	}
 
 	@Test
 	@DisplayName("Verification that a run drops what has aged out first, then takes a batch of the oldest rows and delivers them errand by errand")
 	void aRunDeliversErrandByErrandOldestFirst() {
-		givenWaiting(row("row-1", "errand-a"), row("row-2", "errand-b"), row("row-3", "errand-a"));
+		final var first = row("row-1", "errand-a", NOW.minusMinutes(3));
+		final var second = row("row-2", "errand-b", NOW.minusMinutes(2));
+		final var third = row("row-3", "errand-a", NOW.minusMinutes(1));
+		givenWaiting(first, second, third);
+		givenLocked(List.of("row-1", "row-3"), first, third);
+		givenLocked(List.of("row-2"), second);
+		givenAccepted();
 
 		relay.relay();
 
-		final var inOrder = inOrder(outboxRepositoryMock, deliveryMock);
-		inOrder.verify(deliveryMock).dropAgedOut(NOW.minus(MAX_AGE), BATCH_SIZE);
+		final var inOrder = inOrder(outboxRepositoryMock, pwAlktIntegrationMock);
+		inOrder.verify(outboxRepositoryMock).findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(NOW.minus(MAX_AGE), PageRequest.of(0, BATCH_SIZE));
 		inOrder.verify(outboxRepositoryMock).findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore(PROCESS_SERVICE, NOW.minus(TRANSACTION_BUFFER), PageRequest.of(0, BATCH_SIZE, Sort.by("created", "id")));
-		inOrder.verify(deliveryMock).deliverGroup(List.of("row-1", "row-3"));
-		inOrder.verify(deliveryMock).deliverGroup(List.of("row-2"));
-		verifyNoMoreInteractions(outboxRepositoryMock, deliveryMock);
+		inOrder.verify(outboxRepositoryMock).findByIdInAndDeliveredAtIsNull(List.of("row-1", "row-3"));
+		inOrder.verify(pwAlktIntegrationMock, times(2)).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any());
+		inOrder.verify(outboxRepositoryMock).findByIdInAndDeliveredAtIsNull(List.of("row-2"));
+		inOrder.verify(pwAlktIntegrationMock).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any());
+		assertThat(List.of(first, second, third)).extracting(ProcessEventOutboxEntity::getDeliveredAt).containsOnly(NOW_IN_MILLIS);
 	}
 
 	@Test
-	@DisplayName("Verification that rows that have aged out are dropped a batch at a time until a batch comes back short")
+	@DisplayName("Verification that every group and every batch of dropped rows gets a transaction of its own at read committed, which the template has to be told since no proxy tells it")
+	void everyTransactionIsOfItsOwnAtReadCommitted() {
+		final var row = row("row-1", ERRAND_ID, NOW.minusMinutes(1));
+		givenWaiting(row);
+		givenLocked(List.of("row-1"), row);
+		givenAccepted();
+
+		relay.relay();
+
+		verify(transactionManagerMock, times(2)).getTransaction(definitionCaptor.capture());
+		assertThat(definitionCaptor.getAllValues()).allSatisfy(definition -> {
+			assertThat(definition.getPropagationBehavior()).isEqualTo(PROPAGATION_REQUIRES_NEW);
+			assertThat(definition.getIsolationLevel()).isEqualTo(ISOLATION_READ_COMMITTED);
+		});
+	}
+
+	@Test
+	@DisplayName("Verification that rows that have aged out are dropped a batch at a time, each batch in a transaction of its own, until a batch comes back short")
 	void aRunDropsWhatHasAgedOutBatchByBatch() {
-		when(deliveryMock.dropAgedOut(NOW.minus(MAX_AGE), BATCH_SIZE)).thenReturn(BATCH_SIZE, BATCH_SIZE, 1);
+		final var firstBatch = List.of(agedRow("row-1"), agedRow("row-2"), agedRow("row-3"));
+		final var secondBatch = List.of(agedRow("row-4"), agedRow("row-5"), agedRow("row-6"));
+		final var lastBatch = List.of(agedRow("row-7"));
+		when(outboxRepositoryMock.findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(NOW.minus(MAX_AGE), PageRequest.of(0, BATCH_SIZE))).thenReturn(firstBatch, secondBatch, lastBatch);
+		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(any())).thenReturn(firstBatch, secondBatch, lastBatch);
 		givenWaiting();
 
 		relay.relay();
 
-		verify(deliveryMock, times(3)).dropAgedOut(NOW.minus(MAX_AGE), BATCH_SIZE);
-		verify(deliveryMock, never()).deliverGroup(any());
+		verify(outboxRepositoryMock, times(3)).deleteAllByIdInBatch(any());
+		verify(transactionManagerMock, times(3)).commit(any());
+		verifyNoInteractions(pwAlktIntegrationMock);
 	}
 
 	@Test
 	@DisplayName("Verification that an errand whose delivery fails holds back no one but itself, whether pw-alkt refused it or something unforeseen went wrong")
 	void anErrandThatFailsHoldsBackNoOneButItself() {
-		givenWaiting(row("row-1", "errand-a"), row("row-2", "errand-b"), row("row-3", "errand-c"));
-		doThrow(new PwAlktUnavailableException(false, new IllegalStateException("503"))).when(deliveryMock).deliverGroup(List.of("row-1"));
-		doThrow(new IllegalStateException("something unforeseen")).when(deliveryMock).deliverGroup(List.of("row-2"));
+		final var first = row("row-1", "errand-a", NOW.minusMinutes(3));
+		final var second = row("row-2", "errand-b", NOW.minusMinutes(2));
+		final var third = row("row-3", "errand-c", NOW.minusMinutes(1));
+		givenWaiting(first, second, third);
+		givenLocked(List.of("row-1"), first);
+		givenLocked(List.of("row-2"), second);
+		givenLocked(List.of("row-3"), third);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any()))
+			.thenThrow(new PwAlktUnavailableException(false, new IllegalStateException("503")))
+			.thenThrow(new IllegalStateException("something unforeseen"))
+			.thenReturn(true);
 
 		assertThatNoException().isThrownBy(relay::relay);
 
-		verify(deliveryMock).deliverGroup(List.of("row-3"));
+		assertThat(first.getDeliveredAt()).isNull();
+		assertThat(second.getDeliveredAt()).isNull();
+		assertThat(third.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+		verify(transactionManagerMock, times(2)).rollback(any());
 	}
 
 	@Test
 	@DisplayName("Verification that an open circuit breaker ends the run, since every errand after it would meet the same answer")
 	void anOpenCircuitBreakerEndsTheRun() {
-		givenWaiting(row("row-1", "errand-a"), row("row-2", "errand-b"));
-		doThrow(new PwAlktUnavailableException(true, new IllegalStateException("open"))).when(deliveryMock).deliverGroup(List.of("row-1"));
+		final var first = row("row-1", "errand-a", NOW.minusMinutes(2));
+		final var second = row("row-2", "errand-b", NOW.minusMinutes(1));
+		givenWaiting(first, second);
+		givenLocked(List.of("row-1"), first);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenThrow(new PwAlktUnavailableException(true, new IllegalStateException("open")));
 
 		relay.relay();
 
-		verify(deliveryMock, never()).deliverGroup(List.of("row-2"));
+		verify(outboxRepositoryMock, never()).findByIdInAndDeliveredAtIsNull(List.of("row-2"));
+		assertThat(second.getDeliveredAt()).isNull();
 	}
 
 	@Test
 	@DisplayName("Verification that a direct run delivers the rows of its errand, held to the age limit but not to the transaction buffer")
 	void aDirectRunDeliversTheRowsOfItsErrand() {
-		givenWaitingFor("errand-a", row("row-1", "errand-a"), row("row-2", "errand-a"));
+		final var first = row("row-1", ERRAND_ID, NOW.minusMinutes(2));
+		final var second = row("row-2", ERRAND_ID, NOW.minusMinutes(1));
+		givenWaitingFor(ERRAND_ID, first, second);
+		givenLocked(List.of("row-1", "row-2"), first, second);
+		givenAccepted();
 
-		relay.relayErrand("errand-a");
+		relay.relayErrand(ERRAND_ID);
 
-		verify(deliveryMock).deliverGroup(List.of("row-1", "row-2"));
-		verify(deliveryMock, never()).dropAgedOut(any(), anyInt());
+		assertThat(List.of(first, second)).extracting(ProcessEventOutboxEntity::getDeliveredAt).containsOnly(NOW_IN_MILLIS);
+		verify(outboxRepositoryMock, never()).findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(any(), any());
+		verify(outboxRepositoryMock, never()).findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore(any(), any(), any());
 	}
 
 	@Test
 	@DisplayName("Verification that a direct run that finds nothing, because another run got there first, does nothing")
 	void aDirectRunWithNothingWaiting() {
-		givenWaitingFor("errand-a");
+		givenWaitingFor(ERRAND_ID);
 
-		relay.relayErrand("errand-a");
+		relay.relayErrand(ERRAND_ID);
 
-		verifyNoInteractions(deliveryMock);
+		verify(outboxRepositoryMock, never()).findByIdInAndDeliveredAtIsNull(any());
+		verifyNoInteractions(pwAlktIntegrationMock, transactionManagerMock);
 	}
 
 	@Test
-	@DisplayName("Verification that a direct run leaves a failed delivery to its caller")
-	void aDirectRunLeavesAFailureToItsCaller() {
-		givenWaitingFor("errand-a", row("row-1", "errand-a"));
-		final var failure = new PwAlktUnavailableException(false, new IllegalStateException("503"));
-		doThrow(failure).when(deliveryMock).deliverGroup(List.of("row-1"));
+	@DisplayName("Verification that a group goes to pw-alkt oldest first, whatever order the locking read returned it in, and is acknowledged in the same transaction")
+	void aGroupIsDeliveredOldestFirstAndAcknowledged() {
+		final var newest = row("row-3", ERRAND_ID, NOW.minusMinutes(1), "UPDATE");
+		final var sameMomentLaterId = row("row-2", ERRAND_ID, NOW.minusMinutes(2), "UPDATE");
+		final var oldest = row("row-1", ERRAND_ID, NOW.minusMinutes(2), "CREATE");
+		givenWaitingFor(ERRAND_ID, oldest, sameMomentLaterId, newest);
+		givenLocked(List.of("row-1", "row-2", "row-3"), newest, sameMomentLaterId, oldest);
+		givenAccepted();
 
-		assertThatThrownBy(() -> relay.relayErrand("errand-a")).isSameAs(failure);
+		relay.relayErrand(ERRAND_ID);
+
+		verify(pwAlktIntegrationMock, times(3)).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), eventCaptor.capture());
+		assertThat(eventCaptor.getAllValues()).extracting(ErrandEvent::getEventId).containsExactly("row-1", "row-2", "row-3");
+		assertThat(List.of(oldest, sameMomentLaterId, newest)).extracting(ProcessEventOutboxEntity::getDeliveredAt).containsOnly(NOW_IN_MILLIS);
+		verify(transactionManagerMock).commit(any());
+		verifyNoInteractions(errandsRepositoryMock, processRepositoryMock, activityRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a row another run delivered while this one waited for the lock is not delivered again")
+	void aRowAnotherRunDeliveredIsLeftAlone() {
+		final var alreadyDelivered = row("row-1", ERRAND_ID, NOW.minusMinutes(2));
+		final var stillWaiting = row("row-2", ERRAND_ID, NOW.minusMinutes(1));
+		givenWaitingFor(ERRAND_ID, alreadyDelivered, stillWaiting);
+		givenLocked(List.of("row-1", "row-2"), stillWaiting);
+		givenAccepted();
+
+		relay.relayErrand(ERRAND_ID);
+
+		verify(pwAlktIntegrationMock).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getEventId()).isEqualTo("row-2");
+	}
+
+	@Test
+	@DisplayName("Verification that a row that does not go through takes the group down, rolling its transaction back and leaving the failure to the caller of a direct run")
+	void aRowThatDoesNotGoThroughTakesTheGroupDown() {
+		final var first = row("row-1", ERRAND_ID, NOW.minusMinutes(2));
+		final var second = row("row-2", ERRAND_ID, NOW.minusMinutes(1));
+		final var failure = new PwAlktUnavailableException(false, new IllegalStateException("503"));
+		givenWaitingFor(ERRAND_ID, first, second);
+		givenLocked(List.of("row-1", "row-2"), first, second);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(true).thenThrow(failure);
+
+		assertThatThrownBy(() -> relay.relayErrand(ERRAND_ID)).isSameAs(failure);
+
+		assertThat(second.getDeliveredAt()).isNull();
+		verify(transactionManagerMock).rollback(any());
+		verify(transactionManagerMock, never()).commit(any());
+		verifyNoInteractions(errandsRepositoryMock, processRepositoryMock, activityRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a refusal for good consumes the row, fails the live instance and writes an error entry on it")
+	void aRefusalForGoodFailsTheLiveInstance() {
+		final var row = row("row-1", ERRAND_ID, NOW.minusMinutes(1));
+		final var instance = liveInstance();
+		givenRefused(row);
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(instance));
+
+		relay.relayErrand(ERRAND_ID);
+
+		assertThat(row.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+		assertThat(instance.getProcessStatus()).isEqualTo(FAILED);
+		assertThat(instance.getActiveMarker()).isNull();
+		assertThat(instance.getErrorCode()).isEqualTo(REJECTION_ERROR_CODE);
+		assertThat(instance.getErrorMessage()).startsWith("pw-alkt refused an event on this errand for good").contains("'" + PROCESS_KEY + "'");
+
+		verify(activityRepositoryMock).save(activityCaptor.capture());
+		assertThat(activityCaptor.getValue()).satisfies(entry -> {
+			assertThat(entry.getErrandProcessId()).isEqualTo("process-1");
+			assertThat(entry.getErrandId()).isEqualTo(ERRAND_ID);
+			assertThat(entry.getActivityType()).isEqualTo(REJECTION_ACTIVITY_TYPE);
+			assertThat(entry.getSeverity()).isEqualTo(ERROR);
+			assertThat(entry.getErrorCode()).isEqualTo(REJECTION_ERROR_CODE);
+			assertThat(entry.getMessage()).isEqualTo(instance.getErrorMessage());
+			assertThat(entry.getOccurredAt()).isEqualTo(NOW_IN_MILLIS);
+		});
+	}
+
+	@Test
+	@DisplayName("Verification that a refusal for good on an errand without a process writes the entry alone, without an instance")
+	void aRefusalForGoodWithoutAProcess() {
+		final var row = row("row-1", ERRAND_ID, NOW.minusMinutes(1));
+		givenRefused(row);
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.empty());
+
+		relay.relayErrand(ERRAND_ID);
+
+		assertThat(row.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+		verify(activityRepositoryMock).save(activityCaptor.capture());
+		assertThat(activityCaptor.getValue().getErrandProcessId()).isNull();
+	}
+
+	@Test
+	@DisplayName("Verification that a refusal is recorded once every call in the group has been made, so that the lock on the errand is not held across calls")
+	void aRefusalIsRecordedAfterTheCalls() {
+		final var refused = row("row-1", ERRAND_ID, NOW.minusMinutes(2));
+		final var accepted = row("row-2", ERRAND_ID, NOW.minusMinutes(1));
+		givenWaitingFor(ERRAND_ID, refused, accepted);
+		givenLocked(List.of("row-1", "row-2"), refused, accepted);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false, true);
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+
+		relay.relayErrand(ERRAND_ID);
+
+		final var inOrder = inOrder(pwAlktIntegrationMock, errandsRepositoryMock);
+		inOrder.verify(pwAlktIntegrationMock, times(2)).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any());
+		inOrder.verify(errandsRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+	}
+
+	@Test
+	@DisplayName("Verification that a refused deletion leaves nothing to write on, and consumes the row all the same")
+	void aRefusedDeletionLeavesNothingToWriteOn() {
+		final var row = row("row-1", ERRAND_ID, NOW.minusMinutes(1), "DELETE");
+		givenWaitingFor(ERRAND_ID, row);
+		givenLocked(List.of("row-1"), row);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false);
+
+		relay.relayErrand(ERRAND_ID);
+
+		assertThat(row.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+		verifyNoInteractions(errandsRepositoryMock, processRepositoryMock, activityRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a refusal for an errand that is gone writes nothing, since the entry would have nothing to hang on")
+	void aRefusalForAnErrandThatIsGoneWritesNothing() {
+		final var row = row("row-1", ERRAND_ID, NOW.minusMinutes(1));
+		givenWaitingFor(ERRAND_ID, row);
+		givenLocked(List.of("row-1"), row);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false);
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
+
+		relay.relayErrand(ERRAND_ID);
+
+		assertThat(row.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+		verifyNoInteractions(processRepositoryMock, activityRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that the entry is written once per errand and window, while the instance is failed all the same")
+	void theEntryIsWrittenOncePerErrandAndWindow() {
+		final var row = row("row-1", ERRAND_ID, NOW.minusMinutes(1));
+		final var instance = liveInstance();
+		givenWaitingFor(ERRAND_ID, row);
+		givenLocked(List.of("row-1"), row);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false);
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(instance));
+		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, REJECTION_ERROR_CODE, NOW_IN_MILLIS.minus(WINDOW))).thenReturn(true);
+
+		relay.relayErrand(ERRAND_ID);
+
+		assertThat(instance.getProcessStatus()).isEqualTo(FAILED);
+		verify(activityRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that rows that have aged out are locked by id, dropped undelivered and each logged as an error")
+	void rowsThatHaveAgedOutAreDropped() {
+		final var aged = row("row-1", ERRAND_ID, NOW.minusDays(31));
+		final var agedToo = row("row-2", ERRAND_ID, NOW.minusDays(31).plusSeconds(1));
+		givenAgedOut(aged, agedToo);
+		givenLocked(List.of("row-1", "row-2"), aged, agedToo);
+		givenWaiting();
+
+		relay.relay();
+
+		verify(outboxRepositoryMock).deleteAllByIdInBatch(List.of("row-1", "row-2"));
+		assertThat(errorsLogged()).satisfiesExactly(
+			message -> assertThat(message).contains("row-1", ERRAND_ID, "undelivered"),
+			message -> assertThat(message).contains("row-2", ERRAND_ID, "undelivered"));
+		verifyNoInteractions(pwAlktIntegrationMock);
+	}
+
+	@Test
+	@DisplayName("Verification that with nothing aged out nothing is locked")
+	void nothingAgedOut() {
+		givenAgedOut();
+		givenWaiting();
+
+		relay.relay();
+
+		verify(outboxRepositoryMock, never()).findByIdInAndDeliveredAtIsNull(any());
+		verify(outboxRepositoryMock, never()).deleteAllByIdInBatch(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a row delivered after all, while it was about to be dropped, is left alone")
+	void aRowDeliveredMeanwhileIsNotDropped() {
+		final var aged = row("row-1", ERRAND_ID, NOW.minusDays(31));
+		givenAgedOut(aged);
+		givenLocked(List.of("row-1"));
+		givenWaiting();
+
+		relay.relay();
+
+		verify(outboxRepositoryMock).deleteAllByIdInBatch(List.of());
+		assertThat(errorsLogged()).isEmpty();
 	}
 
 	@Test
@@ -195,13 +504,73 @@ class ProcessEventRelayTest {
 			.thenReturn(List.of(rows));
 	}
 
+	private void givenLocked(final List<String> rowIds, final ProcessEventOutboxEntity... rows) {
+		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(rowIds)).thenReturn(List.of(rows));
+	}
+
+	private void givenAgedOut(final ProcessEventOutboxEntity... rows) {
+		when(outboxRepositoryMock.findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(NOW.minus(MAX_AGE), PageRequest.of(0, BATCH_SIZE))).thenReturn(List.of(rows));
+	}
+
+	private void givenAccepted() {
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(true);
+	}
+
+	private void givenRefused(final ProcessEventOutboxEntity row) {
+		givenWaitingFor(row.getErrandId(), row);
+		givenLocked(List.of(row.getId()), row);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false);
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
+		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, REJECTION_ERROR_CODE, NOW_IN_MILLIS.minus(WINDOW))).thenReturn(false);
+	}
+
 	private void givenOldestUndelivered(final OffsetDateTime... created) {
 		when(outboxRepositoryMock.existsByDeliveredAtIsNullAndProcessServiceNot(PROCESS_SERVICE)).thenReturn(false);
 		when(outboxRepositoryMock.findFirstByDeliveredAtIsNullOrderByCreatedAsc())
 			.thenReturn(Stream.of(created).map(moment -> ProcessEventOutboxEntity.create().withCreated(moment)).findFirst());
 	}
 
-	private static ProcessEventOutboxEntity row(final String id, final String errandId) {
-		return ProcessEventOutboxEntity.create().withId(id).withErrandId(errandId);
+	private List<String> errorsLogged() {
+		return logAppender.list.stream()
+			.filter(event -> Level.ERROR.equals(event.getLevel()))
+			.map(ILoggingEvent::getFormattedMessage)
+			.toList();
+	}
+
+	private static ErrandProcessEntity liveInstance() {
+		final var instance = ErrandProcessEntity.create()
+			.withId("process-1")
+			.withErrandId(ERRAND_ID)
+			.withProcessService(PROCESS_SERVICE)
+			.withProcessKey(PROCESS_KEY)
+			.withProcessInstanceId("pi-1");
+		instance.applyStatus(WAITING, CLOCK);
+
+		return instance;
+	}
+
+	private static ProcessEventOutboxEntity agedRow(final String id) {
+		return row(id, ERRAND_ID, NOW.minusDays(31));
+	}
+
+	private static ProcessEventOutboxEntity row(final String id, final String errandId, final OffsetDateTime created) {
+		return row(id, errandId, created, "UPDATE");
+	}
+
+	private static ProcessEventOutboxEntity row(final String id, final String errandId, final OffsetDateTime created, final String eventType) {
+		return ProcessEventOutboxEntity.create()
+			.withId(id)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withErrandId(errandId)
+			.withProcessService(PROCESS_SERVICE)
+			.withProcessKey(PROCESS_KEY)
+			.withEventType(eventType)
+			.withEventSubType("ERRAND")
+			.withCreated(created);
+	}
+
+	private static Logger logger() {
+		return (Logger) LoggerFactory.getLogger(ProcessEventRelay.class);
 	}
 }

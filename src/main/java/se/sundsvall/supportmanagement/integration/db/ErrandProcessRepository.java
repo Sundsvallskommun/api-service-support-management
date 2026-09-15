@@ -45,6 +45,19 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	Optional<ErrandProcessEntity> findByProcessInstanceId(String processInstanceId);
 
 	/**
+	 * The row of an instance, provided it belongs to the errand asked about.
+	 * <p>
+	 * Asked with both at once, so that an instance of another errand is left out by the query rather than read and thrown
+	 * away. A report still asks by the instance alone, since it has to find out that the instance belongs elsewhere.
+	 *
+	 * @param  processInstanceId the instance to look up.
+	 * @param  errandId          the errand the instance has to belong to.
+	 * @return                   the row for the instance, or empty when SM has never seen it or it belongs to another
+	 *                           errand.
+	 */
+	Optional<ErrandProcessEntity> findByProcessInstanceIdAndErrandId(String processInstanceId, String errandId);
+
+	/**
 	 * The instances of a whole page of errands, newest first.
 	 * <p>
 	 * One query for the page rather than one per errand, which is what the {@code process} projection on the errand is
