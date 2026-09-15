@@ -130,8 +130,6 @@ class ErrandMapperTest {
 	private static final String MEASURE_DESCRIPTION = "measureDescription";
 	private static final Accept MEASURE_ACCEPT = Accept.TRUE;
 	private static final String MEASURE_ACCEPT_MOTIVATION = "measureAcceptMotivation";
-	private static final String MEASURE_REWORK_GOAL = "measureReworkGoal";
-	private static final String MEASURE_REWORK_DESCRIPTION = "measureReworkDescription";
 	private static final OffsetDateTime MEASURE_CREATED = now().minusDays(5);
 	private static final OffsetDateTime MEASURE_MODIFIED = now().minusDays(1);
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -184,9 +182,7 @@ class ErrandMapperTest {
 				.withGoal(MEASURE_GOAL)
 				.withDescription(MEASURE_DESCRIPTION)
 				.withAccept(MEASURE_ACCEPT.name())
-				.withAcceptMotivation(MEASURE_ACCEPT_MOTIVATION)
-				.withReworkGoal(MEASURE_REWORK_GOAL)
-				.withReworkDescription(MEASURE_REWORK_DESCRIPTION)));
+				.withAcceptMotivation(MEASURE_ACCEPT_MOTIVATION)));
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -262,8 +258,6 @@ class ErrandMapperTest {
 				.withDescription(MEASURE_DESCRIPTION)
 				.withAccept(MEASURE_ACCEPT)
 				.withAcceptMotivation(MEASURE_ACCEPT_MOTIVATION)
-				.withReworkGoal(MEASURE_REWORK_GOAL)
-				.withReworkDescription(MEASURE_REWORK_DESCRIPTION)
 				.withCreated(MEASURE_CREATED)
 				.withModified(MEASURE_MODIFIED)));
 
@@ -346,9 +340,9 @@ class ErrandMapperTest {
 			.containsExactly(tuple(PHASE_ID, PHASE_NAME, PHASE_DISPLAY_NAME, PHASE_STARTED, null));
 		assertThat(errand.getMeasures()).hasSize(1)
 			.extracting(Measure::getId, Measure::getResponsibleUser, Measure::getType, Measure::getPlannedStart, Measure::getPlannedComplete, Measure::getExecuted, Measure::getAddedByUser, Measure::getAddedByRole, Measure::getGoal,
-				Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation, Measure::getReworkGoal, Measure::getReworkDescription, Measure::getCreated, Measure::getModified)
+				Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation, Measure::getCreated, Measure::getModified)
 			.containsExactly(tuple(MEASURE_ID, MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION,
-				MEASURE_ACCEPT.name(), MEASURE_ACCEPT_MOTIVATION, MEASURE_REWORK_GOAL, MEASURE_REWORK_DESCRIPTION, MEASURE_CREATED, MEASURE_MODIFIED));
+				MEASURE_ACCEPT.name(), MEASURE_ACCEPT_MOTIVATION, MEASURE_CREATED, MEASURE_MODIFIED));
 		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 	}
 
@@ -636,9 +630,9 @@ class ErrandMapperTest {
 
 		assertThat(entity.getMeasures()).hasSize(1)
 			.extracting(MeasureEntity::getResponsibleUser, MeasureEntity::getType, MeasureEntity::getPlannedStart, MeasureEntity::getPlannedComplete, MeasureEntity::getExecuted, MeasureEntity::getAddedByUser, MeasureEntity::getAddedByRole,
-				MeasureEntity::getGoal, MeasureEntity::getDescription, MeasureEntity::getAccept, MeasureEntity::getAcceptMotivation, MeasureEntity::getReworkGoal, MeasureEntity::getReworkDescription)
+				MeasureEntity::getGoal, MeasureEntity::getDescription, MeasureEntity::getAccept, MeasureEntity::getAcceptMotivation)
 			.containsExactly(tuple(MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION, MEASURE_ACCEPT,
-				MEASURE_ACCEPT_MOTIVATION, MEASURE_REWORK_GOAL, MEASURE_REWORK_DESCRIPTION));
+				MEASURE_ACCEPT_MOTIVATION));
 		assertThat(entity.getMeasures().getFirst().getErrandEntity()).isSameAs(entity);
 
 		assertThat(entity.getCreated()).isNull();

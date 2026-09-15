@@ -148,6 +148,18 @@
 			"level": "RW"
 		},
 		{
+			"resource": "errand/statement",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/investigation",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/decision",
+			"level": "RW"
+		},
+		{
 			"resource": "errand/notification",
 			"level": "RW"
 		},

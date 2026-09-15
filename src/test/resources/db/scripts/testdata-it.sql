@@ -678,9 +678,9 @@ VALUES ('dd000000-0000-0000-0000-000000000100', 'GROUP-A'),
 -- -----------------------------------
 -- Measure (errand measures)
 -- -----------------------------------
-INSERT INTO measure(id, errand_id, municipality_id, namespace, status, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, rework_goal, rework_description, created, modified)
-VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'ACTIVE', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, null, null, '2024-01-10 12:00:00.000', null),
-       ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'COMPLETED', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', null, null, '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');
+INSERT INTO measure(id, errand_id, municipality_id, namespace, status, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, created, modified)
+VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'ACTIVE', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, '2024-01-10 12:00:00.000', null),
+       ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'COMPLETED', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');
 
 -- -----------------------------------
 -- An errand of its own for the handling artefacts.

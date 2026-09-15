@@ -37,9 +37,10 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
  * <p>
  * The oldest of the four handling artefacts, and the reason the other three were shaped after it rather than the other
  * way around. It carries fields inherited from the action plan flow of a single line of business - {@code goal},
- * {@code accept}, {@code acceptMotivation}, {@code reworkGoal} and {@code reworkDescription}. They are neither touched
- * nor removed, but a new line of business must not fill them with anything other than what they mean. Where an accept
- * step is needed, it belongs in a JSON parameter.
+ * {@code accept} and {@code acceptMotivation}. A new line of business must not fill them with anything other than what
+ * they mean. Where an accept step is needed, it belongs in a JSON parameter.
+ * <p>
+ * The rework fields of that same flow were dropped rather than carried forward, having never been filled by anything.
  * <p>
  * Two inherited fields are overridden rather than migrated. {@code type} is 255 characters here and 128 in the base
  * class, and {@code description} is 1000 rather than a long text: narrowing a column that already holds data would
@@ -61,7 +62,7 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
 	joinColumns = @JoinColumn(name = "errand_id", nullable = false),
 	foreignKey = @ForeignKey(name = "fk_measure_errand_id"))
 @AttributeOverride(name = "type", column = @Column(name = "type", length = 255))
-@AttributeOverride(name = "description", column = @Column(name = "description", length = 1000))
+@AttributeOverride(name = "description", column = @Column(name = "description", length = 3000))
 public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 
 	@Column(name = "responsible_user")
@@ -85,7 +86,7 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 	@Column(name = "added_by_role")
 	private String addedByRole;
 
-	@Column(name = "goal")
+	@Column(name = "goal", length = 3000)
 	private String goal;
 
 	// The length says what the column has held since V1_51, and the jdbc type says it is a string rather than the
@@ -97,12 +98,6 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 
 	@Column(name = "accept_motivation")
 	private String acceptMotivation;
-
-	@Column(name = "rework_goal")
-	private String reworkGoal;
-
-	@Column(name = "rework_description", length = 1000)
-	private String reworkDescription;
 
 	/** The outcome once the measure has been carried out. Not {@link Accept}, which means something else. */
 	@Enumerated(EnumType.STRING)
@@ -270,32 +265,6 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 		return this;
 	}
 
-	public String getReworkGoal() {
-		return reworkGoal;
-	}
-
-	public void setReworkGoal(final String reworkGoal) {
-		this.reworkGoal = reworkGoal;
-	}
-
-	public MeasureEntity withReworkGoal(final String reworkGoal) {
-		this.reworkGoal = reworkGoal;
-		return this;
-	}
-
-	public String getReworkDescription() {
-		return reworkDescription;
-	}
-
-	public void setReworkDescription(final String reworkDescription) {
-		this.reworkDescription = reworkDescription;
-	}
-
-	public MeasureEntity withReworkDescription(final String reworkDescription) {
-		this.reworkDescription = reworkDescription;
-		return this;
-	}
-
 	public MeasureResult getResult() {
 		return result;
 	}
@@ -392,15 +361,13 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 			&& Objects.equals(goal, that.goal)
 			&& (accept == that.accept)
 			&& Objects.equals(acceptMotivation, that.acceptMotivation)
-			&& Objects.equals(reworkGoal, that.reworkGoal)
-			&& Objects.equals(reworkDescription, that.reworkDescription)
 			&& (result == that.result)
 			&& Objects.equals(resultText, that.resultText);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(super.hashCode(), responsibleUser, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, accept, acceptMotivation, reworkGoal, reworkDescription, result,
+		return Objects.hash(super.hashCode(), responsibleUser, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, accept, acceptMotivation, result,
 			resultText);
 	}
 
@@ -416,8 +383,6 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 			", goal='" + goal + '\'' +
 			", accept=" + accept +
 			", acceptMotivation='" + acceptMotivation + '\'' +
-			", reworkGoal='" + reworkGoal + '\'' +
-			", reworkDescription='" + reworkDescription + '\'' +
 			", result=" + result +
 			", resultText='" + resultText + '\'' +
 			", decisionEntity=" + (decisionEntity != null ? decisionEntity.getId() : "null") +

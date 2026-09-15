@@ -218,6 +218,21 @@
 			"errandScoped": true
 		},
 		{
+			"resource": "STATEMENT",
+			"path": "errand/statement",
+			"errandScoped": true
+		},
+		{
+			"resource": "INVESTIGATION",
+			"path": "errand/investigation",
+			"errandScoped": true
+		},
+		{
+			"resource": "DECISION",
+			"path": "errand/decision",
+			"errandScoped": true
+		},
+		{
 			"resource": "NOTIFICATION",
 			"path": "errand/notification",
 			"errandScoped": true
@@ -248,6 +263,11 @@
 			"errandScoped": false
 		},
 		{
+			"resource": "METADATA_ATTACHMENT_PURPOSE",
+			"path": "metadata/attachment-purpose",
+			"errandScoped": false
+		},
+		{
 			"resource": "METADATA_CATEGORY",
 			"path": "metadata/category",
 			"errandScoped": false
@@ -255,6 +275,11 @@
 		{
 			"resource": "METADATA_CONTACT_REASON",
 			"path": "metadata/contact-reason",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_DECISION_OUTCOME",
+			"path": "metadata/decision-outcome",
 			"errandScoped": false
 		},
 		{
@@ -280,6 +305,11 @@
 		{
 			"resource": "METADATA_ROLE",
 			"path": "metadata/role",
+			"errandScoped": false
+		},
+		{
+			"resource": "METADATA_STATEMENT_OUTCOME",
+			"path": "metadata/statement-outcome",
 			"errandScoped": false
 		},
 		{

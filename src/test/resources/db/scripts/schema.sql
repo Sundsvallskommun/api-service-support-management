@@ -25,6 +25,12 @@
         primary key (value_order, action_config_condition_id)
     ) engine=InnoDB;
 
+    create table action_config_operation_type (
+        action_config_id varchar(255) not null,
+        operation_type enum ('CREATE','DELETE','READ','UPDATE') not null,
+        primary key (action_config_id, operation_type)
+    ) engine=InnoDB;
+
     create table action_config_parameter (
         action_config_id varchar(255) not null,
         id varchar(255) not null,
@@ -480,19 +486,17 @@
         result varchar(32) check ((result in ('COMPLETED','PARTIALLY_COMPLETED','NOT_COMPLETED','NOT_APPLICABLE'))),
         status varchar(32) not null check ((status in ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))),
         accept varchar(50) check ((accept in ('TRUE','FALSE','REWORK'))),
-        description varchar(1000),
-        rework_description varchar(1000),
+        description varchar(3000),
+        goal varchar(3000),
         accept_motivation varchar(255),
         added_by_role varchar(255),
         added_by_user varchar(255),
         created_by varchar(255),
         decision_id varchar(255),
         errand_id varchar(255) not null,
-        goal varchar(255),
         id varchar(255) not null,
         modified_by varchar(255),
         responsible_user varchar(255),
-        rework_goal varchar(255),
         statement_id varchar(255),
         title varchar(255),
         type varchar(255),
@@ -524,9 +528,13 @@
         namespace varchar(32) not null,
         display_name varchar(255),
         id varchar(255) not null,
-        measure_group varchar(255) not null,
         name varchar(255) not null,
         primary key (id)
+    ) engine=InnoDB;
+
+    create table measure_type_groups (
+        measure_group varchar(255),
+        measure_type_id varchar(255) not null
     ) engine=InnoDB;
 
     create table message_exchange_integration_config (
@@ -1379,6 +1387,11 @@
        foreign key (action_config_condition_id) 
        references action_config_condition (id);
 
+    alter table if exists action_config_operation_type 
+       add constraint fk_action_config_operation_type_action_config_id 
+       foreign key (action_config_id) 
+       references action_config (id);
+
     alter table if exists action_config_parameter 
        add constraint fk_action_config_parameter_action_config_id 
        foreign key (action_config_id) 
@@ -1612,6 +1625,11 @@
        foreign key (measure_id) 
        references measure (id) 
        on delete cascade;
+
+    alter table if exists measure_type_groups 
+       add constraint fk_measure_type_groups_measure_type_id 
+       foreign key (measure_type_id) 
+       references measure_type (id);
 
     alter table if exists metadata_label 
        add constraint fk_metadata_label_id 
