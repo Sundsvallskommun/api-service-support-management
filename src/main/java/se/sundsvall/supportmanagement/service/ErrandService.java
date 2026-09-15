@@ -168,7 +168,7 @@ public class ErrandService {
 	 * errand.
 	 */
 	private ErrandEnrichment enrichmentOf(final String namespace, final String municipalityId, final List<ErrandEntity> entities) {
-		return ErrandEnrichment.of(errandProcessService.findLatestProcesses(namespace, municipalityId, entities.stream()
+		return new ErrandEnrichment(errandProcessService.findLatestProcesses(namespace, municipalityId, entities.stream()
 			.map(ErrandEntity::getId)
 			.toList()));
 	}

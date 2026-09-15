@@ -18,7 +18,6 @@ import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
-import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
@@ -36,6 +35,7 @@ import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_CONSUMER;
+import static se.sundsvall.supportmanagement.integration.pwalkt.configuration.PwAlktConfiguration.CLIENT_ID;
 
 @Service
 public class NamespaceConfigService {
@@ -51,17 +51,15 @@ public class NamespaceConfigService {
 	private static final String LEVEL_NOT_ALLOWED = "Level may not be set for field '%s' of '%s' as the field holds no keyed collection";
 	private static final String LEVEL_NOT_SUPPORTED = "Level '%s' may not be set for field '%s' of '%s' as a field is held at read or read/write";
 	private static final String DUPLICATE_PROCESS_TRIGGER = "'%s' occurs more than once among the process triggers";
-	private static final String UNKNOWN_PROCESS_CONSUMER = "'%s' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be one of %s";
+	private static final String UNKNOWN_PROCESS_CONSUMER = "'%s' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be '%s'";
 	private static final String PROCESS_CONSUMER_EXCLUDES_ACCESS_CONTROL = "Access control may not be active for a namespace with the process consumer '%s'. A process consumer is not an AD account, and the access mapper grants access to nothing else, so every read and write the process makes for the namespace would be denied";
 
 	private final NamespaceConfigRepository configRepository;
 	private final NamespaceConfigMapper mapper;
-	private final ProcessEngineProperties processEngineProperties;
 
-	public NamespaceConfigService(NamespaceConfigRepository configRepository, NamespaceConfigMapper mapper, ProcessEngineProperties processEngineProperties) {
+	public NamespaceConfigService(NamespaceConfigRepository configRepository, NamespaceConfigMapper mapper) {
 		this.configRepository = configRepository;
 		this.mapper = mapper;
-		this.processEngineProperties = processEngineProperties;
 	}
 
 	@Caching(evict = {
@@ -118,9 +116,9 @@ public class NamespaceConfigService {
 	/**
 	 * Verifies the process configuration of the namespace.
 	 * <p>
-	 * The consumer is checked against the register of process engines the service can actually deliver to, since the name
-	 * is the delivery address rather than a label: a misspelt one would otherwise be accepted and then leave every event
-	 * of the namespace undeliverable, which shows up as errands that stop moving rather than as a configuration error.
+	 * The consumer is checked against the one process engine the service can actually deliver to, since the name is the
+	 * delivery address rather than a label: a misspelt one would otherwise be accepted and then leave every event of the
+	 * namespace undeliverable, which shows up as errands that stop moving rather than as a configuration error.
 	 * <p>
 	 * Access control is refused alongside a consumer for a reason that is technical rather than a policy. The access
 	 * mapper answers for AD accounts only, and a process engine has none, so it would be denied everything it asks for -
@@ -138,8 +136,8 @@ public class NamespaceConfigService {
 			});
 
 		ofNullable(request.getProcessConsumer()).ifPresent(consumer -> {
-			if (!processEngineProperties.consumers().contains(consumer)) {
-				throw Problem.valueOf(BAD_REQUEST, UNKNOWN_PROCESS_CONSUMER.formatted(consumer, processEngineProperties.consumers()));
+			if (!CLIENT_ID.equals(consumer)) {
+				throw Problem.valueOf(BAD_REQUEST, UNKNOWN_PROCESS_CONSUMER.formatted(consumer, CLIENT_ID));
 			}
 			if (request.isAccessControl()) {
 				throw Problem.valueOf(BAD_REQUEST, PROCESS_CONSUMER_EXCLUDES_ACCESS_CONTROL.formatted(consumer));

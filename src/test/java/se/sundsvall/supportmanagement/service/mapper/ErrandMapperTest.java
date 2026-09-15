@@ -429,11 +429,11 @@ class ErrandMapperTest {
 	@Test
 	void testAnErrandWithoutAProcessCarriesNoProcessField() {
 		assertThat(toErrand(createEntity()).getProcess()).isNull();
-		assertThat(toErrand(createEntity(), ErrandEnrichment.of(Map.of("anotherErrand", ErrandProcess.create()))).getProcess()).isNull();
+		assertThat(toErrand(createEntity(), new ErrandEnrichment(Map.of("anotherErrand", ErrandProcess.create()))).getProcess()).isNull();
 	}
 
 	private static ErrandEnrichment enrichmentWithProcess() {
-		return ErrandEnrichment.of(Map.of(ID, ErrandProcess.create()
+		return new ErrandEnrichment(Map.of(ID, ErrandProcess.create()
 			.withId("processRowId")
 			.withProcessService("pw-alkt")
 			.withProcessKey("alkt-ansokan")

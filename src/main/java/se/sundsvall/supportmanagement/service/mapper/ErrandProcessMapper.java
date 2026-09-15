@@ -12,7 +12,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
-import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
@@ -28,13 +27,9 @@ public final class ErrandProcessMapper {
 	 * is what keeps them out of every read.
 	 *
 	 * @param  entity the instance to map.
-	 * @return        the instance as it is read, or null when there is none.
+	 * @return        the instance as it is read.
 	 */
 	public static ErrandProcess toErrandProcess(final ErrandProcessEntity entity) {
-		if (isNull(entity)) {
-			return null;
-		}
-
 		return ErrandProcess.create()
 			.withId(entity.getId())
 			.withProcessService(entity.getProcessService())
@@ -51,7 +46,7 @@ public final class ErrandProcessMapper {
 	}
 
 	public static List<ErrandProcess> toErrandProcesses(final List<ErrandProcessEntity> entities) {
-		return ofNullable(entities).orElse(emptyList()).stream()
+		return entities.stream()
 			.map(ErrandProcessMapper::toErrandProcess)
 			.toList();
 	}
@@ -142,7 +137,7 @@ public final class ErrandProcessMapper {
 	}
 
 	/**
-	 * An entry of a report, as it is stored.
+	 * An entry of a report, as it is stored. An entry that states no severity is information.
 	 *
 	 * @param  errandProcessId the instance the entry belongs to.
 	 * @param  errandId        the errand the entry belongs to.
@@ -158,28 +153,22 @@ public final class ErrandProcessMapper {
 			.withActivityType(activity.getActivityType())
 			.withActivityId(activity.getActivityId())
 			.withActivityName(activity.getActivityName())
-			.withSeverity(ofNullable(activity.getSeverity()).map(severity -> EnumUtils.getEnum(ActivitySeverity.class, severity)).orElse(INFO))
+			.withSeverity(EnumUtils.getEnum(ActivitySeverity.class, activity.getSeverity(), INFO))
 			.withMessage(activity.getMessage())
 			.withErrorCode(activity.getErrorCode())
 			.withOccurredAt(activity.getOccurredAt());
 	}
 
 	/**
-	 * Maps entries for reading, resolving the instance each of them belongs to.
+	 * Maps an entry for reading, resolving the instance it belongs to.
 	 *
-	 * @param  entities                 the entries to map.
-	 * @param  processInstanceIdByRowId the instance id of every process row the entries point at. An entry pointing at
-	 *                                  nothing keeps a null instance, which is what the entries written before any
-	 *                                  process existed look like.
-	 * @return                          the entries as they are read.
+	 * @param  entity                   the entry to map.
+	 * @param  processInstanceIdByRowId the instance id of every process row the entries of the page point at. An entry
+	 *                                  pointing at nothing keeps a null instance, which is what the entries written
+	 *                                  before any process existed look like.
+	 * @return                          the entry as it is read.
 	 */
-	public static List<ProcessActivity> toProcessActivities(final List<ErrandProcessActivityEntity> entities, final Map<String, String> processInstanceIdByRowId) {
-		return ofNullable(entities).orElse(emptyList()).stream()
-			.map(entity -> toProcessActivity(entity, processInstanceIdByRowId))
-			.toList();
-	}
-
-	private static ProcessActivity toProcessActivity(final ErrandProcessActivityEntity entity, final Map<String, String> processInstanceIdByRowId) {
+	public static ProcessActivity toProcessActivity(final ErrandProcessActivityEntity entity, final Map<String, String> processInstanceIdByRowId) {
 		return ProcessActivity.create()
 			.withId(entity.getId())
 			.withProcessInstanceId(ofNullable(entity.getErrandProcessId()).map(processInstanceIdByRowId::get).orElse(null))

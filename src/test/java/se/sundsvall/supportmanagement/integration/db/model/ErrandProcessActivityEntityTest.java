@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import java.time.OffsetDateTime;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
 
@@ -18,7 +17,6 @@ import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
 
 class ErrandProcessActivityEntityTest {
 
@@ -100,25 +98,12 @@ class ErrandProcessActivityEntityTest {
 	}
 
 	@Test
-	@DisplayName("Verification that an entry written without a severity falls back to INFO, since the column default never fires")
 	void testOnCreate() {
 		final var entity = ErrandProcessActivityEntity.create();
 		entity.onCreate();
 
-		assertThat(entity)
-			.hasAllNullFieldsOrPropertiesExcept("created", "severity")
-			.satisfies(e -> {
-				assertThat(e.getCreated()).isCloseTo(now(), within(1, SECONDS));
-				assertThat(e.getSeverity()).isEqualTo(INFO);
-			});
-	}
-
-	@Test
-	void onCreateLeavesAGivenSeverityAlone() {
-		final var entity = ErrandProcessActivityEntity.create().withSeverity(ERROR);
-		entity.onCreate();
-
-		assertThat(entity.getSeverity()).isEqualTo(ERROR);
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
 	}
 
 	@Test

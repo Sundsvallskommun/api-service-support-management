@@ -20,6 +20,7 @@ import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
+import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
 
 import static java.time.OffsetDateTime.now;
@@ -124,6 +125,33 @@ class ErrandProcessResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("activities", "may contain at most 100 activities"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	/**
+	 * The error of a failed process is often a stack trace, and one longer than its column has to be refused as a bad
+	 * request rather than reach the insert and fail as a server error - which would leave the failure unreported.
+	 */
+	@Test
+	void aReportWithAnErrorMessageLongerThanItsColumnIsRejected() {
+		final var report = validReport()
+			.withError(ProcessError.create().withCode("INCIDENT").withMessage("x".repeat(2049)));
+
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(report)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("error.message", "size must be between 0 and 2048"));
 
 		verifyNoInteractions(serviceMock);
 	}

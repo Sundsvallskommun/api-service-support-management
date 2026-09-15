@@ -48,17 +48,23 @@ scheduler:
     cron: 0 * * * * *
     shedlock-lock-at-most-for: PT2M
     maximum-execution-time: PT1M
+    # How old a row must be before the scheduled run takes it, so that the run does not reach past a transaction still
+    # being committed. The direct run is not held to it, since it starts once its own transaction is committed
+    transaction-buffer: PT5S
     # Last resort for a row that never makes it through
     max-age: P30D
     # Measured on the age of the oldest undelivered row
     unhealthy-after: PT15M
-    # Ceiling per consumer and run, so that one process engine being down cannot starve the others
+    # Ceiling per run, so that a backlog cannot make a single run unbounded
     batch-size: 200
   process-cleanup:
     name: process_event_cleanup
     cron: 0 30 2 * * *
     shedlock-lock-at-most-for: PT10M
     maximum-execution-time: PT5M
+    batch-size: 1000
+    # How long an entry of the activity log is kept
+    activity-retention: P365D
   job:
     name: maintain_jobs
     # Hourly. What the sweep looks for is a job that has been quiet for days, so asking more often than that finds the
@@ -74,14 +80,16 @@ errand:
     max-concurrent-runs: 2
     progress-interval: PT1M
 process-engine:
-  # Settings for the process engines errand events are published to. Documented in ProcessEngineProperties, which is
-  # where the defaults live. The consumers are the register of known process engines, and the name in it is the delivery
-  # address: connecting a namespace to one of them is configuration, adding a new one is a release.
-  consumers:
-    - pw-alkt
+  # Settings for the process engine errand events are published to. Documented in ProcessEngineProperties, which is where
+  # the defaults live.
   loop-guard:
     max-events-per-errand: 20
     window: PT10M
+  direct-run:
+    enabled: true
+    core-pool-size: 2
+    max-pool-size: 4
+    queue-capacity: 500
 job:
   # Settings for the job table every long running piece of work reports against. Documented in JobProperties, which is
   # where the defaults live. Jobs are kept: a purge leaves one row behind, and that row is the lasting record of it.
@@ -123,6 +131,11 @@ integration:
   json-schema:
     connectTimeout: 5
     readTimeout: 30
+  pw-alkt:
+    # Short on purpose: the call is held inside the transaction of the delivery, and pw-alkt answers as soon as it has
+    # taken the event in
+    connect-timeout: 5
+    read-timeout: 10
 logbook:
   body-filters:
     jsonPath:
@@ -150,6 +163,17 @@ resilience4j:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
       json-schema:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
+      pw-alkt:
+        # An answer about a single event, a 5xx included, says pw-alkt is there and is not counted: counting it would let a
+        # few events pw-alkt never takes hold the breaker open for every errand. Everything else is counted - a timeout, a
+        # connection that fails, a token that cannot be fetched
+        ignoreExceptions:
+          - se.sundsvall.dept44.exception.ClientProblem
+          - se.sundsvall.dept44.exception.ServerProblem
+        # Opens once three calls are counted and half of the last five failed. The token retryer every client is given makes a timeout twice
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 3
+        waitDurationInOpenState: PT30S
 
 spring:
   application:
@@ -214,6 +238,9 @@ spring:
           json-schema:
             authorization-grant-type: client_credentials
             provider: json-schema
+          pw-alkt:
+            authorization-grant-type: client_credentials
+            provider: pw-alkt
   servlet:
     multipart:
       max-file-size: 50MB

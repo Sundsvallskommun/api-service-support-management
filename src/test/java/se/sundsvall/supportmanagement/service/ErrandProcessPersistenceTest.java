@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.tuple;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessError.create;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
@@ -167,11 +168,14 @@ class ErrandProcessPersistenceTest {
 	@DisplayName("Verification that an instance of another process than the one the errand already runs is refused")
 	void anInstanceOfAnotherProcessIsRefused() {
 		final var errandId = createErrand();
-		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "first-instance", report(COMPLETED));
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "first-instance", report(FAILED));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "second-instance", report(RUNNING).withProcessKey("alkt-tillsyn")))
-			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(409));
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).contains("already runs a process other than 'alkt-tillsyn'");
+			});
 	}
 
 	/**
@@ -226,7 +230,7 @@ class ErrandProcessPersistenceTest {
 	@DisplayName("Verification that the envelope lists every process of the errand, newest first")
 	void theEnvelopeListsTheProcessesNewestFirst() {
 		final var errandId = createErrand();
-		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "older", report(COMPLETED).withStarted(now(systemDefault()).minusDays(2)));
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "older", report(FAILED).withStarted(now(systemDefault()).minusDays(2)));
 		errandProcessRepository.findByProcessInstanceId("older").ifPresent(entity -> entity.setCreated(now(systemDefault()).minusDays(2)));
 		errandProcessRepository.flush();
 		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "newer", report(RUNNING));
@@ -246,6 +250,7 @@ class ErrandProcessPersistenceTest {
 		errandProcessActivityRepository.saveAndFlush(ErrandProcessActivityEntity.create()
 			.withErrandId(errandId)
 			.withActivityType("CONFIG")
+			.withSeverity(ERROR)
 			.withMessage("Two labels resolve to different process keys")
 			.withOccurredAt(now(systemDefault())));
 		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance", report(RUNNING)

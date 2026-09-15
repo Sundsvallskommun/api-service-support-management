@@ -8,16 +8,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
@@ -26,17 +25,14 @@ import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.EXECUTED_BY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
@@ -55,8 +51,9 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  *
  * <pre>
  * 1. process consumer for (municipalityId, namespace)?   no   -&gt; return
+ *    event type CREATE, UPDATE or DELETE?                no   -&gt; throw, which takes the errand change down
  * 2. X-Trigger-Process: false, from a non ad identity?   yes  -&gt; return                 (loop guard, layer 1)
- *                    commands (PROCESS, SIGNAL) skip steps 2, 3 and 4
+ *                    commands (PROCESS, SIGNAL) and deletions skip steps 2, 3 and 4
  * 3. delivered events for the errand in the window?      over -&gt; error entry, return    (layer 3)
  * 4. event sub type among the process triggers?          no   -&gt; return                 (layer 2)
  * 5. process key: the command's own first, then the instance's, and the labels last
@@ -64,12 +61,16 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  *                    more than one -&gt; error entry, return
  *                    too long      -&gt; error entry, return
  * 6. start permission: a start command -&gt; yes
- *                    otherwise no live instance, no completed instance, and an AUTOMATIC label
- * 7. insert the row, addressed to the process consumer of the namespace
+ *                    otherwise no live instance, no completed instance, and an AUTOMATIC label naming the same key
+ * 7. insert the row, addressed to the process consumer of the namespace, and signal that it is there
  * </pre>
  *
  * Layer 1 goes on intent rather than on identity: a process saying itself that it does not want to be woken is what
  * saves SM from having to recognise every process engine by name.
+ * <p>
+ * The three layers are there for machine traffic about an errand, and two kinds of event pass them all. A command is
+ * a person pressing a button rather than something that happened to the errand. A deletion cannot loop, since the
+ * errand is gone, and holding it back would leave the process instance running for an errand that no longer exists.
  * <p>
  * A publication that fails may not be swallowed. Every call site of {@code createErrandEvent} catches Exception and
  * logs a warning, so a publication that merely threw would leave the errand change saved while the process was never
@@ -80,7 +81,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
 public class ProcessEventPublisher {
 
 	static final String LOOP_GUARD_ACTIVITY_TYPE = "LOOP_GUARD";
-	static final String AMBIGUOUS_KEY_ACTIVITY_TYPE = "CONFIG";
+	static final String CONFIG_ACTIVITY_TYPE = "CONFIG";
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessEventPublisher.class);
 
@@ -94,7 +95,7 @@ public class ProcessEventPublisher {
 	private static final int KEY_EXCERPT_LENGTH = 64;
 
 	private static final String LOOP_GUARD_TRIPPED = """
-		emergency brake tripped: more than %d events have reached the process of this errand within %s, and further \
+		emergency brake tripped: %d events, the most allowed, have reached the process of this errand within %s, and further \
 		events are being dropped. Something is waking the errand in a loop - find what writes to it, and check that \
 		the process asks not to be woken by its own writes""";
 	private static final String AMBIGUOUS_KEYS = """
@@ -104,31 +105,35 @@ public class ProcessEventPublisher {
 		the process key on the labels of this errand is %d characters long, and a process key may hold at most %d. No \
 		process is started for it, and no event about it reaches one. Shorten the processKey attribute of the label to \
 		the key the process is actually deployed under. The key begins '%s'""";
+	private static final String UNKNOWN_EVENT_TYPE = "a process is told of a creation, an update or a deletion, and an event of type %s is none of them";
 
 	private final NamespaceConfigService namespaceConfigService;
 	private final ProcessEventOutboxRepository outboxRepository;
 	private final ErrandProcessRepository processRepository;
-	private final ErrandProcessActivityRepository activityRepository;
 	private final ProcessKeySelector processKeySelector;
+	private final ProcessErrorLog errorLog;
 	private final ProcessEngineProperties processEngineProperties;
 	private final Clock clock;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 	public ProcessEventPublisher(
 		final NamespaceConfigService namespaceConfigService,
 		final ProcessEventOutboxRepository outboxRepository,
 		final ErrandProcessRepository processRepository,
-		final ErrandProcessActivityRepository activityRepository,
 		final ProcessKeySelector processKeySelector,
+		final ProcessErrorLog errorLog,
 		final ProcessEngineProperties processEngineProperties,
-		final Clock clock) {
+		final Clock clock,
+		final ApplicationEventPublisher applicationEventPublisher) {
 
 		this.namespaceConfigService = namespaceConfigService;
 		this.outboxRepository = outboxRepository;
 		this.processRepository = processRepository;
-		this.activityRepository = activityRepository;
 		this.processKeySelector = processKeySelector;
+		this.errorLog = errorLog;
 		this.processEngineProperties = processEngineProperties;
 		this.clock = clock;
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
 	/**
@@ -153,53 +158,44 @@ public class ProcessEventPublisher {
 	private void write(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final String executedBy, final String requestGroupId, final ProcessCommand command) {
 		final var namespace = errand.getNamespace();
 		final var municipalityId = errand.getMunicipalityId();
-
-		// A namespace without a process pays for nothing beyond this lookup, which is answered from a cache.
 		final var processService = namespaceConfigService.getProcessConsumer(namespace, municipalityId).orElse(null);
 
 		if (isNull(processService)) {
 			return;
 		}
 
-		// All three layers of the loop guard are there for machine traffic. A command is not something that happened to
-		// the errand but a request aimed at the process, and it comes from a person by construction.
-		final var derivedEvent = !eventSubType.isCommand();
+		final var processEventType = toProcessEventType(eventType);
+		final var guarded = !eventSubType.isCommand() && DELETE != eventType;
 
-		if (derivedEvent && isOptedOut()) {
+		if (guarded && isOptedOut()) {
 			LOG.debug("No process event written for errand {}: the write asked not to wake the process", sanitizeForLogging(errand.getId()));
 			return;
 		}
 
-		if (derivedEvent && isRateExceeded(errand, eventType)) {
+		if (guarded && isRateExceeded(errand)) {
 			return;
 		}
 
-		if (derivedEvent && !namespaceConfigService.getProcessTriggers(namespace, municipalityId).contains(eventSubType)) {
+		if (guarded && !namespaceConfigService.getProcessTriggers(namespace, municipalityId).contains(eventSubType)) {
 			return;
 		}
 
-		final var instances = processRepository.findByErrandId(errand.getId());
+		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errand.getId());
 		final var selection = selectFromLabels(errand, eventType);
 		final var processKey = resolveProcessKey(command, instances, selection);
 
 		if (isNull(processKey)) {
 			if (selection.isAmbiguous()) {
-				writeOncePerWindow(errand, eventType, AMBIGUOUS_KEY_ACTIVITY_TYPE, AMBIGUOUS_KEY_ERROR_CODE, AMBIGUOUS_KEYS.formatted(excerptOf(selection.keys())));
+				errorLog.writeOncePerWindow(errand.getId(), null, CONFIG_ACTIVITY_TYPE, AMBIGUOUS_KEY_ERROR_CODE, AMBIGUOUS_KEYS.formatted(excerptOf(selection.keys())));
 				return;
 			}
 
-			// A deletion is published without a key. The process engine matches a deletion on the errand rather than on
-			// the process, and holding the row back would leave the instance running for an errand that no longer exists.
 			if (DELETE != eventType) {
 				return;
 			}
 		} else if (processKey.length() > PROCESS_KEY_LENGTH) {
-			// A label attribute is free text of unbounded length while the column is not, and a key that does not fit is
-			// answered here rather than left to the insert. Left to the insert it would be a failed publication, and a
-			// failed publication takes the errand change with it - so one mistyped label would make every write to every
-			// errand wearing it impossible, for ever, with a 500 that names nothing. Reported as the configuration fault
-			// it is instead, which leaves the errand writable and the process startable by hand.
-			writeOncePerWindow(errand, eventType, AMBIGUOUS_KEY_ACTIVITY_TYPE, OVERSIZED_KEY_ERROR_CODE,
+			// Left to the insert, one mistyped label would fail every write to every errand wearing it.
+			errorLog.writeOncePerWindow(errand.getId(), null, CONFIG_ACTIVITY_TYPE, OVERSIZED_KEY_ERROR_CODE,
 				OVERSIZED_KEY.formatted(processKey.length(), PROCESS_KEY_LENGTH, StringUtils.abbreviate(processKey, KEY_EXCERPT_LENGTH)));
 			return;
 		}
@@ -210,18 +206,33 @@ public class ProcessEventPublisher {
 			.withErrandId(errand.getId())
 			.withProcessService(processService)
 			.withProcessKey(processKey)
-			.withEventType(eventType.getValue())
+			.withEventType(processEventType)
 			.withEventSubType(eventSubType.getValue())
-			.withStartAllowed(isStartAllowed(eventSubType, instances, selection))
-			// Not held against its column, unlike the two beside it. A signal name that does not fit cannot be cut - that
-			// would correlate a different gate - and it cannot be dropped either, since a person is standing there
-			// waiting for an answer. Letting the insert refuse it fails the command loudly, which is the right answer for
-			// something a human just asked for, and a command cannot make an errand unwritable the way a label can.
+			.withStartAllowed(isStartAllowed(eventSubType, processKey, instances, selection))
+			// Never cut: a shortened name would correlate another gate, so one that does not fit fails the command loudly.
 			.withSignalName(ofNullable(command).map(ProcessCommand::signalName).orElse(null))
-			// Cut to fit rather than refused. It arrives in a header the caller controls, and it is a trace of who wrote
-			// rather than a value anything is decided on, so a shortened one is worth more than a failed write.
 			.withExecutedBy(StringUtils.truncate(executedBy, EXECUTED_BY_LENGTH))
 			.withRequestGroupId(requestGroupId));
+
+		applicationEventPublisher.publishEvent(new ProcessEventWritten(errand.getId()));
+	}
+
+	/**
+	 * The event type a process is told, refusing one no process knows while the caller is still there to fail.
+	 * <p>
+	 * A process engine knows a creation, an update and a deletion, and nothing else. Left to the delivery, any other type
+	 * would be a row the relay can never turn into an event - read first again on every run, it would hold back every later
+	 * event of its errand until it aged out. Nothing publishes another type today; this is for the next call site that
+	 * does. It is asked before the loop guard and the triggers, so that such a call fails in the first test that reaches it
+	 * rather than in production on the day a namespace starts triggering on its sub type.
+	 * <p>
+	 * The switch has no default, so a type added to the event log does not compile until it has been decided here.
+	 */
+	private static String toProcessEventType(final EventType eventType) {
+		return switch (eventType) {
+			case CREATE, UPDATE, DELETE -> eventType.getValue();
+			case READ, ACCESS, EXECUTE, CANCEL, DROP -> throw new IllegalArgumentException(UNKNOWN_EVENT_TYPE.formatted(eventType.getValue()));
+		};
 	}
 
 	/**
@@ -247,16 +258,16 @@ public class ProcessEventPublisher {
 	 * itself - the rows pile up because nothing gets through, the brake reads the pile as a loop, and an outage that
 	 * only cost time turns into permanent event loss, at the very moment nothing at all was getting through.
 	 */
-	private boolean isRateExceeded(final ErrandEntity errand, final EventType eventType) {
+	private boolean isRateExceeded(final ErrandEntity errand) {
 		final var guard = processEngineProperties.loopGuard();
 		final var delivered = outboxRepository.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(errand.getId(), OffsetDateTime.now(clock).minus(guard.window()));
 
-		if (delivered <= guard.maxEventsPerErrand()) {
+		if (delivered < guard.maxEventsPerErrand()) {
 			return false;
 		}
 
 		LOG.error("Dropping process event for errand {}: {} events have reached its process within {}", sanitizeForLogging(errand.getId()), delivered, guard.window());
-		writeOncePerWindow(errand, eventType, LOOP_GUARD_ACTIVITY_TYPE, LOOP_GUARD_ERROR_CODE, LOOP_GUARD_TRIPPED.formatted(guard.maxEventsPerErrand(), guard.window()));
+		errorLog.writeOncePerWindow(errand.getId(), null, LOOP_GUARD_ACTIVITY_TYPE, LOOP_GUARD_ERROR_CODE, LOOP_GUARD_TRIPPED.formatted(guard.maxEventsPerErrand(), guard.window()));
 
 		return true;
 	}
@@ -284,19 +295,10 @@ public class ProcessEventPublisher {
 	 * runs the same process, so it does not matter which of them answers.
 	 */
 	private String resolveProcessKey(final ProcessCommand command, final List<ErrandProcessEntity> instances, final ProcessKeySelection selection) {
-		final var chosen = ofNullable(command)
+		return ofNullable(command)
 			.map(ProcessCommand::processKey)
 			.filter(StringUtils::isNotBlank)
-			.orElse(null);
-
-		if (nonNull(chosen)) {
-			return chosen;
-		}
-
-		return instances.stream()
-			.map(ErrandProcessEntity::getProcessKey)
-			.filter(StringUtils::isNotBlank)
-			.findFirst()
+			.or(() -> instances.stream().map(ErrandProcessEntity::getProcessKey).findFirst())
 			.orElseGet(selection::processKey);
 	}
 
@@ -305,63 +307,25 @@ public class ProcessEventPublisher {
 	 * <p>
 	 * Worked out once, here, and carried along with the event, so that the process engine has to know neither the start
 	 * mode of the labels nor the process history of the errand. It costs no extra query: step 5 already reads the
-	 * process rows of the errand, and both halves of the question are answered from them.
+	 * process rows of the errand, and both halves of the question are answered from them. Only a start command asks for
+	 * an instance to be born; a signal is aimed at one that already runs.
+	 * <p>
+	 * The mode counts only when it comes from the label naming the key the row carries. An errand whose failed instance
+	 * ran one process while its labels now point at another would otherwise take the key from the instance and the mode
+	 * from a label that has nothing to do with it.
 	 * <p>
 	 * The permission is optimistic and the registration is authoritative. A process can reach its end between
 	 * publication and delivery, and the conflict answered when a start is registered is the safety net for that.
 	 */
-	private boolean isStartAllowed(final EventSubType eventSubType, final List<ErrandProcessEntity> instances, final ProcessKeySelection selection) {
+	private boolean isStartAllowed(final EventSubType eventSubType, final String processKey, final List<ErrandProcessEntity> instances, final ProcessKeySelection selection) {
 		if (eventSubType.isCommand()) {
-			// Only a start command asks for an instance to be born. A signal is aimed at one that already runs.
 			return PROCESS == eventSubType;
 		}
 
 		return AUTOMATIC == selection.startMode()
+			&& selection.processKey().equals(processKey)
 			&& instances.stream().noneMatch(instance -> nonNull(instance.getActiveMarker()))
 			&& instances.stream().noneMatch(instance -> COMPLETED == instance.getProcessStatus());
-	}
-
-	/**
-	 * Writes an error entry on the errand, once per errand and window rather than once per discarded event.
-	 * <p>
-	 * A loop producing hundreds of events would otherwise lay down hundreds of entries, and an ambiguous errand is a
-	 * state it can sit in until somebody starts the process by hand. The idempotency key of the log does not help: both
-	 * the instance and the external task are null for these entries, and null is distinct in a unique index. The fault
-	 * being reported would drown the log it is reported in.
-	 * <p>
-	 * Written without a process instance, since they happen precisely when there is none - which is also why nothing is
-	 * written for a deletion. An entry hangs on the errand alone, and the errand row is normally gone by then.
-	 */
-	private void writeOncePerWindow(final ErrandEntity errand, final EventType eventType, final String activityType, final String errorCode, final String message) {
-		if (DELETE == eventType) {
-			return;
-		}
-
-		final var now = OffsetDateTime.now(clock).truncatedTo(MILLIS);
-
-		if (activityRepository.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(errand.getId(), activityType, ERROR, dedupeWindowStart(now))) {
-			return;
-		}
-
-		activityRepository.save(ErrandProcessActivityEntity.create()
-			.withErrandId(errand.getId())
-			.withActivityType(activityType)
-			.withSeverity(ERROR)
-			.withMessage(StringUtils.truncate(message, MESSAGE_LENGTH))
-			.withErrorCode(errorCode)
-			.withOccurredAt(now));
-	}
-
-	/**
-	 * How far back the log is asked before another entry of the same kind is written.
-	 * <p>
-	 * Deliberately the window of the emergency brake, and named here so that the sharing is visible rather than read out
-	 * of an expression. It is one setting for two things: raising the brake window to an hour also makes an ambiguous
-	 * errand report itself once an hour. That is the intended reading of "once per errand and window", and if the two
-	 * ever need to differ this is the one place to split them.
-	 */
-	private OffsetDateTime dedupeWindowStart(final OffsetDateTime now) {
-		return now.minus(processEngineProperties.loopGuard().window());
 	}
 
 	/**
@@ -384,6 +348,9 @@ public class ProcessEventPublisher {
 	 * caller running its own transaction template - as the process service does, for the sake of its collision recovery -
 	 * would get a complaint about there being no transaction instead of the rollback, losing the original failure with
 	 * it. Supports rather than required, since a write without a transaction is to be reported and not given one.
+	 * <p>
+	 * The failure is handed on rather than logged here: the caller catches it, and what surfaces from the rollback is
+	 * logged where it is turned into a response.
 	 */
 	private void failPublication(final ErrandEntity errand, final Exception cause) {
 		if (!TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -393,8 +360,6 @@ public class ProcessEventPublisher {
 
 		TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
 
-		// Handed on rather than logged: the caller catches it, and what surfaces from the rollback is logged where it is
-		// turned into a response. Saying it here as well would say it twice.
 		if (cause instanceof final RuntimeException runtimeException) {
 			throw runtimeException;
 		}
