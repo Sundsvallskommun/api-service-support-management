@@ -98,6 +98,20 @@ class ErrandAccessIT extends AbstractAppTest {
 	}
 
 	/**
+	 * A user the access mapper grants nothing, and who did not report the errand, is refused rather than answered with
+	 * an empty report.
+	 */
+	@Test
+	void test06_notAccessible() {
+		setupCall()
+			.withServicePath(ACCESS_CONTROLLED_ERRAND)
+			.withHttpMethod(GET)
+			.withHeader(SENT_BY_HEADER, "nob01ody; type=adAccount")
+			.withExpectedResponseStatus(UNAUTHORIZED)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
 	 * A first line officer of a namespace weighing resource grants, whose labels reach the errand at read while the
 	 * access mapper grants them the messages of its conversations at read/write.
 	 * <p>
@@ -113,20 +127,6 @@ class ErrandAccessIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
-	}
-
-	/**
-	 * A user the access mapper grants nothing, and who did not report the errand, is refused rather than answered with
-	 * an empty report.
-	 */
-	@Test
-	void test06_notAccessible() {
-		setupCall()
-			.withServicePath(ACCESS_CONTROLLED_ERRAND)
-			.withHttpMethod(GET)
-			.withHeader(SENT_BY_HEADER, "nob01ody; type=adAccount")
-			.withExpectedResponseStatus(UNAUTHORIZED)
 			.sendRequestAndVerifyResponse();
 	}
 }

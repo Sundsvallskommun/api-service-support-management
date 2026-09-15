@@ -10,7 +10,7 @@ public class ErrandFieldKeyAccess {
 	@Schema(description = "Key of the keyed collection", examples = "contactChannel")
 	private String key;
 
-	@Schema(description = "What the user may do with the key. Never wider than what they may do with the errand itself", examples = "RW")
+	@Schema(description = "What the user may do with the key. Never wider than what they may do with the field carrying it, which is the errand itself unless the field has a write endpoint of its own", examples = "RW")
 	private AccessLevel level;
 
 	public static ErrandFieldKeyAccess create() {

@@ -43,8 +43,8 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
  * The rework fields of that same flow were dropped rather than carried forward, having never been filled by anything.
  * <p>
  * Two inherited fields are overridden rather than migrated. {@code type} is 255 characters here and 128 in the base
- * class, and {@code description} is 1000 rather than a long text: narrowing a column that already holds data would
- * truncate it in silence, and widening it rebuilds a table for no gain the business asked for.
+ * class, and {@code description} is 3000 rather than a long text: narrowing a column that already holds data would
+ * truncate it in silence, and a long text buys nothing over the length the goal and the description were widened to.
  * <p>
  * Rows that predate the shared shape had their municipality and namespace filled from their errand, and their status
  * read from {@code executed}: {@code COMPLETED} where it was set, {@code ACTIVE} otherwise. The foreign key to the
