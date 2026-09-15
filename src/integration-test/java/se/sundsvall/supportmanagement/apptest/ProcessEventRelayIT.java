@@ -349,12 +349,7 @@ class ProcessEventRelayIT extends AbstractAppTest {
 		final var release = new CountDownLatch(1);
 
 		try {
-			final var capacity = processEventExecutor.getMaxPoolSize() + processEventExecutor.getQueueCapacity();
-			for (var i = 0; i < capacity; i++) {
-				processEventExecutor.execute(() -> awaitQuietly(release));
-			}
-			await().atMost(10, SECONDS).until(() -> processEventExecutor.getActiveCount() == processEventExecutor.getMaxPoolSize());
-			assertThat(processEventExecutor.getQueueSize()).isEqualTo(processEventExecutor.getQueueCapacity());
+			await().atMost(10, SECONDS).pollInterval(Duration.ofMillis(10)).until(() -> fillPool(release));
 
 			assertThat(patchErrand().getStatusCode()).isEqualTo(OK);
 		} finally {
@@ -538,6 +533,21 @@ class ProcessEventRelayIT extends AbstractAppTest {
 
 	private String relayHealth() {
 		return healthContributor.getOrCreateIndicator(RELAY_JOB).health().getStatus().getCode();
+	}
+
+	/**
+	 * Adds blocked runs while the pool has room, and answers whether every thread is busy and the queue is full.
+	 * <p>
+	 * Filled until full rather than with a count worked out in advance: threads left idle by the direct runs of earlier
+	 * tests take runs off the queue while it is being filled, so a counted fill leaves the queue one or two short. A run is
+	 * only added while there is room, which is why none of them is ever dropped.
+	 */
+	private boolean fillPool(final CountDownLatch release) {
+		while (processEventExecutor.getQueueSize() < processEventExecutor.getQueueCapacity() || processEventExecutor.getPoolSize() < processEventExecutor.getMaxPoolSize()) {
+			processEventExecutor.execute(() -> awaitQuietly(release));
+		}
+
+		return processEventExecutor.getActiveCount() == processEventExecutor.getMaxPoolSize() && processEventExecutor.getQueueSize() == processEventExecutor.getQueueCapacity();
 	}
 
 	private static void awaitQuietly(final CountDownLatch latch) {
