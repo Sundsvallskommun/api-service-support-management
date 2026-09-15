@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -225,6 +226,29 @@ class MetadataLabelResourceFailureTest {
 		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(expectedViolations);
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an omitted dryRun is rejected rather than defaulted, since a move cannot be undone and a caller that has to write the intent out cannot make that mistake silently")
+	void moveLabelWithMissingDryRun_returns400() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Map.of())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("dryRun", "must not be null"));
 
 		verifyNoInteractions(metadataServiceMock);
 	}

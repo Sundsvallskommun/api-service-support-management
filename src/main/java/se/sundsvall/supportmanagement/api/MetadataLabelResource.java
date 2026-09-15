@@ -145,7 +145,7 @@ class MetadataLabelResource {
 
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
 
-		if (request.isDryRun()) {
+		if (request.getDryRun()) {
 			return ok(metadataService.moveLabel(namespace, municipalityId, labelId, request));
 		}
 

@@ -10396,8 +10396,12 @@ components:
           example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
         dryRun:
           type: boolean
-          default: false
-          description: "If true, return affected counts without making any changes."
+          description: "When true, return affected counts without making any changes.\
+            \ When false, starts the move as an asynchronous job."
+          examples:
+          - true
+      required:
+      - dryRun
     MessageExchangeIntegration:
       type: object
       description: Message exchange worker config model
