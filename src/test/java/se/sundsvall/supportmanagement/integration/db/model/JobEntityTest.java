@@ -50,6 +50,7 @@ class JobEntityTest {
 	void hasValidBuilderMethods() {
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var id = "6a5b8c9d-1234-5678-abcd-ef0123456789";
+		final var labelId = "label-id";
 		final var message = "something went wrong";
 		final var modified = OffsetDateTime.now();
 		final var municipalityId = "2281";
@@ -63,6 +64,7 @@ class JobEntityTest {
 		final var entity = JobEntity.create()
 			.withCreated(created)
 			.withId(id)
+			.withLabelId(labelId)
 			.withMessage(message)
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
@@ -78,6 +80,7 @@ class JobEntityTest {
 			.satisfies(e -> {
 				assertThat(e.getCreated()).isEqualTo(created);
 				assertThat(e.getId()).isEqualTo(id);
+				assertThat(e.getLabelId()).isEqualTo(labelId);
 				assertThat(e.getMessage()).isEqualTo(message);
 				assertThat(e.getModified()).isEqualTo(modified);
 				assertThat(e.getMunicipalityId()).isEqualTo(municipalityId);

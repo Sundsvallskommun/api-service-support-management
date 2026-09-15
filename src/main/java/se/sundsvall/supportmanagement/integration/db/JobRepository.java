@@ -27,6 +27,8 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
 
 	boolean existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(String namespace, String municipalityId, JobType type, Collection<JobStatus> statuses);
 
+	boolean existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(String namespace, String municipalityId, JobType type, String labelId, Collection<JobStatus> statuses);
+
 	/**
 	 * Jobs in one of the sent in states that have not been written to since the sent in point in time.
 	 *

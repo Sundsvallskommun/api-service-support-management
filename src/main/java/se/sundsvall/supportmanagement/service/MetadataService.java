@@ -391,8 +391,12 @@ public class MetadataService {
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
 		validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
 
+		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL, labelId)) {
+			throw Problem.valueOf(CONFLICT, "Label '%s' already has a move in progress".formatted(labelId));
+		}
+
 		var affectedErrandCount = errandsRepository.countByLabelsMetadataLabelId(labelId);
-		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount);
+		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, labelId);
 
 		return jobService.get(namespace, municipalityId, jobId);
 	}

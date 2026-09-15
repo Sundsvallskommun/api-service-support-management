@@ -50,11 +50,21 @@ public class JobService {
 
 	@Transactional
 	public String create(final String namespace, final String municipalityId, final JobType type, final int total) {
+		return create(namespace, municipalityId, type, total, null);
+	}
+
+	/**
+	 * Creates a job that works on one label, so that a caller wanting to know whether that label already has a run under
+	 * way has something to ask {@link #hasActiveJob(String, String, JobType, String)} about.
+	 */
+	@Transactional
+	public String create(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
 		return jobRepository.save(JobEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
 			.withType(type)
-			.withTotal(total)).getId();
+			.withTotal(total)
+			.withLabelId(labelId)).getId();
 	}
 
 	@Transactional(readOnly = true)
@@ -175,6 +185,14 @@ public class JobService {
 	 */
 	public boolean hasActiveJob(final String namespace, final String municipalityId, final JobType type) {
 		return jobRepository.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(namespace, municipalityId, type, ACTIVE_STATUSES);
+	}
+
+	/**
+	 * Whether a job of one kind is already under way for one label, for work that must not start a second run against a
+	 * label a first run has not finished with yet.
+	 */
+	public boolean hasActiveJob(final String namespace, final String municipalityId, final JobType type, final String labelId) {
+		return jobRepository.existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(namespace, municipalityId, type, labelId, ACTIVE_STATUSES);
 	}
 
 	/**
