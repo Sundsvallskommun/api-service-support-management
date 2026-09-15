@@ -211,7 +211,7 @@ class MetadataLabelResourceFailureTest {
 	@MethodSource("moveLabelArguments")
 	void moveLabelWithInvalidArguments(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request, final Tuple... expectedViolations) {
 
-		final var response = webTestClient.put()
+		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", namespace, "municipalityId", municipalityId, "labelId", labelId)))
 			.contentType(org.springframework.http.MediaType.APPLICATION_JSON)
 			.bodyValue(request)
@@ -251,7 +251,7 @@ class MetadataLabelResourceFailureTest {
 		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
 			.thenThrow(Problem.valueOf(NOT_FOUND, "Label not found"));
 
-		webTestClient.put()
+		webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(LabelMoveRequest.create().withDryRun(true))
@@ -268,7 +268,7 @@ class MetadataLabelResourceFailureTest {
 		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
 			.thenThrow(Problem.valueOf(BAD_REQUEST, "New parent not found"));
 
-		webTestClient.put()
+		webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(LabelMoveRequest.create().withNewParentId(newParentId).withDryRun(true))
@@ -284,7 +284,7 @@ class MetadataLabelResourceFailureTest {
 		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
 			.thenThrow(Problem.valueOf(BAD_REQUEST, "Move is a no-op"));
 
-		webTestClient.put()
+		webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(LabelMoveRequest.create().withDryRun(true))
@@ -301,7 +301,7 @@ class MetadataLabelResourceFailureTest {
 		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
 			.thenThrow(Problem.valueOf(BAD_REQUEST, "Cycle detected"));
 
-		webTestClient.put()
+		webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(LabelMoveRequest.create().withNewParentId(newParentId).withDryRun(true))
@@ -318,7 +318,7 @@ class MetadataLabelResourceFailureTest {
 		when(metadataServiceMock.moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
 			.thenThrow(Problem.valueOf(CONFLICT, "Path collision"));
 
-		webTestClient.put()
+		webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(LabelMoveRequest.create().withNewParentId(newParentId).withDryRun(true))

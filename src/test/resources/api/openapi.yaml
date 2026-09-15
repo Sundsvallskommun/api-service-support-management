@@ -710,7 +710,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/metadata/labels/{labelId}/move:
-    put:
+    post:
       tags:
       - Metadata for labels
       summary: Move label

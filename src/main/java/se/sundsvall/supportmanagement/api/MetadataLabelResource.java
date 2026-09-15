@@ -121,7 +121,7 @@ class MetadataLabelResource {
 			.build();
 	}
 
-	@PutMapping(path = "/{labelId}/move", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@PostMapping(path = "/{labelId}/move", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Move label", description = "Validates a label move. When dryRun is true, returns the number of affected errands and actions without making any changes. When dryRun is false, starts the move as an asynchronous job.", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful dry-run operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = LabelMoveDryRunResponse.class))),
 		@ApiResponse(responseCode = "202",

@@ -266,7 +266,7 @@ class MetadataLabelIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(path)
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(OK)
@@ -282,7 +282,7 @@ class MetadataLabelIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(movePath)
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(OK)
@@ -305,7 +305,7 @@ class MetadataLabelIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(path)
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(ACCEPTED)
@@ -322,7 +322,7 @@ class MetadataLabelIT extends AbstractAppTest {
 		// First move — accepted, leaves the label with a PENDING job
 		setupCall()
 			.withServicePath(path)
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(ACCEPTED)
@@ -331,7 +331,7 @@ class MetadataLabelIT extends AbstractAppTest {
 		// Second move on the same label — refused while the first one is still PENDING
 		setupCall()
 			.withServicePath(path)
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(CONFLICT)
