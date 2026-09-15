@@ -4,6 +4,7 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import java.util.Map;
 import java.util.Set;
+import se.sundsvall.supportmanagement.integration.db.model.AbstractErrandItemEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -39,7 +40,15 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		Map.entry(NotificationEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(ErrandPhaseEntity.class, Set.of(ERRAND_ENTITY)),
 		Map.entry(PhaseTransitionEntity.class, Set.of(PHASE_ENTITY)),
-		Map.entry(MeasureEntity.class, Set.of(ERRAND_ENTITY)),
+		// The reference back to the errand is declared once, in the base class of the handling artefacts, and Gson asks
+		// about a field under the class that DECLARES it rather than the one that inherits it. Naming MeasureEntity here
+		// would therefore exclude nothing, and the snapshot would walk errand to measure to errand until the stack ran
+		// out. Anything else moved up into the base class has to be named here for the same reason.
+		Map.entry(AbstractErrandItemEntity.class, Set.of(ERRAND_ENTITY)),
+
+		// What the measure itself declares: the attachments it uses, which the errand already holds, its JSON parameters,
+		// which are the measure's rather than the errand's, and the artefact it follows from, which points back at the errand.
+		Map.entry(MeasureEntity.class, Set.of("attachments", "jsonParameters", "decisionEntity", "statementEntity")),
 		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)));
 
 	public static CircularReferenceExclusionStrategy create() {

@@ -9,5 +9,6 @@
 	"accessControl": true,
 	"notifyReporter": true,
 	"roleBasedMapping": false,
-	"resourceAccessControl": false
+	"resourceAccessControl": false,
+	"singleDecisionPerErrand": false
 }

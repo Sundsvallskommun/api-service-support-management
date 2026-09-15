@@ -20,6 +20,7 @@ public class ConfigPropertyExtractor {
 	public static final String PROPERTY_NOTIFY_REPORTER = "NOTIFY_REPORTER";
 	public static final String PROPERTY_ROLE_BASED_MAPPING = "ROLE_BASED_MAPPING";
 	public static final String PROPERTY_RESOURCE_ACCESS_CONTROL = "RESOURCE_ACCESS_CONTROL";
+	public static final String PROPERTY_SINGLE_DECISION_PER_ERRAND = "SINGLE_DECISION_PER_ERRAND";
 	public static final String PROPERTY_PROCESS_CONSUMER = "PROCESS_CONSUMER";
 	public static final String PROPERTY_PROCESS_TRIGGER = "PROCESS_TRIGGER";
 

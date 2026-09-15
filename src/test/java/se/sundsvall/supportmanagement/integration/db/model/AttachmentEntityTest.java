@@ -4,6 +4,7 @@ import com.google.code.beanmatchers.BeanMatchers;
 import java.time.OffsetDateTime;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
@@ -28,6 +29,16 @@ class AttachmentEntityTest {
 	// one it does not have.
 	private static final String READ_ONLY_PROPERTY = "attachmentDataId";
 
+	// The purpose is a reference into the metadata of the namespace, named by its id in the string form, and takes no part
+	// in equality.
+	private static final String[] NOT_COMPARED = {
+		"purpose"
+	};
+
+	private static String[] excluding(final String... properties) {
+		return Stream.concat(Stream.of(properties), Stream.of(NOT_COMPARED)).toArray(String[]::new);
+	}
+
 	@BeforeAll
 	static void setup() {
 		BeanMatchers.registerValueGenerator(() -> now().plusDays(new Random().nextInt()), OffsetDateTime.class);
@@ -38,9 +49,9 @@ class AttachmentEntityTest {
 		assertThat(AttachmentEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSettersExcluding(READ_ONLY_PROPERTY),
-			hasValidBeanHashCodeExcluding(READ_ONLY_PROPERTY),
-			hasValidBeanEqualsExcluding(READ_ONLY_PROPERTY),
-			hasValidBeanToStringExcluding("errandEntity", READ_ONLY_PROPERTY)));
+			hasValidBeanHashCodeExcluding(excluding(READ_ONLY_PROPERTY)),
+			hasValidBeanEqualsExcluding(excluding(READ_ONLY_PROPERTY)),
+			hasValidBeanToStringExcluding(excluding("errandEntity", READ_ONLY_PROPERTY))));
 	}
 
 	@Test
@@ -56,6 +67,7 @@ class AttachmentEntityTest {
 		final var municipalityId = "municipalityId";
 		final var fileSize = 100;
 		final var hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+		final var purpose = AttachmentPurposeEntity.create().withId(UUID.randomUUID().toString()).withName("RESPONSE");
 
 		final var attachmentEntity = AttachmentEntity.create()
 			.withId(id)
@@ -69,10 +81,12 @@ class AttachmentEntityTest {
 			.withCreated(now().truncatedTo(SECONDS))
 			.withModified(now().truncatedTo(SECONDS))
 			.withFileSize(fileSize)
-			.withHash(hash);
+			.withHash(hash)
+			.withPurpose(purpose);
 
 		assertThat(attachmentEntity).hasNoNullFieldsOrPropertiesExcept(READ_ONLY_PROPERTY);
 		assertThat(attachmentEntity.getId()).isEqualTo(id);
+		assertThat(attachmentEntity.getPurpose()).isEqualTo(purpose);
 		assertThat(attachmentEntity.getNamespace()).isEqualTo(namespace);
 		assertThat(attachmentEntity.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(attachmentEntity.getFileName()).isEqualTo(fileName);
@@ -82,6 +96,15 @@ class AttachmentEntityTest {
 		assertThat(attachmentEntity.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(attachmentEntity.getFileSize()).isEqualTo(fileSize);
 		assertThat(attachmentEntity.getHash()).isEqualTo(hash);
+	}
+
+	@Test
+	void toStringNamesThePurposeByItsId() {
+		final var purposeId = UUID.randomUUID().toString();
+		final var entity = AttachmentEntity.create().withPurpose(AttachmentPurposeEntity.create().withId(purposeId).withDisplayName("Inkommen handling"));
+
+		assertThat(entity.toString()).contains("purpose=" + purposeId).doesNotContain("Inkommen handling");
+		assertThat(AttachmentEntity.create().toString()).contains("purpose=null");
 	}
 
 	@Test

@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.integration.messaging;
 
+import generated.se.sundsvall.messaging.EmailBatchRequest;
 import generated.se.sundsvall.messaging.EmailRequest;
+import generated.se.sundsvall.messaging.MessageBatchResult;
 import generated.se.sundsvall.messaging.MessageRequest;
 import generated.se.sundsvall.messaging.MessageResult;
 import generated.se.sundsvall.messaging.SmsRequest;
@@ -65,4 +67,9 @@ public interface MessagingClient {
 	MessageResult sendMessage(
 		@PathVariable("municipalityId") final String municipalityId,
 		@RequestBody final MessageRequest messageRequest);
+
+	@PostMapping(path = "/{municipalityId}/email/batch", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+	MessageBatchResult sendEmailBatch(
+		@PathVariable("municipalityId") final String municipalityId,
+		@RequestBody final EmailBatchRequest emailBatchRequest);
 }

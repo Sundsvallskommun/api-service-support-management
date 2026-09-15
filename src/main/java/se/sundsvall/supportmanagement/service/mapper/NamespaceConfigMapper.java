@@ -49,6 +49,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_RESOURCE_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ROLE_BASED_MAPPING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SINGLE_DECISION_PER_ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getNullableValue;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getValue;
 
@@ -79,6 +80,7 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFY_REPORTER, String.valueOf(config.isNotifyReporter()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_ROLE_BASED_MAPPING, String.valueOf(config.isRoleBasedMapping()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_RESOURCE_ACCESS_CONTROL, String.valueOf(config.isResourceAccessControl()), BOOLEAN))
+			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_SINGLE_DECISION_PER_ERRAND, String.valueOf(config.isSingleDecisionPerErrand()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
 			.withAccessGrants(toAccessGrants(config));
 
@@ -118,6 +120,7 @@ public class NamespaceConfigMapper {
 			.withNotifyReporter(getValue(entity, PROPERTY_NOTIFY_REPORTER))
 			.withRoleBasedMapping(readOptionalToggle(entity, PROPERTY_ROLE_BASED_MAPPING))
 			.withResourceAccessControl(readOptionalToggle(entity, PROPERTY_RESOURCE_ACCESS_CONTROL))
+			.withSingleDecisionPerErrand(readOptionalToggle(entity, PROPERTY_SINGLE_DECISION_PER_ERRAND))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
 			.withProcessConsumer(getNullableValue(entity, PROPERTY_PROCESS_CONSUMER))
 			.withProcessTriggers(toProcessTriggers(entity))

@@ -38,24 +38,12 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriptionServiceTest {
 
 	private static final String IDENTIFIER_TYPE = "adAccount";
 	private static final String IDENTIFIER_VALUE = "joe01doe";
-
-	@BeforeEach
-	void setUpIdentity() {
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue(IDENTIFIER_VALUE));
-	}
-
-	@AfterEach
-	void clearIdentity() {
-		Identifier.remove();
-	}
-
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "my-namespace";
 	private static final String SUBSCRIBER_ID = "subscriber-1";
@@ -79,14 +67,13 @@ class SubscriptionServiceTest {
 	private ArgumentCaptor<SubscriptionEntity> entityCaptor;
 
 	@BeforeEach
-	void setExecutingUser() {
-		se.sundsvall.dept44.support.Identifier.set(
-			se.sundsvall.dept44.support.Identifier.create().withType(AD_ACCOUNT).withValue("joe01doe"));
+	void setUpIdentity() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue(IDENTIFIER_VALUE));
 	}
 
 	@AfterEach
-	void clearExecutingUser() {
-		se.sundsvall.dept44.support.Identifier.remove();
+	void clearIdentity() {
+		Identifier.remove();
 	}
 
 	@Test
