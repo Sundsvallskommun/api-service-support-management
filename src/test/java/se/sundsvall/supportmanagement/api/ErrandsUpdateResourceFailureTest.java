@@ -411,7 +411,72 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("jsonParameters[0].key", "must not be blank"));
+			.containsExactlyInAnyOrder(
+				tuple("jsonParameters[0].key", "must not be blank"),
+				tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, ., - and _"));
+
+		// Verification
+		verifyNoInteractions(metadataServiceMock, errandServiceMock);
+	}
+
+	/**
+	 * A key the database would take for another one - here by the trailing space its comparison ignores - is refused
+	 * before it gets that far.
+	 */
+	@Test
+	void updateErrandWithJsonParameterKeyOutsideTheAllowedCharacters() {
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create()
+				.withJsonParameters(List.of(
+					JsonParameter.create()
+						.withKey("formData ")
+						.withValue(new ObjectMapper().createObjectNode())
+						.withSchemaId("550e8400-e29b-41d4-a716-446655440000"))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, ., - and _"));
+
+		// Verification
+		verifyNoInteractions(metadataServiceMock, errandServiceMock);
+	}
+
+	/**
+	 * Nor is a key longer than the column holding it.
+	 */
+	@Test
+	void updateErrandWithTooLongJsonParameterKey() {
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create()
+				.withJsonParameters(List.of(
+					JsonParameter.create()
+						.withKey("a".repeat(256))
+						.withValue(new ObjectMapper().createObjectNode())
+						.withSchemaId("550e8400-e29b-41d4-a716-446655440000"))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("jsonParameters[0].key", "size must be between 1 and 255"));
 
 		// Verification
 		verifyNoInteractions(metadataServiceMock, errandServiceMock);

@@ -354,8 +354,8 @@ DLQ-djup och nodstatus — samt en dokumenterad väg tillbaka när något gått 
 
 ### 3.1 Tabellerna
 
-Fem nya tabeller i tre migreringar: `V1_56__add_process_integration_tables.sql` med de tre första (byggs i
-T1), `V1_57__add_errand_decision.sql` med beslutet (T9) och `V1_58__add_errand_process_signal.sql` med de
+Fem nya tabeller i tre migreringar: `V1_57__add_process_integration_tables.sql` med de tre första (byggs i
+T1), `V1_58__add_errand_decision.sql` med beslutet (T9) och `V1_59__add_errand_process_signal.sql` med de
 väntade signalerna (T11). De ligger i var sin fil eftersom Flyway jämför checksumma — en migrering som
 redan körts går inte att fylla på i efterhand.
 
@@ -363,7 +363,7 @@ redan körts går inte att fylla på i efterhand.
 sent.**
 
 - **Versionsnumret sätts efter det högsta som redan finns i repot, inte efter det som stod i ett dokument.**
-  Numren ovan är de lediga när det här skrivs; `V1_53`–`V1_55` togs av annat arbete medan designen låg
+  Numren ovan är de lediga när det här skrivs; `V1_53`–`V1_56` togs av annat arbete medan designen låg
   färdig. Det är därför numren i det här avsnittet ska läsas som "nästa lediga", och kontrolleras mot
   `src/main/resources/db/migration` när migreringen faktiskt skrivs. Ett återanvänt nummer stoppar Flyway
   vid uppstart i varje miljö som redan kört den andra filen.
@@ -474,7 +474,7 @@ create table if not exists errand_process_activity (
         references errand (id) on delete cascade
 ) engine=InnoDB;
 
--- V1_57: arendets beslut. Ett per arende - unikheten AR invarianten (7.5). Arendedata, inte
+-- V1_58: arendets beslut. Ett per arende - unikheten AR invarianten (7.5). Arendedata, inte
 -- processmaskineri: darfor egen tabell och JPA-relation pa ErrandEntity, till skillnad fran
 -- tabellerna ovan.
 create table if not exists errand_decision (
@@ -503,7 +503,7 @@ create table if not exists errand_decision (
     constraint fk_ed_process foreign key (errand_process_id) references errand_process (id) on delete set null
 ) engine=InnoDB;
 
--- V1_58: vad processen just nu vantar pa fran handlaggaren (5.9). Ersatts i sin helhet vid
+-- V1_59: vad processen just nu vantar pa fran handlaggaren (5.9). Ersatts i sin helhet vid
 -- varje rapport. Tom mangd = processen vantar inte pa nagon manniska.
 create table if not exists errand_process_signal (
     id                varchar(36)  not null,
@@ -2446,7 +2446,7 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T1 — Datamodell och domänenums (SM)
 
-**Bygg:** `V1_56`-migrering (§3.1); `ProcessStatus` med `isTerminal()` (§4.1); `ActivitySeverity`; entiteterna `ProcessEventOutboxEntity`, `ErrandProcessEntity` (§4.3), `ErrandProcessActivityEntity`; repositories med `Pageable` på **alla** sökfrågor; tabellerna i `truncate.sql`.
+**Bygg:** `V1_57`-migrering (§3.1); `ProcessStatus` med `isTerminal()` (§4.1); `ActivitySeverity`; entiteterna `ProcessEventOutboxEntity`, `ErrandProcessEntity` (§4.3), `ErrandProcessActivityEntity`; repositories med `Pageable` på **alla** sökfrågor; tabellerna i `truncate.sql`.
 
 **Acceptans:**
 - Ingen av T1:s entiteter är mappad som relation på `ErrandEntity`. (Beslutet i T9 är det enda undantaget, och det är avsiktligt — §3.2.)
@@ -2488,7 +2488,7 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T4 — Optimistisk samtidighetskontroll (SM)
 
-**Bygg:** `errandVersion` i rapportmodellen och kontrollen mot `errand.version` i `ErrandProcessService` (§6.3); kolumnen `outstanding_external_task_id` i T1:s `V1_56` (§3.1) med WARN-aktivitet när ett annat `externalTaskId` rapporterar `RUNNING` medan ett steg fortfarande står där (§6.4); INFO-raden som är enda spåret av ett `412` (§8.1).
+**Bygg:** `errandVersion` i rapportmodellen och kontrollen mot `errand.version` i `ErrandProcessService` (§6.3); kolumnen `outstanding_external_task_id` i T1:s `V1_57` (§3.1) med WARN-aktivitet när ett annat `externalTaskId` rapporterar `RUNNING` medan ett steg fortfarande står där (§6.4); INFO-raden som är enda spåret av ett `412` (§8.1).
 
 **Acceptans:**
 - Rapport med `errandVersion` som glidit ⇒ `412`, och **varken** tillstånd eller aktiviteter skrivs.
@@ -2555,7 +2555,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### T9 — Beslutet: modell, endpoint och spårbarhet (SM)
 
-**Bygg:** `V1_57`-migreringen med `errand_decision` (§3.1) och `DecisionEntity` som `@OneToOne` på `ErrandEntity`; enums `DecisionOutcome` och `DecisionMethod` (§4.2); `Decision`-modellen (§5.3); `ErrandDecisionResource` (`GET`, `PUT`, `DELETE` med `If-Match`) och `ErrandDecisionService`; `method`-regeln mot identiteten; `EventSubType.DECISION`-event och revision från beslutsskrivningen; låsning mot `COMPLETED` process; `Errand.decision`; `DECISION` i `PROCESS_TRIGGER` för ALKT; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
+**Bygg:** `V1_58`-migreringen med `errand_decision` (§3.1) och `DecisionEntity` som `@OneToOne` på `ErrandEntity`; enums `DecisionOutcome` och `DecisionMethod` (§4.2); `Decision`-modellen (§5.3); `ErrandDecisionResource` (`GET`, `PUT`, `DELETE` med `If-Match`) och `ErrandDecisionService`; `method`-regeln mot identiteten; `EventSubType.DECISION`-event och revision från beslutsskrivningen; låsning mot `COMPLETED` process; `Errand.decision`; `DECISION` i `PROCESS_TRIGGER` för ALKT; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
 
 **Acceptans:**
 - Beslutsskrivning ger en eventlogg-post med subtyp `DECISION` **och** en revision, och beslutet ingår i revisionssnapshotten. Utan eventet publiceras ingen outbox-rad och processen vaknar aldrig.
@@ -2574,7 +2574,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### T11 — Manuell stegning med signaler (SM)
 
-**Bygg:** `V1_58`-migreringen med `errand_process_signal` (§3.1), entitet och repository; `ProcessSignal` i API:et och `awaitingSignals` på `ErrandProcess` (§5.3); `POST .../processes/{processInstanceId}/signals` (§5.9); aktivitetspost med `activityType = SIGNAL`; signalnamnet i händelsemodellen — värdet `SIGNAL` i `EventSubType` och kolumnen `signal_name` fylls redan i T5; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
+**Bygg:** `V1_59`-migreringen med `errand_process_signal` (§3.1), entitet och repository; `ProcessSignal` i API:et och `awaitingSignals` på `ErrandProcess` (§5.3); `POST .../processes/{processInstanceId}/signals` (§5.9); aktivitetspost med `activityType = SIGNAL`; signalnamnet i händelsemodellen — värdet `SIGNAL` i `EventSubType` och kolumnen `signal_name` fylls redan i T5; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
 
 **Acceptans:**
 - **Outbox-raden bär signalens namn i `signal_name`, och det följer med ut i `signalName` på händelsen.** Ett test som bara kontrollerar att en rad skrevs missar poängen — det är namnet pw korrelerar på (§5.4).
@@ -2590,7 +2590,7 @@ Utan detta test är loop-skyddet en hypotes.
 
 ### T12 — Automatisk och manuell start (SM)
 
-**Bygg:** `startAllowed` i händelsemodellen (§5.4) — kolumnen skapas i T1:s `V1_56` och fylls redan i T5; attributet `processStartMode` med validering vid etikettskrivning (§7.7); `startable` i kuvertet runt `GET .../processes` (§5.10); `POST .../processes/start` med `ProcessStartRequest`; aktivitetspost med `activityType = START`; regenerera `openapi.yaml`.
+**Bygg:** `startAllowed` i händelsemodellen (§5.4) — kolumnen skapas i T1:s `V1_57` och fylls redan i T5; attributet `processStartMode` med validering vid etikettskrivning (§7.7); `startable` i kuvertet runt `GET .../processes` (§5.10); `POST .../processes/start` med `ProcessStartRequest`; aktivitetspost med `activityType = START`; regenerera `openapi.yaml`.
 
 `ProcessKeySelector` med paret nyckel och läge, uträkningen av startlovet i publiceringens steg 6 och kommandonas undantag från triggerfiltret och nödbromsen byggdes i T5. Kvar här är reglerna runt attributet och vägen in för handläggaren.
 

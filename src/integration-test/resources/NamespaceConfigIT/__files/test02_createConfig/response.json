@@ -9,6 +9,7 @@
 	"notifyReporter": true,
 	"roleBasedMapping": false,
 	"resourceAccessControl": false,
+	"singleDecisionPerErrand": false,
 	"processConsumer": "pw-alkt",
 	"processTriggers": [
 		"ATTACHMENT",

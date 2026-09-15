@@ -4,18 +4,29 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import tools.jackson.databind.JsonNode;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static se.sundsvall.supportmanagement.Constants.JSON_PARAMETER_KEY_REGEXP;
+import static se.sundsvall.supportmanagement.Constants.JSON_PARAMETER_KEY_VALIDATION_MESSAGE;
 
 @Schema(description = "JSON Parameter model")
 public class JsonParameter {
 
+	/**
+	 * Keys are unique per owner in a column compared without regard to case, and looked up the same way. Held to the
+	 * length of that column and to characters every such comparison agrees on, so that no key the lookup tells apart
+	 * from a stored one is one the database takes for it.
+	 */
 	@Schema(description = "Parameter key/name", examples = "formData1")
 	@NotBlank
+	@Size(min = 1, max = 255)
+	@Pattern(regexp = JSON_PARAMETER_KEY_REGEXP, message = JSON_PARAMETER_KEY_VALIDATION_MESSAGE)
 	private String key;
 
 	@Schema(description = "JSON structure value", example = """

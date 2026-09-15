@@ -31,6 +31,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.CountResponse;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
@@ -329,6 +330,41 @@ class ErrandsResourceTest {
 		// Verification
 		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance);
 		assertThat(response).isEqualTo(updatedInstance);
+	}
+
+	/**
+	 * Measures are part of the errand payload, so the ordinary read, change a field, patch it back round trip hands them
+	 * straight back - version and all. Every read-only field a measure carries has to survive that, or the round trip the
+	 * measures are merged for is not one a client can actually make.
+	 */
+	@Test
+	void updateErrandAcceptsAMeasureReadStraightBack() {
+		// Parameter values
+		final var errandInstance = Errand.create()
+			.withMeasures(List.of(Measure.create()
+				.withId("5f79a808-0ef3-4985-99b9-b12f23e202a7")
+				.withType("INTERVENTION")
+				.withAddedByUser("joe01doe")
+				.withAddedByRole("MANAGER")
+				.withStatus("ACTIVE")
+				.withVersion(3L)
+				.withCreated(OffsetDateTime.now())
+				.withCreatedBy("joe01doe")));
+		final var updatedInstance = Errand.create().withId(ERRAND_ID);
+
+		// Mock
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance)).thenReturn(updatedInstance);
+
+		// Call
+		webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(errandInstance)
+			.exchange()
+			.expectStatus().isOk();
+
+		// Verification
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance);
 	}
 
 	@Test

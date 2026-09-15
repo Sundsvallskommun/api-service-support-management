@@ -1,0 +1,8 @@
+{
+	"key": "dispatchLog",
+	"schemaId": "test-schema-1.0",
+	"value": {
+		"answer": "sent"
+	},
+	"version": 0
+}

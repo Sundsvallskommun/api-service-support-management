@@ -56,6 +56,11 @@ public class NamespaceConfig {
 	private boolean resourceAccessControl;
 
 	@Schema(
+		description = "If set to true an errand may hold at most one decision. Leave false where interim decisions, partial decisions or reconsideration occur. If no value is set it defaults to false.",
+		examples = "true")
+	private boolean singleDecisionPerErrand;
+
+	@Schema(
 		description = "The process engine running the processes of this namespace, named as it is configured under process-engine.consumers. A namespace has exactly one, and leaving it out means the namespace runs no processes at all. It cannot be combined with access control, as the access mapper only grants access to AD accounts",
 		examples = "pw-alkt")
 	private String processConsumer;
@@ -219,6 +224,19 @@ public class NamespaceConfig {
 		this.resourceAccessControl = resourceAccessControl;
 	}
 
+	public boolean isSingleDecisionPerErrand() {
+		return singleDecisionPerErrand;
+	}
+
+	public void setSingleDecisionPerErrand(final boolean singleDecisionPerErrand) {
+		this.singleDecisionPerErrand = singleDecisionPerErrand;
+	}
+
+	public NamespaceConfig withSingleDecisionPerErrand(final boolean singleDecisionPerErrand) {
+		this.singleDecisionPerErrand = singleDecisionPerErrand;
+		return this;
+	}
+
 	public NamespaceConfig withResourceAccessControl(final boolean resourceAccessControl) {
 		this.resourceAccessControl = resourceAccessControl;
 		return this;
@@ -292,7 +310,8 @@ public class NamespaceConfig {
 	@Override
 	public int hashCode() {
 		return Objects.hash(accessControl, created, displayName,
-			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, roleFieldRestrictions, roleBasedMapping, shortCode);
+			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand, roleFieldRestrictions, roleBasedMapping,
+			shortCode);
 	}
 
 	@Override
@@ -302,7 +321,7 @@ public class NamespaceConfig {
 		return accessControl == other.accessControl && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
 			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(processConsumer, other.processConsumer) && Objects.equals(processTriggers,
 				other.processTriggers) && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
-					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && Objects.equals(roleFieldRestrictions,
+					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && Objects.equals(roleFieldRestrictions,
 						other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
 			&& Objects.equals(shortCode, other.shortCode);
 	}
@@ -312,9 +331,10 @@ public class NamespaceConfig {
 		final var builder = new StringBuilder();
 		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", notificationTTLInDays=").append(
 			notificationTTLInDays).append(", created=").append(created).append(", modified=").append(modified).append(", accessControl=").append(accessControl).append(", notifyReporter=").append(notifyReporter).append(", roleBasedMapping=").append(
-				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", processConsumer=").append(processConsumer).append(", processTriggers=").append(processTriggers).append(", limitedReadAccess=").append(
-					limitedReadAccess).append(", reporterAccess=").append(reporterAccess).append(", roleFieldRestrictions=").append(
-						roleFieldRestrictions)
+				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", singleDecisionPerErrand=").append(singleDecisionPerErrand).append(", processConsumer=").append(processConsumer).append(", processTriggers=")
+			.append(
+				processTriggers).append(", limitedReadAccess=").append(limitedReadAccess).append(", reporterAccess=").append(reporterAccess).append(", roleFieldRestrictions=").append(
+					roleFieldRestrictions)
 			.append("]");
 		return builder.toString();
 	}

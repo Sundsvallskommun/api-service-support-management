@@ -29,6 +29,8 @@ public interface AttachmentRepository extends JpaRepository<AttachmentEntity, St
 	 */
 	List<AttachmentDataIdProjection> findByIdIn(List<String> ids);
 
+	boolean existsByPurposeId(String purposeId);
+
 	List<AttachmentEntity> findByNamespaceAndMunicipalityIdAndErrandEntityIdAndIdIn(final String namespace, final String municipalityId, final String errandId, final List<String> ids);
 
 }

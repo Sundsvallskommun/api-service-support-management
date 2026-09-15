@@ -10,6 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
@@ -17,9 +18,11 @@ import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
+import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DecisionOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
@@ -27,6 +30,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 
@@ -792,5 +796,181 @@ class MetadataMapperTest {
 	void testUpdateMeasureTypeEntityWithNull() {
 		final var entity = MeasureTypeEntity.create().withName("name");
 		assertThat(MetadataMapper.updateMeasureTypeEntity(entity, null)).isEqualTo(entity);
+	}
+
+	// =================================================================
+	// DecisionOutcome tests
+	// =================================================================
+
+	@Test
+	void toDecisionOutcome() {
+		final var created = OffsetDateTime.now().minusDays(1);
+		final var modified = OffsetDateTime.now();
+
+		final var entity = DecisionOutcomeEntity.create()
+			.withId("id")
+			.withCreated(created)
+			.withModified(modified)
+			.withName("APPROVAL")
+			.withDisplayName("Bifall")
+			.withSortOrder(1)
+			.withDeprecated(true);
+
+		assertThat(MetadataMapper.toDecisionOutcome(entity)).isEqualTo(DecisionOutcome.create()
+			.withId("id")
+			.withCreated(created)
+			.withModified(modified)
+			.withName("APPROVAL")
+			.withDisplayName("Bifall")
+			.withSortOrder(1)
+			.withDeprecated(true));
+	}
+
+	@Test
+	void toDecisionOutcomeForNull() {
+		assertThat(MetadataMapper.toDecisionOutcome(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toDecisionOutcomeEntityArguments")
+	void toDecisionOutcomeEntity(final String namespace, final String municipalityId, final DecisionOutcome decisionOutcome, final DecisionOutcomeEntity expectedResult) {
+		assertThat(MetadataMapper.toDecisionOutcomeEntity(namespace, municipalityId, decisionOutcome)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toDecisionOutcomeEntityArguments() {
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, DecisionOutcome.create().withName("name"), null),
+			Arguments.of(null, "municipalityId", DecisionOutcome.create().withName("name"), null),
+			Arguments.of("namespace", "municipalityId", DecisionOutcome.create().withName("name"),
+				DecisionOutcomeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")),
+			Arguments.of("namespace", "municipalityId", DecisionOutcome.create().withName("name").withDisplayName("displayName").withSortOrder(2).withDeprecated(true),
+				DecisionOutcomeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName").withSortOrder(2).withDeprecated(true)));
+	}
+
+	@Test
+	void updateDecisionOutcomeEntity() {
+		final var entity = DecisionOutcomeEntity.create().withName("oldName").withDisplayName("oldDisplayName").withSortOrder(1);
+
+		final var result = MetadataMapper.updateDecisionOutcomeEntity(entity, DecisionOutcome.create()
+			.withName("newName")
+			.withDisplayName("newDisplayName")
+			.withSortOrder(2)
+			.withDeprecated(true));
+
+		assertThat(result.getName()).isEqualTo("newName");
+		assertThat(result.getDisplayName()).isEqualTo("newDisplayName");
+		assertThat(result.getSortOrder()).isEqualTo(2);
+		assertThat(result.isDeprecated()).isTrue();
+	}
+
+	@Test
+	void updateDecisionOutcomeEntityLeavesOmittedFieldsAlone() {
+		final var entity = DecisionOutcomeEntity.create().withName("name").withDisplayName("displayName").withSortOrder(1).withDeprecated(true);
+
+		final var result = MetadataMapper.updateDecisionOutcomeEntity(entity, DecisionOutcome.create());
+
+		assertThat(result).isEqualTo(DecisionOutcomeEntity.create().withName("name").withDisplayName("displayName").withSortOrder(1).withDeprecated(true));
+	}
+
+	@Test
+	void updateDecisionOutcomeEntityWithNull() {
+		final var entity = DecisionOutcomeEntity.create().withName("name");
+		assertThat(MetadataMapper.updateDecisionOutcomeEntity(entity, null)).isEqualTo(entity);
+	}
+
+	// =================================================================
+	// StatementOutcome tests
+	// =================================================================
+
+	@Test
+	void toStatementOutcome() {
+		final var created = OffsetDateTime.now().minusDays(1);
+		final var modified = OffsetDateTime.now();
+
+		final var entity = StatementOutcomeEntity.create()
+			.withId("id")
+			.withCreated(created)
+			.withModified(modified)
+			.withName("NO_RESPONSE")
+			.withDisplayName("Inget svar")
+			.withSortOrder(1)
+			.withResponded(false)
+			.withDeprecated(true);
+
+		assertThat(MetadataMapper.toStatementOutcome(entity)).isEqualTo(StatementOutcome.create()
+			.withId("id")
+			.withCreated(created)
+			.withModified(modified)
+			.withName("NO_RESPONSE")
+			.withDisplayName("Inget svar")
+			.withSortOrder(1)
+			.withResponded(false)
+			.withDeprecated(true));
+	}
+
+	@Test
+	void toStatementOutcomeForNull() {
+		assertThat(MetadataMapper.toStatementOutcome(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toStatementOutcomeEntityArguments")
+	void toStatementOutcomeEntity(final String namespace, final String municipalityId, final StatementOutcome statementOutcome, final StatementOutcomeEntity expectedResult) {
+		assertThat(MetadataMapper.toStatementOutcomeEntity(namespace, municipalityId, statementOutcome)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toStatementOutcomeEntityArguments() {
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, StatementOutcome.create().withName("name"), null),
+			Arguments.of(null, "municipalityId", StatementOutcome.create().withName("name"), null),
+			Arguments.of("namespace", "municipalityId", StatementOutcome.create().withName("name").withDisplayName("displayName").withSortOrder(2).withResponded(false).withDeprecated(true),
+				StatementOutcomeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName").withSortOrder(2).withResponded(false).withDeprecated(true)));
+	}
+
+	/**
+	 * An outcome registered without saying whether it means a response is taken to mean one - the common case, and the
+	 * one that holds a statement completed with it to the time of the response.
+	 */
+	@Test
+	void toStatementOutcomeEntityMeansAResponseUnlessToldOtherwise() {
+		assertThat(MetadataMapper.toStatementOutcomeEntity("namespace", "municipalityId", StatementOutcome.create().withName("SUPPORTS")).isResponded()).isTrue();
+	}
+
+	@Test
+	void updateStatementOutcomeEntity() {
+		final var entity = StatementOutcomeEntity.create().withName("oldName").withDisplayName("oldDisplayName").withSortOrder(1).withResponded(true);
+
+		final var result = MetadataMapper.updateStatementOutcomeEntity(entity, StatementOutcome.create()
+			.withName("newName")
+			.withDisplayName("newDisplayName")
+			.withSortOrder(2)
+			.withResponded(false)
+			.withDeprecated(true));
+
+		assertThat(result.getName()).isEqualTo("newName");
+		assertThat(result.getDisplayName()).isEqualTo("newDisplayName");
+		assertThat(result.getSortOrder()).isEqualTo(2);
+		assertThat(result.isResponded()).isFalse();
+		assertThat(result.isDeprecated()).isTrue();
+	}
+
+	/**
+	 * A patch leaving out whether the outcome means a response does not turn one that does not into one that does.
+	 */
+	@Test
+	void updateStatementOutcomeEntityLeavesOmittedFieldsAlone() {
+		final var entity = StatementOutcomeEntity.create().withName("NO_RESPONSE").withDisplayName("displayName").withSortOrder(1).withResponded(false).withDeprecated(true);
+
+		final var result = MetadataMapper.updateStatementOutcomeEntity(entity, StatementOutcome.create());
+
+		assertThat(result).isEqualTo(StatementOutcomeEntity.create().withName("NO_RESPONSE").withDisplayName("displayName").withSortOrder(1).withResponded(false).withDeprecated(true));
+	}
+
+	@Test
+	void updateStatementOutcomeEntityWithNull() {
+		final var entity = StatementOutcomeEntity.create().withName("name");
+		assertThat(MetadataMapper.updateStatementOutcomeEntity(entity, null)).isEqualTo(entity);
 	}
 }

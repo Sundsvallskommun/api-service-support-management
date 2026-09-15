@@ -34,6 +34,8 @@ class MetadataResponseTest {
 		final var statuses = List.of(Status.create().withName("STATUS"));
 
 		final var phases = List.of(Phase.create().withName("INVESTIGATION"));
+		final var decisionOutcomes = List.of(DecisionOutcome.create().withName("APPROVAL"));
+		final var statementOutcomes = List.of(StatementOutcome.create().withName("SUPPORTS"));
 
 		final var response = MetadataResponse.create()
 			.withCategories(categories)
@@ -41,7 +43,9 @@ class MetadataResponseTest {
 			.withLabels(labels)
 			.withRoles(roles)
 			.withStatuses(statuses)
-			.withPhases(phases);
+			.withPhases(phases)
+			.withDecisionOutcomes(decisionOutcomes)
+			.withStatementOutcomes(statementOutcomes);
 
 		assertThat(response.getCategories()).isEqualTo(categories);
 		assertThat(response.getExternalIdTypes()).isEqualTo(externalIdTypes);
@@ -49,6 +53,8 @@ class MetadataResponseTest {
 		assertThat(response.getRoles()).isEqualTo(roles);
 		assertThat(response.getStatuses()).isEqualTo(statuses);
 		assertThat(response.getPhases()).isEqualTo(phases);
+		assertThat(response.getDecisionOutcomes()).isEqualTo(decisionOutcomes);
+		assertThat(response.getStatementOutcomes()).isEqualTo(statementOutcomes);
 	}
 
 	@Test

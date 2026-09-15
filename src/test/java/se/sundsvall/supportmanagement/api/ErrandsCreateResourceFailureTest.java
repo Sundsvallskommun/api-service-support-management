@@ -602,7 +602,9 @@ class ErrandsCreateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("jsonParameters[0].key", "must not be blank"));
+			.containsExactlyInAnyOrder(
+				tuple("jsonParameters[0].key", "must not be blank"),
+				tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, ., - and _"));
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());
