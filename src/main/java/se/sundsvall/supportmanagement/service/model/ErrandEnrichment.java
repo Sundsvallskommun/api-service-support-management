@@ -4,7 +4,6 @@ import java.util.Map;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Objects.isNull;
 
 /**
  * What mapping an errand needs beyond the errand row itself.
@@ -25,11 +24,7 @@ public record ErrandEnrichment(Map<String, ErrandProcess> processes) {
 		return EMPTY;
 	}
 
-	public static ErrandEnrichment of(final Map<String, ErrandProcess> processes) {
-		return isNull(processes) || processes.isEmpty() ? EMPTY : new ErrandEnrichment(processes);
-	}
-
 	public ErrandProcess processOf(final String errandId) {
-		return isNull(errandId) ? null : processes.get(errandId);
+		return processes.get(errandId);
 	}
 }

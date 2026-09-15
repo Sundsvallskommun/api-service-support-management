@@ -18,9 +18,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverit
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.util.Objects.isNull;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
 
 /**
  * Append-only log of what the process did, and of what kept it from doing anything.
@@ -101,11 +99,6 @@ public class ErrandProcessActivityEntity {
 	@PrePersist
 	void onCreate() {
 		created = now(systemDefault()).truncatedTo(MILLIS);
-
-		// The column default never fires, since Hibernate writes every mapped column on insert.
-		if (isNull(severity)) {
-			severity = INFO;
-		}
 	}
 
 	public String getId() {

@@ -4,6 +4,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -92,16 +93,15 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	long countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(String errandId, OffsetDateTime createdAfter);
 
 	/**
-	 * Undelivered rows, oldest first.
+	 * The oldest undelivered row.
 	 * <p>
-	 * Health is measured in the age of the oldest one, not in how many there are: every publication leaves a row behind
-	 * until the next run takes it, so a condition on existence would report unhealthy during normal operation and teach
-	 * everyone to stop looking.
+	 * Health is measured in its age, not in how many rows are waiting: every publication leaves a row behind until the
+	 * next run takes it, so a condition on existence would report unhealthy during normal operation and teach everyone to
+	 * stop looking.
 	 *
-	 * @param  pageable how many of the oldest to look at.
-	 * @return          the undelivered rows, oldest first.
+	 * @return the oldest undelivered row, or empty when every row has been delivered.
 	 */
-	List<ProcessEventOutboxEntity> findByDeliveredAtIsNullOrderByCreatedAsc(Pageable pageable);
+	Optional<ProcessEventOutboxEntity> findFirstByDeliveredAtIsNullOrderByCreatedAsc();
 
 	/**
 	 * Whether any undelivered row is addressed to another process consumer than the sent in one, which no run delivers.

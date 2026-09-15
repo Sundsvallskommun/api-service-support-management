@@ -33,7 +33,6 @@ import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepositor
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
-import se.sundsvall.supportmanagement.integration.pwalkt.DeliveryResult;
 import se.sundsvall.supportmanagement.integration.pwalkt.PwAlktIntegration;
 import se.sundsvall.supportmanagement.integration.pwalkt.PwAlktUnavailableException;
 import se.sundsvall.supportmanagement.service.ProcessErrorLog;
@@ -52,7 +51,6 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
-import static se.sundsvall.supportmanagement.integration.pwalkt.DeliveryResult.ACCEPTED;
 import static se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventDelivery.REJECTION_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventDelivery.REJECTION_ERROR_CODE;
 
@@ -66,7 +64,6 @@ class ProcessEventDeliveryTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "ALKT";
 	private static final String PROCESS_KEY = "alkt-ansokan";
-	private static final String REFUSAL = "no process is deployed under alkt-ansokan";
 
 	@Mock
 	private ProcessEventOutboxRepository outboxRepositoryMock;
@@ -95,7 +92,7 @@ class ProcessEventDeliveryTest {
 
 	@BeforeEach
 	void setUp() {
-		final var properties = new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, WINDOW), new DirectRun(true, 2, 4, 500));
+		final var properties = new ProcessEngineProperties(new LoopGuard(20, WINDOW), new DirectRun(true, 2, 4, 500));
 		delivery = new ProcessEventDelivery(outboxRepositoryMock, errandsRepositoryMock, processRepositoryMock, pwAlktIntegrationMock, new ProcessErrorLog(activityRepositoryMock, properties, CLOCK), CLOCK);
 
 		logAppender.start();
@@ -114,7 +111,7 @@ class ProcessEventDeliveryTest {
 		final var sameMomentLaterId = row("row-2", NOW.minusMinutes(2), "UPDATE");
 		final var oldest = row("row-1", NOW.minusMinutes(2), "CREATE");
 		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(List.of("row-1", "row-2", "row-3"))).thenReturn(List.of(newest, sameMomentLaterId, oldest));
-		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(ACCEPTED);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(true);
 
 		delivery.deliverGroup(List.of("row-1", "row-2", "row-3"));
 
@@ -129,7 +126,7 @@ class ProcessEventDeliveryTest {
 	void aRowAnotherRunDeliveredIsLeftAlone() {
 		final var stillWaiting = row("row-2", NOW.minusMinutes(1), "UPDATE");
 		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(List.of("row-1", "row-2"))).thenReturn(List.of(stillWaiting));
-		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(ACCEPTED);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(true);
 
 		delivery.deliverGroup(List.of("row-1", "row-2"));
 
@@ -144,7 +141,7 @@ class ProcessEventDeliveryTest {
 		final var second = row("row-2", NOW.minusMinutes(1), "UPDATE");
 		final var failure = new PwAlktUnavailableException(false, new IllegalStateException("503"));
 		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(List.of("row-1", "row-2"))).thenReturn(List.of(first, second));
-		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(ACCEPTED).thenThrow(failure);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(true).thenThrow(failure);
 
 		assertThatThrownBy(() -> delivery.deliverGroup(List.of("row-1", "row-2"))).isSameAs(failure);
 
@@ -178,8 +175,6 @@ class ProcessEventDeliveryTest {
 			assertThat(entry.getMessage()).isEqualTo(instance.getErrorMessage());
 			assertThat(entry.getOccurredAt()).isEqualTo(NOW);
 		});
-
-		assertThat(errorsLogged()).singleElement().asString().contains("row-1", ERRAND_ID, PROCESS_KEY, REFUSAL);
 	}
 
 	@Test
@@ -202,7 +197,7 @@ class ProcessEventDeliveryTest {
 		final var refused = row("row-1", NOW.minusMinutes(2), "UPDATE");
 		final var accepted = row("row-2", NOW.minusMinutes(1), "UPDATE");
 		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(List.of("row-1", "row-2"))).thenReturn(List.of(refused, accepted));
-		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(DeliveryResult.rejection(REFUSAL), ACCEPTED);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false, true);
 		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		delivery.deliverGroup(List.of("row-1", "row-2"));
@@ -213,25 +208,24 @@ class ProcessEventDeliveryTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a refused deletion leaves nothing to write on, and is only logged")
-	void aRefusedDeletionIsOnlyLogged() {
+	@DisplayName("Verification that a refused deletion leaves nothing to write on, and consumes the row all the same")
+	void aRefusedDeletionLeavesNothingToWriteOn() {
 		final var row = row("row-1", NOW.minusMinutes(1), "DELETE");
 		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(List.of("row-1"))).thenReturn(List.of(row));
-		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(DeliveryResult.rejection(REFUSAL));
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false);
 
 		delivery.deliverGroup(List.of("row-1"));
 
 		assertThat(row.getDeliveredAt()).isEqualTo(NOW);
-		assertThat(errorsLogged()).hasSize(1);
 		verifyNoInteractions(errandsRepositoryMock, processRepositoryMock, activityRepositoryMock);
 	}
 
 	@Test
-	@DisplayName("Verification that a refusal for an errand that is gone is only logged, since the entry would have nothing to hang on")
-	void aRefusalForAnErrandThatIsGoneIsOnlyLogged() {
+	@DisplayName("Verification that a refusal for an errand that is gone writes nothing, since the entry would have nothing to hang on")
+	void aRefusalForAnErrandThatIsGoneWritesNothing() {
 		final var row = row("row-1", NOW.minusMinutes(1), "UPDATE");
 		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(List.of("row-1"))).thenReturn(List.of(row));
-		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(DeliveryResult.rejection(REFUSAL));
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false);
 		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 
 		delivery.deliverGroup(List.of("row-1"));
@@ -246,10 +240,10 @@ class ProcessEventDeliveryTest {
 		final var row = row("row-1", NOW.minusMinutes(1), "UPDATE");
 		final var instance = liveInstance();
 		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(List.of("row-1"))).thenReturn(List.of(row));
-		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(DeliveryResult.rejection(REFUSAL));
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false);
 		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(instance));
-		when(activityRepositoryMock.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(ERRAND_ID, REJECTION_ACTIVITY_TYPE, ERROR, NOW.minus(WINDOW))).thenReturn(true);
+		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, REJECTION_ERROR_CODE, NOW.minus(WINDOW))).thenReturn(true);
 
 		delivery.deliverGroup(List.of("row-1"));
 
@@ -303,9 +297,9 @@ class ProcessEventDeliveryTest {
 
 	private void givenRefused(final ProcessEventOutboxEntity row) {
 		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(List.of(row.getId()))).thenReturn(List.of(row));
-		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(DeliveryResult.rejection(REFUSAL));
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any())).thenReturn(false);
 		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
-		when(activityRepositoryMock.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(ERRAND_ID, REJECTION_ACTIVITY_TYPE, ERROR, NOW.minus(WINDOW))).thenReturn(false);
+		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, REJECTION_ERROR_CODE, NOW.minus(WINDOW))).thenReturn(false);
 	}
 
 	private List<String> errorsLogged() {

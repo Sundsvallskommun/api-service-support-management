@@ -45,6 +45,9 @@ public class ProcessEventScheduler {
 		});
 	}
 
+	/**
+	 * The nightly cleanup: delivered rows of the outbox, and entries of the activity log past their retention.
+	 */
 	@Dept44Scheduled(
 		cron = "${scheduler.process-cleanup.cron}",
 		name = "${scheduler.process-cleanup.name}",
@@ -52,5 +55,6 @@ public class ProcessEventScheduler {
 		maximumExecutionTime = "${scheduler.process-cleanup.maximum-execution-time}")
 	public void cleanUp() {
 		processEventCleanup.removeDelivered();
+		processEventCleanup.removeExpiredActivities();
 	}
 }

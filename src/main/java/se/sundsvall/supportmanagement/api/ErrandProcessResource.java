@@ -164,7 +164,6 @@ class ErrandProcessResource {
 
 		final var processInstanceId = result.process().getProcessInstanceId();
 
-		// A start that failed left no instance behind, and so nothing to point a location at.
 		if (isNull(processInstanceId)) {
 			return status(CREATED).body(result.process());
 		}

@@ -36,6 +36,7 @@ public class ServiceUtil {
 	private static final String MIME_ERROR_MSG = "Exception when detecting mime type of file with filename '{}'";
 	private static final String HASH_ALGORITHM = "SHA-256";
 	private static final Tika DETECTOR = new Tika();
+	private static final int REQUEST_GROUP_ID_LENGTH = 36;
 	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
 	private static final ThreadLocal<String> TRIGGER_PROCESS = new ThreadLocal<>();
 
@@ -100,11 +101,17 @@ public class ServiceUtil {
 		return Identifier.get();
 	}
 
+	/**
+	 * Holds the group the request belongs to, cut to the width the tables storing it give it. The header is set by the
+	 * caller, and a value longer than a uuid would otherwise fail every write that records the group.
+	 *
+	 * @param requestGroupId the raw header value, or null when the request carried none
+	 */
 	public static void setRequestGroupId(final String requestGroupId) {
 		if (StringUtils.isBlank(requestGroupId)) {
 			REQUEST_GROUP_ID.remove();
 		} else {
-			REQUEST_GROUP_ID.set(requestGroupId);
+			REQUEST_GROUP_ID.set(StringUtils.truncate(requestGroupId, REQUEST_GROUP_ID_LENGTH));
 		}
 	}
 

@@ -20,6 +20,7 @@ import static java.time.ZoneId.systemDefault;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
@@ -86,6 +87,7 @@ class ProcessIntegrationDataModelTest {
 			.withErrandProcessId(process.getId())
 			.withErrandId(errandId)
 			.withActivityType("TASK")
+			.withSeverity(INFO)
 			.withOccurredAt(now(systemDefault()))).getId();
 
 		errandsRepository.deleteById(errandId);

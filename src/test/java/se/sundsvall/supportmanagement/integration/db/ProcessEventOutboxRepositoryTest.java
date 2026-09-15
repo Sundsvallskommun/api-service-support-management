@@ -130,9 +130,10 @@ class ProcessEventOutboxRepositoryTest {
 
 	@Test
 	@DisplayName("Verification that health is read from the oldest undelivered row, which is what makes an age and not a count the condition")
-	void findByDeliveredAtIsNullOrderByCreatedAsc() {
-		assertThat(processEventOutboxRepository.findByDeliveredAtIsNullOrderByCreatedAsc(PageRequest.of(0, 1)))
+	void findFirstByDeliveredAtIsNullOrderByCreatedAsc() {
+		assertThat(processEventOutboxRepository.findFirstByDeliveredAtIsNullOrderByCreatedAsc())
+			.get()
 			.extracting(ProcessEventOutboxEntity::getId)
-			.containsExactly("peo-other-consumer");
+			.isEqualTo("peo-other-consumer");
 	}
 }

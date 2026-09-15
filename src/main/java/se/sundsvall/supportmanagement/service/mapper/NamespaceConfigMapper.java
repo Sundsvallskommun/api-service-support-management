@@ -32,6 +32,7 @@ import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtracto
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope.LIMITED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope.REPORTER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.FIELD;
@@ -138,7 +139,7 @@ public class NamespaceConfigMapper {
 			.map(value -> {
 				final var trigger = EnumUtils.getEnum(EventSubType.class, value);
 				if (trigger == null) {
-					LOG.warn("Skipping unknown process trigger '{}' for namespace '{}'", value, entity.getNamespace());
+					LOG.warn("Skipping unknown process trigger '{}' for namespace '{}'", sanitizeForLogging(value), sanitizeForLogging(entity.getNamespace()));
 				}
 				return trigger;
 			})

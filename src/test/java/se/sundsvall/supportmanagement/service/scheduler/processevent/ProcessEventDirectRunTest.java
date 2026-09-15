@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.processevent;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,6 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.core.task.TaskRejectedException;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties.DirectRun;
@@ -21,7 +19,6 @@ import se.sundsvall.supportmanagement.service.ProcessEventWritten;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -71,14 +68,6 @@ class ProcessEventDirectRunTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a pool that cannot take the run does not fail the write that sent the signal")
-	void aPoolThatRefusesTheRunDoesNotFailTheWrite() {
-		doThrow(new TaskRejectedException("full")).when(executorMock).execute(any());
-
-		assertThatNoException().isThrownBy(() -> directRun(true).onProcessEventWritten(new ProcessEventWritten(ERRAND_ID)));
-	}
-
-	@Test
 	@DisplayName("Verification that a run that does not reach pw-alkt is left to the scheduled run")
 	void aRunThatDoesNotReachPwAlkt() {
 		directRun(true).onProcessEventWritten(new ProcessEventWritten(ERRAND_ID));
@@ -101,7 +90,7 @@ class ProcessEventDirectRunTest {
 	}
 
 	private ProcessEventDirectRun directRun(final boolean enabled) {
-		final var properties = new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, Duration.ofMinutes(10)), new DirectRun(enabled, 2, 4, 500));
+		final var properties = new ProcessEngineProperties(new LoopGuard(20, Duration.ofMinutes(10)), new DirectRun(enabled, 2, 4, 500));
 
 		return new ProcessEventDirectRun(relayMock, executorMock, properties);
 	}

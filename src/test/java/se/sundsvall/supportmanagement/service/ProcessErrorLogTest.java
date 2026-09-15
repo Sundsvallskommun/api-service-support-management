@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,9 +44,9 @@ class ProcessErrorLogTest {
 	private ArgumentCaptor<ErrandProcessActivityEntity> entryCaptor;
 
 	@Test
-	@DisplayName("Verification that an entry is written when none of its kind stands on the errand inside the window")
+	@DisplayName("Verification that an entry is written when none for the same fault stands on the errand inside the window")
 	void anEntryIsWritten() {
-		when(activityRepositoryMock.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(ERRAND_ID, ACTIVITY_TYPE, ERROR, NOW.minus(WINDOW))).thenReturn(false);
+		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, ERROR_CODE, NOW.minus(WINDOW))).thenReturn(false);
 
 		errorLog().writeOncePerWindow(ERRAND_ID, "process-1", ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
 
@@ -66,7 +65,7 @@ class ProcessErrorLogTest {
 	@Test
 	@DisplayName("Verification that a fault without a process instance is written on the errand alone")
 	void anEntryWithoutAnInstance() {
-		when(activityRepositoryMock.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(ERRAND_ID, ACTIVITY_TYPE, ERROR, NOW.minus(WINDOW))).thenReturn(false);
+		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, ERROR_CODE, NOW.minus(WINDOW))).thenReturn(false);
 
 		errorLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
 
@@ -75,9 +74,9 @@ class ProcessErrorLogTest {
 	}
 
 	@Test
-	@DisplayName("Verification that no second entry of the same kind is written inside the window, however often the fault repeats")
+	@DisplayName("Verification that no second entry for the same fault is written inside the window, however often the fault repeats")
 	void noSecondEntryInsideTheWindow() {
-		when(activityRepositoryMock.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(ERRAND_ID, ACTIVITY_TYPE, ERROR, NOW.minus(WINDOW))).thenReturn(true);
+		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, ERROR_CODE, NOW.minus(WINDOW))).thenReturn(true);
 
 		errorLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
 
@@ -87,7 +86,7 @@ class ProcessErrorLogTest {
 	@Test
 	@DisplayName("Verification that a message longer than its column is cut to fit, since an entry reporting a fault may not cause one")
 	void theMessageIsCutToFit() {
-		when(activityRepositoryMock.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(ERRAND_ID, ACTIVITY_TYPE, ERROR, NOW.minus(WINDOW))).thenReturn(false);
+		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, ERROR_CODE, NOW.minus(WINDOW))).thenReturn(false);
 
 		errorLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "x".repeat(MESSAGE_LENGTH + 10));
 
@@ -96,6 +95,6 @@ class ProcessErrorLogTest {
 	}
 
 	private ProcessErrorLog errorLog() {
-		return new ProcessErrorLog(activityRepositoryMock, new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, WINDOW), new DirectRun(true, 2, 4, 500)), CLOCK);
+		return new ProcessErrorLog(activityRepositoryMock, new ProcessEngineProperties(new LoopGuard(20, WINDOW), new DirectRun(true, 2, 4, 500)), CLOCK);
 	}
 }

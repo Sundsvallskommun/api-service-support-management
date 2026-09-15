@@ -16,11 +16,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties.DirectRun;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties.LoopGuard;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,9 +32,13 @@ class ProcessEventCleanupTest {
 	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-14T02:30:00Z"), ZoneId.of("UTC"));
 	private static final OffsetDateTime NOW = OffsetDateTime.now(CLOCK);
 	private static final int BATCH_SIZE = 2;
+	private static final Duration ACTIVITY_RETENTION = Duration.ofDays(90);
 
 	@Mock
 	private ProcessEventOutboxRepository outboxRepositoryMock;
+
+	@Mock
+	private ErrandProcessActivityRepository activityRepositoryMock;
 
 	@Test
 	@DisplayName("Verification that delivered rows are removed a batch at a time, until a batch comes back short")
@@ -44,6 +51,7 @@ class ProcessEventCleanupTest {
 
 		verify(outboxRepositoryMock).deleteAllByIdInBatch(List.of("row-1", "row-2"));
 		verify(outboxRepositoryMock).deleteAllByIdInBatch(List.of("row-3"));
+		verifyNoInteractions(activityRepositoryMock);
 	}
 
 	@Test
@@ -54,6 +62,20 @@ class ProcessEventCleanupTest {
 		assertThat(cleanup(Duration.ofMinutes(10)).removeDelivered()).isZero();
 
 		verify(outboxRepositoryMock).deleteAllByIdInBatch(List.of());
+	}
+
+	@Test
+	@DisplayName("Verification that entries of the activity log are removed once they have outlived their retention, a batch at a time")
+	void expiredActivitiesAreRemovedBatchByBatch() {
+		final var first = List.of(activity("entry-1"), activity("entry-2"));
+		final var last = List.of(activity("entry-3"));
+		when(activityRepositoryMock.findByCreatedBeforeOrderByCreatedAsc(NOW.minus(ACTIVITY_RETENTION), PageRequest.of(0, BATCH_SIZE))).thenReturn(first, last);
+
+		assertThat(cleanup(Duration.ofMinutes(10)).removeExpiredActivities()).isEqualTo(3);
+
+		verify(activityRepositoryMock).deleteAllByIdInBatch(List.of("entry-1", "entry-2"));
+		verify(activityRepositoryMock).deleteAllByIdInBatch(List.of("entry-3"));
+		verifyNoInteractions(outboxRepositoryMock);
 	}
 
 	@Test
@@ -70,14 +92,19 @@ class ProcessEventCleanupTest {
 	}
 
 	private ProcessEventCleanup cleanup(final Duration window) {
-		final var properties = new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, window), new DirectRun(true, 2, 4, 500));
-		final var cleanup = new ProcessEventCleanup(outboxRepositoryMock, properties, CLOCK);
+		final var properties = new ProcessEngineProperties(new LoopGuard(20, window), new DirectRun(true, 2, 4, 500));
+		final var cleanup = new ProcessEventCleanup(outboxRepositoryMock, activityRepositoryMock, properties, CLOCK);
 		ReflectionTestUtils.setField(cleanup, "batchSize", BATCH_SIZE);
+		ReflectionTestUtils.setField(cleanup, "activityRetention", ACTIVITY_RETENTION);
 
 		return cleanup;
 	}
 
 	private static ProcessEventOutboxEntity row(final String id) {
 		return ProcessEventOutboxEntity.create().withId(id);
+	}
+
+	private static ErrandProcessActivityEntity activity(final String id) {
+		return ErrandProcessActivityEntity.create().withId(id);
 	}
 }

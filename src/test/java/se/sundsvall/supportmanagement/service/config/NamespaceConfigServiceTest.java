@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.config;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -22,8 +21,6 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
-import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
-import se.sundsvall.supportmanagement.config.ProcessEngineProperties.LoopGuard;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
@@ -50,9 +47,6 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Protecte
 @ExtendWith(MockitoExtension.class)
 class NamespaceConfigServiceTest {
 
-	// The register of process consumers the service validates against, as it is configured in application.yml
-	private static final ProcessEngineProperties PROCESS_ENGINE_PROPERTIES = new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, Duration.ofMinutes(10)), new ProcessEngineProperties.DirectRun(true, 2, 4, 500));
-
 	@Mock
 	private NamespaceConfigRepository configRepositoryMock;
 
@@ -66,7 +60,7 @@ class NamespaceConfigServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		configService = new NamespaceConfigService(configRepositoryMock, mapperMock, PROCESS_ENGINE_PROPERTIES);
+		configService = new NamespaceConfigService(configRepositoryMock, mapperMock);
 	}
 
 	@Test
@@ -343,7 +337,7 @@ class NamespaceConfigServiceTest {
 	 * drift apart.
 	 */
 	private NamespaceConfigService serviceWithRealMapper() {
-		return new NamespaceConfigService(configRepositoryMock, new NamespaceConfigMapper(), PROCESS_ENGINE_PROPERTIES);
+		return new NamespaceConfigService(configRepositoryMock, new NamespaceConfigMapper());
 	}
 
 	@Test
@@ -415,7 +409,7 @@ class NamespaceConfigServiceTest {
 
 		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(exception.getMessage()).isEqualTo(
-			"Bad Request: 'pw-alk' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be one of [pw-alkt]");
+			"Bad Request: 'pw-alk' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be 'pw-alkt'");
 		verify(configRepositoryMock, never()).save(any());
 	}
 
@@ -423,7 +417,7 @@ class NamespaceConfigServiceTest {
 	void replaceWithUnknownProcessConsumer() {
 		final var request = NamespaceConfig.create().withProcessConsumer("PW-ALKT");
 
-		// The name is the delivery address, so it has to match the register exactly rather than case insensitively
+		// The name is the delivery address, so it has to match exactly rather than case insensitively
 		final var exception = assertThrows(ThrowableProblem.class, () -> configService.replace(request, "namespace", "municipalityId"));
 
 		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);

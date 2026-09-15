@@ -182,7 +182,7 @@ class ProcessEventRelayTest {
 		when(outboxRepositoryMock.existsByDeliveredAtIsNullAndProcessServiceNot(PROCESS_SERVICE)).thenReturn(true);
 
 		assertThat(relay.findHealthFault()).hasValue("undelivered process events are addressed to a process consumer other than 'pw-alkt', and nothing delivers them");
-		verify(outboxRepositoryMock, never()).findByDeliveredAtIsNullOrderByCreatedAsc(any());
+		verify(outboxRepositoryMock, never()).findFirstByDeliveredAtIsNullOrderByCreatedAsc();
 	}
 
 	private void givenWaiting(final ProcessEventOutboxEntity... rows) {
@@ -197,8 +197,8 @@ class ProcessEventRelayTest {
 
 	private void givenOldestUndelivered(final OffsetDateTime... created) {
 		when(outboxRepositoryMock.existsByDeliveredAtIsNullAndProcessServiceNot(PROCESS_SERVICE)).thenReturn(false);
-		when(outboxRepositoryMock.findByDeliveredAtIsNullOrderByCreatedAsc(PageRequest.of(0, 1)))
-			.thenReturn(Stream.of(created).map(moment -> ProcessEventOutboxEntity.create().withCreated(moment)).toList());
+		when(outboxRepositoryMock.findFirstByDeliveredAtIsNullOrderByCreatedAsc())
+			.thenReturn(Stream.of(created).map(moment -> ProcessEventOutboxEntity.create().withCreated(moment)).findFirst());
 	}
 
 	private static ProcessEventOutboxEntity row(final String id, final String errandId) {

@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
 
 @Transactional
 @CircuitBreaker(name = "errandProcessActivityRepository")
@@ -52,26 +51,25 @@ public interface ErrandProcessActivityRepository extends JpaRepository<ErrandPro
 	List<ErrandProcessActivityEntity> findByErrandProcessIdAndExternalTaskId(String errandProcessId, String externalTaskId);
 
 	/**
-	 * Whether an errand already carries an entry of a kind inside a window.
+	 * Whether an errand already carries an entry for a fault inside a window.
 	 * <p>
-	 * What it is for is to write the entries that report a jammed errand once per errand and window instead of once per
-	 * discarded event. {@code uq_epa_idempotency} does not help there: both the instance and the external task are null
-	 * for those entries, and null is distinct in a unique index, so the error would drown the log it is reported in.
+	 * What it is for is to write the entries that report a jammed errand once per errand, fault and window instead of once
+	 * per discarded event. {@code uq_epa_idempotency} does not help there: both the instance and the external task are
+	 * null for those entries, and null is distinct in a unique index, so the error would drown the log it is reported in.
 	 *
 	 * @param  errandId     the errand to look at.
-	 * @param  activityType the kind of entry to look for.
-	 * @param  severity     the severity to look for.
+	 * @param  errorCode    the code of the fault to look for.
 	 * @param  createdAfter the start of the window.
 	 * @return              whether such an entry has already been written inside the window.
 	 */
-	boolean existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(String errandId, String activityType, ActivitySeverity severity, OffsetDateTime createdAfter);
+	boolean existsByErrandIdAndErrorCodeAndCreatedAfter(String errandId, String errorCode, OffsetDateTime createdAfter);
 
 	/**
 	 * Whether an instance already carries an entry of a kind.
 	 * <p>
-	 * Asked before the warning about two work steps running at once is written, so that it is written once per
-	 * instance while the counter takes every occurrence. Branches that pass each other do so for as long as the model
-	 * has the gateway, and a log the handler reads would drown in a fault it has already been told about.
+	 * Asked before the warning about two work steps running at once is written, so that it is written once per instance.
+	 * Branches that pass each other do so for as long as the model has the gateway, and a log the handler reads would
+	 * drown in a fault it has already been told about.
 	 *
 	 * @param  errandProcessId the instance to look at.
 	 * @param  activityType    the kind of entry to look for.

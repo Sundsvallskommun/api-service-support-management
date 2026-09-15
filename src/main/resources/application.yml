@@ -63,6 +63,8 @@ scheduler:
     shedlock-lock-at-most-for: PT10M
     maximum-execution-time: PT5M
     batch-size: 1000
+    # How long an entry of the activity log is kept
+    activity-retention: P365D
   job:
     name: maintain_jobs
     # Hourly. What the sweep looks for is a job that has been quiet for days, so asking more often than that finds the
@@ -78,11 +80,8 @@ errand:
     max-concurrent-runs: 2
     progress-interval: PT1M
 process-engine:
-  # Settings for the process engines errand events are published to. Documented in ProcessEngineProperties, which is
-  # where the defaults live. The consumers are the register of known process engines, and the name in it is the delivery
-  # address: connecting a namespace to one of them is configuration, adding a new one is a release.
-  consumers:
-    - pw-alkt
+  # Settings for the process engine errand events are published to. Documented in ProcessEngineProperties, which is where
+  # the defaults live.
   loop-guard:
     max-events-per-errand: 20
     window: PT10M
@@ -171,7 +170,7 @@ resilience4j:
         ignoreExceptions:
           - se.sundsvall.dept44.exception.ClientProblem
           - se.sundsvall.dept44.exception.ServerProblem
-        # Opens after three such calls. A timeout is one of them, although the token retryer every client is given makes it twice
+        # Opens once three calls are counted and half of the last five failed. The token retryer every client is given makes a timeout twice
         slidingWindowSize: 5
         minimumNumberOfCalls: 3
         waitDurationInOpenState: PT30S

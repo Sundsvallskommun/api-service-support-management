@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service.scheduler.processevent;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
@@ -51,7 +50,7 @@ class ProcessEventDirectRunConfigTest {
 	}
 
 	private static ProcessEngineProperties properties(final int corePoolSize, final int maxPoolSize, final int queueCapacity) {
-		return new ProcessEngineProperties(List.of("pw-alkt"), new LoopGuard(20, Duration.ofMinutes(10)), new DirectRun(true, corePoolSize, maxPoolSize, queueCapacity));
+		return new ProcessEngineProperties(new LoopGuard(20, Duration.ofMinutes(10)), new DirectRun(true, corePoolSize, maxPoolSize, queueCapacity));
 	}
 
 	private static void awaitQuietly(final CountDownLatch latch) {

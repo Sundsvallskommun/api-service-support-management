@@ -15,7 +15,6 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
-import se.sundsvall.supportmanagement.integration.pwalkt.DeliveryResult;
 import se.sundsvall.supportmanagement.integration.pwalkt.PwAlktIntegration;
 import se.sundsvall.supportmanagement.integration.pwalkt.PwAlktUnavailableException;
 import se.sundsvall.supportmanagement.service.ProcessErrorLog;
@@ -27,7 +26,6 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.transaction.annotation.Isolation.READ_COMMITTED;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
-import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.service.mapper.ProcessEventMapper.toErrandEvent;
 
@@ -96,18 +94,16 @@ public class ProcessEventDelivery {
 	@Transactional(propagation = REQUIRES_NEW, isolation = READ_COMMITTED)
 	public void deliverGroup(final Collection<String> rowIds) {
 		final var deliveredAt = OffsetDateTime.now(clock).truncatedTo(MILLIS);
-		final var rejections = new ArrayList<Rejection>();
+		final var refused = new ArrayList<ProcessEventOutboxEntity>();
 
 		for (final var row : oldestFirst(outboxRepository.findByIdInAndDeliveredAtIsNull(rowIds))) {
-			final var result = deliver(row);
-			row.setDeliveredAt(deliveredAt);
-
-			if (result.rejected()) {
-				rejections.add(new Rejection(row, result.detail()));
+			if (!pwAlktIntegration.sendErrandEvent(row.getMunicipalityId(), row.getNamespace(), toErrandEvent(row))) {
+				refused.add(row);
 			}
+			row.setDeliveredAt(deliveredAt);
 		}
 
-		rejections.forEach(rejection -> recordRejection(rejection.row(), rejection.detail()));
+		refused.forEach(this::recordRejection);
 	}
 
 	/**
@@ -153,15 +149,8 @@ public class ProcessEventDelivery {
 	}
 
 	/**
-	 * The one exchange with the process engine, and the only line that would change if the events travelled over a
-	 * message queue instead.
-	 */
-	private DeliveryResult deliver(final ProcessEventOutboxEntity row) {
-		return pwAlktIntegration.sendErrandEvent(row.getMunicipalityId(), row.getNamespace(), toErrandEvent(row));
-	}
-
-	/**
-	 * Puts a refusal for good in the history of the errand rather than in a flag on a row.
+	 * Puts a refusal for good in the history of the errand rather than in a flag on a row. The refusal itself is logged
+	 * where the answer of pw-alkt is read.
 	 * <p>
 	 * The live instance of the errand is failed, if it has one. Usually it has none - a key that was never deployed never
 	 * started anything - and then only the entry is written, without an instance. A mistyped key refuses every event of
@@ -171,10 +160,7 @@ public class ProcessEventDelivery {
 	 * instance would otherwise be failed underneath a report being written. A deletion, or an errand that is gone,
 	 * leaves nothing to write on, and the log is all there is.
 	 */
-	private void recordRejection(final ProcessEventOutboxEntity row, final String detail) {
-		LOG.error("{} refused process event {} for errand {} for good, and it is not delivered again: no process is deployed under the key '{}'. {}",
-			row.getProcessService(), row.getId(), row.getErrandId(), sanitizeForLogging(row.getProcessKey()), sanitizeForLogging(detail));
-
+	private void recordRejection(final ProcessEventOutboxEntity row) {
 		if (DELETE.getValue().equals(row.getEventType())
 			|| !errandsRepository.existsWithLockingByIdAndNamespaceAndMunicipalityId(row.getErrandId(), row.getNamespace(), row.getMunicipalityId())) {
 			return;
@@ -190,8 +176,5 @@ public class ProcessEventDelivery {
 		}
 
 		errorLog.writeOncePerWindow(row.getErrandId(), ofNullable(instance).map(ErrandProcessEntity::getId).orElse(null), REJECTION_ACTIVITY_TYPE, REJECTION_ERROR_CODE, message);
-	}
-
-	private record Rejection(ProcessEventOutboxEntity row, String detail) {
 	}
 }

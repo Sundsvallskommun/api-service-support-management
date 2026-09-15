@@ -15,9 +15,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Activity
 /**
  * The error entries SM itself writes on an errand, about faults that keep its process from being told or started.
  * <p>
- * Each is written once per errand, kind and window rather than once per occurrence. The faults reported here repeat for
- * as long as their cause stands - a loop producing hundreds of events, labels pointing at two processes, a process key
- * the process engine has never deployed - and an entry per occurrence would drown the log they are reported in. The
+ * Each is written once per errand, fault and window rather than once per occurrence. The faults reported here repeat
+ * for as long as their cause stands - a loop producing hundreds of events, labels pointing at two processes, a process
+ * key the process engine has never deployed - and an entry per occurrence would drown the log they are reported in. The
  * idempotency key of the log does not help: both the instance and the external task are null for these entries, and
  * null is distinct in a unique index.
  */
@@ -35,19 +35,20 @@ public class ProcessErrorLog {
 	}
 
 	/**
-	 * Writes an error entry on an errand, unless one of the same kind has already been written inside the window.
+	 * Writes an error entry on an errand, unless one for the same fault has already been written inside the window.
 	 *
 	 * @param errandId        the errand to write the entry on.
 	 * @param errandProcessId the process row the entry belongs to, or null when the fault happened without one.
-	 * @param activityType    the kind of entry, which is what a repetition is recognised by.
-	 * @param errorCode       the code of the fault.
+	 * @param activityType    the kind of entry.
+	 * @param errorCode       the code of the fault, which is what a repetition is recognised by. Two faults of one kind -
+	 *                        an ambiguous key and an oversized one - therefore never hide each other.
 	 * @param message         what is wrong and what to do about it. Cut to fit its column, since an entry that reports a
 	 *                        fault may not cause one.
 	 */
 	public void writeOncePerWindow(final String errandId, final String errandProcessId, final String activityType, final String errorCode, final String message) {
 		final var now = OffsetDateTime.now(clock).truncatedTo(MILLIS);
 
-		if (activityRepository.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter(errandId, activityType, ERROR, windowStart(now))) {
+		if (activityRepository.existsByErrandIdAndErrorCodeAndCreatedAfter(errandId, errorCode, windowStart(now))) {
 			return;
 		}
 
@@ -62,7 +63,7 @@ public class ProcessErrorLog {
 	}
 
 	/**
-	 * How far back the log is asked before another entry of the same kind is written.
+	 * How far back the log is asked before another entry for the same fault is written.
 	 * <p>
 	 * Deliberately the window of the emergency brake, and named here so that the sharing is visible rather than read out
 	 * of an expression. It is one setting for two things: raising the brake window to an hour also makes an ambiguous

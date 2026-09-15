@@ -47,20 +47,15 @@ public class ProcessEventDirectRun {
 
 	/**
 	 * Hands the delivery to the pool once the row is committed, or at once when it was written without a transaction,
-	 * since it is saved already then.
+	 * since it is saved already then. The pool drops a run it has no room for instead of refusing it, so handing it over
+	 * cannot throw in the thread that committed the errand.
 	 *
 	 * @param event the signal that a row has been written.
 	 */
 	@TransactionalEventListener(phase = AFTER_COMMIT, fallbackExecution = true)
 	public void onProcessEventWritten(final ProcessEventWritten event) {
-		if (!processEngineProperties.directRun().enabled()) {
-			return;
-		}
-
-		try {
+		if (processEngineProperties.directRun().enabled()) {
 			executor.execute(() -> run(event.errandId()));
-		} catch (final Exception e) {
-			LOG.warn("Could not start a direct run for errand {}, and the scheduled run delivers its events instead: {}", sanitizeForLogging(event.errandId()), e.getMessage());
 		}
 	}
 

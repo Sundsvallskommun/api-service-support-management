@@ -138,10 +138,9 @@ public class ProcessEventRelay {
 
 		final var limit = OffsetDateTime.now(clock).minus(unhealthyAfter);
 
-		return outboxRepository.findByDeliveredAtIsNullOrderByCreatedAsc(PageRequest.of(0, 1)).stream()
+		return outboxRepository.findFirstByDeliveredAtIsNullOrderByCreatedAsc()
 			.map(ProcessEventOutboxEntity::getCreated)
 			.filter(created -> created.isBefore(limit))
-			.findFirst()
 			.map(created -> STALE_BACKLOG.formatted(created, unhealthyAfter));
 	}
 

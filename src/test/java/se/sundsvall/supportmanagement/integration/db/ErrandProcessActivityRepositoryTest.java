@@ -64,12 +64,13 @@ class ErrandProcessActivityRepositoryTest {
 	}
 
 	@Test
-	@DisplayName("Verification that an errand already carrying the entry is recognised, so a jammed errand is reported once per window instead of once per discarded event")
-	void existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter() {
+	@DisplayName("Verification that an errand already carrying the entry for a fault is recognised, so a jammed errand is reported once per window instead of once per discarded event")
+	void existsByErrandIdAndErrorCodeAndCreatedAfter() {
 		final var windowStart = at("2026-01-01T11:50:00");
 
-		assertThat(errandProcessActivityRepository.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter("ERRAND_ID-1", "CONFIG", ERROR, windowStart)).isTrue();
-		assertThat(errandProcessActivityRepository.existsByErrandIdAndActivityTypeAndSeverityAndCreatedAfter("ERRAND_ID-2", "CONFIG", ERROR, windowStart)).isFalse();
+		assertThat(errandProcessActivityRepository.existsByErrandIdAndErrorCodeAndCreatedAfter("ERRAND_ID-1", "AMBIGUOUS_PROCESS_KEY", windowStart)).isTrue();
+		assertThat(errandProcessActivityRepository.existsByErrandIdAndErrorCodeAndCreatedAfter("ERRAND_ID-1", "OVERSIZED_PROCESS_KEY", windowStart)).isFalse();
+		assertThat(errandProcessActivityRepository.existsByErrandIdAndErrorCodeAndCreatedAfter("ERRAND_ID-2", "AMBIGUOUS_PROCESS_KEY", windowStart)).isFalse();
 	}
 
 	@Test

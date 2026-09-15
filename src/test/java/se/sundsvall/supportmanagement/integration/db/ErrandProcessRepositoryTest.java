@@ -6,13 +6,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository.LiveProcessInstance;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
@@ -59,26 +58,16 @@ class ErrandProcessRepositoryTest {
 			.isEqualTo("ep-live-1");
 	}
 
+	/**
+	 * The history carries the finished instances along with the live one, since a completed process is what ends the
+	 * process life of an errand and a live one is only part of the answer.
+	 */
 	@Test
-	@DisplayName("Verification that the history of an errand comes back newest first")
-	void findByErrandIdAndMunicipalityIdAndNamespaceOrderByCreatedDesc() {
-		assertThat(errandProcessRepository.findByErrandIdAndMunicipalityIdAndNamespaceOrderByCreatedDesc("ERRAND_ID-1", "2281", "NAMESPACE.1", PageRequest.of(0, 10)))
-			.extracting(ErrandProcessEntity::getId)
-			.containsExactly("ep-live-1", "ep-done-1");
-	}
-
-	@Test
-	@DisplayName("Verification that a process which has run its course is remembered, so an ordinary errand change cannot start it over")
-	void existsByErrandIdAndProcessStatus() {
-		assertThat(errandProcessRepository.existsByErrandIdAndProcessStatus("ERRAND_ID-1", COMPLETED)).isTrue();
-		assertThat(errandProcessRepository.existsByErrandIdAndProcessStatus("ERRAND_ID-2", COMPLETED)).isFalse();
-	}
-
-	@Test
-	@DisplayName("Verification that the rule of one process per errand is asked of every instance the errand has had, not only the live one")
-	void existsByErrandIdAndProcessKeyNot() {
-		assertThat(errandProcessRepository.existsByErrandIdAndProcessKeyNot("ERRAND_ID-1", "alkt-ansokan")).isFalse();
-		assertThat(errandProcessRepository.existsByErrandIdAndProcessKeyNot("ERRAND_ID-1", "alkt-tillsyn")).isTrue();
+	@DisplayName("Verification that the history of an errand comes back newest first, live and finished instances alike")
+	void findByErrandIdOrderByCreatedDesc() {
+		assertThat(errandProcessRepository.findByErrandIdOrderByCreatedDesc("ERRAND_ID-1"))
+			.extracting(ErrandProcessEntity::getId, ErrandProcessEntity::getProcessStatus)
+			.containsExactly(tuple("ep-live-1", WAITING), tuple("ep-done-1", COMPLETED));
 	}
 
 	/**
@@ -92,21 +81,6 @@ class ErrandProcessRepositoryTest {
 		assertThat(errandProcessRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("ERRAND_ID-1", "ERRAND_ID-2"), "2281", "NAMESPACE.1"))
 			.extracting(ErrandProcessEntity::getId)
 			.containsExactly("ep-live-1", "ep-failed-2", "ep-done-1");
-	}
-
-	/**
-	 * The refusal of a second instance names the one holding the slot, so the projection has to carry that column and
-	 * not merely say that a row is there.
-	 */
-	@Test
-	@DisplayName("Verification that the live instance can be read as its id alone")
-	void findByErrandIdAndActiveMarkerIsNotNullAsProjection() {
-		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-1", LiveProcessInstance.class))
-			.get()
-			.extracting(LiveProcessInstance::getProcessInstanceId)
-			.isEqualTo("pi-live-1");
-
-		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull("ERRAND_ID-2", LiveProcessInstance.class)).isEmpty();
 	}
 
 	@Test

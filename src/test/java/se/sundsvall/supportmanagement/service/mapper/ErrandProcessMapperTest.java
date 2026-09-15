@@ -26,7 +26,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessActivityEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcesses;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessActivities;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessActivity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.updateErrandProcessEntity;
 
 class ErrandProcessMapperTest {
@@ -86,12 +86,6 @@ class ErrandProcessMapperTest {
 		entity.applyStatus(RUNNING, CLOCK);
 
 		assertThat(toErrandProcess(entity).getError()).isNull();
-	}
-
-	@Test
-	void toErrandProcessHandlesNull() {
-		assertThat(toErrandProcess(null)).isNull();
-		assertThat(toErrandProcesses(null)).isEmpty();
 	}
 
 	@Test
@@ -197,9 +191,9 @@ class ErrandProcessMapperTest {
 			.withSeverity(ERROR)
 			.withOccurredAt(occurredAt);
 
-		final var activities = toProcessActivities(List.of(withInstance, withoutInstance), Map.of("processRowId", "processInstanceId"));
+		final var processInstanceIds = Map.of("processRowId", "processInstanceId");
 
-		assertThat(activities)
+		assertThat(List.of(toProcessActivity(withInstance, processInstanceIds), toProcessActivity(withoutInstance, processInstanceIds)))
 			.extracting(ProcessActivity::getId, ProcessActivity::getProcessInstanceId, ProcessActivity::getSeverity)
 			.containsExactly(
 				tuple("withInstance", "processInstanceId", INFO.name()),
@@ -207,7 +201,12 @@ class ErrandProcessMapperTest {
 	}
 
 	@Test
-	void toProcessActivitiesHandlesNull() {
-		assertThat(toProcessActivities(null, Map.of())).isEmpty();
+	void toErrandProcessActivityEntityKeepsAReportedSeverity() {
+		final var entity = toErrandProcessActivityEntity("processRowId", "errandId", null, ProcessActivity.create()
+			.withActivityType("INCIDENT")
+			.withSeverity(ERROR)
+			.withOccurredAt(now(systemDefault())));
+
+		assertThat(entity.getSeverity()).isEqualTo(ERROR);
 	}
 }

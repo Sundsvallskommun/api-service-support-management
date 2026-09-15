@@ -56,7 +56,7 @@ public class NamespaceConfig {
 	private boolean resourceAccessControl;
 
 	@Schema(
-		description = "The process engine running the processes of this namespace, named as it is configured under process-engine.consumers. A namespace has exactly one, and leaving it out means the namespace runs no processes at all. It cannot be combined with access control, as the access mapper only grants access to AD accounts",
+		description = "The process engine running the processes of this namespace, which is also the address its events are delivered to. The only one known is pw-alkt. A namespace has exactly one, and leaving it out means the namespace runs no processes at all. It cannot be combined with access control, as the access mapper only grants access to AD accounts",
 		examples = "pw-alkt")
 	private String processConsumer;
 

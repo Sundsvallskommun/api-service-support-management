@@ -73,10 +73,11 @@ class ProcessEventSchedulerTest {
 	}
 
 	@Test
-	void theCleanupRemovesDeliveredRows() {
+	void theCleanupRemovesDeliveredRowsAndExpiredActivities() {
 		scheduler.cleanUp();
 
 		verify(cleanupMock).removeDelivered();
+		verify(cleanupMock).removeExpiredActivities();
 		verifyNoInteractions(relayMock, healthUtilityMock);
 	}
 }

@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -26,7 +25,6 @@ import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository.LiveProcessInstance;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
@@ -55,7 +53,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessActivityEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcesses;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessActivities;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessActivity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessStatus;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.updateErrandProcessEntity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
@@ -75,7 +73,7 @@ public class ErrandProcessService {
 
 	private static final String INSTANCE_ID_MISMATCH = "The process instance id '%s' in the body differs from '%s' in the path";
 	private static final String MISSING_INSTANCE_ID = "A process instance id is required unless the report registers a start that failed";
-	private static final String INSTANCE_ON_OTHER_ERRAND = "The process instance '%s' is registered on errand '%s' and cannot be reported on errand '%s'";
+	private static final String INSTANCE_ON_OTHER_ERRAND = "The process instance '%s' belongs to another errand and cannot be reported on errand '%s'";
 	private static final String OTHER_LIVE_INSTANCE = "The errand '%s' already has a live process instance '%s' and cannot be given another one";
 	private static final String OTHER_PROCESS_KEY = "The errand '%s' already runs a process other than '%s', and every instance of an errand runs the same process";
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again";
@@ -152,7 +150,7 @@ public class ErrandProcessService {
 		// Asked of a row that already exists as well, because a terminal one reporting itself alive again - an incident
 		// resolved by hand - asks for the place it gave up when it ended, and may find it taken. The unique key would
 		// refuse that too, but only the check can say which instance is standing in the way.
-		verifyNoOtherLiveInstance(errandId, processInstanceId, report);
+		verifyNoOtherLiveInstance(processRepository.findByErrandIdOrderByCreatedDesc(errandId), errandId, processInstanceId, report);
 
 		final var displaced = trackOutstandingTask(existing, report);
 
@@ -195,33 +193,32 @@ public class ErrandProcessService {
 	private ErrandProcessResult registerInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
 		verifyErrandVersion(lockErrandForWriting(namespace, municipalityId, errandId), report);
 
-		// A start that never produced an instance cannot have been reported on: with no instance there is no work step.
-		if (nonNull(processInstanceId)) {
-			final var existing = processRepository.findByProcessInstanceId(processInstanceId).orElse(null);
-
-			if (nonNull(existing)) {
+		return ofNullable(processInstanceId)
+			.flatMap(processRepository::findByProcessInstanceId)
+			.map(existing -> {
 				verifyBelongsToErrand(existing, errandId);
 				return new ErrandProcessResult(toErrandProcess(existing), false);
-			}
-		}
-
-		// The one rule of a single process per errand that no unique key can hold, since a completed instance and a
-		// failed one leave the same empty slot behind. A failed start is recovered from, a completed process is not.
-		if (processRepository.existsByErrandIdAndProcessStatus(errandId, COMPLETED)) {
-			throw Problem.valueOf(CONFLICT, PROCESS_LIFE_OVER.formatted(errandId));
-		}
-
-		return createProcess(namespace, municipalityId, errandId, processInstanceId, report);
+			})
+			.orElseGet(() -> createProcess(namespace, municipalityId, errandId, processInstanceId, report));
 	}
 
+	/**
+	 * Creates the row for an instance this service has not seen, from either write path.
+	 * <p>
+	 * Both paths are held to the rules of a single process per errand, the first report of a work step as much as the
+	 * registration of a start. A work step can report before its start is registered, so rules asked only by the
+	 * registration would let an instance started on a stale permission in through the report - and the registration would
+	 * then find the row and answer 200, instead of the conflict that tells the process engine to abort the instance.
+	 */
 	private ErrandProcessResult createProcess(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
-		verifySameProcessKeyAsErrand(errandId, report.getProcessKey());
-		verifyNoOtherLiveInstance(errandId, processInstanceId, report);
+		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
+
+		verifyProcessLifeNotOver(instances, errandId);
+		verifySameProcessKeyAsErrand(instances, errandId, report.getProcessKey());
+		verifyNoOtherLiveInstance(instances, errandId, processInstanceId, report);
 
 		final var entity = toErrandProcessEntity(namespace, municipalityId, errandId, processInstanceId, report);
 		entity.applyStatus(toProcessStatus(report), clock);
-
-		// A row that did not exist has no task standing on it, so this can only record the one reporting now.
 		trackOutstandingTask(entity, report);
 
 		final var saved = processRepository.saveAndFlush(entity);
@@ -244,7 +241,7 @@ public class ErrandProcessService {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, PROCESS, R);
 
 		return ErrandProcesses.create()
-			.withProcesses(toErrandProcesses(processRepository.findByErrandIdAndMunicipalityIdAndNamespaceOrderByCreatedDesc(errandId, municipalityId, namespace, Pageable.unpaged())));
+			.withProcesses(toErrandProcesses(processRepository.findByErrandIdOrderByCreatedDesc(errandId)));
 	}
 
 	/**
@@ -252,7 +249,7 @@ public class ErrandProcessService {
 	 * <p>
 	 * Read per errand rather than per instance, since the entries explaining why no process ever started belong to no
 	 * instance and could not be reached at all otherwise. Narrowing to an instance therefore leaves them out, which is
-	 * the point of narrowing.
+	 * the point of narrowing, and narrowing to an instance the errand never had leaves nothing rather than everything.
 	 *
 	 * @param  namespace         the namespace of the errand.
 	 * @param  municipalityId    the municipality of the errand.
@@ -267,20 +264,15 @@ public class ErrandProcessService {
 
 		if (isNull(processInstanceId)) {
 			final var page = activityRepository.findByErrandId(errandId, pageable);
-			return toPage(page, processInstanceIdsOf(page.getContent()), pageable);
+			final var processInstanceIds = processInstanceIdsOf(page.getContent());
+			return page.map(entity -> toProcessActivity(entity, processInstanceIds));
 		}
 
-		final var instance = processRepository.findByProcessInstanceId(processInstanceId)
-			.filter(entity -> errandId.equals(entity.getErrandId()))
-			.orElse(null);
-
-		// An instance the errand never had narrows the log to nothing rather than widening it to everything.
-		if (isNull(instance)) {
-			return new PageImpl<>(emptyList(), pageable, 0);
-		}
-
-		final var page = activityRepository.findByErrandIdAndErrandProcessId(errandId, instance.getId(), pageable);
-		return toPage(page, Map.of(instance.getId(), processInstanceId), pageable);
+		return processRepository.findByProcessInstanceId(processInstanceId)
+			.filter(instance -> errandId.equals(instance.getErrandId()))
+			.map(instance -> activityRepository.findByErrandIdAndErrandProcessId(errandId, instance.getId(), pageable)
+				.map(entity -> toProcessActivity(entity, Map.of(instance.getId(), processInstanceId))))
+			.orElseGet(() -> Page.empty(pageable));
 	}
 
 	/**
@@ -326,7 +318,7 @@ public class ErrandProcessService {
 	 * answered by the checks the attempt begins with. What is left is a row this service cannot write at all - a value
 	 * too long for its column, a key it collides with for reasons no concurrent writer explains - and it is raised as
 	 * the fault it is rather than dressed up as a conflict, since a report answered with 409 tells a process engine to
-	 * abort the process it just started.
+	 * abort the process it just started. It is logged once, where it leaves this service.
 	 * <p>
 	 * Asking the database afterwards which rows exist cannot tell the two apart, and must not be tried: on the update
 	 * path the row and the live slot were both already taken by this very report, so every such question answers yes
@@ -336,9 +328,6 @@ public class ErrandProcessService {
 		try {
 			return transactionTemplate.execute(_ -> attempt.get());
 		} catch (final DataIntegrityViolationException lostTheRace) {
-			// The one place the errand and the instance can be named, and it fires whether or not the retry saves the
-			// write. The second attempt is left to fail on its own: rethrowing it here with a line of its own would say
-			// the same thing twice, since what leaves this service unhandled is logged where it is turned into a response.
 			LOG.warn("Retrying the write for process instance '{}' on errand '{}' after an integrity violation", processInstanceId, errandId, lostTheRace);
 
 			return transactionTemplate.execute(_ -> attempt.get());
@@ -379,9 +368,13 @@ public class ErrandProcessService {
 		}
 	}
 
+	/**
+	 * Refuses an instance registered on another errand. The other errand is not named, since it can belong to another
+	 * namespace or municipality than the caller has any business with.
+	 */
 	private static void verifyBelongsToErrand(final ErrandProcessEntity entity, final String errandId) {
 		if (!errandId.equals(entity.getErrandId())) {
-			throw Problem.valueOf(CONFLICT, INSTANCE_ON_OTHER_ERRAND.formatted(entity.getProcessInstanceId(), entity.getErrandId(), errandId));
+			throw Problem.valueOf(CONFLICT, INSTANCE_ON_OTHER_ERRAND.formatted(entity.getProcessInstanceId(), errandId));
 		}
 	}
 
@@ -391,9 +384,20 @@ public class ErrandProcessService {
 		}
 	}
 
-	private void verifySameProcessKeyAsErrand(final String errandId, final String processKey) {
-		if (processRepository.existsByErrandIdAndProcessKeyNot(errandId, processKey)) {
+	private static void verifySameProcessKeyAsErrand(final List<ErrandProcessEntity> instances, final String errandId, final String processKey) {
+		if (instances.stream().anyMatch(instance -> !instance.getProcessKey().equals(processKey))) {
 			throw Problem.valueOf(CONFLICT, OTHER_PROCESS_KEY.formatted(errandId, processKey));
+		}
+	}
+
+	/**
+	 * Refuses a new instance on an errand whose process has run to its end. A completed instance and a failed one leave
+	 * the same empty slot in the unique key behind, so this is the rule asked of the rows instead: a failed start is
+	 * recovered from, a completed process is not.
+	 */
+	private static void verifyProcessLifeNotOver(final List<ErrandProcessEntity> instances, final String errandId) {
+		if (instances.stream().anyMatch(instance -> COMPLETED == instance.getProcessStatus())) {
+			throw Problem.valueOf(CONFLICT, PROCESS_LIFE_OVER.formatted(errandId));
 		}
 	}
 
@@ -402,13 +406,15 @@ public class ErrandProcessService {
 	 * that would itself be live, exactly as the key is: a terminal row leaves the slot empty and can never take one that
 	 * is occupied, which is what lets a start that failed be registered while the instance it failed to replace lives on.
 	 */
-	private void verifyNoOtherLiveInstance(final String errandId, final String processInstanceId, final ErrandProcess report) {
+	private static void verifyNoOtherLiveInstance(final List<ErrandProcessEntity> instances, final String errandId, final String processInstanceId, final ErrandProcess report) {
 		if (toProcessStatus(report).isTerminal()) {
 			return;
 		}
 
-		processRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId, LiveProcessInstance.class)
-			.filter(live -> !Objects.equals(live.getProcessInstanceId(), processInstanceId))
+		instances.stream()
+			.filter(instance -> nonNull(instance.getActiveMarker()))
+			.filter(instance -> !Objects.equals(instance.getProcessInstanceId(), processInstanceId))
+			.findFirst()
 			.ifPresent(live -> {
 				throw Problem.valueOf(CONFLICT, OTHER_LIVE_INSTANCE.formatted(errandId, live.getProcessInstanceId()));
 			});
@@ -423,7 +429,8 @@ public class ErrandProcessService {
 	 * <p>
 	 * Answered before anything is written, so a refused report leaves neither state nor activities behind. For the step
 	 * it is a 412 like any other: report RETRYING, throw, and let the process engine run it again against the errand as
-	 * it now is.
+	 * it now is. The log line is the only trace a refused report leaves, and it is logged as routine rather than as a
+	 * fault: how often it happens is worth knowing, not any single occurrence.
 	 */
 	private void verifyErrandVersion(final ErrandEntity errand, final ErrandProcess report) {
 		final var readVersion = report.getErrandVersion();
@@ -432,10 +439,6 @@ public class ErrandProcessService {
 			return;
 		}
 
-		// The only trace a refused report leaves. Neither state nor activities are written, so without this line a
-		// work step that keeps being run again would have nothing behind it to explain why. Logged as routine rather
-		// than as a fault: a handler editing an errand while a process works on it is the case this is built for,
-		// and it is how often it happens, not any single occurrence, that is worth knowing.
 		LOG.info("Report on errand '{}' was read at version {}, which the errand has since left behind at {}",
 			errand.getId(), readVersion, errand.getVersion());
 
@@ -451,25 +454,31 @@ public class ErrandProcessService {
 	 * arrived before the next task announces itself. Two that do meet are two branches of the same instance running at
 	 * once, which the process models are not allowed to have.
 	 * <p>
-	 * A report naming no task leaves the place as it found it. It says nothing about the task standing there, and a
-	 * registration of a start - which names none - must not be read as one having finished.
+	 * Only the task standing in the place empties it. A report from another task that does not announce itself, or a
+	 * report naming no task at all - the registration of a start among them - says nothing about the task standing there
+	 * and leaves the place as it found it.
 	 *
 	 * @return the task that was already working when this report came in, or null if the place was free. The id
 	 *         rather than a yes or no, since the warning names both tasks to be worth acting on.
 	 */
 	private String trackOutstandingTask(final ErrandProcessEntity entity, final ErrandProcess report) {
 		final var reporting = report.getExternalTaskId();
+		final var outstanding = entity.getOutstandingExternalTaskId();
 
 		if (isNull(reporting)) {
 			return null;
 		}
 
-		final var outstanding = entity.getOutstandingExternalTaskId();
-		final var takesThePlace = RUNNING == toProcessStatus(report) && !reporting.equals(outstanding);
+		if (RUNNING == toProcessStatus(report) && !reporting.equals(outstanding)) {
+			entity.setOutstandingExternalTaskId(reporting);
+			return outstanding;
+		}
 
-		entity.setOutstandingExternalTaskId(takesThePlace ? reporting : null);
+		if (reporting.equals(outstanding)) {
+			entity.setOutstandingExternalTaskId(null);
+		}
 
-		return takesThePlace ? outstanding : null;
+		return null;
 	}
 
 	/**
@@ -478,9 +487,9 @@ public class ErrandProcessService {
 	 * Refusing one of them would silence the very entry that reveals the model is breaking the rule, and would leave
 	 * the two steps knocking each other out with nothing on the errand to say why.
 	 * <p>
-	 * Counted every time and logged once per instance. Branches that pass each other keep doing so for as long as
-	 * the model has the gateway, so the counter is what says how often while a single entry says what is wrong -
-	 * a log the handler reads would otherwise drown in a fault it has already been told about.
+	 * Written once per instance, while every occurrence is logged as a warning. Branches that pass each other keep doing
+	 * so for as long as the model has the gateway, and the log a handler reads on the errand would otherwise drown in a
+	 * fault it has already been told about.
 	 * <p>
 	 * That entry is written without an activity id, so that {@code uq_epa_idempotency} - which counts null as
 	 * distinct - can never refuse it. A constraint violation here would take the report it was found in down with
@@ -560,9 +569,5 @@ public class ErrandProcessService {
 		return processRepository.findAllById(processIds).stream()
 			.filter(entity -> nonNull(entity.getProcessInstanceId()))
 			.collect(Collectors.toMap(ErrandProcessEntity::getId, ErrandProcessEntity::getProcessInstanceId));
-	}
-
-	private static Page<ProcessActivity> toPage(final Page<ErrandProcessActivityEntity> page, final Map<String, String> processInstanceIdByRowId, final Pageable pageable) {
-		return new PageImpl<>(toProcessActivities(page.getContent(), processInstanceIdByRowId), pageable, page.getTotalElements());
 	}
 }

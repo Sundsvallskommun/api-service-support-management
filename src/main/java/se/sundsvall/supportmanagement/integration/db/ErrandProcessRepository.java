@@ -4,11 +4,9 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
 @Transactional
 @CircuitBreaker(name = "errandProcessRepository")
@@ -25,16 +23,18 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	Optional<ErrandProcessEntity> findByErrandIdAndActiveMarkerIsNotNull(String errandId);
 
 	/**
-	 * Every process row of an errand, live or finished.
+	 * Every process row of an errand, live or finished, newest first. Normally exactly one.
 	 * <p>
-	 * One read for the two questions publication asks: which process the errand runs, and whether it may be given a new
-	 * instance. Reading only the live one would answer the first and leave the second - a completed process ends the
-	 * process life of an errand, and a completed row is not a live one.
+	 * One read for every question asked of the process history of an errand: which process it runs, whether a live
+	 * instance stands in the way, and whether its process life is over. Reading only the live one would leave the last
+	 * question unanswered - a completed process ends the process life of an errand, and a completed row is not a live
+	 * one. An errand holds a handful of rows at most, so the questions are answered from the rows rather than by a query
+	 * each.
 	 *
 	 * @param  errandId the errand to look at.
-	 * @return          the process rows of the errand, empty for one that has never had a process.
+	 * @return          the process rows of the errand, newest first, and empty for one that has never had a process.
 	 */
-	List<ErrandProcessEntity> findByErrandId(String errandId);
+	List<ErrandProcessEntity> findByErrandIdOrderByCreatedDesc(String errandId);
 
 	/**
 	 * The row a report from the process engine belongs to. Unique by {@code uq_ep_process_instance_id}.
@@ -45,45 +45,13 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	Optional<ErrandProcessEntity> findByProcessInstanceId(String processInstanceId);
 
 	/**
-	 * Every instance an errand has had, newest first. Normally exactly one.
-	 *
-	 * @param  errandId       the errand to look at.
-	 * @param  municipalityId the municipality the errand belongs to.
-	 * @param  namespace      the namespace the errand belongs to.
-	 * @param  pageable       the page to read.
-	 * @return                the instances of the errand, newest first.
-	 */
-	List<ErrandProcessEntity> findByErrandIdAndMunicipalityIdAndNamespaceOrderByCreatedDesc(String errandId, String municipalityId, String namespace, Pageable pageable);
-
-	/**
-	 * Whether an errand has ever had an instance reach the sent in state. Asked about COMPLETED to keep a process that has
-	 * run its course from being started over by an ordinary errand change.
-	 *
-	 * @param  errandId      the errand to look at.
-	 * @param  processStatus the state to look for.
-	 * @return               whether the errand has an instance in that state.
-	 */
-	boolean existsByErrandIdAndProcessStatus(String errandId, ProcessStatus processStatus);
-
-	/**
-	 * Whether an errand already has an instance of some other process than the sent in one. All instances of an errand run
-	 * the same process model, and that is the one rule of the three about a single process per errand that the database
-	 * cannot hold on its own.
-	 *
-	 * @param  errandId   the errand to look at.
-	 * @param  processKey the process model the incoming report claims.
-	 * @return            whether the errand already runs a different process.
-	 */
-	boolean existsByErrandIdAndProcessKeyNot(String errandId, String processKey);
-
-	/**
 	 * The instances of a whole page of errands, newest first.
 	 * <p>
 	 * One query for the page rather than one per errand, which is what the {@code process} projection on the errand is
 	 * built from: the caller keeps the first row it sees per errand, and the ordering makes that the latest one.
 	 * <p>
-	 * Scoped by namespace and municipality like every other read of this table, so that a caller holding errand ids from
-	 * somewhere else cannot reach across a tenant by handing them over.
+	 * Scoped by namespace and municipality, so that a caller holding errand ids from somewhere else cannot reach across a
+	 * tenant by handing them over.
 	 *
 	 * @param  errandIds      the errands to read the instances of.
 	 * @param  municipalityId the municipality of the errands.
@@ -91,24 +59,4 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	 * @return                the instances of those errands, newest first.
 	 */
 	List<ErrandProcessEntity> findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(Collection<String> errandIds, String municipalityId, String namespace);
-
-	/**
-	 * The live instance of an errand, read as the projection the caller asks for.
-	 * <p>
-	 * The refusal of a second instance names the one standing in the way, so the plain answer of an exists query is not
-	 * enough - but neither is the whole row. {@link LiveProcessInstance} reads the one column the message needs.
-	 *
-	 * @param  <T>      the projection to read.
-	 * @param  errandId the errand to look at.
-	 * @param  type     the projection to read the row as.
-	 * @return          the live instance of the errand, or empty if it has none.
-	 */
-	<T> Optional<T> findByErrandIdAndActiveMarkerIsNotNull(String errandId, Class<T> type);
-
-	/**
-	 * The instance id of a live process, and nothing else of it.
-	 */
-	interface LiveProcessInstance {
-		String getProcessInstanceId();
-	}
 }

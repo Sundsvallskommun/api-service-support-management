@@ -71,6 +71,17 @@ class ServiceUtilTest {
 		assertThat(ServiceUtil.getRequestGroupId()).isNull();
 	}
 
+	/**
+	 * The header is set by the caller and stored in columns as wide as a uuid, so a longer value would otherwise fail
+	 * every write that records the group.
+	 */
+	@Test
+	void setRequestGroupIdCutsAValueWiderThanTheColumnsStoringIt() {
+		ServiceUtil.setRequestGroupId("x".repeat(40));
+
+		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo("x".repeat(36));
+	}
+
 	@ParameterizedTest
 	@MethodSource("toValidUuidsStreamArguments")
 	void isValidUuid(String uuid, boolean expectedResult) {

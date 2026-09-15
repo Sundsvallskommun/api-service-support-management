@@ -83,11 +83,12 @@ public class ErrandProcess {
 
 	@Schema(description = """
 		When the process reached a state it does not leave. Set by this service from the reported state rather than \
-		taken from the report, and cleared again if the instance comes back to life.""", examples = "2026-09-20T14:03:11.882+02:00")
+		taken from the report, and cleared again if the instance comes back to life.""", examples = "2026-09-20T14:03:11.882+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime ended;
 
 	@Schema(description = "Why the process failed, set when the state says it did")
+	@Valid
 	private ProcessError error;
 
 	@Schema(description = """
