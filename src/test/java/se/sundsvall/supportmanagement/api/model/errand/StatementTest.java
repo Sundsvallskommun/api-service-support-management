@@ -6,6 +6,7 @@ import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -57,7 +58,7 @@ class StatementTest {
 		final var outcome = "SUPPORTS";
 		final var responseText = "responseText";
 		final var communicationId = "communicationId";
-		final var attachments = List.of(ArtefactAttachment.create());
+		final var attachments = List.of(ErrandAttachment.create());
 		final var createdBy = "createdBy";
 		final var modifiedBy = "modifiedBy";
 		final var created = now();

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
@@ -194,7 +194,7 @@ public class ErrandInvestigationService {
 	}
 
 	@Transactional
-	public ArtefactAttachment linkInvestigationAttachment(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String attachmentId) {
+	public ErrandAttachment linkInvestigationAttachment(final String namespace, final String municipalityId, final String errandId, final String investigationId, final String attachmentId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
 

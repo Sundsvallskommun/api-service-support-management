@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
@@ -198,7 +198,7 @@ public class ErrandDecisionService {
 	}
 
 	@Transactional
-	public ArtefactAttachment linkDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String attachmentId) {
+	public ErrandAttachment linkDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String attachmentId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 

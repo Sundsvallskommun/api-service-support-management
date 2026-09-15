@@ -12,7 +12,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static se.sundsvall.supportmanagement.service.mapper.ArtefactAttachmentMapper.toArtefactAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
 
 public final class ErrandDecisionMapper {
 
@@ -93,7 +93,7 @@ public final class ErrandDecisionMapper {
 				.withInvestigationId(ofNullable(e.getInvestigationEntity()).map(InvestigationEntity::getId).orElse(null))
 				.withErrandProcessId(e.getErrandProcessId())
 				.withTerms(toDecisionTerms(e.getTerms()))
-				.withAttachments(toArtefactAttachments(e.getAttachments()))
+				.withAttachments(toErrandAttachments(e.getAttachments()))
 				.withCreatedBy(e.getCreatedBy())
 				.withModifiedBy(e.getModifiedBy())
 				.withCreated(e.getCreated())

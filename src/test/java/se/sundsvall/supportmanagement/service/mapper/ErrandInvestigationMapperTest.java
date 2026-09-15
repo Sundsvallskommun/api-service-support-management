@@ -125,7 +125,7 @@ class ErrandInvestigationMapperTest {
 			assertThat(section.getAssessment()).isEqualTo("APPROVED");
 		});
 		assertThat(result.getAttachments()).singleElement()
-			.satisfies(attachment -> assertThat(attachment.getAttachmentId()).isEqualTo("attachmentId"));
+			.satisfies(attachment -> assertThat(attachment.getId()).isEqualTo("attachmentId"));
 	}
 
 	@Test

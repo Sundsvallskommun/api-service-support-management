@@ -12,6 +12,7 @@ import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
@@ -118,9 +119,9 @@ public class Statement {
 	})
 	private String communicationId;
 
-	@ArraySchema(schema = @Schema(implementation = ArtefactAttachment.class, accessMode = READ_ONLY),
+	@ArraySchema(schema = @Schema(implementation = ErrandAttachment.class, accessMode = READ_ONLY),
 		arraySchema = @Schema(description = "Attachments of the errand linked to this statement"))
-	private List<ArtefactAttachment> attachments;
+	private List<ErrandAttachment> attachments;
 
 	@Schema(description = "User who created the statement", examples = "jo12doe", accessMode = READ_ONLY)
 	private String createdBy;
@@ -377,15 +378,15 @@ public class Statement {
 		return this;
 	}
 
-	public List<ArtefactAttachment> getAttachments() {
+	public List<ErrandAttachment> getAttachments() {
 		return attachments;
 	}
 
-	public void setAttachments(final List<ArtefactAttachment> attachments) {
+	public void setAttachments(final List<ErrandAttachment> attachments) {
 		this.attachments = attachments;
 	}
 
-	public Statement withAttachments(final List<ArtefactAttachment> attachments) {
+	public Statement withAttachments(final List<ErrandAttachment> attachments) {
 		this.attachments = attachments;
 		return this;
 	}

@@ -19,7 +19,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.ACTIVE;
-import static se.sundsvall.supportmanagement.service.mapper.ArtefactAttachmentMapper.toArtefactAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
 
 public final class ErrandMeasureMapper {
 
@@ -128,7 +128,7 @@ public final class ErrandMeasureMapper {
 	 */
 	public static Measure toMeasure(final MeasureEntity entity) {
 		return toMeasureWithoutAttachments(entity)
-			.withAttachments(toArtefactAttachments(entity.getAttachments()));
+			.withAttachments(toErrandAttachments(entity.getAttachments()));
 	}
 
 	/**

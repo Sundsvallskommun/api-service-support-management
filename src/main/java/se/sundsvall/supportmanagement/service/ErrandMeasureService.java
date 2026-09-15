@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
@@ -139,7 +139,7 @@ public class ErrandMeasureService {
 	}
 
 	@Transactional
-	public ArtefactAttachment linkMeasureAttachment(final String namespace, final String municipalityId, final String errandId, final String measureId, final String attachmentId) {
+	public ErrandAttachment linkMeasureAttachment(final String namespace, final String municipalityId, final String errandId, final String measureId, final String attachmentId) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.MEASURE, RW);
 		final var entity = findMeasureEntityOrElseThrow(errandEntity, measureId);
 

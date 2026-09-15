@@ -10558,7 +10558,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ArtefactAttachment"
+                $ref: "#/components/schemas/ErrandAttachment"
         "404":
           description: Not found
           content:
@@ -11969,7 +11969,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ArtefactAttachment"
+                $ref: "#/components/schemas/ErrandAttachment"
         "404":
           description: Not found
           content:
@@ -13393,7 +13393,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ArtefactAttachment"
+                $ref: "#/components/schemas/ErrandAttachment"
         "404":
           description: Not found
           content:
@@ -14410,7 +14410,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ArtefactAttachment"
+                $ref: "#/components/schemas/ErrandAttachment"
         "404":
           description: Not found
           content:
@@ -17838,7 +17838,7 @@ components:
             by the measure resource and left out where the measure is part of the
             errand
           items:
-            $ref: "#/components/schemas/ArtefactAttachment"
+            $ref: "#/components/schemas/ErrandAttachment"
             readOnly: true
         createdBy:
           type: string
@@ -20083,6 +20083,13 @@ components:
           type: string
           description: Mime type of the file
           readOnly: true
+        fileSize:
+          type: integer
+          format: int32
+          description: Size of the file in bytes
+          examples:
+          - 40960
+          readOnly: true
         channel:
           type:
           - string
@@ -20117,40 +20124,6 @@ components:
         count:
           type: integer
           format: int64
-    ArtefactAttachment:
-      type: object
-      description: Attachment of an errand linked to a handling artefact
-      properties:
-        attachmentId:
-          type: string
-          description: Attachment ID
-          examples:
-          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
-          readOnly: true
-        fileName:
-          type: string
-          description: Name of the file
-          examples:
-          - yttrande.pdf
-          readOnly: true
-        mimeType:
-          type: string
-          description: Mime type of the file
-          examples:
-          - application/pdf
-          readOnly: true
-        fileSize:
-          type: integer
-          format: int32
-          description: Size of the file in bytes
-          examples:
-          - 40960
-          readOnly: true
-        purpose:
-          $ref: "#/components/schemas/ErrandAttachmentPurpose"
-          description: What the attachment is for. Left out for an attachment without
-            a purpose
-          readOnly: true
     AttachmentPurpose:
       type: object
       description: AttachmentPurpose model
@@ -20335,7 +20308,7 @@ components:
           type: array
           description: Attachments of the errand linked to this decision
           items:
-            $ref: "#/components/schemas/ArtefactAttachment"
+            $ref: "#/components/schemas/ErrandAttachment"
             readOnly: true
         createdBy:
           type: string
@@ -20560,7 +20533,7 @@ components:
           type: array
           description: Attachments of the errand linked to this investigation
           items:
-            $ref: "#/components/schemas/ArtefactAttachment"
+            $ref: "#/components/schemas/ErrandAttachment"
             readOnly: true
         createdBy:
           type: string
@@ -20760,7 +20733,7 @@ components:
           type: array
           description: Attachments of the errand linked to this statement
           items:
-            $ref: "#/components/schemas/ArtefactAttachment"
+            $ref: "#/components/schemas/ErrandAttachment"
             readOnly: true
         createdBy:
           type: string

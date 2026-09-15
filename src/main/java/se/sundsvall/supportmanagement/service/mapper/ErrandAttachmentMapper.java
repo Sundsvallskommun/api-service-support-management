@@ -90,6 +90,7 @@ public final class ErrandAttachmentMapper {
 				.withCreated(e.getCreated())
 				.withId(e.getId())
 				.withMimeType(e.getMimeType())
+				.withFileSize(e.getFileSize())
 				.withChannel(e.getChannel())
 				.withHash(e.getHash())
 				.withPurpose(toErrandAttachmentPurpose(e.getPurpose())))

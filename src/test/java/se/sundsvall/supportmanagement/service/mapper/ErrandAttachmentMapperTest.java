@@ -160,6 +160,15 @@ class ErrandAttachmentMapperTest {
 	}
 
 	@Test
+	void toErrandAttachmentMapsFileSize() {
+		final var entity = buildAttachmentEntity(buildErrandEntity()).withFileSize(40960);
+
+		final var result = ErrandAttachmentMapper.toErrandAttachment(entity);
+
+		assertThat(result.getFileSize()).isEqualTo(40960);
+	}
+
+	@Test
 	void toErrandAttachmentFromNull() {
 		assertThat(ErrandAttachmentMapper.toErrandAttachment(null)).isNull();
 	}

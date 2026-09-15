@@ -6,6 +6,7 @@ import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -62,7 +63,7 @@ class MeasureTest {
 		final var resultText = "resultText";
 		final var decisionId = "decisionId";
 		final var statementId = "statementId";
-		final var attachments = List.of(ArtefactAttachment.create().withAttachmentId("attachmentId"));
+		final var attachments = List.of(ErrandAttachment.create().withId("attachmentId"));
 		final var createdBy = "createdBy";
 		final var modifiedBy = "modifiedBy";
 		final var version = 1L;

@@ -24,6 +24,9 @@ public class ErrandAttachment {
 	@Schema(description = "Mime type of the file", accessMode = Schema.AccessMode.READ_ONLY)
 	private String mimeType;
 
+	@Schema(description = "Size of the file in bytes", examples = "40960", accessMode = READ_ONLY)
+	private Integer fileSize;
+
 	@Schema(description = "The channel the attachment was received via", examples = "EMAIL", allowableValues = {
 		"EMAIL", "ESERVICE", "WEB_UI", "MY_PAGES"
 	}, nullable = true)
@@ -84,6 +87,19 @@ public class ErrandAttachment {
 		return this;
 	}
 
+	public Integer getFileSize() {
+		return fileSize;
+	}
+
+	public void setFileSize(final Integer fileSize) {
+		this.fileSize = fileSize;
+	}
+
+	public ErrandAttachment withFileSize(final Integer fileSize) {
+		this.fileSize = fileSize;
+		return this;
+	}
+
 	public String getChannel() {
 		return this.channel;
 	}
@@ -141,13 +157,14 @@ public class ErrandAttachment {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final ErrandAttachment that = (ErrandAttachment) o;
-		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(created, that.created) && Objects.equals(hash, that.hash) && Objects
-			.equals(purpose, that.purpose);
+		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(fileSize, that.fileSize) && Objects.equals(channel, that.channel) && Objects.equals(created, that.created)
+			&& Objects.equals(hash, that.hash) && Objects
+				.equals(purpose, that.purpose);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, fileName, mimeType, channel, created, hash, purpose);
+		return Objects.hash(id, fileName, mimeType, fileSize, channel, created, hash, purpose);
 	}
 
 	@Override
@@ -156,6 +173,7 @@ public class ErrandAttachment {
 			"id='" + id + '\'' +
 			", fileName='" + fileName + '\'' +
 			", mimeType='" + mimeType + '\'' +
+			", fileSize=" + fileSize +
 			", channel='" + channel + '\'' +
 			", created=" + created +
 			", hash='" + hash + '\'' +

@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 
@@ -14,7 +14,7 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.mapper.ArtefactAttachmentMapper.toArtefactAttachment;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachment;
 
 /**
  * Linking attachments of the errand to a handling artefact, written once for all four of them.
@@ -70,7 +70,7 @@ public class ArtefactAttachmentService {
 	 * @param attachments the attachments of the artefact, which the attachment is added to.
 	 */
 	@Transactional
-	public ArtefactAttachment link(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final List<AttachmentEntity> attachments) {
+	public ErrandAttachment link(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final List<AttachmentEntity> attachments) {
 		return addLink(namespace, municipalityId, errandId, attachmentId, attachments);
 	}
 
@@ -90,7 +90,7 @@ public class ArtefactAttachmentService {
 		}
 	}
 
-	private ArtefactAttachment addLink(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final List<AttachmentEntity> attachments) {
+	private ErrandAttachment addLink(final String namespace, final String municipalityId, final String errandId, final String attachmentId, final List<AttachmentEntity> attachments) {
 		final var attachmentEntity = attachmentRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdAndId(namespace, municipalityId, errandId, attachmentId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ATTACHMENT_NOT_FOUND.formatted(attachmentId, errandId)));
 
@@ -100,7 +100,7 @@ public class ArtefactAttachmentService {
 
 		attachments.add(attachmentEntity);
 
-		return toArtefactAttachment(attachmentEntity);
+		return toErrandAttachment(attachmentEntity);
 	}
 
 	private static boolean hasId(final AttachmentEntity attachment, final String attachmentId) {

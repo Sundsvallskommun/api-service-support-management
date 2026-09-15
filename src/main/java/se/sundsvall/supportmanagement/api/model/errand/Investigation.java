@@ -11,6 +11,7 @@ import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
@@ -88,9 +89,9 @@ public class Investigation {
 		arraySchema = @Schema(description = "Sections of the investigation, written through their own resource"))
 	private List<InvestigationSection> sections;
 
-	@ArraySchema(schema = @Schema(implementation = ArtefactAttachment.class, accessMode = READ_ONLY),
+	@ArraySchema(schema = @Schema(implementation = ErrandAttachment.class, accessMode = READ_ONLY),
 		arraySchema = @Schema(description = "Attachments of the errand linked to this investigation"))
-	private List<ArtefactAttachment> attachments;
+	private List<ErrandAttachment> attachments;
 
 	@Schema(description = "User who created the investigation", examples = "jo12doe", accessMode = READ_ONLY)
 	private String createdBy;
@@ -295,15 +296,15 @@ public class Investigation {
 		return this;
 	}
 
-	public List<ArtefactAttachment> getAttachments() {
+	public List<ErrandAttachment> getAttachments() {
 		return attachments;
 	}
 
-	public void setAttachments(final List<ArtefactAttachment> attachments) {
+	public void setAttachments(final List<ErrandAttachment> attachments) {
 		this.attachments = attachments;
 	}
 
-	public Investigation withAttachments(final List<ArtefactAttachment> attachments) {
+	public Investigation withAttachments(final List<ErrandAttachment> attachments) {
 		this.attachments = attachments;
 		return this;
 	}

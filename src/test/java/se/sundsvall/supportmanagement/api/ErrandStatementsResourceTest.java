@@ -13,7 +13,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
@@ -205,14 +205,14 @@ class ErrandStatementsResourceTest {
 
 		// Arrange
 		when(serviceMock.linkStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, ATTACHMENT_ID))
-			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
+			.thenReturn(ErrandAttachment.create().withId(ATTACHMENT_ID));
 
 		// Act & Verify
 		webTestClient.post()
 			.uri(builder -> builder.path(PATH_WITH_ID + "/attachments/{attachmentId}").build(PATH_VARIABLES))
 			.exchange()
 			.expectStatus().isCreated()
-			.expectBody(ArtefactAttachment.class);
+			.expectBody(ErrandAttachment.class);
 
 		verify(serviceMock).linkStatementAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, STATEMENT_ID, ATTACHMENT_ID);
 	}

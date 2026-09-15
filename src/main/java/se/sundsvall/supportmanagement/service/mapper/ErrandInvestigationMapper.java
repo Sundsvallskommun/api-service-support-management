@@ -11,7 +11,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessme
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static se.sundsvall.supportmanagement.service.mapper.ArtefactAttachmentMapper.toArtefactAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
 
 public final class ErrandInvestigationMapper {
 
@@ -69,7 +69,7 @@ public final class ErrandInvestigationMapper {
 				.withRecommendation(e.getRecommendation())
 				.withRecommendationMotivation(e.getRecommendationMotivation())
 				.withSections(toInvestigationSections(e.getSections()))
-				.withAttachments(toArtefactAttachments(e.getAttachments()))
+				.withAttachments(toErrandAttachments(e.getAttachments()))
 				.withCreatedBy(e.getCreatedBy())
 				.withModifiedBy(e.getModifiedBy())
 				.withCreated(e.getCreated())

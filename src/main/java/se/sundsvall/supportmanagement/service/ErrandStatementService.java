@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
@@ -122,7 +122,7 @@ public class ErrandStatementService {
 	}
 
 	@Transactional
-	public ArtefactAttachment linkStatementAttachment(final String namespace, final String municipalityId, final String errandId, final String statementId, final String attachmentId) {
+	public ErrandAttachment linkStatementAttachment(final String namespace, final String municipalityId, final String errandId, final String statementId, final String attachmentId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.STATEMENT, RW);
 		final var entity = findStatementOrElseThrow(namespace, municipalityId, errandId, statementId);
 

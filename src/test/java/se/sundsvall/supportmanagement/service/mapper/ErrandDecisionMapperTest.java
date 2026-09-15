@@ -146,7 +146,7 @@ class ErrandDecisionMapperTest {
 		assertThat(result.getVersion()).isEqualTo(4L);
 		assertThat(result.getTerms()).singleElement().satisfies(term -> assertThat(term.getText()).isEqualTo("text"));
 		assertThat(result.getAttachments()).singleElement()
-			.satisfies(attachment -> assertThat(attachment.getAttachmentId()).isEqualTo("attachmentId"));
+			.satisfies(attachment -> assertThat(attachment.getId()).isEqualTo("attachmentId"));
 	}
 
 	@Test

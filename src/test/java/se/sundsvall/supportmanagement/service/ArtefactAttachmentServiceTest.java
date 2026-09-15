@@ -64,7 +64,7 @@ class ArtefactAttachmentServiceTest {
 
 		// Verify
 		assertThat(attachments).containsExactly(attachmentEntity);
-		assertThat(result.getAttachmentId()).isEqualTo(ATTACHMENT_ID);
+		assertThat(result.getId()).isEqualTo(ATTACHMENT_ID);
 		assertThat(result.getFileName()).isEqualTo("yttrande.pdf");
 		assertThat(result.getPurpose().getName()).isEqualTo("RESPONSE");
 	}

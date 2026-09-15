@@ -141,7 +141,7 @@ class ErrandStatementMapperTest {
 		assertThat(result.getCreated()).isEqualTo(created);
 		assertThat(result.getVersion()).isEqualTo(3L);
 		assertThat(result.getAttachments()).singleElement().satisfies(attachment -> {
-			assertThat(attachment.getAttachmentId()).isEqualTo("attachmentId");
+			assertThat(attachment.getId()).isEqualTo("attachmentId");
 			assertThat(attachment.getFileName()).isEqualTo("file.pdf");
 			assertThat(attachment.getPurpose().getName()).isEqualTo("RESPONSE");
 		});

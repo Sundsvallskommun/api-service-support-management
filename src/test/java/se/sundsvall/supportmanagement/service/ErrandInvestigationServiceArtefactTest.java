@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import se.sundsvall.dept44.problem.ThrowableProblem;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -119,13 +119,13 @@ class ErrandInvestigationServiceArtefactTest {
 		mockErrand();
 		final var entity = mockInvestigation();
 		when(artefactAttachmentServiceMock.link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), any()))
-			.thenReturn(ArtefactAttachment.create().withAttachmentId(ATTACHMENT_ID));
+			.thenReturn(ErrandAttachment.create().withId(ATTACHMENT_ID));
 
 		// Act
 		final var result = service.linkInvestigationAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID, ATTACHMENT_ID);
 
 		// Verify
-		assertThat(result.getAttachmentId()).isEqualTo(ATTACHMENT_ID);
+		assertThat(result.getId()).isEqualTo(ATTACHMENT_ID);
 		verify(artefactAttachmentServiceMock).link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), same(entity.getAttachments()));
 		verify(investigationRepositoryMock).saveAndFlush(entity);
 	}

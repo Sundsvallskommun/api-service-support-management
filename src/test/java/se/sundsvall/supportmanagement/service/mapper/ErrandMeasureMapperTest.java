@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.api.model.errand.ArtefactAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -220,7 +220,7 @@ class ErrandMeasureMapperTest {
 		final var result = toMeasure(entity);
 
 		// Assert
-		assertThat(result.getAttachments()).extracting(ArtefactAttachment::getAttachmentId).containsExactly("attachment-id");
+		assertThat(result.getAttachments()).extracting(ErrandAttachment::getId).containsExactly("attachment-id");
 	}
 
 	/**

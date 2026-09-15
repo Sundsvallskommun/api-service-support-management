@@ -12,6 +12,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
@@ -136,9 +137,9 @@ public class Measure {
 	@ValidUuid(nullable = true)
 	private String statementId;
 
-	@ArraySchema(schema = @Schema(implementation = ArtefactAttachment.class, accessMode = READ_ONLY),
+	@ArraySchema(schema = @Schema(implementation = ErrandAttachment.class, accessMode = READ_ONLY),
 		arraySchema = @Schema(description = "Attachments of the errand linked to this measure. Filled in by the measure resource and left out where the measure is part of the errand"))
-	private List<ArtefactAttachment> attachments;
+	private List<ErrandAttachment> attachments;
 
 	@Schema(description = "User who created the measure", examples = "jo12doe", accessMode = READ_ONLY)
 	private String createdBy;
@@ -465,15 +466,15 @@ public class Measure {
 		return this;
 	}
 
-	public List<ArtefactAttachment> getAttachments() {
+	public List<ErrandAttachment> getAttachments() {
 		return attachments;
 	}
 
-	public void setAttachments(final List<ArtefactAttachment> attachments) {
+	public void setAttachments(final List<ErrandAttachment> attachments) {
 		this.attachments = attachments;
 	}
 
-	public Measure withAttachments(final List<ArtefactAttachment> attachments) {
+	public Measure withAttachments(final List<ErrandAttachment> attachments) {
 		this.attachments = attachments;
 		return this;
 	}

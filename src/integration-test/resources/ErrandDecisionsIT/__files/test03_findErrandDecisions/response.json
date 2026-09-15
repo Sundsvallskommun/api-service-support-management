@@ -32,7 +32,7 @@
 		],
 		"attachments": [
 			{
-				"attachmentId": "a5000000-0000-0000-0000-000000000001",
+				"id": "a5000000-0000-0000-0000-000000000001",
 				"fileName": "yttrande.txt",
 				"mimeType": "text/plain",
 				"fileSize": 3,
