@@ -321,6 +321,8 @@ The access mapper is queried per AD identity with three group types, each carryi
 
 **Layer A — visibility and write filtering.** A JPA specification restricts which errands come back and whether a
 write is allowed, based on the caller's label grants. An errand carrying no access labels is accessible to everyone.
+The labels an errand is given must belong to its own namespace and municipality; `POST` and `PATCH` answer `400`
+otherwise, since a label brings its access rules along.
 
 **Layer B — resource entitlement.** Which sub-resources the caller may reach, from the access mapper's `resource`
 groups. Gated by the `resourceAccessControl` flag: while it is `false`, resources are unrestricted and only labels
@@ -556,6 +558,8 @@ is always allowed, as it resolves the errand to a single key.
   `ERROR` entry is written. Only delivered events are counted, so a delivery outage never trips it.
 - A deletion passes the trigger filter, the header and the brake alike: it cannot loop, and holding it back would leave
   the process running for an errand that no longer exists.
+- A scheduled action that changes the errand, such as `ADD_LABEL`, is recorded as a revision and an errand event
+  without a notification, and reaches the process like any other change.
 
 ### Endpoints
 
