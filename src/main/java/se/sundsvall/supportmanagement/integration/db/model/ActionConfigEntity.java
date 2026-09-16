@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
@@ -30,6 +31,7 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static org.hibernate.type.SqlTypes.VARCHAR;
 
 @Entity
 @Table(name = "action_config", indexes = {
@@ -69,8 +71,9 @@ public class ActionConfigEntity {
 	 */
 	@ElementCollection(fetch = EAGER)
 	@CollectionTable(name = "action_config_operation_type", joinColumns = @JoinColumn(name = "action_config_id", foreignKey = @ForeignKey(name = "fk_action_config_operation_type_action_config_id")))
-	@Column(name = "operation_type", nullable = false)
+	@Column(name = "operation_type", nullable = false, length = 32)
 	@Enumerated(STRING)
+	@JdbcTypeCode(VARCHAR)
 	private Set<OperationType> operationTypes = new LinkedHashSet<>();
 
 	@Column(name = "created")

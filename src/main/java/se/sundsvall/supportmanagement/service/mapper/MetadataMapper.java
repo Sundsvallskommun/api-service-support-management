@@ -606,7 +606,16 @@ public class MetadataMapper {
 
 		ofNullable(measureType.getName()).ifPresent(entity::setName);
 		ofNullable(measureType.getDisplayName()).ifPresent(entity::setDisplayName);
-		ofNullable(measureType.getMeasureGroups()).map(MetadataMapper::toMeasureGroups).ifPresent(entity::setMeasureGroups);
+		ofNullable(measureType.getMeasureGroups()).map(MetadataMapper::toMeasureGroups)
+			.filter(groups -> !groups.equals(entity.getMeasureGroups()))
+			.ifPresent(groups -> {
+				entity.setMeasureGroups(groups);
+
+				// The groups live in a table of their own, so changing only them leaves the measure type itself
+				// untouched and the callback maintaining 'modified' never runs. Touching it here is what marks the row
+				// as changed; the callback then sets it again, to the same instant.
+				entity.setModified(now(ZoneId.systemDefault()));
+			});
 		ofNullable(measureType.getSortOrder()).ifPresent(entity::setSortOrder);
 		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
 
