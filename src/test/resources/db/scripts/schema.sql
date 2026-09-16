@@ -449,6 +449,7 @@
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,
         id varchar(255) not null,
+        label_id varchar(255),
         message text,
         status enum ('COMPLETED','FAILED','PENDING','RUNNING','STOPPED') not null,
         type enum ('ERRAND_PURGE','MOVE_LABEL') not null,

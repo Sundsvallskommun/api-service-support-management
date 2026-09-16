@@ -1,0 +1,128 @@
+{
+	"labelStructure": [
+		{
+			"id": "13a6abf3-b5ed-4edc-b582-6cf58fa667e3",
+			"version": 0,
+			"classification": "CATEGORY",
+			"displayName": "SOME_CATEGORY_2",
+			"resourcePath": "LABEL-2",
+			"resourceName": "CATEGORY-2",
+			"labels": [],
+			"deprecated": false
+		},
+		{
+			"id": "5940c8c8-d84a-4144-b650-313356ad1333",
+			"version": 0,
+			"classification": "CATEGORY",
+			"displayName": "SOME_CATEGORY_1",
+			"resourcePath": "LABEL-1",
+			"resourceName": "CATEGORY-1",
+			"labels": [],
+			"deprecated": false
+		},
+		{
+			"id": "a8fe832f-77a7-4906-9a97-ac5cbd73dbe7",
+			"version": 0,
+			"classification": "CATEGORY",
+			"displayName": "CATEGORY-DISPLAY-NAME-1",
+			"resourcePath": "CATEGORY-1",
+			"resourceName": "CATEGORY-1",
+			"attributes": [
+				{
+					"key": "escalationEmail",
+					"value": "escalation@example.com"
+				},
+				{
+					"key": "owner",
+					"value": "team-a"
+				}
+			],
+			"labels": [
+				{
+					"id": "3273e374-855c-4525-b8fc-aeaa710b83c5",
+					"version": 0,
+					"classification": "TYPE",
+					"displayName": "TYPE-DISPLAY-NAME-2",
+					"resourcePath": "CATEGORY-1/TYPE-2",
+					"resourceName": "TYPE-2",
+					"labels": [
+						{
+							"id": "926fd3f9-f488-4ba4-93f6-2789dee0c0c3",
+							"version": 0,
+							"classification": "SUBTYPE",
+							"displayName": "SUBTYPE-DISPLAY-NAME-3",
+							"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-3",
+							"resourceName": "SUBTYPE-3",
+							"labels": [],
+							"deprecated": false
+						},
+						{
+							"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
+							"version": 0,
+							"classification": "SUBTYPE",
+							"displayName": "SUBTYPE-DISPLAY-NAME-4",
+							"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4",
+							"resourceName": "SUBTYPE-4",
+							"labels": [
+								{
+									"id": "0eb1f695-48b1-40fd-af8c-b277c37db2d4",
+									"version": 0,
+									"classification": "DEEPSUBTYPE",
+									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-2",
+									"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-2",
+									"resourceName": "DEEPSUBTYPE-2",
+									"labels": [],
+									"deprecated": false
+								},
+								{
+									"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907",
+									"version": 0,
+									"classification": "DEEPSUBTYPE",
+									"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
+									"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1",
+									"resourceName": "DEEPSUBTYPE-1",
+									"labels": [],
+									"deprecated": false
+								}
+							],
+							"deprecated": false
+						}
+					],
+					"deprecated": false
+				},
+				{
+					"id": "cd99569f-6b6d-4d7a-b04c-9ae528be8258",
+					"version": 0,
+					"classification": "TYPE",
+					"displayName": "TYPE-DISPLAY-NAME-1",
+					"resourcePath": "CATEGORY-1/TYPE-1",
+					"resourceName": "TYPE-1",
+					"labels": [
+						{
+							"id": "6dd1f18b-3f45-4d5f-b38b-176bfb3329c8",
+							"version": 0,
+							"classification": "SUBTYPE",
+							"displayName": "SUBTYPE-DISPLAY-NAME-2",
+							"resourcePath": "CATEGORY-1/TYPE-1/SUBTYPE-2",
+							"resourceName": "SUBTYPE-2",
+							"labels": [],
+							"deprecated": false
+						},
+						{
+							"id": "8d0ac81c-9c56-43b7-95cd-fa3c3592666d",
+							"version": 0,
+							"classification": "SUBTYPE",
+							"displayName": "SUBTYPE-DISPLAY-NAME-1",
+							"resourcePath": "CATEGORY-1/TYPE-1/SUBTYPE-1",
+							"resourceName": "SUBTYPE-1",
+							"labels": [],
+							"deprecated": false
+						}
+					],
+					"deprecated": false
+				}
+			],
+			"deprecated": false
+		}
+	]
+}

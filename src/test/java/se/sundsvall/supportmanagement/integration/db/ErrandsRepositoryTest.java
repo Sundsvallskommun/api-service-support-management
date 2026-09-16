@@ -3,6 +3,8 @@ package se.sundsvall.supportmanagement.integration.db;
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -275,6 +277,38 @@ class ErrandsRepositoryTest {
 		errandsRepository.save(errandWithLabel("errand-count-3", labelId));
 
 		assertThat(errandsRepository.countByLabelsMetadataLabelId(labelId)).isEqualTo(2);
+	}
+
+	@Test
+	void countDistinctByLabelsMetadataLabelIdIn_noMatch() {
+		assertThat(errandsRepository.countDistinctByLabelsMetadataLabelIdIn(Set.of("non-existent-label-id"))).isZero();
+	}
+
+	@Test
+	@DisplayName("Verification that errands tagged with either of the sent in label ids are counted")
+	void countDistinctByLabelsMetadataLabelIdIn_matchesAcrossIds() {
+		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		final var otherLabelId = "86d459cd-4810-4b4a-b365-97aa0c2c0ff5";
+		errandsRepository.save(errandWithLabel("errand-count-in-1", labelId));
+		errandsRepository.save(errandWithLabel("errand-count-in-2", otherLabelId));
+
+		assertThat(errandsRepository.countDistinctByLabelsMetadataLabelIdIn(Set.of(labelId, otherLabelId))).isEqualTo(2);
+	}
+
+	@Test
+	@DisplayName("Verification that an errand carrying more than one of the sent in label ids — such as a leaf and one of its expanded ancestors — is counted once, not once per matching label")
+	void countDistinctByLabelsMetadataLabelIdIn_dedupesErrandWithMultipleMatchingLabels() {
+		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		final var otherLabelId = "86d459cd-4810-4b4a-b365-97aa0c2c0ff5";
+		errandsRepository.save(ErrandEntity.create()
+			.withNamespace("namespace-1")
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withErrandNumber("errand-count-in-3")
+			.withLabels(List.of(
+				ErrandLabelEmbeddable.create().withMetadataLabelId(labelId),
+				ErrandLabelEmbeddable.create().withMetadataLabelId(otherLabelId))));
+
+		assertThat(errandsRepository.countDistinctByLabelsMetadataLabelIdIn(Set.of(labelId, otherLabelId))).isOne();
 	}
 
 	@Test
