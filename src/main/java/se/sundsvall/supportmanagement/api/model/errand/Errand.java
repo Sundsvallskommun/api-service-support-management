@@ -133,8 +133,8 @@ public class Errand {
 	@Schema(description = "Flag to indicate if the errand is business related", examples = "true")
 	private Boolean businessRelated;
 
-	@Schema(description = "List of labels for the errand")
-	private List<ErrandLabel> labels;
+	@Schema(description = "List of labels for the errand. Every label must belong to the namespace of the errand")
+	private List<@Valid ErrandLabel> labels;
 
 	@Schema(description = "Phase history for the errand", accessMode = READ_ONLY)
 	@Null(groups = {

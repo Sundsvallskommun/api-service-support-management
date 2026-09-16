@@ -32,10 +32,12 @@ public class ErrandListener {
 		Optional.ofNullable(errandEntity.getStakeholders())
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
+		// The same truncated moment as the errand itself: an untruncated start time is cut to the precision of its column when
+		// stored, so the revision of the errand just created would differ from the same errand read back.
 		Optional.ofNullable(errandEntity.getTimeMeasures())
 			.ifPresentOrElse(
-				list -> list.add(startTimeEntry(errandEntity, now(ZoneId.systemDefault()))),
-				() -> errandEntity.setTimeMeasures(new ArrayList<>(List.of(startTimeEntry(errandEntity, now(ZoneId.systemDefault()))))));
+				list -> list.add(startTimeEntry(errandEntity, now)),
+				() -> errandEntity.setTimeMeasures(new ArrayList<>(List.of(startTimeEntry(errandEntity, now)))));
 	}
 
 	@PreUpdate

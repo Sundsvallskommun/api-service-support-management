@@ -120,7 +120,7 @@ public class ErrandService {
 
 		// Everything the request is held to on its own, before an errand is built from it.
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
-		errandLabelService.validateVersions(errand.getLabels());
+		errandLabelService.validateLabels(namespace, municipalityId, errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 
 		final var errandEntity = toErrandEntity(namespace, municipalityId, errand);
@@ -191,7 +191,7 @@ public class ErrandService {
 		// Everything the patch is held to on its own, before the errand is touched by it.
 		requireMatchingVersion(ifMatch, errandEntityToUpdate.getVersion(), id, namespace, municipalityId);
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
-		errandLabelService.validateVersions(errand.getLabels());
+		errandLabelService.validateLabels(namespace, municipalityId, errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 
 		// Held now, since the patch is about to replace them and what the change does to the process key of the errand

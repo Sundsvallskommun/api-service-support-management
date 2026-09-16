@@ -54,7 +54,7 @@ class ErrandListenerTest {
 		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "touched", "stakeholders", "timeMeasures", "status", "previousStatus", "assignedUserId");
 		assertThat(entity.getTimeMeasures()).isNotEmpty().hasSize(1);
 		assertThat(entity.getTimeMeasures().getFirst()).isNotNull();
-		assertThat(entity.getTimeMeasures().getFirst().getStartTime()).isNotNull();
+		assertThat(entity.getTimeMeasures().getFirst().getStartTime()).isEqualTo(entity.getCreated());
 		assertThat(entity.getTimeMeasures().getFirst().getStatus()).isEqualTo(status);
 		assertThat(entity.getTimeMeasures().getFirst().getAdministrator()).isEqualTo(loginName);
 	}

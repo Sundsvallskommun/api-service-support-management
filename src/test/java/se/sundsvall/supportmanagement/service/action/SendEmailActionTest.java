@@ -470,7 +470,7 @@ class SendEmailActionTest {
 			ActionConfigParameterEntity.create().withKey("body").withValues(List.of(EMAIL_BODY)),
 			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("false")))));
 
-		sendEmailAction.executeAction(errand, config);
+		assertThat(sendEmailAction.executeAction(errand, config)).isFalse();
 
 		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
 		var capturedRequest = emailRequestCaptor.getValue();
@@ -503,7 +503,7 @@ class SendEmailActionTest {
 			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("true")),
 			ActionConfigParameterEntity.create().withKey("baseUrl").withValues(List.of(ERRAND_BASE_URL)))));
 
-		sendEmailAction.executeAction(errand, config);
+		assertThat(sendEmailAction.executeAction(errand, config)).isFalse();
 
 		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
 		var capturedRequest = emailRequestCaptor.getValue();

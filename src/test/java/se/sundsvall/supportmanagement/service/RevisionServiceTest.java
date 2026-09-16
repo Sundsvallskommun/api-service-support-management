@@ -25,8 +25,11 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -201,6 +204,83 @@ class RevisionServiceTest {
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that what a snapshot written earlier carries of the loaded state is not read as a change, since snapshots written now leave it out")
+	void shouldNotCreateErrandRevisionWhenOnlyTheLoadedStateOfTheLastSnapshotDiffers() {
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create()
+				.withMetadataLabelId("label-id")
+				.withMetadataLabel(MetadataLabelEntity.create().withId("label-id").withDisplayName("Ansokan"))));
+		final var earlierSnapshot = """
+			{"id":"%s","namespace":"%s","municipalityId":"%s","tempPreviousStatus":"STATUS-1",
+			 "labels":[{"metadataLabelId":"label-id","metadataLabel":{"id":"label-id","displayName":"Ansokan","metadataLabels":[]}}]}"""
+			.formatted(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(earlierSnapshot)));
+
+		assertThat(service.createErrandRevision(entity)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that an errand just written reads like the same errand just read: empty collections are no collections, and labels and tags come in any order")
+	void shouldNotCreateErrandRevisionWhenOnlyEmptyCollectionsAndTheOrderOfUnorderedOnesDiffer() {
+		final var justRead = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("b"), ErrandLabelEmbeddable.create().withMetadataLabelId("a")))
+			.withExternalTags(List.of(DbExternalTag.create().withKey("z").withValue("1"), DbExternalTag.create().withKey("y").withValue("2")))
+			.withActions(List.of())
+			.withNotifications(List.of())
+			.withStakeholders(List.of(StakeholderEntity.create().withFirstName("x").withContactChannels(List.of())));
+		final var justWritten = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("a"), ErrandLabelEmbeddable.create().withMetadataLabelId("b")))
+			.withExternalTags(List.of(DbExternalTag.create().withKey("y").withValue("2"), DbExternalTag.create().withKey("z").withValue("1")))
+			.withStakeholders(List.of(StakeholderEntity.create().withFirstName("x")));
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(0).withSerializedSnapshot(toSerializedSnapshot(justWritten))));
+
+		assertThat(service.createErrandRevision(justRead)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a diff leaves out a change of order in the collections that have none of their own, and still shows a collection going from none to empty")
+	void compareErrandRevisionVersionsIgnoresTheOrderOfUnorderedCollections() {
+		final var before = """
+			{"labels":[{"metadataLabelId":"b"},{"metadataLabelId":"a"}],"accessLabels":[{"metadataLabelId":"b"},{"metadataLabelId":"a"}],
+			 "externalTags":[{"key":"z","value":"1"},{"key":"y","value":"2"}]}""";
+		final var after = """
+			{"labels":[{"metadataLabelId":"a"},{"metadataLabelId":"b"}],"accessLabels":[{"metadataLabelId":"a"},{"metadataLabelId":"b"}],
+			 "externalTags":[{"key":"y","value":"2"},{"key":"z","value":"1"}],"actions":[]}""";
+
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 0)).thenReturn(Optional.of(createRevisionEntity().withSerializedSnapshot(before)));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 1)).thenReturn(Optional.of(createRevisionEntity().withSerializedSnapshot(after)));
+
+		assertThat(service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 0, 1).getOperations())
+			.extracting(Operation::getOp, Operation::getPath)
+			.containsExactly(tuple("add", "/actions"));
+	}
+
+	@Test
+	@DisplayName("Verification that the order of a list that has one is still a change, and so is a label that is really gone")
+	void compareErrandRevisionVersionsStillSeesRealChangesToCollections() {
+		final var before = """
+			{"parameters":[{"key":"a"},{"key":"b"}],"labels":[{"metadataLabelId":"a"},{"metadataLabelId":"b"}]}""";
+		final var after = """
+			{"parameters":[{"key":"b"},{"key":"a"}],"labels":[{"metadataLabelId":"b"}]}""";
+
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 0)).thenReturn(Optional.of(createRevisionEntity().withSerializedSnapshot(before)));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 1)).thenReturn(Optional.of(createRevisionEntity().withSerializedSnapshot(after)));
+
+		assertThat(service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 0, 1).getOperations())
+			.extracting(Operation::getPath)
+			.contains("/labels/0")
+			.anyMatch(path -> path.startsWith("/parameters/"));
 	}
 
 	@Test
@@ -386,6 +466,22 @@ class RevisionServiceTest {
 				"/key",
 				"newValue",
 				"oldValue"));
+	}
+
+	@Test
+	@DisplayName("Verification that comparing a revision written with label metadata to one written without it shows no difference, since only the metadata differs")
+	void compareErrandRevisionVersionsIgnoresTheLabelMetadataOfEarlierRevisions() {
+		final var sourceVersion = 1;
+		final var targetVersion = 2;
+
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()
+			.withSerializedSnapshot("{\"labels\":[{\"metadataLabelId\":\"label-id\",\"metadataLabel\":{\"id\":\"label-id\",\"displayName\":\"Ansokan\"}}]}")));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, targetVersion)).thenReturn(Optional.of(createRevisionEntity()
+			.withSerializedSnapshot("{\"labels\":[{\"metadataLabelId\":\"label-id\"}]}")));
+
+		final var result = service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion, targetVersion);
+
+		assertThat(result.getOperations()).isEmpty();
 	}
 
 	@Test

@@ -12,6 +12,8 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
 import static java.util.Collections.emptyList;
@@ -66,7 +68,7 @@ class RevisionMapperTest {
 		final var serializedSnapshot = RevisionMapper.toSerializedSnapshot(errand);
 		assertThat(serializedSnapshot).isEqualToIgnoringNewLines(
 			"""
-				{"id":"ERRAND_ID-4","externalTags":[],"stakeholders":[{"id":3004,"externalId":"EXTERNAL_ID-3","externalIdType":"ENTERPRISE","contactChannels":[],"parameters":[]}],"municipalityId":"2305","namespace":"NAMESPACE.3","title":"TITLE-3","category":"CATEGORY-3","type":"TYPE-3","status":"STATUS-3","priority":"PRIORITY-3","reporterUserId":"REPORTER_USER_ID-3","assignedUserId":"ASSIGNED_USER_ID-3","assignedGroupId":"ASSIGNED_GROUP_ID-3","escalationEmail":"ESCALATION_EMAIL_4","parameters":[],"jsonParameters":[],"attachments":[],"notifications":[],"actions":[],"phases":[],"labels":[],"accessLabels":[],"errandNumber":"KC-23020004","tempPreviousStatus":"STATUS-3","timeMeasures":[],"measures":[]}
+				{"id":"ERRAND_ID-4","externalTags":[],"stakeholders":[{"id":3004,"externalId":"EXTERNAL_ID-3","externalIdType":"ENTERPRISE","contactChannels":[],"parameters":[]}],"municipalityId":"2305","namespace":"NAMESPACE.3","title":"TITLE-3","category":"CATEGORY-3","type":"TYPE-3","status":"STATUS-3","priority":"PRIORITY-3","reporterUserId":"REPORTER_USER_ID-3","assignedUserId":"ASSIGNED_USER_ID-3","assignedGroupId":"ASSIGNED_GROUP_ID-3","escalationEmail":"ESCALATION_EMAIL_4","parameters":[],"jsonParameters":[],"attachments":[],"notifications":[],"actions":[],"phases":[],"labels":[],"accessLabels":[],"errandNumber":"KC-23020004","timeMeasures":[],"measures":[]}
 				""");
 	}
 
@@ -77,6 +79,21 @@ class RevisionMapperTest {
 
 		// Covers the id of the data row as well, since its name begins with the name of the association.
 		assertThat(serializedSnapshot).contains("ATTACHMENT_ID-1").doesNotContain("attachmentData");
+	}
+
+	@Test
+	@DisplayName("Verification that what an errand holds only once it is loaded stays out of a snapshot - otherwise the same errand would read differently written and read")
+	void toSerializedSnapshotLeavesOutWhatIsOnlyThereOnceLoaded() {
+		final var label = MetadataLabelEntity.create()
+			.withId("label-id")
+			.withDisplayName("Ansokan")
+			.withResourcePath("ANSOKAN");
+		final var errand = ErrandEntity.create()
+			.withId(ENTITY_UUID)
+			.withTempPreviousStatus("STATUS-1")
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("label-id").withMetadataLabel(label)));
+
+		assertThat(RevisionMapper.toSerializedSnapshot(errand)).isEqualToIgnoringNewLines("{\"id\":\"" + ENTITY_UUID + "\",\"labels\":[{\"metadataLabelId\":\"label-id\"}]}");
 	}
 
 	@Test

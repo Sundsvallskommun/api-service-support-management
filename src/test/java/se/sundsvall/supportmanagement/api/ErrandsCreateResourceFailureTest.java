@@ -19,6 +19,7 @@ import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
@@ -363,6 +364,33 @@ class ErrandsCreateResourceFailureTest {
 		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void createErrandWithInvalidLabelId() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance()
+				.withClassification(Classification.create().withCategory("CATEGORY_1").withType("TYPE_1"))
+				.withStatus("STATUS_1")
+				.withLabels(List.of(ErrandLabel.create().withId("not-a-uuid"), ErrandLabel.create())))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
+			tuple("createErrand.errand.labels[0].id", "not a valid UUID"),
+			tuple("createErrand.errand.labels[1].id", "not a valid UUID"));
+
+		// Verification
 		verifyNoInteractions(errandServiceMock);
 	}
 

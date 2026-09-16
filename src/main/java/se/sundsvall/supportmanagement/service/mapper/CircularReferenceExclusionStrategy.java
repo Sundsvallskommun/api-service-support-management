@@ -9,6 +9,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigCondition
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
@@ -49,7 +51,13 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		// What the measure itself declares: the attachments it uses, which the errand already holds, its JSON parameters,
 		// which are the measure's rather than the errand's, and the artefact it follows from, which points back at the errand.
 		Map.entry(MeasureEntity.class, Set.of("attachments", "jsonParameters", "decisionEntity", "statementEntity")),
-		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)));
+		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)),
+
+		// What the errand holds only once it is read from the database: the metadata of a label it holds by id, and the
+		// status it was loaded with. A snapshot taking them along read the same errand differently just written and just
+		// read, so a patch changing nothing right after a creation or a status change wrote a revision and an event.
+		Map.entry(ErrandLabelEmbeddable.class, Set.of("metadataLabel")),
+		Map.entry(ErrandEntity.class, Set.of("tempPreviousStatus")));
 
 	public static CircularReferenceExclusionStrategy create() {
 		return new CircularReferenceExclusionStrategy();
