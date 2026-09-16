@@ -1,7 +1,11 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +53,7 @@ import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
@@ -59,6 +64,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -845,6 +851,7 @@ public class MetadataService {
 
 	public List<MeasureType> findMeasureTypes(final String namespace, final String municipalityId, final String measureGroup, final Sort sort) {
 		final var sortToUse = getDefaultSortIfUnsorted(sort);
+		verifySortable(sortToUse);
 
 		return ofNullable(measureGroup)
 			.map(group -> measureTypeRepository.findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(namespace, municipalityId, group, sortToUse))
@@ -868,6 +875,28 @@ public class MetadataService {
 		}
 		final var entity = updateMeasureTypeEntity(measureTypeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), measureType);
 		return toMeasureType(measureTypeRepository.save(entity));
+	}
+
+	/**
+	 * The properties a measure type may be sorted by, which is every scalar it carries.
+	 * <p>
+	 * The groups became a collection, and a collection cannot be sorted on. A request naming one sorted a measure type
+	 * before that and would otherwise reach the query derivation as a property that is not there, which answers 500
+	 * without saying what is wrong.
+	 */
+	private static final Set<String> SORTABLE_MEASURE_TYPE_PROPERTIES = Arrays.stream(MeasureTypeEntity.class.getDeclaredFields())
+		.filter(field -> !field.isSynthetic())
+		.filter(field -> !Modifier.isStatic(field.getModifiers()))
+		.filter(field -> !Collection.class.isAssignableFrom(field.getType()))
+		.map(Field::getName)
+		.collect(toSet());
+
+	private static void verifySortable(final Sort sort) {
+		sort.forEach(order -> {
+			if (!SORTABLE_MEASURE_TYPE_PROPERTIES.contains(order.getProperty())) {
+				throw Problem.valueOf(BAD_REQUEST, "'%s' is not a property a measure type can be sorted by".formatted(order.getProperty()));
+			}
+		});
 	}
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {

@@ -38,6 +38,35 @@ class MetadataMeasureTypeResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
+	/**
+	 * The scalar group these replaced carried @NotBlank, so a measure type has always had to name one. Nothing said so
+	 * once it became a list, and a type belonging to no group is invisible to a lookup by group for good.
+	 */
+	@ParameterizedTest
+	@MethodSource("invalidMeasureGroupsArguments")
+	void createWithInvalidMeasureGroups(final List<String> measureGroups, final String expectedField, final String expectedMessage) {
+
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281")))
+			.bodyValue(MeasureType.create().withName("name").withMeasureGroups(measureGroups))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).contains(tuple(expectedField, expectedMessage));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	private static Stream<Arguments> invalidMeasureGroupsArguments() {
+		return Stream.of(
+			Arguments.of(null, "measureGroups", "must not be empty"),
+			Arguments.of(List.of(), "measureGroups", "must not be empty"),
+			Arguments.of(List.of(" "), "measureGroups[0]", "must not be blank"));
+	}
+
 	@ParameterizedTest
 	@MethodSource("createMeasureTypeArguments")
 	void createWithInvalidArguments(final String namespace, final String municipalityId, final Tuple expectedResponse) {

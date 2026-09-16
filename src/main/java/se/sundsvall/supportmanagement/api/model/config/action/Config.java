@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.model.config.action;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
@@ -36,7 +37,7 @@ public class Config {
 	@Schema(
 		description = "The operations on an errand that this config reacts to. Left empty the config reacts to every operation the action supports, which is how a config without this behaves. It may only narrow what the action supports, never widen it - the action definition publishes what that is.",
 		examples = "[\"CREATE\"]")
-	private List<OperationType> operationTypes;
+	private List<@NotNull(message = "must not contain null") OperationType> operationTypes;
 
 	public static Config create() {
 		return new Config();

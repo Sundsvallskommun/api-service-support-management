@@ -1868,6 +1868,27 @@ class MetadataServiceTest {
 		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 	}
 
+	/**
+	 * The groups became a collection, which cannot be sorted on. Sorting by one used to work, so the caller is told what
+	 * is wrong rather than meeting the query derivation, which answers 500 and says nothing.
+	 */
+	@Test
+	void findMeasureTypesRefusesASortOnTheGroups() {
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> metadataService.findMeasureTypes("namespace", "2281", null, Sort.by("measureGroup")));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).contains("'measureGroup' is not a property a measure type can be sorted by");
+		verifyNoInteractions(measureTypeRepositoryMock);
+	}
+
+	@Test
+	void findMeasureTypesAllowsASortOnAScalar() {
+		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(List.of());
+
+		assertThat(metadataService.findMeasureTypes("namespace", "2281", null, Sort.by("displayName"))).isEmpty();
+	}
+
 	@Test
 	void findMeasureTypesByGroup() {
 		// Setup
