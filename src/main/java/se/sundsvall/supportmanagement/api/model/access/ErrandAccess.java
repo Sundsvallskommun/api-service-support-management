@@ -16,7 +16,7 @@ public class ErrandAccess {
 	private AccessLevel level;
 
 	@Schema(
-		description = "What the user may do with each field of the errand they reach. A field that is not listed is not shown to them at all. Every field a response carries is listed, the phase a request names to move the errand into excepted, which no response carries")
+		description = "What the user may do with each field of the errand they reach. A field that is not listed is not returned in the errand payload, which says nothing about an endpoint of its own serving it - that is what 'resources' answers. Every field a response carries is listed, the phase a request names to move the errand into excepted, which no response carries")
 	private List<ErrandFieldAccess> fields;
 
 	@Schema(description = "What the user may do with each resource of the errand they reach. A resource that is not listed is not reachable by them. The errand itself is reported as 'level' rather than listed here")

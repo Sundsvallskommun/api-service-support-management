@@ -26,9 +26,9 @@
     ) engine=InnoDB;
 
     create table action_config_operation_type (
+        operation_type varchar(32) not null check ((operation_type in ('CREATE','UPDATE','DELETE','READ'))),
         action_config_id varchar(255) not null,
-        operation_type enum ('CREATE','DELETE','READ','UPDATE') not null,
-        primary key (action_config_id, operation_type)
+        primary key (operation_type, action_config_id)
     ) engine=InnoDB;
 
     create table action_config_parameter (

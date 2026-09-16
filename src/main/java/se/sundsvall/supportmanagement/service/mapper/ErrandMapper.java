@@ -322,6 +322,47 @@ public final class ErrandMapper {
 		entry(ErrandField.EXTERNAL_TAGS, (errand, e, keys) -> errand.setExternalTags(filterByKey(toExternalTags(e.getExternalTags()), ExternalTag::getKey, keys)))));
 
 	/**
+	 * Reads each field off an errand as a request carries it, so that a patch naming a field its sender does not hold
+	 * can be spotted without every caller knowing which property that is. One entry per {@link ErrandField}, held to
+	 * the constants by the same test that holds the mappers to them.
+	 */
+	private static final Map<ErrandField, Function<Errand, Object>> FIELD_READERS = new EnumMap<>(Map.ofEntries(
+		entry(ErrandField.ID, Errand::getId),
+		entry(ErrandField.ERRAND_NUMBER, Errand::getErrandNumber),
+		entry(ErrandField.TITLE, Errand::getTitle),
+		entry(ErrandField.STATUS, Errand::getStatus),
+		entry(ErrandField.RESOLUTION, Errand::getResolution),
+		entry(ErrandField.CHANNEL, Errand::getChannel),
+		entry(ErrandField.CREATED, Errand::getCreated),
+		entry(ErrandField.MODIFIED, Errand::getModified),
+		entry(ErrandField.TOUCHED, Errand::getTouched),
+		entry(ErrandField.PRIORITY, Errand::getPriority),
+		entry(ErrandField.DESCRIPTION, Errand::getDescription),
+		entry(ErrandField.CLASSIFICATION, Errand::getClassification),
+		entry(ErrandField.REPORTER_USER_ID, Errand::getReporterUserId),
+		entry(ErrandField.ASSIGNED_USER_ID, Errand::getAssignedUserId),
+		entry(ErrandField.ASSIGNED_GROUP_ID, Errand::getAssignedGroupId),
+		entry(ErrandField.BUSINESS_RELATED, Errand::getBusinessRelated),
+		entry(ErrandField.SUSPENSION, Errand::getSuspension),
+		entry(ErrandField.CONTACT_REASON, Errand::getContactReason),
+		entry(ErrandField.CONTACT_REASON_DESCRIPTION, Errand::getContactReasonDescription),
+		entry(ErrandField.ESCALATION_EMAIL, Errand::getEscalationEmail),
+		entry(ErrandField.LABELS, Errand::getLabels),
+		entry(ErrandField.STAKEHOLDERS, Errand::getStakeholders),
+		entry(ErrandField.MEASURES, Errand::getMeasures),
+		entry(ErrandField.ACTIVE_NOTIFICATIONS, Errand::getActiveNotifications),
+		entry(ErrandField.PHASES, Errand::getPhases),
+		entry(ErrandField.ACTIONS, Errand::getActions),
+		entry(ErrandField.VERSION, Errand::getVersion),
+		entry(ErrandField.PARAMETERS, Errand::getParameters),
+		entry(ErrandField.JSON_PARAMETERS, Errand::getJsonParameters),
+		entry(ErrandField.EXTERNAL_TAGS, Errand::getExternalTags)));
+
+	public static Map<ErrandField, Function<Errand, Object>> fieldReaders() {
+		return FIELD_READERS;
+	}
+
+	/**
 	 * Every restrictable field, none of them limited to keys, which is what an unrestricted user is served.
 	 */
 	private static final Map<ErrandField, Set<String>> ALL_FIELDS = FIELD_MAPPERS.keySet().stream()

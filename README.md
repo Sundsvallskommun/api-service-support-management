@@ -519,7 +519,7 @@ a jsonSchema driven form is editable before any data has been saved to it, which
   write: `title` follows the errand and `parameters` follows the resource serving it.
 - `fields` lists the fields the caller reaches, each named as the property is written in the errand payload rather than
   as the `ErrandField` constant, so a client looks the answer up against what it renders and adding a field here leaves
-  the published contract alone. One that is not listed is not shown to them. Fields carry **no level of
+  the published contract alone. One that is not listed is absent from the errand payload, which says nothing about an endpoint of its own serving it - `resources` answers that. Fields carry **no level of
   their own** — a namespace may only hold an individual key to read, never a whole field, so a field is writable exactly
   when what serves it is: the errand for most of them, and for `parameters` and `jsonParameters` the resource carrying
   their own write endpoint, so a field's `level` may be **wider than the errand's**. Every property a response carries

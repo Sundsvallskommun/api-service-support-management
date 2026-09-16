@@ -12,7 +12,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
@@ -412,7 +412,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/c9efe03d-deff-4828-a043-541fa78ffdeb")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -422,7 +422,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=partyId")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -433,7 +433,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -443,7 +443,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/notes")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -465,7 +465,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters/hidden-key")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -488,7 +488,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -498,7 +498,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters/hidden-key")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(DELETE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -509,7 +509,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -531,7 +531,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/notes")
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -595,7 +595,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 }

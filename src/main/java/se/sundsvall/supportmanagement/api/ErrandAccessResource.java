@@ -47,7 +47,7 @@ class ErrandAccessResource {
 		description = "Reports what the requesting user may do with the errand that matches the provided id, so that a client can render only the controls their next request would be allowed to make",
 		responses = {
 			@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
-			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+			@ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 		})
 	ResponseEntity<ErrandAccess> readErrandAccess(

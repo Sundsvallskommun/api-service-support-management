@@ -46,8 +46,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.isReportedBy;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
@@ -58,6 +58,7 @@ public class AccessControlService {
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String ENTITY_NOT_ACCESSIBLE = "Errand not accessible by user '%s'";
 	private static final String KEY_NOT_ACCESSIBLE = "Key '%s' not accessible by user '%s'";
+	private static final String FIELD_NOT_WRITABLE = "Field '%s' not writable by user '%s'";
 	private static final String KEY_NOT_WRITABLE = "Key '%s' not writable by user '%s'";
 	private static final String RESOURCE_NOT_ACCESSIBLE = "Resource '%s' not accessible by user '%s'";
 
@@ -254,7 +255,7 @@ public class AccessControlService {
 		final var errandLevel = highestLevel(config, access, errandEntity, adAccount, ProtectedResource.ERRAND);
 
 		if (isNull(errandLevel)) {
-			throw Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(ofNullable(user)
+			throw Problem.valueOf(FORBIDDEN, ENTITY_NOT_ACCESSIBLE.formatted(ofNullable(user)
 				.map(Identifier::getValue)
 				.orElse(null)));
 		}
@@ -595,7 +596,7 @@ public class AccessControlService {
 			.filter(key -> !accessibleKey.test(key))
 			.findFirst()
 			.ifPresent(key -> {
-				throw Problem.valueOf(UNAUTHORIZED, KEY_NOT_ACCESSIBLE.formatted(key, Optional.ofNullable(Identifier.get())
+				throw Problem.valueOf(FORBIDDEN, KEY_NOT_ACCESSIBLE.formatted(key, Optional.ofNullable(Identifier.get())
 					.map(Identifier::getValue)
 					.orElse(null)));
 			});
@@ -617,7 +618,7 @@ public class AccessControlService {
 			.filter(key -> !writableKey.test(key))
 			.findFirst()
 			.ifPresent(key -> {
-				throw Problem.valueOf(UNAUTHORIZED, KEY_NOT_WRITABLE.formatted(key, Optional.ofNullable(Identifier.get())
+				throw Problem.valueOf(FORBIDDEN, KEY_NOT_WRITABLE.formatted(key, Optional.ofNullable(Identifier.get())
 					.map(Identifier::getValue)
 					.orElse(null)));
 			});
@@ -654,6 +655,8 @@ public class AccessControlService {
 			ErrandMapper.changedJsonParameterKeys(errandEntity, patch.getJsonParameters()));
 		verifyKeys(access, ErrandField.EXTERNAL_TAGS, keysOf(patch.getExternalTags(), ExternalTag::getKey),
 			ErrandMapper.changedExternalTagKeys(errandEntity, patch.getExternalTags()));
+
+		verifyWritableFields(access, patch);
 
 		return new ErrandKeyAccess(access::writableKey, resolver.andThen(FieldAccessResolution::readable));
 	}
@@ -693,6 +696,31 @@ public class AccessControlService {
 			.withValue(jsonParameter.getValue()))));
 
 		return toKeyAccess(access, ErrandField.JSON_PARAMETERS);
+	}
+
+	/**
+	 * Refuses a patch naming a field its sender does not hold.
+	 * <p>
+	 * A field carries no level of its own unless it is keyed - a namespace may not hold a whole field to read, which
+	 * {@code validateFields} refuses - so a field that is not keyed is theirs to read and to write, or not theirs at
+	 * all. A value for one they do not hold is therefore a value they were never served, and is refused rather than
+	 * quietly dropped: a patch that is half applied is worse to debug than one that is turned away.
+	 * <p>
+	 * The keyed fields are left to {@link #verifyKeys}, which weighs them key by key.
+	 */
+	private void verifyWritableFields(FieldAccessResolution access, Errand patch) {
+		// A null map is a user nothing restricts, who holds every field.
+		if (isNull(access.writable())) {
+			return;
+		}
+
+		ErrandMapper.fieldReaders().forEach((field, read) -> {
+			if (!field.isKeyed() && !access.writable().containsKey(field) && nonNull(read.apply(patch))) {
+				throw Problem.valueOf(FORBIDDEN, FIELD_NOT_WRITABLE.formatted(field.getPropertyName(), Optional.ofNullable(Identifier.get())
+					.map(Identifier::getValue)
+					.orElse(null)));
+			}
+		});
 	}
 
 	private void verifyKeys(FieldAccessResolution access, ErrandField field, Collection<String> present, Collection<String> changed) {
@@ -1000,7 +1028,7 @@ public class AccessControlService {
 		final var grant = new ResourceGrant(true, accessMapperService.getAccessSnapshot(municipalityId, namespace, Identifier.get()).resources().get(resource));
 
 		if (!grant.permits(required)) {
-			throw Problem.valueOf(UNAUTHORIZED, RESOURCE_NOT_ACCESSIBLE.formatted(resource, Optional.ofNullable(Identifier.get())
+			throw Problem.valueOf(FORBIDDEN, RESOURCE_NOT_ACCESSIBLE.formatted(resource, Optional.ofNullable(Identifier.get())
 				.map(Identifier::getValue)
 				.orElse(null)));
 		}
@@ -1021,7 +1049,7 @@ public class AccessControlService {
 		verifyExistingErrand(errandId, namespace, municipalityId, lock);
 		return errandsRepository
 			.findOne(withId(errandId).and(withAccessControl(namespace, municipalityId, Identifier.get(), resource, required)))
-			.orElseThrow(() -> Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
+			.orElseThrow(() -> Problem.valueOf(FORBIDDEN, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
 				.map(Identifier::getValue)
 				.orElse(null))));
 	}
@@ -1041,7 +1069,7 @@ public class AccessControlService {
 		final var authorized = errandsRepository.exists(withId(id).and(withAccessControl(namespace, municipalityId, Identifier.get(), resource, required)));
 
 		if (!authorized) {
-			throw Problem.valueOf(UNAUTHORIZED, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
+			throw Problem.valueOf(FORBIDDEN, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
 				.map(Identifier::getValue)
 				.orElse(null)));
 		}

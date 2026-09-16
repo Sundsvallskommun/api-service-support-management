@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -50,8 +51,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.isReportedBy;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
@@ -579,7 +580,7 @@ class AccessControlServiceTest {
 	}
 
 	@Test
-	void getErrandUnauthorized() {
+	void getErrandRefusedWhenNotAccessible() {
 		// Setup
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
@@ -596,9 +597,9 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR));
 
 		// Verify
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getTitle()).isEqualTo(FORBIDDEN.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Errand not accessible by user 'user'");
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
@@ -666,9 +667,9 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, LR));
 
 		// Verify
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getTitle()).isEqualTo(FORBIDDEN.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Errand not accessible by user 'user'");
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
@@ -800,6 +801,41 @@ class AccessControlServiceTest {
 		assertThat(predicate.test("any-key")).isFalse();
 	}
 
+	/**
+	 * A field that is not keyed carries no level, so a role either holds it or does not. A patch naming one it does not
+	 * hold is naming a field it was never served, and is refused rather than applied in part.
+	 */
+	@Test
+	void verifyKeyAccessRefusesAFieldTheRoleDoesNotHold() {
+		Identifier.set(adUser());
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.TITLE))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL), Set.of("CASE_OFFICER")));
+
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> accessControlService.verifyKeyAccess(NAMESPACE, MUNICIPALITY_ID, coveredErrand(), Errand.create().withStatus("SOLVED")));
+
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Field 'status' not writable by user '%s'".formatted(AD_ACCOUNT));
+	}
+
+	@Test
+	void verifyKeyAccessAllowsAFieldTheRoleHolds() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.TITLE))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL), Set.of("CASE_OFFICER")));
+
+		assertThat(accessControlService.verifyKeyAccess(NAMESPACE, MUNICIPALITY_ID, coveredErrand(), Errand.create().withTitle("new title"))).isNotNull();
+	}
+
+	@Test
+	void verifyKeyAccessLeavesAnUnrestrictedUserAlone() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig());
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL)));
+
+		assertThat(accessControlService.verifyKeyAccess(NAMESPACE, MUNICIPALITY_ID, coveredErrand(), Errand.create().withStatus("SOLVED"))).isNotNull();
+	}
+
 	@Test
 	void verifyAccessibleKeyThrowsForUngrantedKey() {
 		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
@@ -809,8 +845,8 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class,
 			() -> accessControlService.verifyAccessibleKey(NAMESPACE, MUNICIPALITY_ID, errand, ErrandField.PARAMETERS, "key-2"));
 
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Key 'key-2' not accessible by user '%s'".formatted(AD_ACCOUNT));
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Key 'key-2' not accessible by user '%s'".formatted(AD_ACCOUNT));
 	}
 
 	@Test
@@ -1042,8 +1078,8 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class,
 			() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
 
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Resource 'NAMESPACE_CONFIG' not accessible by user '%s'".formatted(AD_ACCOUNT));
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Resource 'NAMESPACE_CONFIG' not accessible by user '%s'".formatted(AD_ACCOUNT));
 	}
 
 	@Test
@@ -1189,7 +1225,7 @@ class AccessControlServiceTest {
 
 		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, partyUser, errand));
 
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
 	}
 
 	/**
@@ -1205,7 +1241,7 @@ class AccessControlServiceTest {
 
 		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, user, errand));
 
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
 	}
 
 	@Test
@@ -1367,6 +1403,6 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class,
 			() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
 
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
 	}
 }

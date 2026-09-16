@@ -9,7 +9,7 @@ import se.sundsvall.supportmanagement.Application;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 /**
@@ -107,7 +107,7 @@ class ErrandAccessIT extends AbstractAppTest {
 			.withServicePath(ACCESS_CONTROLLED_ERRAND)
 			.withHttpMethod(GET)
 			.withHeader(SENT_BY_HEADER, "nob01ody; type=adAccount")
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 

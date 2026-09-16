@@ -11,7 +11,7 @@ import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
@@ -199,7 +199,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(PUT)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -210,7 +210,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 	/**

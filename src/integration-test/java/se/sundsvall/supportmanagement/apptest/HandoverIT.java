@@ -9,7 +9,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.MediaType.IMAGE_JPEG_VALUE;
@@ -245,7 +245,7 @@ class HandoverIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
