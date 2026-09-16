@@ -1326,6 +1326,33 @@ class AccessControlServiceTest {
 	}
 
 	/**
+	 * A field carrying no key restriction has no keys to carry a level, so before it carried one of its own the report
+	 * could not say that parameters are writable on an errand held at read - the caller was told to follow the errand
+	 * and would have hidden an edit the endpoint accepts.
+	 */
+	@Test
+	void resolveErrandAccessReportsAFieldWithoutKeyRestrictionByTheResourceServingIt() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig().withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
+			Map.of(LR, Set.of(ERRAND_LABEL), R, Set.of(ERRAND_LABEL), RW, Set.of()),
+			Set.of(),
+			Map.of(ProtectedResource.ERRAND, RW, ProtectedResource.PARAMETER, RW)));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(R);
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).allKeys()).isTrue();
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).keys()).isEmpty();
+
+		// Wider than the errand, because the endpoint writing one parameter is guarded on the resource and not on it.
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).level()).isEqualTo(RW);
+
+		// Everything else is written through the errand and says so.
+		assertThat(resolution.fields().get(ErrandField.TITLE).level()).isEqualTo(R);
+		assertThat(resolution.fields().get(ErrandField.EXTERNAL_TAGS).level()).isEqualTo(R);
+	}
+
+	/**
 	 * And the keys of a field written through that resource are reported by it too, so the report cannot invite a client
 	 * to render a form the endpoint would then refuse - nor withhold one it would accept.
 	 */

@@ -2,98 +2,128 @@
 	"level": "R",
 	"fields": [
 		{
-			"field": "id"
+			"field": "id",
+			"level": "R"
 		},
 		{
-			"field": "errandNumber"
+			"field": "errandNumber",
+			"level": "R"
 		},
 		{
-			"field": "title"
+			"field": "title",
+			"level": "R"
 		},
 		{
-			"field": "status"
+			"field": "status",
+			"level": "R"
 		},
 		{
-			"field": "resolution"
+			"field": "resolution",
+			"level": "R"
 		},
 		{
-			"field": "channel"
+			"field": "channel",
+			"level": "R"
 		},
 		{
-			"field": "created"
+			"field": "created",
+			"level": "R"
 		},
 		{
-			"field": "modified"
+			"field": "modified",
+			"level": "R"
 		},
 		{
-			"field": "touched"
+			"field": "touched",
+			"level": "R"
 		},
 		{
-			"field": "priority"
+			"field": "priority",
+			"level": "R"
 		},
 		{
-			"field": "description"
+			"field": "description",
+			"level": "R"
 		},
 		{
-			"field": "classification"
+			"field": "classification",
+			"level": "R"
 		},
 		{
-			"field": "reporterUserId"
+			"field": "reporterUserId",
+			"level": "R"
 		},
 		{
-			"field": "assignedUserId"
+			"field": "assignedUserId",
+			"level": "R"
 		},
 		{
-			"field": "assignedGroupId"
+			"field": "assignedGroupId",
+			"level": "R"
 		},
 		{
-			"field": "businessRelated"
+			"field": "businessRelated",
+			"level": "R"
 		},
 		{
-			"field": "suspension"
+			"field": "suspension",
+			"level": "R"
 		},
 		{
-			"field": "contactReason"
+			"field": "contactReason",
+			"level": "R"
 		},
 		{
-			"field": "contactReasonDescription"
+			"field": "contactReasonDescription",
+			"level": "R"
 		},
 		{
-			"field": "escalationEmail"
+			"field": "escalationEmail",
+			"level": "R"
 		},
 		{
-			"field": "labels"
+			"field": "labels",
+			"level": "R"
 		},
 		{
-			"field": "stakeholders"
+			"field": "stakeholders",
+			"level": "R"
 		},
 		{
-			"field": "measures"
+			"field": "measures",
+			"level": "R"
 		},
 		{
-			"field": "activeNotifications"
+			"field": "activeNotifications",
+			"level": "R"
 		},
 		{
-			"field": "phases"
+			"field": "phases",
+			"level": "R"
 		},
 		{
-			"field": "actions"
+			"field": "actions",
+			"level": "R"
 		},
 		{
-			"field": "version"
+			"field": "version",
+			"level": "R"
 		},
 		{
 			"field": "parameters",
+			"level": "R",
 			"allKeys": true,
 			"keys": []
 		},
 		{
 			"field": "jsonParameters",
+			"level": "R",
 			"allKeys": true,
 			"keys": []
 		},
 		{
 			"field": "externalTags",
+			"level": "R",
 			"allKeys": true,
 			"keys": []
 		}

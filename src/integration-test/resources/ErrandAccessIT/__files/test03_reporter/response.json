@@ -2,19 +2,24 @@
 	"level": "R",
 	"fields": [
 		{
-			"field": "id"
+			"field": "id",
+			"level": "R"
 		},
 		{
-			"field": "errandNumber"
+			"field": "errandNumber",
+			"level": "R"
 		},
 		{
-			"field": "title"
+			"field": "title",
+			"level": "R"
 		},
 		{
-			"field": "status"
+			"field": "status",
+			"level": "R"
 		},
 		{
 			"field": "parameters",
+			"level": "R",
 			"allKeys": false,
 			"keys": [
 				{

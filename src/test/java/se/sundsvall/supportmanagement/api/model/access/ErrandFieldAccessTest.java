@@ -30,11 +30,13 @@ class ErrandFieldAccessTest {
 		final var keys = List.of(ErrandFieldKeyAccess.create().withKey("granted-key").withLevel(AccessLevel.RW));
 		final var bean = ErrandFieldAccess.create()
 			.withField("parameters")
+			.withLevel(AccessLevel.RW)
 			.withAllKeys(false)
 			.withKeys(keys);
 
 		assertThat(bean).hasNoNullFieldsOrProperties();
 		assertThat(bean.getField()).isEqualTo("parameters");
+		assertThat(bean.getLevel()).isEqualTo(AccessLevel.RW);
 		assertThat(bean.getAllKeys()).isFalse();
 		assertThat(bean.getKeys()).isEqualTo(keys);
 	}

@@ -61,7 +61,7 @@ class ErrandAccessServiceTest {
 	void readErrandAccess() {
 		final var errandEntity = ErrandEntity.create().withId(ERRAND_ID);
 		final Map<ErrandField, FieldGrant> fields = new EnumMap<>(ErrandField.class);
-		fields.put(ErrandField.TITLE, new FieldGrant(null, null));
+		fields.put(ErrandField.TITLE, new FieldGrant(RW, null, null));
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), eq(false), any(), any())).thenReturn(errandEntity);
 		when(accessControlServiceMock.resolveErrandAccess(any(), any(), any(), any()))

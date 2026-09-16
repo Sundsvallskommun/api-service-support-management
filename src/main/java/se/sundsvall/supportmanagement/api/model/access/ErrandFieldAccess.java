@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.model.access;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 
 @Schema(description = "What the requesting user may do with one field of an errand")
 public class ErrandFieldAccess {
@@ -13,7 +14,12 @@ public class ErrandFieldAccess {
 	private String field;
 
 	@Schema(
-		description = "If the field is reached without any key restriction, in which case every key of it follows the level of the errand and 'keys' is empty. False means the namespace restricts the field to the keys listed. Only set for the keyed fields PARAMETERS, JSON_PARAMETERS and EXTERNAL_TAGS",
+		description = "What the user may do with the field. The errand answers for every field written through it, and for the two keyed fields with a write endpoint of their own - 'parameters' and 'jsonParameters' - the resource serving that endpoint answers instead, so this may be wider than the level of the errand",
+		examples = "RW")
+	private AccessLevel level;
+
+	@Schema(
+		description = "If the field is reached without any key restriction, in which case every key of it follows the level of the field and 'keys' is empty. False means the namespace restricts the field to the keys listed. Only set for the keyed fields PARAMETERS, JSON_PARAMETERS and EXTERNAL_TAGS",
 		examples = "false")
 	private Boolean allKeys;
 
@@ -35,6 +41,19 @@ public class ErrandFieldAccess {
 
 	public ErrandFieldAccess withField(final String field) {
 		this.field = field;
+		return this;
+	}
+
+	public AccessLevel getLevel() {
+		return level;
+	}
+
+	public void setLevel(final AccessLevel level) {
+		this.level = level;
+	}
+
+	public ErrandFieldAccess withLevel(final AccessLevel level) {
+		this.level = level;
 		return this;
 	}
 
@@ -66,20 +85,20 @@ public class ErrandFieldAccess {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(allKeys, field, keys);
+		return Objects.hash(allKeys, field, level, keys);
 	}
 
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final ErrandFieldAccess other)) { return false; }
-		return Objects.equals(allKeys, other.allKeys) && Objects.equals(field, other.field) && Objects.equals(keys, other.keys);
+		return Objects.equals(allKeys, other.allKeys) && Objects.equals(field, other.field) && level == other.level && Objects.equals(keys, other.keys);
 	}
 
 	@Override
 	public String toString() {
 		final var builder = new StringBuilder();
-		builder.append("ErrandFieldAccess [field=").append(field).append(", allKeys=").append(allKeys).append(", keys=").append(keys).append("]");
+		builder.append("ErrandFieldAccess [field=").append(field).append(", level=").append(level).append(", allKeys=").append(allKeys).append(", keys=").append(keys).append("]");
 		return builder.toString();
 	}
 }

@@ -28,7 +28,7 @@ class ErrandAccessMapperTest {
 	@Test
 	void toErrandAccessMapsEveryLevel() {
 		final Map<ErrandField, FieldGrant> fields = new EnumMap<>(ErrandField.class);
-		fields.put(ErrandField.TITLE, new FieldGrant(null, null));
+		fields.put(ErrandField.TITLE, new FieldGrant(RW, null, null));
 
 		final var result = ErrandAccessMapper.toErrandAccess(new ErrandAccessResolution(LR, Map.of(ProtectedResource.COMMUNICATION, R), fields));
 
@@ -44,7 +44,7 @@ class ErrandAccessMapperTest {
 	@Test
 	void toErrandAccessLeavesKeysOutOfAFieldHoldingNoKeyedCollection() {
 		final Map<ErrandField, FieldGrant> fields = new EnumMap<>(ErrandField.class);
-		fields.put(ErrandField.TITLE, new FieldGrant(null, null));
+		fields.put(ErrandField.TITLE, new FieldGrant(RW, null, null));
 
 		final var field = ErrandAccessMapper.toErrandAccess(new ErrandAccessResolution(R, Map.of(), fields)).getFields().getFirst();
 
@@ -58,7 +58,7 @@ class ErrandAccessMapperTest {
 		keys.put("granted-key", RW);
 		keys.put("readonly-key", R);
 		final Map<ErrandField, FieldGrant> fields = new EnumMap<>(ErrandField.class);
-		fields.put(ErrandField.PARAMETERS, new FieldGrant(false, keys));
+		fields.put(ErrandField.PARAMETERS, new FieldGrant(RW, false, keys));
 
 		final var field = ErrandAccessMapper.toErrandAccess(new ErrandAccessResolution(RW, Map.of(), fields)).getFields().getFirst();
 

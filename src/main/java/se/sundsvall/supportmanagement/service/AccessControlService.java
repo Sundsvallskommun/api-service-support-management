@@ -307,7 +307,7 @@ public class AccessControlService {
 
 		// A user nothing restricts reaches every field, and every key of the keyed ones.
 		if (isNull(access.readable())) {
-			Arrays.stream(ErrandField.values()).forEach(field -> grants.put(field, unrestrictedGrant(field)));
+			Arrays.stream(ErrandField.values()).forEach(field -> grants.put(field, unrestrictedGrant(field, writableField.test(field))));
 			return grants;
 		}
 
@@ -315,8 +315,9 @@ public class AccessControlService {
 		return grants;
 	}
 
-	private static FieldGrant unrestrictedGrant(ErrandField field) {
-		return field.isKeyed() ? new FieldGrant(true, new LinkedHashMap<>()) : new FieldGrant(null, null);
+	private static FieldGrant unrestrictedGrant(ErrandField field, boolean fieldWritable) {
+		final var level = fieldWritable ? RW : R;
+		return field.isKeyed() ? new FieldGrant(level, true, new LinkedHashMap<>()) : new FieldGrant(level, null, null);
 	}
 
 	/**
@@ -324,18 +325,20 @@ public class AccessControlService {
 	 * collection.
 	 * <p>
 	 * A key restriction is all or nothing: either the namespace names the keys of the field, in which case those are the
-	 * only ones reachable, or it names none and every key of the collection simply follows the errand. The field itself
-	 * therefore carries no level of its own - a field is writable exactly when what serves it is, since a namespace may
-	 * only hold a key to read, never a whole field.
+	 * only ones reachable, or it names none and every key of the collection simply follows the field. The field carries
+	 * the level of whatever serves it, which a namespace cannot narrow further - it may hold an individual key to read,
+	 * never a whole field.
 	 */
 	private static FieldGrant toFieldGrant(FieldAccessResolution access, ErrandField field, Set<String> readableKeys, boolean fieldWritable) {
+		final var level = fieldWritable ? RW : R;
+
 		if (!field.isKeyed()) {
-			return new FieldGrant(null, null);
+			return new FieldGrant(level, null, null);
 		}
 
-		// No key restriction, so the keys are not enumerated at all and each of them follows the errand.
+		// No key restriction, so the keys are not enumerated at all and each of them follows the field.
 		if (readableKeys.isEmpty()) {
-			return new FieldGrant(true, new LinkedHashMap<>());
+			return new FieldGrant(level, true, new LinkedHashMap<>());
 		}
 
 		final var writableKey = access.writableKey(field);
@@ -345,7 +348,7 @@ public class AccessControlService {
 		// as well as changed, which is what lets a form be rendered before anything has been saved to it.
 		readableKeys.forEach(key -> keys.put(key, fieldWritable && writableKey.test(key) ? RW : R));
 
-		return new FieldGrant(false, keys);
+		return new FieldGrant(level, false, keys);
 	}
 
 	/**
@@ -361,14 +364,16 @@ public class AccessControlService {
 		Map<ErrandField, FieldGrant> fields) {}
 
 	/**
-	 * What a user may do with one field of one errand. A field they do not reach at all is simply absent, and a field
-	 * they reach follows the errand unless its keys say otherwise.
+	 * What a user may do with one field of one errand. A field they do not reach at all is simply absent.
 	 *
+	 * @param level   what they may do with the field itself, which the errand answers for every field written through
+	 *                it and the resource serving it answers for the rest
 	 * @param allKeys if the field is reached without a key restriction, null for a field holding no keyed collection
 	 * @param keys    every key of the collection they reach, empty when {@code allKeys}, null for a field holding no
 	 *                keyed collection
 	 */
 	public record FieldGrant(
+		Access.AccessLevelEnum level,
 		Boolean allKeys,
 		Map<String, Access.AccessLevelEnum> keys) {}
 

@@ -2,16 +2,20 @@
 	"level": "RW",
 	"fields": [
 		{
-			"field": "id"
+			"field": "id",
+			"level": "RW"
 		},
 		{
-			"field": "errandNumber"
+			"field": "errandNumber",
+			"level": "RW"
 		},
 		{
-			"field": "title"
+			"field": "title",
+			"level": "RW"
 		},
 		{
 			"field": "parameters",
+			"level": "RW",
 			"allKeys": false,
 			"keys": [
 				{
@@ -26,6 +30,7 @@
 		},
 		{
 			"field": "jsonParameters",
+			"level": "RW",
 			"allKeys": false,
 			"keys": [
 				{

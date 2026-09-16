@@ -2,98 +2,128 @@
 	"level": "RW",
 	"fields": [
 		{
-			"field": "id"
+			"field": "id",
+			"level": "RW"
 		},
 		{
-			"field": "errandNumber"
+			"field": "errandNumber",
+			"level": "RW"
 		},
 		{
-			"field": "title"
+			"field": "title",
+			"level": "RW"
 		},
 		{
-			"field": "status"
+			"field": "status",
+			"level": "RW"
 		},
 		{
-			"field": "resolution"
+			"field": "resolution",
+			"level": "RW"
 		},
 		{
-			"field": "channel"
+			"field": "channel",
+			"level": "RW"
 		},
 		{
-			"field": "created"
+			"field": "created",
+			"level": "RW"
 		},
 		{
-			"field": "modified"
+			"field": "modified",
+			"level": "RW"
 		},
 		{
-			"field": "touched"
+			"field": "touched",
+			"level": "RW"
 		},
 		{
-			"field": "priority"
+			"field": "priority",
+			"level": "RW"
 		},
 		{
-			"field": "description"
+			"field": "description",
+			"level": "RW"
 		},
 		{
-			"field": "classification"
+			"field": "classification",
+			"level": "RW"
 		},
 		{
-			"field": "reporterUserId"
+			"field": "reporterUserId",
+			"level": "RW"
 		},
 		{
-			"field": "assignedUserId"
+			"field": "assignedUserId",
+			"level": "RW"
 		},
 		{
-			"field": "assignedGroupId"
+			"field": "assignedGroupId",
+			"level": "RW"
 		},
 		{
-			"field": "businessRelated"
+			"field": "businessRelated",
+			"level": "RW"
 		},
 		{
-			"field": "suspension"
+			"field": "suspension",
+			"level": "RW"
 		},
 		{
-			"field": "contactReason"
+			"field": "contactReason",
+			"level": "RW"
 		},
 		{
-			"field": "contactReasonDescription"
+			"field": "contactReasonDescription",
+			"level": "RW"
 		},
 		{
-			"field": "escalationEmail"
+			"field": "escalationEmail",
+			"level": "RW"
 		},
 		{
-			"field": "labels"
+			"field": "labels",
+			"level": "RW"
 		},
 		{
-			"field": "stakeholders"
+			"field": "stakeholders",
+			"level": "RW"
 		},
 		{
-			"field": "measures"
+			"field": "measures",
+			"level": "RW"
 		},
 		{
-			"field": "activeNotifications"
+			"field": "activeNotifications",
+			"level": "RW"
 		},
 		{
-			"field": "phases"
+			"field": "phases",
+			"level": "RW"
 		},
 		{
-			"field": "actions"
+			"field": "actions",
+			"level": "RW"
 		},
 		{
-			"field": "version"
+			"field": "version",
+			"level": "RW"
 		},
 		{
 			"field": "parameters",
+			"level": "RW",
 			"allKeys": true,
 			"keys": []
 		},
 		{
 			"field": "jsonParameters",
+			"level": "RW",
 			"allKeys": true,
 			"keys": []
 		},
 		{
 			"field": "externalTags",
+			"level": "RW",
 			"allKeys": true,
 			"keys": []
 		}

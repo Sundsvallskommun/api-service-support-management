@@ -502,29 +502,33 @@ a jsonSchema driven form is editable before any data has been saved to it, which
 
 ```json
 {
-  "level": "RW",
+  "level": "R",
   "fields": [
-    { "field": "title" },
-    { "field": "parameters", "allKeys": false,
+    { "field": "title", "level": "R" },
+    { "field": "parameters", "level": "RW", "allKeys": false,
       "keys": [{ "key": "granted-key", "level": "RW" }, { "key": "readonly-key", "level": "R" }] },
-    { "field": "jsonParameters", "allKeys": true, "keys": [] }
+    { "field": "jsonParameters", "level": "R", "allKeys": true, "keys": [] }
   ],
-  "resources": [{ "resource": "errand/communication", "level": "R" }]
+  "resources": [{ "resource": "errand/communication", "level": "R" },
+                { "resource": "errand/parameter", "level": "RW" }]
 }
 ```
 
-- `level` is what the caller holds the errand itself at. Reaching the endpoint at all means at least `LR`.
+- `level` is what the caller holds the errand itself at. Reaching the endpoint at all means at least `LR`. The example
+  above is the shape this takes for a caller the errand is read-only to whose grant on `errand/parameter` carries the
+  write: `title` follows the errand and `parameters` follows the resource serving it.
 - `fields` lists the fields the caller reaches, each named as the property is written in the errand payload rather than
   as the `ErrandField` constant, so a client looks the answer up against what it renders and adding a field here leaves
   the published contract alone. One that is not listed is not shown to them. Fields carry **no level of
   their own** — a namespace may only hold an individual key to read, never a whole field, so a field is writable exactly
   when what serves it is: the errand for most of them, and for `parameters` and `jsonParameters` the resource carrying
-  their own write endpoint. Every property a response carries is a field, `phases` and `actions` included — the one
-  exception is `activePhaseId`, which is inbound only: a request names the phase to move the errand into, and the
-  response carries the phases themselves, of which the active one is the phase not yet ended. Whether a property is
-  writable *at all* is a separate question answered by `readOnly` in the schema.
+  their own write endpoint, so a field's `level` may be **wider than the errand's**. Every property a response carries
+  is a field, `phases` and `actions` included — the one exception is `activePhaseId`, which is inbound only: a request
+  names the phase to move the errand into, and the response carries the phases themselves, of which the active one is
+  the phase not yet ended. Whether a property is writable *at all* is a separate question answered by `readOnly` in the
+  schema.
 - A key restriction is all or nothing. `allKeys: true` means the field carries no key restriction and every key of it
-  follows the errand, including keys that may be added. `allKeys: false` means `keys` is exhaustive: those are the only
+  follows the field's own `level`, including keys that may be added. `allKeys: false` means `keys` is exhaustive: those are the only
   keys the caller reaches, each with its own level, already held against the level of the errand.
 - A granted key is listed whether or not the errand carries it yet, so a key shown as `RW` may be **created** as well as
   changed. That is what lets a form be rendered editable before anything is saved to it.

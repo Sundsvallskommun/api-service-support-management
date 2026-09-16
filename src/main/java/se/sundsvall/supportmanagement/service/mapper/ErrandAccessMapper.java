@@ -43,6 +43,7 @@ public final class ErrandAccessMapper {
 	private static ErrandFieldAccess toErrandFieldAccess(final ErrandField field, final FieldGrant grant) {
 		return ErrandFieldAccess.create()
 			.withField(field.getPropertyName())
+			.withLevel(toAccessLevel(grant.level()))
 			.withAllKeys(grant.allKeys())
 			.withKeys(toKeys(grant.keys()));
 	}

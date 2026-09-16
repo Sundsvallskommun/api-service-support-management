@@ -2,31 +2,40 @@
 	"level": "LR",
 	"fields": [
 		{
-			"field": "id"
+			"field": "id",
+			"level": "R"
 		},
 		{
-			"field": "errandNumber"
+			"field": "errandNumber",
+			"level": "R"
 		},
 		{
-			"field": "title"
+			"field": "title",
+			"level": "R"
 		},
 		{
-			"field": "status"
+			"field": "status",
+			"level": "R"
 		},
 		{
-			"field": "resolution"
+			"field": "resolution",
+			"level": "R"
 		},
 		{
-			"field": "channel"
+			"field": "channel",
+			"level": "R"
 		},
 		{
-			"field": "created"
+			"field": "created",
+			"level": "R"
 		},
 		{
-			"field": "modified"
+			"field": "modified",
+			"level": "R"
 		},
 		{
-			"field": "touched"
+			"field": "touched",
+			"level": "R"
 		}
 	],
 	"resources": [
