@@ -28,7 +28,6 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.joining;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.EXECUTED_BY_LENGTH;
@@ -36,6 +35,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOu
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.service.ProcessErrorLog.CONFIG_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTriggerProcess;
 
@@ -81,7 +81,6 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
 public class ProcessEventPublisher {
 
 	static final String LOOP_GUARD_ACTIVITY_TYPE = "LOOP_GUARD";
-	static final String CONFIG_ACTIVITY_TYPE = "CONFIG";
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessEventPublisher.class);
 
@@ -90,9 +89,6 @@ public class ProcessEventPublisher {
 	private static final String LOOP_GUARD_ERROR_CODE = "EVENT_RATE_EXCEEDED";
 	private static final String AMBIGUOUS_KEY_ERROR_CODE = "AMBIGUOUS_PROCESS_KEY";
 	private static final String OVERSIZED_KEY_ERROR_CODE = "OVERSIZED_PROCESS_KEY";
-
-	/** How much of a key is worth showing in an entry that reports what is wrong with it. */
-	private static final int KEY_EXCERPT_LENGTH = 64;
 
 	private static final String LOOP_GUARD_TRIPPED = """
 		emergency brake tripped: %d events, the most allowed, have reached the process of this errand within %s, and further \
@@ -186,7 +182,7 @@ public class ProcessEventPublisher {
 
 		if (isNull(processKey)) {
 			if (selection.isAmbiguous()) {
-				errorLog.writeOncePerWindow(errand.getId(), null, CONFIG_ACTIVITY_TYPE, AMBIGUOUS_KEY_ERROR_CODE, AMBIGUOUS_KEYS.formatted(excerptOf(selection.keys())));
+				errorLog.writeOncePerWindow(errand.getId(), null, CONFIG_ACTIVITY_TYPE, AMBIGUOUS_KEY_ERROR_CODE, AMBIGUOUS_KEYS.formatted(ProcessKeySelector.excerptOf(selection.keys())));
 				return;
 			}
 
@@ -196,7 +192,7 @@ public class ProcessEventPublisher {
 		} else if (processKey.length() > PROCESS_KEY_LENGTH) {
 			// Left to the insert, one mistyped label would fail every write to every errand wearing it.
 			errorLog.writeOncePerWindow(errand.getId(), null, CONFIG_ACTIVITY_TYPE, OVERSIZED_KEY_ERROR_CODE,
-				OVERSIZED_KEY.formatted(processKey.length(), PROCESS_KEY_LENGTH, StringUtils.abbreviate(processKey, KEY_EXCERPT_LENGTH)));
+				OVERSIZED_KEY.formatted(processKey.length(), PROCESS_KEY_LENGTH, ProcessKeySelector.excerptOf(processKey)));
 			return;
 		}
 
@@ -326,15 +322,6 @@ public class ProcessEventPublisher {
 			&& selection.processKey().equals(processKey)
 			&& instances.stream().noneMatch(instance -> nonNull(instance.getActiveMarker()))
 			&& instances.stream().noneMatch(instance -> COMPLETED == instance.getProcessStatus());
-	}
-
-	/**
-	 * The keys of an ambiguous errand, shortened, for an entry that has to name them without being made of them.
-	 */
-	private String excerptOf(final List<String> keys) {
-		return keys.stream()
-			.map(key -> StringUtils.abbreviate(key, KEY_EXCERPT_LENGTH))
-			.collect(joining(", "));
 	}
 
 	/**

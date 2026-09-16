@@ -61,6 +61,8 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 42 | **Statusfälten är strängar i API:et, och enumen hålls på SM-sidan** — `processStatus`, `severity` och `startable.status`, kontrollerade med `@ValidEnumValue` | Enum i specen                                                                                                                                                       | Ett enum i specen gör varje nytt värde till en ny API-version, och en klient som genererat enumet kastar på värdet i stället för att bortse från det. Mängden är stängd där värdet skrivs och öppen där det läses (PR #737) — §5.3, §5.10                                                                                                                                                                    |
 | 43 | **`DELETE` passerar loop-skyddets tre lager, precis som kommandon**                                                                                           | Att låta nödbromsen, triggerfiltret och headern gälla raderingar                                                                                                    | En radering kan inte loopa, eftersom ärendet är borta, och en radering som hålls tillbaka lämnar processinstansen levande i Operaton för ett ärende som inte finns — §2.2, §6.5                                                                                                                                                                                                                              |
 | 44 | **Aktivitetsloggen gallras av städjobbet efter `activity-retention`, 365 dagar**                                                                              | Ingen gallring; gallring som en egen uppgift                                                                                                                        | §5.9 och §11 vilar på att loggen gallras, och frågan och indexet fanns redan — §3.2, §7.2                                                                                                                                                                                                                                                                                                                    |
+| 45 | **Ett ärendes etiketter får peka ut högst en `processKey`, och det hålls när etiketterna skrivs** — vid skapande, `PATCH` och `ADD_LABEL`                     | Att bara hantera tvetydigheten när händelsen publiceras: ingen start och en ERROR-aktivitet (§7.3)                                                                  | Ett ärende som pekar ut två processer är fel innan något har startats, och vid publiceringen syns det först när processen borde ha vaknat. Läs-sidan behövs ändå, eftersom en ändring i etikettens metadata kan göra ett ärende tvetydigt utan att ärendet skrivs — §7.3, §7.4                                                                                                                               |
+| 46 | **Etikettspärren jämför vad etiketterna löser ut till före och efter ändringen**, och släpper alltid igenom en ändring som pekar på den process ärendet kör   | Att jämföra de nya etiketterna med nyckeln på processraden                                                                                                          | Jämförelsen fångar att nyckeln försvinner lika väl som att den byts. Undantaget är enda vägen tillbaka för ett ärende vars etikett redan tappat nyckeln — §7.4                                                                                                                                                                                                                                               |
 
 ---
 
@@ -1155,9 +1157,12 @@ Statuskoderna för `.../signals` står i §5.9 och för `.../processes/start` i 
 
 ### 5.7 Vad som ändras för dem som redan använder API:et
 
-**Ingenting.**
+**Nästan ingenting.**
 
-Inga nya statuskoder, inga nya spärrar och inget nytt felfall att hantera i gränssnittet. Headern
+Inga nya statuskoder och bara en ny spärr: `POST` och `PATCH` på ärendet svarar `400` när etiketterna skulle
+peka ut två processer, eller flytta ett ärende med process till en annan (§7.4 regel 1 och 5). Spärren slår
+bara till i namespace vars etiketter bär `processKey`, så verksamheter utanför ALKT märker den inte. I
+gränssnittet räcker det att visa `detail` — den säger vad som är fel och vad man gör åt det. Headern
 `X-Trigger-Process` är valfri, och utelämnad betyder den precis det som gäller i dag (§6.5). Den optimistiska
 samtidighetskontrollen (§6.2) använder `If-Match` och `412`, som redan finns på ärendet och dess parametrar
 och redan står i specen. Verksamheter utanför ALKT märker ingenting, med ett undantag: en notis som skapas av en skrivning från en identitet
@@ -1309,7 +1314,8 @@ att ärendet väntar på en knapptryckning, på att processen redan gått i mål
 **Två nycklar i `processKeys` betyder att någon måste välja.** Etiketterna pekar åt två håll (§7.3), och i
 stället för att gissa lämnar SM över valet: gränssnittet frågar handläggaren och skickar den valda nyckeln
 i kroppen. Det är samma tvetydighet som stoppar den automatiska starten — skillnaden är att här finns en
-människa som kan lösa upp den.
+människa som kan lösa upp den. En skrivning kan inte ge ärendet två nycklar (§7.4 regel 5), men en ändring i
+etikettens metadata kan, och då är det här vägen framåt.
 
 #### Modellerna, och vad varje fält betyder
 
@@ -1793,19 +1799,57 @@ knapp. Det läses ur **samma etikett** som gav nyckeln, och beskrivs i §7.7.
 | Noll            | Ingen process. Inte ett fel                                                                                                              |
 | Två eller fler  | **Ingen automatisk start**, ERROR-aktivitet som namnger båda. En manuell start löser upp tvetydigheten genom att peka ut nyckeln (§5.10) |
 
+Tabellen beskriver vad som händer när ärendet **redan** pekar ut två nycklar. En skrivning som skulle leda dit avvisas (§7.4 regel 5), men ett ärende kan ändå hamna där om någon lägger `processKey` på en etikett som ärendet redan bär — därför behövs raden.
+
 Etiketter som är märkta `deprecated` räknas inte. Nycklarna i exemplen är pw-alkts egna: `Constants.PROCESS_KEYS` i
 pw-alkt räknar upp de tio processer som finns. **SM kontrollerar inte att nyckeln finns på riktigt** — det är bara pw som vet vilka processer som är driftsatta, och en nyckel som inte finns fångas som `422` (§5.4).
 
 ### 7.4 En process per ärende — och hur den regeln hålls
 
-Fyra regler tillsammans:
+Fem regler tillsammans:
 
-1. En etikettändring som skulle peka ut en annan `processKey` avvisas med `400` så snart ärendet har en processrad — även om den processen är avslutad.
+1. **En etikettändring får inte flytta ett ärende till en annan process** så snart ärendet har en processrad — även om den processen är avslutad. Etiketterna ska fortsätta peka ut samma `processKey` som före ändringen.
 2. Högst en **levande** instans per ärende. Den regeln bär databasen själv via `active_marker` (§4.1).
 3. Alla instanser på samma ärende har samma `process_key`. Den kontrollen får tjänstelagret göra under radlås; den går inte att uttrycka i databasen.
 4. **När en instans blivit `COMPLETED` är ärendets processliv slut.** Ingen ny instans får startas — nästa process är ett nytt ärende (beslut 6). En `FAILED` instans stoppar däremot ingenting; att försöka igen efter en misslyckad start är återhämtning.
+5. **Ett ärendes etiketter får peka ut högst en `processKey`.** Det gäller alla ärenden, med eller utan process, och hålls redan när ärendet skapas (beslut 45).
 
-Regel 4 går inte heller att lägga i databasen, eftersom `active_marker` är NULL för både `COMPLETED` och `FAILED` och alltså inte skiljer dem åt. Kontrollen ligger därför där en processrad skapas — både i `POST .../processes` och i den `PUT` som rapporterar en instans SM inte sett (§5.1) — i `POST .../processes/start` (§5.10) och i startlovet som publiceraren räknar ut (§7.7). Flera ställen ställer samma fråga, eftersom starten kan komma från flera håll. Att den ligger i SM och inte bara i pw är medvetet: pw frågar Operaton om vad som kör just nu, och där syns inte avslutade processer alls (§9.3).
+#### Regel 1 och 5 — etiketterna
+
+Båda reglerna handlar om samma sak: att etiketterna tyst slutar svara på frågan vilken process ärendet hör till. Det kan ske på två sätt, och inget av dem ger något fel någonstans — ärendet står bara still tills någon undrar varför:
+
+```
+två etiketter pekar ut två processer -> de löser ut till ingen, och ingen process startas eller får veta något
+nyckeln byts mot en annan            -> instansen som kör får aldrig veta något, och ingenting fallerar
+```
+
+Därför avvisas ändringen när den görs, inte när händelsen publiceras. Det är samma val som i §7.7: hellre ett högljutt konfigurationsfel än en tyst driftstörning.
+
+**Regel 1 jämför före med efter.** Frågan är vad etiketterna löser ut till före ändringen och vad de skulle lösa ut till efter — inte vad de löser ut till jämfört med nyckeln på processraden. Då fångas både att nyckeln byts och att den försvinner: ett ärende som inte längre pekar ut någon process slutar få väckningar lika tyst som ett som pekar fel.
+
+**En ändring som pekar tillbaka på den process ärendet faktiskt kör släpps alltid igenom**, oavsett vad etiketterna pekade på innan. Utan det undantaget finns ingen väg tillbaka för ett ärende vars etikett redan har tappat nyckeln — att sätta tillbaka den är också en ändring. Och det är den enda etikettändring som inte kan peka ärendet någon annanstans än dit det redan pekar.
+
+**Bara nyckeln hålls still.** `processStartMode` läses ur samma etiketter men får bytas fritt, även på ett ärende med process. Attributet säger om SM startar processen åt handläggaren (§7.7), inte vilken process ärendet kör, och att byta läge är just så automatisk start rullas ut.
+
+**Regel 5 frågas först.** Pekar etiketterna ut två nycklar spelar det ingen roll vad ärendet kör — det är fel redan innan något har startats. Processraderna läses därför först när regel 5 har passerat.
+
+**Ett ärende som redan pekar ut två nycklar får `400` på varje etikettändring** tills tvetydigheten är löst. Vägen ut finns alltid: ändringen som tar bort den ena etiketten löser ut till en nyckel och släpps igenom. Ett ärende kan hamna där trots regel 5, om någon lägger `processKey` på en etikett som ärendet redan bär — ärendet rörs inte, så ingen skrivning fångar det. Därför finns läs-sidans hantering i §7.3 kvar, och därför kan en manuell start fortfarande behöva peka ut nyckeln (§5.10).
+
+**Tre vägar skriver etiketter, och kontrollen finns på alla** — en kontroll på bara några av dem är ingen kontroll:
+
+|                        Väg                        | Regler  |                       Utfall                        |
+|---------------------------------------------------|---------|-----------------------------------------------------|
+| `POST /errands` — även handover och e-postintaget | 5       | `400`. Ett ärende som skapas har ingen process än   |
+| `PATCH /errands/{errandId}`                       | 1 och 5 | `400`                                               |
+| `AddLabelAction.executeAction`                    | 1 och 5 | Etiketten läggs inte till, och en ERROR-post skrivs |
+
+`AddLabelAction` körs av ett schemalagt jobb och passerar ingen endpoint, så där finns ingen anropare att svara. Etiketten läggs inte till, och felposten i aktivitetsloggen är det enda som syns på ärendet. Utan den slutar processen tyst att få väckningar. Posten skrivs en gång per ärende, fel och fönster, som övriga poster SM skriver själv (§2.2). En uppgift som stoppats skapas om vid nästa ändring av ärendet, eftersom etiketten aldrig kom på plats.
+
+Kontrollen frågas mot de etiketter ärendet faktiskt skulle bära, alltså **efter** att förfäderna lagts till. En förälder kan vara etiketten som pekar ut processen.
+
+#### Regel 4 och de unika nycklarna
+
+Regel 4 går, precis som regel 3, inte att lägga i databasen, eftersom `active_marker` är NULL för både `COMPLETED` och `FAILED` och alltså inte skiljer dem åt. Kontrollen ligger därför där en processrad skapas — både i `POST .../processes` och i den `PUT` som rapporterar en instans SM inte sett (§5.1) — i `POST .../processes/start` (§5.10) och i startlovet som publiceraren räknar ut (§7.7). Flera ställen ställer samma fråga, eftersom starten kan komma från flera håll. Att den ligger i SM och inte bara i pw är medvetet: pw frågar Operaton om vad som kör just nu, och där syns inte avslutade processer alls (§9.3).
 
 Krockar med de unika nycklarna **måste översättas till begripliga svar** och aldrig bubbla upp som `500`. De två betyder dessutom olika saker och ska inte behandlas lika:
 
@@ -2595,11 +2639,18 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T7 — Skyddsräcken (SM)
 
-**Bygg:** `400` på etikettändring som byter `processKey` — **både i `ErrandService.updateErrand` och i `AddLabelAction.executeAction`**, som körs schemalagt och aldrig passerar API:t.
+**Bygg:** `ProcessKeyGuard` med §7.4 regel 1 och 5, anropad från alla tre vägar som skriver etiketter: `ErrandService.createErrand` (`400`, bara regel 5), `ErrandService.updateErrand` (`400`) och `AddLabelAction.executeAction`, som körs schemalagt och aldrig passerar API:t (etiketten läggs inte till, ERROR-post via `ProcessErrorLog`). Ingen ny action — `AddLabelAction` får bara ett anrop. `ProcessKeySelector.selectFrom` löser ut nyckeln ur etiketter som slagits upp på id, eftersom en etikett som mappern just byggt saknar sin metadataetikett.
 
 **Acceptans:**
-- `400`-fallet täckt av enhetstest och ett IT-fall.
+- `400`-fallet täckt av enhetstest och ett IT-fall — både för en levande och för en **avslutad** process, mot riktiga rader i databasen.
 - `AddLabelAction` som skulle byta upplöst `processKey` på ett ärende med levande instans ⇒ etiketten läggs inte till, ERROR-aktivitet skrivs. Utan detta slutar processen tyst få väckningar (§11).
+- Ett ärende utan processrad påverkas inte av regel 1.
+- En etikettändring som inte rör `processKey` går igenom som vanligt, även på ett ärende med levande process.
+- Att byta `processStartMode` är alltid tillåtet, även på ett ärende med process (§7.7).
+- Etiketter som pekar ut två nycklar ⇒ `400`, även på ett ärende utan process och även när ärendet skapas.
+- En ändring som pekar tillbaka på den process ärendet kör går igenom, även om etiketterna inte pekade ut någon nyckel före ändringen.
+- Kontrollen görs mot etiketterna **efter** att förfäderna lagts till.
+- Båda sidor av jämförelsen slås upp i **en** fråga, och en ändring som inte rör etiketterna läser ingenting alls.
 
 ### T8 — `ProcessLoopGuardIT` (SM)
 
@@ -2765,7 +2816,9 @@ den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. U
 | **Knapp som inte längre gäller**                                | Handläggaren ser en signal processen hunnit lämna. Skrivningen ger `409` — gränssnittet ska läsa om ärendet, inte försöka igen                                                                                                                                                                                  |
 | **Beslut på ärende helt utan process**                          | Tillåtet och olåst: det finns ingen `COMPLETED` process att låsa mot. Spårbarheten bärs då av revisionen, inte av spärren (§7.5)                                                                                                                                                                                |
 | **Föräldralös processinstans efter radering**                   | `DELETE` publiceras även utan `processKey` (§2.2) och passerar loop-skyddets tre lager (§6.5), och pw raderar på `businessKey` (§9.3). Restrisk kvarstår om leveransen aldrig går igenom och raden åldras ur — därför ERROR-loggen när en rad åldras ur, och hälsoindikatorn (§8.3)                             |
-| **Etikettändring utanför API:t**                                | `AddLabelAction.executeAction` körs schemalagt och lägger till etiketter utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar — T7:s kontroll måste ligga även där                                                                                               |
+| **Etikettändring utanför API:t**                                | `AddLabelAction.executeAction` körs schemalagt utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar. Kontrollen ligger därför även där: etiketten läggs inte till, och en ERROR-post syns på ärendet (§7.4)                                                      |
+| **Ärende som pekar ut två processer**                           | Löser ut till ingen av dem, så ingen process startas och ingenting syns. Avvisas när etiketterna skrivs (§7.4 regel 5). Kan ändå uppstå om `processKey` läggs på en etikett ärendet redan bär — då fångar läs-sidan det (§7.3), och en manuell start kan peka ut nyckeln (§5.10)                                |
+| **Ärende som redan är tvetydigt**                               | Varje etikettändring får `400` tills tvetydigheten är löst. Vägen ut är att ta bort den ena etiketten, vilket alltid går igenom (§7.4)                                                                                                                                                                          |
 | **Publiceringsfel sväljs av anropsstället**                     | `setRollbackOnly` före kast (§2.2) gör svälj-fångsten ofarlig. Kvarstående hål: anropsväg helt utan transaktion — syns som ERROR-logg                                                                                                                                                                           |
 | **E-post eller webbmeddelande tappas vid återrullning**         | Befintlig brist i intaget: meddelandet raderas i källsystemet, och e-postkvittensen skickas, före commit. Publiceringens `setRollbackOnly` är ytterligare en väg till en återrullning bland databasfelen. Rättas i en egen uppgift: radering och kvittens efter commit, kvittensen i en egen transaktion (§2.2) |
 | **Start uteblir när etiketten sätts sent**                      | Start villkoras av `processKey`, inte `eventType` (§9.3). Täckt av ett P2-fall                                                                                                                                                                                                                                  |

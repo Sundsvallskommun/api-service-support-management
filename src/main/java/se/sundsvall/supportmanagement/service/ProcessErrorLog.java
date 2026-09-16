@@ -24,6 +24,12 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Activity
 @Component
 public class ProcessErrorLog {
 
+	/**
+	 * A fault in how the errand or its labels are set up, rather than in anything the process did. Named here since more
+	 * than one writer reports one.
+	 */
+	static final String CONFIG_ACTIVITY_TYPE = "CONFIG";
+
 	private final ErrandProcessActivityRepository activityRepository;
 	private final ProcessEngineProperties processEngineProperties;
 	private final Clock clock;

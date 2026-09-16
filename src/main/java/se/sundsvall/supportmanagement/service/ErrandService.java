@@ -75,6 +75,7 @@ public class ErrandService {
 	private final ErrandActionService errandActionService;
 	private final ErrandPhaseService errandPhaseService;
 	private final ErrandProcessService errandProcessService;
+	private final ProcessKeyGuard processKeyGuard;
 	private final EntityManager entityManager;
 
 	public ErrandService(
@@ -92,6 +93,7 @@ public class ErrandService {
 		final ErrandActionService errandActionService,
 		final ErrandPhaseService errandPhaseService,
 		final ErrandProcessService errandProcessService,
+		final ProcessKeyGuard processKeyGuard,
 		final EntityManager entityManager) {
 
 		this.repository = repository;
@@ -108,6 +110,7 @@ public class ErrandService {
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
 		this.errandProcessService = errandProcessService;
+		this.processKeyGuard = processKeyGuard;
 		this.entityManager = entityManager;
 	}
 
@@ -127,6 +130,10 @@ public class ErrandService {
 
 		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
 		errandLabelService.settleAccessLabels(errandEntity);
+
+		// Asked of the settled labels rather than of the ones sent in: the ancestors added above are labels the errand
+		// wears, and one of them can be a label that names a process.
+		processKeyGuard.verifyNewLabels(errandEntity.getLabels());
 
 		final var persistedEntity = repository.save(errandEntity);
 		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
@@ -187,6 +194,13 @@ public class ErrandService {
 		errandLabelService.validateVersions(errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 
+		// Held now, since the patch is about to replace them and what the change does to the process key of the errand
+		// can only be seen from both sets. Only for a patch that carries labels, so that one which does not is spared
+		// the read.
+		final var labelsBeforePatch = nonNull(errand.getLabels())
+			? List.copyOf(ofNullable(errandEntityToUpdate.getLabels()).orElse(emptyList()))
+			: null;
+
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
@@ -199,6 +213,10 @@ public class ErrandService {
 		// Only when the patch touches them, since leaving them alone leaves who reaches the errand alone.
 		if (nonNull(errand.getLabels())) {
 			errandLabelService.settleAccessLabels(errandEntity);
+
+			// Asked of the settled labels rather than of the ones sent in: the ancestors added above are labels the errand
+			// wears, and one of them can be the label that names the process.
+			processKeyGuard.verifyLabelChange(id, labelsBeforePatch, errandEntity.getLabels());
 		}
 
 		final var entity = repository.saveAndFlush(errandEntity);
