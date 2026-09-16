@@ -3,11 +3,13 @@ package se.sundsvall.supportmanagement.service;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
@@ -19,6 +21,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
@@ -45,18 +48,48 @@ public class ProcessKeySelector {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessKeySelector.class);
 
+	private final MetadataLabelRepository metadataLabelRepository;
+
+	public ProcessKeySelector(final MetadataLabelRepository metadataLabelRepository) {
+		this.metadataLabelRepository = metadataLabelRepository;
+	}
+
 	/**
 	 * Reads the process key and the start mode of an errand out of its labels.
+	 * <p>
+	 * A label is read off the errand where Hibernate has filled it in, and looked up by id where it has not.
+	 * {@link ErrandLabelEmbeddable#getMetadataLabel()} is filled in only when the errand is loaded, so the labels of an
+	 * errand being created, and those a patch or a label action run as part of the write has just set, all point at
+	 * nothing. Read as they stand, precisely the writes that give an errand its process label would name no process, and
+	 * start none. The lookup is a single query, made only when such a label is there, so an errand read from the database
+	 * costs nothing more than before. A label the lookup does not find is passed over rather than thrown on, as one that
+	 * is gone always has been.
 	 *
 	 * @param  errand the errand to read.
 	 * @return        the one key the labels agree on together with its start mode, or a selection naming every key found
 	 *                when they agree on none or on more than one.
 	 */
 	public ProcessKeySelection select(final ErrandEntity errand) {
-		// A label of a partially loaded errand points at nothing, and is left in for selectFrom to pass over.
-		return selectFrom(ofNullable(errand.getLabels()).orElse(emptyList()).stream()
+		final var labels = ofNullable(errand.getLabels()).orElse(emptyList()).stream()
+			.filter(Objects::nonNull)
+			.toList();
+
+		final var loaded = labels.stream()
 			.map(ErrandLabelEmbeddable::getMetadataLabel)
-			.toList());
+			.filter(Objects::nonNull)
+			.toList();
+
+		final var idsToLookUp = labels.stream()
+			.filter(label -> isNull(label.getMetadataLabel()))
+			.map(ErrandLabelEmbeddable::getMetadataLabelId)
+			.filter(Objects::nonNull)
+			.collect(toSet());
+
+		if (idsToLookUp.isEmpty()) {
+			return selectFrom(loaded);
+		}
+
+		return selectFrom(Stream.concat(loaded.stream(), metadataLabelRepository.findAllById(idsToLookUp).stream()).toList());
 	}
 
 	/**

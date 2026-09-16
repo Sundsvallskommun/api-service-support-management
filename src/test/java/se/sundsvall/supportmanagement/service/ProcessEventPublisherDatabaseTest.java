@@ -17,6 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityReposi
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
@@ -55,6 +57,8 @@ class ProcessEventPublisherDatabaseTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String PROCESS_KEY = "alkt-ansokan";
+	private static final String PROCESS_LABEL_ID = "5940c8c8-d84a-4144-b650-313356ad1333";
+	private static final String ERRAND_WITHOUT_LABELS = "cc236cf1-c00f-4479-8341-ecf5dd90b5b9";
 
 	@Autowired
 	private EventService eventService;
@@ -134,6 +138,23 @@ class ProcessEventPublisherDatabaseTest {
 				assertThat(entry.getErrandProcessId()).isNull();
 				assertThat(entry.getMessage()).contains(String.valueOf(PROCESS_KEY_LENGTH));
 			});
+	}
+
+	@Test
+	@DisplayName("Verification that an errand given the process label by a write reaches the process with it, although the label has not been read from the database yet")
+	void anErrandGivenTheProcessLabelByAWriteIsPublishedWithItsKey() {
+		new TransactionTemplate(transactionManager).executeWithoutResult(_ -> {
+			final var errand = errandsRepository.findById(ERRAND_WITHOUT_LABELS).orElseThrow();
+			errand.getLabels().add(ErrandLabelEmbeddable.create().withMetadataLabelId(PROCESS_LABEL_ID));
+
+			eventService.createErrandEvent(EventType.UPDATE, "Ärendet har uppdaterats.", errandsRepository.saveAndFlush(errand), null, null, false, ERRAND);
+		});
+
+		assertThat(outboxRepository.findAll()).singleElement().satisfies(row -> {
+			assertThat(row.getErrandId()).isEqualTo(ERRAND_WITHOUT_LABELS);
+			assertThat(row.getProcessKey()).isEqualTo(PROCESS_KEY);
+			assertThat(row.isStartAllowed()).isTrue();
+		});
 	}
 
 	private void givenInstance(final ProcessStatus status) {
