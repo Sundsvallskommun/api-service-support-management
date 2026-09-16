@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -17,6 +18,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.service.MetadataService;
+import se.sundsvall.supportmanagement.service.ProcessKeyGuard;
 
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 
@@ -27,10 +29,12 @@ public class AddLabelAction extends AbstractAction {
 	private static final Set<OperationType> VALID_OPERATION_TYPES = Set.of(OperationType.CREATE, OperationType.UPDATE);
 
 	private final ErrandsRepository errandsRepository;
+	private final ProcessKeyGuard processKeyGuard;
 
-	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository, final Clock clock) {
+	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository, final ProcessKeyGuard processKeyGuard, final Clock clock) {
 		super(metadataService, clock);
 		this.errandsRepository = errandsRepository;
+		this.processKeyGuard = processKeyGuard;
 	}
 
 	@Override
@@ -86,6 +90,13 @@ public class AddLabelAction extends AbstractAction {
 		return createActionWithDuration(errand, actionConfigEntity);
 	}
 
+	/**
+	 * Puts the labels of the action on the errand, unless doing so would leave it naming a process it does not belong to.
+	 * <p>
+	 * This runs from a scheduled job and passes no endpoint, so there is nobody to answer with the 400 the same change
+	 * gets through the API. The labels are left off instead, and the guard writes what happened on the errand - without
+	 * which the process would quietly stop being woken and nothing anywhere would say why.
+	 */
 	@Override
 	public void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
 		var newLabels = actionConfigEntity.getParameters().stream()
@@ -97,6 +108,14 @@ public class AddLabelAction extends AbstractAction {
 			.map(labelId -> ErrandLabelEmbeddable.create().withMetadataLabelId(labelId))
 			.filter(label -> !errand.getLabels().contains(label))
 			.toList();
+
+		// Copied rather than handed over as it stands: the list below is added to in place, and the guard would be left
+		// holding the same list for both sides of the comparison.
+		var current = List.copyOf(errand.getLabels());
+
+		if (processKeyGuard.refusesLabelChange(errand.getId(), current, Stream.concat(current.stream(), newLabels.stream()).toList())) {
+			return;
+		}
 
 		errand.getLabels().addAll(newLabels);
 

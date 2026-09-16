@@ -5,10 +5,13 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,10 +27,14 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameter
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.service.MetadataService;
+import se.sundsvall.supportmanagement.service.ProcessKeyGuard;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +43,7 @@ class AddLabelActionTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "testNamespace";
+	private static final String ERRAND_ID = "errand-id";
 	private static final String LABEL_ID_1 = "label-id-1";
 	private static final String LABEL_ID_2 = "label-id-2";
 	private static final String STATUS_OPEN = "OPEN";
@@ -48,6 +56,9 @@ class AddLabelActionTest {
 
 	@Mock
 	private ErrandsRepository errandsRepository;
+
+	@Mock
+	private ProcessKeyGuard processKeyGuard;
 
 	@Mock
 	private Clock clock;
@@ -388,5 +399,45 @@ class AddLabelActionTest {
 
 		assertThat(errand.getLabels()).hasSize(1);
 		verify(errandsRepository).save(errand);
+	}
+
+	@Test
+	@DisplayName("Verification that the guard is asked about the labels the errand would end up wearing, not only about the ones being added")
+	void executeActionAsksTheGuardAboutTheWholeSet() {
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
+
+		var config = ActionConfigEntity.create();
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_2)))));
+
+		addLabelAction.executeAction(errand, config);
+
+		var before = ArgumentCaptor.<Collection<ErrandLabelEmbeddable>>captor();
+		var after = ArgumentCaptor.<Collection<ErrandLabelEmbeddable>>captor();
+
+		verify(processKeyGuard).refusesLabelChange(eq(ERRAND_ID), before.capture(), after.capture());
+		assertThat(before.getValue()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1);
+		assertThat(after.getValue()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1, LABEL_ID_2);
+	}
+
+	@Test
+	@DisplayName("Verification that a refused label is left off the errand entirely, rather than written and reported")
+	void executeActionLeavesARefusedLabelOff() {
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
+
+		var config = ActionConfigEntity.create();
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_2)))));
+
+		when(processKeyGuard.refusesLabelChange(eq(ERRAND_ID), any(), any())).thenReturn(true);
+
+		addLabelAction.executeAction(errand, config);
+
+		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1);
+		verifyNoInteractions(errandsRepository);
 	}
 }

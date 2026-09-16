@@ -166,6 +166,37 @@ class ProcessKeySelectorTest {
 		assertThat(selection.startMode()).isEqualTo(MANUAL);
 	}
 
+	@Test
+	void aKeyThatFitsIsNamedAsItIs() {
+		assertThat(ProcessKeySelector.excerptOf(APPLICATION)).isEqualTo(APPLICATION);
+	}
+
+	@Test
+	@DisplayName("Verification that a key too long to name in full is cut, so that a message about it is not made of it")
+	void aKeyTooLongToNameIsCut() {
+		final var excerpt = ProcessKeySelector.excerptOf("k".repeat(1000));
+
+		assertThat(excerpt).hasSize(64).endsWith("...");
+	}
+
+	@Test
+	void theKeysOfAnAmbiguousErrandAreNamedTogether() {
+		assertThat(ProcessKeySelector.excerptOf(List.of(APPLICATION, SUPERVISION))).isEqualTo(APPLICATION + ", " + SUPERVISION);
+	}
+
+	@Test
+	@DisplayName("Verification that each key of an ambiguous errand is cut on its own, rather than the list as a whole")
+	void eachKeyOfAnAmbiguousErrandIsCutOnItsOwn() {
+		final var excerpt = ProcessKeySelector.excerptOf(List.of("k".repeat(1000), APPLICATION));
+
+		assertThat(excerpt).endsWith(", " + APPLICATION).hasSize(64 + ", ".length() + APPLICATION.length());
+	}
+
+	@Test
+	void noKeysAtAllAreNamedAsNothing() {
+		assertThat(ProcessKeySelector.excerptOf((List<String>) null)).isEmpty();
+	}
+
 	private ErrandEntity errandWith(final MetadataLabelEntity... labels) {
 		return ErrandEntity.create().withLabels(Stream.of(labels)
 			.map(label -> {

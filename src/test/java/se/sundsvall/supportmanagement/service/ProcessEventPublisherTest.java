@@ -80,7 +80,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
-import static se.sundsvall.supportmanagement.service.ProcessEventPublisher.CONFIG_ACTIVITY_TYPE;
+import static se.sundsvall.supportmanagement.service.ProcessErrorLog.CONFIG_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.ProcessEventPublisher.LOOP_GUARD_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearTriggerProcess;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setTriggerProcess;

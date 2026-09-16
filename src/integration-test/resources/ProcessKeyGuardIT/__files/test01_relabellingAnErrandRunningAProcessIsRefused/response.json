@@ -1,0 +1,5 @@
+{
+	"detail": "The labels of errand 'aa000000-0000-0000-0000-0000000000a1' resolve to the process key 'alkt-ansokan', and the change would leave them resolving to the process key 'alkt-tillsyn'. The errand runs the process 'alkt-ansokan', and an errand runs the one process for the whole of its life - labels naming another would leave the process it does run with nothing to wake it. Leave the label carrying the process key as it is, and handle the other process on an errand of its own.",
+	"title": "Bad Request",
+	"status": 400
+}

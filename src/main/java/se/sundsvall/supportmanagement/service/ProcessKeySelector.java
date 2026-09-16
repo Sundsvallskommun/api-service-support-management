@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import org.apache.commons.lang3.EnumUtils;
@@ -17,6 +18,7 @@ import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
@@ -38,6 +40,9 @@ public class ProcessKeySelector {
 	static final String PROCESS_KEY_ATTRIBUTE = "processKey";
 	static final String PROCESS_START_MODE_ATTRIBUTE = "processStartMode";
 
+	/** How much of a key is worth showing in a message that reports what is wrong with it. */
+	private static final int KEY_EXCERPT_LENGTH = 64;
+
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessKeySelector.class);
 
 	/**
@@ -48,8 +53,26 @@ public class ProcessKeySelector {
 	 *                when they agree on none or on more than one.
 	 */
 	public ProcessKeySelection select(final ErrandEntity errand) {
-		final var candidates = ofNullable(errand.getLabels()).orElse(emptyList()).stream()
+		// A label of a partially loaded errand points at nothing, and is left in for selectFrom to pass over.
+		return selectFrom(ofNullable(errand.getLabels()).orElse(emptyList()).stream()
 			.map(ErrandLabelEmbeddable::getMetadataLabel)
+			.toList());
+	}
+
+	/**
+	 * The same answer, read out of labels rather than out of an errand.
+	 * <p>
+	 * For the question asked about labels an errand does not wear yet: whether changing them would move its process key.
+	 * {@link ErrandLabelEmbeddable#getMetadataLabel()} is filled in by Hibernate when the errand is loaded and is null on
+	 * a label that has only just been put together, so the caller asking that question looks the labels up itself and
+	 * hands them here.
+	 *
+	 * @param  labels the labels to read.
+	 * @return        the one key they agree on together with its start mode, or a selection naming every key found when
+	 *                they agree on none or on more than one.
+	 */
+	public ProcessKeySelection selectFrom(final Collection<MetadataLabelEntity> labels) {
+		final var candidates = ofNullable(labels).orElse(emptyList()).stream()
 			.filter(Objects::nonNull)
 			.filter(label -> !label.isDeprecated())
 			.map(this::toCandidate)
@@ -67,6 +90,33 @@ public class ProcessKeySelector {
 		}
 
 		return new ProcessKeySelection(keys.getFirst(), startModeOf(candidates), keys);
+	}
+
+	/**
+	 * How a key is named in a message about it.
+	 * <p>
+	 * Shortened, since a message reporting what is wrong with a key may not be made of the key. It is held here, on the
+	 * class that owns what a process key is, rather than beside each message: the refusals and the error entries that
+	 * name a key are written in more than one place, and the one that has no outer limit of its own - the detail of a
+	 * 400 - is the one that needs this most.
+	 *
+	 * @param  key the key to name.
+	 * @return     the key, cut to the length worth showing.
+	 */
+	public static String excerptOf(final String key) {
+		return StringUtils.abbreviate(key, KEY_EXCERPT_LENGTH);
+	}
+
+	/**
+	 * The same, for a message that has to name every key an ambiguous errand resolves to.
+	 *
+	 * @param  keys the keys to name.
+	 * @return      the keys, each cut to the length worth showing, separated by commas.
+	 */
+	public static String excerptOf(final Collection<String> keys) {
+		return ofNullable(keys).orElse(emptyList()).stream()
+			.map(ProcessKeySelector::excerptOf)
+			.collect(joining(", "));
 	}
 
 	/**
