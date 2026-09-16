@@ -4,6 +4,7 @@ import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.FindNotesResponse;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -100,6 +101,11 @@ class ErrandNoteServiceTest {
 			.withBody(BODY)
 			.withModifiedBy(MODIFIED_BY)
 			.withSubject(SUBJECT);
+	}
+
+	@AfterEach
+	void clearIdentifier() {
+		Identifier.remove();
 	}
 
 	@Test

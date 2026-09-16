@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
@@ -33,16 +31,16 @@ import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.ETAG;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
-import static se.sundsvall.dept44.problem.Problem.valueOf;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
-import static se.sundsvall.supportmanagement.service.util.ETagUtil.format;
+import static se.sundsvall.supportmanagement.api.util.JsonParameterUtil.toUpsertResponse;
+import static se.sundsvall.supportmanagement.api.util.JsonParameterUtil.verifyKeyMatchesPath;
+import static se.sundsvall.supportmanagement.service.util.ETagUtil.formatOrNull;
 
 @RestController
 @Validated
@@ -86,7 +84,7 @@ class ErrandJsonParameterResource {
 
 		final var result = service.readJsonParameter(namespace, municipalityId, errandId, key);
 		return ok()
-			.header(ETAG, result.getVersion() != null ? format(result.getVersion()) : null)
+			.header(ETAG, formatOrNull(result.getVersion()))
 			.body(result);
 	}
 
@@ -106,16 +104,8 @@ class ErrandJsonParameterResource {
 		@Parameter(name = "If-Match", description = "Optional ETag of the JSON parameter for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
 		@Valid @ValidJsonParameter @NotNull @RequestBody final JsonParameter jsonParameter) {
 
-		if (jsonParameter.getKey() != null && !key.equals(jsonParameter.getKey())) {
-			throw valueOf(BAD_REQUEST, "Key in request body '%s' does not match key in path '%s'".formatted(jsonParameter.getKey(), key));
-		}
-		final var result = service.updateJsonParameter(namespace, municipalityId, errandId, key, ifMatch, jsonParameter);
-		final var eTag = result.jsonParameter().getVersion() != null ? format(result.jsonParameter().getVersion()) : null;
-		if (result.created()) {
-			final var location = URI.create(ServletUriComponentsBuilder.fromCurrentRequest().build().getPath());
-			return ResponseEntity.created(location).header(ETAG, eTag).body(result.jsonParameter());
-		}
-		return ok().header(ETAG, eTag).body(result.jsonParameter());
+		verifyKeyMatchesPath(jsonParameter, key);
+		return toUpsertResponse(service.updateJsonParameter(namespace, municipalityId, errandId, key, ifMatch, jsonParameter));
 	}
 
 	@DeleteMapping(path = "/{key}", produces = ALL_VALUE)

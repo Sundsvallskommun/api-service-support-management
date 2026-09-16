@@ -15,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
+import se.sundsvall.supportmanagement.api.model.attachment.UpdateErrandAttachmentRequest;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
 import static java.time.OffsetDateTime.now;
@@ -125,6 +127,55 @@ class ErrandAttachmentsResourceTest {
 
 		// Verification
 		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+	}
+
+	/**
+	 * The only place the purpose is written. It belongs to the attachment rather than to any link to it, which is what
+	 * lets the errand show it in its own attachment list.
+	 */
+	@Test
+	void updateErrandAttachment() {
+
+		// Parameter values
+		final var attachmentId = randomUUID().toString();
+		final var purposeId = randomUUID().toString();
+		final var body = UpdateErrandAttachmentRequest.create().withPurpose(ErrandAttachmentPurpose.create().withId(purposeId));
+		final var purpose = ErrandAttachmentPurpose.create().withId(purposeId).withName("RESPONSE").withDisplayName("Inkommen handling");
+
+		when(errandAttachmentServiceMock.updateErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId, body))
+			.thenReturn(ErrandAttachment.create().withId(attachmentId).withPurpose(purpose));
+
+		// Call
+		final var response = webTestClient.patch().uri(builder -> builder.path(PATH.concat("/{attachmentId}"))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody(ErrandAttachment.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verification
+		assertThat(response.getPurpose()).isEqualTo(purpose);
+		verify(errandAttachmentServiceMock).updateErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId, body);
+	}
+
+	@Test
+	void deleteErrandAttachmentPurpose() {
+
+		// Parameter values
+		final var attachmentId = randomUUID().toString();
+
+		webTestClient.delete().uri(builder -> builder.path(PATH.concat("/{attachmentId}/purpose"))
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID, "attachmentId", attachmentId)))
+			.exchange()
+			.expectStatus().isNoContent()
+			.expectHeader().contentType(ALL_VALUE);
+
+		// Verification
+		verify(errandAttachmentServiceMock).deleteErrandAttachmentPurpose(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId);
 	}
 
 	@Test

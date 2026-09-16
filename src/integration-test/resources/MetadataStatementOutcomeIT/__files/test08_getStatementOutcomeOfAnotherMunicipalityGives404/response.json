@@ -1,0 +1,5 @@
+{
+	"title": "Not Found",
+	"status": 404,
+	"detail": "StatementOutcome 'd1000000-0000-0000-0000-000000000003' is not present in namespace 'NAMESPACE-ARTEFACT' for municipalityId '2309'"
+}

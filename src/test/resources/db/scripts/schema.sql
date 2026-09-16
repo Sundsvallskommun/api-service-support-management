@@ -47,6 +47,7 @@
         municipality_id varchar(8),
         namespace varchar(32),
         hash varchar(64),
+        attachment_purpose_id varchar(255),
         channel varchar(255),
         errand_id varchar(255) not null,
         file_name varchar(255),
@@ -58,6 +59,19 @@
     create table attachment_data (
         id integer not null auto_increment,
         file longblob,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table attachment_purpose (
+        deprecated bit not null,
+        sort_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
@@ -170,6 +184,75 @@
     create table conversation_relation_id (
         conversation_id varchar(36) not null,
         relation_id varchar(36)
+    ) engine=InnoDB;
+
+    create table decision (
+        appealable bit,
+        valid_from date,
+        valid_to date,
+        completed_at datetime(6),
+        created datetime(6),
+        decided_at datetime(6) not null,
+        due_at datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        version bigint default 0 not null,
+        method varchar(16) not null check ((method in ('MANUAL','AUTOMATIC'))),
+        namespace varchar(32) not null,
+        status varchar(32) not null check ((status in ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))),
+        errand_process_id varchar(36),
+        delegation_reference varchar(64),
+        decided_by_role varchar(128),
+        type varchar(128),
+        created_by varchar(255),
+        decided_by varchar(255) not null,
+        errand_id varchar(255) not null,
+        id varchar(255) not null,
+        investigation_id varchar(255),
+        legal_basis varchar(255),
+        modified_by varchar(255),
+        outcome varchar(255) not null,
+        title varchar(255),
+        description longtext,
+        justification longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table decision_attachment (
+        attachment_id varchar(255) not null,
+        decision_id varchar(255) not null
+    ) engine=InnoDB;
+
+    create table decision_json_parameter (
+        version bigint default 0 not null,
+        decision_id varchar(255) not null,
+        id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        value longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table decision_outcome (
+        deprecated bit not null,
+        sort_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table decision_term (
+        sort_order integer,
+        category varchar(128),
+        decision_id varchar(255) not null,
+        id varchar(255) not null,
+        text longtext not null,
+        primary key (id)
     ) engine=InnoDB;
 
     create table email_worker_config (
@@ -294,6 +377,69 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table investigation (
+        completed_at datetime(6),
+        created datetime(6),
+        due_at datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        started_at datetime(6),
+        version bigint default 0 not null,
+        namespace varchar(32) not null,
+        status varchar(32) not null check ((status in ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))),
+        type varchar(128),
+        created_by varchar(255),
+        errand_id varchar(255) not null,
+        id varchar(255) not null,
+        investigator_user_id varchar(255),
+        modified_by varchar(255),
+        recommendation varchar(255),
+        title varchar(255),
+        conclusion longtext,
+        description longtext,
+        recommendation_motivation longtext,
+        summary longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table investigation_attachment (
+        attachment_id varchar(255) not null,
+        investigation_id varchar(255) not null
+    ) engine=InnoDB;
+
+    create table investigation_json_parameter (
+        version bigint default 0 not null,
+        id varchar(255) not null,
+        investigation_id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        value longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table investigation_section (
+        sort_order integer,
+        completed_at datetime(6),
+        assessment varchar(32) not null check ((assessment in ('PENDING','APPROVED','DEFICIENCY','NOT_APPLICABLE'))),
+        section_key varchar(64) not null,
+        completed_by varchar(255),
+        heading varchar(255),
+        id varchar(255) not null,
+        investigation_id varchar(255) not null,
+        text longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table investigation_section_json_parameter (
+        version bigint default 0 not null,
+        id varchar(255) not null,
+        investigation_section_id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        value longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table job (
         processed integer,
         progress integer,
@@ -321,23 +467,51 @@
     ) engine=InnoDB;
 
     create table measure (
+        completed_at datetime(6),
         created datetime(6),
+        due_at datetime(6),
         executed datetime(6),
         modified datetime(6),
+        municipality_id varchar(8) not null,
         planned_complete datetime(6),
         planned_start datetime(6),
+        version bigint default 0 not null,
+        namespace varchar(32) not null,
+        result varchar(32) check ((result in ('COMPLETED','PARTIALLY_COMPLETED','NOT_COMPLETED','NOT_APPLICABLE'))),
+        status varchar(32) not null check ((status in ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))),
+        accept varchar(50) check ((accept in ('TRUE','FALSE','REWORK'))),
         description varchar(1000),
         rework_description varchar(1000),
         accept_motivation varchar(255),
         added_by_role varchar(255),
         added_by_user varchar(255),
+        created_by varchar(255),
+        decision_id varchar(255),
         errand_id varchar(255) not null,
         goal varchar(255),
         id varchar(255) not null,
+        modified_by varchar(255),
         responsible_user varchar(255),
         rework_goal varchar(255),
+        statement_id varchar(255),
+        title varchar(255),
         type varchar(255),
-        accept enum ('FALSE','REWORK','TRUE'),
+        result_text longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table measure_attachment (
+        attachment_id varchar(255) not null,
+        measure_id varchar(255) not null
+    ) engine=InnoDB;
+
+    create table measure_json_parameter (
+        version bigint default 0 not null,
+        id varchar(255) not null,
+        measure_id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        value longtext,
         primary key (id)
     ) engine=InnoDB;
 
@@ -560,6 +734,65 @@
         value varchar(255)
     ) engine=InnoDB;
 
+    create table statement (
+        completed_at datetime(6),
+        created datetime(6),
+        due_at datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        reminded_at datetime(6),
+        responded_at datetime(6),
+        sent_at datetime(6),
+        version bigint default 0 not null,
+        namespace varchar(32) not null,
+        status varchar(32) not null check ((status in ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))),
+        communication_id varchar(36),
+        counterparty_external_id_type varchar(128),
+        counterparty_reference varchar(128),
+        type varchar(128),
+        counterparty_external_id varchar(255),
+        counterparty_name varchar(255) not null,
+        created_by varchar(255),
+        errand_id varchar(255) not null,
+        id varchar(255) not null,
+        modified_by varchar(255),
+        outcome varchar(255),
+        title varchar(255),
+        description longtext,
+        question longtext,
+        response_text longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table statement_attachment (
+        attachment_id varchar(255) not null,
+        statement_id varchar(255) not null
+    ) engine=InnoDB;
+
+    create table statement_json_parameter (
+        version bigint default 0 not null,
+        id varchar(255) not null,
+        parameter_key varchar(255) not null,
+        schema_id varchar(255),
+        statement_id varchar(255) not null,
+        value longtext,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table statement_outcome (
+        deprecated bit not null,
+        responded bit not null,
+        sort_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table status (
         deprecated bit not null,
         sort_order integer,
@@ -710,8 +943,17 @@
     create index idx_attachment_namespace 
        on attachment (namespace);
 
+    create index idx_attachment_attachment_purpose_id 
+       on attachment (attachment_purpose_id);
+
     alter table if exists attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
+
+    create index idx_attachment_purpose_namespace_municipality_id 
+       on attachment_purpose (namespace, municipality_id);
+
+    alter table if exists attachment_purpose 
+       add constraint uq_attachment_purpose_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
     create index idx_namespace_municipality_id 
        on category (namespace, municipality_id);
@@ -748,6 +990,39 @@
 
     create index idx_message_exchange_id 
        on conversation (message_exchange_id);
+
+    create index idx_decision_errand_id 
+       on decision (errand_id);
+
+    create index idx_decision_ns_outcome 
+       on decision (municipality_id, namespace, outcome);
+
+    create index idx_decision_valid_to 
+       on decision (valid_to);
+
+    create index idx_decision_due_at 
+       on decision (due_at);
+
+    create index idx_decision_attachment_decision_id 
+       on decision_attachment (decision_id);
+
+    create index idx_decision_attachment_attachment_id 
+       on decision_attachment (attachment_id);
+
+    alter table if exists decision_attachment 
+       add constraint uq_decision_attachment_decision_id_attachment_id unique (decision_id, attachment_id);
+
+    alter table if exists decision_json_parameter 
+       add constraint uq_decision_json_parameter_decision_id_key unique (decision_id, parameter_key);
+
+    create index idx_decision_outcome_namespace_municipality_id 
+       on decision_outcome (namespace, municipality_id);
+
+    alter table if exists decision_outcome 
+       add constraint uq_decision_outcome_namespace_municipality_id_name unique (namespace, municipality_id, name);
+
+    create index idx_decision_term_decision_id 
+       on decision_term (decision_id);
 
     create index idx_namespace_municipality_id 
        on email_worker_config (namespace, municipality_id);
@@ -800,13 +1075,13 @@
     create index idx_errand_municipality_id_namespace_created 
        on errand (municipality_id, namespace, created);
 
-    create index idx_errand_municipality_id_namespace_touched
+    create index idx_errand_municipality_id_namespace_touched 
        on errand (municipality_id, namespace, touched);
 
-    create index idx_errand_municipality_id_namespace_id
+    create index idx_errand_municipality_id_namespace_id 
        on errand (municipality_id, namespace, id);
 
-    alter table if exists errand
+    alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);
 
     create index idx_errand_access_labels_errand_id_metadata_label_id 
@@ -866,11 +1141,41 @@
     alter table if exists external_tag 
        add constraint uq_external_tag_errand_id_key unique (errand_id, `key`);
 
-    alter table if exists handover_idempotency
+    alter table if exists handover_idempotency 
        add constraint uq_handover_source_target unique (source_errand_id, target_namespace, target_municipality_id);
 
-    create index idx_job_namespace_municipality_id_status
-        on job (namespace, municipality_id, status);
+    create index idx_investigation_errand_id 
+       on investigation (errand_id);
+
+    create index idx_investigation_ns_status 
+       on investigation (municipality_id, namespace, status);
+
+    create index idx_investigation_due_at 
+       on investigation (due_at);
+
+    create index idx_investigation_attachment_investigation_id 
+       on investigation_attachment (investigation_id);
+
+    create index idx_investigation_attachment_attachment_id 
+       on investigation_attachment (attachment_id);
+
+    alter table if exists investigation_attachment 
+       add constraint uq_investigation_attachment_investigation_id_attachment_id unique (investigation_id, attachment_id);
+
+    alter table if exists investigation_json_parameter 
+       add constraint uq_investigation_json_parameter_investigation_id_key unique (investigation_id, parameter_key);
+
+    create index idx_investigation_section_investigation_id 
+       on investigation_section (investigation_id);
+
+    alter table if exists investigation_section 
+       add constraint uq_investigation_section_investigation_id_section_key unique (investigation_id, section_key);
+
+    alter table if exists investigation_section_json_parameter 
+       add constraint uq_investigation_section_json_parameter_section_id_key unique (investigation_section_id, parameter_key);
+
+    create index idx_job_namespace_municipality_id_status 
+       on job (namespace, municipality_id, status);
 
     create index idx_json_parameter_errand_id 
        on json_parameter (errand_id);
@@ -883,6 +1188,24 @@
 
     create index idx_measure_errand_id 
        on measure (errand_id);
+
+    create index idx_measure_ns_status 
+       on measure (municipality_id, namespace, status);
+
+    create index idx_measure_due_at 
+       on measure (due_at);
+
+    create index idx_measure_attachment_measure_id 
+       on measure_attachment (measure_id);
+
+    create index idx_measure_attachment_attachment_id 
+       on measure_attachment (attachment_id);
+
+    alter table if exists measure_attachment 
+       add constraint uq_measure_attachment_measure_id_attachment_id unique (measure_id, attachment_id);
+
+    alter table if exists measure_json_parameter 
+       add constraint uq_measure_json_parameter_measure_id_key unique (measure_id, parameter_key);
 
     create index idx_measure_type_namespace_municipality_id 
        on measure_type (namespace, municipality_id);
@@ -977,6 +1300,36 @@
     create index idx_stakeholder_external_id_role_errand_id 
        on stakeholder (external_id, `role`, errand_id);
 
+    create index idx_statement_errand_id 
+       on statement (errand_id);
+
+    create index idx_statement_ns_status 
+       on statement (municipality_id, namespace, status);
+
+    create index idx_statement_due_at 
+       on statement (due_at);
+
+    create index idx_statement_counterparty_external_id 
+       on statement (counterparty_external_id);
+
+    create index idx_statement_attachment_statement_id 
+       on statement_attachment (statement_id);
+
+    create index idx_statement_attachment_attachment_id 
+       on statement_attachment (attachment_id);
+
+    alter table if exists statement_attachment 
+       add constraint uq_statement_attachment_statement_id_attachment_id unique (statement_id, attachment_id);
+
+    alter table if exists statement_json_parameter 
+       add constraint uq_statement_json_parameter_statement_id_key unique (statement_id, parameter_key);
+
+    create index idx_statement_outcome_namespace_municipality_id 
+       on statement_outcome (namespace, municipality_id);
+
+    alter table if exists statement_outcome 
+       add constraint uq_statement_outcome_namespace_municipality_id_name unique (namespace, municipality_id, name);
+
     create index idx_namespace_municipality_id 
        on status (namespace, municipality_id);
 
@@ -1046,6 +1399,11 @@
        foreign key (errand_id) 
        references errand (id);
 
+    alter table if exists attachment 
+       add constraint fk_attachment_attachment_purpose_id 
+       foreign key (attachment_purpose_id) 
+       references attachment_purpose (id);
+
     alter table if exists communication_attachment 
        add constraint fk_communication_attachment_attachment_data 
        foreign key (attachment_data_id) 
@@ -1096,6 +1454,42 @@
        foreign key (conversation_id) 
        references conversation (id);
 
+    alter table if exists decision 
+       add constraint fk_decision_errand_id 
+       foreign key (errand_id) 
+       references errand (id) 
+       on delete cascade;
+
+    alter table if exists decision 
+       add constraint fk_decision_investigation_id 
+       foreign key (investigation_id) 
+       references investigation (id) 
+       on delete set null;
+
+    alter table if exists decision_attachment 
+       add constraint fk_decision_attachment_attachment_id 
+       foreign key (attachment_id) 
+       references attachment (id) 
+       on delete cascade;
+
+    alter table if exists decision_attachment 
+       add constraint fk_decision_attachment_decision_id 
+       foreign key (decision_id) 
+       references decision (id) 
+       on delete cascade;
+
+    alter table if exists decision_json_parameter 
+       add constraint fk_decision_json_parameter_decision_id 
+       foreign key (decision_id) 
+       references decision (id) 
+       on delete cascade;
+
+    alter table if exists decision_term 
+       add constraint fk_decision_term_decision_id 
+       foreign key (decision_id) 
+       references decision (id) 
+       on delete cascade;
+
     alter table if exists errand 
        add constraint fk_errand_contact_reason_id 
        foreign key (contact_reason_id) 
@@ -1142,6 +1536,42 @@
        foreign key (errand_id) 
        references errand (id);
 
+    alter table if exists investigation 
+       add constraint fk_investigation_errand_id 
+       foreign key (errand_id) 
+       references errand (id) 
+       on delete cascade;
+
+    alter table if exists investigation_attachment 
+       add constraint fk_investigation_attachment_attachment_id 
+       foreign key (attachment_id) 
+       references attachment (id) 
+       on delete cascade;
+
+    alter table if exists investigation_attachment 
+       add constraint fk_investigation_attachment_investigation_id 
+       foreign key (investigation_id) 
+       references investigation (id) 
+       on delete cascade;
+
+    alter table if exists investigation_json_parameter 
+       add constraint fk_investigation_json_parameter_investigation_id 
+       foreign key (investigation_id) 
+       references investigation (id) 
+       on delete cascade;
+
+    alter table if exists investigation_section 
+       add constraint fk_investigation_section_investigation_id 
+       foreign key (investigation_id) 
+       references investigation (id) 
+       on delete cascade;
+
+    alter table if exists investigation_section_json_parameter 
+       add constraint fk_investigation_section_json_parameter_section_id 
+       foreign key (investigation_section_id) 
+       references investigation_section (id) 
+       on delete cascade;
+
     alter table if exists json_parameter 
        add constraint fk_json_parameter_errand_id 
        foreign key (errand_id) 
@@ -1150,7 +1580,38 @@
     alter table if exists measure 
        add constraint fk_measure_errand_id 
        foreign key (errand_id) 
-       references errand (id);
+       references errand (id) 
+       on delete cascade;
+
+    alter table if exists measure 
+       add constraint fk_measure_decision_id 
+       foreign key (decision_id) 
+       references decision (id) 
+       on delete set null;
+
+    alter table if exists measure 
+       add constraint fk_measure_statement_id 
+       foreign key (statement_id) 
+       references statement (id) 
+       on delete set null;
+
+    alter table if exists measure_attachment 
+       add constraint fk_measure_attachment_attachment_id 
+       foreign key (attachment_id) 
+       references attachment (id) 
+       on delete cascade;
+
+    alter table if exists measure_attachment 
+       add constraint fk_measure_attachment_measure_id 
+       foreign key (measure_id) 
+       references measure (id) 
+       on delete cascade;
+
+    alter table if exists measure_json_parameter 
+       add constraint fk_measure_json_parameter_measure_id 
+       foreign key (measure_id) 
+       references measure (id) 
+       on delete cascade;
 
     alter table if exists metadata_label 
        add constraint fk_metadata_label_id 
@@ -1211,6 +1672,30 @@
        add constraint fk_stakeholder_parameter_values_stakeholder_parameter_id 
        foreign key (stakeholder_parameter_id) 
        references stakeholder_parameter (id);
+
+    alter table if exists statement 
+       add constraint fk_statement_errand_id 
+       foreign key (errand_id) 
+       references errand (id) 
+       on delete cascade;
+
+    alter table if exists statement_attachment 
+       add constraint fk_statement_attachment_attachment_id 
+       foreign key (attachment_id) 
+       references attachment (id) 
+       on delete cascade;
+
+    alter table if exists statement_attachment 
+       add constraint fk_statement_attachment_statement_id 
+       foreign key (statement_id) 
+       references statement (id) 
+       on delete cascade;
+
+    alter table if exists statement_json_parameter 
+       add constraint fk_statement_json_parameter_statement_id 
+       foreign key (statement_id) 
+       references statement (id) 
+       on delete cascade;
 
     alter table if exists subscriber_channel 
        add constraint fk_subscriber_channel_subscriber_id 
