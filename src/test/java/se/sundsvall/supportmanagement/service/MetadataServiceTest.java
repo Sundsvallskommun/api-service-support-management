@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -1338,13 +1339,49 @@ class MetadataServiceTest {
 			.thenReturn(dbResults);
 
 		// Call
-		final var result = metadataService.patternToLabels(namespace, municipalityId, patterns);
+		final var result = metadataService.patternToLabels(namespace, municipalityId, Map.of("group", patterns));
 
 		// Verifications
-		assertThat(result).hasSize(3).containsExactlyInAnyOrder(entity1, entity2, entity3);
+		assertThat(result.get("group")).hasSize(3).containsExactlyInAnyOrder(entity1, entity2, entity3);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void patternToLabelsReadsTheLabelsOnceForEveryGroup() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		final var entity1 = MetadataLabelEntity.create().withResourcePath("path/to/resource/file1");
+		final var entity2 = MetadataLabelEntity.create().withResourcePath("path/other/resource/fileX");
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId))
+			.thenReturn(List.of(entity1, entity2));
+
+		// Call
+		final var result = metadataService.patternToLabels(namespace, municipalityId, Map.of(
+			"first", List.of("path/to/**"),
+			"second", List.of("path/other/**"),
+			"third", List.of()));
+
+		// Verifications - one read answers every group, so the groups cannot disagree with each other
+		assertThat(result.get("first")).containsExactly(entity1);
+		assertThat(result.get("second")).containsExactly(entity2);
+		assertThat(result.get("third")).isEmpty();
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	void patternToLabelsWithoutPatternsNeverReads() {
+		// Call
+		final var result = metadataService.patternToLabels("namespace", "municipalityId", Map.of("first", List.<String>of(), "second", List.<String>of()));
+
+		// Verifications
+		assertThat(result).containsOnlyKeys("first", "second").allSatisfy((_, labels) -> assertThat(labels).isEmpty());
+		verifyNoInteractions(metadataLabelRepositoryMock);
 	}
 
 	// =================================================================

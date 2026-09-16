@@ -10,6 +10,14 @@
 				"updated"
 			],
 			"version": 1
+		},
+		{
+			"key": "readonly-key",
+			"displayName": "Readonly",
+			"values": [
+				"kept"
+			],
+			"version": 0
 		}
 	],
 	"jsonParameters": [

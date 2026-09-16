@@ -79,6 +79,13 @@
 						]
 					},
 					{
+						"field": "PARAMETERS",
+						"keys": [
+							"readonly-key"
+						],
+						"level": "R"
+					},
+					{
 						"field": "JSON_PARAMETERS",
 						"keys": [
 							"granted-json"

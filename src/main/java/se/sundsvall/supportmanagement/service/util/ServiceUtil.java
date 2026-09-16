@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.service.util;
 
-import generated.se.sundsvall.accessmapper.Access;
-import generated.se.sundsvall.accessmapper.Access.AccessLevelEnum;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -15,7 +13,6 @@ import org.apache.commons.lang3.Strings;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -41,16 +38,6 @@ public class ServiceUtil {
 	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
 
 	private ServiceUtil() {}
-
-	public static String createCacheKey(List<Access.AccessLevelEnum> filter) {
-		if (CollectionUtils.isEmpty(filter)) {
-			return "EMPTY";
-		}
-
-		return String.join("|", filter.stream()
-			.map(AccessLevelEnum::getValue)
-			.toList());
-	}
 
 	public static boolean isValidUuid(String uuid) {
 		try {

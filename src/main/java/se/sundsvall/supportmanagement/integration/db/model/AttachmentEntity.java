@@ -67,6 +67,13 @@ public class AttachmentEntity {
 	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_attachment_data_attachment"))
 	private AttachmentDataEntity attachmentData;
 
+	// The same column as the association above, mapped once more for reading only, so that the data row an attachment
+	// points at can be named without the row being loaded. What that row holds is the file, and a removal that reaches
+	// it through the association pays for every byte of it. Written through the association alone, which is what
+	// insertable and updatable being false says.
+	@Column(name = "attachment_data_id", nullable = false, insertable = false, updatable = false)
+	private Integer attachmentDataId;
+
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -182,6 +189,16 @@ public class AttachmentEntity {
 	public AttachmentEntity withAttachmentData(final AttachmentDataEntity attachmentData) {
 		this.attachmentData = attachmentData;
 		return this;
+	}
+
+	/**
+	 * The id of the data row this attachment points at, without the row being loaded. Read only: the association is
+	 * what sets it, which is why there is no setter to go with this.
+	 *
+	 * @return the id of the data row, or null for an attachment that has not been written yet.
+	 */
+	public Integer getAttachmentDataId() {
+		return attachmentDataId;
 	}
 
 	public ErrandEntity getErrandEntity() {

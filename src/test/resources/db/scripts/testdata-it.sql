@@ -463,7 +463,9 @@ VALUES (5, 'LIMITED', 'RESOURCE', 'COMMUNICATION', null),
        (5, 'FIRST_LINE', 'FIELD', 'ERRAND_NUMBER', null),
        (5, 'FIRST_LINE', 'FIELD', 'TITLE', null),
        (5, 'FIRST_LINE', 'FIELD', 'PARAMETERS:granted-key', null),
-       (5, 'FIRST_LINE', 'FIELD', 'JSON_PARAMETERS:granted-json', null);
+       (5, 'FIRST_LINE', 'FIELD', 'JSON_PARAMETERS:granted-json', null),
+       -- A key the role is served but may not change, which is what a level on a field grant is for.
+       (5, 'FIRST_LINE', 'FIELD', 'PARAMETERS:readonly-key', 'R');
        
 -- -----------------------------------
 -- Time measurement
@@ -482,7 +484,8 @@ VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', '45d266a7-1ff2-4bf4-b6f3-0473b2b
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'cb638956-0823-402b-ab2a-ae947c0ba006', 'keyA', 'Displayname A', null),
        ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'db93ed18-8f7b-4809-8bc0-1d8971be7291', 'keyB', 'Displayname B', null),
        ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'e1b9a0d3-6a7c-4f4a-9d0e-1a2b3c4d5e6f', 'granted-key', 'Granted', null),
-       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'f2c8b1e4-7b8d-4a5b-8e1f-2b3c4d5e6f70', 'hidden-key', 'Hidden', null);
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'f2c8b1e4-7b8d-4a5b-8e1f-2b3c4d5e6f70', 'hidden-key', 'Hidden', null),
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'a3d9c2f5-8c9e-4b6c-9f20-3c4d5e6f7081', 'readonly-key', 'Readonly', null);
 
 -- -----------------------------------
 -- Json parameters
@@ -492,7 +495,8 @@ VALUES ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'a9c1d2e3-0000-0000-0000-0000000
        ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'b8d2e3f4-0000-0000-0000-00000000000b', 'hidden-json', 'test-schema-1.0', '{"secret": "must survive"}');
 
 INSERT INTO parameter_values(parameter_id, value, value_order)
-VALUES ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),
+VALUES ('a3d9c2f5-8c9e-4b6c-9f20-3c4d5e6f7081', 'kept', 0),
+       ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value1', 0),
        ('45d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', 'value2', 1),
        ('cb638956-0823-402b-ab2a-ae947c0ba006', 'valueA1', 0),
        ('cb638956-0823-402b-ab2a-ae947c0ba006', 'valueA2', 1),
@@ -564,8 +568,12 @@ VALUES ('a1b2c3d4-1111-2222-3333-444455556666', '2281', 'NAMESPACE-1', 'REGISTRA
 INSERT INTO phase_allowed_status(phase_id, status, status_order)
 VALUES ('a1b2c3d4-1111-2222-3333-444455556666', 'NEW', 0),
        ('a1b2c3d4-1111-2222-3333-444455556666', 'IN_PROGRESS', 1),
+       -- The status the errands of this namespace actually carry, so that moving one between the two first phases is
+       -- allowed. Decision below deliberately does not allow it, which is what makes a move into it refusable.
+       ('a1b2c3d4-1111-2222-3333-444455556666', 'STATUS-3', 2),
        ('b2c3d4e5-1111-2222-3333-444455556666', 'IN_PROGRESS', 0),
        ('b2c3d4e5-1111-2222-3333-444455556666', 'WAITING', 1),
+       ('b2c3d4e5-1111-2222-3333-444455556666', 'STATUS-3', 2),
        ('c3d4e5f6-1111-2222-3333-444455556666', 'CLOSED', 0);
 
 INSERT INTO phase_transition(id, phase_id, target_phase_id, description, deprecated)

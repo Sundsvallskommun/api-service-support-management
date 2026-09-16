@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/smo02key"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test01_updateJsonParameterLeavesOtherKeysIntact/responses/api-accessmapper-smo02key.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-smo02key"
+}

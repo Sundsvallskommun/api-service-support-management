@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -21,6 +22,10 @@ import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
+import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -28,6 +33,9 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+import se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper;
+import se.sundsvall.supportmanagement.service.model.AccessSnapshot;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
@@ -48,6 +56,7 @@ public class AccessControlService {
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
 	private static final String ENTITY_NOT_ACCESSIBLE = "Errand not accessible by user '%s'";
 	private static final String KEY_NOT_ACCESSIBLE = "Key '%s' not accessible by user '%s'";
+	private static final String KEY_NOT_WRITABLE = "Key '%s' not writable by user '%s'";
 	private static final String RESOURCE_NOT_ACCESSIBLE = "Resource '%s' not accessible by user '%s'";
 
 	/**
@@ -83,7 +92,9 @@ public class AccessControlService {
 	 * Fields given to the reporter of an errand union on top of whatever restriction applies, so someone who both reported
 	 * an errand and handles it keeps the fuller view. They never restrict a user nothing else restricts, since reporting an
 	 * errand may not
-	 * reduce what its reporter sees.
+	 * reduce what its reporter sees. A reporter no label of theirs reaches the errand through is held to the reporter
+	 * fields alone, since limited read was never granted to them and so has nothing to add: the two grants are independent,
+	 * and either may be the narrower one.
 	 * <p>
 	 * A null result means no restriction applies at all and the errand is mapped in full, which is what an unrestricted
 	 * role yields. An empty result, in contrast, is a restriction resolving to no fields whatsoever. A limited read never
@@ -96,75 +107,245 @@ public class AccessControlService {
 	 * @return                resolver of fields, and the keys to limit them to, per errand
 	 */
 	public Function<ErrandEntity, Map<ErrandField, Set<String>>> roleBasedFieldResolver(String namespace, String municipalityId, Identifier user) {
+		return fieldAccessResolver(namespace, municipalityId, user).andThen(FieldAccessResolution::readable);
+	}
+
+	/**
+	 * Resolves what the user may read of an errand and what of it they may write, in one pass.
+	 * <p>
+	 * The two answer different questions and a caller needing both should ask once: a field grant may hold a field to
+	 * read while the errand itself is writable, so the keys a caller may see are not always the keys they may change.
+	 * What may be written is by construction a subset of what may be read - a level on a grant only ever restricts it
+	 * further, and a grant carrying no level simply follows the errand, which is what every grant did before levels
+	 * existed.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  user           user
+	 * @return                resolver of what the user may read and write, per errand
+	 */
+	public Function<ErrandEntity, FieldAccessResolution> fieldAccessResolver(String namespace, String municipalityId, Identifier user) {
 		final var config = namespaceConfigService.get(namespace, municipalityId);
 
 		// Nothing restricts anyone while the namespace has not opted in, so the access mapper is never asked for it.
 		if (!config.isAccessControl()) {
-			return _ -> null;
+			return _ -> FieldAccessResolution.unrestricted();
 		}
 
 		final var adAccount = adAccountOf(user);
+		final var access = accessMapperService.getAccessSnapshot(municipalityId, namespace, user);
 
 		// R/RW has precedence over LR, so an errand fully covered by them is not limited for this user.
-		final var fullReadLabelIds = accessMapperService.getAccessibleLabels(municipalityId, namespace, user, List.of(R, RW)).stream()
-			.map(MetadataLabelEntity::getId)
-			.collect(Collectors.toSet());
+		final var fullReadLabelIds = labelIds(access, levelsAtOrAbove(R));
 
-		// Roles only select fields, so they are resolved solely for a namespace mapping errands per role.
-		final var namespaceRoles = config.isRoleBasedMapping()
-			? accessMapperService.getAccessibleRoles(municipalityId, namespace, user)
-			: Set.<String>of();
+		// The labels reaching an errand at any level, which is what tells a limited read apart from no label access at
+		// all. Only the reporter of an errand can be either, and only an ad account can be a reporter, so nobody else
+		// pays for resolving it.
+		final var readableLabelIds = nonNull(adAccount) ? labelIds(access, levelsAtOrAbove(LR)) : Set.<String>of();
+
+		// Roles only select fields, so they are consulted solely for a namespace mapping errands per role.
+		final var namespaceRoles = config.isRoleBasedMapping() ? access.roles() : Set.<String>of();
 
 		return errandEntity -> {
-			final var applicable = new ArrayList<FieldAccess>();
-			final var limited = isLimited(fullReadLabelIds, errandEntity);
-			var restricted = limited;
-
-			if (limited) {
-				applicable.addAll(ofNullable(config.getLimitedReadAccess()).map(LimitedReadAccess::getFields).orElse(emptyList()));
-			} else {
-				final var matchedRestrictions = ofNullable(config.getRoleFieldRestrictions()).orElse(emptyList()).stream()
-					.filter(restriction -> nonNull(restriction.getRole()) && namespaceRoles.contains(restriction.getRole().toUpperCase()))
-					.toList();
-
-				restricted = !matchedRestrictions.isEmpty();
-				matchedRestrictions.forEach(restriction -> applicable.addAll(ofNullable(restriction.getFields()).orElse(emptyList())));
-			}
+			final var reporter = isReporter(adAccount, errandEntity);
+			final var coverage = coverageOf(fullReadLabelIds, readableLabelIds, errandEntity, reporter);
+			final var applicable = restrictedFields(config, coverage, namespaceRoles);
 
 			// Reporter fields widen a restriction, they never introduce one.
-			if (!restricted) {
-				return null;
+			if (isNull(applicable)) {
+				return FieldAccessResolution.unrestricted();
 			}
 
-			// An errand that is limited for the user is never returned in full. Nothing resolving here means the namespace
-			// has not said what limited read exposes, and the safe reading of limited is the minimum rather than everything.
-			// Resolved before the reporter fields are merged in, so that the minimum is a floor the reporter widens rather
-			// than something their own field set replaces - otherwise a namespace granting the reporter a single field
-			// would show them less of their own errand than any other limited read user sees.
-			if (limited && applicable.isEmpty()) {
-				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
-			}
-
-			if (isReporter(adAccount, errandEntity)) {
+			if (reporter) {
 				applicable.addAll(ofNullable(config.getReporterAccess()).map(ReporterAccess::getFields).orElse(emptyList()));
 			}
 
-			return applicable.stream().collect(Collectors.toMap(
-				FieldAccess::getField,
-				fieldAccess -> new LinkedHashSet<>(ofNullable(fieldAccess.getKeys()).orElse(emptyList())),
-				AccessControlService::mergeKeys,
-				LinkedHashMap::new));
+			// Here the reporter fields stand on their own rather than on top of a limited read, so the minimum is applied
+			// after them instead of before: a namespace saying what its reporters see may keep that narrower than limited
+			// read, while one saying nothing at all falls back to the minimum rather than to an errand carrying no fields.
+			if (Coverage.REPORTER_ONLY == coverage && applicable.isEmpty()) {
+				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
+			}
+
+			return new FieldAccessResolution(toFields(applicable), toFields(writableOf(applicable)));
 		};
 	}
 
 	/**
-	 * Signals if the labels of the user fail to cover the errand fully, meaning the access mapper granted them limited read
-	 * for it.
+	 * What the user may read of one errand and what of it they may write, resolved together.
+	 * <p>
+	 * A null map means nothing restricts the user and the errand is reached in full, which is what an unrestricted role
+	 * yields. An empty map, in contrast, is a restriction resolving to no fields whatsoever.
+	 *
+	 * @param readable the fields, and the keys of them, the user may see
+	 * @param writable the fields, and the keys of them, the user may change
 	 */
-	private static boolean isLimited(Set<String> fullReadLabelIds, ErrandEntity errandEntity) {
-		return !fullReadLabelIds.containsAll(ofNullable(errandEntity.getAccessLabels()).orElse(emptyList()).stream()
+	public record FieldAccessResolution(Map<ErrandField, Set<String>> readable, Map<ErrandField, Set<String>> writable) {
+
+		private static FieldAccessResolution unrestricted() {
+			return new FieldAccessResolution(null, null);
+		}
+
+		/**
+		 * The keys of sent in field the user may see.
+		 */
+		public Predicate<String> readableKey(ErrandField field) {
+			return toKeyPredicate(readable, field);
+		}
+
+		/**
+		 * The keys of sent in field the user may change. Never wider than {@link #readableKey}.
+		 */
+		public Predicate<String> writableKey(ErrandField field) {
+			return toKeyPredicate(writable, field);
+		}
+
+		/**
+		 * Reads one field out of a resolved map. A null map is a user nothing restricts, so every key of every field is
+		 * theirs; a field the map does not carry is one they do not reach at all; and a field carrying no keys is the
+		 * whole collection.
+		 */
+		private static Predicate<String> toKeyPredicate(Map<ErrandField, Set<String>> fields, ErrandField field) {
+			if (isNull(fields)) {
+				return _ -> true;
+			}
+
+			final var keys = fields.get(field);
+			if (isNull(keys)) {
+				return _ -> false;
+			}
+
+			return keys.isEmpty() ? _ -> true : keys::contains;
+		}
+	}
+
+	/**
+	 * The grants of sent in ones that carry the right to write, which is every grant a namespace has not deliberately
+	 * held to read.
+	 */
+	private static List<FieldAccess> writableOf(List<FieldAccess> applicable) {
+		return applicable.stream()
+			.filter(fieldAccess -> AccessLevel.R != fieldAccess.getLevel())
+			.toList();
+	}
+
+	/**
+	 * The three ways a user may hold an errand, since each of them answers with a field set of its own.
+	 */
+	private enum Coverage {
+		/** The labels of the user cover the errand at read or read/write. */
+		FULL,
+		/** Their labels reach the errand, but only at limited read. */
+		LIMITED,
+		/** No label of theirs reaches the errand, which leaves its reporter holding it as its reporter alone. */
+		REPORTER_ONLY
+	}
+
+	/**
+	 * Settles how the user holds sent in errand.
+	 * <p>
+	 * Anyone but the reporter holding an errand their labels do not cover fully was granted limited read for it, since
+	 * nothing else would have returned it to them at all. The reporter reaches their own errand either way, so only there
+	 * do the labels have to be asked whether limited read is what actually applies.
+	 */
+	private static Coverage coverageOf(Set<String> fullReadLabelIds, Set<String> readableLabelIds, ErrandEntity errandEntity, boolean reporter) {
+		if (covers(fullReadLabelIds, errandEntity)) {
+			return Coverage.FULL;
+		}
+
+		return !reporter || covers(readableLabelIds, errandEntity) ? Coverage.LIMITED : Coverage.REPORTER_ONLY;
+	}
+
+	/**
+	 * The fields sent in coverage restricts the errand to, before any reporter fields widen them. Null means nothing
+	 * restricts the user, and an empty list that the restriction is carried by the reporter fields alone.
+	 *
+	 * @param  config         namespace configuration
+	 * @param  coverage       how the user holds the errand
+	 * @param  namespaceRoles roles the user holds, empty unless the namespace maps errands per role
+	 * @return                fields to restrict to, or null when the errand is not restricted at all
+	 */
+	private static List<FieldAccess> restrictedFields(NamespaceConfig config, Coverage coverage, Set<String> namespaceRoles) {
+		return switch (coverage) {
+			// Limited read was never granted here, so it has nothing to add and the reporter fields stand alone.
+			case REPORTER_ONLY -> new ArrayList<>();
+			case LIMITED -> limitedReadFields(config);
+			case FULL -> roleRestrictedFields(config, namespaceRoles);
+		};
+	}
+
+	/**
+	 * What an errand is trimmed to for a user holding limited read for it.
+	 * <p>
+	 * An errand that is limited for the user is never returned in full. Nothing configured means the namespace has not
+	 * said what limited read exposes, and the safe reading of limited is the minimum rather than everything. Resolved
+	 * before the reporter fields are merged in, so that the minimum is a floor the reporter widens rather than something
+	 * their own field set replaces - otherwise a namespace granting the reporter a single field would show them less of
+	 * their own errand than any other limited read user sees.
+	 */
+	private static List<FieldAccess> limitedReadFields(NamespaceConfig config) {
+		final var applicable = new ArrayList<>(ofNullable(config.getLimitedReadAccess()).map(LimitedReadAccess::getFields).orElse(emptyList()));
+
+		if (applicable.isEmpty()) {
+			applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
+		}
+
+		return applicable;
+	}
+
+	/**
+	 * What the roles the user holds trim an errand they have full access to, or null when no role of theirs is
+	 * restricted at all.
+	 */
+	private static List<FieldAccess> roleRestrictedFields(NamespaceConfig config, Set<String> namespaceRoles) {
+		final var matchedRestrictions = ofNullable(config.getRoleFieldRestrictions()).orElse(emptyList()).stream()
+			.filter(restriction -> nonNull(restriction.getRole()) && namespaceRoles.contains(restriction.getRole().toUpperCase(Locale.ROOT)))
+			.toList();
+
+		if (matchedRestrictions.isEmpty()) {
+			return null;
+		}
+
+		final var applicable = new ArrayList<FieldAccess>();
+		matchedRestrictions.forEach(restriction -> applicable.addAll(ofNullable(restriction.getFields()).orElse(emptyList())));
+
+		return applicable;
+	}
+
+	/**
+	 * Collects resolved field grants into the keys readable per field, merging the keys granted for a field more than
+	 * once.
+	 */
+	private static Map<ErrandField, Set<String>> toFields(List<FieldAccess> applicable) {
+		return applicable.stream().collect(Collectors.toMap(
+			FieldAccess::getField,
+			fieldAccess -> new LinkedHashSet<>(ofNullable(fieldAccess.getKeys()).orElse(emptyList())),
+			AccessControlService::mergeKeys,
+			LinkedHashMap::new));
+	}
+
+	/**
+	 * Signals if sent in labels cover every label of the errand.
+	 * <p>
+	 * Nearly the question {@link se.sundsvall.supportmanagement.service.util.SpecificationBuilder#hasAllowedMetadataLabels}
+	 * asks of the labels at a given level, with one long standing difference: an errand carrying no labels at all is
+	 * covered by any set here, while the specification reaches no errand at all for a user holding no labels. A user the
+	 * access mapper grants nothing is therefore fully covered for an unlabelled errand rather than held to the reporter
+	 * fields.
+	 */
+	private static boolean covers(Set<String> labelIds, ErrandEntity errandEntity) {
+		return labelIds.containsAll(ofNullable(errandEntity.getAccessLabels()).orElse(emptyList()).stream()
 			.map(AccessLabelEmbeddable::getMetadataLabelId)
 			.collect(Collectors.toSet()));
+	}
+
+	/**
+	 * Ids of the labels sent in access reaches at any of sent in levels.
+	 */
+	private static Set<String> labelIds(AccessSnapshot access, List<Access.AccessLevelEnum> levels) {
+		return access.labels(levels).stream()
+			.map(MetadataLabelEntity::getId)
+			.collect(Collectors.toSet());
 	}
 
 	private static boolean isReporter(String adAccount, ErrandEntity errandEntity) {
@@ -186,7 +367,24 @@ public class AccessControlService {
 	 * @return                predicate accepting the keys the user may read
 	 */
 	public Predicate<String> readableKeyPredicate(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity, ErrandField field) {
-		return toKeyPredicate(roleBasedFieldResolver(namespace, municipalityId, user).apply(errandEntity), field);
+		return fieldAccessResolver(namespace, municipalityId, user).apply(errandEntity).readableKey(field);
+	}
+
+	/**
+	 * Tells which keys of a keyed field the user may change on sent in errand.
+	 * <p>
+	 * Narrower than {@link #readableKeyPredicate} exactly where the namespace holds a field or a key to read, and the
+	 * same answer everywhere else.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  user           user
+	 * @param  errandEntity   errand the field belongs to
+	 * @param  field          field to write
+	 * @return                predicate accepting the keys the user may change
+	 */
+	public Predicate<String> writableKeyPredicate(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity, ErrandField field) {
+		return fieldAccessResolver(namespace, municipalityId, user).apply(errandEntity).writableKey(field);
 	}
 
 	/**
@@ -202,26 +400,13 @@ public class AccessControlService {
 	 * @return                resolver of the predicate accepting the keys the user may read, per field
 	 */
 	public Function<ErrandField, Predicate<String>> readableKeyResolver(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity) {
-		final var fields = roleBasedFieldResolver(namespace, municipalityId, user).apply(errandEntity);
-		return field -> toKeyPredicate(fields, field);
-	}
-
-	private static Predicate<String> toKeyPredicate(Map<ErrandField, Set<String>> fields, ErrandField field) {
-		if (isNull(fields)) {
-			return _ -> true;
-		}
-
-		final var keys = fields.get(field);
-		if (isNull(keys)) {
-			return _ -> false;
-		}
-
-		return keys.isEmpty() ? _ -> true : keys::contains;
+		return fieldAccessResolver(namespace, municipalityId, user).apply(errandEntity)::readableKey;
 	}
 
 	/**
 	 * Throws 401 unless the user may reach sent in key of sent in field. A key the user cannot read is also a key they
-	 * cannot write, so that no one can overwrite or remove data they are not allowed to see.
+	 * cannot write, so that no one can overwrite or remove data they are not allowed to see. The converse does not hold:
+	 * a key they may read is not necessarily one they may change, which {@link #verifyWritableKeys} answers.
 	 */
 	public void verifyAccessibleKey(String namespace, String municipalityId, ErrandEntity errandEntity, ErrandField field, String key) {
 		verifyAccessibleKeys(namespace, municipalityId, errandEntity, field, List.of(key));
@@ -259,6 +444,134 @@ public class AccessControlService {
 	}
 
 	/**
+	 * Throws 401 unless the user may change every one of sent in keys, according to an already resolved predicate.
+	 * <p>
+	 * Sent in keys are the ones a request would actually change, not every key it carries: a namespace holding a key to
+	 * read leaves it readable, so a caller patching back what they were served may name it as long as they leave it as
+	 * it stands.
+	 */
+	public void verifyWritableKeys(Predicate<String> writableKey, Collection<String> keys) {
+		if (isNull(keys)) {
+			return;
+		}
+
+		keys.stream()
+			.filter(key -> !writableKey.test(key))
+			.findFirst()
+			.ifPresent(key -> {
+				throw Problem.valueOf(UNAUTHORIZED, KEY_NOT_WRITABLE.formatted(key, Optional.ofNullable(Identifier.get())
+					.map(Identifier::getValue)
+					.orElse(null)));
+			});
+	}
+
+	/**
+	 * Throws 401 unless the user may change sent in key of sent in field, resolving the grants for it.
+	 */
+	public void verifyWritableKey(String namespace, String municipalityId, ErrandEntity errandEntity, ErrandField field, String key) {
+		verifyWritableKeys(writableKeyPredicate(namespace, municipalityId, Identifier.get(), errandEntity, field), List.of(key));
+	}
+
+	/**
+	 * Verifies every keyed field of sent in patch against what the caller may reach on the errand, and answers with what
+	 * the merge and the response need.
+	 * <p>
+	 * Two questions are asked of each field. A key the caller cannot see at all is refused outright, whichever endpoint
+	 * they write it through. A key they may see but not change is refused only when the patch would actually change it,
+	 * since a caller patching back what they were served carries it unchanged.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  errandEntity   errand as it stands, before the patch is applied
+	 * @param  patch          patch to apply
+	 * @return                the keys the caller may change, and the resolver mapping the response
+	 */
+	public ErrandKeyAccess verifyKeyAccess(String namespace, String municipalityId, ErrandEntity errandEntity, Errand patch) {
+		final var resolver = fieldAccessResolver(namespace, municipalityId, Identifier.get());
+		final var access = resolver.apply(errandEntity);
+
+		verifyKeys(access, ErrandField.PARAMETERS, keysOf(patch.getParameters(), Parameter::getKey),
+			ErrandParameterMapper.changedKeys(errandEntity, patch.getParameters()));
+		verifyKeys(access, ErrandField.JSON_PARAMETERS, keysOf(patch.getJsonParameters(), JsonParameter::getKey),
+			ErrandMapper.changedJsonParameterKeys(errandEntity, patch.getJsonParameters()));
+		verifyKeys(access, ErrandField.EXTERNAL_TAGS, keysOf(patch.getExternalTags(), ExternalTag::getKey),
+			ErrandMapper.changedExternalTagKeys(errandEntity, patch.getExternalTags()));
+
+		return new ErrandKeyAccess(access::writableKey, resolver.andThen(FieldAccessResolution::readable));
+	}
+
+	/**
+	 * The same two questions for the parameters of one errand, asked by the endpoint replacing them wholesale.
+	 */
+	public KeyAccess verifyParameterAccess(String namespace, String municipalityId, ErrandEntity errandEntity, List<Parameter> parameters) {
+		final var access = fieldAccessResolver(namespace, municipalityId, Identifier.get()).apply(errandEntity);
+
+		verifyKeys(access, ErrandField.PARAMETERS, keysOf(parameters, Parameter::getKey),
+			ErrandParameterMapper.changedKeys(errandEntity, parameters));
+
+		return toKeyAccess(access, ErrandField.PARAMETERS);
+	}
+
+	/**
+	 * The same two questions for a single parameter, which the endpoint writing one asks of its values alone.
+	 */
+	public KeyAccess verifyParameterAccess(String namespace, String municipalityId, ErrandEntity errandEntity, String key, List<String> values) {
+		final var access = fieldAccessResolver(namespace, municipalityId, Identifier.get()).apply(errandEntity);
+
+		verifyKeys(access, ErrandField.PARAMETERS, List.of(key), ErrandParameterMapper.changedValueKeys(errandEntity, key, values));
+
+		return toKeyAccess(access, ErrandField.PARAMETERS);
+	}
+
+	/**
+	 * The same two questions for a single json parameter.
+	 */
+	public KeyAccess verifyJsonParameterAccess(String namespace, String municipalityId, ErrandEntity errandEntity, String key, JsonParameter jsonParameter) {
+		final var access = fieldAccessResolver(namespace, municipalityId, Identifier.get()).apply(errandEntity);
+
+		verifyKeys(access, ErrandField.JSON_PARAMETERS, List.of(key), ErrandMapper.changedJsonParameterKeys(errandEntity, List.of(JsonParameter.create()
+			.withKey(key)
+			.withSchemaId(jsonParameter.getSchemaId())
+			.withValue(jsonParameter.getValue()))));
+
+		return toKeyAccess(access, ErrandField.JSON_PARAMETERS);
+	}
+
+	private void verifyKeys(FieldAccessResolution access, ErrandField field, Collection<String> present, Collection<String> changed) {
+		verifyAccessibleKeys(access.readableKey(field), present);
+		verifyWritableKeys(access.writableKey(field), changed);
+	}
+
+	private static KeyAccess toKeyAccess(FieldAccessResolution access, ErrandField field) {
+		return new KeyAccess(access.readableKey(field), access.writableKey(field));
+	}
+
+	/**
+	 * Keys of a keyed collection of a patch, or null when the patch leaves the collection alone.
+	 */
+	private static <T> List<String> keysOf(List<T> values, Function<T, String> keyExtractor) {
+		return ofNullable(values)
+			.map(list -> list.stream().map(keyExtractor).toList())
+			.orElse(null);
+	}
+
+	/**
+	 * What a caller may do with the keys of one field of one errand.
+	 *
+	 * @param readableKey the keys they may see
+	 * @param writableKey the keys they may change, never wider than the ones they may see
+	 */
+	public record KeyAccess(Predicate<String> readableKey, Predicate<String> writableKey) {}
+
+	/**
+	 * What a caller may do with the keyed fields of one errand they are patching.
+	 *
+	 * @param writableKey the keys they may change, per field, for the merge to leave the rest as it stands
+	 * @param readable    the fields they may see, for the response to be mapped as a plain read would be
+	 */
+	public record ErrandKeyAccess(Function<ErrandField, Predicate<String>> writableKey, Function<ErrandEntity, Map<ErrandField, Set<String>>> readable) {}
+
+	/**
 	 * Merges the keys two roles grant for the same field. An empty set means the whole collection, so it wins over any set
 	 * of individual keys.
 	 */
@@ -294,16 +607,17 @@ public class AccessControlService {
 		}
 
 		final var clauses = new ArrayList<Specification<ErrandEntity>>();
+		final var access = accessMapperService.getAccessSnapshot(municipalityId, namespace, user);
 
 		// Labels say which errands the user reaches, the access mapper resources say which operations they may perform at
 		// all, and both must allow.
-		if (grantsResourceAccess(config, namespace, municipalityId, user, resource, required)) {
+		if (grantsResourceAccess(config, access, resource, required)) {
 			// One clause at the lowest label level that reaches this resource. A separate clause for limited read would be
 			// redundant, since the labels of a level are a subset of those of every level below it and the predicate is
 			// monotonic, so the stricter clause can never match a row the looser one does not.
 			final var lowestLevel = grantsLimitedReadAccess(config, resource, required) ? LR : fullAccessLevel(required);
 
-			clauses.add(hasAllowedMetadataLabels(accessMapperService.getAccessibleLabels(municipalityId, namespace, user, levelsAtOrAbove(lowestLevel))));
+			clauses.add(hasAllowedMetadataLabels(access.labels(levelsAtOrAbove(lowestLevel))));
 		}
 
 		// Errands reported by the user, which their labels may say nothing at all about.
@@ -335,11 +649,11 @@ public class AccessControlService {
 	 * limited read
 	 * grant equal to no grant at all.
 	 */
-	private boolean grantsResourceAccess(NamespaceConfig config, String namespace, String municipalityId, Identifier user, ProtectedResource resource, Access.AccessLevelEnum required) {
+	private static boolean grantsResourceAccess(NamespaceConfig config, AccessSnapshot access, ProtectedResource resource, Access.AccessLevelEnum required) {
 		if (!config.isResourceAccessControl()) {
 			return true;
 		}
-		return ofNullable(accessMapperService.getAccessibleResources(municipalityId, namespace, user).get(resource))
+		return ofNullable(access.resources().get(resource))
 			.filter(granted -> satisfies(granted, required))
 			.isPresent();
 	}
@@ -435,7 +749,7 @@ public class AccessControlService {
 			return;
 		}
 
-		final var granted = accessMapperService.getAccessibleResources(municipalityId, namespace, Identifier.get()).get(resource);
+		final var granted = accessMapperService.getAccessSnapshot(municipalityId, namespace, Identifier.get()).resources().get(resource);
 
 		if (isNull(granted) || !satisfies(granted, required)) {
 			throw Problem.valueOf(UNAUTHORIZED, RESOURCE_NOT_ACCESSIBLE.formatted(resource, Optional.ofNullable(Identifier.get())
