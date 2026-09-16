@@ -66,7 +66,7 @@ public class LabelMoveRequest {
 		if (!(obj instanceof final LabelMoveRequest other)) {
 			return false;
 		}
-		return dryRun == other.dryRun && Objects.equals(newParentId, other.newParentId);
+		return Objects.equals(dryRun, other.dryRun) && Objects.equals(newParentId, other.newParentId);
 	}
 
 	@Override
