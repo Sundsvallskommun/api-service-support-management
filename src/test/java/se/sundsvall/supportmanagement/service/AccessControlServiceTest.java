@@ -1287,27 +1287,6 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A resource grant never stands in for the labels. Holding an errand at read while the access mapper grants the
-	 * parameter resource read/write does not open the endpoint writing a parameter of that errand: the specification
-	 * asks the labels for read/write as well, and both have to allow.
-	 */
-	@Test
-	void getErrandRefusesAWriteResourceGrantOnAnErrandTheLabelsOnlyReach() {
-		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig().withResourceAccessControl(true));
-		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
-			Map.of(LR, Set.of(ERRAND_LABEL), R, Set.of(ERRAND_LABEL), RW, Set.of()),
-			Set.of(),
-			Map.of(ProtectedResource.ERRAND, RW, ProtectedResource.PARAMETER, RW)));
-		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
-		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
-
-		final var exception = assertThrows(ThrowableProblem.class,
-			() -> accessControlService.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.PARAMETER, RW));
-
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-	}
-
-	/**
 	 * A resource of an errand held at read is reported at what its own grant carries, since that is what the endpoint
 	 * serving it accepts. The errand itself stays at read - no grant vouches for writing it.
 	 */

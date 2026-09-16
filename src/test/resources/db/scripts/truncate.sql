@@ -48,6 +48,7 @@ TRUNCATE table action_config_condition;
 TRUNCATE table action_config_parameter_values;
 TRUNCATE table action_config_parameter;
 TRUNCATE table errand_action;
+TRUNCATE table action_config_operation_type;
 TRUNCATE table action_config;
 TRUNCATE table errand_phase;
 TRUNCATE table phase_transition;

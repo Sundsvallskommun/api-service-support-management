@@ -9,7 +9,7 @@ import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 	description = """
 		What the requesting user may do with one errand, so that a client can render only the controls their next request would be allowed to make.
 
-		'fields' describes what a patch of the errand itself accepts. The endpoints serving a resource of the errand on its own are additionally governed by 'resources', so a keyed field may be writable through one of the two and not the other. External tags have no resource of their own and are reached through the errand alone.""")
+		'level' is what a patch of the errand itself accepts. 'fields' reports each field at what serves it, which is the errand for all of them but the two keyed fields carrying a write endpoint of their own - so a field may be wider than the errand. 'resources' reports the endpoints serving a resource of the errand on its own. External tags have no resource of their own and are reached through the errand alone.""")
 public class ErrandAccess {
 
 	@Schema(description = "What the user may do with the errand itself. Reaching this endpoint at all means at least limited read", examples = "RW")
