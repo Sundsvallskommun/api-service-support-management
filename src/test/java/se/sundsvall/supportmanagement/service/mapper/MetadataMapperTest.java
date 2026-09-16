@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -723,7 +724,7 @@ class MetadataMapperTest {
 		final var modified = OffsetDateTime.now();
 		final var name = "measureTypeName";
 		final var displayName = "displayName";
-		final var measureGroups = List.of("MANAGERS", "LEADERS");
+		final var measureGroups = Set.of("MANAGERS", "LEADERS");
 
 		final var entity = MeasureTypeEntity.create()
 			.withCreated(created)
@@ -738,7 +739,7 @@ class MetadataMapperTest {
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
-		assertThat(bean.getMeasureGroups()).isEqualTo(measureGroups);
+		assertThat(bean.getMeasureGroups()).containsExactlyInAnyOrderElementsOf(measureGroups);
 	}
 
 	@Test
@@ -763,9 +764,9 @@ class MetadataMapperTest {
 			Arguments.of("namespace", null, MeasureType.create().withName("name").withMeasureGroups(List.of("group")), null),
 			Arguments.of(null, "municipalityId", MeasureType.create().withName("name").withMeasureGroups(List.of("group")), null),
 			Arguments.of("namespace", "municipalityId", MeasureType.create().withName("name").withMeasureGroups(List.of("group")),
-				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withMeasureGroups(List.of("group"))),
+				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withMeasureGroups(Set.of("group"))),
 			Arguments.of("namespace", "municipalityId", MeasureType.create().withName("name").withDisplayName("displayName").withMeasureGroups(List.of("group")),
-				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName").withMeasureGroups(List.of("group"))));
+				MeasureTypeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName").withMeasureGroups(Set.of("group"))));
 	}
 
 	@Test
@@ -773,7 +774,7 @@ class MetadataMapperTest {
 		final var entity = MeasureTypeEntity.create()
 			.withName("oldName")
 			.withDisplayName("oldDisplayName")
-			.withMeasureGroups(List.of("oldGroup"))
+			.withMeasureGroups(Set.of("oldGroup"))
 			.withSortOrder(1);
 
 		final var measureType = MeasureType.create()

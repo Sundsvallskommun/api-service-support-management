@@ -533,8 +533,9 @@
     ) engine=InnoDB;
 
     create table measure_type_groups (
-        measure_group varchar(255),
-        measure_type_id varchar(255) not null
+        measure_group varchar(255) not null,
+        measure_type_id varchar(255) not null,
+        primary key (measure_group, measure_type_id)
     ) engine=InnoDB;
 
     create table message_exchange_integration_config (

@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.metadata;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
@@ -26,7 +27,9 @@ public class MeasureType {
 	})
 	private String displayName;
 
-	@Schema(description = "Groups that this measure type belongs to", examples = "MANAGERS")
+	@ArraySchema(
+		schema = @Schema(type = "string", description = "Group the measure type belongs to", examples = "MANAGERS"),
+		arraySchema = @Schema(description = "Groups that this measure type belongs to. A group may be named once only"))
 	private List<String> measureGroups;
 
 	@Schema(description = "Sort order for the measure type", examples = "1", types = {

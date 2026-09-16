@@ -1,7 +1,8 @@
 -- A measure type carries a set of groups rather than the single one the column held.
 create table measure_type_groups (
     measure_type_id varchar(255) not null,
-    measure_group varchar(255),
+    measure_group varchar(255) not null,
+    primary key (measure_type_id, measure_group),
     constraint fk_measure_type_groups_measure_type_id foreign key (measure_type_id) references measure_type (id)
 ) engine=InnoDB;
 

@@ -1,8 +1,8 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +45,7 @@ class MeasureTypeEntityTest {
 		final var municipalityId = "municipalityId";
 		final var name = "name";
 		final var displayName = "displayName";
-		final var measureGroups = List.of("MANAGERS", "LEADERS");
+		final var measureGroups = Set.of("MANAGERS", "LEADERS");
 		final var namespace = "namespace";
 		final var sortOrder = 5;
 		final var deprecated = true;
