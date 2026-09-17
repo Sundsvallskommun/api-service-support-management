@@ -183,5 +183,18 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false
+	},
+	{
+		"namespace": "NAMESPACE-2507",
+		"municipalityId": "2506",
+		"displayName": "Namespace 2507",
+		"shortCode": "FL",
+		"notificationTTLInDays": 40,
+		"created": "2024-06-12T15:24:00.001+02:00",
+		"accessControl": true,
+		"notifyReporter": false,
+		"roleBasedMapping": false,
+		"resourceAccessControl": true,
+		"singleDecisionPerErrand": false
 	}
 ]

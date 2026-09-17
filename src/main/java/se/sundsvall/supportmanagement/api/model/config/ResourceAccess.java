@@ -9,7 +9,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 public class ResourceAccess {
 
 	@NotNull
-	@Schema(description = "Resource to grant access to", examples = "COMMUNICATION")
+	@Schema(type = "string", description = "Resource to grant access to. The values accepted are published by the access definition of the namespace configuration", examples = "COMMUNICATION")
 	private ProtectedResource resource;
 
 	@NotNull

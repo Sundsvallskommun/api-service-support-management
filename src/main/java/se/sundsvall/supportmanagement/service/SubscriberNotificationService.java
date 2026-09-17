@@ -17,8 +17,8 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 
 import static java.time.OffsetDateTime.now;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEntity;
 import static se.sundsvall.supportmanagement.service.mapper.SubscriberNotificationMapper.toEventEntities;
@@ -86,7 +86,7 @@ public class SubscriberNotificationService {
 	 */
 	private void verifyOwnedByRequestingUser(final String identifierType, final String identifierValue) {
 		if (!isRequestingUser(identifierType, identifierValue)) {
-			throw Problem.valueOf(UNAUTHORIZED, NOTIFICATION_NOT_OWNED.formatted(identifierValue, getAdUser()));
+			throw Problem.valueOf(FORBIDDEN, NOTIFICATION_NOT_OWNED.formatted(identifierValue, getAdUser()));
 		}
 	}
 

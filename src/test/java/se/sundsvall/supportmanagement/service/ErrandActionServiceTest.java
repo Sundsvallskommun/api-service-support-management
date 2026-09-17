@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.action.Action;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,10 +32,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType.CREATE;
-import static se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType.DELETE;
-import static se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType.READ;
-import static se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType.UPDATE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.OperationType.CREATE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.OperationType.DELETE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.OperationType.READ;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.OperationType.UPDATE;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandActionServiceTest {
@@ -67,6 +69,7 @@ class ErrandActionServiceTest {
 		when(actionMock.getDescription()).thenReturn("Test action description");
 		when(actionMock.getConditionDefinitions(any(), any())).thenReturn(conditionDefinitions);
 		when(actionMock.getParameterDefinitions(any(), any())).thenReturn(parameterDefinitions);
+		when(actionMock.getValidOperationTypes()).thenReturn(Set.of(OperationType.CREATE, OperationType.UPDATE));
 
 		final var service = new ErrandActionService(actionConfigRepositoryMock, List.of(actionMock));
 		final var result = service.getActionDefinitions(MUNICIPALITY_ID, NAMESPACE);
@@ -78,6 +81,9 @@ class ErrandActionServiceTest {
 		assertThat(result.getFirst().getDescription()).isEqualTo("Test action description");
 		assertThat(result.getFirst().getConditionDefinitions()).isEqualTo(conditionDefinitions);
 		assertThat(result.getFirst().getParameterDefinitions()).isEqualTo(parameterDefinitions);
+
+		// A config may name a subset of these and nothing outside them, so a client has to be able to read them.
+		assertThat(result.getFirst().getOperationTypes()).containsExactlyInAnyOrder(OperationType.CREATE, OperationType.UPDATE);
 	}
 
 	@Test
@@ -449,6 +455,131 @@ class ErrandActionServiceTest {
 		final var mock = org.mockito.Mockito.mock(Action.class);
 		when(mock.getName()).thenReturn(name);
 		return mock;
+	}
+
+	// operationTypes tests
+
+	@Test
+	void processErrandActionsSkipsConfigNarrowedToAnotherOperation() {
+		// A config limited to CREATE must not be picked up on an update, which is what keeps an action that belongs to
+		// the reporting of an errand from running again every time someone edits it.
+		final var config = createEntity().withId(CONFIG_ID).withOperationTypes(Set.of(CREATE));
+		final var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withActions(new ArrayList<>());
+
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
+		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
+		when(actionMock.validForOperationType(UPDATE)).thenReturn(true);
+
+		final var service = createService();
+		service.processErrandActions(errand, UPDATE);
+
+		assertThat(errand.getActions()).isEmpty();
+		verify(actionMock, never()).createAction(any(), any());
+	}
+
+	@Test
+	void processErrandActionsAddsActionWhenOperationIsAmongTheNarrowedOnes() {
+		final var config = createEntity().withId(CONFIG_ID).withOperationTypes(Set.of(CREATE));
+		final var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withActions(new ArrayList<>());
+		final var errandAction = ErrandActionEntity.create()
+			.withActionConfigEntity(config)
+			.withErrandEntity(errand)
+			.withExecuteAfter(OffsetDateTime.now().plusHours(1));
+
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
+		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
+		when(actionMock.createAction(errand, config)).thenReturn(Optional.of(errandAction));
+		when(actionMock.validForOperationType(CREATE)).thenReturn(true);
+
+		final var service = createService();
+		service.processErrandActions(errand, CREATE);
+
+		assertThat(errand.getActions()).containsExactly(errandAction);
+	}
+
+	@Test
+	void processErrandActionsTreatsEmptyOperationTypesAsEveryOperationTheActionSupports() {
+		// What every config written before operation types existed holds, and it has to keep behaving as it did.
+		final var config = createEntity().withId(CONFIG_ID).withOperationTypes(Set.of());
+		final var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withActions(new ArrayList<>());
+		final var errandAction = ErrandActionEntity.create()
+			.withActionConfigEntity(config)
+			.withErrandEntity(errand)
+			.withExecuteAfter(OffsetDateTime.now().plusHours(1));
+
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
+		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
+		when(actionMock.createAction(errand, config)).thenReturn(Optional.of(errandAction));
+		when(actionMock.validForOperationType(UPDATE)).thenReturn(true);
+
+		final var service = createService();
+		service.processErrandActions(errand, UPDATE);
+
+		assertThat(errand.getActions()).containsExactly(errandAction);
+	}
+
+	@Test
+	void processErrandActionsSkipsOperationTheActionItselfDoesNotSupport() {
+		// The config may narrow what the action supports, never widen it, so a stored set reaching beyond the action
+		// still does not make it run.
+		final var config = createEntity().withId(CONFIG_ID).withOperationTypes(Set.of(UPDATE));
+		final var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withActions(new ArrayList<>());
+
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
+		when(actionMock.actionFulfilled(any(), any())).thenReturn(false);
+		when(actionMock.validForOperationType(UPDATE)).thenReturn(false);
+
+		final var service = createService();
+		service.processErrandActions(errand, UPDATE);
+
+		assertThat(errand.getActions()).isEmpty();
+		verify(actionMock, never()).createAction(any(), any());
+	}
+
+	@Test
+	void createActionConfigRejectsOperationTypeTheActionDoesNotSupport() {
+		final var config = createConfig().withOperationTypes(List.of(DELETE));
+
+		when(actionMock.getName()).thenReturn(ACTION_NAME);
+		when(actionMock.validForOperationType(DELETE)).thenReturn(false);
+
+		final var service = createService();
+
+		assertThatThrownBy(() -> service.createActionConfig(MUNICIPALITY_ID, NAMESPACE, config))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasMessageContaining("Operation type 'DELETE' is not supported by action");
+
+		verify(actionConfigRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void updateActionConfigRejectsOperationTypeTheActionDoesNotSupport() {
+		final var config = createConfig().withOperationTypes(List.of(DELETE));
+
+		when(actionConfigRepositoryMock.findByIdAndNamespaceAndMunicipalityId(CONFIG_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(createEntity().withId(CONFIG_ID)));
+		when(actionMock.getName()).thenReturn(ACTION_NAME);
+		when(actionMock.validForOperationType(DELETE)).thenReturn(false);
+
+		final var service = createService();
+
+		assertThatThrownBy(() -> service.updateActionConfig(MUNICIPALITY_ID, NAMESPACE, CONFIG_ID, config))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasMessageContaining("Operation type 'DELETE' is not supported by action");
+
+		verify(actionConfigRepositoryMock, never()).save(any());
 	}
 
 	private ActionConfigEntity createEntity() {

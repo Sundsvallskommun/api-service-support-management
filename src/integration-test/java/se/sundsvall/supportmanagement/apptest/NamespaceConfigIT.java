@@ -11,7 +11,7 @@ import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
@@ -41,6 +41,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 	private static final String NAMESPACE_2 = "NAMESPACE-2";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final Function<String, String> PATH = namespace -> "/" + MUNICIPALITY_ID + "/" + namespace + "/namespace-config";
+	private static final Function<String, String> ACCESS_DEFINITION_PATH = namespace -> PATH.apply(namespace) + "/access-definition";
 	private static final Function<String, String> VALIDATION_PATH = namespace -> PATH.apply(namespace) + "/validation";
 	private static final String ACCESS_CONTROLLED_PATH = "/2506/NAMESPACE-2506/namespace-config";
 	private static final String ACCESS_CONTROLLED_LABEL_PATH = "/2506/NAMESPACE-2506/metadata/labels";
@@ -198,7 +199,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(PUT)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -209,7 +210,21 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.sendRequestAndVerifyResponse();
+	}
+	/**
+	 * The values the access configuration accepts, published as data so that exposing a new field or guarding a new
+	 * resource does not alter the contract. The fixture is the whole definition, so adding either shows up here.
+	 */
+	@Test
+	void test12_getAccessDefinition() {
+		setupCall()
+			.withServicePath(ACCESS_DEFINITION_PATH.apply(NAMESPACE_1))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 }

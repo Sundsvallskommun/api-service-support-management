@@ -314,10 +314,53 @@ public final class ErrandMapper {
 		entry(ErrandField.STAKEHOLDERS, (errand, e, _) -> errand.setStakeholders(toStakeholders(e.getStakeholders()))),
 		entry(ErrandField.MEASURES, (errand, e, _) -> errand.setMeasures(toMeasures(e.getMeasures()))),
 		entry(ErrandField.ACTIVE_NOTIFICATIONS, (errand, e, _) -> errand.setActiveNotifications(toActiveNotifications(e.getNotifications()))),
+		entry(ErrandField.PHASES, (errand, e, _) -> errand.setPhases(toErrandPhases(e.getPhases()))),
+		entry(ErrandField.ACTIONS, (errand, e, _) -> errand.setActions(toErrandActions(e.getActions()))),
 		entry(ErrandField.VERSION, (errand, e, _) -> errand.setVersion(e.getVersion())),
 		entry(ErrandField.PARAMETERS, (errand, e, keys) -> errand.setParameters(filterByKey(toParameterList(e.getParameters()), Parameter::getKey, keys))),
 		entry(ErrandField.JSON_PARAMETERS, (errand, e, keys) -> errand.setJsonParameters(filterByKey(toJsonParameters(e.getJsonParameters()), JsonParameter::getKey, keys))),
 		entry(ErrandField.EXTERNAL_TAGS, (errand, e, keys) -> errand.setExternalTags(filterByKey(toExternalTags(e.getExternalTags()), ExternalTag::getKey, keys)))));
+
+	/**
+	 * Reads each field off an errand as a request carries it, so that a patch naming a field its sender does not hold
+	 * can be spotted without every caller knowing which property that is. One entry per {@link ErrandField}, held to
+	 * the constants by the same test that holds the mappers to them.
+	 */
+	private static final Map<ErrandField, Function<Errand, Object>> FIELD_READERS = new EnumMap<>(Map.ofEntries(
+		entry(ErrandField.ID, Errand::getId),
+		entry(ErrandField.ERRAND_NUMBER, Errand::getErrandNumber),
+		entry(ErrandField.TITLE, Errand::getTitle),
+		entry(ErrandField.STATUS, Errand::getStatus),
+		entry(ErrandField.RESOLUTION, Errand::getResolution),
+		entry(ErrandField.CHANNEL, Errand::getChannel),
+		entry(ErrandField.CREATED, Errand::getCreated),
+		entry(ErrandField.MODIFIED, Errand::getModified),
+		entry(ErrandField.TOUCHED, Errand::getTouched),
+		entry(ErrandField.PRIORITY, Errand::getPriority),
+		entry(ErrandField.DESCRIPTION, Errand::getDescription),
+		entry(ErrandField.CLASSIFICATION, Errand::getClassification),
+		entry(ErrandField.REPORTER_USER_ID, Errand::getReporterUserId),
+		entry(ErrandField.ASSIGNED_USER_ID, Errand::getAssignedUserId),
+		entry(ErrandField.ASSIGNED_GROUP_ID, Errand::getAssignedGroupId),
+		entry(ErrandField.BUSINESS_RELATED, Errand::getBusinessRelated),
+		entry(ErrandField.SUSPENSION, Errand::getSuspension),
+		entry(ErrandField.CONTACT_REASON, Errand::getContactReason),
+		entry(ErrandField.CONTACT_REASON_DESCRIPTION, Errand::getContactReasonDescription),
+		entry(ErrandField.ESCALATION_EMAIL, Errand::getEscalationEmail),
+		entry(ErrandField.LABELS, Errand::getLabels),
+		entry(ErrandField.STAKEHOLDERS, Errand::getStakeholders),
+		entry(ErrandField.MEASURES, Errand::getMeasures),
+		entry(ErrandField.ACTIVE_NOTIFICATIONS, Errand::getActiveNotifications),
+		entry(ErrandField.PHASES, Errand::getPhases),
+		entry(ErrandField.ACTIONS, Errand::getActions),
+		entry(ErrandField.VERSION, Errand::getVersion),
+		entry(ErrandField.PARAMETERS, Errand::getParameters),
+		entry(ErrandField.JSON_PARAMETERS, Errand::getJsonParameters),
+		entry(ErrandField.EXTERNAL_TAGS, Errand::getExternalTags)));
+
+	public static Map<ErrandField, Function<Errand, Object>> fieldReaders() {
+		return FIELD_READERS;
+	}
 
 	/**
 	 * Every restrictable field, none of them limited to keys, which is what an unrestricted user is served.
@@ -377,18 +420,20 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys, plus the
-	 * properties no {@link ErrandField} names and which therefore cannot be restricted. Built from the same mappers as a
-	 * role mapped errand, so a conversion exists in one place only and the two projections cannot drift apart.
+	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys. The same
+	 * mappers a role mapped errand is built from, so a conversion exists in one place only and the two projections
+	 * cannot drift apart - nor can a field reach one of them and not the other, which is what left phases and actions
+	 * served to an unrestricted user and dropped from every restricted one.
+	 * <p>
+	 * The one property left out is activePhaseId, which is inbound only: a request names the phase to move the errand
+	 * into, and the response carries the phases themselves, of which the active one is the phase not yet ended.
 	 */
 	public static Errand toErrand(final ErrandEntity entity) {
 		if (isNull(entity)) {
 			return null;
 		}
 
-		return toRoleMappedErrand(entity, ALL_FIELDS)
-			.withPhases(toErrandPhases(entity.getPhases()))
-			.withActions(toErrandActions(entity.getActions()));
+		return toRoleMappedErrand(entity, ALL_FIELDS);
 	}
 
 	public static List<ErrandLabel> toErrandLabels(final List<ErrandLabelEmbeddable> errandLabelEmbeddables) {

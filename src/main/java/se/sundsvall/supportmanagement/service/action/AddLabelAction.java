@@ -9,13 +9,13 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
-import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
@@ -106,5 +106,10 @@ public class AddLabelAction extends AbstractAction {
 	@Override
 	public boolean validForOperationType(OperationType operationType) {
 		return VALID_OPERATION_TYPES.contains(operationType);
+	}
+
+	@Override
+	public Set<OperationType> getValidOperationTypes() {
+		return VALID_OPERATION_TYPES;
 	}
 }

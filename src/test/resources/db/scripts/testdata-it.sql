@@ -87,6 +87,9 @@ INSERT INTO metadata_label (created, modified, municipality_id, namespace, class
     ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELTWO-1-DISPLAY-NAME', '8f1c6101-8c32-4c77-b72c-3348f23394f1', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELTWO-1', 'ROOT/LEVELONE-1/LEVELTWO-1', false),
     ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELTWO-2-DISPLAY-NAME', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f', '8f78a6ae-b1f6-4a63-87f0-30314c038e02', 'LEVELTWO-2', 'ROOT/LEVELONE-1/LEVELTWO-2', false),
     ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2506', 'CLASS', 'LEVELONE-2-DISPLAY-NAME', 'b1e63167-4bba-4f78-825b-e6ca9ce85903', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb', 'LEVELONE-2', 'ROOT/LEVELONE-2', false),
+    -- A namespace weighing the resource grants of the access mapper, where a first line officer holds the label at read
+    -- and the grant carries the write of a single resource.
+    ('2025-11-05 09:45:49.831000', NULL, '2506', 'NAMESPACE-2507', 'CLASS', 'FRONTLINE-DISPLAY-NAME', 'c0f1e2d3-4a5b-4c7d-8e9f-0a1b2c3d4e5f', NULL, 'FRONTLINE', 'FRONTLINE', false),
     -- 2262 CONTACTCENTER labels (for test11 - update labels with new leafs, ACCESS_CONTROL=false)
     -- UUIDs are deliberately reversed (children sort before parents) to reproduce the proxy
     -- field-access bug in updateResourcePath() that occurs with random production UUIDs.
@@ -173,6 +176,10 @@ VALUES ('2281', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'ASSIGNED_GROUP_ID-1', '
        ('2506', '58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
         null, 'NAMESPACE-2506', 'LOW', 'rob01rep', 'STATUS-2506', 'E-service', 'TYPE-2506',
         '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'AP-23020003', false, 'STATUS-2',
+        'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000'),
+       ('2506', '9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b', 'ASSIGNED_GROUP_ID-X', 'ASSIGNED_USER_ID-X',
+        null, 'NAMESPACE-2507', 'LOW', 'REPORTER_USER_ID-X', 'STATUS-2506', 'E-service', 'TYPE-2506',
+        '2024-01-01 12:00:00.000', null, null, null, "ESCALATION_EMAIL_1", 'FL-23020001', false, 'STATUS-2',
         'ESERVICE_INTERNAL', '2024-01-01 12:00:00.000');
 -- -----------------------------------
 -- Stakeholder
@@ -400,7 +407,8 @@ VALUES (1, '2281', 'NAMESPACE-1', '2021-12-31 23:59:59.999', '2022-12-31 23:59:5
        (3, '2281', 'NAMESPACE-3', '2021-12-31 23:59:59.999', '2022-12-31 23:59:59.999'),
        (4, '2262', 'CONTACTCENTER', '2024-06-12 15:24:00.001', null),
        (5, '2506', 'NAMESPACE-2506', '2024-06-12 15:24:00.001', null),
-       (6, '2281', 'NAMESPACE-ARTEFACT', '2024-01-10 12:00:00.000', null);
+       (6, '2281', 'NAMESPACE-ARTEFACT', '2024-01-10 12:00:00.000', null),
+       (7, '2506', 'NAMESPACE-2507', '2024-06-12 15:24:00.001', null);
 
 INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
 VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
@@ -444,7 +452,16 @@ VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
        (6, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (6, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
        (6, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
-       (6, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN');
+       (6, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       -- The only namespace weighing the resource grants of the access mapper, which is what lets a grant carry the
+       -- write of a resource on an errand the labels only reach at read.
+       (7, 'DISPLAY_NAME', 'Namespace 2507', 'STRING'),
+       (7, 'SHORT_CODE', 'FL', 'STRING'),
+       (7, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
+       (7, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
+       (7, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (7, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (7, 'RESOURCE_ACCESS_CONTROL', 'true', 'BOOLEAN');
 
 INSERT INTO namespace_config_access_grant(namespace_config_id, `scope`, `type`, `value`, access_level)
 VALUES (5, 'LIMITED', 'RESOURCE', 'COMMUNICATION', null),
@@ -521,7 +538,9 @@ VALUES ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'ffe5f120-6a3b-4404-ace8-8ea87b5
        -- 2506
        ('7c57b4c3-9ef6-472d-8f03-5c15e9458ad6', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb'),
        ('c9efe03d-deff-4828-a043-541fa78ffdeb', '8f1c6101-8c32-4c77-b72c-3348f23394f1'),
-       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f');
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f'),
+       -- 2507
+       ('9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b', 'c0f1e2d3-4a5b-4c7d-8e9f-0a1b2c3d4e5f');
 
 -- -----------------------------------
 -- errandAccessLabel (leaf labels only, used for access control)
@@ -535,7 +554,9 @@ VALUES ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'ffe5f120-6a3b-4404-ace8-8ea87b5
        -- 2506
        ('7c57b4c3-9ef6-472d-8f03-5c15e9458ad6', '2f3d54e5-075a-4e21-ae30-b8fa69d24eeb'),
        ('c9efe03d-deff-4828-a043-541fa78ffdeb', '8f1c6101-8c32-4c77-b72c-3348f23394f1'),
-       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f');
+       ('58c41b44-0b9f-413d-bd46-406d24bf5ca8', '7ac8f12e-7c9b-47dc-ac7f-92a1f62ca53f'),
+       -- 2507
+       ('9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b', 'c0f1e2d3-4a5b-4c7d-8e9f-0a1b2c3d4e5f');
 
 -- -----------------------------------
 -- conversations
@@ -551,7 +572,9 @@ VALUES ('2281', 100, 'NAMESPACE-1', 'EXTERNAL', 'f4524497-a592-4618-a746-b59a60a
        ('2281', 101, 'NAMESPACE-1', 'INTERNAL', '7a772d18-a588-41bc-91ec-13b7421c9bb9',
         '1be673c0-6ba3-4fb0-af4a-43acf23389f6', '8948f414-079d-4009-af3a-a1ff2a59528b', 'The topic 3'),
        ('2506', 102, 'NAMESPACE-2506', 'INTERNAL', '09ea77cc-8c6e-4904-8d2d-efe8a8d66827',
-        '58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'a18df997-310c-4fb1-96af-d29a4a99a41d', 'The topic 4')        ;
+        '58c41b44-0b9f-413d-bd46-406d24bf5ca8', 'a18df997-310c-4fb1-96af-d29a4a99a41d', 'The topic 4'),
+       ('2506', 103, 'NAMESPACE-2507', 'INTERNAL', '5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9',
+        '9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b', 'b2c3d4e5-f6a7-4b89-9c0d-1e2f3a4b5c6d', 'The topic 5');
 
 -- Insert data into conversation_relation_id table
 INSERT INTO conversation_relation_id (conversation_id, relation_id)
@@ -642,17 +665,22 @@ VALUES ('a1b2c3d4-0000-0000-0000-000000000001', '2023-12-31 23:59:59.999', null,
 -- -----------------------------------
 -- MeasureType
 -- -----------------------------------
-INSERT INTO measure_type(id, name, display_name, measure_group, sort_order, deprecated, namespace, municipality_id, created, modified)
-VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 'GROUP-A', 1, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
-       ('dd000000-0000-0000-0000-000000000101', 'MEASURE-2', 'Display Measure 2', 'GROUP-A', 2, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
-       ('dd000000-0000-0000-0000-000000000102', 'MEASURE-3', 'Display Measure 3', 'GROUP-B', 3, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null);
+INSERT INTO measure_type(id, name, display_name, sort_order, deprecated, namespace, municipality_id, created, modified)
+VALUES ('dd000000-0000-0000-0000-000000000100', 'MEASURE-1', null, 1, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
+       ('dd000000-0000-0000-0000-000000000101', 'MEASURE-2', 'Display Measure 2', 2, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null),
+       ('dd000000-0000-0000-0000-000000000102', 'MEASURE-3', 'Display Measure 3', 3, false, 'NAMESPACE-1', '2281', '2023-01-01 12:00:00.000', null);
+
+INSERT INTO measure_type_groups(measure_type_id, measure_group)
+VALUES ('dd000000-0000-0000-0000-000000000100', 'GROUP-A'),
+       ('dd000000-0000-0000-0000-000000000101', 'GROUP-A'),
+       ('dd000000-0000-0000-0000-000000000102', 'GROUP-B');
 
 -- -----------------------------------
 -- Measure (errand measures)
 -- -----------------------------------
-INSERT INTO measure(id, errand_id, municipality_id, namespace, status, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, rework_goal, rework_description, created, modified)
-VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'ACTIVE', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, null, null, '2024-01-10 12:00:00.000', null),
-       ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'COMPLETED', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', null, null, '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');
+INSERT INTO measure(id, errand_id, municipality_id, namespace, status, responsible_user, type, planned_start, planned_complete, executed, added_by_user, added_by_role, goal, description, accept, accept_motivation, created, modified)
+VALUES ('ee000000-0000-0000-0000-000000000100', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'ACTIVE', 'joe01doe', 'MEASURE-1', '2024-01-15 10:00:00.000', '2024-02-15 10:00:00.000', null, 'joe01doe', 'ROLE-1', 'Improve response time', 'Detailed description of measure 1', null, null, '2024-01-10 12:00:00.000', null),
+       ('ee000000-0000-0000-0000-000000000101', 'ec677eb3-604c-4935-bff7-f8f0b500c8f4', '2281', 'NAMESPACE-1', 'COMPLETED', 'jane11dane', 'MEASURE-2', '2024-03-01 08:00:00.000', '2024-04-01 08:00:00.000', '2024-03-15 14:00:00.000', 'jane11dane', 'ROLE-2', 'Follow up on progress', 'Follow-up description', 'TRUE', 'Approved after review', '2024-01-10 12:00:00.000', '2024-03-16 09:00:00.000');
 
 -- -----------------------------------
 -- An errand of its own for the handling artefacts.

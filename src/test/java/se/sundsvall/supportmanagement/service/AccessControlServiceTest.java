@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.accessmapper.Access;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Predicate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -41,6 +43,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.entry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
@@ -48,8 +51,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.isReportedBy;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
@@ -125,7 +128,11 @@ class AccessControlServiceTest {
 	 * A label granted at one level each, so that the clause built for an operation shows which levels it reaches.
 	 */
 	private static AccessSnapshot snapshotWithALabelPerLevel() {
-		return new AccessSnapshot(Map.of(LR, Set.of(LIMITED_READ_LABEL), R, Set.of(READ_LABEL), RW, Set.of(WRITE_LABEL)), Set.of(), Map.of());
+		return snapshotWithALabelPerLevel(Map.of());
+	}
+
+	private static AccessSnapshot snapshotWithALabelPerLevel(final Map<ProtectedResource, Access.AccessLevelEnum> resources) {
+		return new AccessSnapshot(Map.of(LR, Set.of(LIMITED_READ_LABEL), R, Set.of(READ_LABEL), RW, Set.of(WRITE_LABEL)), Set.of(), resources);
 	}
 
 	/**
@@ -573,7 +580,7 @@ class AccessControlServiceTest {
 	}
 
 	@Test
-	void getErrandUnauthorized() {
+	void getErrandRefusedWhenNotAccessible() {
 		// Setup
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
@@ -590,9 +597,9 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR));
 
 		// Verify
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getTitle()).isEqualTo(FORBIDDEN.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Errand not accessible by user 'user'");
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
@@ -660,9 +667,9 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, LR));
 
 		// Verify
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Errand not accessible by user 'user'");
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getTitle()).isEqualTo(FORBIDDEN.getReasonPhrase());
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Errand not accessible by user 'user'");
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
@@ -794,6 +801,41 @@ class AccessControlServiceTest {
 		assertThat(predicate.test("any-key")).isFalse();
 	}
 
+	/**
+	 * A field that is not keyed carries no level, so a role either holds it or does not. A patch naming one it does not
+	 * hold is naming a field it was never served, and is refused rather than applied in part.
+	 */
+	@Test
+	void verifyKeyAccessRefusesAFieldTheRoleDoesNotHold() {
+		Identifier.set(adUser());
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.TITLE))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL), Set.of("CASE_OFFICER")));
+
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> accessControlService.verifyKeyAccess(NAMESPACE, MUNICIPALITY_ID, coveredErrand(), Errand.create().withStatus("SOLVED")));
+
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Field 'status' not writable by user '%s'".formatted(AD_ACCOUNT));
+	}
+
+	@Test
+	void verifyKeyAccessAllowsAFieldTheRoleHolds() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.TITLE))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL), Set.of("CASE_OFFICER")));
+
+		assertThat(accessControlService.verifyKeyAccess(NAMESPACE, MUNICIPALITY_ID, coveredErrand(), Errand.create().withTitle("new title"))).isNotNull();
+	}
+
+	@Test
+	void verifyKeyAccessLeavesAnUnrestrictedUserAlone() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig());
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL)));
+
+		assertThat(accessControlService.verifyKeyAccess(NAMESPACE, MUNICIPALITY_ID, coveredErrand(), Errand.create().withStatus("SOLVED"))).isNotNull();
+	}
+
 	@Test
 	void verifyAccessibleKeyThrowsForUngrantedKey() {
 		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
@@ -803,8 +845,8 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class,
 			() -> accessControlService.verifyAccessibleKey(NAMESPACE, MUNICIPALITY_ID, errand, ErrandField.PARAMETERS, "key-2"));
 
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Key 'key-2' not accessible by user '%s'".formatted(AD_ACCOUNT));
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Key 'key-2' not accessible by user '%s'".formatted(AD_ACCOUNT));
 	}
 
 	@Test
@@ -872,6 +914,71 @@ class AccessControlServiceTest {
 		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, RW);
 
 		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(allowedLabels));
+	}
+
+	/**
+	 * The grant of the access mapper is what says the user may perform the operation, so the labels are left only having
+	 * to reach the errand at read. Limited read labels stay out of it - a write is never permitted on an errand the user
+	 * cannot see in full.
+	 */
+	@Test
+	void withAccessControlLetsAResourceGrantCarryAWrite() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			snapshotWithALabelPerLevel(Map.of(ProtectedResource.CONVERSATION_MESSAGE, RW)));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.CONVERSATION_MESSAGE, RW);
+
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(READ_LABEL, WRITE_LABEL)));
+	}
+
+	/**
+	 * Without resource access control there is no second axis, so the labels carry the write themselves - which is what
+	 * every namespace holding its labels alone relies on.
+	 */
+	@Test
+	void withAccessControlLeavesAWriteToTheLabelsWithoutResourceAccessControl() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			snapshotWithALabelPerLevel(Map.of(ProtectedResource.CONVERSATION_MESSAGE, RW)));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.CONVERSATION_MESSAGE, RW);
+
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(WRITE_LABEL)));
+	}
+
+	/**
+	 * The errand itself is what the labels are held against, so no grant can vouch for writing it.
+	 */
+	@Test
+	void withAccessControlNeverLetsAResourceGrantCarryAnErrandWrite() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			snapshotWithALabelPerLevel(Map.of(ProtectedResource.ERRAND, RW)));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, RW);
+
+		assertThat(specification).usingRecursiveComparison().isEqualTo(hasAllowedMetadataLabels(Set.of(WRITE_LABEL)));
+	}
+
+	/**
+	 * Lowering what the labels ask does not lower what the grant asks: the two axes still both have to allow.
+	 */
+	@Test
+	void withAccessControlStillDemandsTheResourceGrantForAWrite() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create()
+			.withAccessControl(true)
+			.withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			snapshotWithALabelPerLevel(Map.of(ProtectedResource.CONVERSATION_MESSAGE, R)));
+
+		final var specification = accessControlService.withAccessControl(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.CONVERSATION_MESSAGE, RW);
+
+		assertThat(matches(specification)).isFalse();
 	}
 
 	@Test
@@ -971,8 +1078,8 @@ class AccessControlServiceTest {
 		final var exception = assertThrows(ThrowableProblem.class,
 			() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
 
-		assertThat(exception.getStatus()).isEqualTo(UNAUTHORIZED);
-		assertThat(exception.getMessage()).isEqualTo("Unauthorized: Resource 'NAMESPACE_CONFIG' not accessible by user '%s'".formatted(AD_ACCOUNT));
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Resource 'NAMESPACE_CONFIG' not accessible by user '%s'".formatted(AD_ACCOUNT));
 	}
 
 	@Test
@@ -994,5 +1101,308 @@ class AccessControlServiceTest {
 		accessControlService.roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, adUser()).apply(ErrandEntity.create());
 
 		verifyNoInteractions(accessMapperService);
+	}
+
+	// -------------------------------------------------------------------------------------------------------------
+	// resolveErrandAccess
+	// -------------------------------------------------------------------------------------------------------------
+
+	private static final MetadataLabelEntity ERRAND_LABEL = MetadataLabelEntity.create().withId("label-id-1");
+
+	/**
+	 * An errand covered by {@link #ERRAND_LABEL}, so a user granted that label holds it fully.
+	 */
+	private static ErrandEntity coveredErrand() {
+		return limitedErrand();
+	}
+
+	private static NamespaceConfig controlledConfig() {
+		return NamespaceConfig.create().withAccessControl(true).withRoleBasedMapping(true);
+	}
+
+	@Test
+	void resolveErrandAccessWithoutAccessControlGrantsEverything() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(false));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(RW);
+		assertThat(resolution.fields()).containsOnlyKeys(ErrandField.values());
+		assertThat(resolution.resources()).containsOnlyKeys(Arrays.stream(ProtectedResource.values())
+			.filter(ProtectedResource::isErrandScoped)
+			.filter(resource -> ProtectedResource.ERRAND != resource)
+			.toArray(ProtectedResource[]::new));
+		assertThat(resolution.resources().values()).containsOnly(RW);
+		verifyNoInteractions(accessMapperService);
+	}
+
+	@Test
+	void resolveErrandAccessWithoutAccessControlMarksKeyedFieldsAsHoldingEveryKey() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(false));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).allKeys()).isTrue();
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).keys()).isEmpty();
+		assertThat(resolution.fields().get(ErrandField.TITLE).allKeys()).isNull();
+		assertThat(resolution.fields().get(ErrandField.TITLE).keys()).isNull();
+	}
+
+	@Test
+	void resolveErrandAccessGrantsEverythingToUnrestrictedUserOfControlledNamespace() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig());
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL)));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(RW);
+		assertThat(resolution.fields()).containsOnlyKeys(ErrandField.values());
+	}
+
+	/**
+	 * A field carries no level of its own, so what may be written is read off the errand. Keys are held against it, since
+	 * a key of an errand reached at read is never writable.
+	 */
+	@Test
+	void resolveErrandAccessHoldsKeysAgainstTheLevelOfTheErrand() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("granted-key")))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(
+			new AccessSnapshot(Map.of(LR, Set.of(ERRAND_LABEL), R, Set.of(ERRAND_LABEL), RW, Set.of()), Set.of("CASE_OFFICER"), Map.of()));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(R);
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).keys()).containsExactly(entry("granted-key", R));
+	}
+
+	@Test
+	void resolveErrandAccessReportsLimitedReadAsTrimmedAndReadOnly() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig()
+			.withLimitedReadAccess(LimitedReadAccess.create()
+				.withResources(List.of(ProtectedResource.COMMUNICATION))
+				.withFields(List.of(
+					FieldAccess.create().withField(ErrandField.ID),
+					FieldAccess.create().withField(ErrandField.TITLE)))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(limitedReadSnapshot());
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), limitedErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(LR);
+		assertThat(resolution.fields()).containsOnlyKeys(ErrandField.ID, ErrandField.TITLE);
+		assertThat(resolution.resources()).containsExactly(entry(ProtectedResource.COMMUNICATION, LR));
+	}
+
+	@Test
+	void resolveErrandAccessReportsWhatTheNamespaceGrantsAReporter() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(
+			List.of(
+				ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.R),
+				ResourceAccess.create().withResource(ProtectedResource.COMMUNICATION).withLevel(AccessLevel.RW)),
+			List.of(
+				FieldAccess.create().withField(ErrandField.ID),
+				FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("granted-key")))));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), limitedErrand().withReporterUserId(AD_ACCOUNT));
+
+		assertThat(resolution.errandLevel()).isEqualTo(R);
+		assertThat(resolution.fields()).containsOnlyKeys(ErrandField.ID, ErrandField.PARAMETERS);
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).allKeys()).isFalse();
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).keys()).containsExactly(entry("granted-key", R));
+		assertThat(resolution.resources()).containsExactly(entry(ProtectedResource.COMMUNICATION, RW));
+	}
+
+	/**
+	 * The reporter clause reaches no errand for a caller carrying no ad account, exactly as the specification does not.
+	 */
+	@Test
+	void resolveErrandAccessRefusesAReporterIdentifiedByPartyId() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(
+			List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.R)),
+			List.of(FieldAccess.create().withField(ErrandField.ID))));
+		final var partyUser = Identifier.create().withType(Identifier.Type.PARTY_ID).withValue(AD_ACCOUNT);
+		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, partyUser, errand));
+
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+	}
+
+	/**
+	 * hasAllowedMetadataLabels reaches no errand at all for a user holding no labels, where covers would call an
+	 * unlabelled errand covered by the empty set. Reporting the looser of the two would promise access the endpoints
+	 * refuse.
+	 */
+	@Test
+	void resolveErrandAccessRefusesAUserHoldingNoLabelsOnAnUnlabelledErrand() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig());
+		final var user = adUser();
+		final var errand = ErrandEntity.create();
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, user, errand));
+
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+	}
+
+	@Test
+	void resolveErrandAccessOmitsResourcesTheAccessMapperDoesNotGrant() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig().withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL), Set.of(), Map.of(
+			ProtectedResource.ERRAND, RW,
+			ProtectedResource.COMMUNICATION, R)));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(RW);
+		assertThat(resolution.resources()).containsExactly(entry(ProtectedResource.COMMUNICATION, R));
+	}
+
+	// The four shapes a keyed field can resolve to, each reachable from a real configuration.
+
+	private static NamespaceConfig configWithRoleFields(final List<FieldAccess> fields) {
+		return controlledConfig().withRoleFieldRestrictions(List.of(RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(fields)));
+	}
+
+	private AccessControlService.ErrandAccessResolution resolveWithRoleFields(final List<FieldAccess> fields) {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithRoleFields(fields));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(ERRAND_LABEL), Set.of("CASE_OFFICER")));
+		return accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+	}
+
+	@Test
+	void resolveErrandAccessReportsAKeyedCollectionCarryingNoKeyRestriction() {
+		final var grant = resolveWithRoleFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS)))
+			.fields().get(ErrandField.PARAMETERS);
+
+		assertThat(grant.allKeys()).isTrue();
+		assertThat(grant.keys()).isEmpty();
+	}
+
+	/**
+	 * A key restriction is all or nothing, so a namespace naming keys makes those the only reachable ones and each is
+	 * listed with what may be done to it. A key held to read sits next to one that may be written.
+	 */
+	@Test
+	void resolveErrandAccessListsEveryKeyOfAKeyedCollectionGrantedByKey() {
+		final var grant = resolveWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("granted-key")),
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("readonly-key")).withLevel(AccessLevel.R)))
+			.fields().get(ErrandField.PARAMETERS);
+
+		assertThat(grant.allKeys()).isFalse();
+		assertThat(grant.keys()).containsExactly(entry("granted-key", RW), entry("readonly-key", R));
+	}
+
+	/**
+	 * A key the errand does not carry yet is listed exactly as a stored one is, since the grant says what may be written
+	 * and not what happens to be there. This is what lets a form be rendered editable before anything is saved to it.
+	 */
+	@Test
+	void resolveErrandAccessListsAGrantedKeyTheErrandDoesNotCarry() {
+		final var grant = resolveWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.JSON_PARAMETERS).withKeys(List.of("never-stored"))))
+			.fields().get(ErrandField.JSON_PARAMETERS);
+
+		assertThat(grant.allKeys()).isFalse();
+		assertThat(grant.keys()).containsExactly(entry("never-stored", RW));
+	}
+
+	/**
+	 * The one grant this response cannot express: a namespace may hand out a whole keyed collection and still hold it to
+	 * read. There are no keys to carry the restriction and a field carries no level of its own, so such a caller is
+	 * reported as reaching every key at the level of the errand - which overstates what the write paths accept. No
+	 * namespace configures this, and expressing it would mean giving every field a level back.
+	 */
+	@Test
+	void resolveErrandAccessReportsAWholeKeyedCollectionHeldToReadAsUnrestricted() {
+		final var grant = resolveWithRoleFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withLevel(AccessLevel.R)))
+			.fields().get(ErrandField.PARAMETERS);
+
+		assertThat(grant.allKeys()).isTrue();
+		assertThat(grant.keys()).isEmpty();
+	}
+
+	/**
+	 * A resource of an errand held at read is reported at what its own grant carries, since that is what the endpoint
+	 * serving it accepts. The errand itself stays at read - no grant vouches for writing it.
+	 */
+	@Test
+	void resolveErrandAccessReportsAWritableResourceOnAnErrandHeldAtRead() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig().withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
+			Map.of(LR, Set.of(ERRAND_LABEL), R, Set.of(ERRAND_LABEL), RW, Set.of()),
+			Set.of(),
+			Map.of(ProtectedResource.ERRAND, RW, ProtectedResource.PARAMETER, RW)));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(R);
+		assertThat(resolution.resources()).containsExactly(entry(ProtectedResource.PARAMETER, RW));
+	}
+
+	/**
+	 * A field carrying no key restriction has no keys to carry a level, so before it carried one of its own the report
+	 * could not say that parameters are writable on an errand held at read - the caller was told to follow the errand
+	 * and would have hidden an edit the endpoint accepts.
+	 */
+	@Test
+	void resolveErrandAccessReportsAFieldWithoutKeyRestrictionByTheResourceServingIt() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(controlledConfig().withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
+			Map.of(LR, Set.of(ERRAND_LABEL), R, Set.of(ERRAND_LABEL), RW, Set.of()),
+			Set.of(),
+			Map.of(ProtectedResource.ERRAND, RW, ProtectedResource.PARAMETER, RW)));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(R);
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).allKeys()).isTrue();
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).keys()).isEmpty();
+
+		// Wider than the errand, because the endpoint writing one parameter is guarded on the resource and not on it.
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).level()).isEqualTo(RW);
+
+		// Everything else is written through the errand and says so.
+		assertThat(resolution.fields().get(ErrandField.TITLE).level()).isEqualTo(R);
+		assertThat(resolution.fields().get(ErrandField.EXTERNAL_TAGS).level()).isEqualTo(R);
+	}
+
+	/**
+	 * And the keys of a field written through that resource are reported by it too, so the report cannot invite a client
+	 * to render a form the endpoint would then refuse - nor withhold one it would accept.
+	 */
+	@Test
+	void resolveErrandAccessReportsKeysOfAFieldByTheResourceServingIt() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithRoleFields(List.of(
+			FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("granted-key")),
+			FieldAccess.create().withField(ErrandField.EXTERNAL_TAGS).withKeys(List.of("tag-key"))))
+			.withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
+			Map.of(LR, Set.of(ERRAND_LABEL), R, Set.of(ERRAND_LABEL), RW, Set.of()),
+			Set.of("CASE_OFFICER"),
+			Map.of(ProtectedResource.ERRAND, RW, ProtectedResource.PARAMETER, RW)));
+
+		final var resolution = accessControlService.resolveErrandAccess(NAMESPACE, MUNICIPALITY_ID, adUser(), coveredErrand());
+
+		assertThat(resolution.errandLevel()).isEqualTo(R);
+		assertThat(resolution.fields().get(ErrandField.PARAMETERS).keys()).containsExactly(entry("granted-key", RW));
+
+		// External tags are only ever written through the errand, so they stay held against it.
+		assertThat(resolution.fields().get(ErrandField.EXTERNAL_TAGS).keys()).containsExactly(entry("tag-key", R));
+	}
+
+	/**
+	 * A resource of the namespace is guarded on its grant alone, whether or not the namespace weighs resource grants for
+	 * the resources of its errands.
+	 */
+	@Test
+	void verifyNamespaceAuthorizationThrowsWithoutAGrantEvenWithoutResourceAccessControl() {
+		when(namespaceConfigServiceMock.isAccessControlActive(any(), any())).thenReturn(true);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOfResources(Map.of()));
+
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> accessControlService.verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW));
+
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
 	}
 }

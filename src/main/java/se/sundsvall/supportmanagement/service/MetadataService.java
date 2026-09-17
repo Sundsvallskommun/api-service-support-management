@@ -1,6 +1,10 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +53,7 @@ import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
@@ -58,7 +63,9 @@ import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -102,6 +109,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updat
 @Service
 public class MetadataService {
 
+	private static final String MEASURE_TYPE_WITHOUT_GROUP = "A measure type must belong to at least one group";
 	private static final String ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' already exists in namespace '%s' for municipalityId '%s'";
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 	private static final String LABEL = "Label";
@@ -827,7 +835,28 @@ public class MetadataService {
 	// MeasureType operations
 	// =================================================================
 
+	/**
+	 * A measure type belongs to at least one group - a type in no group cannot be found by the one thing measure types
+	 * are looked up by.
+	 * <p>
+	 * Held here rather than on the model, which the update shares: a constraint there would demand the groups of every
+	 * patch, where every other property of a measure type may be left out.
+	 */
+	private static void verifyMeasureGroupsNamed(final List<String> measureGroups) {
+		if (isEmpty(measureGroups)) {
+			throw Problem.valueOf(BAD_REQUEST, MEASURE_TYPE_WITHOUT_GROUP);
+		}
+	}
+
+	/** An update may leave the groups out, which changes nothing, but may not empty them. */
+	private static void verifyMeasureGroupsNotEmptied(final List<String> measureGroups) {
+		if (nonNull(measureGroups)) {
+			verifyMeasureGroupsNamed(measureGroups);
+		}
+	}
+
 	public String createMeasureType(final String namespace, final String municipalityId, final MeasureType measureType) {
+		verifyMeasureGroupsNamed(measureType.getMeasureGroups());
 		if (measureTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, measureType.getName())) {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, measureType.getName(), namespace, municipalityId));
 		}
@@ -845,9 +874,10 @@ public class MetadataService {
 
 	public List<MeasureType> findMeasureTypes(final String namespace, final String municipalityId, final String measureGroup, final Sort sort) {
 		final var sortToUse = getDefaultSortIfUnsorted(sort);
+		verifySortable(sortToUse);
 
 		return ofNullable(measureGroup)
-			.map(group -> measureTypeRepository.findAllByNamespaceAndMunicipalityIdAndMeasureGroup(namespace, municipalityId, group, sortToUse))
+			.map(group -> measureTypeRepository.findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(namespace, municipalityId, group, sortToUse))
 			.orElseGet(() -> measureTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sortToUse))
 			.stream()
 			.map(MetadataMapper::toMeasureType)
@@ -863,11 +893,34 @@ public class MetadataService {
 	}
 
 	public MeasureType updateMeasureType(final String namespace, final String municipalityId, final String id, final MeasureType measureType) {
+		verifyMeasureGroupsNotEmptied(measureType.getMeasureGroups());
 		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
 		}
 		final var entity = updateMeasureTypeEntity(measureTypeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), measureType);
 		return toMeasureType(measureTypeRepository.save(entity));
+	}
+
+	/**
+	 * The properties a measure type may be sorted by, which is every scalar it carries.
+	 * <p>
+	 * The groups became a collection, and a collection cannot be sorted on. A request naming one sorted a measure type
+	 * before that and would otherwise reach the query derivation as a property that is not there, which answers 500
+	 * without saying what is wrong.
+	 */
+	private static final Set<String> SORTABLE_MEASURE_TYPE_PROPERTIES = Arrays.stream(MeasureTypeEntity.class.getDeclaredFields())
+		.filter(field -> !field.isSynthetic())
+		.filter(field -> !Modifier.isStatic(field.getModifiers()))
+		.filter(field -> !Collection.class.isAssignableFrom(field.getType()))
+		.map(Field::getName)
+		.collect(toSet());
+
+	private static void verifySortable(final Sort sort) {
+		sort.forEach(order -> {
+			if (!SORTABLE_MEASURE_TYPE_PROPERTIES.contains(order.getProperty())) {
+				throw Problem.valueOf(BAD_REQUEST, "'%s' is not a property a measure type can be sorted by".formatted(order.getProperty()));
+			}
+		});
 	}
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {

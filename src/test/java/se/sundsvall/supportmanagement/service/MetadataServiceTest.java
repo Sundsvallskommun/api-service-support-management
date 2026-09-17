@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -1779,10 +1780,10 @@ class MetadataServiceTest {
 		final var id = "generated-id";
 
 		// Mock
-		when(measureTypeRepositoryMock.save(any())).thenReturn(MeasureTypeEntity.create().withId(id).withName(name).withMeasureGroup("MANAGERS"));
+		when(measureTypeRepositoryMock.save(any())).thenReturn(MeasureTypeEntity.create().withId(id).withName(name).withMeasureGroups(Set.of("MANAGERS")));
 
 		// Call
-		final var result = metadataService.createMeasureType(namespace, municipalityId, MeasureType.create().withName(name).withMeasureGroup("MANAGERS"));
+		final var result = metadataService.createMeasureType(namespace, municipalityId, MeasureType.create().withName(name).withMeasureGroups(List.of("MANAGERS")));
 
 		// Verifications
 		assertThat(result).isEqualTo(id);
@@ -1801,7 +1802,7 @@ class MetadataServiceTest {
 		when(measureTypeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
 
 		// Call
-		final var measureType = MeasureType.create().withName(name).withMeasureGroup("MANAGERS");
+		final var measureType = MeasureType.create().withName(name).withMeasureGroups(List.of("MANAGERS"));
 		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.createMeasureType(namespace, municipalityId, measureType));
 
 		// Verifications
@@ -1819,7 +1820,7 @@ class MetadataServiceTest {
 
 		// Mock
 		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
-		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroup("group"));
+		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroups(Set.of("group")));
 
 		// Call
 		final var result = metadataService.getMeasureType(namespace, municipalityId, id);
@@ -1853,8 +1854,8 @@ class MetadataServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var measureTypeEntityList = List.of(
-			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroup("GROUP-1"),
-			MeasureTypeEntity.create().withName("TYPE-2").withMeasureGroup("GROUP-2"));
+			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroups(Set.of("GROUP-1")),
+			MeasureTypeEntity.create().withName("TYPE-2").withMeasureGroups(Set.of("GROUP-2")));
 
 		// Mock
 		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(measureTypeEntityList);
@@ -1867,6 +1868,69 @@ class MetadataServiceTest {
 		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 	}
 
+	/**
+	 * A measure type in no group cannot be found by the one thing measure types are looked up by, so a creation has to
+	 * name them.
+	 */
+	@Test
+	void createMeasureTypeRefusesATypeNamingNoGroup() {
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> metadataService.createMeasureType("namespace", "2281", MeasureType.create().withName("TYPE")));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).contains("must belong to at least one group");
+		verifyNoInteractions(measureTypeRepositoryMock);
+	}
+
+	/**
+	 * An update shares the model, so leaving the groups out has to keep meaning "unchanged" - every other property of a
+	 * measure type may be left out of a patch.
+	 */
+	@Test
+	void updateMeasureTypeAcceptsAPatchLeavingTheGroupsOut() {
+		final var id = "dd000000-0000-0000-0000-000000000100";
+		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(any(), any(), any()))
+			.thenReturn(MeasureTypeEntity.create().withId(id).withName("TYPE").withMeasureGroups(Set.of("MANAGERS")));
+		when(measureTypeRepositoryMock.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final var result = metadataService.updateMeasureType("namespace", "2281", id, MeasureType.create().withDisplayName("Renamed"));
+
+		assertThat(result.getMeasureGroups()).containsExactly("MANAGERS");
+	}
+
+	/** Emptying them is a different thing from leaving them out, and is refused. */
+	@Test
+	void updateMeasureTypeRefusesEmptiedGroups() {
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> metadataService.updateMeasureType("namespace", "2281", "dd000000-0000-0000-0000-000000000100",
+				MeasureType.create().withMeasureGroups(List.of())));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		verifyNoInteractions(measureTypeRepositoryMock);
+	}
+
+	/**
+	 * The groups became a collection, which cannot be sorted on. Sorting by one used to work, so the caller is told what
+	 * is wrong rather than meeting the query derivation, which answers 500 and says nothing.
+	 */
+	@Test
+	void findMeasureTypesRefusesASortOnTheGroups() {
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> metadataService.findMeasureTypes("namespace", "2281", null, Sort.by("measureGroup")));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).contains("'measureGroup' is not a property a measure type can be sorted by");
+		verifyNoInteractions(measureTypeRepositoryMock);
+	}
+
+	@Test
+	void findMeasureTypesAllowsASortOnAScalar() {
+		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(List.of());
+
+		assertThat(metadataService.findMeasureTypes("namespace", "2281", null, Sort.by("displayName"))).isEmpty();
+	}
+
 	@Test
 	void findMeasureTypesByGroup() {
 		// Setup
@@ -1874,17 +1938,17 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 		final var measureGroup = "GROUP-1";
 		final var measureTypeEntityList = List.of(
-			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroup(measureGroup));
+			MeasureTypeEntity.create().withName("TYPE-1").withMeasureGroups(Set.of(measureGroup)));
 
 		// Mock
-		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityIdAndMeasureGroup(any(), any(), any(), any(Sort.class))).thenReturn(measureTypeEntityList);
+		when(measureTypeRepositoryMock.findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(any(), any(), any(), any(Sort.class))).thenReturn(measureTypeEntityList);
 
 		// Call
 		final var result = metadataService.findMeasureTypes(namespace, municipalityId, measureGroup, Sort.unsorted());
 
 		// Verifications
 		assertThat(result).hasSize(1).extracting(MeasureType::getName).containsExactly("TYPE-1");
-		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityIdAndMeasureGroup(namespace, municipalityId, measureGroup, Sort.by(DEFAULT_SORT));
+		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(namespace, municipalityId, measureGroup, Sort.by(DEFAULT_SORT));
 	}
 
 	@Test
@@ -1927,8 +1991,8 @@ class MetadataServiceTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var id = "id";
-		final var entity = MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroup("group");
-		final var measureType = MeasureType.create().withName("newName").withMeasureGroup("newGroup");
+		final var entity = MeasureTypeEntity.create().withId(id).withName("name").withMeasureGroups(Set.of("group"));
+		final var measureType = MeasureType.create().withName("newName").withMeasureGroups(List.of("newGroup"));
 
 		// Mock
 		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
@@ -1957,7 +2021,7 @@ class MetadataServiceTest {
 		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(false);
 
 		// Call
-		final var measureType = MeasureType.create().withName("name").withMeasureGroup("group");
+		final var measureType = MeasureType.create().withName("name").withMeasureGroups(List.of("group"));
 		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateMeasureType(namespace, municipalityId, id, measureType));
 
 		// Verifications
