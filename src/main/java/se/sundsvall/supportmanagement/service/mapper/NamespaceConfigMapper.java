@@ -45,6 +45,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_RESOURCE_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ROLE_BASED_MAPPING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SINGLE_DECISION_PER_ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getValue;
 
 @Component
@@ -60,6 +61,10 @@ public class NamespaceConfigMapper {
 	 */
 	private static final String KEY_SEPARATOR = ":";
 
+	private static final Comparator<FieldAtLevel> FIELD_AT_LEVEL_ORDER = Comparator
+		.comparing(FieldAtLevel::field)
+		.thenComparing(FieldAtLevel::level, Comparator.nullsFirst(Comparator.naturalOrder()));
+
 	public NamespaceConfigEntity toEntity(final NamespaceConfig config, final String namespace, final String municipalityId) {
 		return NamespaceConfigEntity.create()
 			.withNamespace(namespace)
@@ -70,6 +75,7 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFY_REPORTER, String.valueOf(config.isNotifyReporter()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_ROLE_BASED_MAPPING, String.valueOf(config.isRoleBasedMapping()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_RESOURCE_ACCESS_CONTROL, String.valueOf(config.isResourceAccessControl()), BOOLEAN))
+			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_SINGLE_DECISION_PER_ERRAND, String.valueOf(config.isSingleDecisionPerErrand()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
 			.withAccessGrants(toAccessGrants(config));
 	}
@@ -100,6 +106,7 @@ public class NamespaceConfigMapper {
 			.withNotifyReporter(getValue(entity, PROPERTY_NOTIFY_REPORTER))
 			.withRoleBasedMapping(readOptionalToggle(entity, PROPERTY_ROLE_BASED_MAPPING))
 			.withResourceAccessControl(readOptionalToggle(entity, PROPERTY_RESOURCE_ACCESS_CONTROL))
+			.withSingleDecisionPerErrand(readOptionalToggle(entity, PROPERTY_SINGLE_DECISION_PER_ERRAND))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
 			.withLimitedReadAccess(toLimitedReadAccess(entity))
 			.withReporterAccess(toReporterAccess(entity))
@@ -152,19 +159,22 @@ public class NamespaceConfigMapper {
 
 	private void addFieldGrants(final List<NamespaceConfigAccessGrantEmbeddable> grants, final String scope, final List<FieldAccess> fields) {
 		ofNullable(fields).orElse(emptyList()).forEach(field -> {
+			final var level = ofNullable(field.getLevel()).map(AccessLevel::name).orElse(null);
+
 			if (isEmpty(field.getKeys())) {
-				grants.add(toFieldGrant(scope, field.getField().name()));
+				grants.add(toFieldGrant(scope, field.getField().name(), level));
 			} else {
-				field.getKeys().forEach(key -> grants.add(toFieldGrant(scope, field.getField().name() + KEY_SEPARATOR + key)));
+				field.getKeys().forEach(key -> grants.add(toFieldGrant(scope, field.getField().name() + KEY_SEPARATOR + key, level)));
 			}
 		});
 	}
 
-	private NamespaceConfigAccessGrantEmbeddable toFieldGrant(final String scope, final String value) {
+	private NamespaceConfigAccessGrantEmbeddable toFieldGrant(final String scope, final String value, final String level) {
 		return NamespaceConfigAccessGrantEmbeddable.create()
 			.withScope(scope)
 			.withType(FIELD)
-			.withValue(value);
+			.withValue(value)
+			.withAccessLevel(level);
 	}
 
 	/**
@@ -257,11 +267,13 @@ public class NamespaceConfigMapper {
 	 * Values that no longer resolve to a known field are skipped, for the same reason.
 	 * <p>
 	 * A grant carrying no key means the whole collection, so it wins over any grant naming individual keys of the same
-	 * field, mirroring how the keys of two scopes are merged when access is resolved.
+	 * field, mirroring how the keys of two scopes are merged when access is resolved. That only holds within one level:
+	 * a field granted wholesale at the level of the errand and restricted to read for one of its keys is two grants
+	 * saying different things, and collapsing them would lose the narrower one.
 	 */
 	private List<FieldAccess> toFieldAccesses(final List<NamespaceConfigAccessGrantEmbeddable> grants) {
-		final Map<ErrandField, List<String>> keysByField = new LinkedHashMap<>();
-		final Set<ErrandField> wholeCollectionFields = new LinkedHashSet<>();
+		final Map<FieldAtLevel, List<String>> keysByField = new LinkedHashMap<>();
+		final Set<FieldAtLevel> wholeCollectionFields = new LinkedHashSet<>();
 
 		grants.stream()
 			.filter(grant -> FIELD == grant.getType())
@@ -275,11 +287,15 @@ public class NamespaceConfigMapper {
 					return;
 				}
 
-				final var keys = keysByField.computeIfAbsent(field, _ -> new ArrayList<>());
+				// A level that no longer resolves is read as none at all, leaving the field to follow the errand, which is
+				// what every field grant did before levels existed.
+				final var grantedField = new FieldAtLevel(field, EnumUtils.getEnum(AccessLevel.class, grant.getAccessLevel()));
+
+				final var keys = keysByField.computeIfAbsent(grantedField, _ -> new ArrayList<>());
 				if (separatorIndex >= 0) {
 					keys.add(grant.getValue().substring(separatorIndex + 1));
 				} else {
-					wholeCollectionFields.add(field);
+					wholeCollectionFields.add(grantedField);
 				}
 			});
 
@@ -288,10 +304,17 @@ public class NamespaceConfigMapper {
 		}
 
 		return keysByField.entrySet().stream()
-			.sorted(Map.Entry.comparingByKey())
+			.sorted(Map.Entry.comparingByKey(FIELD_AT_LEVEL_ORDER))
 			.map(entry -> FieldAccess.create()
-				.withField(entry.getKey())
+				.withField(entry.getKey().field())
+				.withLevel(entry.getKey().level())
 				.withKeys(wholeCollectionFields.contains(entry.getKey()) || entry.getValue().isEmpty() ? null : entry.getValue()))
 			.toList();
 	}
+
+	/**
+	 * A field as one scope grants it, since the same field may be granted at more than one level - wholesale at the level
+	 * of the errand, say, with a single key of it held to read.
+	 */
+	private record FieldAtLevel(ErrandField field, AccessLevel level) {}
 }

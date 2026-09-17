@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.config;
 
+import java.time.Duration;
 import java.time.Period;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -15,6 +16,11 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param maxConcurrentRuns highest number of runs carried out at the same time. One run per namespace is already the
  *                          rule, but nothing stops several namespaces from being purged at once, and each run reaches
  *                          into the same database and the same neighbouring services.
+ * @param progressInterval  how long a run may go without writing to its job before it reports from inside the batch it
+ *                          is on. A batch is normally a minute's work, but one whose neighbouring services have gone
+ *                          slow can take far longer, and a job that goes quiet is ended as abandoned. This is what
+ *                          keeps the quiet stretch down to a single errand instead of a whole batch, and is therefore
+ *                          what lets {@link JobProperties#staleAfter()} be measured in minutes rather than days.
  */
 @ConfigurationProperties(prefix = "errand.purge")
 public record ErrandPurgeProperties(
@@ -23,5 +29,7 @@ public record ErrandPurgeProperties(
 
 	@DefaultValue("250") int batchSize,
 
-	@DefaultValue("2") int maxConcurrentRuns) {
+	@DefaultValue("2") int maxConcurrentRuns,
+
+	@DefaultValue("PT1M") Duration progressInterval) {
 }

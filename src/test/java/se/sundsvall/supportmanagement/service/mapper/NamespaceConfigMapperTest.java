@@ -242,6 +242,52 @@ class NamespaceConfigMapperTest {
 	}
 
 	@Test
+	void toNamespaceConfigKeepsAFieldGrantedAtTwoLevelsApart() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
+			.withAccessGrants(List.of(
+				accessGrantRow("FIRST_LINE_CASE_OFFICER", FIELD, "PARAMETERS", null),
+				accessGrantRow("FIRST_LINE_CASE_OFFICER", FIELD, "PARAMETERS:read-only", "R")));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		// The keyless grant wins only within its own level. Held at another one it is a second grant saying something
+		// else, and collapsing the two would lose the narrower of them.
+		assertThat(config.getRoleFieldRestrictions()).containsExactly(RoleFieldRestriction.create()
+			.withRole("FIRST_LINE_CASE_OFFICER")
+			.withFields(List.of(
+				FieldAccess.create().withField(ErrandField.PARAMETERS),
+				FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("read-only")).withLevel(AccessLevel.R))));
+	}
+
+	@Test
+	void toEntityWritesTheLevelOfEveryKeyOfAFieldGrant() {
+		final var request = NamespaceConfig.create()
+			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create()
+				.withRole("FIRST_LINE_CASE_OFFICER")
+				.withFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1", "key-2")).withLevel(AccessLevel.R)))));
+
+		final var entity = mapper.toEntity(request, "namespace", "municipalityId");
+
+		assertThat(entity.getAccessGrants())
+			.extracting(NamespaceConfigAccessGrantEmbeddable::getValue, NamespaceConfigAccessGrantEmbeddable::getAccessLevel)
+			.containsExactly(tuple("PARAMETERS:key-1", "R"), tuple("PARAMETERS:key-2", "R"));
+	}
+
+	@Test
+	void toEntityLeavesTheLevelOffAGrantCarryingNone() {
+		final var request = NamespaceConfig.create()
+			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create()
+				.withRole("FIRST_LINE_CASE_OFFICER")
+				.withFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1"))))));
+
+		final var entity = mapper.toEntity(request, "namespace", "municipalityId");
+
+		// A grant without a level follows the errand, which is stored as no level at all.
+		assertThat(entity.getAccessGrants()).singleElement()
+			.extracting(NamespaceConfigAccessGrantEmbeddable::getAccessLevel).isNull();
+	}
+
+	@Test
 	void toNamespaceConfigKeepsKeysContainingTheSeparator() {
 		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
 			.withAccessGrants(List.of(accessGrantRow("LIMITED", FIELD, "PARAMETERS:ns:key", null)));

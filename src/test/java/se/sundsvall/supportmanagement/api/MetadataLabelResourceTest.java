@@ -137,7 +137,7 @@ class MetadataLabelResourceTest {
 
 		when(metadataServiceMock.moveLabel(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(labelId), any())).thenReturn(response);
 
-		final var result = webTestClient.put()
+		final var result = webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "labelId", labelId)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(request)
@@ -160,7 +160,7 @@ class MetadataLabelResourceTest {
 
 		when(metadataServiceMock.startLabelMove(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(labelId), any())).thenReturn(jobResponse);
 
-		final var result = webTestClient.put()
+		final var result = webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/{labelId}/move").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "labelId", labelId)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(request)

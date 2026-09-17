@@ -561,4 +561,26 @@ class ErrandsIT extends AbstractAppTest {
 	}
 
 
+
+	@Test
+	void test37_patchErrandIntoAPhaseThatDisallowsItsStatus() {
+		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+
+		// The errand carries STATUS-3, which registration allows.
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(PATCH)
+			.withRequest("request-initial-phase.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		// Decision allows CLOSED alone, and a move into it is judged by the status the errand will have rather than by
+		// whether the patch happens to name one.
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.sendRequest();
+	}
 }

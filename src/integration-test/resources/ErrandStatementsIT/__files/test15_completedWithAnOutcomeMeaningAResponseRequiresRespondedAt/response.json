@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "A statement with outcome 'OPPOSES' cannot be COMPLETED without respondedAt being set"
+}

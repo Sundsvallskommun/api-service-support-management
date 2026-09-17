@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.apptest;
 
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
@@ -8,12 +9,14 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -263,7 +266,7 @@ class MetadataLabelIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(path)
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(OK)
@@ -279,7 +282,7 @@ class MetadataLabelIT extends AbstractAppTest {
 
 		setupCall()
 			.withServicePath(movePath)
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(OK)
@@ -291,6 +294,65 @@ class MetadataLabelIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse("labels-unchanged.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	@DisplayName("Verification that starting a real move (dryRun=false) is accepted and answered with a PENDING job carrying the affected errand count as its total")
+	void test14_startLabelMoveCreatesJob() {
+		// ffe5f120 is DEEPSUBTYPE-1, referenced by errand 147d355f — so the job total should be 1
+		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/ffe5f120-6a3b-4404-ace8-8ea87b559907/move";
+
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(ACCEPTED)
+			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/jobs/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	@DisplayName("Verification that a second real move on a label already moving is refused, since the two runs would race on the same errands")
+	void test15_startLabelMoveRefusedWhilePreviousMoveIsPending() {
+		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/ffe5f120-6a3b-4404-ace8-8ea87b559907/move";
+
+		// First move — accepted, leaves the label with a PENDING job
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(ACCEPTED)
+			.sendRequestAndVerifyResponse();
+
+		// Second move on the same label — refused while the first one is still PENDING
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	@DisplayName("Verification that a real move to a destination with a multi-level ancestor chain succeeds, since the cycle check walks that chain through LAZY parent proxies and needs a session open to do it")
+	void test16_startLabelMoveToDeepDestinationSucceeds() {
+		// 8d0ac81c is SUBTYPE-1 (under TYPE-1 under CATEGORY-1); moved under f4d6e210, SUBTYPE-4 (under TYPE-2 under
+		// CATEGORY-1) — walking from SUBTYPE-4 up to CATEGORY-1 to check for a cycle crosses two LAZY parent hops
+		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/8d0ac81c-9c56-43b7-95cd-fa3c3592666d/move";
+
+		setupCall()
+			.withServicePath(path)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(ACCEPTED)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 

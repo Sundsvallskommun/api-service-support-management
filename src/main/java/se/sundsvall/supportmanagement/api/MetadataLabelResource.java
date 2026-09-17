@@ -121,7 +121,7 @@ class MetadataLabelResource {
 			.build();
 	}
 
-	@PutMapping(path = "/{labelId}/move", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@PostMapping(path = "/{labelId}/move", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Move label", description = "Validates a label move. When dryRun is true, returns the number of affected errands and actions without making any changes. When dryRun is false, starts the move as an asynchronous job.", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful dry-run operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = LabelMoveDryRunResponse.class))),
 		@ApiResponse(responseCode = "202",
@@ -132,7 +132,9 @@ class MetadataLabelResource {
 			Problem.class, ConstraintViolationProblem.class
 		}))),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
-		@ApiResponse(responseCode = "409", description = "Conflict — path collision at destination", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409",
+			description = "Conflict — path collision at destination, or a move for this label is already in progress",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Object> moveLabel(
@@ -143,7 +145,7 @@ class MetadataLabelResource {
 
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
 
-		if (request.isDryRun()) {
+		if (Boolean.TRUE.equals(request.getDryRun())) {
 			return ok(metadataService.moveLabel(namespace, municipalityId, labelId, request));
 		}
 

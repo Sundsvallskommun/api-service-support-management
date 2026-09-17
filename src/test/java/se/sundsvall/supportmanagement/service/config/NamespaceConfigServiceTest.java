@@ -26,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -259,6 +260,43 @@ class NamespaceConfigServiceTest {
 
 		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
 		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithLevelOnNonKeyedField() {
+		final var request = NamespaceConfig.create().withRoleFieldRestrictions(List.of(
+			RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(FieldAccess.create().withField(TITLE).withLevel(AccessLevel.R)))));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: Level may not be set for field 'TITLE' of 'CASE_OFFICER' as the field holds no keyed collection");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithLimitedReadAsFieldLevel() {
+		final var request = NamespaceConfig.create().withRoleFieldRestrictions(List.of(
+			RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(FieldAccess.create().withField(PARAMETERS).withLevel(AccessLevel.LR)))));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo("Bad Request: Level 'LR' may not be set for field 'PARAMETERS' of 'CASE_OFFICER' as a field is held at read or read/write");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithLevelOnKeyedField() {
+		final var request = NamespaceConfig.create().withRoleFieldRestrictions(List.of(
+			RoleFieldRestriction.create().withRole("CASE_OFFICER").withFields(List.of(FieldAccess.create().withField(PARAMETERS).withKeys(List.of("key-1")).withLevel(AccessLevel.R)))));
+
+		when(mapperMock.toEntity(any(), any(), any())).thenReturn(NamespaceConfigEntity.create());
+
+		// A level is what a keyed field is for, so it passes where the two cases above do not.
+		assertThatNoException().isThrownBy(() -> configService.create(request, "namespace", "municipalityId"));
+
+		verify(configRepositoryMock).save(any());
 	}
 
 	@Test

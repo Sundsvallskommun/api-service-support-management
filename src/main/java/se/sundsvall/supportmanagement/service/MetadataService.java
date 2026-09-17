@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -11,11 +12,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
+import se.sundsvall.supportmanagement.api.model.metadata.AttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
+import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
@@ -26,17 +30,22 @@ import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
+import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
+import se.sundsvall.supportmanagement.integration.db.DecisionOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
+import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
@@ -55,10 +64,14 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurpose;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurposeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategoryEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReason;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toContactReasonEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toDecisionOutcome;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toDecisionOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdType;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabels;
@@ -70,15 +83,20 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPha
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhaseTransitionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatementOutcome;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatementOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatus;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatusEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateAttachmentPurposeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateContactReason;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateDecisionOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateExternalIdTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMeasureTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMetadataLabelEntities;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updatePhaseEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateRoleEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatementOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatusEntity;
 
 @Service
@@ -88,14 +106,19 @@ public class MetadataService {
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
+	private static final int RESOURCE_PATH_MAX_LENGTH = 255;
 
 	private static final String CONTACT_REASON = "ContactReason";
 	private static final String CATEGORY = "Category";
+	private static final String DECISION_OUTCOME = "DecisionOutcome";
 	private static final String EXTERNAL_ID_TYPE = "ExternalIdType";
 	private static final String PHASE = "Phase";
 	private static final String PHASE_TRANSITION = "PhaseTransition";
 	private static final String MEASURE_TYPE = "MeasureType";
+	private static final String ATTACHMENT_PURPOSE = "AttachmentPurpose";
+	private static final String ATTACHMENT_PURPOSE_IN_USE = "AttachmentPurpose '%s' cannot be deleted because it is referenced by one or more attachments";
 	private static final String ROLE = "Role";
+	private static final String STATEMENT_OUTCOME = "StatementOutcome";
 	private static final String STATUS = "Status";
 	private static final String SORT_ORDER = "sortOrder";
 
@@ -104,6 +127,10 @@ public class MetadataService {
 	private final ErrandsRepository errandsRepository;
 	private final ExternalIdTypeRepository externalIdTypeRepository;
 	private final MeasureTypeRepository measureTypeRepository;
+	private final AttachmentPurposeRepository attachmentPurposeRepository;
+	private final AttachmentRepository attachmentRepository;
+	private final DecisionOutcomeRepository decisionOutcomeRepository;
+	private final StatementOutcomeRepository statementOutcomeRepository;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final PhaseRepository phaseRepository;
 	private final RoleRepository roleRepository;
@@ -119,6 +146,10 @@ public class MetadataService {
 		final ErrandsRepository errandsRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
 		final MeasureTypeRepository measureTypeRepository,
+		final AttachmentPurposeRepository attachmentPurposeRepository,
+		final AttachmentRepository attachmentRepository,
+		final DecisionOutcomeRepository decisionOutcomeRepository,
+		final StatementOutcomeRepository statementOutcomeRepository,
 		final MetadataLabelRepository metadataLabelRepository,
 		final PhaseRepository phaseRepository,
 		final RoleRepository roleRepository,
@@ -131,6 +162,10 @@ public class MetadataService {
 		this.errandsRepository = errandsRepository;
 		this.externalIdTypeRepository = externalIdTypeRepository;
 		this.measureTypeRepository = measureTypeRepository;
+		this.attachmentPurposeRepository = attachmentPurposeRepository;
+		this.attachmentRepository = attachmentRepository;
+		this.decisionOutcomeRepository = decisionOutcomeRepository;
+		this.statementOutcomeRepository = statementOutcomeRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.phaseRepository = phaseRepository;
 		this.roleRepository = roleRepository;
@@ -153,6 +188,9 @@ public class MetadataService {
 			.withStatuses(findStatuses(namespace, municipalityId, Sort.unsorted()))
 			.withRoles(findRoles(namespace, municipalityId, Sort.unsorted()))
 			.withMeasureTypes(findMeasureTypes(namespace, municipalityId, null, Sort.unsorted()))
+			.withAttachmentPurposes(findAttachmentPurposes(namespace, municipalityId, Sort.unsorted()))
+			.withDecisionOutcomes(findDecisionOutcomes(namespace, municipalityId, Sort.unsorted()))
+			.withStatementOutcomes(findStatementOutcomes(namespace, municipalityId, Sort.unsorted()))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId, Sort.unsorted()))
 			.withContactReasons(findContactReasons(namespace, municipalityId, Sort.unsorted()))
 			.withPhases(findPhases(namespace, municipalityId));
@@ -359,8 +397,8 @@ public class MetadataService {
 
 	@Transactional(readOnly = true)
 	public LabelMoveDryRunResponse moveLabel(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		var labelToMove = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
-		var allMovedIds = allMovedLabelIds(namespace, municipalityId, labelToMove);
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var allMovedIds = collectMovedLabelIds(context.labelToMove().getId(), context.descendants());
 
 		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
 
@@ -382,28 +420,25 @@ public class MetadataService {
 	 * <p>
 	 * The re-stuvning (re-parenting of affected errand labels) that carries the move out is not wired up yet — the job
 	 * is created here and stays PENDING until a worker that performs it is added.
+	 * <p>
+	 * Kept transactional (not read-only, since {@link JobService#create} writes within it) so that the session
+	 * validation opens against stays open for as long as {@link #validateAndFindLabelToMove} needs it — the cycle
+	 * check walks LAZY {@code parent} proxies one hop at a time, and each hop past the first needs the session to
+	 * still be there to load from.
 	 */
+	@Transactional
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		var labelToMove = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
-		var allMovedIds = allMovedLabelIds(namespace, municipalityId, labelToMove);
+		validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
 
+		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL, canonicalLabelId)) {
+			throw Problem.valueOf(CONFLICT, "Label '%s' already has a move in progress".formatted(canonicalLabelId));
+		}
+
+		var allMovedIds = collectMovedLabelIds(canonicalLabelId, context.descendants());
 		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
-		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount);
+		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
 
 		return jobService.get(namespace, municipalityId, jobId);
-	}
-
-	/**
-	 * The moved label's id together with every descendant's - an errand tagged with any of them is affected by the
-	 * move, since the ancestor-chain-expansion invariant means a descendant-tagged errand already carries the moved
-	 * label's id too, but relying on that alone would silently undercount data that was written outside it.
-	 */
-	private Set<String> allMovedLabelIds(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove) {
-		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
-			namespace, municipalityId, labelToMove.getResourcePath() + "/");
-
-		return Stream.concat(Stream.of(labelToMove.getId()), descendants.stream().map(MetadataLabelEntity::getId))
-			.collect(Collectors.toSet());
 	}
 
 	private MetadataLabelEntity validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
@@ -417,10 +452,20 @@ public class MetadataService {
 		}
 
 		validateNotNoOp(labelToMove, newParentId);
-		validateNoCycle(labelId, newParent);
-		validateNoPathCollision(namespace, municipalityId, labelToMove, newParent);
+		validateNoCycle(labelToMove.getId(), newParent);
 
-		return labelToMove;
+		var newPath = newParent != null
+			? newParent.getResourcePath() + "/" + labelToMove.getResourceName()
+			: labelToMove.getResourceName();
+
+		validateNoPathCollision(namespace, municipalityId, labelToMove, newPath);
+
+		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
+			namespace, municipalityId, labelToMove.getResourcePath() + "/");
+
+		validateResourcePathLength(labelToMove, newPath, descendants);
+
+		return new LabelMoveContext(labelToMove, descendants);
 	}
 
 	private static void validateNotNoOp(final MetadataLabelEntity labelToMove, final String newParentId) {
@@ -430,6 +475,11 @@ public class MetadataService {
 		}
 	}
 
+	/**
+	 * {@code labelId} must be the moved label's id as stored, not the raw path variable — a client sending the same
+	 * UUID in a different case would otherwise never match {@code current.getId()} on the way up, since both sides
+	 * of the comparison have to come from the same, canonical source to line up.
+	 */
 	private static void validateNoCycle(final String labelId, final MetadataLabelEntity newParent) {
 		if (newParent == null) {
 			return;
@@ -447,16 +497,31 @@ public class MetadataService {
 		}
 	}
 
-	private void validateNoPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final MetadataLabelEntity newParent) {
-		var newPath = newParent != null
-			? newParent.getResourcePath() + "/" + labelToMove.getResourceName()
-			: labelToMove.getResourceName();
-
+	private void validateNoPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final String newPath) {
 		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, newPath)
 			.filter(existing -> !Objects.equals(existing.getId(), labelToMove.getId()))
 			.ifPresent(existing -> {
 				throw Problem.valueOf(CONFLICT, "A label with path '%s' already exists under the destination".formatted(newPath));
 			});
+	}
+
+	/**
+	 * The moved label's new path, and the new path every descendant it carries along would get, must each fit the
+	 * resource_path column — rejected here, before any row is touched, rather than surfacing as a database error
+	 * partway through the restructuring.
+	 */
+	private static void validateResourcePathLength(final MetadataLabelEntity labelToMove, final String newPath, final List<MetadataLabelEntity> descendants) {
+		rejectIfTooLong(newPath);
+
+		var oldPrefixLength = labelToMove.getResourcePath().length();
+		descendants.forEach(descendant -> rejectIfTooLong(newPath + descendant.getResourcePath().substring(oldPrefixLength)));
+	}
+
+	private static void rejectIfTooLong(final String resourcePath) {
+		if (resourcePath.length() > RESOURCE_PATH_MAX_LENGTH) {
+			throw Problem.valueOf(BAD_REQUEST,
+				"Resulting resource path '%s' (%d characters) exceeds the maximum of %d characters".formatted(resourcePath, resourcePath.length(), RESOURCE_PATH_MAX_LENGTH));
+		}
 	}
 
 	private static boolean isAffectedByMove(final ActionConfigEntity action, final Set<String> movedLabelIds) {
@@ -480,17 +545,37 @@ public class MetadataService {
 			.forEach(metadataLabelRepository::deleteById);
 	}
 
+	/**
+	 * Resolves the labels of the namespace matching each group of resource path patterns.
+	 * <p>
+	 * The labels are read once for every group rather than once per group, so that the groups are answered from a single
+	 * state of the label table and a caller resolving several of them pays one read.
+	 *
+	 * @param  namespace            namespace
+	 * @param  municipalityId       municipality id
+	 * @param  resourcePathPatterns patterns to match, per group
+	 * @return                      labels matching the patterns of each group, empty for a group carrying no patterns
+	 */
 	@Transactional(readOnly = true)
-	public Set<MetadataLabelEntity> patternToLabels(
+	public <K> Map<K, Set<MetadataLabelEntity>> patternToLabels(
 		final String namespace,
 		final String municipalityId,
-		final List<String> resourcePathPatterns) {
+		final Map<K, List<String>> resourcePathPatterns) {
 
-		if (isEmpty(resourcePathPatterns)) {
-			return Set.of();
+		if (resourcePathPatterns.values().stream().allMatch(CollectionUtils::isEmpty)) {
+			return resourcePathPatterns.keySet().stream().collect(Collectors.toMap(key -> key, _ -> Set.of()));
 		}
 
 		final var potentialMatches = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
+
+		return resourcePathPatterns.entrySet().stream()
+			.collect(Collectors.toMap(Map.Entry::getKey, entry -> matching(potentialMatches, entry.getValue())));
+	}
+
+	private Set<MetadataLabelEntity> matching(final List<MetadataLabelEntity> potentialMatches, final List<String> resourcePathPatterns) {
+		if (isEmpty(resourcePathPatterns)) {
+			return Set.of();
+		}
 
 		return potentialMatches.stream()
 			.filter(entity -> entity.getResourcePath() != null)
@@ -769,5 +854,155 @@ public class MetadataService {
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {
 		return (Objects.isNull(sort) || sort.isUnsorted()) ? Sort.by(SORT_ORDER) : sort;
+	}
+
+	// =================================================================
+	// AttachmentPurpose operations
+	// =================================================================
+
+	public String createAttachmentPurpose(final String namespace, final String municipalityId, final AttachmentPurpose attachmentPurpose) {
+		if (attachmentPurposeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, attachmentPurpose.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, attachmentPurpose.getName(), namespace, municipalityId));
+		}
+
+		return attachmentPurposeRepository.save(toAttachmentPurposeEntity(namespace, municipalityId, attachmentPurpose)).getId();
+	}
+
+	public AttachmentPurpose getAttachmentPurpose(final String namespace, final String municipalityId, final String id) {
+		if (!attachmentPurposeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, id, namespace, municipalityId));
+		}
+
+		return toAttachmentPurpose(attachmentPurposeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
+	}
+
+	public List<AttachmentPurpose> findAttachmentPurposes(final String namespace, final String municipalityId, final Sort sort) {
+		return attachmentPurposeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
+			.stream()
+			.map(MetadataMapper::toAttachmentPurpose)
+			.toList();
+	}
+
+	public void deleteAttachmentPurpose(final String namespace, final String municipalityId, final String id) {
+		if (!attachmentPurposeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, id, namespace, municipalityId));
+		}
+
+		if (attachmentRepository.existsByPurposeId(id)) {
+			throw Problem.valueOf(BAD_REQUEST, ATTACHMENT_PURPOSE_IN_USE.formatted(id));
+		}
+
+		attachmentPurposeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public AttachmentPurpose updateAttachmentPurpose(final String namespace, final String municipalityId, final String id, final AttachmentPurpose attachmentPurpose) {
+		if (!attachmentPurposeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, id, namespace, municipalityId));
+		}
+		if ((attachmentPurpose.getName() != null) && attachmentPurposeRepository.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, attachmentPurpose.getName(), id)) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(ATTACHMENT_PURPOSE, attachmentPurpose.getName(), namespace, municipalityId));
+		}
+		final var entity = updateAttachmentPurposeEntity(attachmentPurposeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), attachmentPurpose);
+		return toAttachmentPurpose(attachmentPurposeRepository.save(entity));
+	}
+
+	// =================================================================
+	// DecisionOutcome operations
+	// =================================================================
+
+	public String createDecisionOutcome(final String namespace, final String municipalityId, final DecisionOutcome decisionOutcome) {
+		if (decisionOutcomeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, decisionOutcome.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, decisionOutcome.getName(), namespace, municipalityId));
+		}
+
+		return decisionOutcomeRepository.save(toDecisionOutcomeEntity(namespace, municipalityId, decisionOutcome)).getId();
+	}
+
+	public DecisionOutcome getDecisionOutcome(final String namespace, final String municipalityId, final String id) {
+		if (!decisionOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, id, namespace, municipalityId));
+		}
+
+		return toDecisionOutcome(decisionOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
+	}
+
+	public List<DecisionOutcome> findDecisionOutcomes(final String namespace, final String municipalityId, final Sort sort) {
+		return decisionOutcomeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
+			.stream()
+			.map(MetadataMapper::toDecisionOutcome)
+			.toList();
+	}
+
+	/**
+	 * Removes the outcome from what may be given from now on. The decisions and recommendations already given it keep it,
+	 * the way an errand keeps a status that has been removed.
+	 */
+	public void deleteDecisionOutcome(final String namespace, final String municipalityId, final String id) {
+		if (!decisionOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, id, namespace, municipalityId));
+		}
+
+		decisionOutcomeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public DecisionOutcome updateDecisionOutcome(final String namespace, final String municipalityId, final String id, final DecisionOutcome decisionOutcome) {
+		if (!decisionOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, id, namespace, municipalityId));
+		}
+		if ((decisionOutcome.getName() != null) && decisionOutcomeRepository.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, decisionOutcome.getName(), id)) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(DECISION_OUTCOME, decisionOutcome.getName(), namespace, municipalityId));
+		}
+		final var entity = updateDecisionOutcomeEntity(decisionOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), decisionOutcome);
+		return toDecisionOutcome(decisionOutcomeRepository.save(entity));
+	}
+
+	// =================================================================
+	// StatementOutcome operations
+	// =================================================================
+
+	public String createStatementOutcome(final String namespace, final String municipalityId, final StatementOutcome statementOutcome) {
+		if (statementOutcomeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, statementOutcome.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, statementOutcome.getName(), namespace, municipalityId));
+		}
+
+		return statementOutcomeRepository.save(toStatementOutcomeEntity(namespace, municipalityId, statementOutcome)).getId();
+	}
+
+	public StatementOutcome getStatementOutcome(final String namespace, final String municipalityId, final String id) {
+		if (!statementOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, id, namespace, municipalityId));
+		}
+
+		return toStatementOutcome(statementOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
+	}
+
+	public List<StatementOutcome> findStatementOutcomes(final String namespace, final String municipalityId, final Sort sort) {
+		return statementOutcomeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
+			.stream()
+			.map(MetadataMapper::toStatementOutcome)
+			.toList();
+	}
+
+	/**
+	 * Removes the outcome from what may be given from now on. The statements already given it keep it, the way an errand
+	 * keeps a status that has been removed.
+	 */
+	public void deleteStatementOutcome(final String namespace, final String municipalityId, final String id) {
+		if (!statementOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, id, namespace, municipalityId));
+		}
+
+		statementOutcomeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public StatementOutcome updateStatementOutcome(final String namespace, final String municipalityId, final String id, final StatementOutcome statementOutcome) {
+		if (!statementOutcomeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, id, namespace, municipalityId));
+		}
+		if ((statementOutcome.getName() != null) && statementOutcomeRepository.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, statementOutcome.getName(), id)) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(STATEMENT_OUTCOME, statementOutcome.getName(), namespace, municipalityId));
+		}
+		final var entity = updateStatementOutcomeEntity(statementOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), statementOutcome);
+		return toStatementOutcome(statementOutcomeRepository.save(entity));
 	}
 }

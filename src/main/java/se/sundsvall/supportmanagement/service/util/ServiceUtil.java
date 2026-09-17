@@ -1,7 +1,5 @@
 package se.sundsvall.supportmanagement.service.util;
 
-import generated.se.sundsvall.accessmapper.Access;
-import generated.se.sundsvall.accessmapper.Access.AccessLevelEnum;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -15,7 +13,6 @@ import org.apache.commons.lang3.Strings;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -41,16 +38,6 @@ public class ServiceUtil {
 	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
 
 	private ServiceUtil() {}
-
-	public static String createCacheKey(List<Access.AccessLevelEnum> filter) {
-		if (CollectionUtils.isEmpty(filter)) {
-			return "EMPTY";
-		}
-
-		return String.join("|", filter.stream()
-			.map(AccessLevelEnum::getValue)
-			.toList());
-	}
 
 	public static boolean isValidUuid(String uuid) {
 		try {
@@ -80,6 +67,19 @@ public class ServiceUtil {
 	public static String getAdUser() {
 		return ofNullable(Identifier.get())
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
+			.map(Identifier::getValue)
+			.orElse(null);
+	}
+
+	/**
+	 * Who wrote the request, whoever they are - an ad account when a caseworker writes, a consumer name when a process
+	 * does. Unlike {@link #getAdUser()} this does not insist on a person, since the handling artefacts are written by
+	 * both and recording only one of them would leave half the writes unattributed.
+	 *
+	 * @return the identity of the caller, or null when the request carries none.
+	 */
+	public static String getCallerIdentity() {
+		return ofNullable(Identifier.get())
 			.map(Identifier::getValue)
 			.orElse(null);
 	}

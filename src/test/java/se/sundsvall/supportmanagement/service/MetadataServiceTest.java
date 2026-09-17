@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,30 +11,40 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.metadata.AttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
+import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
+import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
+import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
+import se.sundsvall.supportmanagement.integration.db.DecisionOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
+import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DecisionOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
@@ -67,6 +78,18 @@ class MetadataServiceTest {
 
 	@Mock
 	private MeasureTypeRepository measureTypeRepositoryMock;
+
+	@Mock
+	private AttachmentPurposeRepository attachmentPurposeRepositoryMock;
+
+	@Mock
+	private AttachmentRepository attachmentRepositoryMock;
+
+	@Mock
+	private DecisionOutcomeRepository decisionOutcomeRepositoryMock;
+
+	@Mock
+	private StatementOutcomeRepository statementOutcomeRepositoryMock;
 
 	@Mock
 	private MetadataLabelRepository metadataLabelRepositoryMock;
@@ -1338,13 +1361,49 @@ class MetadataServiceTest {
 			.thenReturn(dbResults);
 
 		// Call
-		final var result = metadataService.patternToLabels(namespace, municipalityId, patterns);
+		final var result = metadataService.patternToLabels(namespace, municipalityId, Map.of("group", patterns));
 
 		// Verifications
-		assertThat(result).hasSize(3).containsExactlyInAnyOrder(entity1, entity2, entity3);
+		assertThat(result.get("group")).hasSize(3).containsExactlyInAnyOrder(entity1, entity2, entity3);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
 		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
+	}
+
+	@Test
+	void patternToLabelsReadsTheLabelsOnceForEveryGroup() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		final var entity1 = MetadataLabelEntity.create().withResourcePath("path/to/resource/file1");
+		final var entity2 = MetadataLabelEntity.create().withResourcePath("path/other/resource/fileX");
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId))
+			.thenReturn(List.of(entity1, entity2));
+
+		// Call
+		final var result = metadataService.patternToLabels(namespace, municipalityId, Map.of(
+			"first", List.of("path/to/**"),
+			"second", List.of("path/other/**"),
+			"third", List.of()));
+
+		// Verifications - one read answers every group, so the groups cannot disagree with each other
+		assertThat(result.get("first")).containsExactly(entity1);
+		assertThat(result.get("second")).containsExactly(entity2);
+		assertThat(result.get("third")).isEmpty();
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	void patternToLabelsWithoutPatternsNeverReads() {
+		// Call
+		final var result = metadataService.patternToLabels("namespace", "municipalityId", Map.of("first", List.<String>of(), "second", List.<String>of()));
+
+		// Verifications
+		assertThat(result).containsOnlyKeys("first", "second").allSatisfy((_, labels) -> assertThat(labels).isEmpty());
+		verifyNoInteractions(metadataLabelRepositoryMock);
 	}
 
 	// =================================================================
@@ -1423,12 +1482,16 @@ class MetadataServiceTest {
 		assertThat(result.getLabels().getLabelStructure()).hasSize(1).extracting(Label::getResourceName).containsExactly("LABEL-1");
 		assertThat(result.getRoles()).hasSize(3).extracting(Role::getName).containsExactlyInAnyOrder("ROLE-1", "ROLE-2", "ROLE-3");
 		assertThat(result.getMeasureTypes()).isEmpty();
+		assertThat(result.getDecisionOutcomes()).isEmpty();
+		assertThat(result.getStatementOutcomes()).isEmpty();
 		assertThat(result.getStatuses()).hasSize(3).extracting(Status::getName).containsExactlyInAnyOrder("STATUS-1", "STATUS-2", "STATUS-3");
 		assertThat(result.getContactReasons()).hasSize(2).extracting(ContactReason::getReason).containsExactlyInAnyOrder("CONTACTREASON-1", "CONTACTREASON-2");
 
 		verify(categoryRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(externalIdTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+		verify(decisionOutcomeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+		verify(statementOutcomeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
 		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(contactReasonRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
@@ -1901,5 +1964,701 @@ class MetadataServiceTest {
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		verify(measureTypeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(measureTypeRepositoryMock);
+	}
+
+	// =================================================================
+	// AttachmentPurpose tests
+	// =================================================================
+
+	@Test
+	void createAttachmentPurpose() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "RESPONSE";
+		final var id = "generated-id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.save(any())).thenReturn(AttachmentPurposeEntity.create().withId(id).withName(name));
+
+		// Call
+		final var result = metadataService.createAttachmentPurpose(namespace, municipalityId, AttachmentPurpose.create().withName(name).withDisplayName("Inkommen handling"));
+
+		// Verifications
+		assertThat(result).isEqualTo(id);
+		verify(attachmentPurposeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(attachmentPurposeRepositoryMock).save(any());
+	}
+
+	@Test
+	void createAttachmentPurposeDuplicate() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "RESPONSE";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
+
+		// Call
+		final var attachmentPurpose = AttachmentPurpose.create().withName(name);
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.createAttachmentPurpose(namespace, municipalityId, attachmentPurpose));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		verify(attachmentPurposeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void getAttachmentPurpose() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentPurposeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(AttachmentPurposeEntity.create().withId(id).withName("RESPONSE"));
+
+		// Call
+		final var result = metadataService.getAttachmentPurpose(namespace, municipalityId, id);
+
+		// Verifications
+		assertThat(result.getId()).isEqualTo(id);
+		assertThat(result.getName()).isEqualTo("RESPONSE");
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(attachmentPurposeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void getAttachmentPurposeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.getAttachmentPurpose(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void findAttachmentPurposes() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var entities = List.of(
+			AttachmentPurposeEntity.create().withName("SUPPORTING"),
+			AttachmentPurposeEntity.create().withName("RESPONSE"));
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(entities);
+
+		// Call
+		final var result = metadataService.findAttachmentPurposes(namespace, municipalityId, Sort.unsorted());
+
+		// Verifications
+		assertThat(result).extracting(AttachmentPurpose::getName).containsExactly("SUPPORTING", "RESPONSE");
+		verify(attachmentPurposeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+	}
+
+	@Test
+	void deleteAttachmentPurpose() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+
+		// Call
+		metadataService.deleteAttachmentPurpose(namespace, municipalityId, id);
+
+		// Verifications
+		verify(attachmentRepositoryMock).existsByPurposeId(id);
+		verify(attachmentPurposeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	@Test
+	void deleteAttachmentPurposeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteAttachmentPurpose(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+		verifyNoInteractions(attachmentRepositoryMock);
+	}
+
+	/**
+	 * A purpose still given to an attachment stays, the way a label still on an errand does. Clearing it from the
+	 * attachments comes first.
+	 */
+	@Test
+	void deleteAttachmentPurposeInUse() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentRepositoryMock.existsByPurposeId(id)).thenReturn(true);
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteAttachmentPurpose(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("AttachmentPurpose 'id' cannot be deleted because it is referenced by one or more attachments");
+		verify(attachmentPurposeRepositoryMock, never()).deleteByIdAndNamespaceAndMunicipalityId(any(), any(), any());
+	}
+
+	@Test
+	void updateAttachmentPurpose() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = AttachmentPurposeEntity.create().withId(id).withName("RESPONSE").withDisplayName("Svar");
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentPurposeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(attachmentPurposeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateAttachmentPurpose(namespace, municipalityId, id, AttachmentPurpose.create().withDisplayName("Inkommen handling"));
+
+		// Verifications
+		assertThat(result.getDisplayName()).isEqualTo("Inkommen handling");
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(attachmentPurposeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(attachmentPurposeRepositoryMock).save(entity);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void updateAttachmentPurposeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var attachmentPurpose = AttachmentPurpose.create().withDisplayName("Inkommen handling");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateAttachmentPurpose(namespace, municipalityId, id, attachmentPurpose));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(attachmentPurposeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(attachmentPurposeRepositoryMock);
+	}
+
+	@Test
+	void updateAttachmentPurposeRenamed() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = AttachmentPurposeEntity.create().withId(id).withName("RESPONSE");
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentPurposeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(attachmentPurposeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateAttachmentPurpose(namespace, municipalityId, id, AttachmentPurpose.create().withName("REPLY"));
+
+		// Verifications
+		assertThat(result.getName()).isEqualTo("REPLY");
+		verify(attachmentPurposeRepositoryMock).existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, "REPLY", id);
+		verify(attachmentPurposeRepositoryMock).save(entity);
+	}
+
+	/**
+	 * A name another purpose of the namespace already has is refused, rather than left to the unique key of the table.
+	 */
+	@Test
+	void updateAttachmentPurposeToANameAnotherPurposeHas() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(attachmentPurposeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(attachmentPurposeRepositoryMock.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, "RESPONSE", id)).thenReturn(true);
+
+		// Call
+		final var attachmentPurpose = AttachmentPurpose.create().withName("RESPONSE");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateAttachmentPurpose(namespace, municipalityId, id, attachmentPurpose));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("AttachmentPurpose 'RESPONSE' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(attachmentPurposeRepositoryMock, never()).save(any());
+	}
+
+	// =================================================================
+	// DecisionOutcome tests
+	// =================================================================
+
+	@Test
+	void createDecisionOutcome() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "APPROVAL";
+		final var id = "generated-id";
+
+		// Mock
+		when(decisionOutcomeRepositoryMock.save(any())).thenReturn(DecisionOutcomeEntity.create().withId(id).withName(name));
+
+		// Call
+		final var result = metadataService.createDecisionOutcome(namespace, municipalityId, DecisionOutcome.create().withName(name).withDisplayName("Bifall"));
+
+		// Verifications
+		assertThat(result).isEqualTo(id);
+		verify(decisionOutcomeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(decisionOutcomeRepositoryMock).save(any());
+	}
+
+	@Test
+	void createDecisionOutcomeDuplicate() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "APPROVAL";
+
+		// Mock
+		when(decisionOutcomeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
+
+		// Call
+		final var decisionOutcome = DecisionOutcome.create().withName(name);
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.createDecisionOutcome(namespace, municipalityId, decisionOutcome));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("DecisionOutcome 'APPROVAL' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(decisionOutcomeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(decisionOutcomeRepositoryMock);
+	}
+
+	@Test
+	void getDecisionOutcome() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(decisionOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(decisionOutcomeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(DecisionOutcomeEntity.create().withId(id).withName("APPROVAL"));
+
+		// Call
+		final var result = metadataService.getDecisionOutcome(namespace, municipalityId, id);
+
+		// Verifications
+		assertThat(result.getId()).isEqualTo(id);
+		assertThat(result.getName()).isEqualTo("APPROVAL");
+		verify(decisionOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(decisionOutcomeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(decisionOutcomeRepositoryMock);
+	}
+
+	@Test
+	void getDecisionOutcomeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.getDecisionOutcome(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(decisionOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(decisionOutcomeRepositoryMock);
+	}
+
+	@Test
+	void findDecisionOutcomes() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var entities = List.of(
+			DecisionOutcomeEntity.create().withName("APPROVAL"),
+			DecisionOutcomeEntity.create().withName("REJECTION"));
+
+		// Mock
+		when(decisionOutcomeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(entities);
+
+		// Call
+		final var result = metadataService.findDecisionOutcomes(namespace, municipalityId, Sort.unsorted());
+
+		// Verifications
+		assertThat(result).extracting(DecisionOutcome::getName).containsExactly("APPROVAL", "REJECTION");
+		verify(decisionOutcomeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+	}
+
+	@Test
+	void deleteDecisionOutcome() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(decisionOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+
+		// Call
+		metadataService.deleteDecisionOutcome(namespace, municipalityId, id);
+
+		// Verifications
+		verify(decisionOutcomeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	@Test
+	void deleteDecisionOutcomeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteDecisionOutcome(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(decisionOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(decisionOutcomeRepositoryMock);
+	}
+
+	@Test
+	void updateDecisionOutcome() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = DecisionOutcomeEntity.create().withId(id).withName("APPROVAL").withDisplayName("Bifall");
+
+		// Mock
+		when(decisionOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(decisionOutcomeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(decisionOutcomeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateDecisionOutcome(namespace, municipalityId, id, DecisionOutcome.create().withDisplayName("Bifall i sin helhet"));
+
+		// Verifications
+		assertThat(result.getDisplayName()).isEqualTo("Bifall i sin helhet");
+		verify(decisionOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(decisionOutcomeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(decisionOutcomeRepositoryMock).save(entity);
+		verifyNoMoreInteractions(decisionOutcomeRepositoryMock);
+	}
+
+	@Test
+	void updateDecisionOutcomeRenamed() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = DecisionOutcomeEntity.create().withId(id).withName("APPROVAL");
+
+		// Mock
+		when(decisionOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(decisionOutcomeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(decisionOutcomeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateDecisionOutcome(namespace, municipalityId, id, DecisionOutcome.create().withName("GRANTED"));
+
+		// Verifications
+		assertThat(result.getName()).isEqualTo("GRANTED");
+		verify(decisionOutcomeRepositoryMock).existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, "GRANTED", id);
+		verify(decisionOutcomeRepositoryMock).save(entity);
+	}
+
+	/**
+	 * A name another outcome of the namespace already has is refused, rather than left to the unique key of the table.
+	 */
+	@Test
+	void updateDecisionOutcomeToANameAnotherOutcomeHas() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(decisionOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(decisionOutcomeRepositoryMock.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, "APPROVAL", id)).thenReturn(true);
+
+		// Call
+		final var decisionOutcome = DecisionOutcome.create().withName("APPROVAL");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateDecisionOutcome(namespace, municipalityId, id, decisionOutcome));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("DecisionOutcome 'APPROVAL' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(decisionOutcomeRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void updateDecisionOutcomeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var decisionOutcome = DecisionOutcome.create().withDisplayName("Bifall");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateDecisionOutcome(namespace, municipalityId, id, decisionOutcome));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(decisionOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(decisionOutcomeRepositoryMock);
+	}
+
+	// =================================================================
+	// StatementOutcome tests
+	// =================================================================
+
+	@Test
+	void createStatementOutcome() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "NO_RESPONSE";
+		final var id = "generated-id";
+
+		// Mock
+		when(statementOutcomeRepositoryMock.save(any())).thenReturn(StatementOutcomeEntity.create().withId(id).withName(name));
+
+		// Call
+		final var result = metadataService.createStatementOutcome(namespace, municipalityId, StatementOutcome.create().withName(name).withResponded(false));
+
+		// Verifications
+		assertThat(result).isEqualTo(id);
+		verify(statementOutcomeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(statementOutcomeRepositoryMock).save(any());
+	}
+
+	@Test
+	void createStatementOutcomeDuplicate() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "SUPPORTS";
+
+		// Mock
+		when(statementOutcomeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
+
+		// Call
+		final var statementOutcome = StatementOutcome.create().withName(name);
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.createStatementOutcome(namespace, municipalityId, statementOutcome));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("StatementOutcome 'SUPPORTS' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(statementOutcomeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(statementOutcomeRepositoryMock);
+	}
+
+	@Test
+	void getStatementOutcome() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(statementOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(statementOutcomeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(StatementOutcomeEntity.create().withId(id).withName("NO_RESPONSE"));
+
+		// Call
+		final var result = metadataService.getStatementOutcome(namespace, municipalityId, id);
+
+		// Verifications
+		assertThat(result.getId()).isEqualTo(id);
+		assertThat(result.getName()).isEqualTo("NO_RESPONSE");
+		assertThat(result.getResponded()).isFalse();
+		verify(statementOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(statementOutcomeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(statementOutcomeRepositoryMock);
+	}
+
+	@Test
+	void getStatementOutcomeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.getStatementOutcome(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(statementOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(statementOutcomeRepositoryMock);
+	}
+
+	@Test
+	void findStatementOutcomes() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var entities = List.of(
+			StatementOutcomeEntity.create().withName("SUPPORTS"),
+			StatementOutcomeEntity.create().withName("NO_RESPONSE"));
+
+		// Mock
+		when(statementOutcomeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(entities);
+
+		// Call
+		final var result = metadataService.findStatementOutcomes(namespace, municipalityId, Sort.unsorted());
+
+		// Verifications
+		assertThat(result).extracting(StatementOutcome::getName).containsExactly("SUPPORTS", "NO_RESPONSE");
+		verify(statementOutcomeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+	}
+
+	@Test
+	void deleteStatementOutcome() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(statementOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+
+		// Call
+		metadataService.deleteStatementOutcome(namespace, municipalityId, id);
+
+		// Verifications
+		verify(statementOutcomeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	@Test
+	void deleteStatementOutcomeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteStatementOutcome(namespace, municipalityId, id));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(statementOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(statementOutcomeRepositoryMock);
+	}
+
+	@Test
+	void updateStatementOutcome() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = StatementOutcomeEntity.create().withId(id).withName("NO_RESPONSE").withResponded(true);
+
+		// Mock
+		when(statementOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(statementOutcomeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(statementOutcomeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateStatementOutcome(namespace, municipalityId, id, StatementOutcome.create().withResponded(false));
+
+		// Verifications
+		assertThat(result.getResponded()).isFalse();
+		verify(statementOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(statementOutcomeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(statementOutcomeRepositoryMock).save(entity);
+		verifyNoMoreInteractions(statementOutcomeRepositoryMock);
+	}
+
+	@Test
+	void updateStatementOutcomeRenamed() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = StatementOutcomeEntity.create().withId(id).withName("SUPPORTS").withResponded(true);
+
+		// Mock
+		when(statementOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(statementOutcomeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(statementOutcomeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Call
+		final var result = metadataService.updateStatementOutcome(namespace, municipalityId, id, StatementOutcome.create().withName("APPROVES"));
+
+		// Verifications
+		assertThat(result.getName()).isEqualTo("APPROVES");
+		assertThat(result.getResponded()).isTrue();
+		verify(statementOutcomeRepositoryMock).existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, "APPROVES", id);
+		verify(statementOutcomeRepositoryMock).save(entity);
+	}
+
+	/**
+	 * A name another outcome of the namespace already has is refused, rather than left to the unique key of the table.
+	 */
+	@Test
+	void updateStatementOutcomeToANameAnotherOutcomeHas() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Mock
+		when(statementOutcomeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(statementOutcomeRepositoryMock.existsByNamespaceAndMunicipalityIdAndNameAndIdNot(namespace, municipalityId, "SUPPORTS", id)).thenReturn(true);
+
+		// Call
+		final var statementOutcome = StatementOutcome.create().withName("SUPPORTS");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateStatementOutcome(namespace, municipalityId, id, statementOutcome));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("StatementOutcome 'SUPPORTS' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(statementOutcomeRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void updateStatementOutcomeNotFound() {
+		// Setup
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Call
+		final var statementOutcome = StatementOutcome.create().withDisplayName("Tillstyrker");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateStatementOutcome(namespace, municipalityId, id, statementOutcome));
+
+		// Verifications
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(statementOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(statementOutcomeRepositoryMock);
 	}
 }

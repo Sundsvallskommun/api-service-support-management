@@ -802,6 +802,51 @@ class ErrandMapperTest {
 	}
 
 	@Test
+	void testUpdateEntityLeavesAReadOnlyKeyUntouchedWhenThePatchOmitsIt() {
+		final var entity = ErrandEntity.create()
+			.withParameters(new ArrayList<>(List.of(
+				ParameterEntity.create().withKey("writable").withValues(new ArrayList<>(List.of("old"))),
+				ParameterEntity.create().withKey("read-only").withValues(new ArrayList<>(List.of("kept"))))))
+			.withJsonParameters(new ArrayList<>(List.of(
+				JsonParameterEntity.create().withKey("writable").withValue("1"),
+				JsonParameterEntity.create().withKey("read-only").withValue("2"))))
+			.withExternalTags(new ArrayList<>(List.of(
+				DbExternalTag.create().withKey("writable").withValue("old"),
+				DbExternalTag.create().withKey("read-only").withValue("kept"))));
+
+		// The caller was served the read only key, so a patch of theirs may omit it - and omitting it may not delete it.
+		final var patch = Errand.create()
+			.withParameters(List.of(Parameter.create().withKey("writable").withValues(List.of("new"))))
+			.withJsonParameters(List.of(JsonParameter.create().withKey("writable")))
+			.withExternalTags(List.of(ExternalTag.create().withKey("writable").withValue("new")));
+
+		updateEntity(entity, patch, _ -> "writable"::equals);
+
+		assertThat(entity.getParameters()).extracting(ParameterEntity::getKey, ParameterEntity::getValues)
+			.containsExactlyInAnyOrder(tuple("writable", List.of("new")), tuple("read-only", List.of("kept")));
+		assertThat(entity.getJsonParameters()).extracting(JsonParameterEntity::getKey, JsonParameterEntity::getValue)
+			.containsExactlyInAnyOrder(tuple("writable", null), tuple("read-only", "2"));
+		assertThat(entity.getExternalTags()).extracting(DbExternalTag::getKey, DbExternalTag::getValue)
+			.containsExactlyInAnyOrder(tuple("writable", "new"), tuple("read-only", "kept"));
+	}
+
+	@Test
+	void testUpdateEntityLeavesAReadOnlyKeyUntouchedWhenThePatchCarriesIt() {
+		final var entity = ErrandEntity.create()
+			.withParameters(new ArrayList<>(List.of(
+				ParameterEntity.create().withKey("read-only").withValues(new ArrayList<>(List.of("kept"))))));
+
+		// Carrying it back unchanged is how a caller patches what they were served, and it must not be written again.
+		final var patch = Errand.create()
+			.withParameters(List.of(Parameter.create().withKey("read-only").withValues(List.of("kept"))));
+
+		updateEntity(entity, patch, _ -> _ -> false);
+
+		assertThat(entity.getParameters()).extracting(ParameterEntity::getKey, ParameterEntity::getValues)
+			.containsExactly(tuple("read-only", List.of("kept")));
+	}
+
+	@Test
 	void testUpdateEntityWithEmptyRequest() {
 		assertThat(updateEntity(createEntity(), Errand.create())).usingRecursiveComparison().isEqualTo(createEntity());
 	}

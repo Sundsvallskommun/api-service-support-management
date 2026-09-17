@@ -1,13 +1,13 @@
-openapi: 3.0.1
+openapi: 3.1.0
 info:
   title: Messaging
-  contact: { }
+  contact: {}
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "7.9"
+  version: "7.12"
 servers:
-  - url: http://localhost:53686
+  - url: http://localhost:64409
     description: Generated server url
 paths:
   /{municipalityId}/{organizationNumber}/mailboxes:
@@ -977,20 +977,20 @@ paths:
           description: Which page to fetch
           required: false
           schema:
-            minimum: 1
             type: integer
             format: int32
             default: 1
+            minimum: 1
           example: 1
         - name: limit
           in: query
           description: Sets the amount of entries per page
           required: false
           schema:
-            minimum: 1
             type: integer
             format: int32
             default: 15
+            minimum: 1
           example: 1
       responses:
         "200":
@@ -1088,20 +1088,20 @@ paths:
           description: Which page to fetch
           required: false
           schema:
-            minimum: 1
             type: integer
             format: int32
             default: 1
+            minimum: 1
           example: 1
         - name: limit
           in: query
           description: Sets the amount of entries per page
           required: false
           schema:
-            minimum: 1
             type: integer
             format: int32
             default: 15
+            minimum: 1
           example: 1
       responses:
         "200":
@@ -1643,8 +1643,8 @@ paths:
           in: query
           required: true
           schema:
-            minLength: 1
             type: string
+            minLength: 1
           example: some-filename.txt
       responses:
         "200":
@@ -1790,11 +1790,9 @@ components:
     Problem:
       type: object
       properties:
-        status:
-          $ref: "#/components/schemas/StatusType"
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         instance:
           type: string
@@ -1802,36 +1800,28 @@ components:
         type:
           type: string
           format: uri
-        parameters:
-          type: object
-          additionalProperties:
-            type: object
-    StatusType:
-      type: object
-      properties:
-        statusCode:
+        status:
           type: integer
           format: int32
-        reasonPhrase:
-          type: string
     Mailbox:
       type: object
+      description: Response model for a mailbox
       properties:
         partyId:
           type: string
           description: partyId for the person the mailbox belongs to
+        reason:
+          type: string
+          description: "If not reachable, the reason why"
         supplier:
           type: string
           description: "Name of the mailbox, e.g. Kivra"
         reachable:
           type: boolean
           description: If it's possible to send messages to this mailbox
-      description: Response model for a mailbox
     DigitalMailAttachment:
-      required:
-        - content
-        - filename
       type: object
+      description: Attachment
       properties:
         contentType:
           type: string
@@ -1839,61 +1829,61 @@ components:
           enum:
             - application/pdf
         content:
-          minLength: 1
           type: string
           description: Content (BASE64-encoded)
-        filename:
           minLength: 1
+        filename:
           type: string
           description: Filename
-      description: Attachment
-    DigitalMailParty:
+          minLength: 1
       required:
-        - partyIds
+        - content
+        - filename
+    DigitalMailParty:
       type: object
       properties:
         partyIds:
-          minItems: 1
           type: array
           items:
             type: string
-            description: The message party ids
             format: uuid
+            description: The message party ids
+          minItems: 1
         externalReferences:
           type: array
           description: External references
           items:
             $ref: "#/components/schemas/ExternalReference"
-      description: Party
-    DigitalMailRequest:
       required:
-        - body
-        - contentType
-        - party
+        - partyIds
+    DigitalMailRequest:
       type: object
       properties:
         party:
           $ref: "#/components/schemas/DigitalMailParty"
+          description: Party
         sender:
           $ref: "#/components/schemas/DigitalMailSender"
+          description: Sender
         subject:
-          type: string
+          type:
+            - string
+            - "null"
           description: Subject
-          nullable: true
         department:
-          type: string
+          type:
+            - string
+            - "null"
           description: Department and unit that should be billed for the message
-          nullable: true
-          example: "SBK(Gatuavdelningen, Trafiksektionen)"
+          examples:
+            - "SBK(Gatuavdelningen, Trafiksektionen)"
         contentType:
-          minLength: 1
           type: string
           description: Content type
           enum:
             - text/plain
             - text/html
         body:
-          minLength: 1
           type: string
           description: "Body (plain text if contentType is set to 'text/plain', BASE64-encoded\
             \ if contentType is set to 'application/html')"
@@ -1902,92 +1892,95 @@ components:
           description: Attachments
           items:
             $ref: "#/components/schemas/DigitalMailAttachment"
-    DigitalMailSender:
       required:
-        - supportInfo
+        - party
+    DigitalMailSender:
       type: object
       properties:
         supportInfo:
           $ref: "#/components/schemas/DigitalMailSenderSupportInfo"
-      description: Sender
-    DigitalMailSenderSupportInfo:
       required:
-        - text
+        - supportInfo
+    DigitalMailSenderSupportInfo:
       type: object
+      description: Support info
       properties:
         text:
-          minLength: 1
           type: string
           description: Text
+          minLength: 1
         emailAddress:
           type: string
-          description: E-mail address
           format: email
+          description: E-mail address
         phoneNumber:
           type: string
           description: Phone number
         url:
           type: string
           description: URL
-      description: Support info
-    ExternalReference:
       required:
-        - key
-        - value
+        - text
+    ExternalReference:
       type: object
       properties:
         key:
-          minLength: 1
           type: string
           description: The external reference key
-          example: flowInstanceId
-        value:
+          examples:
+            - flowInstanceId
           minLength: 1
+        value:
           type: string
           description: The external reference value
-          example: 356t4r34f
-      description: External references
+          examples:
+            - 356t4r34f
+          minLength: 1
+      required:
+        - key
+        - value
     DeliveryResult:
       type: object
+      description: Delivery result
       properties:
         deliveryId:
           type: string
-          description: The delivery id
           format: uuid
+          description: The delivery id
         messageType:
           $ref: "#/components/schemas/MessageType"
+          description: Message type
         status:
           $ref: "#/components/schemas/MessageStatus"
-      description: Delivery result
+          description: Status
     MessageBatchResult:
       type: object
+      description: Message batch result
       properties:
         batchId:
           type: string
-          description: The batch id
           format: uuid
+          description: The batch id
         messages:
           type: array
           description: The individual message results
           items:
             $ref: "#/components/schemas/MessageResult"
-      description: Message batch result
     MessageResult:
       type: object
+      description: Message result
       properties:
         messageId:
           type: string
-          description: The message id
           format: uuid
+          description: The message id
         deliveries:
           type: array
           description: The message deliveries
           items:
             $ref: "#/components/schemas/DeliveryResult"
-      description: Message result
     MessageStatus:
       type: string
-      description: Status
       enum:
         - PENDING
         - AWAITING_FEEDBACK
@@ -1998,7 +1991,6 @@ components:
         - NO_CONTACT_WANTED
     MessageType:
       type: string
-      description: Message type
       enum:
         - MESSAGE
         - EMAIL
@@ -2011,6 +2003,7 @@ components:
         - SLACK
     WebMessageAttachment:
       type: object
+      description: Attachment
       properties:
         fileName:
           type: string
@@ -2021,179 +2014,200 @@ components:
         base64Data:
           type: string
           description: "BASE64-encoded file, max size 50 MB"
-      description: Attachment
     WebMessageParty:
       type: object
       properties:
         partyId:
           type: string
-          description: The message party id
           format: uuid
+          description: The message party id
         externalReferences:
           type: array
           description: External references
           items:
             $ref: "#/components/schemas/ExternalReference"
-      description: Party
     WebMessageRequest:
-      required:
-        - message
-        - party
       type: object
       properties:
         party:
           $ref: "#/components/schemas/WebMessageParty"
+          description: Party
         message:
-          minLength: 1
           type: string
           description: Message
+          minLength: 1
         sender:
           $ref: "#/components/schemas/WebMessageSender"
+          description: The sender
         sendAsOwner:
           type: boolean
-          description: Send as owner
           default: false
+          description: Send as owner
         oepInstance:
           type: string
           description: Determines if the message should be added to the internal or
             external OeP instance
-          example: INTERNAL
           enum:
             - INTERNAL
             - EXTERNAL
+          examples:
+            - INTERNAL
         attachments:
-          maxItems: 10
-          minItems: 1
           type: array
           items:
             $ref: "#/components/schemas/WebMessageAttachment"
+          maxItems: 10
+          minItems: 1
+      required:
+        - message
+        - party
     WebMessageSender:
       type: object
+      description: Sender
       properties:
         userId:
           type: string
           description: The user ID of the sender. I.e. employee ID
-          example: joe01doe
-      description: Sender
+          examples:
+            - joe01doe
     Address:
       type: object
       properties:
         firstName:
           type: string
           description: The first name of the recipient
-          example: John
+          examples:
+            - John
         lastName:
           type: string
           description: The last name of the recipient
-          example: Doe
+          examples:
+            - Doe
+        organizationName:
+          type: string
+          description: The organization name of the recipient
+          examples:
+            - Acme AB
         address:
           type: string
           description: The address
-          example: Main Street 1
+          examples:
+            - Main Street 1
         apartmentNumber:
           type: string
           description: The apartment number
-          example: "1101"
+          examples:
+            - "1101"
         careOf:
           type: string
           description: The care of
-          example: c/o John Doe
+          examples:
+            - c/o John Doe
         zipCode:
           type: string
           description: The zip code
-          example: "12345"
+          examples:
+            - "12345"
         city:
           type: string
           description: The city
-          example: Main Street
+          examples:
+            - Main Street
         country:
           type: string
           description: The country
-          example: Sweden
-      description: Address
+          examples:
+            - Sweden
     SnailmailAttachment:
-      required:
-        - content
-        - filename
       type: object
+      description: Attachment
       properties:
         filename:
-          minLength: 1
           type: string
           description: The attachment filename
-          example: test.txt
+          examples:
+            - test.txt
+          minLength: 1
         contentType:
           type: string
           description: The attachment content type
-          example: text/plain
+          examples:
+            - text/plain
         content:
           type: string
           description: The attachment (file) content as a BASE64-encoded string
-          example: aGVsbG8gd29ybGQK
-      description: Attachment
+          examples:
+            - aGVsbG8gd29ybGQK
+      required:
+        - content
+        - filename
     SnailmailParty:
       type: object
       properties:
         partyId:
           type: string
           description: The message party id
-          example: f427952b-247c-4d3b-b081-675a467b3619
+          examples:
+            - f427952b-247c-4d3b-b081-675a467b3619
         externalReferences:
           type: array
           description: External references
           items:
             $ref: "#/components/schemas/ExternalReference"
-      description: Party
     SnailmailRequest:
-      required:
-        - department
       type: object
       properties:
         party:
           $ref: "#/components/schemas/SnailmailParty"
+          description: Party
         address:
           $ref: "#/components/schemas/Address"
+          description: Address
         department:
-          minLength: 1
           type: string
           description: Department and unit that should be billed
-          example: "SBK(Gatuavdelningen, Trafiksektionen)"
+          examples:
+            - "SBK(Gatuavdelningen, Trafiksektionen)"
+          minLength: 1
         deviation:
           type: string
           description: If the letter to send deviates from the standard
-          example: A3 Ritning
+          examples:
+            - A3 Ritning
         attachments:
-          minItems: 1
           type: array
           items:
             $ref: "#/components/schemas/SnailmailAttachment"
+          minItems: 1
         folderName:
           type: string
           description: Used by snailmail-sender to set the name of the organization
             folder
-          example: Sundsvalls Kommun
-    SmsRequest:
+          examples:
+            - Sundsvalls Kommun
       required:
-        - message
-        - mobileNumber
+        - department
+    SmsRequest:
       type: object
       properties:
         party:
           $ref: "#/components/schemas/SmsRequestParty"
+          description: Party
         sender:
-          maxLength: 11
-          minLength: 3
           type: string
           description: "The sender of the SMS, swedish letters(å,ä,ö) will be replaced\
             \ by (a,a,o) respectively"
-          example: sender
+          examples:
+            - sender
+          maxLength: 11
+          minLength: 3
         mobileNumber:
           type: string
           description: Mobile number. Should start with +467x
         message:
-          minLength: 1
           type: string
           description: Message
+          minLength: 1
         priority:
           type: string
           description: "Priority (optional, will be defaulted to NORMAL if not present)"
@@ -2203,37 +2217,39 @@ components:
         department:
           type: string
           description: Department
-          example: API-Team
+          examples:
+            - API-Team
+      required:
+        - message
+        - mobileNumber
     SmsRequestParty:
       type: object
       properties:
         partyId:
           type: string
           description: The message party id
-          example: f427952b-247c-4d3b-b081-675a467b3619
+          examples:
+            - f427952b-247c-4d3b-b081-675a467b3619
         externalReferences:
           type: array
           description: External references
           items:
             $ref: "#/components/schemas/ExternalReference"
-      description: Party
     SmsBatchRequest:
-      required:
-        - message
-        - parties
       type: object
       properties:
         sender:
-          maxLength: 11
-          minLength: 3
           type: string
           description: "The sender of the SMS, swedish letters(å,ä,ö) will be replaced\
             \ by (a,a,o) respectively"
-          example: sender
+          examples:
+            - sender
+          maxLength: 11
+          minLength: 3
         message:
-          minLength: 1
           type: string
           description: Message to send as sms
+          minLength: 1
         priority:
           type: string
           description: "Priority (optional, will be defaulted to NORMAL if not present)"
@@ -2243,129 +2259,129 @@ components:
         department:
           type: string
           description: Department
-          example: API-Team
+          examples:
+            - API-Team
         parties:
-          minItems: 1
           type: array
           description: Parties to send the sms message to
           items:
             $ref: "#/components/schemas/SmsBatchRequestParty"
-    SmsBatchRequestParty:
+          minItems: 1
       required:
-        - mobileNumber
+        - message
+        - parties
+    SmsBatchRequestParty:
       type: object
       properties:
         partyId:
           type: string
           description: The message party id (optional)
-          example: f427952b-247c-4d3b-b081-675a467b3619
+          examples:
+            - f427952b-247c-4d3b-b081-675a467b3619
         mobileNumber:
           type: string
           description: "Mobile number, which should start with +467x"
-      description: Parties to send the sms message to
+      required:
+        - mobileNumber
     SlackRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: App/bot token
+          minLength: 1
+        channel:
+          type: string
+          description: Channel name/id
+          minLength: 1
+        message:
+          type: string
+          description: Message (supports Slack markdown formatting)
+          minLength: 1
       required:
         - channel
         - message
         - token
-      type: object
-      properties:
-        token:
-          minLength: 1
-          type: string
-          description: App/bot token
-        channel:
-          minLength: 1
-          type: string
-          description: Channel name/id
-        message:
-          minLength: 1
-          type: string
-          description: Message (supports Slack markdown formatting)
     Email:
-      required:
-        - address
-        - name
       type: object
       properties:
         name:
-          minLength: 1
           type: string
           description: The sender of the e-mail
-        address:
           minLength: 1
+        address:
           type: string
-          description: Sender e-mail address
           format: email
-          example: sender@sender.se
+          description: Sender e-mail address
+          examples:
+            - sender@sender.se
+          minLength: 1
         replyTo:
           type: string
-          description: Reply-to e-mail address
           format: email
-          example: sender@sender.se
-    Message:
+          description: Reply-to e-mail address
+          examples:
+            - sender@sender.se
       required:
-        - message
-        - party
+        - address
+        - name
+    Message:
       type: object
       properties:
         party:
           $ref: "#/components/schemas/MessageParty"
+          description: Party
         filters:
           type: object
           additionalProperties:
             type: array
-            description: Filters
-            example:
-              someAttributeName:
-                - someAttributeValue
             items:
               type: string
-              description: Filters
-              example: "{\"someAttributeName\":[\"someAttributeValue\"]}"
           description: Filters
-          example:
-            someAttributeName:
-              - someAttributeValue
+          examples:
+            - someAttributeName:
+                - someAttributeValue
         sender:
           $ref: "#/components/schemas/MessageSender"
+          description: Sender
         subject:
           type: string
           description: The message subject (for E-mails)
         message:
-          minLength: 1
           type: string
           description: Plain-text message text
+          minLength: 1
         htmlMessage:
           type: string
           description: "HTML message text, for e-mails (BASE64-encoded)"
-      description: The messages to be sent
-    MessageParty:
       required:
-        - partyId
+        - message
+        - party
+    MessageParty:
       type: object
       properties:
         partyId:
           type: string
-          description: The message party id
           format: uuid
+          description: The message party id
         externalReferences:
           type: array
           description: External references
           items:
             $ref: "#/components/schemas/ExternalReference"
-      description: Party
-    MessageRequest:
       required:
-        - messages
+        - partyId
+    MessageRequest:
       type: object
       properties:
         messages:
-          minItems: 1
           type: array
           description: The messages to be sent
           items:
             $ref: "#/components/schemas/Message"
+          minItems: 1
+      required:
+        - messages
     MessageSender:
       type: object
       properties:
@@ -2373,48 +2389,46 @@ components:
           $ref: "#/components/schemas/Email"
         sms:
           $ref: "#/components/schemas/Sms"
-      description: Sender
     Sms:
-      required:
-        - name
       type: object
       properties:
         name:
-          maxLength: 11
-          minLength: 0
           type: string
           description: The sender of the SMS
-          example: sender
-    LetterAttachment:
+          examples:
+            - sender
+          maxLength: 11
+          minLength: 0
       required:
-        - content
-        - deliveryMode
-        - filename
+        - name
+    LetterAttachment:
       type: object
+      description: Attachment
       properties:
         deliveryMode:
           type: string
-          description: |
-            Delivery mode, to indicate whether an attachment is intended/allowed to be used for
-            digital mail, snail-mail or any of them
+          description: Delivery mode
           enum:
             - ANY
             - DIGITAL_MAIL
             - SNAIL_MAIL
         filename:
-          minLength: 1
           type: string
           description: Filename
+          minLength: 1
         contentType:
           type: string
           description: Content type
           enum:
             - application/pdf
         content:
-          minLength: 1
           type: string
           description: Content (BASE64-encoded)
-      description: Attachment
+          minLength: 1
+      required:
+        - content
+        - deliveryMode
+        - filename
     LetterParty:
       type: object
       properties:
@@ -2422,33 +2436,30 @@ components:
           type: array
           items:
             type: string
-            description: The message party ids
             format: uuid
+            description: The message party ids
         addresses:
           type: array
           items:
             $ref: "#/components/schemas/Address"
+            description: Addresses that gets a letter copy
         externalReferences:
           type: array
           description: External references
           items:
             $ref: "#/components/schemas/ExternalReference"
-      description: Party
     LetterRequest:
-      required:
-        - attachments
-        - department
-        - party
-        - subject
       type: object
       properties:
         party:
           $ref: "#/components/schemas/LetterParty"
+          description: Party
         subject:
           type: string
           description: Subject
         sender:
           $ref: "#/components/schemas/LetterSender"
+          description: Sender
         contentType:
           type: string
           description: Content type
@@ -2460,93 +2471,106 @@ components:
           description: "Body (plain text if contentType is set to 'text/plain', BASE64-encoded\
             \ if contentType is set to 'text/html')"
         department:
-          minLength: 1
           type: string
           description: Department and unit that should be billed in case of snailmail
-          example: "SBK(Gatuavdelningen, Trafiksektionen)"
+          examples:
+            - "SBK(Gatuavdelningen, Trafiksektionen)"
+          minLength: 1
         deviation:
           type: string
           description: If the letter to send deviates from the standard
-          example: A3 Ritning
+          examples:
+            - A3 Ritning
         attachments:
-          minItems: 1
           type: array
           items:
             $ref: "#/components/schemas/LetterAttachment"
-    LetterSender:
+            description: Attachments
+          minItems: 1
       required:
-        - supportInfo
+        - attachments
+        - department
+        - party
+        - subject
+    LetterSender:
       type: object
       properties:
         supportInfo:
           $ref: "#/components/schemas/LetterSenderSupportInfo"
-      description: Sender
-    LetterSenderSupportInfo:
       required:
-        - text
+        - supportInfo
+    LetterSenderSupportInfo:
       type: object
+      description: Support info
       properties:
         text:
-          minLength: 1
           type: string
           description: Text
+          minLength: 1
         emailAddress:
           type: string
-          description: E-mail address
           format: email
+          description: E-mail address
         phoneNumber:
           type: string
           description: Phone number
         url:
           type: string
           description: URL
-      description: Support info
-    EmailAttachment:
       required:
-        - content
-        - name
+        - text
+    EmailAttachment:
       type: object
+      description: Attachment
       properties:
         name:
-          minLength: 1
           type: string
           description: The attachment filename
-          example: test.txt
+          examples:
+            - test.txt
+          minLength: 1
         contentType:
           type: string
           description: The attachment content type
-          example: text/plain
+          examples:
+            - text/plain
         content:
           type: string
           description: The attachment (file) content as a BASE64-encoded string
-          example: aGVsbG8gd29ybGQK
-      description: Attachment
-    EmailRequest:
+          examples:
+            - aGVsbG8gd29ybGQK
       required:
-        - subject
+        - content
+        - name
+    EmailRequest:
       type: object
       properties:
         party:
           $ref: "#/components/schemas/EmailRequestParty"
+          description: Party
         emailAddress:
           type: string
-          deprecated: true
-          description: Recipient e-mail address. Deprecated, use 'recipients' instead
           format: email
+          description: Recipient e-mail address. Deprecated, use 'recipients' instead
+          deprecated: true
         recipients:
           type: array
-          description: Recipient (To) e-mail addresses
           items:
             type: string
+            description: Recipient (To) e-mail address
+            examples:
+              - recipient@recipient.se
         cc:
           type: array
-          description: Carbon-copy (CC) e-mail addresses
           items:
             type: string
+            description: Carbon-copy (CC) e-mail address
+            examples:
+              - cc-recipient@recipient.se
         subject:
-          minLength: 1
           type: string
           description: E-mail subject
+          minLength: 1
         message:
           type: string
           description: E-mail plain-text body
@@ -2555,6 +2579,7 @@ components:
           description: E-mail HTML body (BASE64-encoded)
         sender:
           $ref: "#/components/schemas/EmailSender"
+          description: Sender
         attachments:
           type: array
           items:
@@ -2563,61 +2588,59 @@ components:
           type: object
           additionalProperties:
             type: array
-            description: Headers
             items:
               type: string
-              description: Headers
           description: Headers
+      required:
+        - subject
     EmailRequestParty:
       type: object
       properties:
         partyId:
           type: string
-          description: The message party id
           format: uuid
+          description: The message party id
         externalReferences:
           type: array
           description: External references
           items:
             $ref: "#/components/schemas/ExternalReference"
-      description: Party
     EmailSender:
+      type: object
+      description: Sender
+      properties:
+        name:
+          type: string
+          description: The sender of the e-mail
+          minLength: 1
+        address:
+          type: string
+          format: email
+          description: Sender e-mail address
+          examples:
+            - sender@sender.se
+          minLength: 1
+        replyTo:
+          type: string
+          format: email
+          description: Reply-to e-mail address
+          examples:
+            - sender@sender.se
       required:
         - address
         - name
-      type: object
-      properties:
-        name:
-          minLength: 1
-          type: string
-          description: The sender of the e-mail
-        address:
-          minLength: 1
-          type: string
-          description: Sender e-mail address
-          format: email
-          example: sender@sender.se
-        replyTo:
-          type: string
-          description: Reply-to e-mail address
-          format: email
-          example: sender@sender.se
-      description: Sender
     EmailBatchRequest:
-      required:
-        - parties
-        - subject
       type: object
       properties:
         parties:
-          minItems: 1
           type: array
           items:
             $ref: "#/components/schemas/Party"
+          minItems: 1
         subject:
-          minLength: 1
           type: string
           description: E-mail subject
+          minLength: 1
         message:
           type: string
           description: E-mail plain-text body
@@ -2626,6 +2649,7 @@ components:
           description: E-mail HTML body (BASE64-encoded)
         sender:
           $ref: "#/components/schemas/EmailSender"
+          description: Sender
         attachments:
           type: array
           items:
@@ -2634,28 +2658,70 @@ components:
           type: object
           additionalProperties:
             type: array
-            description: Headers
             items:
               type: string
-              description: Headers
           description: Headers
-    Party:
       required:
-        - emailAddress
+        - parties
+        - subject
+    Party:
       type: object
       properties:
         partyId:
           type: string
-          description: The message parties id
           format: uuid
-          example: e8660aab-6df9-4ed5-86d1-d9b90a5f7e87
+          description: The message parties id
+          examples:
+            - e8660aab-6df9-4ed5-86d1-d9b90a5f7e87
         emailAddress:
-          minLength: 1
           type: string
-          description: Recipient e-mail address
           format: email
-          example: someone@somewhere.com
+          description: Recipient e-mail address
+          examples:
+            - someone@somewhere.com
+          minLength: 1
+      required:
+        - emailAddress
     Details:
+      type: object
+      description: Invoice details
+      properties:
+        amount:
+          type: number
+          format: float
+          description: The invoice amount
+          examples:
+            - 123.45
+          minimum: 0
+        dueDate:
+          type: string
+          format: date
+          description: The invoice due date
+          examples:
+            - 2023-10-09
+        paymentReferenceType:
+          type: string
+          enum:
+            - SE_OCR
+            - TENANT_REF
+        paymentReference:
+          type: string
+          description: The payment reference number
+          examples:
+            - "426523791"
+          maxLength: 25
+          minLength: 1
+        accountType:
+          type: string
+          enum:
+            - BANKGIRO
+            - PLUSGIRO
+        accountNumber:
+          type: string
+          description: The receiving account (a valid BANKGIRO or PLUSGIRO number)
+          examples:
+            - "12345"
+          minLength: 1
       required:
         - accountNumber
         - accountType
@@ -2663,45 +2729,7 @@ components:
         - dueDate
         - paymentReference
         - paymentReferenceType
-      type: object
-      properties:
-        amount:
-          type: number
-          description: The invoice amount
-          format: float
-          example: 123.45
-        dueDate:
-          type: string
-          description: The invoice due date
-          format: date
-          example: 2023-10-09
-        paymentReferenceType:
-          type: string
-          enum:
-            - SE_OCR
-            - TENANT_REF
-        paymentReference:
-          maxLength: 25
-          minLength: 1
-          type: string
-          description: The payment reference number
-          example: "426523791"
-        accountType:
-          type: string
-          enum:
-            - BANKGIRO
-            - PLUSGIRO
-        accountNumber:
-          minLength: 1
-          type: string
-          description: The receiving account (a valid BANKGIRO or PLUSGIRO number)
-          example: "12345"
-      description: Invoice details
     DigitalInvoiceFile:
-      required:
-        - content
-        - contentType
-        - filename
       type: object
       properties:
         contentType:
@@ -2713,32 +2741,31 @@ components:
           type: string
           description: Content (BASE64-encoded)
         filename:
-          minLength: 1
           type: string
           description: Filename
-      description: Files
+          minLength: 1
+      required:
+        - content
+        - contentType
+        - filename
     DigitalInvoiceParty:
       type: object
       properties:
         partyId:
           type: string
-          description: The recipient party id
           format: uuid
+          description: The recipient party id
         externalReferences:
           type: array
           description: External references
           items:
             $ref: "#/components/schemas/ExternalReference"
-      description: Party
     DigitalInvoiceRequest:
-      required:
-        - details
-        - party
-        - type
       type: object
       properties:
         party:
           $ref: "#/components/schemas/DigitalInvoiceParty"
+          description: Party
         type:
           type: string
           description: Invoice type
@@ -2746,17 +2773,19 @@ components:
             - INVOICE
             - REMINDER
         subject:
-          type: string
+          type:
+            - string
+            - "null"
           description: Subject
-          nullable: true
         reference:
           type: string
           description: Invoice reference
-          example: "Faktura #12345"
+          examples:
+            - "Faktura #12345"
         payable:
           type: boolean
-          description: Whether the invoice is payable
           default: true
+          description: Whether the invoice is payable
         details:
           $ref: "#/components/schemas/Details"
         files:
@@ -2764,166 +2793,49 @@ components:
           description: Files
           items:
             $ref: "#/components/schemas/DigitalInvoiceFile"
+      required:
+        - details
+        - party
+        - type
     ConstraintViolationProblem:
       type: object
       properties:
-        cause:
-          $ref: "#/components/schemas/ThrowableProblem"
-        stackTrace:
-          type: array
-          items:
-            type: object
-            properties:
-              classLoaderName:
-                type: string
-              moduleName:
-                type: string
-              moduleVersion:
-                type: string
-              methodName:
-                type: string
-              fileName:
-                type: string
-              lineNumber:
-                type: integer
-                format: int32
-              className:
-                type: string
-              nativeMethod:
-                type: boolean
         type:
           type: string
           format: uri
         status:
-          $ref: "#/components/schemas/StatusType"
+          type: integer
+          format: int32
         violations:
           type: array
           items:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        message:
-          type: string
         detail:
           type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
-        parameters:
-          type: object
-          additionalProperties:
-            type: object
-        suppressed:
-          type: array
-          items:
-            type: object
-            properties:
-              stackTrace:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    classLoaderName:
-                      type: string
-                    moduleName:
-                      type: string
-                    moduleVersion:
-                      type: string
-                    methodName:
-                      type: string
-                    fileName:
-                      type: string
-                    lineNumber:
-                      type: integer
-                      format: int32
-                    className:
-                      type: string
-                    nativeMethod:
-                      type: boolean
-              message:
-                type: string
-              localizedMessage:
-                type: string
-        localizedMessage:
-          type: string
     ThrowableProblem:
       type: object
       properties:
-        cause:
-          $ref: "#/components/schemas/ThrowableProblem"
-        stackTrace:
-          type: array
-          items:
-            type: object
-            properties:
-              classLoaderName:
-                type: string
-              moduleName:
-                type: string
-              moduleVersion:
-                type: string
-              methodName:
-                type: string
-              fileName:
-                type: string
-              lineNumber:
-                type: integer
-                format: int32
-              className:
-                type: string
-              nativeMethod:
-                type: boolean
-        message:
+        type:
+          type: string
+          format: uri
+        title:
           type: string
         status:
-          $ref: "#/components/schemas/StatusType"
+          type: integer
+          format: int32
         detail:
-          type: string
-        title:
           type: string
         instance:
           type: string
           format: uri
-        type:
-          type: string
-          format: uri
-        parameters:
-          type: object
-          additionalProperties:
-            type: object
-        suppressed:
-          type: array
-          items:
-            type: object
-            properties:
-              stackTrace:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    classLoaderName:
-                      type: string
-                    moduleName:
-                      type: string
-                    moduleVersion:
-                      type: string
-                    methodName:
-                      type: string
-                    fileName:
-                      type: string
-                    lineNumber:
-                      type: integer
-                      format: int32
-                    className:
-                      type: string
-                    nativeMethod:
-                      type: boolean
-              message:
-                type: string
-              localizedMessage:
-                type: string
-        localizedMessage:
-          type: string
+        causeAsProblem: {}
     Violation:
       type: object
       properties:
@@ -2933,184 +2845,209 @@ components:
           type: string
     MessageAttachment:
       type: object
+      description: Message attachment model
       properties:
         contentType:
           type: string
           description: The attachment content type
-          example: application/pdf
+          examples:
+            - application/pdf
         fileName:
           type: string
           description: The attachment file name
-          example: attachment.pdf
-      description: Message attachment model
-      readOnly: true
+          examples:
+            - attachment.pdf
     PagingMetaData:
       type: object
+      description: PagingMetaData model
       properties:
         page:
           type: integer
-          description: Current page
           format: int32
+          description: Current page
+          examples:
+            - 5
           readOnly: true
-          example: 5
         limit:
           type: integer
-          description: Displayed objects per page
           format: int32
+          description: Displayed objects per page
+          examples:
+            - 20
           readOnly: true
-          example: 20
         count:
           type: integer
-          description: Displayed objects on current page
           format: int32
+          description: Displayed objects on current page
+          examples:
+            - 13
           readOnly: true
-          example: 13
         totalRecords:
           type: integer
-          description: Total amount of hits based on provided search parameters
           format: int64
+          description: Total amount of hits based on provided search parameters
+          examples:
+            - 98
           readOnly: true
-          example: 98
         totalPages:
           type: integer
-          description: Total amount of pages based on provided search parameters
           format: int32
+          description: Total amount of pages based on provided search parameters
+          examples:
+            - 23
           readOnly: true
-          example: 23
-      description: PagingMetaData model
-      readOnly: true
     Recipient:
       type: object
+      description: Recipient model
       properties:
         address:
           $ref: "#/components/schemas/Address"
+          description: The recipient address
         personId:
           type: string
           description: The person identifier
-          example: "199001011234"
+          examples:
+            - "199001011234"
         messageType:
           type: string
           description: The message type
-          example: SNAIL_MAIL
+          examples:
+            - SNAIL_MAIL
         mobileNumber:
           type: string
           description: The recipient mobile number
-          example: "+46123456789"
+          examples:
+            - "+46123456789"
         status:
           type: string
           description: The message status
-          example: SENT
-      description: Recipient model
-      readOnly: true
+          examples:
+            - SENT
     UserMessage:
       type: object
+      description: User message model
       properties:
         messageId:
           type: string
           description: The message id
-          example: b971e0f8-2942-4b45-9fa3-bd2cc22ed76b
+          examples:
+            - b971e0f8-2942-4b45-9fa3-bd2cc22ed76b
         issuer:
           type: string
           description: The message issuer
-          example: and06sod
+          examples:
+            - and06sod
         origin:
           type: string
           description: The system that the message originated from
-          example: CASEDATA
+          examples:
+            - CASEDATA
         sent:
           type: string
-          description: When the message was sent
           format: date-time
+          description: When the message was sent
+          examples:
+            - 2021-01-01T12:00:00
         subject:
           type: string
           description: The message subject
-          example: Important message
+          examples:
+            - Important message
         body:
           type: string
           description: The message body
-          example: This is a message
+          examples:
+            - This is a message
         recipients:
           type: array
-          readOnly: true
           items:
             $ref: "#/components/schemas/Recipient"
+            readOnly: true
         attachments:
           type: array
-          readOnly: true
           items:
             $ref: "#/components/schemas/MessageAttachment"
-      description: User message model
-      readOnly: true
+            readOnly: true
     UserMessages:
       type: object
+      description: User messages model
       properties:
         _meta:
           $ref: "#/components/schemas/PagingMetaData"
+          readOnly: true
         messages:
           type: array
-          readOnly: true
           items:
             $ref: "#/components/schemas/UserMessage"
-      description: User messages model
+            readOnly: true
     Batch:
       type: object
+      description: Batch information model
       properties:
         batchId:
           type: string
           description: The batch id
-          example: b971e0f8-2942-4b45-9fa3-bd2cc22ed76b
+          examples:
+            - b971e0f8-2942-4b45-9fa3-bd2cc22ed76b
         messageType:
           type: string
           description: The original message type
-          example: LETTER
+          examples:
+            - LETTER
         subject:
           type: string
           description: Message subject if such exists for message(s) attached to the
             batch
-          example: Important message
+          examples:
+            - Important message
         sent:
           type: string
-          description: Timestamp when the batch was sent
           format: date-time
+          description: Timestamp when the batch was sent
+          examples:
+            - 2021-01-01T12:00:00
         attachmentCount:
           type: integer
-          description: The amount of documents attached to message(s) in the batch
           format: int32
-          example: 3
+          description: The amount of documents attached to message(s) in the batch
+          examples:
+            - 3
         recipientCount:
           type: integer
-          description: The amount of recipients included in the batch
           format: int32
-          example: 15
+          description: The amount of recipients included in the batch
+          examples:
+            - 15
         status:
           $ref: "#/components/schemas/Status"
-      description: Batch information model
-      readOnly: true
     Status:
       type: object
+      description: Batch status model
       properties:
         successful:
           type: integer
-          description: Amount of successfully sent messages
           format: int32
-          example: 13
+          description: Amount of successfully sent messages
+          examples:
+            - 13
         unsuccessful:
           type: integer
-          description: Amount of failed messages
           format: int32
-          example: 2
-      description: Batch status model
+          description: Amount of failed messages
+          examples:
+            - 2
     UserBatches:
       type: object
+      description: User batches model
       properties:
         _meta:
           $ref: "#/components/schemas/PagingMetaData"
+          readOnly: true
         batches:
           type: array
-          readOnly: true
           items:
             $ref: "#/components/schemas/Batch"
-      description: User batches model
+            readOnly: true
     LetterStatistics:
       type: object
       properties:
@@ -3189,30 +3126,11 @@ components:
       type: object
       properties:
         messageType:
-          type: string
-          enum:
-            - MESSAGE
-            - EMAIL
-            - SMS
-            - WEB_MESSAGE
-            - DIGITAL_MAIL
-            - DIGITAL_INVOICE
-            - SNAIL_MAIL
-            - LETTER
-            - SLACK
+          $ref: "#/components/schemas/MessageType"
         status:
-          type: string
-          enum:
-            - PENDING
-            - AWAITING_FEEDBACK
-            - SENT
-            - NOT_SENT
-            - FAILED
-            - NO_CONTACT_SETTINGS_FOUND
-            - NO_CONTACT_WANTED
-        content:
-          type: object
+          $ref: "#/components/schemas/MessageStatus"
+        content: {}
         timestamp:
           type: string
           format: date-time
-  securitySchemes: { }
+  securitySchemes: {}
