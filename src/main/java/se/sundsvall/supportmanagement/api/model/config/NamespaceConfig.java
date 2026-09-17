@@ -66,7 +66,7 @@ public class NamespaceConfig {
 	private String processConsumer;
 
 	@Schema(
-		description = "The errand changes worth telling the process about. An event whose sub type is not listed here is not published, so a namespace running processes needs at least ERRAND for them to start. Commands sent to the process are not errand changes and are never filtered by this list")
+		description = "The errand changes worth telling the process about. An event whose sub type is not listed here is not published, so a namespace with a process consumer must list ERRAND, for its processes to start, and DECISION, for a process waiting for its decision to learn that it has been made. Commands sent to the process (PROCESS, SIGNAL) are not errand changes, are never filtered by this list and may not be listed")
 	private List<@NotNull EventSubType> processTriggers;
 
 	@Valid

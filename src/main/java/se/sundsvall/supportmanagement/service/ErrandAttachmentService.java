@@ -67,13 +67,14 @@ public class ErrandAttachmentService {
 	private final EntityManager entityManager;
 	private final Semaphore semaphore;
 	private final AttachmentPurposeRepository attachmentPurposeRepository;
+	private final DecisionValidator decisionValidator;
 
 	public ErrandAttachmentService(
 		final ErrandsRepository errandsRepository,
 		final AccessControlService accessControlService,
 		final RevisionService revisionService, final EventService eventService,
 		final AttachmentRepository attachmentRepository, final EntityManager entityManager, final Semaphore semaphore,
-		final AttachmentPurposeRepository attachmentPurposeRepository) {
+		final AttachmentPurposeRepository attachmentPurposeRepository, final DecisionValidator decisionValidator) {
 		this.errandsRepository = errandsRepository;
 		this.accessControlService = accessControlService;
 		this.revisionService = revisionService;
@@ -82,6 +83,7 @@ public class ErrandAttachmentService {
 		this.entityManager = entityManager;
 		this.semaphore = semaphore;
 		this.attachmentPurposeRepository = attachmentPurposeRepository;
+		this.decisionValidator = decisionValidator;
 	}
 
 	@Transactional
@@ -179,6 +181,7 @@ public class ErrandAttachmentService {
 	public void deleteErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.ATTACHMENT, RW);
 		final var attachmentEntity = findAttachmentOrElseThrow(errandEntity, errandId, attachmentId);
+		decisionValidator.validateAttachmentRemovable(namespace, municipalityId, errandId, attachmentEntity.getId());
 
 		final ErrandEntity entity;
 		try {

@@ -53,6 +53,11 @@ public class NamespaceConfigService {
 	private static final String DUPLICATE_PROCESS_TRIGGER = "'%s' occurs more than once among the process triggers";
 	private static final String UNKNOWN_PROCESS_CONSUMER = "'%s' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be '%s'";
 	private static final String PROCESS_CONSUMER_EXCLUDES_ACCESS_CONTROL = "Access control may not be active for a namespace with the process consumer '%s'. A process consumer is not an AD account, and the access mapper grants access to nothing else, so every read and write the process makes for the namespace would be denied";
+	private static final String COMMAND_AS_PROCESS_TRIGGER = "'%s' is a command to the process rather than a change to the errand. Commands always reach the process and are never filtered by the process triggers, so it may not be listed among them";
+	private static final String MISSING_PROCESS_TRIGGERS = "A namespace with the process consumer '%s' must list %s among its process triggers. Without ERRAND an errand given its process label after it was created never starts its process, and without DECISION a process waiting for a decision is never told that it has been made";
+
+	/** The errand changes every process depends on being told about, in the order they are named when missing. */
+	private static final List<EventSubType> REQUIRED_PROCESS_TRIGGERS = List.of(EventSubType.ERRAND, EventSubType.DECISION);
 
 	private final NamespaceConfigRepository configRepository;
 	private final NamespaceConfigMapper mapper;
@@ -124,15 +129,27 @@ public class NamespaceConfigService {
 	 * mapper answers for AD accounts only, and a process engine has none, so it would be denied everything it asks for -
 	 * and denied silently, as the process reports the failure as something to retry and the errand simply stands still.
 	 * The day the access mapper can grant access to machine identities, this is the only thing that has to be lifted.
+	 * <p>
+	 * A namespace running a process has to trigger on {@link #REQUIRED_PROCESS_TRIGGERS}, and a command may not be listed
+	 * at all. Both mistakes are silent otherwise: a missing trigger leaves errands waiting for an event that is never
+	 * published, and a listed command looks as if the list had a say over it, which it never has.
 	 */
 	private void validateProcessConfiguration(NamespaceConfig request) {
+		final var triggers = ofNullable(request.getProcessTriggers()).orElse(emptyList());
 		final var seenTriggers = new HashSet<EventSubType>();
 
-		ofNullable(request.getProcessTriggers()).orElse(emptyList()).stream()
+		triggers.stream()
 			.filter(trigger -> !seenTriggers.add(trigger))
 			.findFirst()
 			.ifPresent(trigger -> {
 				throw Problem.valueOf(BAD_REQUEST, DUPLICATE_PROCESS_TRIGGER.formatted(trigger));
+			});
+
+		triggers.stream()
+			.filter(trigger -> nonNull(trigger) && trigger.isCommand())
+			.findFirst()
+			.ifPresent(trigger -> {
+				throw Problem.valueOf(BAD_REQUEST, COMMAND_AS_PROCESS_TRIGGER.formatted(trigger));
 			});
 
 		ofNullable(request.getProcessConsumer()).ifPresent(consumer -> {
@@ -141,6 +158,14 @@ public class NamespaceConfigService {
 			}
 			if (request.isAccessControl()) {
 				throw Problem.valueOf(BAD_REQUEST, PROCESS_CONSUMER_EXCLUDES_ACCESS_CONTROL.formatted(consumer));
+			}
+
+			final var missing = REQUIRED_PROCESS_TRIGGERS.stream()
+				.filter(required -> !triggers.contains(required))
+				.map(EventSubType::name)
+				.toList();
+			if (!missing.isEmpty()) {
+				throw Problem.valueOf(BAD_REQUEST, MISSING_PROCESS_TRIGGERS.formatted(consumer, String.join(" and ", missing)));
 			}
 		});
 	}

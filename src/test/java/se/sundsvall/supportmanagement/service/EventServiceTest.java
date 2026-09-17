@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -48,6 +50,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
@@ -436,7 +439,7 @@ class EventServiceTest {
 
 		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
 
-		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, ERRAND, "executingUserId", null, null);
+		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, ERRAND, "executingUserId", null, null, false);
 	}
 
 	@Test
@@ -447,7 +450,7 @@ class EventServiceTest {
 		service.createErrandEvent(EventType.DELETE, "message", entity, null, null, false, ERRAND);
 
 		verify(notificationServiceMock, never()).createNotification(any(), any(), any(), any());
-		verify(processEventPublisherMock).publish(entity, EventType.DELETE, ERRAND, "executingUserId", null, null);
+		verify(processEventPublisherMock).publish(entity, EventType.DELETE, ERRAND, "executingUserId", null, null, false);
 	}
 
 	@Test
@@ -458,7 +461,7 @@ class EventServiceTest {
 
 		service.createProcessCommandEvent(EventType.CREATE, "message", entity, false, PROCESS, command);
 
-		verify(processEventPublisherMock).publish(entity, EventType.CREATE, PROCESS, "executingUserId", null, command);
+		verify(processEventPublisherMock).publish(entity, EventType.CREATE, PROCESS, "executingUserId", null, command, false);
 	}
 
 	@Test
@@ -471,6 +474,30 @@ class EventServiceTest {
 		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
 		assertThat(eventCaptor.getValue().getHistoryReference()).isNull();
 		assertThat(eventCaptor.getValue().getMetadata()).extracting(Metadata::getKey).doesNotContain("CurrentRevision", "CurrentVersion", "PreviousRevision", "PreviousVersion");
+	}
+
+	/**
+	 * A change to a decision is an update of the errand, logged without a revision since the decision is no part of it,
+	 * and whether it concludes the decision is carried through to the publisher untouched.
+	 */
+	@ParameterizedTest
+	@ValueSource(booleans = {
+		true, false
+	})
+	@DisplayName("Verification that a change to a decision is logged and published as an update with the sub type DECISION")
+	void aDecisionEventIsLoggedAndPublished(final boolean concludesDecision) {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createDecisionEvent("message", entity, concludesDecision);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getType()).isEqualTo(EventType.UPDATE);
+		assertThat(eventCaptor.getValue().getSubType()).isEqualTo("DECISION");
+		assertThat(eventCaptor.getValue().getMessage()).isEqualTo("message");
+		assertThat(eventCaptor.getValue().getHistoryReference()).isNull();
+		verify(notificationServiceMock).createNotification(eq("2281"), eq("ALKT"), eq(entity.getId()), any());
+		verify(notificationDispatchRepositoryMock).save(any());
+		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, DECISION, "executingUserId", null, null, concludesDecision);
 	}
 
 	@Test

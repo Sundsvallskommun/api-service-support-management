@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
+import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -27,11 +28,13 @@ import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
@@ -63,7 +66,7 @@ public class EventService {
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
 		writeErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype);
-		publishToProcess(errandEntity, eventType, subtype, null);
+		publishToProcess(errandEntity, eventType, subtype, null, false);
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {
@@ -86,7 +89,23 @@ public class EventService {
 	 */
 	public void createProcessCommandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final boolean sendNotification, final EventSubType subtype, final ProcessCommand command) {
 		writeErrandEvent(eventType, message, errandEntity, null, null, sendNotification, subtype);
-		publishToProcess(errandEntity, eventType, subtype, command);
+		publishToProcess(errandEntity, eventType, subtype, command, false);
+	}
+
+	/**
+	 * Writes the event of a change to one of the decisions of the errand, and tells the process of the errand about it.
+	 * <p>
+	 * A decision is no part of the revision of the errand, so the event points at none. A decision being concluded is what
+	 * a process waits for, and one concluded by a handler is told past the emergency brake - see
+	 * {@link ProcessEventPublisher}.
+	 *
+	 * @param message           the text of the event.
+	 * @param errandEntity      the errand the decision belongs to.
+	 * @param concludesDecision whether the change is the one that concludes the decision.
+	 */
+	public void createDecisionEvent(final String message, final ErrandEntity errandEntity, final boolean concludesDecision) {
+		writeErrandEvent(UPDATE, message, errandEntity, null, null, true, DECISION);
+		publishToProcess(errandEntity, UPDATE, DECISION, null, concludesDecision);
 	}
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {
@@ -141,8 +160,8 @@ public class EventService {
 	 * <p>
 	 * The notification flag has no say here - an outbox row is no notice to a handler but a message to a process.
 	 */
-	private void publishToProcess(final ErrandEntity errandEntity, final EventType eventType, final EventSubType subtype, final ProcessCommand command) {
-		processEventPublisher.publish(errandEntity, eventType, subtype, executingIdentity(), getRequestGroupId(), command);
+	private void publishToProcess(final ErrandEntity errandEntity, final EventType eventType, final EventSubType subtype, final ProcessCommand command, final boolean concludesDecision) {
+		processEventPublisher.publish(errandEntity, eventType, subtype, executingIdentity(), getRequestGroupId(), command, concludesDecision);
 	}
 
 	private String extractId(final Revision currentRevision) {
@@ -165,7 +184,7 @@ public class EventService {
 
 	private String extractEventId(final ResponseEntity<Void> response) {
 		return ofNullable(response.getHeaders().getLocation())
-			.map(uri -> uri.getPath())
+			.map(URI::getPath)
 			.map(path -> path.substring(path.lastIndexOf('/') + 1))
 			.orElse(null);
 	}

@@ -143,6 +143,9 @@ logbook:
         value: '[base64]'
       - key: '$..attachments[*].content'
         value: '[binary]'
+      # The justification of a decision nearly always holds personal data, and is to appear in no log
+      - key: '$..justification'
+        value: '[masked]'
 logging:
   level:
     root: INFO

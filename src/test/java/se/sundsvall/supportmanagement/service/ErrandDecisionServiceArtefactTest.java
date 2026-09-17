@@ -12,10 +12,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
@@ -32,9 +34,13 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
@@ -65,10 +71,16 @@ class ErrandDecisionServiceArtefactTest {
 	private InvestigationRepository investigationRepositoryMock;
 
 	@Mock
+	private ErrandProcessRepository processRepositoryMock;
+
+	@Mock
 	private DecisionValidator decisionValidatorMock;
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
+
+	@Mock
+	private EventService eventServiceMock;
 
 	@Captor
 	private ArgumentCaptor<Supplier<DecisionJsonParameterEntity>> jsonParameterFactoryCaptor;
@@ -106,6 +118,31 @@ class ErrandDecisionServiceArtefactTest {
 		assertThat(entity.getAttachments()).isNotNull();
 		verify(artefactAttachmentServiceMock).uploadAndLink(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(file), same(entity.getAttachments()));
 		verify(decisionRepositoryMock).saveAndFlush(entity);
+		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, entity);
+		verifyNoInteractions(eventServiceMock);
+	}
+
+	/**
+	 * The attachments are part of the decision, and locked with it - neither added, linked nor unlinked.
+	 */
+	@Test
+	void noAttachmentOfADecisionThatCanNoLongerBeChangedIsTouched() {
+
+		// Arrange
+		mockErrand();
+		final var entity = mockDecision();
+		doThrow(Problem.valueOf(CONFLICT, "decision completed")).when(decisionValidatorMock).validateChangeable(ERRAND_ID, entity);
+		final var file = new MockMultipartFile("attachment", "beslut.pdf", "application/pdf", "content".getBytes());
+
+		// Act
+		final var uploaded = catchThrowableOfType(ThrowableProblem.class, () -> service.createDecisionAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, file));
+		final var linked = catchThrowableOfType(ThrowableProblem.class, () -> service.linkDecisionAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, ATTACHMENT_ID));
+		final var unlinked = catchThrowableOfType(ThrowableProblem.class, () -> service.unlinkDecisionAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, ATTACHMENT_ID));
+
+		// Verify
+		assertThat(List.of(uploaded, linked, unlinked)).extracting(ThrowableProblem::getStatus).containsOnly(CONFLICT);
+		verifyNoInteractions(artefactAttachmentServiceMock, eventServiceMock);
+		verify(decisionRepositoryMock, never()).saveAndFlush(any());
 	}
 
 	@Test
@@ -124,6 +161,8 @@ class ErrandDecisionServiceArtefactTest {
 		assertThat(result.getId()).isEqualTo(ATTACHMENT_ID);
 		verify(artefactAttachmentServiceMock).link(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(ATTACHMENT_ID), same(entity.getAttachments()));
 		verify(decisionRepositoryMock).saveAndFlush(entity);
+		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, entity);
+		verifyNoInteractions(eventServiceMock);
 	}
 
 	@Test
@@ -139,6 +178,8 @@ class ErrandDecisionServiceArtefactTest {
 		// Verify
 		verify(artefactAttachmentServiceMock).unlink(eq(ATTACHMENT_ID), any());
 		verify(decisionRepositoryMock).saveAndFlush(entity);
+		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, entity);
+		verifyNoInteractions(eventServiceMock);
 	}
 
 	/**
@@ -195,6 +236,7 @@ class ErrandDecisionServiceArtefactTest {
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
 		verify(artefactJsonParameterServiceMock).upsert(same(entity.getJsonParameters()), jsonParameterFactoryCaptor.capture(), isNull(), same(body));
 		assertThat(jsonParameterFactoryCaptor.getValue().get().getDecisionEntity()).as("a new parameter points at the decision").isSameAs(entity);
+		verifyNoInteractions(decisionValidatorMock, eventServiceMock);
 	}
 
 	@Test
@@ -210,6 +252,7 @@ class ErrandDecisionServiceArtefactTest {
 		// Verify
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
 		verify(artefactJsonParameterServiceMock).delete(same(parameters), eq(KEY), eq(IF_MATCH));
+		verifyNoInteractions(decisionValidatorMock, eventServiceMock);
 	}
 
 	@Test
