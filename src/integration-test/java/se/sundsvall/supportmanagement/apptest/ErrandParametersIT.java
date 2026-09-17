@@ -6,7 +6,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 import java.util.List;
@@ -148,7 +148,7 @@ class ErrandParametersIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest("request-change.json")
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequest();
 
 		// Writing back the value they were served changes nothing, so it is not refused.

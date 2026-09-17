@@ -1,8 +1,10 @@
 package se.sundsvall.supportmanagement.api.model.config.action;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 
 @Schema(description = "Action definition model describing an available action and its conditions/parameters")
 public class ActionDefinition {
@@ -18,6 +20,12 @@ public class ActionDefinition {
 
 	@Schema(description = "Definitions of parameters for this action")
 	private List<Definition> parameterDefinitions;
+
+	@ArraySchema(
+		schema = @Schema(implementation = OperationType.class),
+		arraySchema = @Schema(
+			description = "The operations on an errand this action runs on. A config of this action may name a subset of these and nothing outside them"))
+	private List<OperationType> operationTypes;
 
 	public static ActionDefinition create() {
 		return new ActionDefinition();
@@ -62,6 +70,19 @@ public class ActionDefinition {
 		return this;
 	}
 
+	public List<OperationType> getOperationTypes() {
+		return operationTypes;
+	}
+
+	public void setOperationTypes(final List<OperationType> operationTypes) {
+		this.operationTypes = operationTypes;
+	}
+
+	public ActionDefinition withOperationTypes(final List<OperationType> operationTypes) {
+		this.operationTypes = operationTypes;
+		return this;
+	}
+
 	public List<Definition> getParameterDefinitions() {
 		return parameterDefinitions;
 	}
@@ -80,12 +101,13 @@ public class ActionDefinition {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		ActionDefinition that = (ActionDefinition) o;
-		return Objects.equals(name, that.name) && Objects.equals(description, that.description) && Objects.equals(conditionDefinitions, that.conditionDefinitions) && Objects.equals(parameterDefinitions, that.parameterDefinitions);
+		return Objects.equals(name, that.name) && Objects.equals(description, that.description) && Objects.equals(conditionDefinitions, that.conditionDefinitions) && Objects.equals(parameterDefinitions, that.parameterDefinitions) && Objects.equals(
+			operationTypes, that.operationTypes);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(name, description, conditionDefinitions, parameterDefinitions);
+		return Objects.hash(name, description, conditionDefinitions, parameterDefinitions, operationTypes);
 	}
 
 	@Override
@@ -95,6 +117,7 @@ public class ActionDefinition {
 			", description='" + description + '\'' +
 			", conditionDefinitions=" + conditionDefinitions +
 			", parameterDefinitions=" + parameterDefinitions +
+			", operationTypes=" + operationTypes +
 			'}';
 	}
 }

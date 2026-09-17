@@ -1,6 +1,11 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -13,12 +18,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.api.model.metadata.AttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
@@ -28,6 +37,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
@@ -42,6 +52,8 @@ import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
@@ -51,10 +63,14 @@ import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurpose;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurposeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
@@ -93,8 +109,12 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updat
 @Service
 public class MetadataService {
 
+	private static final String MEASURE_TYPE_WITHOUT_GROUP = "A measure type must belong to at least one group";
 	private static final String ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' already exists in namespace '%s' for municipalityId '%s'";
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
+	private static final String LABEL = "Label";
+	private static final String HAS_LABEL = "hasLabel";
+	private static final int RESOURCE_PATH_MAX_LENGTH = 255;
 
 	private static final String CONTACT_REASON = "ContactReason";
 	private static final String CATEGORY = "Category";
@@ -110,6 +130,7 @@ public class MetadataService {
 	private static final String STATUS = "Status";
 	private static final String SORT_ORDER = "sortOrder";
 
+	private final ActionConfigRepository actionConfigRepository;
 	private final CategoryRepository categoryRepository;
 	private final ErrandsRepository errandsRepository;
 	private final ExternalIdTypeRepository externalIdTypeRepository;
@@ -124,9 +145,12 @@ public class MetadataService {
 	private final StatusRepository statusRepository;
 	private final ValidationRepository validationRepository;
 	private final ContactReasonRepository contactReasonRepository;
+	private final JobService jobService;
 	private final AntPathMatcher pathMatcher;
 
-	public MetadataService(final CategoryRepository categoryRepository,
+	public MetadataService(
+		final ActionConfigRepository actionConfigRepository,
+		final CategoryRepository categoryRepository,
 		final ErrandsRepository errandsRepository,
 		final ExternalIdTypeRepository externalIdTypeRepository,
 		final MeasureTypeRepository measureTypeRepository,
@@ -139,7 +163,9 @@ public class MetadataService {
 		final RoleRepository roleRepository,
 		final StatusRepository statusRepository,
 		final ValidationRepository validationRepository,
-		final ContactReasonRepository contactReasonRepository) {
+		final ContactReasonRepository contactReasonRepository,
+		final JobService jobService) {
+		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
 		this.externalIdTypeRepository = externalIdTypeRepository;
@@ -154,6 +180,7 @@ public class MetadataService {
 		this.statusRepository = statusRepository;
 		this.validationRepository = validationRepository;
 		this.contactReasonRepository = contactReasonRepository;
+		this.jobService = jobService;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
 	}
@@ -374,6 +401,160 @@ public class MetadataService {
 
 	public boolean labelExistsById(final String id, final String namespace, final String municipalityId) {
 		return metadataLabelRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	@Transactional(readOnly = true)
+	public LabelMoveDryRunResponse moveLabel(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var allMovedIds = collectMovedLabelIds(context.labelToMove().getId(), context.descendants());
+
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
+
+		var affectedActions = actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
+			.filter(action -> isAffectedByMove(action, allMovedIds))
+			.map(action -> AffectedAction.create()
+				.withId(action.getId())
+				.withName(action.getName())
+				.withDisplayValue(action.getDisplayValue()))
+			.toList();
+
+		return LabelMoveDryRunResponse.create()
+			.withAffectedErrandCount(affectedErrandCount)
+			.withAffectedActions(affectedActions);
+	}
+
+	/**
+	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
+	 * <p>
+	 * The re-stuvning (re-parenting of affected errand labels) that carries the move out is not wired up yet — the job
+	 * is created here and stays PENDING until a worker that performs it is added.
+	 * <p>
+	 * Kept transactional (not read-only, since {@link JobService#create} writes within it) so that the session
+	 * validation opens against stays open for as long as {@link #validateAndFindLabelToMove} needs it — the cycle
+	 * check walks LAZY {@code parent} proxies one hop at a time, and each hop past the first needs the session to
+	 * still be there to load from.
+	 */
+	@Transactional
+	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var canonicalLabelId = context.labelToMove().getId();
+
+		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL, canonicalLabelId)) {
+			throw Problem.valueOf(CONFLICT, "Label '%s' already has a move in progress".formatted(canonicalLabelId));
+		}
+
+		var allMovedIds = collectMovedLabelIds(canonicalLabelId, context.descendants());
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
+		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
+
+		return jobService.get(namespace, municipalityId, jobId);
+	}
+
+	/**
+	 * The moved label together with every descendant under it, so that an errand tagged with any label in the subtree
+	 * counts as affected — regardless of whether the ancestor-chain invariant every errand is meant to carry has actually
+	 * caught up with it yet.
+	 */
+	private static Set<String> collectMovedLabelIds(final String labelId, final List<MetadataLabelEntity> descendants) {
+		return Stream.concat(Stream.of(labelId), descendants.stream().map(MetadataLabelEntity::getId))
+			.collect(Collectors.toSet());
+	}
+
+	/**
+	 * A label found to move, together with the descendants a move carries along with it — fetched once here so that
+	 * validating the resulting resource paths and collecting the ids a move affects don't each ask the database for the
+	 * same subtree.
+	 */
+	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {}
+
+	private LabelMoveContext validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
+		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, labelId, namespace, municipalityId)));
+
+		MetadataLabelEntity newParent = null;
+		if (newParentId != null) {
+			newParent = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(newParentId, namespace, municipalityId)
+				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, newParentId, namespace, municipalityId)));
+		}
+
+		validateNotNoOp(labelToMove, newParentId);
+		validateNoCycle(labelToMove.getId(), newParent);
+
+		var newPath = newParent != null
+			? newParent.getResourcePath() + "/" + labelToMove.getResourceName()
+			: labelToMove.getResourceName();
+
+		validateNoPathCollision(namespace, municipalityId, labelToMove, newPath);
+
+		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
+			namespace, municipalityId, labelToMove.getResourcePath() + "/");
+
+		validateResourcePathLength(labelToMove, newPath, descendants);
+
+		return new LabelMoveContext(labelToMove, descendants);
+	}
+
+	private static void validateNotNoOp(final MetadataLabelEntity labelToMove, final String newParentId) {
+		var currentParentId = labelToMove.getParent() != null ? labelToMove.getParent().getId() : null;
+		if (Objects.equals(currentParentId, newParentId)) {
+			throw Problem.valueOf(BAD_REQUEST, "Label '%s' is already under the specified parent — move would be a no-op".formatted(labelToMove.getId()));
+		}
+	}
+
+	/**
+	 * {@code labelId} must be the moved label's id as stored, not the raw path variable — a client sending the same
+	 * UUID in a different case would otherwise never match {@code current.getId()} on the way up, since both sides
+	 * of the comparison have to come from the same, canonical source to line up.
+	 */
+	private static void validateNoCycle(final String labelId, final MetadataLabelEntity newParent) {
+		if (newParent == null) {
+			return;
+		}
+		var visited = new HashSet<String>();
+		var current = newParent;
+		while (current != null) {
+			if (!visited.add(current.getId())) {
+				break;
+			}
+			if (Objects.equals(labelId, current.getId())) {
+				throw Problem.valueOf(BAD_REQUEST, "Moving label '%s' under '%s' would create a cycle".formatted(labelId, newParent.getId()));
+			}
+			current = current.getParent();
+		}
+	}
+
+	private void validateNoPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final String newPath) {
+		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, newPath)
+			.filter(existing -> !Objects.equals(existing.getId(), labelToMove.getId()))
+			.ifPresent(existing -> {
+				throw Problem.valueOf(CONFLICT, "A label with path '%s' already exists under the destination".formatted(newPath));
+			});
+	}
+
+	/**
+	 * The moved label's new path, and the new path every descendant it carries along would get, must each fit the
+	 * resource_path column — rejected here, before any row is touched, rather than surfacing as a database error
+	 * partway through the restructuring.
+	 */
+	private static void validateResourcePathLength(final MetadataLabelEntity labelToMove, final String newPath, final List<MetadataLabelEntity> descendants) {
+		rejectIfTooLong(newPath);
+
+		var oldPrefixLength = labelToMove.getResourcePath().length();
+		descendants.forEach(descendant -> rejectIfTooLong(newPath + descendant.getResourcePath().substring(oldPrefixLength)));
+	}
+
+	private static void rejectIfTooLong(final String resourcePath) {
+		if (resourcePath.length() > RESOURCE_PATH_MAX_LENGTH) {
+			throw Problem.valueOf(BAD_REQUEST,
+				"Resulting resource path '%s' (%d characters) exceeds the maximum of %d characters".formatted(resourcePath, resourcePath.length(), RESOURCE_PATH_MAX_LENGTH));
+		}
+	}
+
+	private static boolean isAffectedByMove(final ActionConfigEntity action, final Set<String> movedLabelIds) {
+		return action.getConditions().stream()
+			.filter(c -> HAS_LABEL.equals(c.getKey()))
+			.flatMap(c -> c.getValues().stream())
+			.anyMatch(movedLabelIds::contains);
 	}
 
 	public boolean hasLabels(final String namespace, final String municipalityId) {
@@ -654,7 +835,28 @@ public class MetadataService {
 	// MeasureType operations
 	// =================================================================
 
+	/**
+	 * A measure type belongs to at least one group - a type in no group cannot be found by the one thing measure types
+	 * are looked up by.
+	 * <p>
+	 * Held here rather than on the model, which the update shares: a constraint there would demand the groups of every
+	 * patch, where every other property of a measure type may be left out.
+	 */
+	private static void verifyMeasureGroupsNamed(final List<String> measureGroups) {
+		if (isEmpty(measureGroups)) {
+			throw Problem.valueOf(BAD_REQUEST, MEASURE_TYPE_WITHOUT_GROUP);
+		}
+	}
+
+	/** An update may leave the groups out, which changes nothing, but may not empty them. */
+	private static void verifyMeasureGroupsNotEmptied(final List<String> measureGroups) {
+		if (nonNull(measureGroups)) {
+			verifyMeasureGroupsNamed(measureGroups);
+		}
+	}
+
 	public String createMeasureType(final String namespace, final String municipalityId, final MeasureType measureType) {
+		verifyMeasureGroupsNamed(measureType.getMeasureGroups());
 		if (measureTypeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, measureType.getName())) {
 			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, measureType.getName(), namespace, municipalityId));
 		}
@@ -672,9 +874,10 @@ public class MetadataService {
 
 	public List<MeasureType> findMeasureTypes(final String namespace, final String municipalityId, final String measureGroup, final Sort sort) {
 		final var sortToUse = getDefaultSortIfUnsorted(sort);
+		verifySortable(sortToUse);
 
 		return ofNullable(measureGroup)
-			.map(group -> measureTypeRepository.findAllByNamespaceAndMunicipalityIdAndMeasureGroup(namespace, municipalityId, group, sortToUse))
+			.map(group -> measureTypeRepository.findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(namespace, municipalityId, group, sortToUse))
 			.orElseGet(() -> measureTypeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sortToUse))
 			.stream()
 			.map(MetadataMapper::toMeasureType)
@@ -690,11 +893,34 @@ public class MetadataService {
 	}
 
 	public MeasureType updateMeasureType(final String namespace, final String municipalityId, final String id, final MeasureType measureType) {
+		verifyMeasureGroupsNotEmptied(measureType.getMeasureGroups());
 		if (!measureTypeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(MEASURE_TYPE, id, namespace, municipalityId));
 		}
 		final var entity = updateMeasureTypeEntity(measureTypeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), measureType);
 		return toMeasureType(measureTypeRepository.save(entity));
+	}
+
+	/**
+	 * The properties a measure type may be sorted by, which is every scalar it carries.
+	 * <p>
+	 * The groups became a collection, and a collection cannot be sorted on. A request naming one sorted a measure type
+	 * before that and would otherwise reach the query derivation as a property that is not there, which answers 500
+	 * without saying what is wrong.
+	 */
+	private static final Set<String> SORTABLE_MEASURE_TYPE_PROPERTIES = Arrays.stream(MeasureTypeEntity.class.getDeclaredFields())
+		.filter(field -> !field.isSynthetic())
+		.filter(field -> !Modifier.isStatic(field.getModifiers()))
+		.filter(field -> !Collection.class.isAssignableFrom(field.getType()))
+		.map(Field::getName)
+		.collect(toSet());
+
+	private static void verifySortable(final Sort sort) {
+		sort.forEach(order -> {
+			if (!SORTABLE_MEASURE_TYPE_PROPERTIES.contains(order.getProperty())) {
+				throw Problem.valueOf(BAD_REQUEST, "'%s' is not a property a measure type can be sorted by".formatted(order.getProperty()));
+			}
+		});
 	}
 
 	private Sort getDefaultSortIfUnsorted(final Sort sort) {

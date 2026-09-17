@@ -26,6 +26,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.supportmanagement.api.model.config.AccessDefinition;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.Validation;
 import se.sundsvall.supportmanagement.api.model.config.action.ActionDefinition;
@@ -198,6 +199,23 @@ class NamespaceConfigResource {
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
 
 		return ok(validationService.update(namespace, municipalityId, type, validation));
+	}
+
+	@GetMapping(path = "/{municipalityId}/{namespace}/namespace-config/access-definition", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Read the access definition",
+		description = "Fetches the values the access configuration accepts for fields and resources, so that a client configuring access reads them from here rather than from an enum of the schema",
+		responses = {
+			@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+				Problem.class, ConstraintViolationProblem.class
+			}))),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		})
+	ResponseEntity<AccessDefinition> getAccessDefinition(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
+
+		return ok(service.getAccessDefinition());
 	}
 
 	// =============== Action ===============

@@ -2,8 +2,11 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.ZoneId;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,6 +47,7 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.trim;
 
@@ -558,6 +562,21 @@ public class MetadataMapper {
 	// MeasureType operations
 	// =================================================================
 
+	/**
+	 * The groups a measure type belongs to, as the set the entity holds them in. A group named twice in a request means
+	 * the type belongs to it, which it already did, so the repetition is dropped rather than refused - the key on the
+	 * table would refuse it anyway, and by then the caller has a constraint violation instead of an answer.
+	 */
+	private static Set<String> toMeasureGroups(final List<String> measureGroups) {
+		// The key on the table is as case insensitive as the collation of the column, so 'MANAGERS' and 'managers' are
+		// one group to the database and two to a set of strings. Deduplicating the way the database does is what keeps a
+		// request naming both from reaching it as a duplicate key, and the first spelling given is the one kept.
+		final var seen = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+		return ofNullable(measureGroups).orElseGet(List::of).stream()
+			.filter(seen::add)
+			.collect(toCollection(LinkedHashSet::new));
+	}
+
 	public static MeasureType toMeasureType(final MeasureTypeEntity entity) {
 		return ofNullable(entity)
 			.map(e -> MeasureType.create()
@@ -566,7 +585,7 @@ public class MetadataMapper {
 				.withModified(e.getModified())
 				.withName(e.getName())
 				.withDisplayName(e.getDisplayName())
-				.withMeasureGroup(e.getMeasureGroup())
+				.withMeasureGroups(ofNullable(e.getMeasureGroups()).map(List::copyOf).orElse(null))
 				.withDeprecated(e.isDeprecated())
 				.withSortOrder(e.getSortOrder()))
 			.orElse(null);
@@ -581,7 +600,7 @@ public class MetadataMapper {
 			.withMunicipalityId(municipalityId)
 			.withName(measureType.getName())
 			.withDisplayName(measureType.getDisplayName())
-			.withMeasureGroup(measureType.getMeasureGroup())
+			.withMeasureGroups(toMeasureGroups(measureType.getMeasureGroups()))
 			.withSortOrder(measureType.getSortOrder())
 			.withNamespace(namespace);
 		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
@@ -595,7 +614,16 @@ public class MetadataMapper {
 
 		ofNullable(measureType.getName()).ifPresent(entity::setName);
 		ofNullable(measureType.getDisplayName()).ifPresent(entity::setDisplayName);
-		ofNullable(measureType.getMeasureGroup()).ifPresent(entity::setMeasureGroup);
+		ofNullable(measureType.getMeasureGroups()).map(MetadataMapper::toMeasureGroups)
+			.filter(groups -> !groups.equals(entity.getMeasureGroups()))
+			.ifPresent(groups -> {
+				entity.setMeasureGroups(groups);
+
+				// The groups live in a table of their own, so changing only them leaves the measure type itself
+				// untouched and the callback maintaining 'modified' never runs. Touching it here is what marks the row
+				// as changed; the callback then sets it again, to the same instant.
+				entity.setModified(now(ZoneId.systemDefault()));
+			});
 		ofNullable(measureType.getSortOrder()).ifPresent(entity::setSortOrder);
 		ofNullable(measureType.getDeprecated()).ifPresent(entity::setDeprecated);
 

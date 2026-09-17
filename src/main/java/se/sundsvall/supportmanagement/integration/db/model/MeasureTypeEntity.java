@@ -1,15 +1,22 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import java.util.Set;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -41,8 +48,14 @@ public class MeasureTypeEntity {
 	@Column(name = "display_name")
 	private String displayName;
 
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(
+		name = "measure_type_groups",
+		joinColumns = @JoinColumn(name = "measure_type_id",
+			foreignKey = @ForeignKey(name = "fk_measure_type_groups_measure_type_id")))
 	@Column(name = "measure_group", nullable = false)
-	private String measureGroup;
+	@OrderBy
+	private Set<String> measureGroups;
 
 	@Column(name = "sort_order")
 	private Integer sortOrder;
@@ -107,16 +120,16 @@ public class MeasureTypeEntity {
 		return this;
 	}
 
-	public String getMeasureGroup() {
-		return measureGroup;
+	public Set<String> getMeasureGroups() {
+		return measureGroups;
 	}
 
-	public void setMeasureGroup(final String measureGroup) {
-		this.measureGroup = measureGroup;
+	public void setMeasureGroups(final Set<String> measureGroups) {
+		this.measureGroups = measureGroups;
 	}
 
-	public MeasureTypeEntity withMeasureGroup(final String measureGroup) {
-		this.measureGroup = measureGroup;
+	public MeasureTypeEntity withMeasureGroups(final Set<String> measureGroups) {
+		this.measureGroups = measureGroups;
 		return this;
 	}
 
@@ -210,7 +223,7 @@ public class MeasureTypeEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, deprecated, id, measureGroup, modified, municipalityId, name, namespace, displayName, sortOrder);
+		return Objects.hash(created, deprecated, id, measureGroups, modified, municipalityId, name, namespace, displayName, sortOrder);
 	}
 
 	@Override
@@ -221,7 +234,7 @@ public class MeasureTypeEntity {
 		if (!(obj instanceof final MeasureTypeEntity other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(id, other.id) && Objects.equals(measureGroup, other.measureGroup) && Objects.equals(modified, other.modified)
+		return Objects.equals(created, other.created) && deprecated == other.deprecated && Objects.equals(id, other.id) && Objects.equals(measureGroups, other.measureGroups) && Objects.equals(modified, other.modified)
 			&& Objects.equals(municipalityId, other.municipalityId) && Objects.equals(name, other.name) && Objects.equals(namespace, other.namespace) && Objects.equals(displayName, other.displayName) && Objects.equals(sortOrder, other.sortOrder);
 	}
 
@@ -230,7 +243,7 @@ public class MeasureTypeEntity {
 		return "MeasureTypeEntity [id=" + id
 			+ ", name=" + name
 			+ ", displayName=" + displayName
-			+ ", measureGroup=" + measureGroup
+			+ ", measureGroups=" + measureGroups
 			+ ", sortOrder=" + sortOrder
 			+ ", deprecated=" + deprecated
 			+ ", municipalityId=" + municipalityId

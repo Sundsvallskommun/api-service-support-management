@@ -9,11 +9,11 @@ import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
@@ -413,7 +413,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/c9efe03d-deff-4828-a043-541fa78ffdeb")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -423,7 +423,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=partyId")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -434,7 +434,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -444,7 +444,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/notes")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -466,7 +466,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters/hidden-key")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -489,7 +489,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -499,7 +499,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/parameters/hidden-key")
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(DELETE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -510,7 +510,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -532,7 +532,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath("/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8/notes")
 			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(UNAUTHORIZED)
+			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -652,5 +652,20 @@ class ErrandsIT extends AbstractAppTest {
 		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id))
 			.extracting(RevisionEntity::getVersion)
 			.containsExactly(0);
+	}
+
+	/**
+	 * The other half of the pair {@code ErrandCommunicationIT} holds: a resource grant carrying the write of one resource
+	 * of an errand leaves the errand itself refused, since no grant vouches for writing what the labels are held against.
+	 */
+	@Test
+	void test41_patchErrandOnAnErrandHeldAtReadIsNotAllowed() {
+		setupCall()
+			.withServicePath("/2506/NAMESPACE-2507/errands/9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b")
+			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.sendRequestAndVerifyResponse();
 	}
 }

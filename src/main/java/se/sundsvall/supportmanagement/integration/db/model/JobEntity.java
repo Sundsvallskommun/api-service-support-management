@@ -59,6 +59,9 @@ public class JobEntity {
 	@Column(name = "message", columnDefinition = "text")
 	private String message;
 
+	@Column(name = "label_id")
+	private String labelId;
+
 	@Column(name = "created", updatable = false)
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -188,6 +191,19 @@ public class JobEntity {
 		return this;
 	}
 
+	public String getLabelId() {
+		return labelId;
+	}
+
+	public void setLabelId(final String labelId) {
+		this.labelId = labelId;
+	}
+
+	public JobEntity withLabelId(final String labelId) {
+		this.labelId = labelId;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -235,7 +251,7 @@ public class JobEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, municipalityId, namespace, type, status, progress, total, processed, message, created, modified);
+		return Objects.hash(id, municipalityId, namespace, type, status, progress, total, processed, message, labelId, created, modified);
 	}
 
 	@Override
@@ -248,7 +264,7 @@ public class JobEntity {
 		}
 		return Objects.equals(id, other.id) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace)
 			&& type == other.type && status == other.status && Objects.equals(progress, other.progress) && Objects.equals(total, other.total)
-			&& Objects.equals(processed, other.processed) && Objects.equals(message, other.message)
+			&& Objects.equals(processed, other.processed) && Objects.equals(message, other.message) && Objects.equals(labelId, other.labelId)
 			&& Objects.equals(created, other.created) && Objects.equals(modified, other.modified);
 	}
 
@@ -256,6 +272,6 @@ public class JobEntity {
 	public String toString() {
 		return "JobEntity [id=" + id + ", municipalityId=" + municipalityId + ", namespace=" + namespace
 			+ ", type=" + type + ", status=" + status + ", progress=" + progress + ", total=" + total
-			+ ", processed=" + processed + ", message=" + message + ", created=" + created + ", modified=" + modified + "]";
+			+ ", processed=" + processed + ", message=" + message + ", labelId=" + labelId + ", created=" + created + ", modified=" + modified + "]";
 	}
 }

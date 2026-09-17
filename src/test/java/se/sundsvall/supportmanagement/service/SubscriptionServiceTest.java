@@ -36,8 +36,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriptionServiceTest {
@@ -425,7 +425,7 @@ class SubscriptionServiceTest {
 
 		assertThatThrownBy(() -> service.findSubscriptions(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID))
 			.isInstanceOf(Problem.class)
-			.extracting("status").isEqualTo(UNAUTHORIZED);
+			.extracting("status").isEqualTo(FORBIDDEN);
 
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}
@@ -438,7 +438,7 @@ class SubscriptionServiceTest {
 
 		assertThatThrownBy(() -> service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "subscription-1"))
 			.isInstanceOf(Problem.class)
-			.extracting("status").isEqualTo(UNAUTHORIZED);
+			.extracting("status").isEqualTo(FORBIDDEN);
 
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}

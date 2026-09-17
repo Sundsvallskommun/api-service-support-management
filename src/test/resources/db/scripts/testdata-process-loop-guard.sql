@@ -10,7 +10,7 @@
 -- what wakes the process, and nothing else: SIGNAL and PROCESS are left out on purpose, so that a
 -- command reaching the process shows that the triggers have no say over commands.
 INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
-VALUES (7, 'PROCESS_TRIGGER', 'ERRAND', 'STRING');
+VALUES (8, 'PROCESS_TRIGGER', 'ERRAND', 'STRING');
 
 -- A status is always validated against the namespace, and an errand cannot be created without one
 INSERT INTO status(id, created, modified, municipality_id, name, display_name, external_display_name, sort_order, namespace, deprecated)
