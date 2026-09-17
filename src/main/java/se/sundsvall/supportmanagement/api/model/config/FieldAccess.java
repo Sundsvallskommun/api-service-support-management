@@ -10,7 +10,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 public class FieldAccess {
 
 	@NotNull
-	@Schema(description = "Field to expose", examples = "PARAMETERS")
+	@Schema(type = "string", description = "Field to expose. The values accepted are published by the access definition of the namespace configuration", examples = "PARAMETERS")
 	private ErrandField field;
 
 	@Schema(description = "Keys to expose when the field is a keyed collection. The whole collection is exposed when left empty", examples = "[\"contactChannel\"]")

@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.metadata;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class MeasureTypeTest {
 		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
 		final var name = "name";
 		final var displayName = "displayName";
-		final var measureGroup = "MANAGERS";
+		final var measureGroups = List.of("MANAGERS", "LEADERS");
 		final var sortOrder = 3;
 
 		final var bean = MeasureType.create()
@@ -51,7 +52,7 @@ class MeasureTypeTest {
 			.withModified(modified)
 			.withName(name)
 			.withDisplayName(displayName)
-			.withMeasureGroup(measureGroup)
+			.withMeasureGroups(measureGroups)
 			.withSortOrder(sortOrder);
 
 		assertThat(bean.getId()).isEqualTo(id);
@@ -60,7 +61,7 @@ class MeasureTypeTest {
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
-		assertThat(bean.getMeasureGroup()).isEqualTo(measureGroup);
+		assertThat(bean.getMeasureGroups()).isEqualTo(measureGroups);
 		assertThat(bean.getSortOrder()).isEqualTo(sortOrder);
 	}
 

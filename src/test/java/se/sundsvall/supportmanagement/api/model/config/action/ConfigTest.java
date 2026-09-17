@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.config.action;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -37,6 +38,7 @@ class ConfigTest {
 		final var conditions = List.of(Parameter.create().withKey("conditionKey"));
 		final var parameters = List.of(Parameter.create().withKey("parameterKey"));
 		final var displayValue = "displayValue";
+		final var operationTypes = List.of(OperationType.CREATE);
 
 		final var bean = Config.create()
 			.withId(id)
@@ -44,7 +46,8 @@ class ConfigTest {
 			.withActive(active)
 			.withConditions(conditions)
 			.withParameters(parameters)
-			.withDisplayValue(displayValue);
+			.withDisplayValue(displayValue)
+			.withOperationTypes(operationTypes);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);
@@ -53,6 +56,7 @@ class ConfigTest {
 		assertThat(bean.getConditions()).isEqualTo(conditions);
 		assertThat(bean.getParameters()).isEqualTo(parameters);
 		assertThat(bean.getDisplayValue()).isEqualTo(displayValue);
+		assertThat(bean.getOperationTypes()).isEqualTo(operationTypes);
 	}
 
 	@Test

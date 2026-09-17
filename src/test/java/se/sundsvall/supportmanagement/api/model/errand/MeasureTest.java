@@ -51,8 +51,6 @@ class MeasureTest {
 		final var description = "description";
 		final var accept = "TRUE";
 		final var acceptMotivation = "acceptMotivation";
-		final var reworkGoal = "reworkGoal";
-		final var reworkDescription = "reworkDescription";
 		final var created = now();
 		final var modified = now();
 		final var status = "ACTIVE";
@@ -82,8 +80,6 @@ class MeasureTest {
 			.withDescription(description)
 			.withAccept(accept)
 			.withAcceptMotivation(acceptMotivation)
-			.withReworkGoal(reworkGoal)
-			.withReworkDescription(reworkDescription)
 			.withCreated(created)
 			.withModified(modified)
 			.withStatus(status)
@@ -107,9 +103,6 @@ class MeasureTest {
 		assertThat(measure)
 			.extracting(Measure::getAddedByUser, Measure::getAddedByRole, Measure::getGoal, Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation)
 			.containsExactly(addedByUser, addedByRole, goal, description, accept, acceptMotivation);
-		assertThat(measure)
-			.extracting(Measure::getReworkGoal, Measure::getReworkDescription, Measure::getStatus, Measure::getTitle, Measure::getDueAt, Measure::getCompletedAt)
-			.containsExactly(reworkGoal, reworkDescription, status, title, dueAt, completedAt);
 		assertThat(measure)
 			.extracting(Measure::getResult, Measure::getResultText, Measure::getDecisionId, Measure::getStatementId, Measure::getAttachments, Measure::getCreatedBy)
 			.containsExactly(result, resultText, decisionId, statementId, attachments, createdBy);

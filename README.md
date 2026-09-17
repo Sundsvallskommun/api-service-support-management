@@ -309,6 +309,13 @@ The access mapper is queried per AD identity with three group types, each carryi
 **Layer A — visibility and write filtering.** A JPA specification restricts which errands come back and whether a
 write is allowed, based on the caller's label grants. An errand carrying no access labels is accessible to everyone.
 
+The level a label grant must reach depends on *what* is being written. `RW` is demanded for the errand itself, which is
+what the labels are held against. For a resource **of** the errand the resource grant carries the write and the labels
+only have to reach the errand at `R` — so a caller holding a category at read, plus `errand/conversation/message` at
+`RW`, may post a message while `PATCH /errands/{errandId}` stays refused. That split needs a second axis to be doing
+the restricting, so it applies only while `resourceAccessControl` is on; with it off the labels are all there is and
+carry the write themselves, exactly as before. A write is never permitted on an errand the caller only holds at `LR`.
+
 **Layer B — resource entitlement.** Which sub-resources the caller may reach, from the access mapper's `resource`
 groups. Gated by the `resourceAccessControl` flag: while it is `false`, resources are unrestricted and only labels
 apply. This exists so a namespace can enable `accessControl` before the access mapper has any `resource` groups
@@ -458,11 +465,96 @@ entitlement is the wrong tool for that — it needs an ownership rule — so it 
 2. **Layer B** — if `resourceAccessControl` is on, the access mapper's `resource` grants must permit the target
    resource at the required level, otherwise 401.
 3. **Layer A** — the errand must be reachable, which is true if either the caller's label grants cover it at the
-   required level, or the caller is the reporter and `reporterAccess` grants the resource at that level.
+   level that resource demands of them — `RW` for a write to the errand itself, `R` for a write the resource grant
+   carries, `LR` where limited read is extended to the resource — or the caller is the reporter and `reporterAccess`
+   grants the resource at the required level.
 4. **Layer C** — on the way out the payload is trimmed: a limited errand uses `limitedReadAccess.fields` whatever the
    `roleBasedMapping` flag says, and otherwise the matched roles' `roleFieldRestrictions` apply if that flag is on.
    Reporter fields union on top of whichever restriction applied, and a caller no restriction applied to receives the
    full errand.
+
+### Discovering what may be configured
+
+The `field` and `resource` values above are published as **data**, not as an enum of the schema:
+
+`GET /{municipalityId}/{namespace}/namespace-config/access-definition`
+
+```json
+{
+  "fields": [{ "field": "PARAMETERS", "property": "parameters", "keyed": true }],
+  "resources": [{ "resource": "COMMUNICATION", "path": "errand/communication", "errandScoped": true }]
+}
+```
+
+Exposing a new errand field or guarding a new resource therefore leaves the published contract untouched — only this
+response grows. A client configuring access reads the accepted values from here; `keyed` tells it whether `keys` and a
+`level` may be given for a field, and `property` and `path` connect a configured value to how the access of an errand
+reports it.
+
+The values are still enforced: the request models remain typed by the enums internally, so an unknown value is refused
+with a 400 exactly as before — only the published schema says `string` rather than listing the constants.
+
+### Asking what a caller may do
+
+`GET /{municipalityId}/{namespace}/errands/{errandId}/access` reports the outcome of the evaluation above for one
+errand, so a client can render only the controls the caller's next request would be allowed to make — including whether
+a jsonSchema driven form is editable before any data has been saved to it, which inspecting the errand cannot answer.
+
+```json
+{
+  "level": "R",
+  "fields": [
+    { "field": "title", "level": "R" },
+    { "field": "parameters", "level": "RW", "allKeys": false,
+      "keys": [{ "key": "granted-key", "level": "RW" }, { "key": "readonly-key", "level": "R" }] },
+    { "field": "jsonParameters", "level": "R", "allKeys": true, "keys": [] }
+  ],
+  "resources": [{ "resource": "errand/communication", "level": "R" },
+                { "resource": "errand/parameter", "level": "RW" }]
+}
+```
+
+- `level` is what the caller holds the errand itself at. Reaching the endpoint at all means at least `LR`. The example
+  above is the shape this takes for a caller the errand is read-only to whose grant on `errand/parameter` carries the
+  write: `title` follows the errand and `parameters` follows the resource serving it.
+- `fields` lists the fields the caller reaches, each named as the property is written in the errand payload rather than
+  as the `ErrandField` constant, so a client looks the answer up against what it renders and adding a field here leaves
+  the published contract alone. One that is not listed is absent from the errand payload, which says nothing about an endpoint of its own serving it - `resources` answers that. Fields carry **no level of
+  their own** — a namespace may only hold an individual key to read, never a whole field, so a field is writable exactly
+  when what serves it is: the errand for most of them, and for `parameters` and `jsonParameters` the resource carrying
+  their own write endpoint, so a field's `level` may be **wider than the errand's**. Every property a response carries
+  is a field, `phases` and `actions` included — the one exception is `activePhaseId`, which is inbound only: a request
+  names the phase to move the errand into, and the response carries the phases themselves, of which the active one is
+  the phase not yet ended. Whether a property is writable *at all* is a separate question answered by `readOnly` in the
+  schema.
+- A key restriction is all or nothing. `allKeys: true` means the field carries no key restriction and every key of it
+  follows the field's own `level`, including keys that may be added. `allKeys: false` means `keys` is exhaustive: those are the only
+  keys the caller reaches, each with its own level, already held against the level of the errand.
+- A granted key is listed whether or not the errand carries it yet, so a key shown as `RW` may be **created** as well as
+  changed. That is what lets a form be rendered editable before anything is saved to it.
+- `allKeys` and `keys` are only set for the keyed fields `parameters`, `jsonParameters` and `externalTags`.
+- `resources` covers the errand scoped resources the caller reaches, each named by the path access is granted on rather
+  than by the `ProtectedResource` constant, for the same reason the fields are. The access definition above maps the two
+  onto each other. The errand itself is reported as `level` rather than repeated here.
+
+A resource grant never stands in for the labels. Every endpoint needs both: the access mapper must grant the resource
+at the level the operation asks for, *and* the caller's labels must reach the errand at the level that resource demands
+of them. What the two are held against differs, though, which is why `resources` may report a level **above** `level`:
+with `resourceAccessControl` on, `{errand: R, errand/parameter: RW}` and labels at read opens
+`PATCH /errands/{errandId}/parameters/{key}` while leaving `PATCH /errands/{errandId}` refused, and the report says
+exactly that — `level: "R"` with `errand/parameter` at `RW`.
+
+The keys of a keyed field follow the same split, so a `parameters` key may be reported `RW` on an errand reported `R`.
+Only `parameters` and `jsonParameters` have a write endpoint of their own; `externalTags` and every other field are
+written through `PATCH /errands/{errandId}` alone and stay held against the errand.
+
+One grant the response cannot express: a whole keyed collection granted *and* held to read
+(`{"field": "PARAMETERS", "level": "R"}` with no keys — namespace configuration still names fields and resources by
+constant, only the report uses property and path). It has no keys to carry the restriction and fields carry no level, so
+it is reported as `allKeys: true` and overstates what the write paths accept. No namespace configures this.
+
+`AccessControlSpecificationParityTest` holds the in-memory answer this endpoint reports to the JPA specification that
+actually guards every endpoint, so the two cannot drift apart.
 
 ## Contributing
 

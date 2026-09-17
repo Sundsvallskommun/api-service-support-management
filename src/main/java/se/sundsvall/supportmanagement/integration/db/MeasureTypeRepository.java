@@ -13,7 +13,7 @@ public interface MeasureTypeRepository extends JpaRepository<MeasureTypeEntity, 
 
 	List<MeasureTypeEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId, Sort sort);
 
-	List<MeasureTypeEntity> findAllByNamespaceAndMunicipalityIdAndMeasureGroup(String namespace, String municipalityId, String measureGroup, Sort sort);
+	List<MeasureTypeEntity> findAllByNamespaceAndMunicipalityIdAndMeasureGroupsContaining(String namespace, String municipalityId, String measureGroup, Sort sort);
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
 

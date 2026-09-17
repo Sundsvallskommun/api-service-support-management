@@ -26,8 +26,8 @@ import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
 import static java.util.Objects.isNull;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.isRequestingUser;
 
@@ -135,7 +135,7 @@ public class SubscriptionService {
 	private void verifyOwnedByRequestingUser(final SubscriberEntity subscriber) {
 		final var owner = subscriber.getIdentifier();
 		if (isNull(owner) || !isRequestingUser(owner.getType(), owner.getValue())) {
-			throw Problem.valueOf(UNAUTHORIZED, SUBSCRIPTION_NOT_OWNED.formatted(subscriber.getId(), getAdUser()));
+			throw Problem.valueOf(FORBIDDEN, SUBSCRIPTION_NOT_OWNED.formatted(subscriber.getId(), getAdUser()));
 		}
 	}
 

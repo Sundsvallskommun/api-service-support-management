@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.assertj.core.groups.Tuple;
@@ -37,12 +38,42 @@ class MetadataMeasureTypeResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
+	/**
+	 * The scalar group these replaced carried @NotBlank, so a group has never been allowed to be blank. That much is the
+	 * model's to say on either verb; whether groups have to be named at all differs between creating and updating, and
+	 * is answered by the service.
+	 */
+	@ParameterizedTest
+	@MethodSource("invalidMeasureGroupsArguments")
+	void createWithInvalidMeasureGroups(final List<String> measureGroups, final String expectedField, final String expectedMessage) {
+
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281")))
+			.bodyValue(MeasureType.create().withName("name").withMeasureGroups(measureGroups))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).contains(tuple(expectedField, expectedMessage));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	private static Stream<Arguments> invalidMeasureGroupsArguments() {
+		// Naming no group at all is refused by the service, not the model - the update shares the model and may leave
+		// the groups out. A group named as blank is the model's to refuse, on either verb.
+		return Stream.of(
+			Arguments.of(List.of(" "), "measureGroups[0]", "must not be blank"));
+	}
+
 	@ParameterizedTest
 	@MethodSource("createMeasureTypeArguments")
 	void createWithInvalidArguments(final String namespace, final String municipalityId, final Tuple expectedResponse) {
 
 		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("namespace", namespace, "municipalityId", municipalityId)))
-			.bodyValue(MeasureType.create().withName("name").withMeasureGroup("group"))
+			.bodyValue(MeasureType.create().withName("name").withMeasureGroups(List.of("group")))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

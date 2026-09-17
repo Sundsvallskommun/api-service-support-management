@@ -1,11 +1,14 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import se.sundsvall.supportmanagement.api.model.config.AccessFieldDefinition;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
+import se.sundsvall.supportmanagement.api.model.config.AccessResourceDefinition;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -331,5 +334,55 @@ class NamespaceConfigMapperTest {
 			.withType(type)
 			.withValue(value)
 			.withAccessLevel(accessLevel);
+	}
+
+	/**
+	 * The access definition is what a client configuring access reads instead of an enum of the schema, so it has to
+	 * publish
+	 * every value that is actually accepted. A field or resource missing from it would be configurable but undiscoverable.
+	 */
+	@Test
+	void toAccessDefinitionPublishesEveryFieldAndResource() {
+		final var definition = mapper.toAccessDefinition();
+
+		assertThat(definition.getFields())
+			.hasSameSizeAs(ErrandField.values())
+			.extracting(AccessFieldDefinition::getField)
+			.containsExactly(Arrays.stream(ErrandField.values()).map(Enum::name).toArray(String[]::new));
+
+		assertThat(definition.getResources())
+			.hasSameSizeAs(ProtectedResource.values())
+			.extracting(AccessResourceDefinition::getResource)
+			.containsExactly(Arrays.stream(ProtectedResource.values()).map(Enum::name).toArray(String[]::new));
+	}
+
+	/**
+	 * Each entry carries what connects the configured value to the rest of the API - the property the access of an errand
+	 * reports a field by, and the path an access pattern is matched against.
+	 */
+	@Test
+	void toAccessDefinitionCarriesThePropertyAndThePath() {
+		final var definition = mapper.toAccessDefinition();
+
+		assertThat(definition.getFields())
+			.filteredOn(field -> "PARAMETERS".equals(field.getField()))
+			.singleElement()
+			.satisfies(field -> {
+				assertThat(field.getProperty()).isEqualTo("parameters");
+				assertThat(field.isKeyed()).isTrue();
+			});
+
+		assertThat(definition.getResources())
+			.filteredOn(resource -> "COMMUNICATION".equals(resource.getResource()))
+			.singleElement()
+			.satisfies(resource -> {
+				assertThat(resource.getPath()).isEqualTo("errand/communication");
+				assertThat(resource.isErrandScoped()).isTrue();
+			});
+
+		assertThat(definition.getResources())
+			.filteredOn(resource -> "NAMESPACE_CONFIG".equals(resource.getResource()))
+			.singleElement()
+			.satisfies(resource -> assertThat(resource.isErrandScoped()).isFalse());
 	}
 }

@@ -52,8 +52,6 @@ public final class ErrandMeasureMapper {
 			.withDescription(measure.getDescription())
 			.withAccept(ofNullable(measure.getAccept()).map(Accept::valueOf).orElse(null))
 			.withAcceptMotivation(measure.getAcceptMotivation())
-			.withReworkGoal(measure.getReworkGoal())
-			.withReworkDescription(measure.getReworkDescription())
 			.withResult(ofNullable(measure.getResult()).map(MeasureResult::valueOf).orElse(null))
 			.withResultText(measure.getResultText());
 	}
@@ -81,8 +79,6 @@ public final class ErrandMeasureMapper {
 		ofNullable(measure.getDescription()).ifPresent(entity::setDescription);
 		ofNullable(measure.getAccept()).map(Accept::valueOf).ifPresent(entity::setAccept);
 		ofNullable(measure.getAcceptMotivation()).ifPresent(entity::setAcceptMotivation);
-		ofNullable(measure.getReworkGoal()).ifPresent(entity::setReworkGoal);
-		ofNullable(measure.getReworkDescription()).ifPresent(entity::setReworkDescription);
 		return entity;
 	}
 
@@ -163,8 +159,6 @@ public final class ErrandMeasureMapper {
 			.withDescription(entity.getDescription())
 			.withAccept(ofNullable(entity.getAccept()).map(Enum::name).orElse(null))
 			.withAcceptMotivation(entity.getAcceptMotivation())
-			.withReworkGoal(entity.getReworkGoal())
-			.withReworkDescription(entity.getReworkDescription())
 			.withCreated(entity.getCreated())
 			.withModified(entity.getModified());
 	}

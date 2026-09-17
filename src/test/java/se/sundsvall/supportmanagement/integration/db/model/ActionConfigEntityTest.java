@@ -3,8 +3,10 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -46,6 +48,7 @@ class ActionConfigEntityTest {
 		final var displayValue = "displayValue";
 		final var conditions = List.of(ActionConfigConditionEntity.create());
 		final var parameters = List.of(ActionConfigParameterEntity.create());
+		final var operationTypes = Set.of(OperationType.CREATE);
 		final var created = OffsetDateTime.now().minusDays(1);
 		final var modified = OffsetDateTime.now();
 
@@ -58,6 +61,7 @@ class ActionConfigEntityTest {
 			.withDisplayValue(displayValue)
 			.withConditions(conditions)
 			.withParameters(parameters)
+			.withOperationTypes(operationTypes)
 			.withCreated(created)
 			.withModified(modified);
 
@@ -68,6 +72,7 @@ class ActionConfigEntityTest {
 		assertThat(entity.getName()).isEqualTo(name);
 		assertThat(entity.getActive()).isEqualTo(active);
 		assertThat(entity.getDisplayValue()).isEqualTo(displayValue);
+		assertThat(entity.getOperationTypes()).isEqualTo(operationTypes);
 		assertThat(entity.getConditions()).isEqualTo(conditions);
 		assertThat(entity.getParameters()).isEqualTo(parameters);
 		assertThat(entity.getCreated()).isEqualTo(created);
@@ -80,7 +85,7 @@ class ActionConfigEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "created")
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "operationTypes", "created")
 			.satisfies(e -> {
 				assertThat(e.getConditions()).isEmpty();
 				assertThat(e.getParameters()).isEmpty();
@@ -93,7 +98,7 @@ class ActionConfigEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "modified")
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "operationTypes", "modified")
 			.satisfies(e -> {
 				assertThat(e.getConditions()).isEmpty();
 				assertThat(e.getParameters()).isEmpty();
@@ -102,12 +107,12 @@ class ActionConfigEntityTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(ActionConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters")
+		assertThat(ActionConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "operationTypes")
 			.satisfies(e -> {
 				assertThat(e.getConditions()).isEmpty();
 				assertThat(e.getParameters()).isEmpty();
 			});
-		assertThat(new ActionConfigEntity()).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters")
+		assertThat(new ActionConfigEntity()).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "operationTypes")
 			.satisfies(e -> {
 				assertThat(e.getConditions()).isEmpty();
 				assertThat(e.getParameters()).isEmpty();
