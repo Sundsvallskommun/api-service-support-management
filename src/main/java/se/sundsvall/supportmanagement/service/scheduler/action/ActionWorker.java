@@ -95,7 +95,7 @@ public class ActionWorker {
 	 * every scheduled run.
 	 */
 	private void removeAction(final ErrandEntity errand, final ErrandActionEntity actionEntity) {
-		ofNullable(errand.getActions()).ifPresent(actions -> actions.removeIf(action -> Objects.equals(action.getId(), actionEntity.getId())));
+		ofNullable(errand.getActions()).ifPresent(errandActions -> errandActions.removeIf(listed -> Objects.equals(listed.getId(), actionEntity.getId())));
 		errandActionRepository.delete(actionEntity);
 	}
 
