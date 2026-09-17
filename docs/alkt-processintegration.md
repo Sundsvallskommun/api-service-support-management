@@ -39,7 +39,7 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 20 | **`POST .../processes` skapar, men uppdaterar aldrig**                                                                                                                                                                                                                                                                                    | `409` så snart det finns en rad                                                                                                                                     | Ett arbetssteg kan hinna rapportera före pw:s `POST`. När `POST` bara skapar spelar ankomstordningen ingen roll, och `409` betyder bara en enda sak — §5.1                                                                                                                                                                                                                                                   |
 | 21 | **Ett avslutat processliv startas aldrig om.** `FAILED` får startas om                                                                                                                                                                                                                                                                    | Starta på nästa triggande händelse oavsett historik                                                                                                                 | `findProcessInstances` ser bara det som kör i Operaton just nu, så en `COMPLETED` process ser ut som ingen process alls. Nästa process är ett nytt ärende — §7.4                                                                                                                                                                                                                                             |
 | 22 | `errand.process` visar den **senaste** instansen                                                                                                                                                                                                                                                                                          | Den som lever just nu                                                                                                                                               | En misslyckad start lämnar ingen levande instans efter sig, och då hade handläggaren inte sett någonting alls — §5.3                                                                                                                                                                                                                                                                                         |
-| 23 | **Beslutet är en egen ärendescopad resurs, `errand_decision`, med fasta fält**                                                                                                                                                                                                                                                            | `json_parameter` med registrerat schema; kolumner på `errand_process`; vanliga parametrar; aktivitetsloggen                                                         | Ett ärende, ett beslut — och `uq_ed_errand_id` *är* den regeln. Ett myndighetsbeslut har dessutom en form som följer av förvaltningslagen och förtjänar riktiga fält, och det är ärendedata som ska gå att läsa utan att man känner till processen. Se §7.5                                                                                                                                                  |
+| 23 | **Beslutet är en resurs med fasta fält — mains `.../decisions`, inte en egen `errand_decision`** (ändrat 2026-09-15, beslut 51)                                                                                                                                                                                                           | `json_parameter` med registrerat schema; kolumner på `errand_process`; vanliga parametrar; aktivitetsloggen; en egen `errand_decision`                              | Ett myndighetsbeslut har en form som följer av förvaltningslagen och förtjänar riktiga fält, och det är ärendedata som ska gå att läsa utan att man känner till processen. Den formen fanns redan i mains handläggningsmodell när ALKT kom dit. Se §7.5                                                                                                                                                      |
 | 24 | **Både handläggare och process får fatta beslutet; `method` skiljer dem åt**                                                                                                                                                                                                                                                              | Bara handläggaren; bara processen                                                                                                                                   | Ett delegationsbeslut kan vara automatiserat, men vilket det var måste gå att svara på i efterhand (FL 28 §). Följden: `DECISION` måste vara `PROCESS_TRIGGER`, och `method` valideras mot identiteten — §7.5                                                                                                                                                                                                |
 | 25 | `processKey` hämtas från instansen först och från etiketterna i andra hand; `DELETE` skickas även utan nyckel                                                                                                                                                                                                                             | Att alltid läsa nyckeln ur etiketterna                                                                                                                              | En borttagen etikett skulle annars lämna en processinstans kvar i Operaton för ett ärende som inte längre finns — §2.2                                                                                                                                                                                                                                                                                       |
 | 26 | **Resursen heter `processes` och modellen `ErrandProcess`**                                                                                                                                                                                                                                                                               | `process-instances`; `process-info`                                                                                                                                 | Modellen ska kunna bära även processer som inte körs i Operaton, och kodbasens övriga subresurser heter något i plural. `process-info` går inte att böja i plural och hade dessutom låst oss vid en rad per ärende                                                                                                                                                                                           |
@@ -48,14 +48,14 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 29 | **Signalen bär bara ett namn, ingen fritext**                                                                                                                                                                                                                                                                                             | Ett kommentarsfält på signalen                                                                                                                                      | Aktivitetsloggen gallras efter 365 dagar medan ärendet lever längre, och `message` får inte innehålla personuppgifter. Motiveringen hör hemma i ärendeanteckningar (§5.9)                                                                                                                                                                                                                                    |
 | 30 | **Ingen retry-räknare och ingen dead letter. Raden ligger kvar tills den gått igenom**                                                                                                                                                                                                                                                    | Egen backoff med `retry_count`/`next_retry_at`/`dead_letter`, som `notification_dispatch` hade före `V1_48__simplify_notification_dispatch`                         | Leverans och radering i samma transaktion ger samma sak utan bokföring, och den bokföringen har kodbasen medvetet gjort sig av med. Kvar blir `delivered_at`, som nödbromsen behöver — §8.3                                                                                                                                                                                                                  |
 | 31 | **Outbox-raden bär sitt eget mål i `process_service`, satt vid publicering**                                                                                                                                                                                                                                                              | Att relayet slår upp `PROCESS_CONSUMER` på nytt vid leverans                                                                                                        | Ett namespace har exakt en processkonsument, men konfigurationen kan ändras mellan publicering och leverans. Raden ska gå dit den var adresserad. Relayet hämtar på kolumnen, och en rad adresserad någon annanstans än pw-alkt syns i hälsoindikatorn — §7.6                                                                                                                                                |
-| 32 | **`process` och `decision` är `ErrandField`-värden**                                                                                                                                                                                                                                                                                      | Att låta dem stå utanför den rollbaserade fältfiltreringen                                                                                                          | `justification` är fritext med personuppgifter, och alla andra känsliga fält på ärendet går genom `roleBasedFieldResolver`. Att ALKT kör utan åtkomstkontroll döljer bara problemet till nästa namespace — §5.3                                                                                                                                                                                              |
+| 32 | **`process` är ett `ErrandField`-värde. `decision` är det inte** (ändrat 2026-09-15)                                                                                                                                                                                                                                                      | Att låta `process` stå utanför den rollbaserade fältfiltreringen                                                                                                    | Ärendet bär inget beslut (beslut 51). Beslutet läses på `.../decisions`, och `justification` skyddas där av resursen `DECISION` i stället för av fältfiltreringen — §5.3, §7.5                                                                                                                                                                                                                               |
 | 33 | **AoT använder inte AccessMapper, och ett namespace med `PROCESS_CONSUMER` får inte ha aktiv `access_control`**                                                                                                                                                                                                                           | Att lita på att ingen slår på den; att låta `AccessControlService` gå förbi kontrollen för konsumenten utpekad med `X-Sent-By`                                      | AccessMapper svarar bara på AD-konton, och pw är ingen människa. Slås kontrollen på får pw `401` på allt, och det syns som ärenden som står stilla. En header som anroparen sätter själv duger inte som behörighetsgrund — §7.1                                                                                                                                                                              |
-| 34 | **Tre nya `ProtectedResource`: `PROCESS`, `PROCESS_ACTIVITY`, `DECISION`**                                                                                                                                                                                                                                                                | Att återanvända `ERRAND`                                                                                                                                            | `getErrand` och `verifyExistingErrandAndAuthorization` kräver en resurs, så valet går inte att skjuta upp. `ERRAND` hade gett processens rapporter samma behörighet som ärendet självt — §5.6                                                                                                                                                                                                                |
+| 34 | **Två nya `ProtectedResource`: `PROCESS` och `PROCESS_ACTIVITY`. `DECISION` fanns redan**                                                                                                                                                                                                                                                 | Att återanvända `ERRAND`                                                                                                                                            | `getErrand` och `verifyExistingErrandAndAuthorization` kräver en resurs, så valet går inte att skjuta upp. `ERRAND` hade gett processens rapporter samma behörighet som ärendet självt. `DECISION` kom med mains handläggningsmodell — §5.6                                                                                                                                                                  |
 | 35 | **Startläget bor på etiketten: `processStartMode` bredvid `processKey`**                                                                                                                                                                                                                                                                  | En inställning per namespace; en manuell grind först i processmodellen                                                                                              | Ansökan och tillsyn ligger i samma namespace och vill ha olika svar. En grind i modellen hade dessutom gett varje ärende en levande instans, och att avbryta vid grinden avslutar processlivet enligt §7.4 regel 4 — ärendet hade aldrig gått att starta igen. Avgränsat mot beslut 28: läget styr instansens **födelse**, modellen styr stegningen — §7.7                                                   |
 | 36 | **SM räknar ut startlovet och skickar det med händelsen som `startAllowed`**                                                                                                                                                                                                                                                              | Att pw avgör själv och frågar SM om ärendet har en avslutad process                                                                                                 | Manuell start går annars inte att uttrycka: den skiljer sig från en vanlig ärendeändring bara genom att den får starta. På köpet försvinner pw:s återanrop till SM för `COMPLETED`-kontrollen — lovet är redan uträknat när händelsen kommer fram — §7.7, §9.3                                                                                                                                               |
 | 37 | **Kommandon filtreras inte av `PROCESS_TRIGGER` och kräver AD-identitet**                                                                                                                                                                                                                                                                 | Ett `PROCESS`-värde i triggern; att släppa in maskinidentiteter och i stället undanta kommandon från loop-skyddets lager 1                                          | Ett kommando är ingen ärendeändring, och en människa som trycker på en knapp är ingen loop. Kommandon passerar därför **alla tre** lagren: AD-kravet gör lager 1 verkningslöst av sig självt, medan lager 2 och 3 undantar dem uttryckligen. Utan undantaget för nödbromsen sväljs startkommandot tyst på just de ärenden som har mest trafik. `SIGNAL` utgår därmed ur `PROCESS_TRIGGER` — §6.5, §7.1, §7.7 |
 | 38 | **`GET .../processes` svarar med ett kuvert: `startable` + `processes`**                                                                                                                                                                                                                                                                  | En naken lista; ett fält på ärendeprojektionen                                                                                                                      | Det intressanta fallet är när listan är tom, och en tom lista kan inte bära *varför*. Ärendeprojektionen är tjänstens varmaste läsväg och hade dragit med sig en uppslagning per ärende i listsvar — §5.10                                                                                                                                                                                                   |
-| 39 | **`decision` reduceras i listsvar till `outcome`, `method` och `decidedAt`; `process` reduceras inte**                                                                                                                                                                                                                                    | Hela beslutet i varje träff; en egen listmodell för beslutet                                                                                                        | `justification` är fritext med personuppgifter, och en träfflista hade burit en per rad till en klient som bara visar utfallet. Reduceringen görs i mapparen så att modellen förblir en — §5.3                                                                                                                                                                                                               |
+| 39 | **Utgår (2026-09-15).** `decision` skulle ha reducerats i listsvar till `outcome`, `method` och `decidedAt`                                                                                                                                                                                                                               | —                                                                                                                                                                   | Ärendet bär inget beslut (beslut 51), så det finns inget listsvar att reducera                                                                                                                                                                                                                                                                                                                               |
 | 40 | **Kontrollen av processrapportens avsändare är validering och svarar `400`, inte `403`**                                                                                                                                                                                                                                                  | `403` enligt §5.6:s ursprungliga tabell                                                                                                                             | SM autentiserar ingenting inkommande och `X-Sent-By` sätts av anroparen själv, så ett `403` hade påstått en behörighetsprövning som aldrig gjordes och skickat felsökningen till WSO2 i stället för till fältet i kroppen. Reglerna gör `process_service` garanterad, hindrar rader i namespace utan processmotor och ger loggen en avsändare — §5.6, beslut 33                                              |
 | 41 | **Relayet levererar bara till pw-alkt, med en statisk Feign-klient byggd som tjänstens övriga**                                                                                                                                                                                                                                           | En uppslagningstabell namn → klient byggd ur `process-engine.consumers` med `FeignClientBuilder`; ett register över konsumenter att validera `PROCESS_CONSUMER` mot | Det finns en processmotor, och REST ska ersättas av RabbitMQ. En ny konsument kräver en release ändå, och en statisk klient ser ut som resten av tjänsten. `PROCESS_CONSUMER` valideras mot klientens namn, så ett register med fler namn än relayet kan leverera till behövs inte. En rad adresserad någon annanstans syns i hälsoindikatorn — §7.2, §7.6                                                   |
 | 42 | **Statusfälten är strängar i API:et, och enumen hålls på SM-sidan** — `processStatus`, `severity` och `startable.status`, kontrollerade med `@ValidEnumValue`                                                                                                                                                                             | Enum i specen                                                                                                                                                       | Ett enum i specen gör varje nytt värde till en ny API-version, och en klient som genererat enumet kastar på värdet i stället för att bortse från det. Mängden är stängd där värdet skrivs och öppen där det läses (PR #737) — §5.3, §5.10                                                                                                                                                                    |
@@ -67,6 +67,13 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 48 | **En schemalagd åtgärd som ändrat ärendet ger revision och ärendehändelse, men ingen notis**                                                                                                                                                                                                                                              | Ingen händelse, som tidigare; en händelse med notis till handläggaren                                                                                               | Utan händelse fick varken historiken, eventloggen eller processen veta att en etikett kommit till, och en processetikett startade ingenting. Ändringen är namespacets konfiguration i arbete, inte någon handläggaren väntar sig ett besked från — §7.3                                                                                                                                                      |
 | 49 | **Ett ärende ska ge samma snapshot nyss skrivet som nyss läst.** Etiketternas metadata och den inlästa statusen skrivs inte, äldre snapshots jämförs och diffas utan dem, samlingar utan egen ordning sorteras, en tom samling räknas som ingen när revisionen avgörs, och den första tidsmätningens start avrundas som ärendets egen tid | Att fylla i fälten överallt; att även låta diffen bortse från tomma samlingar                                                                                       | Skillnaderna fanns bara mellan skrivet och läst, så en `PATCH` utan ändring gav revision, händelse och en onödig väckning. En ändring av etikettens metadata hade dessutom sett ut som en ändring av varje ärende som bär etiketten. Diffen behåller sina sökvägar, eftersom den är ett API — §11                                                                                                            |
 | 50 | **En etikett i `POST` och `PATCH` måste höra till ärendets namespace och kommun**, annars `400` med samma svar som för en etikett som inte finns                                                                                                                                                                                          | Att bara lita på främmande nyckel i databasen                                                                                                                       | Ett id når etiketter i alla namespace, och med etiketten följer åtkomstregler och processnyckel. Samma svar för okänd och främmande etikett, så att svaret inte avslöjar något om andra namespace — §11                                                                                                                                                                                                      |
+| 51 | **Beslutet byggs inte i ALKT-planen. Mains handläggningsmodell används som den är: `.../decisions`, `DecisionEntity`, `DecisionValidator` och utfallen som metadata** (2026-09-15)                                                                                                                                                        | En egen `errand_decision` med `@OneToOne` på ärendet, `Errand.decision`, `ErrandField.DECISION` och revision av beslutet                                            | Två beslutsmodeller hade behövt hållas i takt, och den som läser beslut hade fått fråga sig vilken som gäller. Processen läser beslutet på `GET .../decisions` — §7.5                                                                                                                                                                                                                                        |
+| 52 | **Att skapa, ändra och radera ett beslut ger en ärendehändelse med subtypen `DECISION` och höjer `errand.version`. Villkoren, bilagelänkarna och JSON-parametrarna gör ingetdera**                                                                                                                                                        | Händelser även för underresurserna; revision av beslutet                                                                                                            | Processen väntar på att beslutet blir färdigt. Varje extra händelse räknas av nödbromsen, och ärendets revision bär inte beslutet — §7.5                                                                                                                                                                                                                                                                     |
+| 53 | **Beslutet låses på ärenden med process: alla skrivvägar när processen är `COMPLETED`, och beslutet självt när det är `COMPLETED`. JSON-parametrarna undantas. En ärendebilaga som ett låst beslut länkar och en utredning ett låst beslut vilar på går inte att radera**                                                                 | Lås bara mot processen; lås även JSON-parametrarna                                                                                                                  | Processen har gått vidare från ett fattat beslut. Laga kraft och delgivning blir kända först efteråt och hör hemma i JSON-parametrarna. Bilagan och utredningen hade annars ändrat beslutet genom databasens kaskad — §7.5                                                                                                                                                                                   |
+| 54 | **Händelsen när en handläggare gör ett beslut `COMPLETED` passerar nödbromsen, men inte lager 1 och 2**                                                                                                                                                                                                                                   | Att låta bromsen hålla tillbaka den som andra händelser; att släppa förbi även processens egna avslut                                                               | Det är den enda händelse väntläget behöver, och en människa loopar inte. Processen skapar ett nytt beslut varje gång den avslutar ett, så dess egna avslut hade kunnat loopa förbi bromsen — §6.5                                                                                                                                                                                                            |
+| 55 | **`PROCESS_TRIGGER` kontrolleras när konfigurationen skrivs: med `PROCESS_CONSUMER` krävs `ERRAND` och `DECISION`, och `PROCESS` och `SIGNAL` får aldrig stå med**                                                                                                                                                                        | Bara dokumentation; att alltid publicera beslutshändelsen oavsett listan                                                                                            | En saknad trigger märks bara som ärenden som står stilla. En uppräknad kommandotyp ser ut att styra något den inte styr — §7.1                                                                                                                                                                                                                                                                               |
+| 56 | **`AUTOMATIC` godtas bara från namespacets `PROCESS_CONSUMER`, och SM sätter `errandProcessId` till ärendets levande processrad**                                                                                                                                                                                                         | `AUTOMATIC` från vilken identitet som helst som inte är ett AD-konto, som handläggningsmodellen först tillät                                                        | Ett namespace utan processmotor har ingen som kan fatta ett automatiskt beslut. Ingen FK mot processraden, eftersom processrader bara försvinner med ärendet — §7.5                                                                                                                                                                                                                                          |
+| 57 | **`justification` maskas i payloadloggen med ett filter i `logbook.body-filters`**                                                                                                                                                                                                                                                        | Att lita på att tjänstens egna loggrader bara loggar id:n                                                                                                           | dept44 loggar hela request- och svarskroppen som standard — §8.1                                                                                                                                                                                                                                                                                                                                             |
 
 ---
 
@@ -387,10 +394,13 @@ DLQ-djup och nodstatus — samt en dokumenterad väg tillbaka när något gått 
 
 ### 3.1 Tabellerna
 
-Fem nya tabeller i tre migreringar: `V1_57__add_process_integration_tables.sql` med de tre första (byggs i
-T1), `V1_58__add_errand_decision.sql` med beslutet (T9) och `V1_59__add_errand_process_signal.sql` med de
-väntade signalerna (T11). De ligger i var sin fil eftersom Flyway jämför checksumma — en migrering som
-redan körts går inte att fylla på i efterhand.
+Fyra nya tabeller i två migreringar: `V1_57__add_process_integration_tables.sql` med de tre första (byggs i
+T1) och nästa lediga migrering med de väntade signalerna (T11). De ligger i var sin fil eftersom Flyway
+jämför checksumma — en migrering som redan körts går inte att fylla på i efterhand.
+
+Beslutet har ingen tabell här. Det ligger i `decision` från mains gemensamma handläggningsmodell
+(`V1_56__add_errand_item_model.sql`), tillsammans med sina villkor, bilagelänkar och JSON-parametrar (§7.5,
+beslut 51). Kolumnen `decision.errand_process_id` fanns redan där, för just det här ändamålet.
 
 **Tre regler gäller alla migreringar här, och de står i förväg eftersom de kostar mest när de upptäcks
 sent.**
@@ -507,36 +517,7 @@ create table if not exists errand_process_activity (
         references errand (id) on delete cascade
 ) engine=InnoDB;
 
--- V1_58: arendets beslut. Ett per arende - unikheten AR invarianten (7.5). Arendedata, inte
--- processmaskineri: darfor egen tabell och JPA-relation pa ErrandEntity, till skillnad fran
--- tabellerna ovan.
-create table if not exists errand_decision (
-    id                    varchar(36)  not null,
-    errand_id             varchar(255) not null,
-    municipality_id       varchar(8)   not null,
-    namespace             varchar(32)  not null,
-    outcome               varchar(32)  not null,   -- DecisionOutcome
-    method                varchar(16)  not null,   -- MANUAL | AUTOMATIC
-    decided_by            varchar(255) not null,   -- AD-konto vid MANUAL, konsumentnamn vid AUTOMATIC
-    decided_at            datetime(3)  not null,
-    legal_basis           varchar(255),
-    delegation_reference  varchar(64),
-    justification         text,                    -- motivering; innehaller personuppgifter
-    appealable            bit,
-    attachment_id         varchar(36),             -- beslutshandlingen, maste tillhora arendet
-    -- Vilken processrad som fattade beslutet. Nullbar: manuella beslut, och arenden helt utan process.
-    -- SET NULL, inte CASCADE - beslutet overlever att processraden stads bort.
-    errand_process_id     varchar(36),
-    version               int          default 0 not null,   -- barer ETag
-    created               datetime(3)  not null,
-    modified              datetime(3),
-    primary key (id),
-    constraint uq_ed_errand_id unique (errand_id),
-    constraint fk_ed_errand  foreign key (errand_id)         references errand (id) on delete cascade,
-    constraint fk_ed_process foreign key (errand_process_id) references errand_process (id) on delete set null
-) engine=InnoDB;
-
--- V1_59: vad processen just nu vantar pa fran handlaggaren (5.9). Ersatts i sin helhet vid
+-- Nasta lediga migrering: vad processen just nu vantar pa fran handlaggaren (5.9). Ersatts i sin helhet vid
 -- varje rapport. Tom mangd = processen vantar inte pa nagon manniska.
 create table if not exists errand_process_signal (
     id                varchar(36)  not null,
@@ -555,15 +536,15 @@ create table if not exists errand_process_signal (
 
 ### 3.2 Hur tabellerna hänger ihop
 
-|                    Tabell                    |                              FK                               |                                                                                                            Motiv                                                                                                            |
-|----------------------------------------------|---------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `process_event_outbox` → `errand`            | **Ingen, medvetet**                                           | Samma val som `notification_dispatch` (`V1_38`). Ett DELETE-event måste överleva att ärendet raderas                                                                                                                        |
-| `errand_process` → `errand`                  | `ON DELETE CASCADE`, **ingen JPA-relation på `ErrandEntity`** | DB-kaskaden räcker för att undvika föräldralösa rader vid `repository.deleteById` (`ErrandService.deleteErrand`). JPA-mappning vore aktivt skadlig (§1.4)                                                                   |
-| `errand_process_activity` → `errand_process` | `ON DELETE CASCADE`, **nullbar**                              | Poster utan instans måste kunna skrivas (§4.2)                                                                                                                                                                              |
-| `errand_process_activity` → `errand`         | `ON DELETE CASCADE`                                           | Krävs när instans-FK:n är nullbar — annars överlever instanslösa poster ärendet. InnoDB tillåter båda kaskadvägarna parallellt                                                                                              |
-| `errand_decision` → `errand`                 | `ON DELETE CASCADE`, **med JPA-relation på `ErrandEntity`**   | Motsatt val mot raderna ovan, och avsiktligt. Beslutet ska ligga i ärendets aggregat och därmed i revisionssnapshotten (§7.5). Det skrivs en handfull gånger per ärendes livstid, inte per arbetssteg — inget revisionsbrus |
-| `errand_process_signal` → `errand_process`   | `ON DELETE CASCADE`                                           | Signalerna är processens tillstånd, inte ärendedata. Försvinner processraden ska de följa med                                                                                                                               |
-| `errand_decision` → `errand_process`         | `ON DELETE SET NULL`, **nullbar**                             | Spårbarhet till processen som fattade beslutet. Nullbar för manuella beslut och för ärenden helt utan process; `SET NULL` för att beslutet inte får försvinna med processraden                                              |
+|                     Tabell                      |                                    FK                                    |                                                                           Motiv                                                                           |
+|-------------------------------------------------|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `process_event_outbox` → `errand`               | **Ingen, medvetet**                                                      | Samma val som `notification_dispatch` (`V1_38`). Ett DELETE-event måste överleva att ärendet raderas                                                      |
+| `errand_process` → `errand`                     | `ON DELETE CASCADE`, **ingen JPA-relation på `ErrandEntity`**            | DB-kaskaden räcker för att undvika föräldralösa rader vid `repository.deleteById` (`ErrandService.deleteErrand`). JPA-mappning vore aktivt skadlig (§1.4) |
+| `errand_process_activity` → `errand_process`    | `ON DELETE CASCADE`, **nullbar**                                         | Poster utan instans måste kunna skrivas (§4.2)                                                                                                            |
+| `errand_process_activity` → `errand`            | `ON DELETE CASCADE`                                                      | Krävs när instans-FK:n är nullbar — annars överlever instanslösa poster ärendet. InnoDB tillåter båda kaskadvägarna parallellt                            |
+| `decision` → `errand`                           | `ON DELETE CASCADE` (mains `V1_56`), **ingen samling på `ErrandEntity`** | Beslutet följer ärendet, men det ingår inte i ärendets revision. Spårbarheten är händelseloggen och beslutets egen version (§7.5)                         |
+| `errand_process_signal` → `errand_process`      | `ON DELETE CASCADE`                                                      | Signalerna är processens tillstånd, inte ärendedata. Försvinner processraden ska de följa med                                                             |
+| `decision.errand_process_id` → `errand_process` | **Ingen FK**, nullbar                                                    | Processraden som fattade ett automatiskt beslut. Processrader försvinner bara tillsammans med ärendet, så referensen kan inte bli hängande (beslut 56)    |
 
 **Retention:** aktiviteter röjs på `created` av städjobbet, efter `scheduler.process-cleanup.activity-retention` (365 d); **levererade** outbox-rader röjs när `delivered_at` är äldre än **max(loop-guard-fönstret × 6, 24 h)**; oskickade rader röjs aldrig av städningen utan ligger kvar tills de gått igenom eller åldrats ur (§8.3). Beslutet röjs aldrig separat — det följer ärendet.
 
@@ -846,8 +827,8 @@ GET .../errands/{errandId}/processes            -> 200 ErrandProcesses
 GET .../errands/{errandId}/process-activities   -> 200 Page<ProcessActivity>
                                                    ?processInstanceId= (valfritt filter)
                                                    &page=&size=50&sort=occurredAt,desc
-GET .../errands/{errandId}/decision             -> 200 Decision | 404 (§7.5)
-GET .../errands/{errandId}                      -> 200 Errand med process- och decision-objekten
+GET .../errands/{errandId}/decisions            -> 200 [Decision] (§7.5)
+GET .../errands/{errandId}                      -> 200 Errand med process-objektet
 ```
 
 Aktiviteterna läses **per ärende, inte per processinstans**. Annars går det inte att komma åt de poster som
@@ -906,41 +887,20 @@ public class ProcessError {
     @Size(max = 64)   private String code;
     @Size(max = 2048) private String message;
 }
-
-/** Arendets beslut. Agare ar arendet, inte processen - se 7.5. */
-@Schema(description = "Decision made on an errand")
-public class Decision {
-    @Schema(accessMode = READ_ONLY) private String id;
-    @NotNull  private DecisionOutcome outcome;
-    @NotNull  private DecisionMethod method;                   // MANUAL | AUTOMATIC
-    @NotBlank private String decidedBy;                        // AD-konto vid MANUAL, konsumentens namn vid AUTOMATIC
-    @NotNull  private OffsetDateTime decidedAt;
-    private String legalBasis;                                 // lagrum, "9 kap. 30 § PBL"
-    private String delegationReference;                        // punkt i delegationsordningen, "3.2.1"
-    private String justification;                              // motivering - innehaller personuppgifter, se 11
-    private Boolean appealable;
-    @ValidUuid(nullable = true) private String attachmentId;    // beslutshandlingen; maste tillhora arendet
-    @Schema(accessMode = READ_ONLY) private String processId;   // errand_process.id, satts vid AUTOMATIC
-    @Schema(accessMode = READ_ONLY) private OffsetDateTime created;
-    @Schema(accessMode = READ_ONLY) private OffsetDateTime modified;
-    @Schema(accessMode = READ_ONLY) private Integer version;    // barer ETag
-}
 ```
 
-`Errand` utökas med två läsprojektioner:
+Beslutet har ingen modell här. Det är mains `Decision` från den gemensamma handläggningsmodellen, och det
+läses på sin egen resurs (§7.5).
+
+`Errand` utökas med en läsprojektion:
 
 ```java
 @Schema(accessMode = READ_ONLY, description = "Process state driving this errand; null for namespaces without a process model")
 private ErrandProcess process;
-
-@Schema(accessMode = READ_ONLY, description = "Decision registered on this errand; null until a decision is made")
-private Decision decision;
 ```
 
-**Båda fälten är `ErrandField`-värden**, `PROCESS` och `DECISION`, och går därmed genom
-`AccessControlService.roleBasedFieldResolver` som allt annat på ärendet. Skälet är `justification`: en
-beslutsmotivering är fritext med personuppgifter, och den får inte vara det enda känsliga fältet på
-ärendet som står utanför fältfiltreringen.
+**Fältet är ett `ErrandField`-värde**, `PROCESS`, och går därmed genom
+`AccessControlService.roleBasedFieldResolver` som allt annat på ärendet.
 
 För ALKT gör det ingen skillnad — namespacet använder inte AccessMapper (§1.8), så resolvern vänder direkt.
 Tillägget finns för nästa namespace. Designen är byggd för att bäras av fler (§7.6), och ett fält som
@@ -949,31 +909,24 @@ namespacet som tar den i bruk.
 
 Beteendet följer av hur resolvern redan fungerar, kontrollerat i koden:
 
-|                   Läge                    |                                                           Utfall                                                           |
-|-------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| Namespace utan åtkomstkontroll — som ALKT | `roleBasedFieldResolver` returnerar `null` direkt och ingenting filtreras. Fälten syns, precis som i dag                   |
-| Användare som ingen restriktion träffar   | Samma sak: `null`, hela ärendet                                                                                            |
-| Begränsad läsning eller rollrestriktion   | Kartan är en **tillåtelselista**. `PROCESS` och `DECISION` saknas där tills namespacet räknar upp dem, alltså utelämnas de |
+|                   Läge                    |                                                    Utfall                                                    |
+|-------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| Namespace utan åtkomstkontroll — som ALKT | `roleBasedFieldResolver` returnerar `null` direkt och ingenting filtreras. Fälten syns, precis som i dag     |
+| Användare som ingen restriktion träffar   | Samma sak: `null`, hela ärendet                                                                              |
+| Begränsad läsning eller rollrestriktion   | Kartan är en **tillåtelselista**. `PROCESS` saknas där tills namespacet räknar upp det, alltså utelämnas det |
 
-Tillägget är därför additivt och stängt som utgångsläge, vilket är rätt riktning för ett fält som bär
-personuppgifter. Två saker följer: gränssnittet måste tåla att `process` och `decision` saknas för en
-begränsad användare, och ett namespace som vill visa dem lägger till dem i `limitedReadAccess.fields`,
-`roleFieldRestrictions` eller `reporterAccess`.
+Tillägget är därför additivt och stängt som utgångsläge. Två saker följer: gränssnittet måste tåla att
+`process` saknas för en begränsad användare, och ett namespace som vill visa det lägger till det i
+`limitedReadAccess.fields`, `roleFieldRestrictions` eller `reporterAccess`.
 
-**`decision` är reducerad i listsvar (beslut 39).** `findErrands` lämnar `outcome`, `method` och
-`decidedAt` per träff; hela beslutet läses vid enskild läsning av ärendet och på `GET .../decision`. Skälet
-är `justification`: en beslutsmotivering är fritext med personuppgifter, och en träfflista på hundra
-ärenden hade annars burit hundra sådana till en klient som bara ville visa en kolumn med utfall.
-Dataminimering och nyttolast pekar åt samma håll, och de tre fälten är precis vad en lista behöver för att
-kunna visa och sortera på beslutet.
+**Beslutet står utanför fältfiltreringen, och det är med flit** (beslut 32): ärendet bär det inte. Den som
+läser `.../decisions` måste i stället ha resursen `DECISION`, på nivån `LR`, och begränsad läsning når bara
+resursen om namespacet räknat upp `DECISION` bland `limitedReadAccess.resources`. `justification`, som är
+fritext med personuppgifter, är därmed lika stängd som utgångsläge som den hade varit som ärendefält — och
+eftersom ärendet inte bär beslutet finns det heller ingen träfflista som bär hundra motiveringar (beslut 39
+utgår).
 
-Reduceringen ligger i `ErrandMapper`, inte i en egen modell: samma `Decision` serialiseras utan null-fält,
-och listvägen fyller bara de tre fälten. En andra modell hade behövt hållas i takt med den första, och det
-är samma fälla som §5.3 undviker för `ErrandProcess`. Fältfiltreringen gäller ändå: `DECISION` som helhet
-kan stängas av `roleBasedFieldResolver`, och reduceringen är ett golv under den, inte ett alternativ till
-den.
-
-**`process` reduceras däremot inte.** Processens tillstånd är just det listvyn ska visa (§2.1), och ingen
+**`process` reduceras inte i listsvar.** Processens tillstånd är just det listvyn ska visa (§2.1), och ingen
 del av `ErrandProcess` är fritext om en person — `error.message` beskriver ett tekniskt fel och får enligt
 §11 inte bära personuppgifter.
 
@@ -997,8 +950,7 @@ den levande skulle båda se ut som `null` — alltså precis som "ärendet har i
 Det ställer ett krav på hur fältet fylls i: frågan är "senaste raden per ärende", inte "raden där
 `active_marker = 1`". Över en hel lista med ärenden kräver det antingen en fönsterfunktion (`ROW_NUMBER()`,
 finns i MariaDB 10.6) eller en join mot `max(created)` — men det ska fortfarande bli **en** fråga, inte en
-per ärende. `decision` hämtas i samma sväng och är en rak join på `errand_id`, eftersom det bara finns ett
-beslut att välja på (§7.5).
+per ärende.
 
 `awaitingSignals` är en barnsamling och går inte att hämta i samma fråga utan att multiplicera raderna.
 Hämta dem i **en** extra fråga för hela sidan, nycklad på de processrader man redan har — två frågor
@@ -1100,7 +1052,9 @@ det (§9.2 punkt 5). Fältet går aldrig vidare till SM: det hör till Operaton,
 De två skrivvägarna släpps in på olika sätt, och det är med flit. **Processrapporten** godtas bara från
 namespacets `PROCESS_CONSUMER`, utpekad med `X-Sent-By` — den bär processens tillstånd och inget
 ärendeinnehåll. Det är den enda plats vid sidan av beslutets `method` där `X-Sent-By` styr ett utfall;
-loop-skyddet läser den inte (§6.5). **Beslutet** går den vanliga vägen för ärendeskrivningar, eftersom det *är* ärendedata.
+loop-skyddet läser den inte (§6.5). **Beslutet** går den vanliga vägen för ärendeskrivningar, eftersom det *är*
+ärendedata, och `method: AUTOMATIC` från fel avsändare svarar `403` — beslutets egen regel från
+handläggningsmodellen, som bara pekar ut vem som får göra anspråket (§7.5).
 
 **Kontrollen är validering, inte behörighetsprövning, och svaret är `400`** (beslut 40). SM autentiserar
 ingenting inkommande — det gör WSO2 — och `X-Sent-By` sätts av anroparen själv utan att något bakom den
@@ -1116,21 +1070,22 @@ statuskod.
 `AccessControlService.getErrand(...)` och `.verifyExistingErrandAndAuthorization(...)` **kräver** en
 `ProtectedResource` och en lägsta nivå — det finns ingen överlagring utan. Varje ny endpoint måste alltså
 peka ut en, och `ERRAND` är fel svar: den skulle ge processens rapporter samma behörighet som ärendet
-självt. Tre nya värden tillkommer, alla under `errand/`-subträdet så att ett mönster som `errand/**`
-täcker dem:
+självt. Två nya värden tillkommer, båda under `errand/`-subträdet så att ett mönster som `errand/**`
+täcker dem. Beslutets `DECISION` fanns redan, från mains handläggningsmodell:
 
-|                Väg                |              `ProtectedResource`               |  Nivå   |
-|-----------------------------------|------------------------------------------------|---------|
-| `GET .../processes`               | `PROCESS` — `errand/process`                   | `R, RW` |
-| `PUT`/`POST .../processes`        | `PROCESS`                                      | `RW`    |
-| `POST .../processes/{id}/signals` | `PROCESS`                                      | `RW`    |
-| `POST .../processes/start`        | `PROCESS`                                      | `RW`    |
-| `GET .../process-activities`      | `PROCESS_ACTIVITY` — `errand/process-activity` | `R, RW` |
-| `GET .../decision`                | `DECISION` — `errand/decision`                 | `R, RW` |
-| `PUT`/`DELETE .../decision`       | `DECISION`                                     | `RW`    |
+|                Väg                 |                    `ProtectedResource`                     |    Nivå     |
+|------------------------------------|------------------------------------------------------------|-------------|
+| `GET .../processes`                | `PROCESS` — `errand/process`                               | `R, RW`     |
+| `PUT`/`POST .../processes`         | `PROCESS`                                                  | `RW`        |
+| `POST .../processes/{id}/signals`  | `PROCESS`                                                  | `RW`        |
+| `POST .../processes/start`         | `PROCESS`                                                  | `RW`        |
+| `GET .../process-activities`       | `PROCESS_ACTIVITY` — `errand/process-activity`             | `R, RW`     |
+| `GET .../decisions/**`             | `DECISION` — `errand/decision`, från handläggningsmodellen | `LR, R, RW` |
+| Skrivvägarna under `.../decisions` | `DECISION`                                                 | `RW`        |
 
 Nivåerna följer regeln i §1.3: skrivvägar kräver `RW`, läsvägar lägst `R`. `AccessControlService` tar en lägsta
-nivå, så `R` släpper även igenom den som har `RW`. Signalen kunde ha varit en
+nivå, så `R` släpper även igenom den som har `RW`. Beslutets läsvägar kräver lägst `LR`, som handläggningsmodellens
+alla artefakter, och begränsad läsning når dem bara när namespacet räknat upp `DECISION` (§5.3). Signalen kunde ha varit en
 egen resurs — att stega processen är något man kan vilja dela ut separat — men den ligger under `PROCESS`
 tills behovet visar sig.
 
@@ -1149,15 +1104,15 @@ namespacet självt, som konfiguration och metadata; våra ligger alla under ett 
 
 Statuskoderna för `.../signals` står i §5.9 och för `.../processes/start` i §5.10.
 
-**`.../decision`**
+**`.../decisions`** — det som tillkommer för ärenden med process
 
-|  Kod  |                                                            När                                                            |
-|-------|---------------------------------------------------------------------------------------------------------------------------|
-| `400` | Kroppen validerar inte; `attachmentId` pekar på en bilaga som inte tillhör ärendet                                        |
-| `403` | `method: AUTOMATIC` från någon annan än namespacets `PROCESS_CONSUMER`; `method: MANUAL` från en icke-AD-identitet (§7.5) |
-| `404` | Ärendet finns inte; eller, för `GET`/`DELETE`, inget beslut registrerat                                                   |
-| `409` | Ärendet har en `COMPLETED` process — beslutet är låst (§7.5)                                                              |
-| `412` | `If-Match` matchar inte beslutets `version`                                                                               |
+|  Kod  |                                                                                                                                       När                                                                                                                                       |
+|-------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `403` | `method: AUTOMATIC` från någon annan än namespacets `PROCESS_CONSUMER`, eller i ett namespace utan sådan; `method: MANUAL` från en identitet som inte är ett AD-konto (§7.5)                                                                                                    |
+| `409` | Ärendets process är `COMPLETED`, eller beslutet är `COMPLETED` på ett ärende med process — beslutet är låst. Gäller också villkoren och bilagelänkarna, radering av en ärendebilaga som ett låst beslut länkar och radering av en utredning som ett låst beslut vilar på (§7.5) |
+| `412` | `If-Match` matchar inte beslutets `version`, eller ett arbetssteg skriver ärendet med en `ETag` från före beslutsskrivningen                                                                                                                                                    |
+
+Övriga svar på `.../decisions` är handläggningsmodellens och beskrivs i `openapi.yaml`.
 
 ### 5.7 Vad som ändras för dem som redan använder API:et
 
@@ -1173,8 +1128,14 @@ och redan står i specen. Verksamheter utanför ALKT märker ingenting, med ett 
 som inte är ett AD-konto — en e-tjänst med `partyId`, en integration — får identitetens värde i `createdBy` i stället
 för ett tomt fält (§1.8, T3).
 
-Ärendet får två nya läsfält, `process` och `decision`, och `.../decision` är en ny adress. Båda är rena
-tillägg — en klient som inte känner till dem påverkas inte.
+Ärendet får ett nytt läsfält, `process`. Det är ett rent tillägg — en klient som inte känner till det påverkas
+inte.
+
+Beslutsresursen `.../decisions` får två nya svar, men bara på ärenden som har en process: `409` när beslutet är
+låst och `412` på ärendet efter en beslutsskrivning. En ärendebilaga som ett låst beslut länkar går inte att radera
+(`409`). Tvärs över alla namespace gäller två skärpningar: `method: AUTOMATIC` godtas bara från namespacets
+`PROCESS_CONSUMER`, och en namespace-konfiguration med `PROCESS_CONSUMER` måste räkna upp `ERRAND` och `DECISION`
+bland triggerna (§7.1, §7.5). Varje skrivning på ett beslut blir dessutom en post i händelseloggen.
 
 Däremot finns det två saker gränssnittet **vinner på** att visa. Det ena är processläget:
 `errand.process.processStatus` och `currentActivityName` berättar om en process arbetar med ärendet just
@@ -1183,9 +1144,10 @@ förstå varför ärendet plötsligt kan ändra sig. (Att skicka `If-Match` äve
 en förbättring, för då upptäcks krocken i stället för att den sista skrivningen vinner — men det är en
 fristående sak, inget krav härifrån.)
 
-Det andra är beslutet. `errand.decision` är tom tills ett beslut finns, och när det väl finns räcker det
-inte att visa utfallet: `method` talar om ifall det var en handläggare eller processen som fattade det,
-och just den skillnaden har både handläggaren och den sökande rätt att se.
+Det andra är beslutet. När det väl finns på `.../decisions` räcker det inte att visa utfallet: `method`
+talar om ifall det var en handläggare eller processen som fattade det, och just den skillnaden har både
+handläggaren och den sökande rätt att se. Gränssnittet bör också visa att ett beslut är låst, så att
+handläggaren förstår varför en rättelse kräver ett nytt ärende.
 
 ### 5.8 Det som tas bort i pw-alkt
 
@@ -1627,6 +1589,16 @@ en radering som hålls tillbaka lämnar processinstansen levande i Operaton för
 även en radering från en maskinidentitet med `X-Trigger-Process: false`, och även när `ERRAND` saknas i
 `PROCESS_TRIGGER`.
 
+**Skrivningen där en handläggare gör ett beslut `COMPLETED` passerar bromsen, men bara den** (beslut 54). Det
+är den händelse ett väntläge väntar på, och kastas den står ärendet still hur mycket annan trafik som än orsakade
+att bromsen slog till. En människa som fattar ett beslut är ingen loop, och på ett ärende med process är beslutet
+låst när det väl är färdigt (§7.5), så övergången sker en gång. Processens egna avslut omfattas inte: varje
+beslut processen skapar färdigt är ett nytt, så en process som glömt att be om att slippa väckas hade kunnat
+skapa beslut efter beslut förbi bromsen — och den behöver aldrig väckas av sitt eget beslut. Lager 1 och 2
+gäller som vanligt, och ett namespace utan `DECISION` bland triggerna får ingen rad.
+`EventService.createDecisionEvent` talar om för publiceringen att händelsen är en sådan övergång, och
+publiceringen avgör själv om skrivaren är ett AD-konto.
+
 **Att bara levererade rader räknas är inte en detalj.** Räknades även de oskickade skulle ett
 leveransavbrott trippa bromsen av sig självt: raderna hopar sig därför att ingenting går fram, bromsen
 läser hopen som en loop och börjar kasta nya händelser. Ett avbrott som bara kostade tid hade då blivit
@@ -1702,15 +1674,23 @@ anrop. Men triggern räcker inte ensam — pw måste också starta processen fö
 inte för att händelsen råkar vara ett `CREATE`. Annars faller samma fall bort på mottagarsidan i stället.
 Se §9.3.
 
-**`DECISION` är lika obligatorisk.** Beslutet skrivs till `.../errands/{errandId}/decision` (§7.5) och
+**`DECISION` är lika obligatorisk.** Beslutet skrivs till `.../errands/{errandId}/decisions` (§7.5) och
 processen väntar på det. Saknas triggern publiceras ingen outbox-rad för den skrivningen, processen får
 aldrig veta att beslutet är fattat, och instansen står kvar i `WAITING` för alltid.
+
+**Båda kontrolleras när konfigurationen skrivs** (beslut 55). Har namespacet en `PROCESS_CONSUMER` svarar
+`NamespaceConfigService` `400` om `ERRAND` eller `DECISION` saknas bland triggerna, och felmeddelandet säger
+vad som går förlorat utan dem. Det gör en tyst driftstörning till ett högljutt konfigurationsfel, på samma sätt
+som spärren mot åtkomstkontroll nedan. En konfiguration som sparades före kontrollen prövas först när den
+skrivs nästa gång, så ett namespace som redan kör bör kontrolleras för hand. Triggers utan konsument prövas
+inte — de väcker ingen, och står kvar till den dag en konsument läggs till.
 
 **Kommandon står utanför listan.** `PROCESS_TRIGGER` säger vilka *ärendeändringar* som är värda att berätta
 om för processen. Handläggarens signal (§5.9) och manuella start (§5.10) är inga ärendeändringar utan
 kommandon riktade rakt till processen, och de publiceras alltid. Det är därför `SIGNAL` inte längre står i
 listan: en knapp som ser ut att fungera men inte gör något är precis den tysta felväg konfigurationen inte
-ska kunna orsaka (§7.7).
+ska kunna orsaka (§7.7). Konfigurationen avvisar dem numera med `400`, eftersom en uppräknad kommandotyp ser
+ut att styra något den aldrig styr.
 
 **Startläget konfigureras inte här utan på etiketten.** `PROCESS_CONSUMER` säger att namespacet kör
 processer; `processStartMode` säger om de startar av sig själva. Ansökan och tillsyn ligger i samma
@@ -1890,50 +1870,71 @@ skapar relationen via `RelationClient` — samma väg handover använder.
 
 Det är den yttersta av tre regler som säger ungefär samma sak, fast på olika nivåer:
 
-|      Nivå      |            Invariant             |                     Upprätthålls av                     |
-|----------------|----------------------------------|---------------------------------------------------------|
-| Processinstans | Högst en levande per ärende      | `uq_ep_one_active_per_errand`                           |
-| Processliv     | En `COMPLETED` startas aldrig om | `ErrandProcessService`, när en processrad skapas (§7.4) |
-| Beslut         | Ett per ärende                   | `uq_ed_errand_id`                                       |
+|      Nivå      |            Invariant             |                                    Upprätthålls av                                    |
+|----------------|----------------------------------|---------------------------------------------------------------------------------------|
+| Processinstans | Högst en levande per ärende      | `uq_ep_one_active_per_errand`                                                         |
+| Processliv     | En `COMPLETED` startas aldrig om | `ErrandProcessService`, när en processrad skapas (§7.4)                               |
+| Beslut         | Ett per ärende                   | `SINGLE_DECISION_PER_ERRAND` i namespacets konfiguration, `DecisionValidator` (`409`) |
+
+Den tredje regeln är en inställning och ingen unik nyckel, eftersom beslutsmodellen delas med verksamheter där
+interimistiska beslut, delbeslut och omprövning är vardag. **ALKT måste alltså slå på
+`singleDecisionPerErrand`** för att regeln ska hålla där.
 
 #### Var beslutet lagras
 
-I en **egen ärendescopad tabell, `errand_decision`** (§3.1), med en typad modell `Decision` (§5.3) och en
-egen endpoint:
+**I mains gemensamma handläggningsmodell, och ingen annanstans** (beslut 51). Tabellen `decision`
+(`V1_56`), modellen `Decision` och resursen nedan byggdes för alla verksamheter — bygglov, miljötillsyn,
+individärenden — och ALKT använder dem som de är:
 
 ```
-GET    /{municipalityId}/{namespace}/errands/{errandId}/decision   -> 200 Decision | 404
-PUT    /{municipalityId}/{namespace}/errands/{errandId}/decision   -> 200 | 201, If-Match
-DELETE /{municipalityId}/{namespace}/errands/{errandId}/decision   -> 204
+POST   /{municipalityId}/{namespace}/errands/{errandId}/decisions                -> 201
+GET    /{municipalityId}/{namespace}/errands/{errandId}/decisions                -> 200 [Decision]
+GET    /{municipalityId}/{namespace}/errands/{errandId}/decisions/{decisionId}   -> 200 Decision, ETag
+PATCH  /{municipalityId}/{namespace}/errands/{errandId}/decisions/{decisionId}   -> 200, If-Match
+DELETE /{municipalityId}/{namespace}/errands/{errandId}/decisions/{decisionId}   -> 204, If-Match
+       .../decisions/{decisionId}/terms, /attachments, /json-parameters
 ```
 
 ```json
-{ "outcome": "APPROVAL",
+{ "type": "PERMIT",
+  "status": "COMPLETED",
+  "outcome": "APPROVAL",
   "method": "MANUAL",
   "decidedBy": "anna.andersson",
   "decidedAt": "2026-09-14T10:12:00+02:00",
-  "legalBasis": "9 kap. 30 § PBL",
+  "legalBasis": "8 kap. 12 § alkohollagen",
   "delegationReference": "3.2.1",
   "justification": "...",
   "appealable": true }
 ```
 
+Planen var länge en egen `errand_decision` med `@OneToOne` på ärendet, `Errand.decision` och ett beslut i
+ärendets revision. Den skrinlades när handläggningsmodellen kom till main först: två beslutsmodeller hade
+behövt hållas i takt, och den som läser beslut — e-tjänst, arkiv, processen — hade fått fråga sig vilken av
+dem som gäller.
+
 **Fasta fält, inte ett fritt dokument.** Ett beslut har en form som följer av förvaltningslagen, och den är
 sig lik oavsett om det gäller bygglov, försörjningsstöd eller tillsyn: utfall, vem som fattade det, när,
 med stöd av vilket lagrum eller vilken delegationspunkt, och varför. Den formen hör hemma i modellen — där
-kontrolleras den när den kommer in, den syns i `openapi.yaml` och den går att söka i. I ett fritt
-JSON-dokument får varje läsare tolka den på egen hand i stället.
+kontrolleras den när den kommer in, den syns i `openapi.yaml` och den går att söka i. Två saker skiljer
+modellen från den ursprungliga planen:
 
-Två saker är medvetet utelämnade: **överklagandetiden**, eftersom klockan börjar gå vid delgivningen och
-den håller SM inte reda på, och en fri lista med egna nyckel/värde-par, eftersom den snabbt blir en
-soptunna och återinför exakt det otypade vi just tagit bort.
+- **`outcome` är metadata, inte ett enum.** Utfallen registreras per namespace på
+  `/metadata/decisionoutcomes`, och ett utfall namespacet inte känner till ger `400`. ALKT registrerar sina
+  på samma sätt som alla andra.
+- **`status` är beslutets livscykel** — `DRAFT`, `ACTIVE`, `COMPLETED`, `CANCELLED` — och det är den som
+  säger när beslutet är fattat. `outcome` och `decidedAt` krävs redan när beslutet skapas, så ett
+  `COMPLETED` beslut har alltid båda.
 
-Fyra andra lösningar övervägdes och valdes bort:
+**Uppgifter som blir kända efter beslutet**, som laga kraft och delgivning, hör hemma i beslutets
+JSON-parametrar (`decision_json_parameter`, med registrerat schema). Det är därför de står utanför låsen
+nedan.
 
-- **`json_parameter` med registrerat schema**, som var det tidigare valet i den här designen. Den kräver
-  att ett JSON-schema registreras och förvaltas per verksamhet, och dessutom att
-  `ErrandJsonParameterService.updateJsonParameter` börjar skapa event och revision — en beteendeändring i
-  en tjänst som redan används av andra (§1.6). Otypad lagring för ärendets mest formbundna dokument.
+Fyra andra lösningar övervägdes och valdes bort redan innan handläggningsmodellen fanns, och skälen gäller
+fortfarande:
+
+- **`json_parameter` på ärendet med registrerat schema.** Kräver att ett JSON-schema förvaltas per
+  verksamhet för ärendets mest formbundna dokument, och otypad lagring för det.
 - **Kolumner eller JSON på `errand_process`.** Ett myndighetsbeslut är ärendedata, inte processmaskineri.
   Det ska gå att läsa för e-tjänst och arkiv utan att man vet något om Operaton, det finns även på ärenden
   helt utan process, och vid en omstart efter `FAILED` hade det hamnat på fel rad (§7.4).
@@ -1945,50 +1946,79 @@ Fyra andra lösningar övervägdes och valdes bort:
 
 Två kan fatta beslutet, men de går in samma väg:
 
-|               Fall               |  `method`   |          Vem skriver           |                          Behörighet                           |
-|----------------------------------|-------------|--------------------------------|---------------------------------------------------------------|
-| Handläggaren fattar beslutet     | `MANUAL`    | ett AD-konto                   | RW på ärendet, som vid vilken annan ärendeskrivning som helst |
-| Processen fattar beslutet självt | `AUTOMATIC` | namespacets `PROCESS_CONSUMER` | `X-Sent-By` pekar ut samma tjänst som `PROCESS_CONSUMER`      |
+|               Fall               |  `method`   |          Vem skriver           |                               Känns igen på                               |
+|----------------------------------|-------------|--------------------------------|---------------------------------------------------------------------------|
+| Handläggaren fattar beslutet     | `MANUAL`    | ett AD-konto                   | `X-Sent-By` med `type=adAccount`, och RW på beslutet                      |
+| Processen fattar beslutet självt | `AUTOMATIC` | namespacets `PROCESS_CONSUMER` | `X-Sent-By` har samma värde som `PROCESS_CONSUMER`, och är inget AD-konto |
 
-**Regeln kontrolleras när beslutet kommer in:** `AUTOMATIC` godtas bara från namespacets
-`PROCESS_CONSUMER`, `MANUAL` bara från ett AD-konto. Allt annat ger `403`. Utan den kontrollen skulle en
-handläggare kunna stämpla sitt eget beslut som automatiskt, eller en process stämpla sitt som manuellt —
-och det är just den skillnaden man måste kunna svara på i efterhand (förvaltningslagen 28 § och
-dataskyddsförordningen artikel 22 om automatiserat beslutsfattande).
+**Regeln kontrolleras när beslutet kommer in** (beslut 56): `AUTOMATIC` godtas bara från namespacets
+`PROCESS_CONSUMER`, `MANUAL` bara från ett AD-konto. Allt annat ger `403`, också `AUTOMATIC` i ett namespace
+som saknar processmotor. Utan den kontrollen skulle en handläggare kunna stämpla sitt eget beslut som
+automatiskt, eller en process stämpla sitt som manuellt — och det är just den skillnaden man måste kunna svara
+på i efterhand (förvaltningslagen 28 § och dataskyddsförordningen artikel 22 om automatiserat
+beslutsfattande). Metoden som prövas är den beslutet får efter skrivningen, så en `PATCH` som utelämnar
+`method` prövas mot den lagrade.
 
-`processId` fyller SM i själv och tar aldrig emot den från klienten: ärendets levande processrad när
-beslutet är automatiskt, annars ingenting.
+`X-Sent-By` sätts av anroparen, så kontrollen håller stämpeln till anroparens avsikt snarare än bevisar vem
+den är (§1.8). Det räcker för det den ska göra: ett beslut kan inte få fel metod av misstag. Handläggningsmodellen
+svarade redan `403` på regeln, och det står sig — till skillnad från processrapportens avsändarkontroll
+(beslut 40) handlar den om vem som får göra ett anspråk, inte om ett fält som är fel.
+
+`errandProcessId` fyller SM i själv och tar aldrig emot från klienten: vid `AUTOMATIC` ärendets levande
+processrad, och den rad beslutet redan pekar ut om ingen lever; vid `MANUAL` ingenting. Kolumnen har ingen
+främmande nyckel, eftersom processrader bara försvinner tillsammans med ärendet.
 
 #### Vad som händer när beslutet skrivs
 
-1. **Det skapas en revision och en händelse med subtypen `DECISION`**, längs samma väg som alla andra
-   ärendeskrivningar (§1.1). Beslutet hänger på `ErrandEntity` och följer därför med i revisionens
-   ögonblicksbild (§3.2) — till skillnad från processtabellerna, som med flit står utanför (§1.4).
-2. **`errand.version` höjs.** Ett arbetssteg som håller en äldre ETag får `412` och kör om sig (§6.2).
-   Det är rätt: beslutet ändrade ju underlaget.
-3. **`DECISION` måste finnas i `PROCESS_TRIGGER`** (§7.1), annars skrivs ingen outbox-rad och processen
-   får aldrig veta att beslutet är fattat.
-4. Är det **processen själv** som skriver beslutet stoppas outbox-raden av loop-skyddets första lager
-   (pw sätter `X-Trigger-Process: false`, §6.5). Också rätt: processen behöver inte väckas av sitt
-   eget beslut.
+1. **Att skapa, ändra eller radera ett beslut ger en ärendehändelse med subtypen `DECISION`** (beslut 52),
+   av typen `UPDATE` och längs samma väg som alla andra ärendehändelser (§1.1). Händelsen pekar inte ut
+   någon revision: beslutet ingår inte i ärendets ögonblicksbild. Spårbarheten är händelseloggen, beslutets
+   `createdBy`, `modifiedBy` och `version`, och `method` och `decidedBy` på beslutet självt.
+2. **`errand.version` höjs.** Ett arbetssteg som håller en äldre ETag får `412` och kör om sig (§6.2). Det är
+   rätt: beslutet ändrade ju underlaget.
+3. **Villkoren, bilagelänkarna och JSON-parametrarna gör ingetdera.** Processen väntar på att beslutet blir
+   färdigt, och varje extra händelse räknas av nödbromsen. En fil som laddas upp via beslutet blir ändå en
+   `ATTACHMENT`-händelse, precis som all uppladdning.
+4. **`DECISION` måste finnas i `PROCESS_TRIGGER`** (§7.1), annars skrivs ingen outbox-rad och processen
+   får aldrig veta att beslutet är fattat. Konfigurationen avvisas utan den.
+5. Är det **processen själv** som skriver beslutet stoppas outbox-raden av loop-skyddets första lager
+   (pw sätter `X-Trigger-Process: false`, §6.5). Också rätt: processen behöver inte väckas av sitt eget
+   beslut.
+6. **Skrivningen där en handläggare gör beslutet `COMPLETED` passerar nödbromsen** (beslut 54), men inte
+   lager 1 och 2. Den är den enda händelse väntläget behöver, och en broms som trippats av annan trafik på
+   ärendet hade annars lämnat det stående. Processens egna avslut bromsas som andra skrivningar från processen
+   (§6.5). I händelseloggen heter skrivningen "Ett beslut i ärendet har fattats.", också när beslutet skapas
+   färdigt.
 
 #### När beslutet låses
 
-Så länge processen lever går beslutet att skriva om — steget som förbereder beslutet kan behöva rätta sig
-självt, och en handläggare kan upptäcka ett stavfel. När ärendets process är `COMPLETED` är det låst, och
-samma `hasCompletedProcess(errandId)` som hindrar att processen startas om (§7.4) ger `409` också här. En
-kontroll, två användningar. `DELETE` finns för det felskrivna beslutet och lyder under samma spärr.
+Låsen gäller bara ärenden som har en process — minst en processrad (beslut 53). Svaret är `409`.
 
-Ärenden **utan** process låses aldrig, helt enkelt för att det inte finns någon process som kan bli
-`COMPLETED`. Där är revisionshistoriken spårbarheten. Och ska ett låst beslut ändras är vägen ett nytt
-ärende, kopplat till det gamla.
+- **När ärendets process är `COMPLETED`** kan inget av ärendets beslut skapas, ändras eller raderas. Det är
+  samma `ErrandProcessService.hasCompletedProcess` som hindrar att processen startas om (§7.4). En kontroll,
+  två användningar.
+- **När beslutet är `COMPLETED`** är det låst som det står, också innan processen hunnit gå i mål. Att backa
+  statusen och att radera beslutet ingår, och det är det lagrade beslutet som prövas: en `PATCH` som gör
+  beslutet färdigt släpps igenom, men inte nästa.
+- **Villkoren och bilagelänkarna** låses med beslutet.
+- **En bilaga på ärendet som ett låst beslut länkar går inte att radera**, och inte heller **en utredning
+  som ett låst beslut vilar på**. Länken respektive beslutets hänvisning till utredningen hade annars
+  försvunnit genom databasens kaskad, förbi beslutets regler — och hänvisningen hade inte gått att sätta
+  tillbaka, eftersom beslutet är låst. Spärrarna gäller API-vägen; gallringen tar allt.
+- **JSON-parametrarna låses inte.** Laga kraft och delgivning blir kända först efter beslutet.
+
+Så länge processen lever och beslutet inte är färdigt går det att skriva om — steget som förbereder beslutet
+kan behöva rätta sig självt, och en handläggare kan upptäcka ett stavfel. Ärenden **utan** process låses
+aldrig: där är händelseloggen spårbarheten. Och ska ett låst beslut ändras är vägen ett nytt ärende,
+kopplat till det gamla.
 
 #### Det här hänger på hur processen är modellerad
 
-Väntläget som avvaktar beslutet **måste läsa om ärendet när det går in i väntan** (§9.2 punkt 1). Skrivs
-beslutet medan processen är mitt i ett arbetssteg finns det ingen som lyssnar, väckningen sväljs som en
-`MismatchingMessageCorrelation` och är sedan borta. Om processen då inte tar reda på hur ärendet faktiskt
-ser ut när den börjar vänta, blir ärendet stående för alltid — med ett färdigt beslut liggande i databasen.
+Väntläget som avvaktar beslutet **väntar på ett beslut med `status = COMPLETED`**, läst på
+`GET .../decisions`, och **måste läsa om ärendet när det går in i väntan** (§9.2 punkt 1). Skrivs beslutet
+medan processen är mitt i ett arbetssteg finns det ingen som lyssnar, väckningen sväljs som en
+`MismatchingMessageCorrelation` och är sedan borta. Om processen då inte tar reda på hur ärendet faktiskt ser
+ut när den börjar vänta, blir ärendet stående för alltid — med ett färdigt beslut liggande i databasen.
 Det är det allvarligaste misstag man kan göra i den här lösningen, och ingen kod i SM kan rädda det.
 
 ---
@@ -2207,10 +2237,14 @@ den som letar. De nedan gör det inte — de yttrar sig i att ingenting händer.
 | Rad som släppts vid `max-age`, och publicering utan aktiv transaktion          | Anropet lyckas, men något gick ändå förlorat                                                                        | ERROR-loggar, båda två. Ska aldrig förekomma                                                                                                                          |
 
 Logga alltid `eventId`, `errandId`, `processInstanceId` och `X-Request-Group-Id` — dubbelleveranser blir då
-spårbara i efterhand. **Logga aldrig `justification`** — den innehåller personuppgifter (§11).
+spårbara i efterhand. **Logga aldrig `justification`** — den innehåller personuppgifter (§11). Tjänstens egna
+loggrader räcker inte för det: dept44 skriver hela request- och svarskroppen till loggern
+`se.sundsvall.dept44.payload` som standard. Fältet maskas därför med ett filter i `logbook.body-filters`
+(`$..justification`), och `ErrandDecisionProcessIT` kontrollerar att motiveringen inte syns i loggen men att
+maskeringen gör det (beslut 57).
 
 Behöver någon senare veta hur ofta något sker snarare än om det skett, är svaret oftast en fråga till
-databasen: `errand_decision` bär `method` och `decided_by`, `process_event_outbox` bär `delivered_at`, och
+databasen: `decision` bär `method`, `decided_by` och `errand_process_id`, `process_event_outbox` bär `delivered_at`, och
 aktivitetsloggen bär en post per instans där modellen bryter mot §6.4. Ett mätvärde blir motiverat den dag
 något faktiskt larmar på det — och då är beroendet `micrometer-registry-prometheus` det som saknas, inte
 räknarna.
@@ -2223,8 +2257,9 @@ räknarna.
 | Varför syns ingen knapp för att starta handläggningen?                | `startable.status` säger vilket hinder det är. `PROCESS_COMPLETED` betyder att ärendets processliv är slut — nästa process är ett nytt ärende (§7.4)                                                                                                                                                                                                                                                                                                                                                                  |
 | Varför går processen inte vidare fast handläggaren tryckt på knappen? | Kontrollera att signalen står bland `errand.process.awaitingSignals` och att väntläget i modellen lyssnar på just det namnet. Signaler filtreras inte av `PROCESS_TRIGGER` (§7.7), så där finns ingenting att felkonfigurera. En avvisad signal svarar `409`                                                                                                                                                                                                                                                          |
 | Varför syns ingen knapp för att gå vidare?                            | `errand.process.awaitingSignals` är tom. Antingen är väntläget automatiskt, eller så rapporterar pw inte in signalerna (§9.3)                                                                                                                                                                                                                                                                                                                                                                                         |
-| Varför avslutas inte processen fast beslutet är fattat?               | Kontrollera att `DECISION` ligger i `PROCESS_TRIGGER` (§7.1), att outbox-raden finns för beslutsskrivningen, och att väntläget läser om ärendet när det går in i väntan (§9.2 punkt 1)                                                                                                                                                                                                                                                                                                                                |
-| Vem fattade beslutet på ärendet?                                      | `errand.decision.method` och `.decidedBy`. `AUTOMATIC` betyder att processen fattade det; `processId` pekar ut vilken processrad                                                                                                                                                                                                                                                                                                                                                                                      |
+| Varför avslutas inte processen fast beslutet är fattat?               | Kontrollera att beslutet har `status = COMPLETED` på `GET .../decisions`, att outbox-raden med subtypen `DECISION` finns för skrivningen, och att väntläget läser om ärendet när det går in i väntan (§9.2 punkt 1). `DECISION` i `PROCESS_TRIGGER` kontrolleras när konfigurationen skrivs, men en konfiguration från före kontrollen kan sakna den (§7.1)                                                                                                                                                           |
+| Vem fattade beslutet på ärendet?                                      | `method` och `decidedBy` på `GET .../decisions`. `AUTOMATIC` betyder att processen fattade det; `errandProcessId` pekar ut vilken processrad                                                                                                                                                                                                                                                                                                                                                                          |
+| Varför går beslutet inte att ändra?                                   | Ärendets process är `COMPLETED`, eller beslutet är det, och ärendet har en process (§7.5). En rättelse görs i ett nytt ärende, kopplat via `referredFrom`                                                                                                                                                                                                                                                                                                                                                             |
 | Varför kör processen om samma steg gång på gång?                      | Handläggaren ändrar ärendet mitt i steget ⇒ `412` (§6.2). Se INFO-raden per avvisad rapport (§8.1) och aktivitetsloggen                                                                                                                                                                                                                                                                                                                                                                                               |
 | Varför väcks inte processen av inkommande e-post?                     | `MESSAGE` saknas i `PROCESS_TRIGGER`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Varför väcks processen inte av sina egna ändringar?                   | Det är meningen — lager 1 i §6.5                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -2270,14 +2305,15 @@ Det som behövs är att någon märker att den ligger kvar, och det är vad häl
 
 ### 8.4 Prova själv, lokalt
 
-1. Skapa namespace-config med `PROCESS_CONSUMER=pw-alkt` och `PROCESS_TRIGGER=ERRAND,MESSAGE`.
+1. Skapa namespace-config med `PROCESS_CONSUMER=pw-alkt` och `PROCESS_TRIGGER=ERRAND,MESSAGE,DECISION` — utan `ERRAND` eller `DECISION` svarar SM `400`. Registrera ett beslutsutfall på `/metadata/decisionoutcomes`.
 2. Tagga en label med `processKey=alcohol-serving`.
 3. `POST /2281/ALKT/errands` med den labeln ⇒ rad i `process_event_outbox` inom en sekund, `delivered_at` satt när stubben svarat.
 4. `GET /2281/ALKT/errands/{id}` ⇒ `process.processStatus = RUNNING`, och `ETag` i svarshuvudet.
 5. `PATCH` samma ärende med den ETag:en ⇒ `200`. `PATCH` igen med **samma** ETag ⇒ `412`.
 6. Låt stubben rapportera med ett `errandVersion` som ligger efter ⇒ `412` på rapporten, inget tillstånd skrivet.
-7. `PUT /2281/ALKT/errands/{id}/decision` med `method: MANUAL` ⇒ revision, `DECISION`-event och en outbox-rad (kräver `DECISION` i `PROCESS_TRIGGER`). Samma skrivning med `X-Sent-By: pw-alkt; type=processEngine`, `X-Trigger-Process: false` och `method: AUTOMATIC` ⇒ ingen outbox-rad, men beslutet skrivet.
-8. Låt stubben rapportera `COMPLETED` och skriv beslutet igen ⇒ `409`.
+7. `POST /2281/ALKT/errands/{id}/decisions` med `method: MANUAL` ⇒ en `DECISION`-händelse, en outbox-rad och ett ärende vars `ETag` flyttat sig (kräver `DECISION` i `PROCESS_TRIGGER`). Samma skrivning med `X-Sent-By: pw-alkt; type=processEngine`, `X-Trigger-Process: false` och `method: AUTOMATIC` ⇒ ingen outbox-rad, men beslutet skrivet och `errandProcessId` satt.
+8. `PATCH` beslutet till `status: COMPLETED` ⇒ en outbox-rad, som skulle ha passerat nödbromsen även om den slagit till för ärendet. `PATCH` det igen ⇒ `409`.
+9. Låt stubben rapportera `COMPLETED` och skapa ett nytt beslut på ärendet ⇒ `409`.
 
 ## 9. pw-alkt
 
@@ -2507,11 +2543,13 @@ handläggaren hunnit ändra under tiden: låt undantaget gå hela vägen upp til
 hamnar på ärendet där handläggaren ser det.
 
 **När processen fattar beslutet själv** skriver arbetssteget det till
-`PUT .../errands/{errandId}/decision` med `method: AUTOMATIC` — alltså inte i rapporten och inte som en
-processvariabel. Rapporten handlar om processens tillstånd, medan beslutet är ärendedata med egen
-livslängd, egen behörighet och egen revision (§7.5). `processId` fyller SM i själv, så steget behöver inte
-veta något om sin egen rad där. Kommer beslutet i stället från en handläggare gör steget ingenting alls —
-processen väcks av `DECISION`-händelsen och läser beslutet ur `errand.decision`.
+`POST .../errands/{errandId}/decisions` med `method: AUTOMATIC`, och `X-Sent-By` med samma värde som
+namespacets `PROCESS_CONSUMER` — alltså inte i rapporten och inte som en processvariabel. Rapporten handlar
+om processens tillstånd, medan beslutet är ärendedata med egen livslängd, egen behörighet och egen
+händelsehistorik (§7.5). `errandProcessId` fyller SM i själv, så steget behöver inte veta något om sin egen
+rad där. Kommer beslutet i stället från en handläggare gör steget ingenting alls — processen väcks av
+`DECISION`-händelsen och läser beslutet på `GET .../decisions`. Ett `409` på beslutet är permanent: beslutet
+är låst, och steget ska inte köras om för det.
 
 ### 9.5 Var `awaitingSignals` kommer ifrån
 
@@ -2545,33 +2583,33 @@ i en Jira-task.
 Tabellen visar **i vilken ordning de bör göras**. Numreringen längre ner (T för SupportManagement, P för
 pw-alkt) följer tjänst i stället för ordning.
 
-| Steg |    Jira     |                    Uppgift                     |
-|------|-------------|------------------------------------------------|
-| 1    | DRAKEN-4734 | T1 — Datamodell och domänenums                 |
-| 2    | DRAKEN-4735 | T2 — Konfigurationsläsning                     |
-| 3    | DRAKEN-4736 | T3 — Process-API                               |
-| 4    | DRAKEN-4737 | T4 — Optimistisk samtidighetskontroll          |
-| 5    | DRAKEN-4738 | T5 — Publicering                               |
-| 6    | DRAKEN-4739 | T6 — Relay och leverans                        |
-| 7    | DRAKEN-4740 | T7 — Skyddsräcken                              |
-| 8    | DRAKEN-4741 | T9 — Beslutet: modell, endpoint och spårbarhet |
-| 9    | DRAKEN-4749 | T11 — Manuell stegning med signaler            |
-| 10   | DRAKEN-4811 | T12 — Automatisk och manuell start             |
-| 11   | DRAKEN-4742 | P1 — Operaton-klienten                         |
-| 12   | DRAKEN-4743 | P2 — Event-endpoint och borttagning            |
-| 13   | DRAKEN-4744 | P3 — SM-klienten                               |
-| 14   | DRAKEN-4745 | P4 — Workerstruktur                            |
-| 15   | DRAKEN-4750 | P7 — Manuella grindar och väntade signaler     |
-| 16   | DRAKEN-4746 | T8 — `ProcessLoopGuardIT`                      |
-| 17   | DRAKEN-4747 | P5 — Tillsynsprocessen                         |
-| 18   | DRAKEN-4748 | P6 — Incidentåterkoppling                      |
+| Steg |    Jira     |                   Uppgift                   |
+|------|-------------|---------------------------------------------|
+| 1    | DRAKEN-4734 | T1 — Datamodell och domänenums              |
+| 2    | DRAKEN-4735 | T2 — Konfigurationsläsning                  |
+| 3    | DRAKEN-4736 | T3 — Process-API                            |
+| 4    | DRAKEN-4737 | T4 — Optimistisk samtidighetskontroll       |
+| 5    | DRAKEN-4738 | T5 — Publicering                            |
+| 6    | DRAKEN-4739 | T6 — Relay och leverans                     |
+| 7    | DRAKEN-4740 | T7 — Skyddsräcken                           |
+| 8    | DRAKEN-4741 | T9 — Beslutet: händelse, lås och spårbarhet |
+| 9    | DRAKEN-4749 | T11 — Manuell stegning med signaler         |
+| 10   | DRAKEN-4811 | T12 — Automatisk och manuell start          |
+| 11   | DRAKEN-4742 | P1 — Operaton-klienten                      |
+| 12   | DRAKEN-4743 | P2 — Event-endpoint och borttagning         |
+| 13   | DRAKEN-4744 | P3 — SM-klienten                            |
+| 14   | DRAKEN-4745 | P4 — Workerstruktur                         |
+| 15   | DRAKEN-4750 | P7 — Manuella grindar och väntade signaler  |
+| 16   | DRAKEN-4746 | T8 — `ProcessLoopGuardIT`                   |
+| 17   | DRAKEN-4747 | P5 — Tillsynsprocessen                      |
+| 18   | DRAKEN-4748 | P6 — Incidentåterkoppling                   |
 
 ### T1 — Datamodell och domänenums (SM)
 
 **Bygg:** `V1_57`-migrering (§3.1); `ProcessStatus` med `isTerminal()` (§4.1); `ActivitySeverity`; entiteterna `ProcessEventOutboxEntity`, `ErrandProcessEntity` (§4.3), `ErrandProcessActivityEntity`; repositories med `Pageable` på de sökfrågor som kan växa utan tak; tabellerna i `truncate.sql`.
 
 **Acceptans:**
-- Ingen av T1:s entiteter är mappad som relation på `ErrandEntity`. (Beslutet i T9 är det enda undantaget, och det är avsiktligt — §3.2.)
+- Ingen av T1:s entiteter är mappad som relation på `ErrandEntity`.
 - `ErrandProcessEntity.applyStatus` är enda vägen att sätta status; settern är inte publik.
 - Tabelldrivet test räknar upp **varje** `ProcessStatus` mot `isTerminal()`, med `WAITING` explicit verifierad som *icke*-terminal.
 - `applyStatus` med icke-terminal status nollar `ended`.
@@ -2606,7 +2644,7 @@ pw-alkt) följer tjänst i stället för ordning.
 - `PUT` med ett `processInstanceId` i kroppen som skiljer sig från pathens ⇒ `400`.
 - Notis som skapas av en processkrivning har en avsändare i `createdBy`, inte tom sträng: `EventService.createNotification` faller tillbaka på identitetens värde när `getAdUser()` är null (§1.8).
 - `PROCESS` tillagt i `ErrandField` och filtrerat av `roleBasedFieldResolver` (§5.3). Test för båda riktningarna: namespace **utan** åtkomstkontroll ⇒ fältet syns; begränsad användare i ett namespace **med** åtkomstkontroll som inte räknat upp `PROCESS` ⇒ fältet utelämnas.
-- Beslut fattat och dokumenterat om `decision` ska vara reducerad i listsvar (§5.3).
+- Beslut fattat och dokumenterat om `decision` ska vara reducerad i listsvar (§5.3). Utgick 2026-09-15, eftersom ärendet inte bär beslutet (beslut 51).
 
 ### T4 — Optimistisk samtidighetskontroll (SM)
 
@@ -2705,24 +2743,31 @@ Två fall till: ett kommando från en maskinidentitet med `X-Trigger-Process: fa
 
 Utan detta test är loop-skyddet en hypotes.
 
-### T9 — Beslutet: modell, endpoint och spårbarhet (SM)
+### T9 — Beslutet: händelse, lås och spårbarhet (SM)
 
-**Bygg:** `V1_58`-migreringen med `errand_decision` (§3.1) och `DecisionEntity` som `@OneToOne` på `ErrandEntity`; enums `DecisionOutcome` och `DecisionMethod` (§4.2); `Decision`-modellen (§5.3); `ErrandDecisionResource` (`GET`, `PUT`, `DELETE` med `If-Match`) och `ErrandDecisionService`; `method`-regeln mot identiteten; `EventSubType.DECISION`-event och revision från beslutsskrivningen; låsning mot `COMPLETED` process; `Errand.decision`; `DECISION` i `PROCESS_TRIGGER` för ALKT; regenerera `openapi.yaml`; tabellen i `truncate.sql`.
+Modellen, tabellen och resursen finns redan i mains handläggningsmodell (beslut 51). Det som återstår är
+kedjan som gör att processen vaknar när beslutet är fattat, och reglerna runt den (beslut 52–57).
+
+**Bygg:** en händelse med subtypen `DECISION` och höjd `errand.version` när ett beslut skapas, ändras eller raderas (`EventService.createDecisionEvent`); `method`-regeln mot namespacets `PROCESS_CONSUMER`; `errandProcessId` satt av SM; låsen i `DecisionValidator.validateChangeable` på alla skrivvägar utom JSON-parametrarna, och spärrarna i `ErrandAttachmentService.deleteErrandAttachment` och `ErrandInvestigationService.deleteErrandInvestigation`; `hasCompletedProcess` delad med `ErrandProcessService`; undantaget från nödbromsen för ett beslut som en handläggare gör `COMPLETED` i `ProcessEventPublisher`; kontrollen av `PROCESS_TRIGGER` i `NamespaceConfigService`; `$..justification` i `logbook.body-filters`; `403` och `409` i `openapi.yaml`; README.
 
 **Acceptans:**
-- Beslutsskrivning ger en eventlogg-post med subtyp `DECISION` **och** en revision, och beslutet ingår i revisionssnapshotten. Utan eventet publiceras ingen outbox-rad och processen vaknar aldrig.
+- Att skapa, ändra och radera ett beslut ger en eventloggpost med subtypen `DECISION`, utan revision. Villkor, bilagelänkar och JSON-parametrar ger ingen.
 - Skrivningen höjer `errand.version`; ett arbetssteg med äldre ETag får `412`.
-- **`method: AUTOMATIC` från någon annan än namespacets `PROCESS_CONSUMER` ⇒ `403`. `method: MANUAL` från en icke-AD-identitet ⇒ `403`.** Båda riktningarna testade — det är den skillnaden som ska hålla i efterhand (§7.5).
-- `processId` sätts av tjänsten, inte av kroppen: en klient som skickar `processId` får det ignorerat, och vid `AUTOMATIC` pekar det på ärendets levande processrad.
-- Andra skrivning på samma ärende går igenom medan processen lever, men ger `409` när ärendets process är `COMPLETED`. Samma spärr gäller `DELETE`.
-- Ärende **utan** process: beslut går att skriva och ändra, och `409`-spärren slår aldrig till.
-- `attachmentId` som pekar på en bilaga i ett annat ärende ⇒ `400`.
-- Två samtidiga skrivningar med samma `If-Match` ⇒ den andra får `412` (`@Version` på entiteten).
-- Radering av ärendet kaskaderar bort beslutet; radering av processraden gör det **inte** (`SET NULL`, §3.2).
-- **IT: handläggaren skriver beslutet ⇒ outbox-rad med subtyp `DECISION`.** Det är hela kedjan som gör att processen kan avslutas.
-- Enhetstest som verifierar att en beslutsskrivning med `X-Trigger-Process: false` **inte** ger en outbox-rad — lager 1 gäller även här.
-- `justification` förekommer inte i någon loggrad (§8.1).
-- `DECISION` tillagt i `ErrandField` (§5.3). Begränsad användare i ett namespace med åtkomstkontroll som inte räknat upp `DECISION` får ärendet **utan** beslutet — testat, eftersom det är `justification` som annars läcker.
+- **`method: AUTOMATIC` från någon annan än namespacets `PROCESS_CONSUMER`, eller i ett namespace utan sådan ⇒ `403`. `method: MANUAL` från en identitet som inte är ett AD-konto ⇒ `403`.** Båda riktningarna testade — det är den skillnaden som ska hålla i efterhand (§7.5).
+- `errandProcessId` sätts av tjänsten, inte av kroppen: en klient som skickar det får det ignorerat, och vid `AUTOMATIC` pekar det på ärendets levande processrad.
+- Ärende med levande process: beslutet går att skriva om tills det är `COMPLETED`, därefter `409` — också för att backa statusen, för `DELETE`, för villkoren och för bilagelänkarna. Ärende med `COMPLETED` process: `409` på alla skrivvägar, nytt beslut inräknat. JSON-parametrarna låses aldrig.
+- Ärende **utan** process: beslutet går att skriva, ändra och radera, och `409`-spärren slår aldrig till.
+- Att radera en ärendebilaga som ett låst beslut länkar, eller en utredning som ett låst beslut vilar på ⇒ `409`.
+- Två skrivningar med samma `If-Match` ⇒ den andra får `412`.
+- Radering av ärendet tar beslutet med sig; att processraden försvinner gör det inte.
+- **IT: handläggaren skriver beslutet ⇒ outbox-rad med subtyp `DECISION`.** Det är hela kedjan som gör att processen kan avslutas (`ErrandDecisionProcessIT`).
+- En beslutsskrivning från processen med `X-Trigger-Process: false` ger **ingen** outbox-rad — lager 1 gäller även här.
+- Skrivningen där en handläggare gör beslutet `COMPLETED` ger en outbox-rad även när nödbromsen slagit till för ärendet; en vanlig beslutsändring ger ingen, och inte heller ett beslut som processen själv skapar färdigt.
+- `PROCESS_CONSUMER` utan `ERRAND` eller `DECISION` bland triggerna ⇒ `400`; `PROCESS` eller `SIGNAL` bland triggerna ⇒ `400`.
+- `justification` förekommer inte i någon loggrad, men den maskerade platshållaren gör det (§8.1).
+- Läs- och skrivvägarna anropar åtkomstkontrollen med `ProtectedResource.DECISION`: läsvägarna på `LR`, skrivvägarna på `RW`.
+
+**Utgår jämfört med den ursprungliga planen:** `errand_decision` och dess migrering, `@OneToOne` på `ErrandEntity`, enumet `DecisionOutcome`, `ErrandDecisionResource` i singular, `Errand.decision`, `ErrandField.DECISION`, reduceringen i listsvar (beslut 39), revision av beslutet, `attachmentId` på beslutet och mätvärdena `decision.written` och `decision.rejected` (§8.1).
 
 ### T11 — Manuell stegning med signaler (SM)
 
@@ -2849,15 +2894,15 @@ den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. U
 | **Loop SM ↔ pw**                                                | Tre lager (§6.5). Lager 1 vilar på en klientsatt header — därför ska processens egen identitet aldrig förekomma bland outbox-radernas `executed_by` (§8.1)                                                                                                                                                                                                      |
 | **Klient som tystar sina egna skrivningar**                     | `X-Trigger-Process: false` är fritt satt, så en integration som härmar pw kan göra sina ändringar osynliga för processen. Headern hedras inte för AD-identiteter (§6.5), men en maskinell integration som härmar pw lämnar inga spår alls — en undertryckt rad skrivs per definition inte                                                                       |
 | **Beslut skrivet medan processen arbetar**                      | Korrelationen sväljs och väckningen är borta. Fångas bara av modelleringskravet i §9.2 punkt 1 — väntläget måste läsa om ärendet när det går in i väntan. Ingen kod i SM kan rädda ett väntläge som inte gör det                                                                                                                                                |
-| **`DECISION` saknas i `PROCESS_TRIGGER`**                       | Processen vaknar aldrig av beslutet och står i `WAITING` för alltid. Validering av triggervärden och ett IT-fall i T9                                                                                                                                                                                                                                           |
-| **Personuppgifter i beslutets motivering**                      | `justification` innehåller nästan alltid personuppgifter. Får aldrig loggas (§8.1), aldrig kopieras till aktivitetsloggen och aldrig läggas i outboxens nyttolast — den bär medvetet ingen ärendedata alls (§5.4). Beslutet kaskaderas bort med ärendet                                                                                                         |
-| **Automatiskt beslut felstämplat som manuellt, eller tvärtom**  | `method` valideras mot identiteten vid systemgränsen och står kvar i `errand_decision.method` och `.decided_by` (§8.1). Utan bådadera går frågan "vilka beslut fattades av en maskin?" inte att svara på i efterhand — och det är en fråga som kommer att ställas                                                                                               |
+| **`DECISION` saknas i `PROCESS_TRIGGER`**                       | Processen vaknar aldrig av beslutet och står i `WAITING` för alltid. Konfigurationen avvisas utan den (beslut 55), men en konfiguration från före kontrollen prövas först när den skrivs igen                                                                                                                                                                   |
+| **Personuppgifter i beslutets motivering**                      | `justification` innehåller nästan alltid personuppgifter. Den maskas i payloadloggen (§8.1), kopieras aldrig till aktivitetsloggen och läggs aldrig i outboxens nyttolast — den bär medvetet ingen ärendedata alls (§5.4). Beslutet kaskaderas bort med ärendet                                                                                                 |
+| **Automatiskt beslut felstämplat som manuellt, eller tvärtom**  | `method` valideras mot identiteten vid systemgränsen och står kvar i `decision.method`, `.decided_by` och `.errand_process_id` (§7.5). Utan dem går frågan "vilka beslut fattades av en maskin?" inte att svara på i efterhand — och det är en fråga som kommer att ställas                                                                                     |
 | **Instans som försvinner utan slutrapport**                     | SM står kvar på `RUNNING` medan instansen är borta ur Operaton, och ärendet kan varken gå vidare eller få en ny process. Modelleringskravet i §9.2 punkt 5 ska hindra det; P6:s schemalagda kontroll stämmer av det som ändå glider isär                                                                                                                        |
 | **Skelettmodellen driftsatt för tidigt**                        | Sex tomma subprocesser springer igenom på millisekunder. Startas den mot ett skarpt ärende är ärendets processliv förbrukat (§9.1). Driftsätt inte förrän väntlägena finns                                                                                                                                                                                      |
 | **Manuell grind som ingen klickar på**                          | Processen står i `WAITING` för alltid. Modelleringsregeln i §9.2 punkt 2 kräver en tidsgräns på grindar som kan glömmas bort, och §8.1 visar hur en grind som står still hittas                                                                                                                                                                                 |
 | **Signal som accepteras men aldrig konsumeras**                 | Går processen vidare på en timer i samma stund som handläggaren trycker, hinner SM svara `202` innan den nya bilden rapporterats. Signalen når då inget väntläge och är borta. Handläggaren ser det vid nästa omläsning, men ingenstans syns att det hände                                                                                                      |
 | **Knapp som inte längre gäller**                                | Handläggaren ser en signal processen hunnit lämna. Skrivningen ger `409` — gränssnittet ska läsa om ärendet, inte försöka igen                                                                                                                                                                                                                                  |
-| **Beslut på ärende helt utan process**                          | Tillåtet och olåst: det finns ingen `COMPLETED` process att låsa mot. Spårbarheten bärs då av revisionen, inte av spärren (§7.5)                                                                                                                                                                                                                                |
+| **Beslut på ärende helt utan process**                          | Tillåtet och olåst: det finns ingen process att låsa mot. Spårbarheten bärs då av händelseloggen, inte av spärren (§7.5)                                                                                                                                                                                                                                        |
 | **Föräldralös processinstans efter radering**                   | `DELETE` publiceras även utan `processKey` (§2.2) och passerar loop-skyddets tre lager (§6.5), och pw raderar på `businessKey` (§9.3). Restrisk kvarstår om leveransen aldrig går igenom och raden åldras ur — därför ERROR-loggen när en rad åldras ur, och hälsoindikatorn (§8.3)                                                                             |
 | **Etikettändring utanför API:t**                                | `AddLabelAction.executeAction` körs schemalagt utan att passera någon endpoint. Byter den upplöst `processKey` slutar processen tyst få väckningar. Kontrollen ligger därför även där: etiketten läggs inte till, och en ERROR-post syns på ärendet (§7.4)                                                                                                      |
 | **Etiketter som ännu inte lästs från databasen**                | En etikett känner sin metadataetikett först när ärendet lästs in. Vid skapande, `PATCH` med etiketter, `ADD_LABEL` och e-postintag hittade publiceringen därför ingen nyckel, och processen startade aldrig. `ProcessKeySelector` slår upp sådana etiketter på id (§7.3). Täckt av T8 och `ProcessEventPublisherDatabaseTest`                                   |
@@ -2883,7 +2928,7 @@ den skrivas som `COMPLETED` eller `FAILED` beroende på hur instansen slutade. U
 | **Händelser som pw-alkt aldrig tar fyller batchen**             | Ett ärende vars äldsta rad alltid fallerar samlar rader bakom sig. Blir de fler än `batch-size` når cronjobbet inga andra rader, men direktkörningen levererar nya händelser. Syns i hälsoindikatorn (§8.3)                                                                                                                                                     |
 | **Nödbromsen tolkar ett leveransavbrott som en loop**           | Skulle förvandla en fördröjning till permanent händelseförlust. Bromsen räknar därför bara rader med `delivered_at` satt (§6.5)                                                                                                                                                                                                                                 |
 | **Hälsoindikatorn på existens i stället för ålder**             | Tjänsten står unhealthy under normal drift och indikatorn slutar betyda något. Villkoret är `unhealthy-after` (§8.3)                                                                                                                                                                                                                                            |
-| **`justification` utanför fältfiltreringen**                    | Beslutsmotiveringen är fritext med personuppgifter. `PROCESS` och `DECISION` är `ErrandField`-värden och stängda som utgångsläge för begränsade användare (§5.3). Att ALKT saknar åtkomstkontroll döljer bara felet till nästa namespace                                                                                                                        |
+| **`justification` utanför fältfiltreringen**                    | Beslutsmotiveringen är fritext med personuppgifter. Ärendet bär inte beslutet, och `.../decisions` kräver resursen `DECISION`, som begränsad läsning bara når när namespacet räknat upp den (§5.3). Att ALKT saknar åtkomstkontroll döljer bara felet till nästa namespace                                                                                      |
 | **Åtkomstkontroll påslagen för ett namespace med processmotor** | pw får `401` på allt, och felet visar sig som ärenden som står stilla — inte som ett behörighetsfel. AccessMapper svarar bara på AD-konton (§1.8). Spärren i §7.1 gör det till ett konfigurationsfel i stället, och lyfts först när AccessMapper kan bevilja maskinidentiteter                                                                                  |
 | **Personuppgifter i aktivitetsloggen**                          | `message` är fri text som kommer från processen. **pw måste instrueras att inte skriva personuppgifter där** — det är en regel, inte en spärr                                                                                                                                                                                                                   |
 | **Dubbla processinstanser**                                     | Radlås på outbox-raderna vid leverans + businessKey-kontroll + `409` + DB-constraint. Restrisk i Operaton, som saknar unikhet på business key — men SM kan inte registrera resultatet                                                                                                                                                                           |
