@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.0"
 servers:
-- url: http://localhost:33217
+- url: http://localhost:37929
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -16566,6 +16566,27 @@ components:
           type: boolean
         number:
           type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
         valueNode:
           type: boolean
         missingNode:
@@ -16587,27 +16608,6 @@ components:
         integralNumber:
           type: boolean
         pojo:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
           type: boolean
         embeddedValue:
           type: boolean
@@ -17343,14 +17343,14 @@ components:
         measureGroups:
           type: array
           description: "Groups that this measure type belongs to. A group may be named\
-            \ once only, and a measure type belongs to at least one"
+            \ once only, and a measure type belongs to at least one - a creation has\
+            \ to name them and an update may leave them out, but may not empty them"
           items:
             type: string
             description: Group the measure type belongs to
             examples:
             - MANAGERS
             minLength: 1
-          minItems: 1
         sortOrder:
           type:
           - integer
@@ -17380,7 +17380,6 @@ components:
           - 2000-10-31T01:30:00.000+02:00
           readOnly: true
       required:
-      - measureGroups
       - name
     AffectedAction:
       type: object

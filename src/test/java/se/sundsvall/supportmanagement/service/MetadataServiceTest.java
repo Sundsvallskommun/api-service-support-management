@@ -1872,6 +1872,48 @@ class MetadataServiceTest {
 	 * The groups became a collection, which cannot be sorted on. Sorting by one used to work, so the caller is told what
 	 * is wrong rather than meeting the query derivation, which answers 500 and says nothing.
 	 */
+	/**
+	 * A measure type in no group cannot be found by the one thing measure types are looked up by, so a creation has to
+	 * name them.
+	 */
+	@Test
+	void createMeasureTypeRefusesATypeNamingNoGroup() {
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> metadataService.createMeasureType("namespace", "2281", MeasureType.create().withName("TYPE")));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).contains("must belong to at least one group");
+		verifyNoInteractions(measureTypeRepositoryMock);
+	}
+
+	/**
+	 * An update shares the model, so leaving the groups out has to keep meaning "unchanged" - every other property of a
+	 * measure type may be left out of a patch.
+	 */
+	@Test
+	void updateMeasureTypeAcceptsAPatchLeavingTheGroupsOut() {
+		final var id = "dd000000-0000-0000-0000-000000000100";
+		when(measureTypeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(measureTypeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(any(), any(), any()))
+			.thenReturn(MeasureTypeEntity.create().withId(id).withName("TYPE").withMeasureGroups(Set.of("MANAGERS")));
+		when(measureTypeRepositoryMock.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final var result = metadataService.updateMeasureType("namespace", "2281", id, MeasureType.create().withDisplayName("Renamed"));
+
+		assertThat(result.getMeasureGroups()).containsExactly("MANAGERS");
+	}
+
+	/** Emptying them is a different thing from leaving them out, and is refused. */
+	@Test
+	void updateMeasureTypeRefusesEmptiedGroups() {
+		final var exception = assertThrows(ThrowableProblem.class,
+			() -> metadataService.updateMeasureType("namespace", "2281", "dd000000-0000-0000-0000-000000000100",
+				MeasureType.create().withMeasureGroups(List.of())));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		verifyNoInteractions(measureTypeRepositoryMock);
+	}
+
 	@Test
 	void findMeasureTypesRefusesASortOnTheGroups() {
 		final var exception = assertThrows(ThrowableProblem.class,

@@ -39,8 +39,9 @@ class MetadataMeasureTypeResourceFailureTest {
 	private WebTestClient webTestClient;
 
 	/**
-	 * The scalar group these replaced carried @NotBlank, so a measure type has always had to name one. Nothing said so
-	 * once it became a list, and a type belonging to no group is invisible to a lookup by group for good.
+	 * The scalar group these replaced carried @NotBlank, so a group has never been allowed to be blank. That much is the
+	 * model's to say on either verb; whether groups have to be named at all differs between creating and updating, and
+	 * is answered by the service.
 	 */
 	@ParameterizedTest
 	@MethodSource("invalidMeasureGroupsArguments")
@@ -61,9 +62,9 @@ class MetadataMeasureTypeResourceFailureTest {
 	}
 
 	private static Stream<Arguments> invalidMeasureGroupsArguments() {
+		// Naming no group at all is refused by the service, not the model - the update shares the model and may leave
+		// the groups out. A group named as blank is the model's to refuse, on either verb.
 		return Stream.of(
-			Arguments.of(null, "measureGroups", "must not be empty"),
-			Arguments.of(List.of(), "measureGroups", "must not be empty"),
 			Arguments.of(List.of(" "), "measureGroups[0]", "must not be blank"));
 	}
 
