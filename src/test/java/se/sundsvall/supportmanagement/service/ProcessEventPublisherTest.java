@@ -148,6 +148,12 @@ class ProcessEventPublisherTest {
 			arguments(null, true));
 	}
 
+	private static Stream<Arguments> commands() {
+		return Stream.of(
+			arguments(PROCESS, new ProcessCommand(APPLICATION, null)),
+			arguments(SIGNAL, new ProcessCommand(null, SIGNAL_NAME)));
+	}
+
 	@BeforeEach
 	void setUp() {
 		publisher = new ProcessEventPublisher(namespaceConfigServiceMock, outboxRepositoryMock, processRepositoryMock, processKeySelectorMock, new ProcessErrorLog(activityRepositoryMock, properties, clock), properties, clock,
@@ -460,6 +466,29 @@ class ProcessEventPublisherTest {
 		verify(outboxRepositoryMock, never()).countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(any(), any());
 		verify(namespaceConfigServiceMock, never()).getProcessTriggers(any(), any());
 		verifyNoInteractions(activityRepositoryMock);
+	}
+
+	/**
+	 * The endpoints are to let only ad accounts issue a command, and the header is not honoured for an ad account, so a
+	 * command would pass layer 1 anyway. The waiver is what keeps the buttons from leaning on that: were the check in front
+	 * of them lost, a command carrying the header every process engine sets would be silenced rather than refused.
+	 */
+	@ParameterizedTest
+	@MethodSource("commands")
+	@DisplayName("Verification that a command asking not to wake the process from a machine identity is published all the same, since layer 1 is waived for commands of their own accord")
+	void aCommandPassesLayerOneFromAMachineIdentity(final EventSubType subType, final ProcessCommand command) {
+		givenNamespaceRunsProcess();
+		givenNoInstances();
+		givenLabels(APPLICATION, AUTOMATIC);
+		asMachine();
+		setTriggerProcess("false");
+
+		publisher.publish(errand(), UPDATE, subType, PROCESS_SERVICE, REQUEST_GROUP_ID, command);
+
+		verify(outboxRepositoryMock).save(outboxCaptor.capture());
+		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo(subType.getValue());
+		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(APPLICATION);
+		assertThat(outboxCaptor.getValue().getSignalName()).isEqualTo(command.signalName());
 	}
 
 	@Test

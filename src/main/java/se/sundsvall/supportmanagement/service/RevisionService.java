@@ -1,11 +1,16 @@
 package se.sundsvall.supportmanagement.service;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ContainerNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipkart.zjsonpatch.DiffFlags;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -50,7 +55,16 @@ public class RevisionService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RevisionService.class);
 
-	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..modified", "$..touched");
+	// The last two are no longer written (CircularReferenceExclusionStrategy), but older snapshots still carry them, and
+	// read as they stand those would differ from every snapshot written since.
+	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..modified", "$..touched",
+		"$..labels[*].metadataLabel", "$.tempPreviousStatus");
+
+	// The collections of an errand with no order of their own, each with the field that tells its elements apart.
+	private static final Map<String, String> UNORDERED_COLLECTIONS = Map.of(
+		"labels", "metadataLabelId",
+		"accessLabels", "metadataLabelId",
+		"externalTags", "key");
 
 	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occurred during comparison";
 
@@ -121,7 +135,7 @@ public class RevisionService {
 		}
 
 		try {
-			return toJsonNode(currentSnapshot).equals(toJsonNode(previousSnapshot));
+			return withoutEmptyCollections(toJsonNode(currentSnapshot)).equals(withoutEmptyCollections(toJsonNode(previousSnapshot)));
 		} catch (final Exception e) { // If something fails, log and return the json objects as unequal to force creation of a new revision
 			LOG.error(COMPARISON_ERROR_LOG_MESSAGE, e);
 		}
@@ -269,14 +283,56 @@ public class RevisionService {
 		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(municipalityId, noteId, sourceVersion, targetVersion));
 	}
 
+	/**
+	 * Reads a snapshot the way two of them are compared and diffed, leaving out what says nothing about the errand.
+	 * <p>
+	 * The collections the database hands back in an order of its own - they have no order of their own - are put in
+	 * one, since the order an errand just written holds them in is not the order the same errand just read holds them in.
+	 */
 	private com.fasterxml.jackson.databind.JsonNode toJsonNode(final String value) {
 		try {
 			final var document = JsonPath.using(JSONPATH_CONFIG).parse(value);
 			EXCLUDED_ATTRIBUTES.forEach(document::delete);
-			return JACKSON2_MAPPER.readTree(document.jsonString());
+
+			final var snapshot = JACKSON2_MAPPER.readTree(document.jsonString());
+			UNORDERED_COLLECTIONS.forEach((name, sortKey) -> sortBy(snapshot.get(name), sortKey));
+
+			return snapshot;
 		} catch (final Exception e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 
+	/**
+	 * Leaves out the empty collections, for the question whether anything changed at all.
+	 * <p>
+	 * A collection nobody has touched is null on an errand just written and empty on the same errand just read, and that
+	 * is no change. Asked only when deciding whether to write a revision: a diff still shows a collection going from none
+	 * to empty, and a collection emptied as the removal of its elements.
+	 */
+	private static com.fasterxml.jackson.databind.JsonNode withoutEmptyCollections(final com.fasterxml.jackson.databind.JsonNode node) {
+		if (node instanceof final ObjectNode object) {
+			object.remove(object.propertyStream()
+				.filter(property -> property.getValue() instanceof final ArrayNode array && array.isEmpty())
+				.map(Map.Entry::getKey)
+				.toList());
+		}
+
+		if (node instanceof ContainerNode<?>) {
+			node.forEach(RevisionService::withoutEmptyCollections);
+		}
+
+		return node;
+	}
+
+	private static void sortBy(final com.fasterxml.jackson.databind.JsonNode node, final String sortKey) {
+		if (node instanceof final ArrayNode array) {
+			final var sorted = array.valueStream()
+				.sorted(Comparator.comparing(element -> element.path(sortKey).asText()))
+				.toList();
+
+			array.removeAll();
+			array.addAll(sorted);
+		}
+	}
 }

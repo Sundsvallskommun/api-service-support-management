@@ -2,16 +2,19 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import com.google.gson.FieldAttributes;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
 
@@ -34,7 +37,7 @@ class CircularReferenceExclusionStrategyTest {
 
 	@Test
 	void shouldNotSkipFieldForNonDeclaredClass() {
-		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "id", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(RevisionEntity.class, "id", true)))).isFalse();
 	}
 
 	@Test
@@ -65,4 +68,14 @@ class CircularReferenceExclusionStrategyTest {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(TimeMeasurementEntity.class, "errandEntity", true)))).isTrue();
 	}
 
+	@Test
+	@DisplayName("Verification that what an errand holds only once it is loaded is skipped, while what is stored in its place is kept")
+	void shouldSkipWhatIsOnlyThereOnceLoaded() {
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandLabelEmbeddable.class, "metadataLabel", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "tempPreviousStatus", true)))).isTrue();
+
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandLabelEmbeddable.class, "metadataLabelId", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "previousStatus", true)))).isFalse();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "status", true)))).isFalse();
+	}
 }

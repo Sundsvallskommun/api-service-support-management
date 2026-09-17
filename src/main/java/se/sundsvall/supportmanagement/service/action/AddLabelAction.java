@@ -98,7 +98,7 @@ public class AddLabelAction extends AbstractAction {
 	 * which the process would quietly stop being woken and nothing anywhere would say why.
 	 */
 	@Override
-	public void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
+	public boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
 		var newLabels = actionConfigEntity.getParameters().stream()
 			.filter(parameter -> parameter.getKey().equals(LABEL))
 			.findFirst()
@@ -114,12 +114,14 @@ public class AddLabelAction extends AbstractAction {
 		var current = List.copyOf(errand.getLabels());
 
 		if (processKeyGuard.refusesLabelChange(errand.getId(), current, Stream.concat(current.stream(), newLabels.stream()).toList())) {
-			return;
+			return false;
 		}
 
 		errand.getLabels().addAll(newLabels);
 
 		errandsRepository.save(errand);
+
+		return !newLabels.isEmpty();
 	}
 
 	@Override

@@ -2,13 +2,19 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
@@ -18,17 +24,25 @@ import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
 import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_KEY_ATTRIBUTE;
 import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_START_MODE_ATTRIBUTE;
 
+@ExtendWith(MockitoExtension.class)
 class ProcessKeySelectorTest {
 
 	private static final String APPLICATION = "alkt-ansokan";
 	private static final String SUPERVISION = "alkt-tillsyn";
 
-	private final ProcessKeySelector selector = new ProcessKeySelector();
+	@Mock
+	private MetadataLabelRepository metadataLabelRepositoryMock;
+
+	@InjectMocks
+	private ProcessKeySelector selector;
 
 	private static Stream<Arguments> unreadableStartModes() {
 		return Stream.of(
@@ -126,11 +140,60 @@ class ProcessKeySelectorTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a label pointing at nothing, which a partially loaded errand can carry, is passed over rather than thrown on")
-	void anEmbeddableWithoutALabelIsPassedOver() {
-		final var errand = ErrandEntity.create().withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(randomUUID().toString()))));
+	@DisplayName("Verification that a label the errand has only just been given is looked up by id, since it points at nothing until the errand is loaded, and an errand created wearing it would otherwise start no process")
+	void aLabelNotYetLoadedIsLookedUpById() {
+		final var application = label(APPLICATION, "MANUAL");
+		when(metadataLabelRepositoryMock.findAllById(Set.of(application.getId()))).thenReturn(List.of(application));
 
-		assertThat(selector.select(errand).keys()).isEmpty();
+		final var selection = selector.select(errandWearing(notLoaded(application.getId())));
+
+		assertThat(selection.processKey()).isEqualTo(APPLICATION);
+		assertThat(selection.startMode()).isEqualTo(MANUAL);
+	}
+
+	@Test
+	@DisplayName("Verification that the labels of an errand read from the database are taken as they stand, so the common case costs no query")
+	void theLabelsOfALoadedErrandAreReadWithoutALookup() {
+		assertThat(selector.select(errandWith(label(APPLICATION, null))).processKey()).isEqualTo(APPLICATION);
+
+		verifyNoInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that the labels an errand wears and the ones it has just been given are read together, the new ones in one lookup, so that a second process among them is the ambiguity it is")
+	void loadedAndNewlyGivenLabelsAreReadTogether() {
+		final var supervision = label(SUPERVISION, null);
+		final var reference = MetadataLabelEntity.create()
+			.withId(randomUUID().toString())
+			.withAttributes(List.of(attribute("escalationEmail", "escalation@example.com")));
+		when(metadataLabelRepositoryMock.findAllById(Set.of(supervision.getId(), reference.getId()))).thenReturn(List.of(supervision, reference));
+
+		final var selection = selector.select(errandWearing(loaded(label(APPLICATION, null)), notLoaded(supervision.getId()), notLoaded(reference.getId())));
+
+		assertThat(selection.isAmbiguous()).isTrue();
+		assertThat(selection.keys()).containsExactly(APPLICATION, SUPERVISION);
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(supervision.getId(), reference.getId()));
+	}
+
+	@Test
+	@DisplayName("Verification that a label the lookup cannot find is passed over rather than thrown on, as one that is gone always has been")
+	void aLabelThatCannotBeFoundIsPassedOver() {
+		final var missing = randomUUID().toString();
+		when(metadataLabelRepositoryMock.findAllById(Set.of(missing))).thenReturn(List.of());
+
+		assertThat(selector.select(errandWearing(notLoaded(missing))).keys()).isEmpty();
+	}
+
+	@Test
+	@DisplayName("Verification that an entry naming no label at all is passed over without a lookup")
+	void anEntryNamingNoLabelIsPassedOverWithoutALookup() {
+		final var labels = new ArrayList<ErrandLabelEmbeddable>();
+		labels.add(null);
+		labels.add(ErrandLabelEmbeddable.create());
+
+		assertThat(selector.select(ErrandEntity.create().withLabels(labels))).isEqualTo(ProcessKeySelection.NONE);
+
+		verifyNoInteractions(metadataLabelRepositoryMock);
 	}
 
 	@Test
@@ -198,13 +261,27 @@ class ProcessKeySelectorTest {
 	}
 
 	private ErrandEntity errandWith(final MetadataLabelEntity... labels) {
-		return ErrandEntity.create().withLabels(Stream.of(labels)
-			.map(label -> {
-				final var embeddable = ErrandLabelEmbeddable.create().withMetadataLabelId(label.getId());
-				ReflectionTestUtils.setField(embeddable, "metadataLabel", label);
-				return embeddable;
-			})
-			.toList());
+		return errandWearing(Stream.of(labels).map(this::loaded).toArray(ErrandLabelEmbeddable[]::new));
+	}
+
+	private ErrandEntity errandWearing(final ErrandLabelEmbeddable... labels) {
+		return ErrandEntity.create().withLabels(new ArrayList<>(List.of(labels)));
+	}
+
+	/**
+	 * A label as Hibernate hands it over when the errand is read from the database.
+	 */
+	private ErrandLabelEmbeddable loaded(final MetadataLabelEntity label) {
+		final var embeddable = ErrandLabelEmbeddable.create().withMetadataLabelId(label.getId());
+		ReflectionTestUtils.setField(embeddable, "metadataLabel", label);
+		return embeddable;
+	}
+
+	/**
+	 * A label as the mapper puts it together, before the errand has ever been loaded.
+	 */
+	private ErrandLabelEmbeddable notLoaded(final String metadataLabelId) {
+		return ErrandLabelEmbeddable.create().withMetadataLabelId(metadataLabelId);
 	}
 
 	private MetadataLabelEntity label(final String processKey, final String startMode) {

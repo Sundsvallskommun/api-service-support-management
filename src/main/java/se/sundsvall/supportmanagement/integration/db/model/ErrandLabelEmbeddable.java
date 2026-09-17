@@ -41,6 +41,21 @@ public class ErrandLabelEmbeddable {
 		return metadataLabel;
 	}
 
+	/**
+	 * Gives a label that has only just been put together the metadata it points at, which Hibernate fills in only when
+	 * the errand is read. Never written: the label is stored by its id alone.
+	 *
+	 * @param metadataLabel the metadata label with the id this label carries
+	 */
+	public void setMetadataLabel(MetadataLabelEntity metadataLabel) {
+		this.metadataLabel = metadataLabel;
+	}
+
+	public ErrandLabelEmbeddable withMetadataLabel(MetadataLabelEntity metadataLabel) {
+		this.metadataLabel = metadataLabel;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(metadataLabelId);

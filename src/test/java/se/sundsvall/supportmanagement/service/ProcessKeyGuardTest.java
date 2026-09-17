@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -56,7 +57,7 @@ class ProcessKeyGuardTest {
 
 	// The real resolution rather than a mock of it: the guard is a comparison of two answers, and a stubbed answer
 	// would be the very thing under test.
-	private final ProcessKeySelector processKeySelector = new ProcessKeySelector();
+	private final ProcessKeySelector processKeySelector = new ProcessKeySelector(mock(MetadataLabelRepository.class));
 
 	private ProcessKeyGuard guard() {
 		return new ProcessKeyGuard(processRepositoryMock, metadataLabelRepositoryMock, processKeySelector, errorLogMock);

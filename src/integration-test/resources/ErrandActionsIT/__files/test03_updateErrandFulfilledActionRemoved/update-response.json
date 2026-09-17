@@ -11,16 +11,36 @@
 	},
 	"labels": [
 		{
-			"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907"
+			"id": "ffe5f120-6a3b-4404-ace8-8ea87b559907",
+			"classification": "DEEPSUBTYPE",
+			"displayName": "DEEPSUBTYPE-DISPLAY-NAME-1",
+			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-1",
+			"resourceName": "DEEPSUBTYPE-1",
+			"version": 0
 		},
 		{
-			"id": "a8fe832f-77a7-4906-9a97-ac5cbd73dbe7"
+			"id": "a8fe832f-77a7-4906-9a97-ac5cbd73dbe7",
+			"classification": "CATEGORY",
+			"displayName": "CATEGORY-DISPLAY-NAME-1",
+			"resourcePath": "CATEGORY-1",
+			"resourceName": "CATEGORY-1",
+			"version": 0
 		},
 		{
-			"id": "3273e374-855c-4525-b8fc-aeaa710b83c5"
+			"id": "3273e374-855c-4525-b8fc-aeaa710b83c5",
+			"classification": "TYPE",
+			"displayName": "TYPE-DISPLAY-NAME-2",
+			"resourcePath": "CATEGORY-1/TYPE-2",
+			"resourceName": "TYPE-2",
+			"version": 0
 		},
 		{
-			"id": "f4d6e210-633b-48a6-ad0a-7be839b28762"
+			"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",
+			"classification": "SUBTYPE",
+			"displayName": "SUBTYPE-DISPLAY-NAME-4",
+			"resourcePath": "CATEGORY-1/TYPE-2/SUBTYPE-4",
+			"resourceName": "SUBTYPE-4",
+			"version": 0
 		}
 	],
 	"actions": [],

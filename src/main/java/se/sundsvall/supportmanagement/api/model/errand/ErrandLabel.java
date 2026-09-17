@@ -3,6 +3,8 @@ package se.sundsvall.supportmanagement.api.model.errand;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -10,7 +12,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 public class ErrandLabel {
 
 	@Schema(description = "Label ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
-	@ValidUuid
+	@ValidUuid(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String id;
 
 	@Schema(description = "Label version for optimistic concurrency control. When set, validated against the current version in DB on errand create/update — mismatch yields 412.")

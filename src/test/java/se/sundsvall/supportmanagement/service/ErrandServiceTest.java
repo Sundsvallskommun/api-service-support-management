@@ -179,7 +179,7 @@ class ErrandServiceTest {
 		assertThat(result).isEqualTo(ERRAND_ID);
 
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
@@ -221,7 +221,7 @@ class ErrandServiceTest {
 		assertThat(result).isEqualTo(ERRAND_ID);
 
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
@@ -247,7 +247,7 @@ class ErrandServiceTest {
 
 		assertThat(result).isEqualTo(ERRAND_ID);
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
@@ -270,7 +270,7 @@ class ErrandServiceTest {
 
 		assertThat(result).isEqualTo(ERRAND_ID);
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
@@ -420,7 +420,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
@@ -446,7 +446,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
@@ -490,7 +490,7 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 	}
 
 	@Test
@@ -508,7 +508,7 @@ class ErrandServiceTest {
 		order.verify(processKeyGuardMock).verifyNewLabels(any());
 		order.verify(errandRepositoryMock).save(any(ErrandEntity.class));
 
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
@@ -527,7 +527,7 @@ class ErrandServiceTest {
 			.isInstanceOf(ThrowableProblem.class)
 			.extracting("status").isEqualTo(BAD_REQUEST);
 
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandLabelServiceMock).settleAccessLabels(any(ErrandEntity.class));
 		verify(errandRepositoryMock, never()).save(any());
@@ -561,7 +561,7 @@ class ErrandServiceTest {
 		assertThat(before.getValue()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly("old-label-id");
 		assertThat(after.getValue()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly("new-label-id");
 
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(revisionServiceMock).createErrandRevision(entity);
 	}
@@ -583,7 +583,7 @@ class ErrandServiceTest {
 			.isInstanceOf(ThrowableProblem.class)
 			.extracting("status").isEqualTo(BAD_REQUEST);
 
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandLabelServiceMock).settleAccessLabels(entity);
 		verify(errandRepositoryMock, never()).saveAndFlush(any());
@@ -605,7 +605,7 @@ class ErrandServiceTest {
 		verifyNoInteractions(processKeyGuardMock);
 		verify(errandLabelServiceMock, never()).settleAccessLabels(any());
 
-		verify(errandLabelServiceMock).validateVersions(null);
+		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);

@@ -600,4 +600,57 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
+	/**
+	 * A label is referred to by its id alone, and the id reaches a label of any namespace. This one lives in NAMESPACE-1
+	 * of another municipality, and would have brought its access rules and any process key along.
+	 */
+	@Test
+	void test39_patchErrandWithALabelOfAnotherMunicipalityIsRefused() {
+		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id)).hasSize(1);
+	}
+
+	/**
+	 * An errand just created and the same errand just read used to make two different snapshots: the one read carried
+	 * the metadata of its labels and the status it was loaded with, had empty collections where the other had none, and
+	 * listed its labels in the order the database gave them. The first patch after a creation therefore wrote a revision,
+	 * and an event, even when it changed nothing. The label is a leaf, so an ancestor is added when the errand is created
+	 * and the labels are read back in another order than they were written.
+	 */
+	@Test
+	void test40_aPatchChangingNothingRightAfterACreationWritesNoRevision() {
+		final var location = setupCall()
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withServicePath(PATH)
+			.withHttpMethod(POST)
+			.withRequest("request-create.json")
+			.withExpectedResponseStatus(CREATED)
+			.sendRequest()
+			.getResponseHeaders()
+			.getLocation()
+			.getPath();
+		final var id = location.substring(location.lastIndexOf('/') + 1);
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id))
+			.extracting(RevisionEntity::getVersion)
+			.containsExactly(0);
+	}
 }

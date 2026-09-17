@@ -361,7 +361,7 @@ class AddLabelActionTest {
 		config.setParameters(new ArrayList<>(List.of(
 			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_2)))));
 
-		addLabelAction.executeAction(errand, config);
+		assertThat(addLabelAction.executeAction(errand, config)).isTrue();
 
 		assertThat(errand.getLabels()).hasSize(2);
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId)
@@ -378,12 +378,27 @@ class AddLabelActionTest {
 		config.setParameters(new ArrayList<>(List.of(
 			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_1, LABEL_ID_2)))));
 
-		addLabelAction.executeAction(errand, config);
+		assertThat(addLabelAction.executeAction(errand, config)).isTrue();
 
 		assertThat(errand.getLabels()).hasSize(2);
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(LABEL_ID_1, LABEL_ID_2);
 		verify(errandsRepository).save(errand);
+	}
+
+	@Test
+	@DisplayName("Verification that labels the errand already wears are no change to it")
+	void executeActionWithLabelsAlreadyWorn() {
+		var errand = ErrandEntity.create()
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
+
+		var config = ActionConfigEntity.create();
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_1)))));
+
+		assertThat(addLabelAction.executeAction(errand, config)).isFalse();
+
+		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1);
 	}
 
 	@Test
@@ -395,7 +410,7 @@ class AddLabelActionTest {
 		config.setParameters(new ArrayList<>(List.of(
 			ActionConfigParameterEntity.create().withKey("duration").withValues(List.of("PT1H")))));
 
-		addLabelAction.executeAction(errand, config);
+		assertThat(addLabelAction.executeAction(errand, config)).isFalse();
 
 		assertThat(errand.getLabels()).hasSize(1);
 		verify(errandsRepository).save(errand);
@@ -435,7 +450,7 @@ class AddLabelActionTest {
 
 		when(processKeyGuard.refusesLabelChange(eq(ERRAND_ID), any(), any())).thenReturn(true);
 
-		addLabelAction.executeAction(errand, config);
+		assertThat(addLabelAction.executeAction(errand, config)).isFalse();
 
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1);
 		verifyNoInteractions(errandsRepository);

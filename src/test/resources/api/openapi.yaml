@@ -20388,7 +20388,8 @@ components:
           - true
         labels:
           type: array
-          description: List of labels for the errand
+          description: List of labels for the errand. Every label must belong to the
+            namespace of the errand
           items:
             $ref: "#/components/schemas/ErrandLabel"
         phases:

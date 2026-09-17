@@ -151,7 +151,7 @@ public class SendEmailAction extends AbstractAction {
 	}
 
 	@Override
-	public void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
+	public boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
 		var parameterMap = actionConfigEntity.getParameters().stream()
 			.collect(Collectors.toMap(ActionConfigParameterEntity::getKey, ActionConfigParameterEntity::getValues));
 
@@ -177,6 +177,8 @@ public class SendEmailAction extends AbstractAction {
 
 		communicationService.sendEmail(errand, emailRequest);
 		LOG.info("SEND_EMAIL action executed for errand '{}'", errand.getId());
+
+		return false;
 	}
 
 	@Override

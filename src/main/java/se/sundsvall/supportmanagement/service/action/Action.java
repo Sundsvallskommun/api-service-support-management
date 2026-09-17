@@ -30,7 +30,15 @@ public interface Action {
 
 	boolean conditionsFulfilled(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
 
-	void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
+	/**
+	 * Carries out the action on the errand.
+	 *
+	 * @param  errand             the errand to act on.
+	 * @param  actionConfigEntity the configuration of the action.
+	 * @return                    whether the errand itself was changed, which is what decides whether a scheduled run
+	 *                            records the change. Sending something about the errand leaves it as it was.
+	 */
+	boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
 
 	boolean validForOperationType(OperationType operationType);
 }
