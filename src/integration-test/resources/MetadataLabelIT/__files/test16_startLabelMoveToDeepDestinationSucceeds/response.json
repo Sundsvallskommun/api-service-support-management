@@ -1,0 +1,9 @@
+{
+	"jobId": "${json-unit.any-string}",
+	"type": "MOVE_LABEL",
+	"status": "PENDING",
+	"progress": 0,
+	"total": 0,
+	"processed": 0,
+	"created": "${json-unit.any-string}"
+}

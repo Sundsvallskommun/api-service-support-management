@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.purge;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.util.List;
@@ -27,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -48,6 +50,12 @@ class ErrandPurgeWorkerTest {
 	private static final String STARTED_BY = "joe01doe";
 	private static final int BATCH_SIZE = 2;
 
+	/**
+	 * Long enough that no batch in these tests comes due for a report of its own, so that what the other tests see is
+	 * the reporting a batch does when it ends.
+	 */
+	private static final Duration PROGRESS_INTERVAL = Duration.ofMinutes(1);
+
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
 
@@ -63,9 +71,13 @@ class ErrandPurgeWorkerTest {
 	private ErrandPurgeWorker worker;
 
 	private ErrandPurgeWorker worker() {
+		return worker(PROGRESS_INTERVAL);
+	}
+
+	private ErrandPurgeWorker worker(final Duration progressInterval) {
 		if (worker == null) {
 			worker = new ErrandPurgeWorker(errandsRepositoryMock, errandServiceMock, jobServiceMock, namespaceConfigServiceMock,
-				new ErrandPurgeProperties(Period.ofYears(2), BATCH_SIZE, 2));
+				new ErrandPurgeProperties(Period.ofYears(2), BATCH_SIZE, 2, progressInterval));
 		}
 		return worker;
 	}
@@ -104,6 +116,24 @@ class ErrandPurgeWorkerTest {
 		verify(jobServiceMock).updateProgress(JOB_ID, 2);
 		verify(jobServiceMock).updateProgress(JOB_ID, 3);
 		verify(jobServiceMock).complete(JOB_ID, "Removed 2 of 3 errands reached, 1 could not be removed");
+	}
+
+	@Test
+	@DisplayName("Verification that a batch outlasting the interval a run reports on is reported from inside, so that a slow run is not taken for one whose instance is gone")
+	void runReportsProgressFromInsideALongBatch() {
+		batches(ids("a", "b"), emptyList());
+		stillRunning();
+		when(errandServiceMock.purgeErrand(any(), any(), any())).thenReturn(true);
+
+		// Nothing may elapse before a report is due, so every errand comes due and the first is reported on well before
+		// the batch holding it has ended.
+		worker(Duration.ZERO).run(run(false, null));
+
+		verify(jobServiceMock).updateProgress(JOB_ID, 1);
+		// Once as the last errand of the batch comes due and once as the batch ends. The two coincide only because the
+		// interval is zero here, and the second write says what the first one did.
+		verify(jobServiceMock, times(2)).updateProgress(JOB_ID, 2);
+		verify(jobServiceMock).complete(JOB_ID, "Removed 2 of 2 errands reached, 0 could not be removed");
 	}
 
 	@Test

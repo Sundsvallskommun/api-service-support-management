@@ -1,11 +1,14 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import se.sundsvall.supportmanagement.api.model.config.AccessFieldDefinition;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
+import se.sundsvall.supportmanagement.api.model.config.AccessResourceDefinition;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -242,6 +245,52 @@ class NamespaceConfigMapperTest {
 	}
 
 	@Test
+	void toNamespaceConfigKeepsAFieldGrantedAtTwoLevelsApart() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
+			.withAccessGrants(List.of(
+				accessGrantRow("FIRST_LINE_CASE_OFFICER", FIELD, "PARAMETERS", null),
+				accessGrantRow("FIRST_LINE_CASE_OFFICER", FIELD, "PARAMETERS:read-only", "R")));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		// The keyless grant wins only within its own level. Held at another one it is a second grant saying something
+		// else, and collapsing the two would lose the narrower of them.
+		assertThat(config.getRoleFieldRestrictions()).containsExactly(RoleFieldRestriction.create()
+			.withRole("FIRST_LINE_CASE_OFFICER")
+			.withFields(List.of(
+				FieldAccess.create().withField(ErrandField.PARAMETERS),
+				FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("read-only")).withLevel(AccessLevel.R))));
+	}
+
+	@Test
+	void toEntityWritesTheLevelOfEveryKeyOfAFieldGrant() {
+		final var request = NamespaceConfig.create()
+			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create()
+				.withRole("FIRST_LINE_CASE_OFFICER")
+				.withFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1", "key-2")).withLevel(AccessLevel.R)))));
+
+		final var entity = mapper.toEntity(request, "namespace", "municipalityId");
+
+		assertThat(entity.getAccessGrants())
+			.extracting(NamespaceConfigAccessGrantEmbeddable::getValue, NamespaceConfigAccessGrantEmbeddable::getAccessLevel)
+			.containsExactly(tuple("PARAMETERS:key-1", "R"), tuple("PARAMETERS:key-2", "R"));
+	}
+
+	@Test
+	void toEntityLeavesTheLevelOffAGrantCarryingNone() {
+		final var request = NamespaceConfig.create()
+			.withRoleFieldRestrictions(List.of(RoleFieldRestriction.create()
+				.withRole("FIRST_LINE_CASE_OFFICER")
+				.withFields(List.of(FieldAccess.create().withField(ErrandField.PARAMETERS).withKeys(List.of("key-1"))))));
+
+		final var entity = mapper.toEntity(request, "namespace", "municipalityId");
+
+		// A grant without a level follows the errand, which is stored as no level at all.
+		assertThat(entity.getAccessGrants()).singleElement()
+			.extracting(NamespaceConfigAccessGrantEmbeddable::getAccessLevel).isNull();
+	}
+
+	@Test
 	void toNamespaceConfigKeepsKeysContainingTheSeparator() {
 		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true)
 			.withAccessGrants(List.of(accessGrantRow("LIMITED", FIELD, "PARAMETERS:ns:key", null)));
@@ -285,5 +334,55 @@ class NamespaceConfigMapperTest {
 			.withType(type)
 			.withValue(value)
 			.withAccessLevel(accessLevel);
+	}
+
+	/**
+	 * The access definition is what a client configuring access reads instead of an enum of the schema, so it has to
+	 * publish
+	 * every value that is actually accepted. A field or resource missing from it would be configurable but undiscoverable.
+	 */
+	@Test
+	void toAccessDefinitionPublishesEveryFieldAndResource() {
+		final var definition = mapper.toAccessDefinition();
+
+		assertThat(definition.getFields())
+			.hasSameSizeAs(ErrandField.values())
+			.extracting(AccessFieldDefinition::getField)
+			.containsExactly(Arrays.stream(ErrandField.values()).map(Enum::name).toArray(String[]::new));
+
+		assertThat(definition.getResources())
+			.hasSameSizeAs(ProtectedResource.values())
+			.extracting(AccessResourceDefinition::getResource)
+			.containsExactly(Arrays.stream(ProtectedResource.values()).map(Enum::name).toArray(String[]::new));
+	}
+
+	/**
+	 * Each entry carries what connects the configured value to the rest of the API - the property the access of an errand
+	 * reports a field by, and the path an access pattern is matched against.
+	 */
+	@Test
+	void toAccessDefinitionCarriesThePropertyAndThePath() {
+		final var definition = mapper.toAccessDefinition();
+
+		assertThat(definition.getFields())
+			.filteredOn(field -> "PARAMETERS".equals(field.getField()))
+			.singleElement()
+			.satisfies(field -> {
+				assertThat(field.getProperty()).isEqualTo("parameters");
+				assertThat(field.isKeyed()).isTrue();
+			});
+
+		assertThat(definition.getResources())
+			.filteredOn(resource -> "COMMUNICATION".equals(resource.getResource()))
+			.singleElement()
+			.satisfies(resource -> {
+				assertThat(resource.getPath()).isEqualTo("errand/communication");
+				assertThat(resource.isErrandScoped()).isTrue();
+			});
+
+		assertThat(definition.getResources())
+			.filteredOn(resource -> "NAMESPACE_CONFIG".equals(resource.getResource()))
+			.singleElement()
+			.satisfies(resource -> assertThat(resource.isErrandScoped()).isFalse());
 	}
 }

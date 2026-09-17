@@ -1,10 +1,15 @@
 {
-	"messageId": "dd42ccfb-2afc-491f-aa26-83a3625f7d05",
-	"deliveries": [
+	"batchId": "dd42ccfb-2afc-491f-aa26-83a3625f7d05",
+	"messages": [
 		{
-			"deliveryId": "91f0dec4-0c18-4dc3-a726-bddd7646e348",
-			"messageType": "EMAIL",
-			"status": "SENT"
+			"messageId": "91f0dec4-0c18-4dc3-a726-bddd7646e348",
+			"deliveries": [
+				{
+					"deliveryId": "11111111-1111-1111-1111-111111111111",
+					"messageType": "EMAIL",
+					"status": "SENT"
+				}
+			]
 		}
 	]
 }

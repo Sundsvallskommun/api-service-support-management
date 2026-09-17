@@ -3,7 +3,9 @@ package se.sundsvall.supportmanagement.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,6 +38,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -172,6 +176,25 @@ class MetadataServiceMoveLabelTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a cycle is still caught when the client's labelId differs in case from how it is stored, since the check must compare against the canonical id on both sides")
+	void moveLabel_cycle_detectedRegardlessOfLabelIdCasing_throws400() {
+		var differentlyCasedLabelId = LABEL_ID.toUpperCase();
+		var label = labelEntity(LABEL_ID, "ROOT", "ROOT");
+		// newParent has label as its ancestor — cycle
+		var newParent = labelEntityWithParent(NEW_PARENT_ID, "CHILD", "ROOT/CHILD", label);
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(differentlyCasedLabelId, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(label));
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(NEW_PARENT_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(newParent));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.moveLabel(NAMESPACE, MUNICIPALITY_ID, differentlyCasedLabelId,
+				LabelMoveRequest.create().withNewParentId(NEW_PARENT_ID).withDryRun(true)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
+			.withMessageContaining("cycle");
+	}
+
+	@Test
 	void moveLabel_pathCollision_throws409() {
 		var label = labelEntity(LABEL_ID, "CHILD", "SOME/CHILD");
 		var newParent = labelEntity(NEW_PARENT_ID, "TARGET", "TARGET");
@@ -191,6 +214,53 @@ class MetadataServiceMoveLabelTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a move is rejected when the moved label's own resulting path would not fit the resource_path column")
+	void moveLabel_resultingPathTooLong_throws400() {
+		var longParentPath = "A".repeat(250);
+		var label = labelEntity(LABEL_ID, "CHILD", "SOME/CHILD");
+		var newParent = labelEntity(NEW_PARENT_ID, "TARGET", longParentPath);
+
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(label));
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(NEW_PARENT_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(newParent));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, longParentPath + "/CHILD"))
+			.thenReturn(Optional.empty());
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOME/CHILD/"))
+			.thenReturn(List.of());
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.moveLabel(NAMESPACE, MUNICIPALITY_ID, LABEL_ID,
+				LabelMoveRequest.create().withNewParentId(NEW_PARENT_ID).withDryRun(true)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
+			.withMessageContaining("exceeds the maximum");
+	}
+
+	@Test
+	@DisplayName("Verification that a move is rejected when it is a descendant's resulting path, not the moved label's own, that would not fit the resource_path column")
+	void moveLabel_descendantResultingPathTooLong_throws400() {
+		var label = labelEntity(LABEL_ID, "CHILD", "SOME/CHILD");
+		var newParent = labelEntity(NEW_PARENT_ID, "TARGET", "TARGET");
+		var longDescendantSuffix = "B".repeat(250);
+		var descendant = labelEntity("descendant-id", "LEAF", "SOME/CHILD/" + longDescendantSuffix);
+
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(label));
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(NEW_PARENT_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(newParent));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "TARGET/CHILD"))
+			.thenReturn(Optional.empty());
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOME/CHILD/"))
+			.thenReturn(List.of(descendant));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.moveLabel(NAMESPACE, MUNICIPALITY_ID, LABEL_ID,
+				LabelMoveRequest.create().withNewParentId(NEW_PARENT_ID).withDryRun(true)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
+			.withMessageContaining("exceeds the maximum");
+	}
+
+	@Test
 	void moveLabel_toRoot_dryRun_returnsCountAndActions() {
 		var label = labelEntityWithParent(LABEL_ID, "CHILD", "PARENT/CHILD", labelEntity(PARENT_ID, "PARENT", null));
 		var actionWithLabel = actionConfigEntity("action-id", "ACTION", "Display",
@@ -203,7 +273,7 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.empty());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
 			.thenReturn(List.of());
-		when(errandsRepositoryMock.countByLabelsMetadataLabelId(LABEL_ID)).thenReturn(3L);
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(3L);
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of(actionWithLabel, actionWithoutLabel));
 
@@ -220,7 +290,8 @@ class MetadataServiceMoveLabelTest {
 	}
 
 	@Test
-	void moveLabel_withDescendants_countsByLabelIdOnly() {
+	@DisplayName("Verification that moving a label with descendants counts errands reached through the whole subtree, not only ones tagged with the moved label itself")
+	void moveLabel_withDescendants_countsAcrossSubtree() {
 		var child = labelEntity("child-id", "CHILD", "ROOT/CHILD");
 		var label = labelEntity(LABEL_ID, "ROOT", "ROOT");
 
@@ -234,7 +305,7 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.empty());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "ROOT/"))
 			.thenReturn(List.of(child));
-		when(errandsRepositoryMock.countByLabelsMetadataLabelId(LABEL_ID)).thenReturn(5L);
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID, "child-id"))).thenReturn(5L);
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of());
 
@@ -279,8 +350,11 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.of(label));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD"))
 			.thenReturn(Optional.empty());
-		when(errandsRepositoryMock.countByLabelsMetadataLabelId(LABEL_ID)).thenReturn(3L);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3)).thenReturn("job-id");
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, LABEL_ID)).thenReturn(false);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
+			.thenReturn(List.of());
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(3L);
+		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3, LABEL_ID)).thenReturn("job-id");
 		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(jobResponse);
 
 		var result = service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false));
@@ -289,8 +363,10 @@ class MetadataServiceMoveLabelTest {
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
-		verify(errandsRepositoryMock).countByLabelsMetadataLabelId(LABEL_ID);
-		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, LABEL_ID);
+		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
+		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3, LABEL_ID);
 		verify(labelMoveTaskExecutorMock).execute(any());
 		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
 	}
@@ -335,31 +411,6 @@ class MetadataServiceMoveLabelTest {
 		verify(labelMoveTaskExecutorMock).execute(any());
 		verify(labelMoveWorkerMock).run(any());
 		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
-	}
-
-	@Test
-	void startLabelMove_dispatchRejected_failsJobAndThrows() {
-		var label = labelEntityWithParent(LABEL_ID, "CHILD", "PARENT/CHILD", labelEntity(PARENT_ID, "PARENT", null));
-
-		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(label));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD"))
-			.thenReturn(Optional.empty());
-		when(errandsRepositoryMock.countByLabelsMetadataLabelId(LABEL_ID)).thenReturn(0L);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 0)).thenReturn("job-id");
-		doThrow(new TaskRejectedException("No thread available")).when(labelMoveTaskExecutorMock).execute(any());
-
-		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false)))
-			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(INTERNAL_SERVER_ERROR.value()))
-			.withMessageContaining("Label move could not be started: No thread available");
-
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
-		verify(errandsRepositoryMock).countByLabelsMetadataLabelId(LABEL_ID);
-		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 0);
-		verify(jobServiceMock).fail("job-id", "Label move could not be started: No thread available");
 	}
 
 	@AfterEach

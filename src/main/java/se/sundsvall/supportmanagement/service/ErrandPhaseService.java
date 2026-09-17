@@ -34,7 +34,24 @@ public class ErrandPhaseService {
 		this.phaseRepository = phaseRepository;
 	}
 
-	public void processPhaseChange(final ErrandEntity errandEntity, final String newPhaseId, final String namespace, final String municipalityId) {
+	/**
+	 * Moves the errand into sent in phase, and holds sent in status against the phase it ends up in.
+	 * <p>
+	 * The two are one step and in that order: which statuses a phase allows is a property of the phase, so a status can
+	 * only be judged once the move has been made. Either may be left out - a request touching neither changes nothing.
+	 *
+	 * @param errandEntity   errand to move
+	 * @param newPhaseId     phase to move it into, or null to leave it where it is
+	 * @param newStatus      status to hold against the resulting phase, or null to hold nothing against it
+	 * @param namespace      namespace
+	 * @param municipalityId municipality id
+	 */
+	public void applyPhaseChange(final ErrandEntity errandEntity, final String newPhaseId, final String newStatus, final String namespace, final String municipalityId) {
+		processPhaseChange(errandEntity, newPhaseId, namespace, municipalityId);
+		validateStatusAgainstActivePhase(errandEntity, newStatus);
+	}
+
+	private void processPhaseChange(final ErrandEntity errandEntity, final String newPhaseId, final String namespace, final String municipalityId) {
 		if (newPhaseId == null) {
 			return;
 		}
@@ -54,7 +71,7 @@ public class ErrandPhaseService {
 		addPhase(errandEntity, targetPhase);
 	}
 
-	public void validateStatusAgainstActivePhase(final ErrandEntity errandEntity, final String newStatus) {
+	private void validateStatusAgainstActivePhase(final ErrandEntity errandEntity, final String newStatus) {
 		if (newStatus == null) {
 			return;
 		}

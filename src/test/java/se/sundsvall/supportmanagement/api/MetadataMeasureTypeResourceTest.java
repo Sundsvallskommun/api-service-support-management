@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ class MetadataMeasureTypeResourceTest {
 	void createMeasureType() {
 		// Setup
 		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
-		final var measureType = MeasureType.create().withName("INTERVENTION").withMeasureGroup("MANAGERS");
+		final var measureType = MeasureType.create().withName("INTERVENTION").withMeasureGroups(List.of("MANAGERS"));
 
 		// Mock
 		when(metadataServiceMock.createMeasureType(NAMESPACE, MUNICIPALITY_ID, measureType)).thenReturn(id);
@@ -70,7 +71,7 @@ class MetadataMeasureTypeResourceTest {
 	void getMeasureType() {
 		// Setup
 		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
-		final var measureType = MeasureType.create().withId(id).withName("INTERVENTION").withMeasureGroup("MANAGERS");
+		final var measureType = MeasureType.create().withId(id).withName("INTERVENTION").withMeasureGroups(List.of("MANAGERS"));
 
 		// Mock
 		when(metadataServiceMock.getMeasureType(NAMESPACE, MUNICIPALITY_ID, id)).thenReturn(measureType);
@@ -138,7 +139,7 @@ class MetadataMeasureTypeResourceTest {
 	void updateMeasureType() {
 		// Setup
 		final var id = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
-		final var body = MeasureType.create().withName("INTERVENTION").withMeasureGroup("MANAGERS");
+		final var body = MeasureType.create().withName("INTERVENTION").withMeasureGroups(List.of("MANAGERS"));
 
 		// Mock
 		when(metadataServiceMock.updateMeasureType(NAMESPACE, MUNICIPALITY_ID, id, body)).thenReturn(body);

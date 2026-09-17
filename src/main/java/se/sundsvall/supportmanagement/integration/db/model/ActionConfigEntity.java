@@ -1,26 +1,37 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 
 import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.EAGER;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static org.hibernate.type.SqlTypes.VARCHAR;
 
 @Entity
 @Table(name = "action_config", indexes = {
@@ -53,6 +64,17 @@ public class ActionConfigEntity {
 
 	@OneToMany(mappedBy = "actionConfigEntity", cascade = ALL, orphanRemoval = true, fetch = EAGER)
 	private List<ActionConfigParameterEntity> parameters = new ArrayList<>();
+
+	/**
+	 * The operations this config reacts to. Empty means every operation the action itself supports, which is what every
+	 * config written before this existed means - the set may only ever narrow that, never widen it.
+	 */
+	@ElementCollection(fetch = EAGER)
+	@CollectionTable(name = "action_config_operation_type", joinColumns = @JoinColumn(name = "action_config_id", foreignKey = @ForeignKey(name = "fk_action_config_operation_type_action_config_id")))
+	@Column(name = "operation_type", nullable = false, length = 32)
+	@Enumerated(STRING)
+	@JdbcTypeCode(VARCHAR)
+	private Set<OperationType> operationTypes = new LinkedHashSet<>();
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
@@ -206,9 +228,22 @@ public class ActionConfigEntity {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
 	}
 
+	public Set<OperationType> getOperationTypes() {
+		return operationTypes;
+	}
+
+	public void setOperationTypes(final Set<OperationType> operationTypes) {
+		this.operationTypes = operationTypes;
+	}
+
+	public ActionConfigEntity withOperationTypes(final Set<OperationType> operationTypes) {
+		this.operationTypes = operationTypes;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, municipalityId, namespace, name, active, displayValue, conditions, parameters, created, modified);
+		return Objects.hash(id, municipalityId, namespace, name, active, displayValue, conditions, parameters, operationTypes, created, modified);
 	}
 
 	@Override
@@ -220,7 +255,8 @@ public class ActionConfigEntity {
 			return false;
 		}
 		return active == other.active && Objects.equals(id, other.id) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(name, other.name)
-			&& Objects.equals(displayValue, other.displayValue) && Objects.equals(conditions, other.conditions) && Objects.equals(parameters, other.parameters) && Objects.equals(created, other.created)
+			&& Objects.equals(displayValue, other.displayValue) && Objects.equals(conditions, other.conditions) && Objects.equals(parameters, other.parameters)
+			&& Objects.equals(operationTypes, other.operationTypes) && Objects.equals(created, other.created)
 			&& Objects.equals(modified, other.modified);
 	}
 
@@ -235,6 +271,7 @@ public class ActionConfigEntity {
 			", displayValue='" + displayValue + '\'' +
 			", conditions=" + conditions +
 			", parameters=" + parameters +
+			", operationTypes=" + operationTypes +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

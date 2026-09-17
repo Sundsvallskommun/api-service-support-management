@@ -56,10 +56,11 @@ errand:
     minimum-age: P2Y
     batch-size: 250
     max-concurrent-runs: 2
+    progress-interval: PT1M
 job:
   # Settings for the job table every long running piece of work reports against. Documented in JobProperties, which is
   # where the defaults live. Jobs are kept: a purge leaves one row behind, and that row is the lasting record of it.
-  stale-after: P3D
+  stale-after: PT30M
 integration:
   accessmapper:
     connectTimeout: 5

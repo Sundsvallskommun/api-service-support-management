@@ -1,0 +1,28 @@
+[
+	{
+		"accessByType": [
+			{
+				"type": "label",
+				"access": [
+					{
+						"pattern": "ROOT/**",
+						"accessLevel": "RW"
+					}
+				]
+			}
+		]
+	},
+	{
+		"accessByType": [
+			{
+				"type": "role",
+				"access": [
+					{
+						"pattern": "FIRST_LINE",
+						"accessLevel": "R"
+					}
+				]
+			}
+		]
+	}
+]

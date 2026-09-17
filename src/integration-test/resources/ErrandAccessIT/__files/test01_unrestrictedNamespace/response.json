@@ -1,0 +1,205 @@
+{
+	"level": "RW",
+	"fields": [
+		{
+			"field": "id",
+			"level": "RW"
+		},
+		{
+			"field": "errandNumber",
+			"level": "RW"
+		},
+		{
+			"field": "title",
+			"level": "RW"
+		},
+		{
+			"field": "status",
+			"level": "RW"
+		},
+		{
+			"field": "resolution",
+			"level": "RW"
+		},
+		{
+			"field": "channel",
+			"level": "RW"
+		},
+		{
+			"field": "created",
+			"level": "RW"
+		},
+		{
+			"field": "modified",
+			"level": "RW"
+		},
+		{
+			"field": "touched",
+			"level": "RW"
+		},
+		{
+			"field": "priority",
+			"level": "RW"
+		},
+		{
+			"field": "description",
+			"level": "RW"
+		},
+		{
+			"field": "classification",
+			"level": "RW"
+		},
+		{
+			"field": "reporterUserId",
+			"level": "RW"
+		},
+		{
+			"field": "assignedUserId",
+			"level": "RW"
+		},
+		{
+			"field": "assignedGroupId",
+			"level": "RW"
+		},
+		{
+			"field": "businessRelated",
+			"level": "RW"
+		},
+		{
+			"field": "suspension",
+			"level": "RW"
+		},
+		{
+			"field": "contactReason",
+			"level": "RW"
+		},
+		{
+			"field": "contactReasonDescription",
+			"level": "RW"
+		},
+		{
+			"field": "escalationEmail",
+			"level": "RW"
+		},
+		{
+			"field": "labels",
+			"level": "RW"
+		},
+		{
+			"field": "stakeholders",
+			"level": "RW"
+		},
+		{
+			"field": "measures",
+			"level": "RW"
+		},
+		{
+			"field": "activeNotifications",
+			"level": "RW"
+		},
+		{
+			"field": "phases",
+			"level": "RW"
+		},
+		{
+			"field": "actions",
+			"level": "RW"
+		},
+		{
+			"field": "version",
+			"level": "RW"
+		},
+		{
+			"field": "parameters",
+			"level": "RW",
+			"allKeys": true,
+			"keys": []
+		},
+		{
+			"field": "jsonParameters",
+			"level": "RW",
+			"allKeys": true,
+			"keys": []
+		},
+		{
+			"field": "externalTags",
+			"level": "RW",
+			"allKeys": true,
+			"keys": []
+		}
+	],
+	"resources": [
+		{
+			"resource": "errand/attachment",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/communication",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/communication/attachment",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/conversation",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/conversation/message",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/conversation/attachment",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/event",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/note",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/note/revision",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/parameter",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/json-parameter",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/measure",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/statement",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/investigation",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/decision",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/notification",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/revision",
+			"level": "RW"
+		},
+		{
+			"resource": "errand/time-measure",
+			"level": "RW"
+		}
+	]
+}

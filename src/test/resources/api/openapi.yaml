@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "15.4"
+  version: "16.1"
 servers:
-- url: http://localhost:65430
+- url: http://localhost:64563
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -789,8 +789,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — path collision at destination, or a job is already\
-            \ running for this namespace"
+          description: Conflict — path collision at destination
           content:
             application/problem+json:
               schema:
@@ -10436,7 +10435,11 @@ components:
     JsonNode:
       type: object
       properties:
+        container:
+          type: boolean
         number:
+          type: boolean
+        floatingPointNumber:
           type: boolean
         nodeType:
           type: string
@@ -10478,10 +10481,6 @@ components:
         boolean:
           type: boolean
         binary:
-          type: boolean
-        container:
-          type: boolean
-        floatingPointNumber:
           type: boolean
         empty:
           type: boolean
@@ -13073,8 +13072,8 @@ components:
     PageableObject:
       type: object
       properties:
-        unpaged:
-          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -13083,17 +13082,17 @@ components:
         pageSize:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
         offset:
           type: integer
           format: int64
     SortObject:
       type: object
       properties:
-        unsorted:
-          type: boolean
         sorted:
+          type: boolean
+        unsorted:
           type: boolean
         empty:
           type: boolean

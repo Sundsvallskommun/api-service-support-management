@@ -130,8 +130,6 @@ class ErrandMapperTest {
 	private static final String MEASURE_DESCRIPTION = "measureDescription";
 	private static final Accept MEASURE_ACCEPT = Accept.TRUE;
 	private static final String MEASURE_ACCEPT_MOTIVATION = "measureAcceptMotivation";
-	private static final String MEASURE_REWORK_GOAL = "measureReworkGoal";
-	private static final String MEASURE_REWORK_DESCRIPTION = "measureReworkDescription";
 	private static final OffsetDateTime MEASURE_CREATED = now().minusDays(5);
 	private static final OffsetDateTime MEASURE_MODIFIED = now().minusDays(1);
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -184,9 +182,7 @@ class ErrandMapperTest {
 				.withGoal(MEASURE_GOAL)
 				.withDescription(MEASURE_DESCRIPTION)
 				.withAccept(MEASURE_ACCEPT.name())
-				.withAcceptMotivation(MEASURE_ACCEPT_MOTIVATION)
-				.withReworkGoal(MEASURE_REWORK_GOAL)
-				.withReworkDescription(MEASURE_REWORK_DESCRIPTION)));
+				.withAcceptMotivation(MEASURE_ACCEPT_MOTIVATION)));
 	}
 
 	private static Stakeholder createStakeHolder() {
@@ -262,8 +258,6 @@ class ErrandMapperTest {
 				.withDescription(MEASURE_DESCRIPTION)
 				.withAccept(MEASURE_ACCEPT)
 				.withAcceptMotivation(MEASURE_ACCEPT_MOTIVATION)
-				.withReworkGoal(MEASURE_REWORK_GOAL)
-				.withReworkDescription(MEASURE_REWORK_DESCRIPTION)
 				.withCreated(MEASURE_CREATED)
 				.withModified(MEASURE_MODIFIED)));
 
@@ -346,9 +340,9 @@ class ErrandMapperTest {
 			.containsExactly(tuple(PHASE_ID, PHASE_NAME, PHASE_DISPLAY_NAME, PHASE_STARTED, null));
 		assertThat(errand.getMeasures()).hasSize(1)
 			.extracting(Measure::getId, Measure::getResponsibleUser, Measure::getType, Measure::getPlannedStart, Measure::getPlannedComplete, Measure::getExecuted, Measure::getAddedByUser, Measure::getAddedByRole, Measure::getGoal,
-				Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation, Measure::getReworkGoal, Measure::getReworkDescription, Measure::getCreated, Measure::getModified)
+				Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation, Measure::getCreated, Measure::getModified)
 			.containsExactly(tuple(MEASURE_ID, MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION,
-				MEASURE_ACCEPT.name(), MEASURE_ACCEPT_MOTIVATION, MEASURE_REWORK_GOAL, MEASURE_REWORK_DESCRIPTION, MEASURE_CREATED, MEASURE_MODIFIED));
+				MEASURE_ACCEPT.name(), MEASURE_ACCEPT_MOTIVATION, MEASURE_CREATED, MEASURE_MODIFIED));
 		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 	}
 
@@ -419,15 +413,48 @@ class ErrandMapperTest {
 		final var entity = createEntity();
 		final var allFields = Arrays.stream(ErrandField.values()).collect(toMap(identity(), _ -> Set.<String>of()));
 
-		// The full errand is the role mapped errand of every field, plus the properties no ErrandField names.
+		// The full errand is exactly the role mapped errand of every field - nothing is added to it afterwards, which is
+		// what keeps a field from reaching one projection and not the other.
 		assertThat(toErrand(entity)).usingRecursiveComparison()
-			.ignoringFields("phases", "actions")
 			.isEqualTo(toErrandWithAccessControl(entity, _ -> allFields));
+	}
+
+	/**
+	 * Phases and actions were served to a caller nothing restricted and dropped from every restricted one, with no grant
+	 * that could give them back. They are fields like any other now, so a restriction naming them carries them.
+	 */
+	@Test
+	void testToErrandWithAccessControlMapsPhasesAndActionsWhenTheyAreGranted() {
+		final var entity = createEntity();
+
+		final var granted = toErrandWithAccessControl(entity, _ -> Map.of(ErrandField.PHASES, Set.of(), ErrandField.ACTIONS, Set.of()));
+
+		assertThat(granted.getPhases()).isNotEmpty().isEqualTo(toErrand(entity).getPhases());
+		assertThat(granted.getActions()).isNotEmpty().isEqualTo(toErrand(entity).getActions());
+		assertThat(granted).hasAllNullFieldsOrPropertiesExcept("phases", "actions");
+	}
+
+	@Test
+	void testToErrandWithAccessControlOmitsPhasesAndActionsWhenTheyAreNotGranted() {
+		final var granted = toErrandWithAccessControl(createEntity(), _ -> Map.of(ErrandField.ID, Set.of()));
+
+		assertThat(granted.getPhases()).isNull();
+		assertThat(granted.getActions()).isNull();
 	}
 
 	@Test
 	void testEveryErrandFieldHasAMapper() {
 		assertThat(ErrandMapper.fieldMappers()).containsOnlyKeys(ErrandField.values());
+	}
+
+	/**
+	 * A field without a reader is not merely unread: verifyWritableFields walks the readers, so a field missing one is a
+	 * field a patch may name without holding it. The mappers are held to the constants above, and these have to be held
+	 * to them for the same reason.
+	 */
+	@Test
+	void testEveryErrandFieldHasAReader() {
+		assertThat(ErrandMapper.fieldReaders()).containsOnlyKeys(ErrandField.values());
 	}
 
 	@Test
@@ -613,9 +640,9 @@ class ErrandMapperTest {
 
 		assertThat(entity.getMeasures()).hasSize(1)
 			.extracting(MeasureEntity::getResponsibleUser, MeasureEntity::getType, MeasureEntity::getPlannedStart, MeasureEntity::getPlannedComplete, MeasureEntity::getExecuted, MeasureEntity::getAddedByUser, MeasureEntity::getAddedByRole,
-				MeasureEntity::getGoal, MeasureEntity::getDescription, MeasureEntity::getAccept, MeasureEntity::getAcceptMotivation, MeasureEntity::getReworkGoal, MeasureEntity::getReworkDescription)
+				MeasureEntity::getGoal, MeasureEntity::getDescription, MeasureEntity::getAccept, MeasureEntity::getAcceptMotivation)
 			.containsExactly(tuple(MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION, MEASURE_ACCEPT,
-				MEASURE_ACCEPT_MOTIVATION, MEASURE_REWORK_GOAL, MEASURE_REWORK_DESCRIPTION));
+				MEASURE_ACCEPT_MOTIVATION));
 		assertThat(entity.getMeasures().getFirst().getErrandEntity()).isSameAs(entity);
 
 		assertThat(entity.getCreated()).isNull();
@@ -799,6 +826,51 @@ class ErrandMapperTest {
 		assertThat(entity.getJsonParameters()).extracting(JsonParameterEntity::getKey).containsExactlyInAnyOrder("visible", "hidden");
 		assertThat(entity.getExternalTags()).extracting(DbExternalTag::getKey, DbExternalTag::getValue)
 			.containsExactlyInAnyOrder(tuple("visible", "new"), tuple("hidden", "secret"));
+	}
+
+	@Test
+	void testUpdateEntityLeavesAReadOnlyKeyUntouchedWhenThePatchOmitsIt() {
+		final var entity = ErrandEntity.create()
+			.withParameters(new ArrayList<>(List.of(
+				ParameterEntity.create().withKey("writable").withValues(new ArrayList<>(List.of("old"))),
+				ParameterEntity.create().withKey("read-only").withValues(new ArrayList<>(List.of("kept"))))))
+			.withJsonParameters(new ArrayList<>(List.of(
+				JsonParameterEntity.create().withKey("writable").withValue("1"),
+				JsonParameterEntity.create().withKey("read-only").withValue("2"))))
+			.withExternalTags(new ArrayList<>(List.of(
+				DbExternalTag.create().withKey("writable").withValue("old"),
+				DbExternalTag.create().withKey("read-only").withValue("kept"))));
+
+		// The caller was served the read only key, so a patch of theirs may omit it - and omitting it may not delete it.
+		final var patch = Errand.create()
+			.withParameters(List.of(Parameter.create().withKey("writable").withValues(List.of("new"))))
+			.withJsonParameters(List.of(JsonParameter.create().withKey("writable")))
+			.withExternalTags(List.of(ExternalTag.create().withKey("writable").withValue("new")));
+
+		updateEntity(entity, patch, _ -> "writable"::equals);
+
+		assertThat(entity.getParameters()).extracting(ParameterEntity::getKey, ParameterEntity::getValues)
+			.containsExactlyInAnyOrder(tuple("writable", List.of("new")), tuple("read-only", List.of("kept")));
+		assertThat(entity.getJsonParameters()).extracting(JsonParameterEntity::getKey, JsonParameterEntity::getValue)
+			.containsExactlyInAnyOrder(tuple("writable", null), tuple("read-only", "2"));
+		assertThat(entity.getExternalTags()).extracting(DbExternalTag::getKey, DbExternalTag::getValue)
+			.containsExactlyInAnyOrder(tuple("writable", "new"), tuple("read-only", "kept"));
+	}
+
+	@Test
+	void testUpdateEntityLeavesAReadOnlyKeyUntouchedWhenThePatchCarriesIt() {
+		final var entity = ErrandEntity.create()
+			.withParameters(new ArrayList<>(List.of(
+				ParameterEntity.create().withKey("read-only").withValues(new ArrayList<>(List.of("kept"))))));
+
+		// Carrying it back unchanged is how a caller patches what they were served, and it must not be written again.
+		final var patch = Errand.create()
+			.withParameters(List.of(Parameter.create().withKey("read-only").withValues(List.of("kept"))));
+
+		updateEntity(entity, patch, _ -> _ -> false);
+
+		assertThat(entity.getParameters()).extracting(ParameterEntity::getKey, ParameterEntity::getValues)
+			.containsExactly(tuple("read-only", List.of("kept")));
 	}
 
 	@Test

@@ -35,8 +35,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 
 @ExtendWith(MockitoExtension.class)
@@ -458,7 +458,7 @@ class SubscriberServiceTest {
 
 		assertThatThrownBy(() -> service.updateSubscriber(MUNICIPALITY_ID, NAMESPACE, id, Subscriber.create().withName("hijacked")))
 			.isInstanceOf(Problem.class)
-			.extracting("status").isEqualTo(UNAUTHORIZED);
+			.extracting("status").isEqualTo(FORBIDDEN);
 
 		verify(subscriberRepositoryMock, never()).saveAndFlush(any(SubscriberEntity.class));
 	}
@@ -472,7 +472,7 @@ class SubscriberServiceTest {
 
 		assertThatThrownBy(() -> service.deleteSubscriber(MUNICIPALITY_ID, NAMESPACE, id))
 			.isInstanceOf(Problem.class)
-			.extracting("status").isEqualTo(UNAUTHORIZED);
+			.extracting("status").isEqualTo(FORBIDDEN);
 
 		verify(subscriberRepositoryMock, never()).delete(any(SubscriberEntity.class));
 	}

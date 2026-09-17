@@ -5,6 +5,8 @@ public final class Constants {
 	public static final String SUBJECT_TEMPLATE = "Nytt meddelande kopplat till ärendet %s";
 	public static final String NAMESPACE_REGEXP = "[\\w|\\-]+";
 	public static final String NAMESPACE_VALIDATION_MESSAGE = "can only contain A-Z, a-z, 0-9, - and _";
+	public static final String JSON_PARAMETER_KEY_REGEXP = "[A-Za-z0-9._-]+";
+	public static final String JSON_PARAMETER_KEY_VALIDATION_MESSAGE = "can only contain A-Z, a-z, 0-9, ., - and _";
 	public static final String SENT_BY_HEADER = "X-Sent-By";
 	public static final String UNKNOWN = "UNKNOWN";
 	public static final String EXTERNAL_TAG_KEY_CASE_ID = "CaseId";

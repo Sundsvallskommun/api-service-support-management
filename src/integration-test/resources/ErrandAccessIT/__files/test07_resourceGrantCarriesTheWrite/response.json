@@ -1,0 +1,137 @@
+{
+	"level": "R",
+	"fields": [
+		{
+			"field": "id",
+			"level": "R"
+		},
+		{
+			"field": "errandNumber",
+			"level": "R"
+		},
+		{
+			"field": "title",
+			"level": "R"
+		},
+		{
+			"field": "status",
+			"level": "R"
+		},
+		{
+			"field": "resolution",
+			"level": "R"
+		},
+		{
+			"field": "channel",
+			"level": "R"
+		},
+		{
+			"field": "created",
+			"level": "R"
+		},
+		{
+			"field": "modified",
+			"level": "R"
+		},
+		{
+			"field": "touched",
+			"level": "R"
+		},
+		{
+			"field": "priority",
+			"level": "R"
+		},
+		{
+			"field": "description",
+			"level": "R"
+		},
+		{
+			"field": "classification",
+			"level": "R"
+		},
+		{
+			"field": "reporterUserId",
+			"level": "R"
+		},
+		{
+			"field": "assignedUserId",
+			"level": "R"
+		},
+		{
+			"field": "assignedGroupId",
+			"level": "R"
+		},
+		{
+			"field": "businessRelated",
+			"level": "R"
+		},
+		{
+			"field": "suspension",
+			"level": "R"
+		},
+		{
+			"field": "contactReason",
+			"level": "R"
+		},
+		{
+			"field": "contactReasonDescription",
+			"level": "R"
+		},
+		{
+			"field": "escalationEmail",
+			"level": "R"
+		},
+		{
+			"field": "labels",
+			"level": "R"
+		},
+		{
+			"field": "stakeholders",
+			"level": "R"
+		},
+		{
+			"field": "measures",
+			"level": "R"
+		},
+		{
+			"field": "activeNotifications",
+			"level": "R"
+		},
+		{
+			"field": "phases",
+			"level": "R"
+		},
+		{
+			"field": "actions",
+			"level": "R"
+		},
+		{
+			"field": "version",
+			"level": "R"
+		},
+		{
+			"field": "parameters",
+			"level": "R",
+			"allKeys": true,
+			"keys": []
+		},
+		{
+			"field": "jsonParameters",
+			"level": "R",
+			"allKeys": true,
+			"keys": []
+		},
+		{
+			"field": "externalTags",
+			"level": "R",
+			"allKeys": true,
+			"keys": []
+		}
+	],
+	"resources": [
+		{
+			"resource": "errand/conversation/message",
+			"level": "RW"
+		}
+	]
+}

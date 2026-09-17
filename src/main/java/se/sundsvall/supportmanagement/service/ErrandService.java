@@ -2,15 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -23,25 +15,18 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Relation;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
-import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
-import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
-import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
-import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
-import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -54,7 +39,6 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
@@ -86,7 +70,7 @@ public class ErrandService {
 	private final ErrandDataDeleter errandDataDeleter;
 	private final AccessControlService accessControlService;
 	private final RelationClient relationClient;
-	private final MetadataLabelRepository metadataLabelRepository;
+	private final ErrandLabelService errandLabelService;
 	private final ErrandActionService errandActionService;
 	private final ErrandPhaseService errandPhaseService;
 	private final EntityManager entityManager;
@@ -102,7 +86,7 @@ public class ErrandService {
 		final ErrandDataDeleter errandDataDeleter,
 		final AccessControlService accessControlService,
 		final RelationClient relationClient,
-		final MetadataLabelRepository metadataLabelRepository,
+		final ErrandLabelService errandLabelService,
 		final ErrandActionService errandActionService,
 		final ErrandPhaseService errandPhaseService,
 		final EntityManager entityManager) {
@@ -117,7 +101,7 @@ public class ErrandService {
 		this.errandDataDeleter = errandDataDeleter;
 		this.accessControlService = accessControlService;
 		this.relationClient = relationClient;
-		this.metadataLabelRepository = metadataLabelRepository;
+		this.errandLabelService = errandLabelService;
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
 		this.entityManager = entityManager;
@@ -127,33 +111,24 @@ public class ErrandService {
 	public String createErrand(final String namespace, final String municipalityId, final Errand errand, final String referredFrom) {
 		errand.withErrandNumber(errandNumberGeneratorService.generateErrandNumber(namespace, municipalityId));
 
-		final var errandEntity = toErrandEntity(namespace, municipalityId, errand);
-		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
-			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
-				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
-
-			errandEntity
-				.withContactReason(contactReason)
-				.withContactReasonDescription(errand.getContactReasonDescription());
-		});
-
+		// Everything the request is held to on its own, before an errand is built from it.
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
+		errandLabelService.validateVersions(errand.getLabels());
+		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 
-		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
-		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errandEntity.getStatus());
+		final var errandEntity = toErrandEntity(namespace, municipalityId, errand);
+		ofNullable(contactReason).ifPresent(reason -> errandEntity
+			.withContactReason(reason)
+			.withContactReasonDescription(errand.getContactReasonDescription()));
 
-		validateLabelVersions(errand.getLabels());
-		expandLabelsToAncestorChain(errandEntity);
-		computeAndSetAccessLabels(errandEntity);
+		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
+		errandLabelService.settleAccessLabels(errandEntity);
+
 		final var persistedEntity = repository.save(errandEntity);
 		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
-		try {
-			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persistedEntity, revision.latest(), null, false, ERRAND);
-		} catch (final Exception e) {
-			LOG.warn("Failed to log CREATE event for errand {}: {}", persistedEntity.getId(), e.getMessage());
-		}
+		logCreateEvent(persistedEntity, revision);
 
 		if (isNotBlank(referredFrom)) {
 			final var relation = ErrandMapper.toReferredFromRelation(namespace, expandRelation(referredFrom), persistedEntity.getId());
@@ -188,65 +163,39 @@ public class ErrandService {
 	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final String ifMatch, final Errand errand) {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
-		// Resolved before the errand is touched, so that patching it does not flush mid transaction, and so that the
-		// response is mapped by the same grants a plain read of the errand would be.
-		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
-		final var accessibleKey = accessControlService.readableKeyResolver(namespace, municipalityId, Identifier.get(), errandEntityToUpdate);
+		// Verified and resolved before the errand is touched, so that patching it does not flush mid transaction, and so
+		// that the response is mapped by the same grants a plain read of the errand would be.
+		final var keyAccess = accessControlService.verifyKeyAccess(namespace, municipalityId, errandEntityToUpdate, errand);
 
-		// A key the caller cannot read is a key they cannot write, whichever endpoint they write it through.
-		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.PARAMETERS), keysOf(errand.getParameters(), Parameter::getKey));
-		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.JSON_PARAMETERS), keysOf(errand.getJsonParameters(), JsonParameter::getKey));
-		accessControlService.verifyAccessibleKeys(accessibleKey.apply(ErrandField.EXTERNAL_TAGS), keysOf(errand.getExternalTags(), ExternalTag::getKey));
+		// Everything the patch is held to on its own, before the errand is touched by it.
+		requireMatchingVersion(ifMatch, errandEntityToUpdate.getVersion(), id, namespace, municipalityId);
+		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
+		errandLabelService.validateVersions(errand.getLabels());
+		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 
-		if (ifMatch == null) {
-			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
-		}
-		validateIfMatch(ifMatch, errandEntityToUpdate.getVersion());
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		final var errandEntity = updateEntity(errandEntityToUpdate, errand, accessibleKey);
+		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
+		ofNullable(contactReason).ifPresent(errandEntity::withContactReason);
 
-		errandPhaseService.processPhaseChange(errandEntity, errand.getActivePhaseId(), namespace, municipalityId);
-		errandPhaseService.validateStatusAgainstActivePhase(errandEntity, errand.getStatus());
-
-		Optional.ofNullable(errand.getContactReason()).ifPresent(reason -> {
-			final var contactReason = contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
-				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
-
-			errandEntity.withContactReason(contactReason);
-		});
-
-		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
+		// Held against the status the errand ends up with rather than the one the patch carries, so that moving it into a
+		// phase is judged by what its status will be and not only by whether the patch happens to name one.
+		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
 
 		if (errand.getLabels() != null) {
 			validateLabelVersions(errand.getLabels());
 			expandLabelsToAncestorChain(errandEntity);
+			errandLabelService.settleAccessLabels(errandEntity);
+			computeAndSetAccessLabels(errandEntity);
 		}
+
 		final var entity = errand.getLabels() != null
 			? persistLabelUpdate(errandEntity)
 			: repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
+		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
-		final var revisionResult = revisionService.createErrandRevision(entity);
-
-		if (nonNull(revisionResult)) {
-			try {
-				eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
-			} catch (final Exception e) {
-				LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
-			}
-		}
-
-		return toErrandWithAccessControl(entity, fieldResolver);
-	}
-
-	/**
-	 * Keys of a keyed collection of a patch, or null when the patch leaves the collection alone.
-	 */
-	private static <T> List<String> keysOf(final List<T> values, final Function<T, String> keyExtractor) {
-		return ofNullable(values)
-			.map(list -> list.stream().map(keyExtractor).toList())
-			.orElse(null);
+		return toErrandWithAccessControl(entity, keyAccess.readable());
 	}
 
 	@Transactional
@@ -263,11 +212,19 @@ public class ErrandService {
 		// full snapshot of a deleted errand.
 		final var latestRevision = revisionService.getLatestErrandRevision(entity);
 
+		// Read for the same reason and at the same moment as the revision above. The removal empties the persistence
+		// context to keep what it reads from filling the heap, which leaves the errand detached, and the event below is
+		// built from its external tags - a collection that can no longer be loaded by then. Held here and put back, so
+		// that a removal which happened is answered for rather than lost to a lazy collection.
+		final var externalTags = List.copyOf(ofNullable(entity.getExternalTags()).orElse(emptyList()));
+
 		// Attachments are read through the attachment service rather than off the entity, so that the access check
 		// guarding them applies to a caller deleting them along with the errand.
 		removeErrand(entity, errandAttachmentService.readErrandAttachments(namespace, municipalityId, id).stream()
 			.map(ErrandAttachment::getId)
 			.toList());
+
+		entity.setExternalTags(externalTags);
 
 		try {
 			eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
@@ -415,39 +372,6 @@ public class ErrandService {
 		return paths;
 	}
 
-	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
-		computeAndSetAccessLabels(entity);
-		return repository.saveAndFlush(entity);
-	}
-
-	/**
-	 * Restows a batch of errands - each one's label set rebuilt from its access labels (leaves) outward - in a
-	 * transaction of its own, separate from whatever transaction (if any) the caller is running in. Used by the
-	 * label-move worker, which calls this once per page rather than once per errand, and must not join or be joined by
-	 * the caller's transaction: the worker is not itself transactional, and the interactive PATCH path that also calls
-	 * {@link #persistLabelUpdate} must keep its label write inside its own single transaction rather than being pulled
-	 * into a separate one.
-	 * <p>
-	 * The rebuild is driven entirely by {@code resourcePath} lookups ({@link #expandLabelsToAncestorChain}), never by
-	 * walking an entity's own lazy associations - the errands handed in were read by the worker in a transaction that
-	 * has already closed by the time this one opens, so nothing on them beyond an eagerly-fetched collection is safe to
-	 * touch.
-	 */
-	@Transactional(propagation = REQUIRES_NEW)
-	void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
-		batch.forEach(this::restowFromAccessLabels);
-	}
-
-	private void restowFromAccessLabels(final ErrandEntity errand) {
-		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
-			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
-			.toList();
-
-		errand.setLabels(leafLabels);
-		expandLabelsToAncestorChain(errand);
-		persistLabelUpdate(errand);
-	}
-
 	private void computeAndSetAccessLabels(final ErrandEntity errandEntity) {
 		final var allLabelIds = ofNullable(errandEntity.getLabels())
 			.orElse(emptyList())
@@ -488,5 +412,54 @@ public class ErrandService {
 					.formatted(referredFromAsString));
 		}
 		return relation;
+	}
+
+	/**
+	 * The contact reason of sent in name, or null when the request names none.
+	 */
+	private ContactReasonEntity resolveContactReason(final String reason, final String namespace, final String municipalityId) {
+		if (isNull(reason)) {
+			return null;
+		}
+
+		return contactReasonRepository.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(reason, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, BAD_CONTACT_REASON.formatted(reason, namespace, municipalityId)));
+	}
+
+	/**
+	 * Holds the errand to the version the caller believes it is at, noting the requests that leave it to chance.
+	 */
+	private void requireMatchingVersion(final String ifMatch, final Long version, final String id, final String namespace, final String municipalityId) {
+		if (isNull(ifMatch)) {
+			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
+		}
+
+		validateIfMatch(ifMatch, version);
+	}
+
+	/**
+	 * Logs the errand having been created. A log that cannot be written is not worth failing the request it describes.
+	 */
+	private void logCreateEvent(final ErrandEntity entity, final RevisionResult revision) {
+		try {
+			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision.latest(), null, false, ERRAND);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log CREATE event for errand {}: {}", entity.getId(), e.getMessage());
+		}
+	}
+
+	/**
+	 * Logs the errand having been updated, for the revisions that produced one.
+	 */
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult) {
+		if (isNull(revisionResult)) {
+			return;
+		}
+
+		try {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
+		}
 	}
 }

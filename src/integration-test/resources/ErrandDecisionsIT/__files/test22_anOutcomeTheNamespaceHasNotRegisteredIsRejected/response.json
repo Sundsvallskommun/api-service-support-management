@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "'DISMISSAL' is not a valid decision outcome for namespace 'NAMESPACE-ARTEFACT' and municipality with id '2281'"
+}

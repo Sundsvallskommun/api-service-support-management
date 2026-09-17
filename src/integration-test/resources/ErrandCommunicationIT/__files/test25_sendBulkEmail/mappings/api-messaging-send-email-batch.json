@@ -1,0 +1,48 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "POST",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"parties": [
+						{
+							"emailAddress": "john.a@zoidberg.com"
+						},
+						{
+							"emailAddress": "turanga@leela.com"
+						}
+					],
+					"attachments": [
+						{
+							"name": "Test3.txt",
+							"contentType": "text/plain",
+							"content": "ODk1MDRFNDcwRDBBMUEwQTAwMDAwMDBENDk0ODQ0NTIwMDAwMDAxMDAwMDAwMDEwMDgwMjAwMDAwMDkwOTE2ODM2MDAwMDAwMDE3MzUyNDc0MjAwQUVDRTFDRTkwMDAwMDAwNDY3NDE0RDQxMDAwMEIxOEYwQkZDNjEwNTAwMDAwMDA5NzA0ODU5NzMwMDAwMEVDMzAwMDAwRUMzMDFDNzZGQTg2NDAwMDAwMDFFNDk0NDQxNTQzODRGNjM1MERBRTg0MzEyNjIyMDQ5MzU1MEYxQTgwNjYyNDI2QzM0OTQwNjQ3MjgwMTAwNkFDOTFGMTA0MEY3OTZCRDAwMDAwMDAwNDk0NTRFNDRBRTQyNjA4Mg=="
+						}
+					],
+					"sender": {
+						"address": "bender@rodriguez.com",
+						"name": "Bender Bending Rodriguez"
+					},
+					"subject": "Insane in the Mainframe",
+					"htmlMessage": "PGh0bWw+U29tZSBtZXNzYWdlIGFib3V0IHRoZSBIQUwgSW5zdGl0dXRlIGZvciA8Yj5DcmltaW5hbGx5IEluc2FuZSBSb2JvdHM8L2I+LCB3aGVyZSByb2JvdHMgdGhhdCA8aT5tdXJkZXJvdXNseTwvaT4gdHVybnMgYWdhaW5zdCBpdHMgaHVtYW4gY3JldyBhcmUgaGVsZDwvaHRtbD4=",
+					"message": "Some message about the HAL Institute for Criminally Insane Robots, where robots that murderously turns against its human crew are held",
+					"headers": {}
+				}
+			}
+		],
+		"url": "/api-messaging/2281/email/batch"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test25_sendBulkEmail/response/api-messaging-send-email-batch-response.json",
+		"status": 200
+	},
+	"name": "api-messaging-email-batch"
+}

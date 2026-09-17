@@ -21,6 +21,7 @@ import org.hibernate.annotations.UuidGenerator;
 import static jakarta.persistence.CascadeType.ALL;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.Optional.ofNullable;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
@@ -28,7 +29,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 	indexes = {
 		@Index(name = "idx_attachment_file_name", columnList = "file_name"),
 		@Index(name = "idx_attachment_municipality_id", columnList = "municipality_id"),
-		@Index(name = "idx_attachment_namespace", columnList = "namespace")
+		@Index(name = "idx_attachment_namespace", columnList = "namespace"),
+		@Index(name = "idx_attachment_attachment_purpose_id", columnList = "attachment_purpose_id")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {
@@ -63,9 +65,32 @@ public class AttachmentEntity {
 	@Column(name = "hash", length = 64)
 	private String hash;
 
+	/**
+	 * What the attachment is for, as registered for the namespace. Optional - an attachment without one is shown as any
+	 * other.
+	 * <p>
+	 * A property of the file rather than of any link to it, so the errand can show it in its own attachment list and an
+	 * attachment belonging to no handling artefact can still carry one. The consequence is that it is a single value: an
+	 * attachment serving one purpose for a statement serves the same purpose everywhere it is linked.
+	 * <p>
+	 * A reference rather than a copy of the name, the way the labels of an errand are, so a purpose given a new name or
+	 * display name in the metadata is shown as such wherever it is used. Nothing cascades either way: clearing the
+	 * reference leaves the purpose in the metadata, and a purpose still referenced cannot be removed from it.
+	 */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "attachment_purpose_id", foreignKey = @ForeignKey(name = "fk_attachment_attachment_purpose_id"))
+	private AttachmentPurposeEntity purpose;
+
 	@ManyToOne(fetch = FetchType.LAZY, cascade = ALL)
 	@JoinColumn(name = "attachment_data_id", nullable = false, foreignKey = @ForeignKey(name = "fk_attachment_data_attachment"))
 	private AttachmentDataEntity attachmentData;
+
+	// The same column as the association above, mapped once more for reading only, so that the data row an attachment
+	// points at can be named without the row being loaded. What that row holds is the file, and a removal that reaches
+	// it through the association pays for every byte of it. Written through the association alone, which is what
+	// insertable and updatable being false says.
+	@Column(name = "attachment_data_id", nullable = false, insertable = false, updatable = false)
+	private Integer attachmentDataId;
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
@@ -184,6 +209,16 @@ public class AttachmentEntity {
 		return this;
 	}
 
+	/**
+	 * The id of the data row this attachment points at, without the row being loaded. Read only: the association is
+	 * what sets it, which is why there is no setter to go with this.
+	 *
+	 * @return the id of the data row, or null for an attachment that has not been written yet.
+	 */
+	public Integer getAttachmentDataId() {
+		return attachmentDataId;
+	}
+
 	public ErrandEntity getErrandEntity() {
 		return errandEntity;
 	}
@@ -249,13 +284,27 @@ public class AttachmentEntity {
 		return this;
 	}
 
+	public AttachmentPurposeEntity getPurpose() {
+		return purpose;
+	}
+
+	public void setPurpose(final AttachmentPurposeEntity purpose) {
+		this.purpose = purpose;
+	}
+
+	public AttachmentEntity withPurpose(final AttachmentPurposeEntity purpose) {
+		this.purpose = purpose;
+		return this;
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final AttachmentEntity that = (AttachmentEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(
-			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(hash, that.hash) && Objects.equals(attachmentData, that.attachmentData) && Objects.equals(
+			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(hash, that.hash) && Objects.equals(attachmentData, that.attachmentData)
+			&& Objects.equals(
 				created, that.created) && Objects.equals(modified, that.modified)
 			&& Objects.equals(errandEntity, that.errandEntity);
 	}
@@ -276,6 +325,7 @@ public class AttachmentEntity {
 			", channel='" + channel + '\'' +
 			", fileSize=" + fileSize +
 			", hash='" + hash + '\'' +
+			", purpose=" + ofNullable(purpose).map(AttachmentPurposeEntity::getId).orElse(null) +
 			", attachmentData=" + attachmentData +
 			", created=" + created +
 			", modified=" + modified +

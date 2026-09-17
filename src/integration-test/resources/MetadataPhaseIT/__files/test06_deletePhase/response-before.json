@@ -7,7 +7,8 @@
 		"phaseOrder": 0,
 		"allowedStatuses": [
 			"NEW",
-			"IN_PROGRESS"
+			"IN_PROGRESS",
+			"STATUS-3"
 		],
 		"transitions": [
 			{
@@ -38,7 +39,8 @@
 		"phaseOrder": 1,
 		"allowedStatuses": [
 			"IN_PROGRESS",
-			"WAITING"
+			"WAITING",
+			"STATUS-3"
 		],
 		"transitions": [
 			{

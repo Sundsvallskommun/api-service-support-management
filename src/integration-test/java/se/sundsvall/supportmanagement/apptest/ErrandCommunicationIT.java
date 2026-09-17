@@ -355,4 +355,39 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test25_sendBulkEmail() {
+		setupCall()
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6/communication/email/batch")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6/communication")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A first line officer whose labels reach the errand at read only, and whom the access mapper grants the messages of
+	 * its conversations at read/write. The grant carries the write, so the message is accepted - while the errand itself
+	 * stays refused to them, which {@code ErrandsIT} holds the other half of.
+	 */
+	@Test
+	void test26_createConversationMessageOnAnErrandHeldAtRead() throws FileNotFoundException {
+		setupCall()
+			.withHttpMethod(POST)
+			.withServicePath("/2506/NAMESPACE-2507/errands/9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b/communication/conversations/5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9/messages")
+			.withHeader(HEADER_NAME, "fro01lin; type=adAccount")
+			.withContentType(MULTIPART_FORM_DATA)
+			.withRequestFile("message", REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequestAndVerifyResponse();
+	}
 }

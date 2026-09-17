@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -17,6 +18,7 @@ public class RevisionMapper {
 
 	private static final Gson GSON = new GsonBuilder()
 		.registerTypeAdapter(OffsetDateTime.class, OffsetDateTimeSerializer.create())
+		.registerTypeAdapter(LocalDate.class, LocalDateSerializer.create())
 		.registerTypeAdapterFactory(new HibernateProxyAdapterFactory())
 		.addSerializationExclusionStrategy(CircularReferenceExclusionStrategy.create())
 		.addSerializationExclusionStrategy(AttachmentExclusionStrategy.create())

@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.employee.PortalPersonData;
+import generated.se.sundsvall.messaging.EmailBatchRequest;
 import generated.se.sundsvall.messaging.Message;
 import generated.se.sundsvall.messaging.MessageParty;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,6 +23,7 @@ import org.springframework.util.StreamUtils;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Identifier.Type;
+import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.Communication;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
@@ -31,6 +33,7 @@ import se.sundsvall.supportmanagement.integration.db.CommunicationAttachmentRepo
 import se.sundsvall.supportmanagement.integration.db.CommunicationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -55,8 +58,8 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.EMAIL;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.ESERVICE;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.createReporterEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailBatchRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMessagingMessageRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
@@ -82,6 +85,7 @@ public class CommunicationService {
 	private final EmployeeService employeeService;
 	private final CitizenIntegration citizenIntegration;
 	private final MessagingSettingsIntegration messagingSettingsIntegration;
+	private final ChunkedDeleter chunkedDeleter;
 
 	public CommunicationService(
 		final AccessControlService accessControlService,
@@ -92,7 +96,9 @@ public class CommunicationService {
 		final ErrandAttachmentService errandAttachmentService,
 		final Semaphore semaphore,
 		final EmployeeService employeeService,
-		final CitizenIntegration citizenIntegration, final MessagingSettingsIntegration messagingSettingsIntegration) {
+		final CitizenIntegration citizenIntegration,
+		final MessagingSettingsIntegration messagingSettingsIntegration,
+		final ChunkedDeleter chunkedDeleter) {
 
 		this.accessControlService = accessControlService;
 		this.messagingClient = messagingClient;
@@ -104,6 +110,7 @@ public class CommunicationService {
 		this.employeeService = employeeService;
 		this.citizenIntegration = citizenIntegration;
 		this.messagingSettingsIntegration = messagingSettingsIntegration;
+		this.chunkedDeleter = chunkedDeleter;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -193,6 +200,43 @@ public class CommunicationService {
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, errandEntity);
 
+	}
+
+	public void sendBulkEmail(final String namespace, final String municipalityId, final String id, final BulkEmailRequest request) {
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, id, request.getAttachmentIds());
+		final var batchRequest = toEmailBatchRequest(request, toEmailAttachments(errandAttachments));
+
+		messagingClient.sendEmailBatch(municipalityId, batchRequest);
+
+		// Any inline attachments in the request are the same content for every recipient, so they are only
+		// persisted as errand attachments once - not once per recipient.
+		var attachmentSaved = false;
+		for (final var recipient : request.getRecipients()) {
+			final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, toSingleEmailRequest(request, recipient))
+				.withErrandAttachments(errandAttachments)
+				.withViewed(true)
+				.withErrandNumber(errandEntity.getErrandNumber());
+			saveCommunication(communicationEntity);
+
+			if (!attachmentSaved) {
+				saveAttachment(communicationEntity, errandEntity);
+				attachmentSaved = true;
+			}
+		}
+	}
+
+	private static EmailRequest toSingleEmailRequest(final BulkEmailRequest bulk, final String recipient) {
+		return EmailRequest.create()
+			.withSender(bulk.getSender())
+			.withSenderName(bulk.getSenderName())
+			.withRecipient(recipient)
+			.withSubject(bulk.getSubject())
+			.withMessage(bulk.getMessage())
+			.withHtmlMessage(bulk.getHtmlMessage())
+			.withEmailHeaders(bulk.getEmailHeaders())
+			.withAttachments(bulk.getAttachments())
+			.withAttachmentIds(bulk.getAttachmentIds());
 	}
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
@@ -309,18 +353,44 @@ public class CommunicationService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, RW);
 		final var stakeholder = getStakeholderMatchingRole(errandEntity, "REPORTER");
 
-		// Create a notification and send email if logic determins that mail should be sent
 		if (isStakeholderEligibleForEmailNotification(stakeholder)) {
-			ofNullable(stakeholder.getContactChannels()).orElse(emptyList()).stream()
+			final var emailAddresses = ofNullable(stakeholder.getContactChannels()).orElse(emptyList()).stream()
 				.filter(contactChannel -> Strings.CI.equals("EMAIL", contactChannel.getType()))
 				.map(ContactChannelEntity::getValue)
-				.findFirst()
-				.ifPresent(emailDestination -> {
-					LOGGER.info("Stakeholder with reporter role found on errrand number {}, sending email notification to {}.", errandEntity.getErrandNumber(), emailDestination);
-					final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
-					sendEmail(errandEntity, createReporterEmailRequest(errandEntity, stakeholder, emailDestination, messagingSettings));
-				});
+				.toList();
+
+			if (!emailAddresses.isEmpty()) {
+				LOGGER.info("Stakeholder with reporter role found on errand number {}, sending email notification to {} address(es).", errandEntity.getErrandNumber(), emailAddresses.size());
+				final var messagingSettings = messagingSettingsIntegration.getMessagingsettings(municipalityId, namespace, departmentName);
+				final var batchRequest = toEmailBatchRequest(errandEntity, stakeholder, emailAddresses, messagingSettings);
+
+				messagingClient.sendEmailBatch(municipalityId, batchRequest);
+
+				// No explicit selection exists for an automated notification - null is the documented way to ask for none.
+				final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, errandId, null);
+				final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, toReporterEmailRequest(batchRequest, emailAddresses))
+					.withErrandAttachments(errandAttachments)
+					.withViewed(true)
+					.withErrandNumber(errandEntity.getErrandNumber());
+
+				saveCommunication(communicationEntity);
+				saveAttachment(communicationEntity, errandEntity);
+			}
 		}
+	}
+
+	/**
+	 * The batch request already sent, folded into the single-recipient shape a communication record expects - persisted
+	 * as one record of this notification rather than sent again, since the batch call already reached every address
+	 * on it.
+	 */
+	private static EmailRequest toReporterEmailRequest(final EmailBatchRequest batch, final List<String> recipients) {
+		return EmailRequest.create()
+			.withSender(batch.getSender().getAddress())
+			.withSenderName(batch.getSender().getName())
+			.withRecipient(String.join(",", recipients))
+			.withSubject(batch.getSubject())
+			.withMessage(batch.getMessage());
 	}
 
 	/**
@@ -361,11 +431,28 @@ public class CommunicationService {
 
 	}
 
+	/**
+	 * Removes every communication of an errand.
+	 * <p>
+	 * Only the ids are read, and the communications are then removed a chunk at a time. A communication holds its
+	 * message as both text and html, each of them long text, so an errand carrying a correspondence of any length is
+	 * more than the heap can hold all at once - which is what reading them before removing any would ask of it.
+	 * <p>
+	 * Removing in chunks empties the persistence context as it goes, so an entity a caller was holding is detached by
+	 * the time this returns.
+	 *
+	 * @param errandNumber   number of the errand.
+	 * @param namespace      namespace of the errand.
+	 * @param municipalityId id of the municipality of the errand.
+	 */
 	@Transactional
 	public void deleteAllCommunicationsByErrandNumber(final String errandNumber, final String namespace, final String municipalityId) {
 		// Errand numbers repeat across tenants that share a short code, so an unscoped delete would remove another
 		// tenant's communications.
-		final var list = communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, namespace, municipalityId);
-		communicationRepository.deleteAll(list);
+		final var ids = communicationRepository.findIdsByErrandNumberAndNamespaceAndMunicipalityId(errandNumber, namespace, municipalityId).stream()
+			.map(IdProjection::getId)
+			.toList();
+
+		chunkedDeleter.deleteInChunks(ids, communicationRepository::deleteAllById);
 	}
 }

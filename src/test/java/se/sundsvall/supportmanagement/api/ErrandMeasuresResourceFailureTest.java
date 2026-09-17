@@ -66,6 +66,35 @@ class ErrandMeasuresResourceFailureTest {
 		verifyNoInteractions(serviceMock);
 	}
 
+	/**
+	 * The columns behind these were widened to 3000 without the limit reaching the model, so text past it met the
+	 * database rather than the caller.
+	 */
+	@Test
+	void createErrandMeasureWithOverlongText() {
+		final var tooLong = "x".repeat(3001);
+
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(new Measure().withType("TYPE").withAddedByUser("user").withAddedByRole("role")
+				.withGoal(tooLong)
+				.withDescription(tooLong))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field)
+			.contains("goal", "description");
+
+		verifyNoInteractions(serviceMock);
+	}
+
 	@Test
 	void createErrandMeasureWithNullFields() {
 

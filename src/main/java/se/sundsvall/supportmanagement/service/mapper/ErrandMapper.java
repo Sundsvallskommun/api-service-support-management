@@ -107,17 +107,19 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Updates the errand from sent in patch, leaving the keys of keyed fields the caller may not reach untouched.
+	 * Updates the errand from sent in patch, leaving the keys of keyed fields the caller may not write untouched.
 	 * <p>
 	 * Keyed fields are replaced wholesale by a patch, so without that guard a caller restricted to a few keys would
-	 * silently delete every key they are not even allowed to see, simply by patching back what they were served.
+	 * silently delete every key they are not even allowed to see, simply by patching back what they were served. The
+	 * guard is the write grant rather than the read one, since a namespace may hold a key to read: such a key is served
+	 * to the caller, so a patch of theirs carries it, and it must survive that patch exactly as it stands.
 	 *
-	 * @param  entity        errand to update
-	 * @param  errand        patch to apply
-	 * @param  accessibleKey resolver of the predicate accepting the keys the caller may reach, per field
-	 * @return               updated errand
+	 * @param  entity      errand to update
+	 * @param  errand      patch to apply
+	 * @param  writableKey resolver of the predicate accepting the keys the caller may change, per field
+	 * @return             updated errand
 	 */
-	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand, final Function<ErrandField, Predicate<String>> accessibleKey) {
+	public static ErrandEntity updateEntity(final ErrandEntity entity, final Errand errand, final Function<ErrandField, Predicate<String>> writableKey) {
 		if (isNull(errand)) {
 			return entity;
 		}
@@ -133,7 +135,7 @@ public final class ErrandMapper {
 			entity.setSuspendedTo(value.getSuspendedTo());
 		});
 		ofNullable(errand.getStakeholders()).ifPresent(value -> updateStakeholders(entity, value));
-		ofNullable(errand.getExternalTags()).ifPresent(value -> updateExternalTags(entity, value, accessibleKey.apply(ErrandField.EXTERNAL_TAGS)));
+		ofNullable(errand.getExternalTags()).ifPresent(value -> updateExternalTags(entity, value, writableKey.apply(ErrandField.EXTERNAL_TAGS)));
 		ofNullable(errand.getPriority()).ifPresent(value -> entity.setPriority(value.name()));
 		ofNullable(errand.getStatus()).ifPresent(entity::setStatus);
 		ofNullable(errand.getTitle()).ifPresent(entity::setTitle);
@@ -143,8 +145,8 @@ public final class ErrandMapper {
 		ofNullable(errand.getContactReasonDescription()).ifPresent(value -> entity.setContactReasonDescription(isEmpty(value) ? null : value));
 		ofNullable(errand.getEscalationEmail()).ifPresent(value -> entity.setEscalationEmail(isEmpty(value) ? null : value));
 		ofNullable(errand.getBusinessRelated()).ifPresent(entity::setBusinessRelated);
-		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value, accessibleKey.apply(ErrandField.PARAMETERS)));
-		ofNullable(errand.getJsonParameters()).ifPresent(value -> updateJsonParameters(entity, value, accessibleKey.apply(ErrandField.JSON_PARAMETERS)));
+		ofNullable(errand.getParameters()).ifPresent(value -> updateParameters(entity, value, writableKey.apply(ErrandField.PARAMETERS)));
+		ofNullable(errand.getJsonParameters()).ifPresent(value -> updateJsonParameters(entity, value, writableKey.apply(ErrandField.JSON_PARAMETERS)));
 		ofNullable(errand.getLabels()).ifPresent(value -> entity.setLabels(toErrandLabelEmbeddables(value)));
 		ofNullable(errand.getMeasures()).ifPresent(value -> ErrandMeasureMapper.mergeMeasures(entity, value));
 		return entity;
@@ -162,25 +164,31 @@ public final class ErrandMapper {
 		mergeParameters(entity, parameters, accessibleKey);
 	}
 
-	private static void updateExternalTags(final ErrandEntity entity, final List<ExternalTag> externalTags, final Predicate<String> accessibleKey) {
+	private static void updateExternalTags(final ErrandEntity entity, final List<ExternalTag> externalTags, final Predicate<String> writableKey) {
 		final var retained = ofNullable(entity.getExternalTags()).orElse(emptyList()).stream()
-			.filter(tag -> !accessibleKey.test(tag.getKey()))
+			.filter(tag -> !writableKey.test(tag.getKey()))
 			.toList();
 
 		final var replacement = new ArrayList<>(retained);
-		replacement.addAll(toExternalTag(externalTags));
+		replacement.addAll(toExternalTag(ofNullable(externalTags).orElse(emptyList()).stream()
+			.filter(tag -> writableKey.test(tag.getKey()))
+			.toList()));
 		entity.setExternalTags(replacement);
 	}
 
-	private static void updateJsonParameters(final ErrandEntity entity, final List<JsonParameter> jsonParameters, final Predicate<String> accessibleKey) {
+	private static void updateJsonParameters(final ErrandEntity entity, final List<JsonParameter> jsonParameters, final Predicate<String> writableKey) {
 		if (entity.getJsonParameters() == null) {
 			entity.setJsonParameters(new ArrayList<>());
 		}
 		final var existing = entity.getJsonParameters();
-		final var incomingByKey = jsonParameters.stream().collect(toMap(JsonParameter::getKey, identity(), (_, b) -> b));
+
+		// A parameter the caller may not write is left exactly as it stands, whether or not the request carries it.
+		final var incomingByKey = jsonParameters.stream()
+			.filter(parameter -> writableKey.test(parameter.getKey()))
+			.collect(toMap(JsonParameter::getKey, identity(), (_, b) -> b));
 		final var existingByKey = existing.stream().collect(toMap(JsonParameterEntity::getKey, identity()));
 
-		existing.removeIf(e -> accessibleKey.test(e.getKey()) && !incomingByKey.containsKey(e.getKey()));
+		existing.removeIf(e -> writableKey.test(e.getKey()) && !incomingByKey.containsKey(e.getKey()));
 		existing.stream()
 			.filter(e -> incomingByKey.containsKey(e.getKey()))
 			.forEach(e -> {
@@ -188,7 +196,7 @@ public final class ErrandMapper {
 				e.setSchemaId(incoming.getSchemaId());
 				e.setValue(toJsonString(incoming.getValue()));
 			});
-		jsonParameters.stream()
+		incomingByKey.values().stream()
 			.filter(p -> !existingByKey.containsKey(p.getKey()))
 			.map(p -> JsonParameterEntity.create()
 				.withErrandEntity(entity)
@@ -196,6 +204,52 @@ public final class ErrandMapper {
 				.withSchemaId(p.getSchemaId())
 				.withValue(toJsonString(p.getValue())))
 			.forEach(existing::add);
+	}
+
+	/**
+	 * The keys of sent in external tags that would come out of a patch different from how they stand on the errand. A key
+	 * the errand does not carry at all is a change, since the patch would add it, and a patch leaving the collection
+	 * alone changes none of them.
+	 */
+	public static List<String> changedExternalTagKeys(final ErrandEntity entity, final List<ExternalTag> externalTags) {
+		if (isNull(externalTags)) {
+			return emptyList();
+		}
+
+		final var existingByKey = ofNullable(entity.getExternalTags()).orElse(emptyList()).stream()
+			.collect(toMap(DbExternalTag::getKey, DbExternalTag::getValue, (left, _) -> left));
+
+		return externalTags.stream()
+			.filter(tag -> !existingByKey.containsKey(tag.getKey()) || !Objects.equals(existingByKey.get(tag.getKey()), tag.getValue()))
+			.map(ExternalTag::getKey)
+			.toList();
+	}
+
+	/**
+	 * The keys of sent in json parameters that would come out of a patch different from how they stand on the errand.
+	 * <p>
+	 * The stored value is compared as a parsed document rather than as the text it is stored as, so that a caller
+	 * patching back what they were served is not told they changed something merely by writing the same object with its
+	 * keys in another order.
+	 */
+	public static List<String> changedJsonParameterKeys(final ErrandEntity entity, final List<JsonParameter> jsonParameters) {
+		if (isNull(jsonParameters)) {
+			return emptyList();
+		}
+
+		final var existingByKey = ofNullable(entity.getJsonParameters()).orElse(emptyList()).stream()
+			.collect(toMap(JsonParameterEntity::getKey, identity(), (left, _) -> left));
+
+		return jsonParameters.stream()
+			.filter(parameter -> changes(existingByKey.get(parameter.getKey()), parameter))
+			.map(JsonParameter::getKey)
+			.toList();
+	}
+
+	private static boolean changes(final JsonParameterEntity existing, final JsonParameter incoming) {
+		return isNull(existing)
+			|| !Objects.equals(existing.getSchemaId(), incoming.getSchemaId())
+			|| !Objects.equals(toJsonNode(existing.getValue()), incoming.getValue());
 	}
 
 	private static void updateStakeholders(final ErrandEntity entity, final List<Stakeholder> stakeholders) {
@@ -260,10 +314,53 @@ public final class ErrandMapper {
 		entry(ErrandField.STAKEHOLDERS, (errand, e, _) -> errand.setStakeholders(toStakeholders(e.getStakeholders()))),
 		entry(ErrandField.MEASURES, (errand, e, _) -> errand.setMeasures(toMeasures(e.getMeasures()))),
 		entry(ErrandField.ACTIVE_NOTIFICATIONS, (errand, e, _) -> errand.setActiveNotifications(toActiveNotifications(e.getNotifications()))),
+		entry(ErrandField.PHASES, (errand, e, _) -> errand.setPhases(toErrandPhases(e.getPhases()))),
+		entry(ErrandField.ACTIONS, (errand, e, _) -> errand.setActions(toErrandActions(e.getActions()))),
 		entry(ErrandField.VERSION, (errand, e, _) -> errand.setVersion(e.getVersion())),
 		entry(ErrandField.PARAMETERS, (errand, e, keys) -> errand.setParameters(filterByKey(toParameterList(e.getParameters()), Parameter::getKey, keys))),
 		entry(ErrandField.JSON_PARAMETERS, (errand, e, keys) -> errand.setJsonParameters(filterByKey(toJsonParameters(e.getJsonParameters()), JsonParameter::getKey, keys))),
 		entry(ErrandField.EXTERNAL_TAGS, (errand, e, keys) -> errand.setExternalTags(filterByKey(toExternalTags(e.getExternalTags()), ExternalTag::getKey, keys)))));
+
+	/**
+	 * Reads each field off an errand as a request carries it, so that a patch naming a field its sender does not hold
+	 * can be spotted without every caller knowing which property that is. One entry per {@link ErrandField}, held to
+	 * the constants by the same test that holds the mappers to them.
+	 */
+	private static final Map<ErrandField, Function<Errand, Object>> FIELD_READERS = new EnumMap<>(Map.ofEntries(
+		entry(ErrandField.ID, Errand::getId),
+		entry(ErrandField.ERRAND_NUMBER, Errand::getErrandNumber),
+		entry(ErrandField.TITLE, Errand::getTitle),
+		entry(ErrandField.STATUS, Errand::getStatus),
+		entry(ErrandField.RESOLUTION, Errand::getResolution),
+		entry(ErrandField.CHANNEL, Errand::getChannel),
+		entry(ErrandField.CREATED, Errand::getCreated),
+		entry(ErrandField.MODIFIED, Errand::getModified),
+		entry(ErrandField.TOUCHED, Errand::getTouched),
+		entry(ErrandField.PRIORITY, Errand::getPriority),
+		entry(ErrandField.DESCRIPTION, Errand::getDescription),
+		entry(ErrandField.CLASSIFICATION, Errand::getClassification),
+		entry(ErrandField.REPORTER_USER_ID, Errand::getReporterUserId),
+		entry(ErrandField.ASSIGNED_USER_ID, Errand::getAssignedUserId),
+		entry(ErrandField.ASSIGNED_GROUP_ID, Errand::getAssignedGroupId),
+		entry(ErrandField.BUSINESS_RELATED, Errand::getBusinessRelated),
+		entry(ErrandField.SUSPENSION, Errand::getSuspension),
+		entry(ErrandField.CONTACT_REASON, Errand::getContactReason),
+		entry(ErrandField.CONTACT_REASON_DESCRIPTION, Errand::getContactReasonDescription),
+		entry(ErrandField.ESCALATION_EMAIL, Errand::getEscalationEmail),
+		entry(ErrandField.LABELS, Errand::getLabels),
+		entry(ErrandField.STAKEHOLDERS, Errand::getStakeholders),
+		entry(ErrandField.MEASURES, Errand::getMeasures),
+		entry(ErrandField.ACTIVE_NOTIFICATIONS, Errand::getActiveNotifications),
+		entry(ErrandField.PHASES, Errand::getPhases),
+		entry(ErrandField.ACTIONS, Errand::getActions),
+		entry(ErrandField.VERSION, Errand::getVersion),
+		entry(ErrandField.PARAMETERS, Errand::getParameters),
+		entry(ErrandField.JSON_PARAMETERS, Errand::getJsonParameters),
+		entry(ErrandField.EXTERNAL_TAGS, Errand::getExternalTags)));
+
+	public static Map<ErrandField, Function<Errand, Object>> fieldReaders() {
+		return FIELD_READERS;
+	}
 
 	/**
 	 * Every restrictable field, none of them limited to keys, which is what an unrestricted user is served.
@@ -323,18 +420,20 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys, plus the
-	 * properties no {@link ErrandField} names and which therefore cannot be restricted. Built from the same mappers as a
-	 * role mapped errand, so a conversion exists in one place only and the two projections cannot drift apart.
+	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys. The same
+	 * mappers a role mapped errand is built from, so a conversion exists in one place only and the two projections
+	 * cannot drift apart - nor can a field reach one of them and not the other, which is what left phases and actions
+	 * served to an unrestricted user and dropped from every restricted one.
+	 * <p>
+	 * The one property left out is activePhaseId, which is inbound only: a request names the phase to move the errand
+	 * into, and the response carries the phases themselves, of which the active one is the phase not yet ended.
 	 */
 	public static Errand toErrand(final ErrandEntity entity) {
 		if (isNull(entity)) {
 			return null;
 		}
 
-		return toRoleMappedErrand(entity, ALL_FIELDS)
-			.withPhases(toErrandPhases(entity.getPhases()))
-			.withActions(toErrandActions(entity.getActions()));
+		return toRoleMappedErrand(entity, ALL_FIELDS);
 	}
 
 	public static List<ErrandLabel> toErrandLabels(final List<ErrandLabelEmbeddable> errandLabelEmbeddables) {
@@ -462,7 +561,7 @@ public final class ErrandMapper {
 	}
 
 	private static List<Measure> toMeasures(final List<MeasureEntity> entities) {
-		return ErrandMeasureMapper.toMeasures(entities);
+		return ErrandMeasureMapper.toMeasuresWithoutAttachments(entities);
 	}
 
 	private static List<ErrandAction> toErrandActions(final List<ErrandActionEntity> entities) {
@@ -530,7 +629,7 @@ public final class ErrandMapper {
 		}
 	}
 
-	private static JsonNode toJsonNode(final String jsonString) {
+	static JsonNode toJsonNode(final String jsonString) {
 		if (isNull(jsonString)) {
 			return null;
 		}

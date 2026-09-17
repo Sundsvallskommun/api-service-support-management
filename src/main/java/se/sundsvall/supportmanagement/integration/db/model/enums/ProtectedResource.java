@@ -23,6 +23,9 @@ public enum ProtectedResource {
 	PARAMETER("errand/parameter"),
 	JSON_PARAMETER("errand/json-parameter"),
 	MEASURE("errand/measure"),
+	STATEMENT("errand/statement"),
+	INVESTIGATION("errand/investigation"),
+	DECISION("errand/decision"),
 	NOTIFICATION("errand/notification"),
 	REVISION("errand/revision"),
 	TIME_MEASURE("errand/time-measure"),
@@ -30,13 +33,16 @@ public enum ProtectedResource {
 	NAMESPACE_CONFIG("namespace-config"),
 	EMAIL_INTEGRATION_CONFIG("email-integration-config"),
 	MESSAGE_EXCHANGE_INTEGRATION_CONFIG("messageexchange-integration-config"),
+	METADATA_ATTACHMENT_PURPOSE("metadata/attachment-purpose"),
 	METADATA_CATEGORY("metadata/category"),
 	METADATA_CONTACT_REASON("metadata/contact-reason"),
+	METADATA_DECISION_OUTCOME("metadata/decision-outcome"),
 	METADATA_EXTERNAL_ID_TYPE("metadata/external-id-type"),
 	METADATA_LABEL("metadata/label"),
 	METADATA_MEASURE_TYPE("metadata/measure-type"),
 	METADATA_PHASE("metadata/phase"),
 	METADATA_ROLE("metadata/role"),
+	METADATA_STATEMENT_OUTCOME("metadata/statement-outcome"),
 	METADATA_STATUS("metadata/status"),
 	SUBSCRIBER("subscriber"),
 	SUBSCRIPTION("subscriber/subscription"),
@@ -50,5 +56,14 @@ public enum ProtectedResource {
 
 	public String getPath() {
 		return path;
+	}
+
+	/**
+	 * Signals if the resource belongs to an errand rather than to the namespace itself, which is what separates the
+	 * resources guarded per errand from those guarded on the access mapper alone. Kept next to the paths, since it is the
+	 * paths it reads.
+	 */
+	public boolean isErrandScoped() {
+		return ERRAND.path.equals(path) || path.startsWith(ERRAND.path + "/");
 	}
 }

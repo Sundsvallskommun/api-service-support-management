@@ -40,7 +40,7 @@ class ErrandPhaseServiceTest {
 	void processPhaseChange_nullPhaseId_doesNothing() {
 		final var errandEntity = ErrandEntity.create();
 
-		service.processPhaseChange(errandEntity, null, NAMESPACE, MUNICIPALITY_ID);
+		service.applyPhaseChange(errandEntity, null, null, NAMESPACE, MUNICIPALITY_ID);
 
 		verifyNoInteractions(phaseRepositoryMock);
 	}
@@ -54,7 +54,7 @@ class ErrandPhaseServiceTest {
 		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(phaseId, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(phaseEntity));
 
-		service.processPhaseChange(errandEntity, phaseId, NAMESPACE, MUNICIPALITY_ID);
+		service.applyPhaseChange(errandEntity, phaseId, null, NAMESPACE, MUNICIPALITY_ID);
 
 		assertThat(errandEntity.getPhases()).hasSize(1);
 		final var createdPhase = errandEntity.getPhases().getFirst();
@@ -73,7 +73,7 @@ class ErrandPhaseServiceTest {
 		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(phaseId, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.empty());
 
-		assertThatThrownBy(() -> service.processPhaseChange(errandEntity, phaseId, NAMESPACE, MUNICIPALITY_ID))
+		assertThatThrownBy(() -> service.applyPhaseChange(errandEntity, phaseId, null, NAMESPACE, MUNICIPALITY_ID))
 			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
@@ -99,7 +99,7 @@ class ErrandPhaseServiceTest {
 		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(newPhaseId, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(newPhaseEntity));
 
-		service.processPhaseChange(errandEntity, newPhaseId, NAMESPACE, MUNICIPALITY_ID);
+		service.applyPhaseChange(errandEntity, newPhaseId, null, NAMESPACE, MUNICIPALITY_ID);
 
 		assertThat(activeErrandPhase.getEnded()).isNotNull();
 		assertThat(errandEntity.getPhases()).hasSize(2);
@@ -124,7 +124,7 @@ class ErrandPhaseServiceTest {
 		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(newPhaseId, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(newPhaseEntity));
 
-		assertThatThrownBy(() -> service.processPhaseChange(errandEntity, newPhaseId, NAMESPACE, MUNICIPALITY_ID))
+		assertThatThrownBy(() -> service.applyPhaseChange(errandEntity, newPhaseId, null, NAMESPACE, MUNICIPALITY_ID))
 			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
@@ -150,7 +150,7 @@ class ErrandPhaseServiceTest {
 		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(newPhaseId, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(newPhaseEntity));
 
-		assertThatThrownBy(() -> service.processPhaseChange(errandEntity, newPhaseId, NAMESPACE, MUNICIPALITY_ID))
+		assertThatThrownBy(() -> service.applyPhaseChange(errandEntity, newPhaseId, null, NAMESPACE, MUNICIPALITY_ID))
 			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
@@ -171,7 +171,7 @@ class ErrandPhaseServiceTest {
 		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(phaseId, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(phaseEntity));
 
-		service.processPhaseChange(errandEntity, phaseId, NAMESPACE, MUNICIPALITY_ID);
+		service.applyPhaseChange(errandEntity, phaseId, null, NAMESPACE, MUNICIPALITY_ID);
 
 		assertThat(activeErrandPhase.getEnded()).isNull();
 		assertThat(errandEntity.getPhases()).hasSize(1);
@@ -181,7 +181,7 @@ class ErrandPhaseServiceTest {
 	void validateStatus_noPhases_passes() {
 		final var errandEntity = ErrandEntity.create();
 
-		service.validateStatusAgainstActivePhase(errandEntity, "NEW");
+		service.applyPhaseChange(errandEntity, null, "NEW", NAMESPACE, MUNICIPALITY_ID);
 
 		verifyNoInteractions(phaseRepositoryMock);
 	}
@@ -195,7 +195,7 @@ class ErrandPhaseServiceTest {
 		final var errandEntity = ErrandEntity.create()
 			.withPhases(new ArrayList<>(List.of(endedPhase)));
 
-		service.validateStatusAgainstActivePhase(errandEntity, "NEW");
+		service.applyPhaseChange(errandEntity, null, "NEW", NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
@@ -209,7 +209,7 @@ class ErrandPhaseServiceTest {
 		final var errandEntity = ErrandEntity.create()
 			.withPhases(new ArrayList<>(List.of(activePhase)));
 
-		service.validateStatusAgainstActivePhase(errandEntity, "IN_PROGRESS");
+		service.applyPhaseChange(errandEntity, null, "IN_PROGRESS", NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
@@ -223,7 +223,7 @@ class ErrandPhaseServiceTest {
 		final var errandEntity = ErrandEntity.create()
 			.withPhases(new ArrayList<>(List.of(activePhase)));
 
-		assertThatThrownBy(() -> service.validateStatusAgainstActivePhase(errandEntity, "CLOSED"))
+		assertThatThrownBy(() -> service.applyPhaseChange(errandEntity, null, "CLOSED", NAMESPACE, MUNICIPALITY_ID))
 			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
@@ -242,7 +242,7 @@ class ErrandPhaseServiceTest {
 		final var errandEntity = ErrandEntity.create()
 			.withPhases(new ArrayList<>(List.of(activePhase)));
 
-		service.validateStatusAgainstActivePhase(errandEntity, "ANY_STATUS");
+		service.applyPhaseChange(errandEntity, null, "ANY_STATUS", NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
@@ -250,7 +250,7 @@ class ErrandPhaseServiceTest {
 		final var errandEntity = ErrandEntity.create()
 			.withPhases(new ArrayList<>(List.of(ErrandPhaseEntity.create())));
 
-		service.validateStatusAgainstActivePhase(errandEntity, null);
+		service.applyPhaseChange(errandEntity, null, null, NAMESPACE, MUNICIPALITY_ID);
 
 		verifyNoInteractions(phaseRepositoryMock);
 	}
@@ -268,7 +268,7 @@ class ErrandPhaseServiceTest {
 		when(phaseRepositoryMock.findByIdAndNamespaceAndMunicipalityId(phaseId, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(phaseEntity));
 
-		assertThatThrownBy(() -> service.processPhaseChange(errandEntity, phaseId, NAMESPACE, MUNICIPALITY_ID))
+		assertThatThrownBy(() -> service.applyPhaseChange(errandEntity, phaseId, null, NAMESPACE, MUNICIPALITY_ID))
 			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
@@ -283,7 +283,7 @@ class ErrandPhaseServiceTest {
 				ErrandPhaseEntity.create().withPhaseEntity(PhaseEntity.create().withAllowedStatuses(List.of("NEW"))),
 				ErrandPhaseEntity.create().withPhaseEntity(PhaseEntity.create().withAllowedStatuses(List.of("NEW"))))));
 
-		assertThatThrownBy(() -> service.validateStatusAgainstActivePhase(errandEntity, "NEW"))
+		assertThatThrownBy(() -> service.applyPhaseChange(errandEntity, null, "NEW", NAMESPACE, MUNICIPALITY_ID))
 			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);

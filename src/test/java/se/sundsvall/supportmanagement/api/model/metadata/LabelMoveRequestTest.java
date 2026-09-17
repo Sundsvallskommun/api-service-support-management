@@ -8,8 +8,8 @@ class LabelMoveRequestTest {
 
 	@Test
 	void constructors() {
-		assertThat(new LabelMoveRequest()).hasAllNullFieldsOrPropertiesExcept("dryRun");
-		assertThat(LabelMoveRequest.create()).hasAllNullFieldsOrPropertiesExcept("dryRun");
+		assertThat(new LabelMoveRequest()).hasAllNullFieldsOrProperties();
+		assertThat(LabelMoveRequest.create()).hasAllNullFieldsOrProperties();
 	}
 
 	@Test
@@ -19,7 +19,7 @@ class LabelMoveRequestTest {
 		bean.setDryRun(true);
 
 		assertThat(bean.getNewParentId()).isEqualTo("parent-id");
-		assertThat(bean.isDryRun()).isTrue();
+		assertThat(bean.getDryRun()).isTrue();
 	}
 
 	@Test
@@ -29,7 +29,7 @@ class LabelMoveRequestTest {
 			.withDryRun(true);
 
 		assertThat(bean.getNewParentId()).isEqualTo("parent-id");
-		assertThat(bean.isDryRun()).isTrue();
+		assertThat(bean.getDryRun()).isTrue();
 	}
 
 	@Test
