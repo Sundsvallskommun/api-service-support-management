@@ -66,9 +66,11 @@ public class Measure {
 	private String addedByRole;
 
 	@Schema(description = "Goal of the measure", examples = "Improve response time")
+	@Size(max = 3000)
 	private String goal;
 
 	@Schema(description = "Description of the measure", examples = "Detailed description of the measure")
+	@Size(max = 3000)
 	private String description;
 
 	@Schema(description = "Accept status", examples = "TRUE", nullable = true)
@@ -81,12 +83,6 @@ public class Measure {
 
 	@Schema(description = "Motivation for the accept decision", examples = "The measure is approved")
 	private String acceptMotivation;
-
-	@Schema(description = "Rework goal", examples = "Updated goal after rework")
-	private String reworkGoal;
-
-	@Schema(description = "Rework description", examples = "Detailed description of the rework")
-	private String reworkDescription;
 
 	@Schema(description = "Timestamp when the measure was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
@@ -310,32 +306,6 @@ public class Measure {
 		return this;
 	}
 
-	public String getReworkGoal() {
-		return reworkGoal;
-	}
-
-	public void setReworkGoal(final String reworkGoal) {
-		this.reworkGoal = reworkGoal;
-	}
-
-	public Measure withReworkGoal(final String reworkGoal) {
-		this.reworkGoal = reworkGoal;
-		return this;
-	}
-
-	public String getReworkDescription() {
-		return reworkDescription;
-	}
-
-	public void setReworkDescription(final String reworkDescription) {
-		this.reworkDescription = reworkDescription;
-	}
-
-	public Measure withReworkDescription(final String reworkDescription) {
-		this.reworkDescription = reworkDescription;
-		return this;
-	}
-
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -520,7 +490,7 @@ public class Measure {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, responsibleUser, type, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, description, accept, acceptMotivation, reworkGoal, reworkDescription, created, modified, status, title, dueAt, completedAt,
+		return Objects.hash(id, responsibleUser, type, plannedStart, plannedComplete, executed, addedByUser, addedByRole, goal, description, accept, acceptMotivation, created, modified, status, title, dueAt, completedAt,
 			result, resultText, decisionId, statementId, attachments, createdBy, modifiedBy, version);
 	}
 
@@ -544,8 +514,6 @@ public class Measure {
 			&& Objects.equals(description, other.description)
 			&& Objects.equals(accept, other.accept)
 			&& Objects.equals(acceptMotivation, other.acceptMotivation)
-			&& Objects.equals(reworkGoal, other.reworkGoal)
-			&& Objects.equals(reworkDescription, other.reworkDescription)
 			&& Objects.equals(created, other.created)
 			&& Objects.equals(modified, other.modified)
 			&& Objects.equals(status, other.status)
@@ -577,8 +545,6 @@ public class Measure {
 			", description='" + description + '\'' +
 			", accept='" + accept + '\'' +
 			", acceptMotivation='" + acceptMotivation + '\'' +
-			", reworkGoal='" + reworkGoal + '\'' +
-			", reworkDescription='" + reworkDescription + '\'' +
 			", created=" + created +
 			", modified=" + modified +
 			", status='" + status + '\'' +

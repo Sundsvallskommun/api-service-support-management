@@ -64,8 +64,6 @@ class MeasureEntityTest {
 		final var description = "description";
 		final var accept = Accept.TRUE;
 		final var acceptMotivation = "acceptMotivation";
-		final var reworkGoal = "reworkGoal";
-		final var reworkDescription = "reworkDescription";
 		final var created = now();
 		final var modified = now();
 		final var municipalityId = "2281";
@@ -99,8 +97,6 @@ class MeasureEntityTest {
 			.withDescription(description)
 			.withAccept(accept)
 			.withAcceptMotivation(acceptMotivation)
-			.withReworkGoal(reworkGoal)
-			.withReworkDescription(reworkDescription)
 			.withCreated(created)
 			.withModified(modified)
 			.withMunicipalityId(municipalityId)
@@ -127,9 +123,6 @@ class MeasureEntityTest {
 		assertThat(result)
 			.extracting(MeasureEntity::getExecuted, MeasureEntity::getAddedByUser, MeasureEntity::getAddedByRole, MeasureEntity::getGoal, MeasureEntity::getDescription, MeasureEntity::getAccept)
 			.containsExactly(executed, addedByUser, addedByRole, goal, description, accept);
-		assertThat(result)
-			.extracting(MeasureEntity::getAcceptMotivation, MeasureEntity::getReworkGoal, MeasureEntity::getReworkDescription, MeasureEntity::getCreated, MeasureEntity::getModified, MeasureEntity::getMunicipalityId)
-			.containsExactly(acceptMotivation, reworkGoal, reworkDescription, created, modified, municipalityId);
 		assertThat(result)
 			.extracting(MeasureEntity::getNamespace, MeasureEntity::getStatus, MeasureEntity::getTitle, MeasureEntity::getDueAt, MeasureEntity::getCompletedAt, MeasureEntity::getCreatedBy)
 			.containsExactly(namespace, status, title, dueAt, completedAt, createdBy);

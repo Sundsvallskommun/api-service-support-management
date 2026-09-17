@@ -67,6 +67,36 @@ class JobServiceTest {
 	}
 
 	@Test
+	void createWithLabelId() {
+		final var entity = JobEntity.create().withId(JOB_ID);
+		when(jobRepositoryMock.save(any())).thenReturn(entity);
+
+		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "label-id");
+
+		assertThat(result).isEqualTo(JOB_ID);
+		final var captor = ArgumentCaptor.forClass(JobEntity.class);
+		verify(jobRepositoryMock).save(captor.capture());
+		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
+		assertThat(captor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
+		assertThat(captor.getValue().getType()).isEqualTo(MOVE_LABEL);
+		assertThat(captor.getValue().getTotal()).isEqualTo(100);
+		assertThat(captor.getValue().getLabelId()).isEqualTo("label-id");
+	}
+
+	@Test
+	@DisplayName("Verification that create without a labelId stores none, since not every kind of job works on one label")
+	void createWithoutLabelIdStoresNoLabelId() {
+		final var entity = JobEntity.create().withId(JOB_ID);
+		when(jobRepositoryMock.save(any())).thenReturn(entity);
+
+		jobService.create(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, 100);
+
+		final var captor = ArgumentCaptor.forClass(JobEntity.class);
+		verify(jobRepositoryMock).save(captor.capture());
+		assertThat(captor.getValue().getLabelId()).isNull();
+	}
+
+	@Test
 	void get() {
 		final var entity = jobEntity(RUNNING);
 		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
@@ -162,6 +192,21 @@ class JobServiceTest {
 		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), any())).thenReturn(true);
 
 		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE)).isTrue();
+	}
+
+	@Test
+	@DisplayName("Verification that a label already worked on by a job of one kind is found, so that a second run against the same label is not started under it")
+	void hasActiveJobOfTypeAndLabel() {
+		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), eq("label-id"), any())).thenReturn(true);
+
+		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, "label-id")).isTrue();
+	}
+
+	@Test
+	void hasActiveJobOfTypeAndLabelReturnsFalseWhenNoneActive() {
+		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), eq("label-id"), any())).thenReturn(false);
+
+		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, "label-id")).isFalse();
 	}
 
 	@Test

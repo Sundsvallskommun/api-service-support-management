@@ -35,8 +35,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 
@@ -227,7 +227,7 @@ class SubscriberNotificationServiceTest {
 	void readingAnotherIdentitysNotificationsIsRefused() {
 		assertThatThrownBy(() -> service.getNotifications(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, "someone-else", Pageable.unpaged()))
 			.isInstanceOf(Problem.class)
-			.extracting("status").isEqualTo(UNAUTHORIZED);
+			.extracting("status").isEqualTo(FORBIDDEN);
 
 		verifyNoInteractions(repositoryMock);
 	}
@@ -240,7 +240,7 @@ class SubscriberNotificationServiceTest {
 
 		assertThatThrownBy(() -> service.acknowledgeNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID))
 			.isInstanceOf(Problem.class)
-			.extracting("status").isEqualTo(UNAUTHORIZED);
+			.extracting("status").isEqualTo(FORBIDDEN);
 
 		assertThat(entity.getAcknowledged()).isNull();
 		verify(repositoryMock, never()).save(any());
@@ -255,7 +255,7 @@ class SubscriberNotificationServiceTest {
 
 		assertThatThrownBy(() -> service.deleteNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID))
 			.isInstanceOf(Problem.class)
-			.extracting("status").isEqualTo(UNAUTHORIZED);
+			.extracting("status").isEqualTo(FORBIDDEN);
 
 		verify(repositoryMock, never()).delete(any());
 	}

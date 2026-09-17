@@ -3,12 +3,13 @@ package se.sundsvall.supportmanagement.service.action;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.config.action.Definition;
-import se.sundsvall.supportmanagement.api.model.config.action.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 
 public interface Action {
 
@@ -41,4 +42,10 @@ public interface Action {
 	boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
 
 	boolean validForOperationType(OperationType operationType);
+
+	/**
+	 * The operations this action runs on. A config may narrow this set and may not widen it, so a client configuring one
+	 * has to be able to read it rather than discover it by being refused.
+	 */
+	Set<OperationType> getValidOperationTypes();
 }

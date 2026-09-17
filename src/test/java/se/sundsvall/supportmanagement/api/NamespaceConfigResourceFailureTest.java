@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -557,6 +558,32 @@ class NamespaceConfigResourceFailureTest {
 			.containsExactly(tuple("createActionConfig.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		verifyNoInteractions(actionServiceMock);
+	}
+
+	/**
+	 * An explicit null among the operation types reached a Set.of, which refuses one with a NullPointerException rather
+	 * than answering the caller. An unknown operation was always a 400; a null now is too.
+	 */
+	@Test
+	void createActionConfigWithNullOperationType() {
+		final var config = createValidActionConfig();
+		config.setOperationTypes(Collections.singletonList(null));
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(ACTION_CONFIG_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(config)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.contains(tuple("operationTypes[0]", "must not contain null"));
 	}
 
 	@Test

@@ -40,9 +40,7 @@ class ErrandMeasureMapperTest {
 			.withGoal("Improve response time")
 			.withDescription("Detailed description")
 			.withAccept("TRUE")
-			.withAcceptMotivation("Approved")
-			.withReworkGoal("Rework goal")
-			.withReworkDescription("Rework description");
+			.withAcceptMotivation("Approved");
 
 		// Act
 		final var result = toMeasureEntity(measure, errandEntity);
@@ -61,8 +59,6 @@ class ErrandMeasureMapperTest {
 		assertThat(result.getDescription()).isEqualTo("Detailed description");
 		assertThat(result.getAccept()).isEqualTo(Accept.TRUE);
 		assertThat(result.getAcceptMotivation()).isEqualTo("Approved");
-		assertThat(result.getReworkGoal()).isEqualTo("Rework goal");
-		assertThat(result.getReworkDescription()).isEqualTo("Rework description");
 	}
 
 	@Test
@@ -141,8 +137,6 @@ class ErrandMeasureMapperTest {
 			.withDescription("description")
 			.withAccept(Accept.FALSE)
 			.withAcceptMotivation("motivation")
-			.withReworkGoal("rework goal")
-			.withReworkDescription("rework description")
 			.withCreated(now)
 			.withModified(now.plusHours(1));
 
@@ -163,8 +157,6 @@ class ErrandMeasureMapperTest {
 		assertThat(result.getDescription()).isEqualTo("description");
 		assertThat(result.getAccept()).isEqualTo("FALSE");
 		assertThat(result.getAcceptMotivation()).isEqualTo("motivation");
-		assertThat(result.getReworkGoal()).isEqualTo("rework goal");
-		assertThat(result.getReworkDescription()).isEqualTo("rework description");
 		assertThat(result.getCreated()).isEqualTo(now);
 		assertThat(result.getModified()).isEqualTo(now.plusHours(1));
 	}

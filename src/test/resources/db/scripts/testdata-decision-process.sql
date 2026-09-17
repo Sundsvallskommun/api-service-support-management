@@ -9,8 +9,8 @@
 -- -----------------------------------------------------------------------------------------------
 
 INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
-VALUES (7, 'PROCESS_TRIGGER', 'ERRAND', 'STRING'),
-       (7, 'PROCESS_TRIGGER', 'DECISION', 'STRING');
+VALUES (8, 'PROCESS_TRIGGER', 'ERRAND', 'STRING'),
+       (8, 'PROCESS_TRIGGER', 'DECISION', 'STRING');
 
 INSERT INTO decision_outcome(id, name, display_name, sort_order, deprecated, namespace, municipality_id, created)
 VALUES ('d0000000-0000-0000-0000-0000000000f1', 'APPROVAL', 'Bifall', 1, false, 'PROCESS-NAMESPACE', '2281',

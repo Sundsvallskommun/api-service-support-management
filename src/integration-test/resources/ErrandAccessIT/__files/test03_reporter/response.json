@@ -1,0 +1,42 @@
+{
+	"level": "R",
+	"fields": [
+		{
+			"field": "id",
+			"level": "R"
+		},
+		{
+			"field": "errandNumber",
+			"level": "R"
+		},
+		{
+			"field": "title",
+			"level": "R"
+		},
+		{
+			"field": "status",
+			"level": "R"
+		},
+		{
+			"field": "parameters",
+			"level": "R",
+			"allKeys": false,
+			"keys": [
+				{
+					"key": "granted-key",
+					"level": "R"
+				}
+			]
+		}
+	],
+	"resources": [
+		{
+			"resource": "errand/communication",
+			"level": "R"
+		},
+		{
+			"resource": "errand/parameter",
+			"level": "R"
+		}
+	]
+}
