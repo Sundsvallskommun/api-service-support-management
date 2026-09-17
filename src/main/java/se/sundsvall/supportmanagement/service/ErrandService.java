@@ -35,7 +35,6 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -182,12 +181,9 @@ public class ErrandService {
 		// phase is judged by what its status will be and not only by whether the patch happens to name one.
 		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
 
-		// Only when the patch touches them, since leaving them alone leaves who reaches the errand alone.
-		if (nonNull(errand.getLabels())) {
-			errandLabelService.settleAccessLabels(errandEntity);
-		}
-
-		final var entity = repository.saveAndFlush(errandEntity);
+		final var entity = errand.getLabels() != null
+			? persistLabelUpdate(errandEntity)
+			: repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
@@ -292,6 +288,11 @@ public class ErrandService {
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);
+	}
+
+	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
+		errandLabelService.settleAccessLabels(entity);
+		return repository.saveAndFlush(entity);
 	}
 
 	se.sundsvall.dept44.support.Relation expandRelation(final String referredFromAsString) {
