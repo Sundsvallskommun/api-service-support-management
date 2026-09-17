@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,6 +47,7 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.trim;
 
@@ -566,7 +568,17 @@ public class MetadataMapper {
 	 * table would refuse it anyway, and by then the caller has a constraint violation instead of an answer.
 	 */
 	private static Set<String> toMeasureGroups(final List<String> measureGroups) {
-		return isNull(measureGroups) ? null : new LinkedHashSet<>(measureGroups);
+		if (isNull(measureGroups)) {
+			return null;
+		}
+
+		// The key on the table is as case insensitive as the collation of the column, so 'MANAGERS' and 'managers' are
+		// one group to the database and two to a set of strings. Deduplicating the way the database does is what keeps a
+		// request naming both from reaching it as a duplicate key, and the first spelling given is the one kept.
+		final var seen = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+		return measureGroups.stream()
+			.filter(seen::add)
+			.collect(toCollection(LinkedHashSet::new));
 	}
 
 	public static MeasureType toMeasureType(final MeasureTypeEntity entity) {

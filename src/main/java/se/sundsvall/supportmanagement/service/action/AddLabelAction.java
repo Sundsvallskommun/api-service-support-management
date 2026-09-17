@@ -107,4 +107,9 @@ public class AddLabelAction extends AbstractAction {
 	public boolean validForOperationType(OperationType operationType) {
 		return VALID_OPERATION_TYPES.contains(operationType);
 	}
+
+	@Override
+	public Set<OperationType> getValidOperationTypes() {
+		return VALID_OPERATION_TYPES;
+	}
 }

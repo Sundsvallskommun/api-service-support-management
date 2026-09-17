@@ -55,7 +55,8 @@ public class ErrandActionService {
 				.withName(action.getName())
 				.withDescription(action.getDescription())
 				.withConditionDefinitions(action.getConditionDefinitions(municipalityId, namespace))
-				.withParameterDefinitions(action.getParameterDefinitions(municipalityId, namespace)))
+				.withParameterDefinitions(action.getParameterDefinitions(municipalityId, namespace))
+				.withOperationTypes(List.copyOf(action.getValidOperationTypes())))
 			.toList();
 	}
 

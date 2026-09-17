@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.action.Action;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +69,7 @@ class ErrandActionServiceTest {
 		when(actionMock.getDescription()).thenReturn("Test action description");
 		when(actionMock.getConditionDefinitions(any(), any())).thenReturn(conditionDefinitions);
 		when(actionMock.getParameterDefinitions(any(), any())).thenReturn(parameterDefinitions);
+		when(actionMock.getValidOperationTypes()).thenReturn(Set.of(OperationType.CREATE, OperationType.UPDATE));
 
 		final var service = new ErrandActionService(actionConfigRepositoryMock, List.of(actionMock));
 		final var result = service.getActionDefinitions(MUNICIPALITY_ID, NAMESPACE);
@@ -79,6 +81,9 @@ class ErrandActionServiceTest {
 		assertThat(result.getFirst().getDescription()).isEqualTo("Test action description");
 		assertThat(result.getFirst().getConditionDefinitions()).isEqualTo(conditionDefinitions);
 		assertThat(result.getFirst().getParameterDefinitions()).isEqualTo(parameterDefinitions);
+
+		// A config may name a subset of these and nothing outside them, so a client has to be able to read them.
+		assertThat(result.getFirst().getOperationTypes()).containsExactlyInAnyOrder(OperationType.CREATE, OperationType.UPDATE);
 	}
 
 	@Test

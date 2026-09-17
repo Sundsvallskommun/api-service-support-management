@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.config.action;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -30,18 +31,21 @@ class ActionDefinitionTest {
 		final var description = "description";
 		final var conditionDefinitions = List.of(Definition.create().withKey("condKey"));
 		final var parameterDefinitions = List.of(Definition.create().withKey("paramKey"));
+		final var operationTypes = List.of(OperationType.CREATE, OperationType.UPDATE);
 
 		final var bean = ActionDefinition.create()
 			.withName(name)
 			.withDescription(description)
 			.withConditionDefinitions(conditionDefinitions)
-			.withParameterDefinitions(parameterDefinitions);
+			.withParameterDefinitions(parameterDefinitions)
+			.withOperationTypes(operationTypes);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getConditionDefinitions()).isEqualTo(conditionDefinitions);
 		assertThat(bean.getParameterDefinitions()).isEqualTo(parameterDefinitions);
+		assertThat(bean.getOperationTypes()).isEqualTo(operationTypes);
 	}
 
 	@Test

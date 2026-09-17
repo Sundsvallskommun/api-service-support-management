@@ -718,6 +718,18 @@ class MetadataMapperTest {
 	// MeasureType tests
 	// =================================================================
 
+	/**
+	 * The key on measure_type_groups is as case insensitive as the column collation, so two spellings of one group are a
+	 * duplicate key rather than two rows. Dropped here, where the request is turned into what the entity holds.
+	 */
+	@Test
+	void toMeasureTypeEntityDropsGroupsDifferingOnlyInCase() {
+		final var entity = MetadataMapper.toMeasureTypeEntity("namespace", "2281",
+			MeasureType.create().withName("TYPE").withMeasureGroups(List.of("MANAGERS", "managers", "LEADERS")));
+
+		assertThat(entity.getMeasureGroups()).containsExactly("MANAGERS", "LEADERS");
+	}
+
 	@Test
 	void toMeasureType() {
 		final var created = OffsetDateTime.now().minusDays(1);

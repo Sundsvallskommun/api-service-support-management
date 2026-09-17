@@ -10,7 +10,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -48,6 +47,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.isReportedBy;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
@@ -596,9 +596,7 @@ public class AccessControlService {
 			.filter(key -> !accessibleKey.test(key))
 			.findFirst()
 			.ifPresent(key -> {
-				throw Problem.valueOf(FORBIDDEN, KEY_NOT_ACCESSIBLE.formatted(key, Optional.ofNullable(Identifier.get())
-					.map(Identifier::getValue)
-					.orElse(null)));
+				throw Problem.valueOf(FORBIDDEN, KEY_NOT_ACCESSIBLE.formatted(key, getCallerIdentity()));
 			});
 	}
 
@@ -618,9 +616,7 @@ public class AccessControlService {
 			.filter(key -> !writableKey.test(key))
 			.findFirst()
 			.ifPresent(key -> {
-				throw Problem.valueOf(FORBIDDEN, KEY_NOT_WRITABLE.formatted(key, Optional.ofNullable(Identifier.get())
-					.map(Identifier::getValue)
-					.orElse(null)));
+				throw Problem.valueOf(FORBIDDEN, KEY_NOT_WRITABLE.formatted(key, getCallerIdentity()));
 			});
 	}
 
@@ -716,9 +712,7 @@ public class AccessControlService {
 
 		ErrandMapper.fieldReaders().forEach((field, read) -> {
 			if (!field.isKeyed() && !access.writable().containsKey(field) && nonNull(read.apply(patch))) {
-				throw Problem.valueOf(FORBIDDEN, FIELD_NOT_WRITABLE.formatted(field.getPropertyName(), Optional.ofNullable(Identifier.get())
-					.map(Identifier::getValue)
-					.orElse(null)));
+				throw Problem.valueOf(FORBIDDEN, FIELD_NOT_WRITABLE.formatted(field.getPropertyName(), getCallerIdentity()));
 			}
 		});
 	}
@@ -1028,9 +1022,7 @@ public class AccessControlService {
 		final var grant = new ResourceGrant(true, accessMapperService.getAccessSnapshot(municipalityId, namespace, Identifier.get()).resources().get(resource));
 
 		if (!grant.permits(required)) {
-			throw Problem.valueOf(FORBIDDEN, RESOURCE_NOT_ACCESSIBLE.formatted(resource, Optional.ofNullable(Identifier.get())
-				.map(Identifier::getValue)
-				.orElse(null)));
+			throw Problem.valueOf(FORBIDDEN, RESOURCE_NOT_ACCESSIBLE.formatted(resource, getCallerIdentity()));
 		}
 	}
 
@@ -1049,9 +1041,7 @@ public class AccessControlService {
 		verifyExistingErrand(errandId, namespace, municipalityId, lock);
 		return errandsRepository
 			.findOne(withId(errandId).and(withAccessControl(namespace, municipalityId, Identifier.get(), resource, required)))
-			.orElseThrow(() -> Problem.valueOf(FORBIDDEN, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
-				.map(Identifier::getValue)
-				.orElse(null))));
+			.orElseThrow(() -> Problem.valueOf(FORBIDDEN, ENTITY_NOT_ACCESSIBLE.formatted(getCallerIdentity())));
 	}
 
 	/**
@@ -1069,9 +1059,7 @@ public class AccessControlService {
 		final var authorized = errandsRepository.exists(withId(id).and(withAccessControl(namespace, municipalityId, Identifier.get(), resource, required)));
 
 		if (!authorized) {
-			throw Problem.valueOf(FORBIDDEN, ENTITY_NOT_ACCESSIBLE.formatted(Optional.ofNullable(Identifier.get())
-				.map(Identifier::getValue)
-				.orElse(null)));
+			throw Problem.valueOf(FORBIDDEN, ENTITY_NOT_ACCESSIBLE.formatted(getCallerIdentity()));
 		}
 	}
 

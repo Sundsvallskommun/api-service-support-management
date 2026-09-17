@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.0"
 servers:
-- url: http://localhost:39537
+- url: http://localhost:33217
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -16566,27 +16566,6 @@ components:
           type: boolean
         number:
           type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
         valueNode:
           type: boolean
         missingNode:
@@ -16608,6 +16587,27 @@ components:
         integralNumber:
           type: boolean
         pojo:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
+        binary:
           type: boolean
         embeddedValue:
           type: boolean
@@ -18226,11 +18226,15 @@ components:
           description: Goal of the measure
           examples:
           - Improve response time
+          maxLength: 3000
+          minLength: 0
         description:
           type: string
           description: Description of the measure
           examples:
           - Detailed description of the measure
+          maxLength: 3000
+          minLength: 0
         accept:
           type:
           - string
@@ -20324,6 +20328,12 @@ components:
           description: Definitions of parameters for this action
           items:
             $ref: "#/components/schemas/Definition"
+        operationTypes:
+          type: array
+          description: The operations on an errand this action runs on. A config of
+            this action may name a subset of these and nothing outside them
+          items:
+            $ref: "#/components/schemas/OperationType"
     Definition:
       type: object
       description: Definition of a condition or parameter for an action

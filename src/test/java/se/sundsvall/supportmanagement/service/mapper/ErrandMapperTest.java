@@ -447,6 +447,16 @@ class ErrandMapperTest {
 		assertThat(ErrandMapper.fieldMappers()).containsOnlyKeys(ErrandField.values());
 	}
 
+	/**
+	 * A field without a reader is not merely unread: verifyWritableFields walks the readers, so a field missing one is a
+	 * field a patch may name without holding it. The mappers are held to the constants above, and these have to be held
+	 * to them for the same reason.
+	 */
+	@Test
+	void testEveryErrandFieldHasAReader() {
+		assertThat(ErrandMapper.fieldReaders()).containsOnlyKeys(ErrandField.values());
+	}
+
 	@Test
 	void testToErrands() {
 		final var errands = toErrands(List.of(createEntity()));

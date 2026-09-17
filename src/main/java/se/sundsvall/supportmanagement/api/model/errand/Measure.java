@@ -66,9 +66,11 @@ public class Measure {
 	private String addedByRole;
 
 	@Schema(description = "Goal of the measure", examples = "Improve response time")
+	@Size(max = 3000)
 	private String goal;
 
 	@Schema(description = "Description of the measure", examples = "Detailed description of the measure")
+	@Size(max = 3000)
 	private String description;
 
 	@Schema(description = "Accept status", examples = "TRUE", nullable = true)
