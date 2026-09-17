@@ -395,9 +395,23 @@ public class ErrandProcessService {
 	 * recovered from, a completed process is not.
 	 */
 	private static void verifyProcessLifeNotOver(final List<ErrandProcessEntity> instances, final String errandId) {
-		if (instances.stream().anyMatch(instance -> COMPLETED == instance.getProcessStatus())) {
+		if (hasCompletedProcess(instances)) {
 			throw Problem.valueOf(CONFLICT, PROCESS_LIFE_OVER.formatted(errandId));
 		}
+	}
+
+	/**
+	 * Whether the process life of an errand is over.
+	 * <p>
+	 * One rule with two uses: a completed process is never started again, and the decisions of its errand can no longer
+	 * be changed. A failed process leaves the life open, since it is recovered from.
+	 *
+	 * @param  instances the process rows of the errand, as {@link ErrandProcessRepository#findByErrandIdOrderByCreatedDesc}
+	 *                   reads them.
+	 * @return           true when any of them ran to its end.
+	 */
+	public static boolean hasCompletedProcess(final List<ErrandProcessEntity> instances) {
+		return instances.stream().anyMatch(instance -> COMPLETED == instance.getProcessStatus());
 	}
 
 	/**

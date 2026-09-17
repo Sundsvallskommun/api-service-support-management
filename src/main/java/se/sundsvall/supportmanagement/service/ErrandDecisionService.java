@@ -14,11 +14,14 @@ import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -31,6 +34,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.AUTOMATIC;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecision;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisionTerm;
@@ -51,6 +56,14 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
  * <p>
  * The investigation a decision rests on is resolved through the errand rather than taken as an id and trusted, which is
  * what keeps a decision from resting on the investigation of a different errand.
+ * <p>
+ * Creating, changing and deleting a decision is a change to the errand: it moves the version of the errand, so that a
+ * work step holding an older one is told the basis it read has changed, and it writes an event with the sub type
+ * DECISION, which is what wakes a process waiting for the decision. The terms, the attachment links and the JSON
+ * parameters do neither. The process waits for the decision to be concluded, and every further event would only count
+ * towards the emergency brake.
+ * <p>
+ * Every write but those to the JSON parameters is held to {@link DecisionValidator#validateChangeable}.
  */
 @Service
 public class ErrandDecisionService {
@@ -59,39 +72,56 @@ public class ErrandDecisionService {
 	private static final String DECISION_NOT_FOUND = "A decision with id '%s' could not be found in errand with id '%s'";
 	private static final String TERM_NOT_FOUND = "A term with id '%s' could not be found in decision with id '%s'";
 	private static final String INVESTIGATION_NOT_FOUND = "An investigation with id '%s' could not be found in errand with id '%s'";
+	private static final String EVENT_LOG_CREATE_DECISION = "Ett beslut har lagts till i ärendet.";
+	private static final String EVENT_LOG_UPDATE_DECISION = "Ett beslut i ärendet har uppdaterats.";
+	private static final String EVENT_LOG_CONCLUDE_DECISION = "Ett beslut i ärendet har fattats.";
+	private static final String EVENT_LOG_DELETE_DECISION = "Ett beslut har tagits bort från ärendet.";
 
 	private final DecisionRepository decisionRepository;
 	private final ArtefactAttachmentService artefactAttachmentService;
 	private final ArtefactJsonParameterService artefactJsonParameterService;
 	private final InvestigationRepository investigationRepository;
+	private final ErrandProcessRepository processRepository;
 	private final DecisionValidator decisionValidator;
 	private final AccessControlService accessControlService;
+	private final EventService eventService;
 	private final EntityManager entityManager;
 
 	ErrandDecisionService(final DecisionRepository decisionRepository, final ArtefactAttachmentService artefactAttachmentService, final ArtefactJsonParameterService artefactJsonParameterService,
-		final InvestigationRepository investigationRepository, final DecisionValidator decisionValidator, final AccessControlService accessControlService, final EntityManager entityManager) {
+		final InvestigationRepository investigationRepository, final ErrandProcessRepository processRepository, final DecisionValidator decisionValidator,
+		final AccessControlService accessControlService, final EventService eventService, final EntityManager entityManager) {
 		this.decisionRepository = decisionRepository;
 		this.artefactAttachmentService = artefactAttachmentService;
 		this.artefactJsonParameterService = artefactJsonParameterService;
 		this.investigationRepository = investigationRepository;
+		this.processRepository = processRepository;
 		this.decisionValidator = decisionValidator;
 		this.accessControlService = accessControlService;
+		this.eventService = eventService;
 		this.entityManager = entityManager;
 	}
 
 	@Transactional
 	public String createErrandDecision(final String namespace, final String municipalityId, final String errandId, final Decision decision) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
+		final var method = ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).orElse(null);
 
+		decisionValidator.validateChangeable(errandId, null);
 		decisionValidator.validateCardinality(namespace, municipalityId, errandId);
-		decisionValidator.validateMethod(ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).orElse(null));
+		decisionValidator.validateMethod(namespace, municipalityId, method);
 		decisionValidator.validateOutcome(namespace, municipalityId, decision.getOutcome());
 
 		final var investigationEntity = resolveInvestigation(namespace, municipalityId, errandId, decision.getInvestigationId());
 		final var entity = toDecisionEntity(decision, errandEntity, investigationEntity, namespace, municipalityId)
-			.withCreatedBy(getCallerIdentity());
+			.withCreatedBy(getCallerIdentity())
+			.withErrandProcessId(errandProcessIdOf(errandId, method, null));
 
-		return decisionRepository.save(entity).getId();
+		entityManager.lock(errandEntity, OPTIMISTIC_FORCE_INCREMENT);
+		final var id = decisionRepository.saveAndFlush(entity).getId();
+
+		final var concludes = COMPLETED == entity.getStatus();
+		recordChange(errandEntity, concludes ? EVENT_LOG_CONCLUDE_DECISION : EVENT_LOG_CREATE_DECISION, concludes);
+		return id;
 	}
 
 	@Transactional(readOnly = true)
@@ -106,33 +136,51 @@ public class ErrandDecisionService {
 		return toDecisions(decisionRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(namespace, municipalityId, errandId));
 	}
 
+	/**
+	 * A lock is answered before a stale version, since a decision that can no longer be changed will not become
+	 * changeable by being read again.
+	 */
 	@Transactional
 	public Decision updateErrandDecision(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String ifMatch, final Decision decision) {
-		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
+		decisionValidator.validateChangeable(errandId, entity);
 		logMissingIfMatch(ifMatch, "PATCH", namespace, municipalityId, errandId, decisionId);
 		validateIfMatch(ifMatch, entity.getVersion());
 
-		decisionValidator.validateMethod(ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).orElse(entity.getMethod()));
+		final var method = ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).orElse(entity.getMethod());
+		decisionValidator.validateMethod(namespace, municipalityId, method);
 		decisionValidator.validateOutcome(namespace, municipalityId, decision.getOutcome());
 
+		final var wasCompleted = COMPLETED == entity.getStatus();
 		updateDecisionEntity(entity, decision).setModifiedBy(getCallerIdentity());
 		ofNullable(decision.getInvestigationId())
 			.ifPresent(id -> entity.setInvestigationEntity(resolveInvestigation(namespace, municipalityId, errandId, id)));
+		entity.setErrandProcessId(errandProcessIdOf(errandId, method, entity.getErrandProcessId()));
 
-		return toDecision(decisionRepository.saveAndFlush(entity));
+		entityManager.lock(errandEntity, OPTIMISTIC_FORCE_INCREMENT);
+		final var result = toDecision(decisionRepository.saveAndFlush(entity));
+
+		final var concludes = !wasCompleted && COMPLETED == entity.getStatus();
+		recordChange(errandEntity, concludes ? EVENT_LOG_CONCLUDE_DECISION : EVENT_LOG_UPDATE_DECISION, concludes);
+		return result;
 	}
 
 	@Transactional
 	public void deleteErrandDecision(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String ifMatch) {
-		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
+		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
+		decisionValidator.validateChangeable(errandId, entity);
 		logMissingIfMatch(ifMatch, "DELETE", namespace, municipalityId, errandId, decisionId);
 		validateIfMatch(ifMatch, entity.getVersion());
 
+		entityManager.lock(errandEntity, OPTIMISTIC_FORCE_INCREMENT);
 		decisionRepository.delete(entity);
+		decisionRepository.flush();
+
+		recordChange(errandEntity, EVENT_LOG_DELETE_DECISION, false);
 	}
 
 	@Transactional
@@ -140,6 +188,7 @@ public class ErrandDecisionService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 
 		final var decisionEntity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
+		decisionValidator.validateChangeable(errandId, decisionEntity);
 		final var entity = toDecisionTermEntity(term, decisionEntity);
 		if (decisionEntity.getTerms() == null) {
 			decisionEntity.setTerms(new ArrayList<>());
@@ -168,6 +217,7 @@ public class ErrandDecisionService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 
 		final var decisionEntity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
+		decisionValidator.validateChangeable(errandId, decisionEntity);
 		final var entity = findTermOrElseThrow(decisionEntity, termId);
 		updateDecisionTermEntity(entity, term);
 
@@ -181,6 +231,7 @@ public class ErrandDecisionService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 
 		final var decisionEntity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
+		decisionValidator.validateChangeable(errandId, decisionEntity);
 		decisionEntity.getTerms().remove(findTermOrElseThrow(decisionEntity, termId));
 
 		markChanged(decisionEntity);
@@ -191,6 +242,7 @@ public class ErrandDecisionService {
 	public String createDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final MultipartFile file) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
+		decisionValidator.validateChangeable(errandId, entity);
 
 		final var attachmentId = artefactAttachmentService.uploadAndLink(namespace, municipalityId, errandId, file, attachments(entity));
 		decisionRepository.saveAndFlush(entity);
@@ -201,6 +253,7 @@ public class ErrandDecisionService {
 	public ErrandAttachment linkDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String attachmentId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
+		decisionValidator.validateChangeable(errandId, entity);
 
 		final var result = artefactAttachmentService.link(namespace, municipalityId, errandId, attachmentId, attachments(entity));
 		decisionRepository.saveAndFlush(entity);
@@ -211,6 +264,7 @@ public class ErrandDecisionService {
 	public void unlinkDecisionAttachment(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String attachmentId) {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
+		decisionValidator.validateChangeable(errandId, entity);
 
 		artefactAttachmentService.unlink(attachmentId, attachments(entity));
 		decisionRepository.saveAndFlush(entity);
@@ -243,6 +297,33 @@ public class ErrandDecisionService {
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
 
 		artefactJsonParameterService.delete(jsonParameters(entity), key, ifMatch);
+	}
+
+	/**
+	 * Writes the event of a change to the decision, which is how the process of the errand learns of it.
+	 * <p>
+	 * Caught and logged like every other errand event. A publication that fails has already marked the transaction for
+	 * rollback, so the decision is not left saved while the process is never told.
+	 */
+	private void recordChange(final ErrandEntity errandEntity, final String message, final boolean concludesDecision) {
+		try {
+			eventService.createDecisionEvent(message, errandEntity, concludesDecision);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log decision event for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
+		}
+	}
+
+	/**
+	 * The process row a decision is made by. An automatic decision is made by the live process of the errand, and keeps
+	 * the row it names when the errand has none live. A manual decision is made by no process.
+	 */
+	private String errandProcessIdOf(final String errandId, final DecisionMethod method, final String current) {
+		if (AUTOMATIC != method) {
+			return null;
+		}
+		return processRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId)
+			.map(ErrandProcessEntity::getId)
+			.orElse(current);
 	}
 
 	private List<AttachmentEntity> attachments(final DecisionEntity entity) {

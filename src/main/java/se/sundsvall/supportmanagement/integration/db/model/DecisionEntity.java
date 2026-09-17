@@ -101,10 +101,11 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	private InvestigationEntity investigationEntity;
 
 	/**
-	 * The process row that made the decision. Nullable for manual decisions, and without a JPA relation.
+	 * The process row that made the decision. Null for manual decisions, and without a JPA relation or foreign key: a
+	 * process row only goes together with its errand.
 	 * <p>
-	 * Nothing writes it yet. It is the column the process integration sets when an automatic decision comes back from a
-	 * process, and it is here so that the table does not need to change then.
+	 * Set by the decision service, never taken from a request: the live process row of the errand when the decision is
+	 * automatic.
 	 */
 	@Column(name = "errand_process_id", length = 36)
 	private String errandProcessId;

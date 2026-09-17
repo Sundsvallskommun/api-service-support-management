@@ -71,6 +71,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOu
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ATTACHMENT;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
@@ -171,7 +172,7 @@ class ProcessEventPublisherTest {
 	void aNamespaceWithoutAProcessConsumerWritesNothing() {
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, processKeySelectorMock, applicationEventPublisherMock);
 	}
@@ -183,7 +184,7 @@ class ProcessEventPublisherTest {
 		asMachine();
 		setTriggerProcess("false");
 
-		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock);
 	}
@@ -201,7 +202,7 @@ class ProcessEventPublisherTest {
 			givenLabels(APPLICATION, AUTOMATIC);
 		}
 
-		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, expectedToPublish ? times(1) : never()).save(any());
 	}
@@ -215,7 +216,7 @@ class ProcessEventPublisherTest {
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTED_BY));
 		setTriggerProcess("false");
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(any());
 	}
@@ -227,7 +228,7 @@ class ProcessEventPublisherTest {
 		givenTriggers(MESSAGE);
 		givenLabels(APPLICATION, AUTOMATIC);
 
-		publisher.publish(errand(), UPDATE, MESSAGE, null, null, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, null, null, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getExecutedBy()).isNull();
@@ -238,7 +239,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
 
-		publisher.publish(errand(), UPDATE, ATTACHMENT, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, ATTACHMENT, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 		verifyNoInteractions(processRepositoryMock, activityRepositoryMock, processKeySelectorMock);
@@ -250,7 +251,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenDeliveredCount(THRESHOLD + 1L);
 
-		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(ERRAND_ID, OffsetDateTime.now(clock).minus(WINDOW));
 		verify(outboxRepositoryMock, never()).save(any());
@@ -262,7 +263,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenDeliveredCount(THRESHOLD);
 
-		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 	}
@@ -275,7 +276,7 @@ class ProcessEventPublisherTest {
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenDeliveredCount(THRESHOLD - 1L);
 
-		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(any());
 	}
@@ -286,7 +287,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenDeliveredCount(THRESHOLD + 1L);
 
-		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(activityRepositoryMock).save(activityCaptor.capture());
 		assertThat(activityCaptor.getValue()).satisfies(entry -> {
@@ -305,9 +306,84 @@ class ProcessEventPublisherTest {
 		givenDeliveredCount(THRESHOLD + 1L);
 		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(eq(ERRAND_ID), eq("EVENT_RATE_EXCEEDED"), any())).thenReturn(true);
 
-		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(activityRepositoryMock, never()).save(any());
+	}
+
+	/**
+	 * A decision concluded by a handler is the event a waiting process needs, and a brake tripped by other traffic on the
+	 * errand would otherwise leave the process waiting for ever.
+	 */
+	@Test
+	@DisplayName("Verification that a decision concluded by a handler is published past a tripped brake, which is then neither asked nor reported")
+	void aConcludedDecisionPassesTheBrake() {
+		givenNamespaceRunsProcess();
+		givenTriggers(DECISION);
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTED_BY));
+		givenLabels(APPLICATION, AUTOMATIC);
+		lenient().when(outboxRepositoryMock.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(eq(ERRAND_ID), any())).thenReturn(THRESHOLD + 1L);
+
+		publisher.publish(errand(), UPDATE, DECISION, EXECUTED_BY, REQUEST_GROUP_ID, null, true);
+
+		verify(outboxRepositoryMock).save(outboxCaptor.capture());
+		assertThat(outboxCaptor.getValue().getEventType()).isEqualTo("UPDATE");
+		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo("DECISION");
+		verify(outboxRepositoryMock, never()).countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(any(), any());
+		verifyNoInteractions(activityRepositoryMock);
+	}
+
+	/**
+	 * Every decision a process creates concluded is a new one, so a process that forgot to ask not to be woken would
+	 * create decision after decision if its conclusions passed the brake.
+	 */
+	@Test
+	@DisplayName("Verification that a decision concluded by the process itself is held back by a tripped brake")
+	void aDecisionConcludedByTheProcessIsHeldBackByTheBrake() {
+		givenNamespaceRunsProcess();
+		givenDeliveredCount(THRESHOLD);
+		asMachine();
+
+		publisher.publish(errand(), UPDATE, DECISION, PROCESS_SERVICE, REQUEST_GROUP_ID, null, true);
+
+		verify(outboxRepositoryMock, never()).save(any());
+		verify(activityRepositoryMock).save(activityCaptor.capture());
+		assertThat(activityCaptor.getValue().getActivityType()).isEqualTo(LOOP_GUARD_ACTIVITY_TYPE);
+	}
+
+	@Test
+	@DisplayName("Verification that an ordinary change to a decision is held back by a tripped brake like any other event")
+	void anOrdinaryDecisionChangeIsHeldBackByTheBrake() {
+		givenNamespaceRunsProcess();
+		givenDeliveredCount(THRESHOLD);
+
+		publisher.publish(errand(), UPDATE, DECISION, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+
+		verify(outboxRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a process concluding its own decision is not woken by it, since passing the brake is all a concluded decision is given")
+	void aConcludedDecisionStillObeysTheOptOut() {
+		givenNamespaceRunsProcess();
+		asMachine();
+		setTriggerProcess("false");
+
+		publisher.publish(errand(), UPDATE, DECISION, PROCESS_SERVICE, REQUEST_GROUP_ID, null, true);
+
+		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a concluded decision is not published by a namespace that does not trigger on decisions")
+	void aConcludedDecisionStillNeedsItsTrigger() {
+		givenNamespaceRunsProcess();
+		givenTriggers(ERRAND);
+
+		publisher.publish(errand(), UPDATE, DECISION, EXECUTED_BY, REQUEST_GROUP_ID, null, true);
+
+		verify(outboxRepositoryMock, never()).save(any());
+		verifyNoInteractions(processRepositoryMock, processKeySelectorMock);
 	}
 
 	@Test
@@ -318,7 +394,7 @@ class ProcessEventPublisherTest {
 		givenNoInstances();
 		givenAmbiguousLabels();
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 		verify(activityRepositoryMock).save(activityCaptor.capture());
@@ -339,7 +415,7 @@ class ProcessEventPublisherTest {
 		final var oversized = "a".repeat(PROCESS_KEY_LENGTH + 1);
 		when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(oversized, AUTOMATIC, List.of(oversized)));
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 		verify(activityRepositoryMock).save(activityCaptor.capture());
@@ -360,7 +436,7 @@ class ProcessEventPublisherTest {
 		final var exact = "a".repeat(PROCESS_KEY_LENGTH);
 		when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(exact, AUTOMATIC, List.of(exact)));
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(exact);
@@ -374,7 +450,7 @@ class ProcessEventPublisherTest {
 		givenNoInstances();
 		when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(null, null, List.of("b".repeat(40_000), "c".repeat(40_000))));
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(activityRepositoryMock).save(activityCaptor.capture());
 		assertThat(activityCaptor.getValue().getMessage())
@@ -390,7 +466,7 @@ class ProcessEventPublisherTest {
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 
-		publisher.publish(errand(), UPDATE, MESSAGE, "x".repeat(EXECUTED_BY_LENGTH + 100), REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, "x".repeat(EXECUTED_BY_LENGTH + 100), REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getExecutedBy()).hasSize(EXECUTED_BY_LENGTH);
@@ -408,7 +484,7 @@ class ProcessEventPublisherTest {
 			.thenReturn(true);
 
 		for (var i = 0; i < 10; i++) {
-			publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+			publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 		}
 
 		verify(activityRepositoryMock, times(1)).save(any());
@@ -422,7 +498,7 @@ class ProcessEventPublisherTest {
 		givenLabels(SUPERVISION, AUTOMATIC);
 		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(instance(APPLICATION, WAITING)));
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(APPLICATION);
@@ -434,7 +510,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenNoInstances();
 
-		publisher.publish(errand(), DELETE, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), DELETE, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isNull();
@@ -447,7 +523,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenNoInstances();
 
-		publisher.publish(errand(), DELETE, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), DELETE, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verifyNoInteractions(processKeySelectorMock);
 	}
@@ -460,7 +536,7 @@ class ProcessEventPublisherTest {
 		asMachine();
 		setTriggerProcess("false");
 
-		publisher.publish(errand(), DELETE, ERRAND, PROCESS_SERVICE, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), DELETE, ERRAND, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(any());
 		verify(outboxRepositoryMock, never()).countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(any(), any());
@@ -483,7 +559,7 @@ class ProcessEventPublisherTest {
 		asMachine();
 		setTriggerProcess("false");
 
-		publisher.publish(errand(), UPDATE, subType, PROCESS_SERVICE, REQUEST_GROUP_ID, command);
+		publisher.publish(errand(), UPDATE, subType, PROCESS_SERVICE, REQUEST_GROUP_ID, command, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo(subType.getValue());
@@ -498,7 +574,7 @@ class ProcessEventPublisherTest {
 		givenNoInstances();
 		when(processKeySelectorMock.select(any())).thenReturn(ProcessKeySelection.NONE);
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 		verify(activityRepositoryMock, never()).save(any());
@@ -512,7 +588,7 @@ class ProcessEventPublisherTest {
 		lenient().when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(APPLICATION, AUTOMATIC, List.of(APPLICATION)));
 		lenient().when(outboxRepositoryMock.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(eq(ERRAND_ID), any())).thenReturn(THRESHOLD + 1L);
 
-		publisher.publish(errand(), CREATE, PROCESS, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(APPLICATION, null));
+		publisher.publish(errand(), CREATE, PROCESS, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(APPLICATION, null), false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(APPLICATION);
@@ -528,7 +604,7 @@ class ProcessEventPublisherTest {
 		givenLabels(APPLICATION, AUTOMATIC);
 		lenient().when(namespaceConfigServiceMock.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of());
 
-		publisher.publish(errand(), UPDATE, SIGNAL, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(null, SIGNAL_NAME));
+		publisher.publish(errand(), UPDATE, SIGNAL, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(null, SIGNAL_NAME), false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getSignalName()).isEqualTo(SIGNAL_NAME);
@@ -542,7 +618,7 @@ class ProcessEventPublisherTest {
 		givenNoInstances();
 		givenAmbiguousLabels();
 
-		publisher.publish(errand(), CREATE, PROCESS, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(SUPERVISION, null));
+		publisher.publish(errand(), CREATE, PROCESS, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(SUPERVISION, null), false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(SUPERVISION);
@@ -556,7 +632,7 @@ class ProcessEventPublisherTest {
 		givenNoInstances();
 		givenLabels(APPLICATION, AUTOMATIC);
 
-		publisher.publish(errand(), UPDATE, SIGNAL, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(null, SIGNAL_NAME));
+		publisher.publish(errand(), UPDATE, SIGNAL, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(null, SIGNAL_NAME), false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().isStartAllowed()).isFalse();
@@ -603,7 +679,7 @@ class ProcessEventPublisherTest {
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue()).satisfies(row -> {
@@ -627,7 +703,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
 
-		publisher.publish(errand(), UPDATE, ATTACHMENT, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, ATTACHMENT, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verifyNoInteractions(applicationEventPublisherMock);
 	}
@@ -645,7 +721,7 @@ class ProcessEventPublisherTest {
 
 		final var status = mock(TransactionStatus.class);
 
-		inTransaction(status, () -> assertThatThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null)).isSameAs(failure));
+		inTransaction(status, () -> assertThatThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false)).isSameAs(failure));
 
 		verify(status).setRollbackOnly();
 		verifyNoInteractions(applicationEventPublisherMock);
@@ -660,7 +736,7 @@ class ProcessEventPublisherTest {
 		givenNoInstances();
 		when(outboxRepositoryMock.save(any())).thenThrow(new IllegalStateException("the row could not be written"));
 
-		assertThatNoException().isThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null));
+		assertThatNoException().isThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false));
 	}
 
 	@ParameterizedTest
@@ -674,7 +750,7 @@ class ProcessEventPublisherTest {
 		lenient().when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(APPLICATION, AUTOMATIC, List.of(APPLICATION)));
 		givenNoInstances();
 
-		publisher.publish(errand(), eventType, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), eventType, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getEventType()).isEqualTo(eventType.getValue());
@@ -690,7 +766,7 @@ class ProcessEventPublisherTest {
 		final var status = mock(TransactionStatus.class);
 
 		inTransaction(status, () -> assertThatIllegalArgumentException()
-			.isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null))
+			.isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false))
 			.withMessageContaining(eventType.getValue()));
 
 		verify(status).setRollbackOnly();
@@ -705,7 +781,7 @@ class ProcessEventPublisherTest {
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 		final var status = mock(TransactionStatus.class);
 
-		inTransaction(status, () -> assertThatNoException().isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null)));
+		inTransaction(status, () -> assertThatNoException().isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false)));
 
 		verifyNoInteractions(status, outboxRepositoryMock);
 	}
@@ -716,7 +792,7 @@ class ProcessEventPublisherTest {
 		givenLabels(labelKey, startMode);
 		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(instances);
 
-		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null);
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		return outboxCaptor.getValue().isStartAllowed();

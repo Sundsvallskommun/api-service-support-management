@@ -3,10 +3,13 @@ package se.sundsvall.supportmanagement.service.config;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -30,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -462,6 +466,94 @@ class NamespaceConfigServiceTest {
 		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(exception.getMessage()).isEqualTo("Bad Request: 'ERRAND' occurs more than once among the process triggers");
 		verify(configRepositoryMock, never()).save(any());
+	}
+
+	private static Stream<Arguments> incompleteProcessTriggers() {
+		return Stream.of(
+			arguments(List.of(), "ERRAND and DECISION"),
+			arguments(List.of(EventSubType.MESSAGE), "ERRAND and DECISION"),
+			arguments(List.of(EventSubType.ERRAND, EventSubType.ATTACHMENT), "DECISION"),
+			arguments(List.of(EventSubType.DECISION), "ERRAND"));
+	}
+
+	/**
+	 * A namespace running a process that is never told of a new process label, or of a decision being made, leaves its
+	 * errands standing still without any error anywhere - so the configuration is refused instead.
+	 */
+	@ParameterizedTest
+	@MethodSource("incompleteProcessTriggers")
+	void createWithProcessConsumerMissingARequiredTrigger(final List<EventSubType> triggers, final String missing) {
+		final var request = NamespaceConfig.create()
+			.withProcessConsumer("pw-alkt")
+			.withProcessTriggers(triggers);
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo(("Bad Request: A namespace with the process consumer 'pw-alkt' must list %s among its process triggers. Without ERRAND an errand given its "
+			+ "process label after it was created never starts its process, and without DECISION a process waiting for a decision is never told that it has been made").formatted(missing));
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void createWithProcessConsumerWithoutAnyTriggers() {
+		final var request = NamespaceConfig.create().withProcessConsumer("pw-alkt");
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).contains("ERRAND and DECISION");
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void replaceWithProcessConsumerMissingDecision() {
+		final var request = NamespaceConfig.create()
+			.withProcessConsumer("pw-alkt")
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.replace(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).contains("must list DECISION");
+		verify(configRepositoryMock, never()).findByNamespaceAndMunicipalityId(any(), any());
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	/**
+	 * A command always reaches the process, so listing one would suggest the list had a say over it. That holds whether
+	 * the namespace runs a process or not.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"PROCESS", "SIGNAL"
+	})
+	void createWithACommandAmongTheProcessTriggers(final EventSubType command) {
+		final var request = NamespaceConfig.create()
+			.withProcessTriggers(List.of(EventSubType.ERRAND, command));
+
+		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
+
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getMessage()).isEqualTo(("Bad Request: '%s' is a command to the process rather than a change to the errand. Commands always reach the process and are never "
+			+ "filtered by the process triggers, so it may not be listed among them").formatted(command));
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	/**
+	 * Triggers without a consumer have nobody to wake, but they are harmless and are kept for when a consumer is added.
+	 */
+	@Test
+	void createWithProcessTriggersButNoProcessConsumer() {
+		final var request = NamespaceConfig.create()
+			.withProcessTriggers(List.of(EventSubType.MESSAGE));
+		final var entity = NamespaceConfigEntity.create();
+
+		when(mapperMock.toEntity(any(), any(), any())).thenReturn(entity);
+
+		configService.create(request, "namespace", "municipalityId");
+
+		verify(configRepositoryMock).save(same(entity));
 	}
 
 	@Test

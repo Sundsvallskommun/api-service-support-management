@@ -61,6 +61,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
@@ -131,6 +132,9 @@ class ErrandAttachmentServiceTest {
 
 	@Mock
 	private AttachmentPurposeRepository attachmentPurposeRepositoryMock;
+
+	@Mock
+	private DecisionValidator decisionValidatorMock;
 
 	@InjectMocks
 	private ErrandAttachmentService service;
@@ -257,6 +261,32 @@ class ErrandAttachmentServiceTest {
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_REMOVE_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
+		verify(decisionValidatorMock).validateAttachmentRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID);
+	}
+
+	/**
+	 * An attachment a decision that can no longer be changed rests on stays on the errand, and so does its link.
+	 */
+	@Test
+	void deleteErrandAttachmentOfADecisionThatCanNoLongerBeChanged() {
+
+		// Mock
+		final var attachments = new ArrayList<>(List.of(attachmentMock));
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandMock);
+		when(errandMock.getAttachments()).thenReturn(attachments);
+		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
+		doThrow(Problem.valueOf(CONFLICT, "decision locked")).when(decisionValidatorMock).validateAttachmentRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID);
+
+		// Act/assert
+		assertThatException()
+			.isThrownBy(() -> service.deleteErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(thrownProblem -> assertThat(thrownProblem.getStatus()).isEqualTo(CONFLICT));
+
+		// Verifications
+		assertThat(attachments).containsExactly(attachmentMock);
+		verify(errandsRepositoryMock, never()).save(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
 	@Test

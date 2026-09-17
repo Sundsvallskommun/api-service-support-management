@@ -29,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
@@ -100,6 +101,7 @@ class ErrandProcessPersistenceTest {
 			.withAccessControl(false)
 			.withNotifyReporter(false)
 			.withProcessConsumer(PROCESS_SERVICE)
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.DECISION))
 			.withNotificationTTLInDays(30), NAMESPACE, MUNICIPALITY_ID);
 
 		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue(PROCESS_SERVICE));

@@ -585,10 +585,16 @@ Two namespace config values decide it:
 |       Field       |     Config key     |                                                                          Meaning                                                                           |
 |-------------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `processConsumer` | `PROCESS_CONSUMER` | The process engine running the namespace's processes, and the address its events go to. The only one known is `pw-alkt`. Leaving it out means no processes |
-| `processTriggers` | `PROCESS_TRIGGER`  | The errand event sub types worth waking the process for. A namespace running processes needs at least `ERRAND` for them to start                           |
+| `processTriggers` | `PROCESS_TRIGGER`  | The errand event sub types worth waking the process for                                                                                                    |
 
 A process consumer **cannot be combined with access control**. The access mapper only grants access to AD accounts, so
 every read and write the process makes would be denied. A namespace config with both is refused with `400`.
+
+A namespace with a process consumer **must list `ERRAND` and `DECISION` among its triggers**, or the config is refused
+with `400`. Without `ERRAND` an errand given its process label after it was created never starts its process, and
+without `DECISION` a process waiting for its decision is never told that it has been made. The commands `PROCESS` and
+`SIGNAL` may never be listed: they always reach the process, and listing them would suggest otherwise. A config stored
+before these rules is not checked until it is written again.
 
 ### Which process an errand belongs to
 
@@ -650,6 +656,9 @@ is always allowed, as it resolves the errand to a single key.
   `ERROR` entry is written. Only delivered events are counted, so a delivery outage never trips it.
 - A deletion passes the trigger filter, the header and the brake alike: it cannot loop, and holding it back would leave
   the process running for an errand that no longer exists.
+- A decision concluded by an AD account passes the brake, and nothing else. It is the event a waiting process needs,
+  and a person is no loop. A decision the process concludes itself is held to the brake like any other write of the
+  process.
 - A scheduled action that changes the errand, such as `ADD_LABEL`, is recorded as a revision and an errand event
   without a notification, and reaches the process like any other change.
 
@@ -665,6 +674,29 @@ All under `/{municipalityId}/{namespace}/errands/{errandId}`:
 | `GET`  | `/process-activities`            | The activity log of the errand, optionally narrowed to one instance |
 
 The errand itself carries the latest process in `errand.process`.
+
+### The decision
+
+The decision is the ordinary `/decisions` resource of the errand, the same for errands with and without a process. What
+a process adds:
+
+- **Creating, changing and deleting a decision** is logged as an errand event with the sub type `DECISION` and moves
+  the version of the errand, so that a work step holding an older `ETag` gets `412`. Its terms, attachment links and
+  JSON parameters do neither.
+- **Who may claim which method:** `MANUAL` is written by an AD account, `AUTOMATIC` only by the process consumer of the
+  namespace, recognised by the value of `X-Sent-By`. Anything else is `403`. The process row that made an automatic
+  decision is set by SupportManagement in `errandProcessId`, and is never taken from the request.
+- **When a decision is locked**, and only on an errand that has a process:
+  - once the process has run to its end (`COMPLETED`), no decision of the errand can be created, changed or deleted;
+  - once a decision is `COMPLETED`, it can no longer be changed or deleted, nor can its terms or attachment links;
+  - an attachment of the errand linked to a locked decision cannot be deleted, nor can an investigation a locked
+    decision rests on.
+
+  Every one of these is answered with `409`. The JSON parameters of a decision are never locked, since legal force and
+  service of the decision are known only after it is made. An errand without a process is never locked. A decision
+  that has to be corrected once it is locked is corrected in a new errand, referred from the first.
+
+- **The justification** nearly always holds personal data, and is masked in the payload log (`logbook.body-filters`).
 
 ## Contributing
 

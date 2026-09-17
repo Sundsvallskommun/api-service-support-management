@@ -8372,7 +8372,8 @@ paths:
                 type: string
         "403":
           description: "Forbidden - the method does not match who writes the decision:\
-            \ MANUAL requires an AD account, AUTOMATIC a consumer"
+            \ MANUAL requires an AD account, AUTOMATIC the process consumer of the\
+            \ namespace"
           content:
             application/problem+json:
               schema:
@@ -8384,8 +8385,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict - the namespace allows a single decision per errand,\
-            \ and the errand already has one"
+          description: "Conflict - the namespace allows a single decision per errand\
+            \ and the errand already has one, or the process of the errand has run\
+            \ to its end"
           content:
             application/problem+json:
               schema:
@@ -8564,6 +8566,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict - the decision can no longer be changed, as the process\
+            \ of the errand has run to its end or the decision is completed on an\
+            \ errand with a process"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -8657,6 +8667,14 @@ paths:
                 type: string
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict - the decision can no longer be changed, as the process\
+            \ of the errand has run to its end or the decision is completed on an\
+            \ errand with a process"
           content:
             application/problem+json:
               schema:
@@ -8757,7 +8775,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: Conflict - the attachment is already linked
+          description: "Conflict - the attachment is already linked, or the decision\
+            \ can no longer be changed"
           content:
             application/problem+json:
               schema:
@@ -8844,6 +8863,14 @@ paths:
           description: Successful operation
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict - the decision can no longer be changed, as the process\
+            \ of the errand has run to its end or the decision is completed on an\
+            \ errand with a process"
           content:
             application/problem+json:
               schema:
@@ -14437,6 +14464,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict - a decision that can no longer be changed rests on
+            the investigation
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "412":
           description: Precondition Failed - If-Match version mismatch
           content:
@@ -15004,6 +15038,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict - the decision can no longer be changed, as the process\
+            \ of the errand has run to its end or the decision is completed on an\
+            \ errand with a process"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "412":
           description: Precondition Failed - If-Match version mismatch
           content:
@@ -15107,13 +15149,22 @@ paths:
                 $ref: "#/components/schemas/Decision"
         "403":
           description: "Forbidden - the method does not match who writes the decision:\
-            \ MANUAL requires an AD account, AUTOMATIC a consumer"
+            \ MANUAL requires an AD account, AUTOMATIC the process consumer of the\
+            \ namespace"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict - the decision can no longer be changed, as the process\
+            \ of the errand has run to its end or the decision is completed on an\
+            \ errand with a process"
           content:
             application/problem+json:
               schema:
@@ -15299,6 +15350,14 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict - the decision can no longer be changed, as the process\
+            \ of the errand has run to its end or the decision is completed on an\
+            \ errand with a process"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -15390,6 +15449,14 @@ paths:
                 $ref: "#/components/schemas/DecisionTerm"
         "404":
           description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict - the decision can no longer be changed, as the process\
+            \ of the errand has run to its end or the decision is completed on an\
+            \ errand with a process"
           content:
             application/problem+json:
               schema:
@@ -15728,6 +15795,13 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict - the attachment belongs to a decision that can no
+            longer be changed
           content:
             application/problem+json:
               schema:
@@ -18930,9 +19004,11 @@ components:
         processTriggers:
           type: array
           description: "The errand changes worth telling the process about. An event\
-            \ whose sub type is not listed here is not published, so a namespace running\
-            \ processes needs at least ERRAND for them to start. Commands sent to\
-            \ the process are not errand changes and are never filtered by this list"
+            \ whose sub type is not listed here is not published, so a namespace with\
+            \ a process consumer must list ERRAND, for its processes to start, and\
+            \ DECISION, for a process waiting for its decision to learn that it has\
+            \ been made. Commands sent to the process (PROCESS, SIGNAL) are not errand\
+            \ changes, are never filtered by this list and may not be listed"
           items:
             type: string
             enum:

@@ -34,7 +34,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOu
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.service.ErrandProcessService.hasCompletedProcess;
 import static se.sundsvall.supportmanagement.service.ProcessErrorLog.CONFIG_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTriggerProcess;
@@ -55,6 +55,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  * 2. X-Trigger-Process: false, from a non ad identity?   yes  -&gt; return                 (loop guard, layer 1)
  *                    commands (PROCESS, SIGNAL) and deletions skip steps 2, 3 and 4
  * 3. delivered events for the errand in the window?      over -&gt; error entry, return    (layer 3)
+ *                    a decision concluded by an ad account skips this step
  * 4. event sub type among the process triggers?          no   -&gt; return                 (layer 2)
  * 5. process key: the command's own first, then the instance's, and the labels last
  *                    none          -&gt; a deletion is published anyway, everything else returns
@@ -71,6 +72,12 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  * The three layers are there for machine traffic about an errand, and two kinds of event pass them all. A command is
  * a person pressing a button rather than something that happened to the errand. A deletion cannot loop, since the
  * errand is gone, and holding it back would leave the process instance running for an errand that no longer exists.
+ * <p>
+ * A decision concluded by a handler passes the emergency brake and nothing else. It is the one event a process waiting
+ * for its decision needs, and a brake tripped by unrelated traffic would otherwise leave the errand waiting for ever. A
+ * person pressing a button is no loop, and a decision is concluded once, since it is locked afterwards. A decision the
+ * process concludes itself is held to the brake like any other write of the process. The process triggers still have
+ * their say.
  * <p>
  * A publication that fails may not be swallowed. Every call site of {@code createErrandEvent} catches Exception and
  * logs a warning, so a publication that merely threw would leave the errand change saved while the process was never
@@ -135,23 +142,27 @@ public class ProcessEventPublisher {
 	/**
 	 * Writes what the process is to be told about an errand event, if anything.
 	 *
-	 * @param errand         the errand the event is about.
-	 * @param eventType      the type of the event.
-	 * @param eventSubType   what happened, which is what the process triggers of the namespace are held against.
-	 * @param executedBy     the identity behind the write, whatever it calls itself.
-	 * @param requestGroupId the group the write belongs to, so that a double delivery can be traced afterwards.
-	 * @param command        the command the event carries, or null for an ordinary errand event.
+	 * @param errand            the errand the event is about.
+	 * @param eventType         the type of the event.
+	 * @param eventSubType      what happened, which is what the process triggers of the namespace are held against.
+	 * @param executedBy        the identity behind the write, whatever it calls itself.
+	 * @param requestGroupId    the group the write belongs to, so that a double delivery can be traced afterwards.
+	 * @param command           the command the event carries, or null for an ordinary errand event.
+	 * @param concludesDecision whether the event is a decision of the errand being concluded, which passes the emergency
+	 *                          brake when a handler concludes it.
 	 */
 	@Transactional(propagation = SUPPORTS)
-	public void publish(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final String executedBy, final String requestGroupId, final ProcessCommand command) {
+	public void publish(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final String executedBy, final String requestGroupId, final ProcessCommand command,
+		final boolean concludesDecision) {
 		try {
-			write(errand, eventType, eventSubType, executedBy, requestGroupId, command);
+			write(errand, eventType, eventSubType, executedBy, requestGroupId, command, concludesDecision);
 		} catch (final Exception e) {
 			failPublication(errand, e);
 		}
 	}
 
-	private void write(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final String executedBy, final String requestGroupId, final ProcessCommand command) {
+	private void write(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final String executedBy, final String requestGroupId, final ProcessCommand command,
+		final boolean concludesDecision) {
 		final var namespace = errand.getNamespace();
 		final var municipalityId = errand.getMunicipalityId();
 		final var processService = namespaceConfigService.getProcessConsumer(namespace, municipalityId).orElse(null);
@@ -168,7 +179,7 @@ public class ProcessEventPublisher {
 			return;
 		}
 
-		if (guarded && isRateExceeded(errand)) {
+		if (guarded && !concludedByPerson(concludesDecision) && isRateExceeded(errand)) {
 			return;
 		}
 
@@ -248,6 +259,17 @@ public class ProcessEventPublisher {
 	}
 
 	/**
+	 * Whether the event is a decision concluded by an ad account, the one kind that passes the emergency brake.
+	 * <p>
+	 * A person cannot loop. A process can, since every decision it creates concluded is a new one: were its own
+	 * conclusions let past the brake, a process that forgot to ask not to be woken would create decision after decision
+	 * with nothing to stop it. And a process concluding a decision has no need to be told of it.
+	 */
+	private static boolean concludedByPerson(final boolean concludesDecision) {
+		return concludesDecision && nonNull(getAdUser());
+	}
+
+	/**
 	 * Layer 3 of the loop guard: how fast are events reaching the process of this errand?
 	 * <p>
 	 * Only delivered rows are counted. Counting the ones still waiting would let a delivery outage trip the brake by
@@ -321,7 +343,7 @@ public class ProcessEventPublisher {
 		return AUTOMATIC == selection.startMode()
 			&& selection.processKey().equals(processKey)
 			&& instances.stream().noneMatch(instance -> nonNull(instance.getActiveMarker()))
-			&& instances.stream().noneMatch(instance -> COMPLETED == instance.getProcessStatus());
+			&& !hasCompletedProcess(instances);
 	}
 
 	/**

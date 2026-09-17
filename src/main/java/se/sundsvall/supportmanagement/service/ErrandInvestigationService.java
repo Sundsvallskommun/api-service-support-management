@@ -48,7 +48,8 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
  * and are cascaded by it - they have no life outside the investigation they belong to.
  * <p>
  * The recommendation proposes a decision, so it is held to the decision outcomes of the namespace through
- * {@link DecisionValidator}.
+ * {@link DecisionValidator}. The same validator keeps an investigation that a locked decision rests on from being
+ * removed.
  */
 @Service
 public class ErrandInvestigationService {
@@ -119,6 +120,7 @@ public class ErrandInvestigationService {
 		accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.INVESTIGATION, RW);
 
 		final var entity = findInvestigationOrElseThrow(namespace, municipalityId, errandId, investigationId);
+		decisionValidator.validateInvestigationRemovable(namespace, municipalityId, errandId, entity.getId());
 		logMissingIfMatch(ifMatch, "DELETE", namespace, municipalityId, errandId, investigationId);
 		validateIfMatch(ifMatch, entity.getVersion());
 

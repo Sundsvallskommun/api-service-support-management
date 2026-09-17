@@ -367,8 +367,29 @@ class ErrandInvestigationServiceTest {
 		// Verify
 		verify(investigationRepositoryMock).delete(entity);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.INVESTIGATION, RW);
-		verifyNoMoreInteractions(accessControlServiceMock);
+		verify(decisionValidatorMock).validateInvestigationRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID);
+		verifyNoMoreInteractions(accessControlServiceMock, decisionValidatorMock);
 		verifyNoInteractions(artefactJsonParameterServiceMock);
+	}
+
+	/**
+	 * The database would take the reference away from a decision that can no longer be changed, so the investigation
+	 * stays - and the lock is answered before a stale version, as on the decision itself.
+	 */
+	@Test
+	void deleteErrandInvestigationADecisionThatCanNoLongerBeChangedRestsOn() {
+
+		// Arrange
+		mockInvestigation().withVersion(4L);
+		doThrow(Problem.valueOf(CONFLICT, "decision locked")).when(decisionValidatorMock).validateInvestigationRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID);
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class,
+			() -> service.deleteErrandInvestigation(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID, IF_MATCH));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+		verify(investigationRepositoryMock, never()).delete(any());
 	}
 
 	/**
