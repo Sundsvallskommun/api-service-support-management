@@ -35,7 +35,6 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -182,13 +181,6 @@ public class ErrandService {
 		// phase is judged by what its status will be and not only by whether the patch happens to name one.
 		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
 
-		if (errand.getLabels() != null) {
-			validateLabelVersions(errand.getLabels());
-			expandLabelsToAncestorChain(errandEntity);
-			computeAndSetAccessLabels(errandEntity);
-			errandLabelService.settleAccessLabels(errandEntity);
-		}
-
 		final var entity = errand.getLabels() != null
 			? persistLabelUpdate(errandEntity)
 			: repository.saveAndFlush(errandEntity);
@@ -298,115 +290,9 @@ public class ErrandService {
 		return repository.count(fullFilter);
 	}
 
-	void validateLabelVersions(final List<ErrandLabel> labels) {
-		var labelsWithVersion = ofNullable(labels).orElse(emptyList()).stream()
-			.filter(label -> label.getVersion() != null)
-			.toList();
-
-		if (labelsWithVersion.isEmpty()) {
-			return;
-		}
-
-		var labelIds = labelsWithVersion.stream().map(ErrandLabel::getId).toList();
-		var currentVersionById = metadataLabelRepository.findAllById(labelIds).stream()
-			.collect(HashMap::new, (m, e) -> m.put(e.getId(), e.getVersion()), HashMap::putAll);
-
-		labelsWithVersion.stream()
-			.filter(label -> {
-				var current = currentVersionById.get(label.getId());
-				return current != null && !current.equals(label.getVersion());
-			})
-			.findFirst()
-			.ifPresent(label -> {
-				throw Problem.valueOf(PRECONDITION_FAILED,
-					"Label with id '%s' has been modified — expected version %d but current version is %d"
-						.formatted(label.getId(), label.getVersion(), currentVersionById.get(label.getId())));
-			});
-	}
-
-	void expandLabelsToAncestorChain(final ErrandEntity errandEntity) {
-		var currentIds = ofNullable(errandEntity.getLabels()).orElse(emptyList()).stream()
-			.map(ErrandLabelEmbeddable::getMetadataLabelId)
-			.collect(Collectors.toSet());
-
-		if (currentIds.isEmpty()) {
-			return;
-		}
-
-		var ancestorPaths = metadataLabelRepository.findAllById(currentIds).stream()
-			.map(MetadataLabelEntity::getResourcePath)
-			.flatMap(path -> ancestorResourcePaths(path).stream())
-			.collect(Collectors.toSet());
-
-		if (ancestorPaths.isEmpty()) {
-			return;
-		}
-
-		var missingAncestors = metadataLabelRepository
-			.findByNamespaceAndMunicipalityIdAndResourcePathIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ancestorPaths)
-			.stream()
-			.filter(a -> !currentIds.contains(a.getId()))
-			.map(a -> ErrandLabelEmbeddable.create().withMetadataLabelId(a.getId()))
-			.toList();
-
-		if (missingAncestors.isEmpty()) {
-			return;
-		}
-
-		var expanded = new ArrayList<>(errandEntity.getLabels());
-		expanded.addAll(missingAncestors);
-		errandEntity.setLabels(expanded);
-	}
-
-	private static Set<String> ancestorResourcePaths(final String resourcePath) {
-		var parts = resourcePath.split("/");
-		var paths = new HashSet<String>();
-		var sb = new StringBuilder();
-		for (int i = 0; i < parts.length - 1; i++) {
-			if (i > 0) {
-				sb.append("/");
-			}
-			sb.append(parts[i]);
-			paths.add(sb.toString());
-		}
-		return paths;
-	}
-
 	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
-		computeAndSetAccessLabels(entity);
+		errandLabelService.settleAccessLabels(entity);
 		return repository.saveAndFlush(entity);
-	}
-
-	private void computeAndSetAccessLabels(final ErrandEntity errandEntity) {
-		final var allLabelIds = ofNullable(errandEntity.getLabels())
-			.orElse(emptyList())
-			.stream()
-			.map(ErrandLabelEmbeddable::getMetadataLabelId)
-			.collect(Collectors.toSet());
-
-		if (allLabelIds.isEmpty()) {
-			errandEntity.setAccessLabels(new ArrayList<>());
-			return;
-		}
-
-		// Repository lookup is needed because ErrandLabelEmbeddable's @ManyToOne metadataLabel
-		// is only populated by Hibernate on load. For freshly created/updated labels (from the mapper),
-		// getMetadataLabel() returns null.
-		final var resourcePathById = metadataLabelRepository.findAllById(allLabelIds).stream()
-			.collect(Collectors.toMap(MetadataLabelEntity::getId, MetadataLabelEntity::getResourcePath));
-
-		final var ancestorIds = resourcePathById.entrySet().stream()
-			.filter(entry -> resourcePathById.values().stream()
-				.anyMatch(otherPath -> !otherPath.equals(entry.getValue()) && otherPath.startsWith(entry.getValue() + "/")))
-			.map(Map.Entry::getKey)
-			.collect(Collectors.toSet());
-
-		final var accessLabels = allLabelIds.stream()
-			.filter(id -> !ancestorIds.contains(id))
-			.map(id -> AccessLabelEmbeddable.create().withMetadataLabelId(id))
-			.collect(Collectors.toCollection(ArrayList::new));
-
-		errandEntity.setAccessLabels(accessLabels);
 	}
 
 	se.sundsvall.dept44.support.Relation expandRelation(final String referredFromAsString) {

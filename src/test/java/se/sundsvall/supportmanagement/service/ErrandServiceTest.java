@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
@@ -626,212 +627,17 @@ class ErrandServiceTest {
 	}
 
 	@Test
-	void persistLabelUpdate_computesAccessLabelsAndSavesWithNoSideEffects() {
-		var labelId = "label-id";
-		var errand = ErrandEntity.create()
-			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(labelId)));
+	void persistLabelUpdate_settlesAccessLabelsAndSaves() {
+		var errand = ErrandEntity.create();
 
-		when(metadataLabelRepositoryMock.findAllById(Set.of(labelId)))
-			.thenReturn(List.of(MetadataLabelEntity.create().withId(labelId).withResourcePath("ROOT")));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
 		var result = service.persistLabelUpdate(errand);
 
 		assertThat(result).isSameAs(errand);
-		assertThat(errand.getAccessLabels()).extracting(
-			se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable::getMetadataLabelId)
-			.containsExactly(labelId);
-		verify(metadataLabelRepositoryMock).findAllById(Set.of(labelId));
+		verify(errandLabelServiceMock).settleAccessLabels(errand);
 		verify(errandRepositoryMock).saveAndFlush(errand);
 		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
-	}
-
-	@Test
-	void persistLabelUpdate_accessLabelsContainOnlyLeaves() {
-		var parentId = "parent-id";
-		var leafId = "leaf-id";
-		var errand = ErrandEntity.create()
-			.withLabels(List.of(
-				ErrandLabelEmbeddable.create().withMetadataLabelId(parentId),
-				ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
-
-		when(metadataLabelRepositoryMock.findAllById(Set.of(parentId, leafId)))
-			.thenReturn(List.of(
-				MetadataLabelEntity.create().withId(parentId).withResourcePath("ROOT"),
-				MetadataLabelEntity.create().withId(leafId).withResourcePath("ROOT/LEAF")));
-		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
-
-		service.persistLabelUpdate(errand);
-
-		// Only the leaf should be in access labels, not the ancestor
-		assertThat(errand.getAccessLabels()).extracting(
-			se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable::getMetadataLabelId)
-			.containsExactly(leafId);
-		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, leafId));
-		verify(errandRepositoryMock).saveAndFlush(errand);
-		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
-	}
-
-	@Test
-	void expandLabelsToAncestorChain_leafExpandsToFullChain() {
-		final var leafId = "leaf-id";
-		final var parentId = "parent-id";
-		final var childId = "child-id";
-
-		final var errandEntity = ErrandEntity.create()
-			.withNamespace(NAMESPACE)
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
-
-		when(metadataLabelRepositoryMock.findAllById(Set.of(leafId)))
-			.thenReturn(List.of(MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
-			.thenReturn(List.of(
-				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
-				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
-
-		service.expandLabelsToAncestorChain(errandEntity);
-
-		assertThat(errandEntity.getLabels())
-			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
-			.containsExactlyInAnyOrder(leafId, parentId, childId);
-
-		verify(metadataLabelRepositoryMock).findAllById(Set.of(leafId));
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
-	}
-
-	@Test
-	void expandLabelsToAncestorChain_partialChainExpandsCorrectly() {
-		final var leafId = "leaf-id";
-		final var parentId = "parent-id";
-		final var childId = "child-id";
-
-		final var errandEntity = ErrandEntity.create()
-			.withNamespace(NAMESPACE)
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withLabels(List.of(
-				ErrandLabelEmbeddable.create().withMetadataLabelId(parentId),
-				ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
-
-		when(metadataLabelRepositoryMock.findAllById(Set.of(parentId, leafId)))
-			.thenReturn(List.of(
-				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
-				MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
-			.thenReturn(List.of(
-				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
-				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
-
-		service.expandLabelsToAncestorChain(errandEntity);
-
-		assertThat(errandEntity.getLabels())
-			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
-			.containsExactlyInAnyOrder(parentId, leafId, childId);
-
-		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, leafId));
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
-	}
-
-	@Test
-	void expandLabelsToAncestorChain_emptyLabels_noRepoInteraction() {
-		final var errandEntity = ErrandEntity.create()
-			.withNamespace(NAMESPACE)
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withLabels(List.of());
-
-		service.expandLabelsToAncestorChain(errandEntity);
-
-		assertThat(errandEntity.getLabels()).isEmpty();
-		verifyNoInteractions(metadataLabelRepositoryMock);
-	}
-
-	@Test
-	void expandLabelsToAncestorChain_alreadyFullChain_noLabelsAdded() {
-		final var leafId = "leaf-id";
-		final var parentId = "parent-id";
-		final var childId = "child-id";
-
-		final var errandEntity = ErrandEntity.create()
-			.withNamespace(NAMESPACE)
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withLabels(List.of(
-				ErrandLabelEmbeddable.create().withMetadataLabelId(parentId),
-				ErrandLabelEmbeddable.create().withMetadataLabelId(childId),
-				ErrandLabelEmbeddable.create().withMetadataLabelId(leafId)));
-
-		when(metadataLabelRepositoryMock.findAllById(Set.of(parentId, childId, leafId)))
-			.thenReturn(List.of(
-				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
-				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child"),
-				MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
-			.thenReturn(List.of(
-				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
-				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
-
-		service.expandLabelsToAncestorChain(errandEntity);
-
-		assertThat(errandEntity.getLabels())
-			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
-			.containsExactlyInAnyOrder(parentId, childId, leafId);
-
-		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, childId, leafId));
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
-	}
-
-	@Test
-	void validateLabelVersions_noVersions_noRepoInteraction() {
-		var labels = List.of(
-			new ErrandLabel().withId("id-1"),
-			new ErrandLabel().withId("id-2"));
-
-		service.validateLabelVersions(labels);
-
-		verifyNoInteractions(metadataLabelRepositoryMock);
-	}
-
-	@Test
-	void validateLabelVersions_nullLabels_noRepoInteraction() {
-		service.validateLabelVersions(null);
-
-		verifyNoInteractions(metadataLabelRepositoryMock);
-	}
-
-	@Test
-	void validateLabelVersions_versionsMatch_noException() {
-		var labelId = "label-id-1";
-		when(metadataLabelRepositoryMock.findAllById(List.of(labelId)))
-			.thenReturn(List.of(MetadataLabelEntity.create().withId(labelId).withVersion(3L)));
-
-		service.validateLabelVersions(List.of(new ErrandLabel().withId(labelId).withVersion(3L)));
-
-		verify(metadataLabelRepositoryMock).findAllById(List.of(labelId));
-	}
-
-	@Test
-	void validateLabelVersions_versionMismatch_throws412() {
-		var labelId = "label-id-1";
-		when(metadataLabelRepositoryMock.findAllById(List.of(labelId)))
-			.thenReturn(List.of(MetadataLabelEntity.create().withId(labelId).withVersion(5L)));
-
-		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service.validateLabelVersions(List.of(new ErrandLabel().withId(labelId).withVersion(3L))))
-			.withMessageContaining(labelId)
-			.withMessageContaining("3")
-			.withMessageContaining("5");
-
-		verify(metadataLabelRepositoryMock).findAllById(List.of(labelId));
-	}
-
-	@Test
-	void validateLabelVersions_nullVersionInDb_noException() {
-		var labelId = "label-id-1";
-		when(metadataLabelRepositoryMock.findAllById(List.of(labelId)))
-			.thenReturn(List.of(MetadataLabelEntity.create().withId(labelId)));
-
-		service.validateLabelVersions(List.of(new ErrandLabel().withId(labelId).withVersion(1L)));
-
-		verify(metadataLabelRepositoryMock).findAllById(List.of(labelId));
 	}
 
 	@ParameterizedTest

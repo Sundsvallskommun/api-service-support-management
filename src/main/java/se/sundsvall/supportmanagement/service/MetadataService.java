@@ -428,7 +428,8 @@ public class MetadataService {
 	 */
 	@Transactional
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var canonicalLabelId = context.labelToMove().getId();
 
 		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL, canonicalLabelId)) {
 			throw Problem.valueOf(CONFLICT, "Label '%s' already has a move in progress".formatted(canonicalLabelId));
@@ -441,7 +442,22 @@ public class MetadataService {
 		return jobService.get(namespace, municipalityId, jobId);
 	}
 
-	private MetadataLabelEntity validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
+	private static Set<String> collectMovedLabelIds(final String labelId, final List<MetadataLabelEntity> descendants) {
+		var ids = new HashSet<String>();
+		ids.add(labelId);
+		descendants.forEach(descendant -> ids.add(descendant.getId()));
+		return ids;
+	}
+
+	/**
+	 * The moved label plus the descendants that move with it — read once by {@link #validateAndFindLabelToMove} and
+	 * reused by both callers, so that neither {@link #moveLabel} nor {@link #startLabelMove} re-reads the descendant
+	 * tree that validation already fetched.
+	 */
+	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {
+	}
+
+	private LabelMoveContext validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
 		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, labelId, namespace, municipalityId)));
 
