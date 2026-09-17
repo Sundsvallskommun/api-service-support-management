@@ -1869,10 +1869,6 @@ class MetadataServiceTest {
 	}
 
 	/**
-	 * The groups became a collection, which cannot be sorted on. Sorting by one used to work, so the caller is told what
-	 * is wrong rather than meeting the query derivation, which answers 500 and says nothing.
-	 */
-	/**
 	 * A measure type in no group cannot be found by the one thing measure types are looked up by, so a creation has to
 	 * name them.
 	 */
@@ -1914,6 +1910,10 @@ class MetadataServiceTest {
 		verifyNoInteractions(measureTypeRepositoryMock);
 	}
 
+	/**
+	 * The groups became a collection, which cannot be sorted on. Sorting by one used to work, so the caller is told what
+	 * is wrong rather than meeting the query derivation, which answers 500 and says nothing.
+	 */
 	@Test
 	void findMeasureTypesRefusesASortOnTheGroups() {
 		final var exception = assertThrows(ThrowableProblem.class,
