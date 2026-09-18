@@ -169,6 +169,8 @@ spring:
             schema_management:
               # How the JSON parameters, which the entity mapping cannot describe, are mapped as they come
               mapping_file: search-mapping.json
+              # Room for the fields the JSON parameters bring, two per scalar path, beyond the default of a thousand
+              settings_file: search-settings.json
           schema_management:
             # The index schema is created by SearchSchemaInitializer after startup and by a full reindex
             strategy: none

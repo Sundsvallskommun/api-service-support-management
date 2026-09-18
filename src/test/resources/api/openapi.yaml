@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.1"
 servers:
-- url: http://localhost:32791
+- url: http://localhost:41931
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -8362,6 +8362,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: The user may not administer the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "409":
           description: A rebuild is already running
           content:
@@ -15730,6 +15736,8 @@ paths:
           Of its communications: `communications.subject`, `communications.messageBody`, `communications.sender`, `communications.direction`, `communications.type`, `communications.sent`.
 
           A search without a field looks in the text of all of the above.
+
+          Errands are searched at full read: an errand the user reaches at limited read only is not found. Where a namespace enforces access control, the fields of a resource the user may not read (communications, decisions, statements, investigations, measures, parameters, JSON parameters, attachments) are left out of a search without a field, a query naming one of them is refused with 403, and so is a wildcard in a field name.
         required: false
         schema:
           type: string
@@ -15783,6 +15791,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: The query names a resource the user may not read
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server Error
           content:

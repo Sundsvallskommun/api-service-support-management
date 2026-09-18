@@ -22,10 +22,8 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.config.SearchProperties;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.util.Map.entry;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
@@ -66,14 +64,16 @@ public class ErrandSearchService {
 
 	private final EntityManager entityManager;
 	private final AccessControlService accessControlService;
+	private final ErrandSearchAccess searchAccess;
 	private final ErrandSearchPredicates predicates;
 	private final SearchAvailability availability;
 	private final SearchProperties properties;
 
-	public ErrandSearchService(final EntityManager entityManager, final AccessControlService accessControlService, final ErrandSearchPredicates predicates,
-		final SearchAvailability availability, final SearchProperties properties) {
+	public ErrandSearchService(final EntityManager entityManager, final AccessControlService accessControlService, final ErrandSearchAccess searchAccess,
+		final ErrandSearchPredicates predicates, final SearchAvailability availability, final SearchProperties properties) {
 		this.entityManager = entityManager;
 		this.accessControlService = accessControlService;
+		this.searchAccess = searchAccess;
 		this.predicates = predicates;
 		this.availability = availability;
 		this.properties = properties;
@@ -82,11 +82,16 @@ public class ErrandSearchService {
 	/**
 	 * Searches the errands of a namespace the requesting user reaches.
 	 *
-	 * @param  namespace      namespace
-	 * @param  municipalityId municipality id
-	 * @param  query          a Lucene query string, or blank for every errand
-	 * @param  pageable       page, size and sort. Without a sort the best matches come first, newest first among equals
-	 * @return                the page of matching errands, with what the requesting user may see of each
+	 * @param  namespace                                      namespace
+	 * @param  municipalityId                                 municipality id
+	 * @param  query                                          a Lucene query string, or blank for every errand
+	 * @param  pageable                                       page, size and sort. Without a sort the best matches come
+	 *                                                        first, newest first among equals
+	 * @return                                                the page of matching errands the user reaches at full read,
+	 *                                                        with what the requesting user may
+	 *                                                        see of each
+	 * @throws org.springframework.web.ErrorResponseException 403 when the query names a resource the user may not read,
+	 *                                                        see {@link ErrandSearchAccess}
 	 */
 	@Transactional(readOnly = true)
 	public Page<Errand> search(final String namespace, final String municipalityId, final String query, final Pageable pageable) {
@@ -95,15 +100,16 @@ public class ErrandSearchService {
 		verifySortable(pageable.getSort());
 
 		final var user = Identifier.get();
-		final var scope = accessControlService.accessScope(namespace, municipalityId, user, ProtectedResource.ERRAND, LR);
+		final var access = searchAccess.resolve(namespace, municipalityId, user);
+		searchAccess.verifyQuery(query, access);
 
 		final SearchResult<ErrandEntity> result;
 		try {
 			result = Search.session(entityManager).search(ErrandEntity.class)
 				.where(f -> f.bool()
 					.filter(predicates.tenant(f, namespace, municipalityId))
-					.filter(predicates.access(f, scope, namespace, municipalityId))
-					.must(predicates.query(f, query)))
+					.filter(predicates.access(f, access.errand(), namespace, municipalityId))
+					.must(predicates.query(f, query, searchAccess.searchableFields(access))))
 				.sort(f -> toSort(f, pageable.getSort()))
 				.fetch((int) pageable.getOffset(), pageable.getPageSize());
 		} catch (final SearchException e) {
