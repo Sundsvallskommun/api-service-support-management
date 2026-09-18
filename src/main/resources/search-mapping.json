@@ -20,7 +20,8 @@
 					"fields": {
 						"raw": {
 							"type": "keyword",
-							"normalizer": "lowercase_normalizer"
+							"normalizer": "lowercase_normalizer",
+							"ignore_above": 8191
 						}
 					}
 				}

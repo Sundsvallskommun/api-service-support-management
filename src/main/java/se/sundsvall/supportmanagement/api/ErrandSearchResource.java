@@ -79,7 +79,12 @@ class ErrandSearchResource {
 		Of its communications: `communications.subject`, `communications.messageBody`, `communications.sender`, \
 		`communications.direction`, `communications.type`, `communications.sent`.
 
-		A search without a field looks in the text of all of the above.""";
+		A search without a field looks in the text of all of the above.
+
+		Errands are searched at full read: an errand the user reaches at limited read only is not found. Where a namespace \
+		enforces access control, the fields of a resource the user may not read (communications, decisions, statements, \
+		investigations, measures, parameters, JSON parameters, attachments) are left out of a search without a field, a query \
+		naming one of them is refused with 403, and so is a wildcard in a field name.""";
 
 	static final String SORT_DESCRIPTION = "Without a sort the best matches come first, newest first among equals. Sortable properties: " +
 		"created, modified, touched, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +
@@ -99,6 +104,7 @@ class ErrandSearchResource {
 		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
 		}))),
+		@ApiResponse(responseCode = "403", description = "The query names a resource the user may not read", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "503", description = "Search not available", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
@@ -121,6 +127,7 @@ class ErrandSearchResource {
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 				Problem.class, ConstraintViolationProblem.class
 			}))),
+			@ApiResponse(responseCode = "403", description = "The user may not administer the namespace", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 			@ApiResponse(responseCode = "409", description = "A rebuild is already running", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 			@ApiResponse(responseCode = "503", description = "Search not available", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))

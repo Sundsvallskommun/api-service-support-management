@@ -52,3 +52,9 @@ VALUES ('ee000000-0000-0000-0000-000000000901', 'ee000000-0000-0000-0000-0000000
 
 INSERT INTO measure_json_parameter(id, measure_id, parameter_key, schema_id, value, version)
 VALUES ('jp000000-0000-0000-0000-000000000903', 'ee000000-0000-0000-0000-000000000901', 'order', 'order-1.0', '{"supplier":"Ljusbolaget","orderNo":"ORD-4711"}', 0);
+
+-- A communication on the errand of the namespace that weighs resource grants, for the search access tests
+INSERT INTO communication(internal, viewed, sender, sender_user_id, sent, id, errand_number, external_id,
+                          message_body, target, subject, direction, type, namespace, municipality_id, html_message_body)
+VALUES (0, 0, 'Frida Frontline', null, '2025-01-11 09:00:00.000', 'cc000000-0000-0000-0000-000000000902', 'FL-23020001', null,
+        'Ett hemligt meddelande', 'frida@example.com', 'Hemligt ärende', 'INBOUND', 'EMAIL', 'NAMESPACE-2507', '2506', null);

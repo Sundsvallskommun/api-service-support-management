@@ -35,10 +35,13 @@ class ErrandSearchServiceTest {
 	private AccessControlService accessControlServiceMock;
 
 	@Mock
+	private ErrandSearchAccess searchAccessMock;
+
+	@Mock
 	private ErrandSearchPredicates predicatesMock;
 
 	private ErrandSearchService service(final boolean enabled) {
-		return new ErrandSearchService(entityManagerMock, accessControlServiceMock, predicatesMock, new SearchAvailability(enabled),
+		return new ErrandSearchService(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, new SearchAvailability(enabled),
 			new SearchProperties(10000, new SearchProperties.Reindex(Duration.ofHours(6))));
 	}
 
@@ -47,7 +50,7 @@ class ErrandSearchServiceTest {
 		final var e = assertThrows(ThrowableProblem.class, () -> service(false).search(NAMESPACE, MUNICIPALITY_ID, "query", PageRequest.of(0, 20)));
 
 		assertThat(e.getStatus()).isEqualTo(SERVICE_UNAVAILABLE);
-		verifyNoInteractions(entityManagerMock, accessControlServiceMock, predicatesMock);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock);
 	}
 
 	@Test
@@ -56,7 +59,7 @@ class ErrandSearchServiceTest {
 
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getDetail()).isEqualTo("Page 500 of size 100 reaches beyond the 10000 results a search can page through. Narrow the search instead");
-		verifyNoInteractions(entityManagerMock, accessControlServiceMock, predicatesMock);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock);
 	}
 
 	@Test
@@ -68,7 +71,7 @@ class ErrandSearchServiceTest {
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getDetail()).isEqualTo("Sorting on 'description' is not supported by search. Sortable properties are: " +
 			"[assignedGroupId, assignedUserId, category, channel, created, errandNumber, modified, priority, reporterUserId, resolution, status, suspendedFrom, suspendedTo, title, touched, type]");
-		verifyNoInteractions(entityManagerMock, accessControlServiceMock, predicatesMock);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock);
 	}
 
 	@Test

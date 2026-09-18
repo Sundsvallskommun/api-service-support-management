@@ -55,13 +55,17 @@ public class ErrandSearchPredicates {
 	 * What the client asked for. A blank query matches everything, so that a client can page through a namespace sorted
 	 * the way it likes without inventing a query. Anything else is a Lucene query string, parsed by OpenSearch, with every
 	 * word required unless the query says otherwise.
+	 *
+	 * @param f      the factory
+	 * @param query  the query string
+	 * @param fields the fields a word without a field is looked for in, see {@link ErrandSearchAccess#searchableFields}
 	 */
-	public SearchPredicate query(final SearchPredicateFactory f, final String query) {
+	public SearchPredicate query(final SearchPredicateFactory f, final String query, final List<String> fields) {
 		if (isBlank(query)) {
 			return f.matchAll().toPredicate();
 		}
 		return f.queryString()
-			.fields(DEFAULT_FIELDS.toArray(String[]::new))
+			.fields(fields.toArray(String[]::new))
 			.matching(query)
 			.defaultOperator(BooleanOperator.AND)
 			.toPredicate();

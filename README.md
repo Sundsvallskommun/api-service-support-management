@@ -283,6 +283,18 @@ Locally, an instance is one command away:
 docker run -p 9200:9200 -e discovery.type=single-node -e DISABLE_SECURITY_PLUGIN=true -e DISABLE_INSTALL_DEMO_CONFIG=true opensearchproject/opensearch:3.6.0
 ```
 
+Access control applies to the query, not only to the answer: errands are searched at full read, and where a namespace
+enforces access control a query naming a field of a resource the user may not read (communications, decisions and so
+on) is refused with 403, since a hit or a miss would tell what the field holds. The rebuild endpoint is held to the
+namespace configuration grant.
+
+JSON parameters are indexed as they come, every scalar under `jsonParameters.<key>.<path>` as text with a keyword twin
+under `.raw`, which is what makes them searchable by path without a schema. Two things follow from that. A path has to
+keep its shape across the errands of the index, a scalar in one and an object in another cannot both be mapped, and the
+errand that breaks the shape is logged and left out of the index. And values longer than 8191 characters have no
+keyword twin, only their words. The index allows 5000 fields, well beyond what the paths of a service's schemas amount
+to; the log says so if that is ever reached.
+
 The integration tests start one of their own through Testcontainers.
 
 ### Additional Notes

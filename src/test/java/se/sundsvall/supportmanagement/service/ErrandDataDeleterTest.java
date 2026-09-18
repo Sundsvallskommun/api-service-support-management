@@ -20,6 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProje
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.service.search.SearchAvailability;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -86,7 +87,7 @@ class ErrandDataDeleterTest {
 	void setUp() {
 		deleter = new ErrandDataDeleter(conversationServiceMock, communicationServiceMock, attachmentRepositoryMock,
 			attachmentDataRepositoryMock, notesClientMock, subscriberNotificationRepositoryMock,
-			handoverIdempotencyRepositoryMock, entityManagerMock, new ChunkedDeleter(entityManagerMock));
+			handoverIdempotencyRepositoryMock, entityManagerMock, new ChunkedDeleter(entityManagerMock), new SearchAvailability(false));
 	}
 
 	@Test

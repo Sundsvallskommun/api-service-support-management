@@ -19,6 +19,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.OK;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
@@ -36,6 +37,7 @@ class ErrandSearchIT extends AbstractAppTest {
 
 	private static final String PATH = "/2281/NAMESPACE-3/errands/search";
 	private static final String ACCESS_CONTROLLED_PATH = "/2506/NAMESPACE-2506/errands/search";
+	private static final String RESOURCE_CONTROLLED_PATH = "/2506/NAMESPACE-2507/errands/search";
 
 	private static final String LEAK = "NS3-25010001";
 	private static final String INVOICE = "NS3-25020001";
@@ -137,11 +139,11 @@ class ErrandSearchIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Labels reaching every label of the namespace reach every errand of it.
+	 * Labels reaching every label of the namespace at full read reach every errand of it.
 	 */
 	@Test
-	void test10_accessThroughAllLabels() {
-		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
+	void test10_accessThroughAllLabelsAtFullRead() {
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "all01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
 	}
 
 	/**
@@ -194,6 +196,50 @@ class ErrandSearchIT extends AbstractAppTest {
 			.withExpectedResponseStatus(ACCEPTED)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * Errands are searched at full read: labels reaching them at limited read only find nothing, rather than finding
+	 * errands the user would then see trimmed.
+	 */
+	@Test
+	void test17_limitedReadFindsNothing() {
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).isEmpty();
+	}
+
+	/**
+	 * A user whose resource grants reach the errand but not its communications. Errands are found, the words of a
+	 * communication are not, and a query naming a communication field is refused rather than answered by hit or miss.
+	 */
+	@Test
+	void test18_closedResourceIsNotSearchable() {
+		assertThat(searchAs(RESOURCE_CONTROLLED_PATH, "", "fro01lin")).containsExactly("FL-23020001");
+		assertThat(searchAs(RESOURCE_CONTROLLED_PATH, "hemligt", "fro01lin")).isEmpty();
+
+		setupCall()
+			.withServicePath(withQuery(RESOURCE_CONTROLLED_PATH, "communications.subject:hemligt"))
+			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-resource.json")
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(withQuery(RESOURCE_CONTROLLED_PATH, "\\*.subject:hemligt"))
+			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-wildcard.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * The same namespace, for a user whose grants reach the communications as well.
+	 */
+	@Test
+	void test19_openResourceIsSearchable() {
+		assertThat(searchAs(RESOURCE_CONTROLLED_PATH, "hemligt", "com01red")).containsExactly("FL-23020001");
+		assertThat(searchAs(RESOURCE_CONTROLLED_PATH, "communications.subject:hemligt", "com01red")).containsExactly("FL-23020001");
 	}
 
 	private List<String> search(final String path, final String query) {

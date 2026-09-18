@@ -109,22 +109,22 @@ class ErrandSearchPredicatesTest {
 		when(factoryMock.matchAll()).thenReturn(matchAllMock);
 		when(matchAllMock.toPredicate()).thenReturn(predicateMock);
 
-		assertThat(predicates().query(factoryMock, " ")).isSameAs(predicateMock);
-		assertThat(predicates().query(factoryMock, null)).isSameAs(predicateMock);
+		assertThat(predicates().query(factoryMock, " ", ErrandSearchPredicates.DEFAULT_FIELDS)).isSameAs(predicateMock);
+		assertThat(predicates().query(factoryMock, null, ErrandSearchPredicates.DEFAULT_FIELDS)).isSameAs(predicateMock);
 		verify(factoryMock, never()).queryString();
 	}
 
 	@Test
-	void queryIsAQueryStringOverTheDefaultFieldsWithEveryWordRequired() {
+	void queryIsAQueryStringOverTheGivenFieldsWithEveryWordRequired() {
 		when(factoryMock.queryString()).thenReturn(queryStringFieldStepMock);
 		when(queryStringFieldStepMock.fields(any(String[].class))).thenReturn(queryStringFieldMoreStepMock);
 		when(queryStringFieldMoreStepMock.matching(anyString())).thenReturn(queryStringOptionsMock);
 		when(queryStringOptionsMock.defaultOperator(any())).thenReturn(queryStringOptionsMock);
 		when(queryStringOptionsMock.toPredicate()).thenReturn(predicateMock);
 
-		assertThat(predicates().query(factoryMock, "vatten status:new")).isSameAs(predicateMock);
+		assertThat(predicates().query(factoryMock, "vatten status:new", List.of("title", "description"))).isSameAs(predicateMock);
 
-		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.DEFAULT_FIELDS.toArray(String[]::new));
+		verify(queryStringFieldStepMock).fields("title", "description");
 		verify(queryStringFieldMoreStepMock).matching("vatten status:new");
 		verify(queryStringOptionsMock).defaultOperator(BooleanOperator.AND);
 		assertThat(ErrandSearchPredicates.DEFAULT_FIELDS).contains("title", "description", "stakeholders.lastName", "jsonParametersText", "communications.messageBody", "measures.jsonParametersText");
