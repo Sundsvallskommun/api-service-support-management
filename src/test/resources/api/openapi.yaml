@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.0"
+  version: "16.1"
 servers:
-- url: http://localhost:37929
+- url: http://localhost:38087
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -45,6 +45,8 @@ tags:
   description: Status metadata operations
 - name: Configuration for email integration
   description: Settings for email integration per municipality/namespace
+- name: Errand search
+  description: Full text search of errands
 - name: Errand Decisions
   description: Errand decision operations
 - name: Metadata for statement outcomes
@@ -8304,6 +8306,80 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/search/reindex:
+    post:
+      tags:
+      - Errand search
+      summary: Rebuild the search index
+      description: "Rebuilds the search index of the namespace from the database and\
+        \ returns at once, the rebuild goes on in the background. Needed after an\
+        \ outage of the search cluster, and for errands created before search was\
+        \ introduced. With full=true the whole index, across every namespace, is dropped\
+        \ and rebuilt from scratch, which is what a changed index mapping calls for.\
+        \ Only one rebuild runs at a time."
+      operationId: reindexErrands
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: full
+        in: query
+        description: "Rebuild the whole index across every namespace, recreating its\
+          \ schema"
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "202":
+          description: Rebuild started
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "409":
+          description: A rebuild is already running
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: Search not available
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/purge:
     post:
       tags:
@@ -15593,6 +15669,127 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/search:
+    get:
+      tags:
+      - Errand search
+      summary: Search errands
+      description: "Searches the errands the requesting user has access to, ranked\
+        \ by how well they match. Without a sort the best matches come first, newest\
+        \ first among equals. Sortable properties: created, modified, touched, suspendedFrom,\
+        \ suspendedTo, errandNumber, title, status, category, type, priority, resolution,\
+        \ channel, reporterUserId, assignedUserId, assignedGroupId."
+      operationId: searchErrands
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: query
+        in: query
+        description: |-
+          A [Lucene query string](https://opensearch.org/docs/latest/query-dsl/full-text/query-string/), searched in an index of the errands and everything attached to them. Blank matches every errand. Words are required unless the query says otherwise, and matching ignores case; text fields are also stemmed for Swedish.
+
+          | Syntax | Meaning |
+          |---|---|
+          | `vatten läcka` | both words, in any of the text fields |
+          | `vatten OR läcka`, `vatten AND NOT läcka`, `-läcka` | boolean operators, upper case |
+          | `"vatten läcka"`, `"vatten läcka"~2` | exact phrase, phrase allowing 2 words in between |
+          | `status:new`, `stakeholders.lastName:berg` | a value in a specific field |
+          | `title:(vatten OR gas)` | several terms against one field |
+          | `jsonParameters.vehicle.regNo:abc123`, `jsonParameters.vehicle.regNo.raw:abc123` | a JSON parameter by key and path, as words or as the exact value |
+          | `berg*`, `b?rg`, `*ander*` | wildcards |
+          | `bergh~1` | fuzzy, at most one edit away |
+          | `created:[2025-01-01 TO 2025-12-31]`, `created:>=2025-06-01`, `created:{* TO now-7d}` | ranges, with date math |
+          | `_exists_:assignedUserId` | the field has a value |
+          | `title:vatten^3 description:vatten` | boost a clause |
+
+          A bare word is a search term, it is only a field name when followed by a colon. The characters `+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /` are part of the syntax and are escaped with a backslash when meant literally.
+
+          Fields of the errand: `errandNumber`, `title`, `description`, `contactReasonDescription`, `contactReason.reason`, `status`, `category`, `type`, `resolution`, `channel`, `priority`, `reporterUserId`, `assignedUserId`, `assignedGroupId`, `escalationEmail`, `businessRelated`, `created`, `modified`, `touched`, `suspendedFrom`, `suspendedTo`, `externalTags.key`, `externalTags.value`, `labels.metadataLabelId`, `attachments.fileName`, `attachments.mimeType`.
+          Of its stakeholders: `stakeholders.externalId`, `stakeholders.externalIdType`, `stakeholders.role`, `stakeholders.firstName`, `stakeholders.lastName`, `stakeholders.organizationName`, `stakeholders.address`, `stakeholders.careOf`, `stakeholders.zipCode`, `stakeholders.city`, `stakeholders.country`, `stakeholders.contactChannels.type`, `stakeholders.contactChannels.value`, `stakeholders.parameters.key`, `stakeholders.parameters.values`.
+          Of its parameters: `parameters.key`, `parameters.displayName`, `parameters.parameterGroup`, `parameters.values`, `jsonParameters.<key>.<path>` for every scalar in a JSON parameter (`.raw` appended for the exact value).
+          Of its phases: `phases.phase.name`, `phases.phase.displayName`, `phases.started`, `phases.ended`.
+          Of its measures, decisions, statements and investigations, under `measures.`, `decisions.`, `statements.` and `investigations.`: `type`, `status`, `title`, `description`, `dueAt`, `completedAt`, `createdBy`, `modifiedBy`, `created`, their own properties by the names of the API model, and `jsonParameters.<key>.<path>`.
+          Of its communications: `communications.subject`, `communications.messageBody`, `communications.sender`, `communications.direction`, `communications.type`, `communications.sent`.
+
+          A search without a field looks in the text of all of the above.
+        required: false
+        schema:
+          type: string
+        example: vattenläcka status:new stakeholders.lastName:berg
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageErrand"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: Search not available
           content:
             application/problem+json:
               schema:

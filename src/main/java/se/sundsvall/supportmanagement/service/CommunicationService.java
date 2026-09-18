@@ -195,7 +195,7 @@ public class CommunicationService {
 		final var communicationEntity = communicationMapper.toCommunicationEntity(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), request)
 			.withErrandAttachments(errandAttachments)
 			.withViewed(true)
-			.withErrandNumber(errandEntity.getErrandNumber());
+			.withErrand(errandEntity);
 
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, errandEntity);
@@ -216,7 +216,7 @@ public class CommunicationService {
 			final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, toSingleEmailRequest(request, recipient))
 				.withErrandAttachments(errandAttachments)
 				.withViewed(true)
-				.withErrandNumber(errandEntity.getErrandNumber());
+				.withErrand(errandEntity);
 			saveCommunication(communicationEntity);
 
 			if (!attachmentSaved) {
@@ -245,7 +245,7 @@ public class CommunicationService {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
 			.withViewed(true)
-			.withErrandNumber(entity.getErrandNumber());
+			.withErrand(entity);
 
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, entity);
@@ -261,7 +261,7 @@ public class CommunicationService {
 			.map(Identifier::getValue)
 			.orElse("UNKNOWN");
 
-		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity.getErrandNumber(), request, fullName, identifier)
+		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, entity, request, fullName, identifier)
 			.withViewed(true)
 			.withErrandAttachments(errandAttachments);
 
@@ -371,7 +371,7 @@ public class CommunicationService {
 				final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, toReporterEmailRequest(batchRequest, emailAddresses))
 					.withErrandAttachments(errandAttachments)
 					.withViewed(true)
-					.withErrandNumber(errandEntity.getErrandNumber());
+					.withErrand(errandEntity);
 
 				saveCommunication(communicationEntity);
 				saveAttachment(communicationEntity, errandEntity);

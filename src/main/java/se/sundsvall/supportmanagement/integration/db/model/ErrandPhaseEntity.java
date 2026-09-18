@@ -13,6 +13,12 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
+import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
@@ -33,16 +39,23 @@ public class ErrandPhaseEntity {
 	@JoinColumn(name = "errand_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_phase_errand_id"))
 	private ErrandEntity errandEntity;
 
+	// Shallow: nothing leads from a phase back to the errands in it, so a renamed phase is picked up by a reindex
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "phase_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_phase_phase_id"))
+	@IndexedEmbedded(name = "phase", includePaths = {
+		"name", "displayName"
+	})
+	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
 	private PhaseEntity phaseEntity;
 
 	@Column(name = "started")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime started;
 
 	@Column(name = "ended")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime ended;
 
 	public static ErrandPhaseEntity create() {

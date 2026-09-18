@@ -422,6 +422,45 @@ class AccessControlServiceTest {
 	}
 
 	@Test
+	void accessScopeIsUnrestrictedWhenAccessControlIsOff() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(false));
+
+		final var scope = accessControlService.accessScope(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, R);
+
+		assertThat(scope.enforced()).isFalse();
+		assertThat(scope.allowedLabels()).isNull();
+		assertThat(scope.allowedLabelIds()).isEmpty();
+		assertThat(scope.reporterAdAccount()).isNull();
+		verifyNoInteractions(accessMapperService);
+	}
+
+	@Test
+	void accessScopeCarriesBothRoutes() {
+		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.R)), null));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
+
+		final var scope = accessControlService.accessScope(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, R);
+
+		assertThat(scope.enforced()).isTrue();
+		assertThat(scope.allowedLabels()).isEqualTo(allowedLabels);
+		assertThat(scope.allowedLabelIds()).containsExactly("label-id");
+		assertThat(scope.reporterAdAccount()).isEqualTo(AD_ACCOUNT);
+	}
+
+	@Test
+	void accessScopeClosesTheLabelRouteWhenTheResourceIsNotGranted() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true).withResourceAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(MetadataLabelEntity.create().withId("label-id"))));
+
+		final var scope = accessControlService.accessScope(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.COMMUNICATION, R);
+
+		assertThat(scope.enforced()).isTrue();
+		assertThat(scope.allowedLabels()).isNull();
+		assertThat(scope.reporterAdAccount()).isNull();
+	}
+
+	@Test
 	void withAccessControlAddsReporterClauseWhenResourceIsGranted() {
 		final var user = adUser();
 		final var allowedLabels = Set.of(MetadataLabelEntity.create().withId("label-id"));

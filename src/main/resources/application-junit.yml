@@ -42,6 +42,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        search:
+          enabled: false
         hbm2ddl:
           schema-generation:
             script:

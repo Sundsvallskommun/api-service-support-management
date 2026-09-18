@@ -10,16 +10,29 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>16.0</version>
+	<version>16.1</version>
 	<name>api-service-support-management</name>
 	<properties>
 		<spring-filter.version>4.1.1</spring-filter.version>
+		<hibernate-search.version>8.4.0.Final</hibernate-search.version>
+		<opensearch-testcontainers.version>4.1.0</opensearch-testcontainers.version>
 		<tika-core.version>4.0.0</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<commons-validator.version>1.11.0</commons-validator.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
 	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.hibernate.search</groupId>
+				<artifactId>hibernate-search-bom</artifactId>
+				<version>${hibernate-search.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -72,6 +85,15 @@
 			<artifactId>zjsonpatch</artifactId>
 			<version>${flipkart.zjsonpatch.version}</version>
 		</dependency>
+		<!-- Errand search: Hibernate Search keeps an OpenSearch index in step with the JPA entities -->
+		<dependency>
+			<groupId>org.hibernate.search</groupId>
+			<artifactId>hibernate-search-mapper-orm</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate.search</groupId>
+			<artifactId>hibernate-search-backend-elasticsearch</artifactId>
+		</dependency>
 		<!-- Test -->
 		<dependency>
 			<groupId>se.sundsvall.dept44</groupId>
@@ -81,6 +103,12 @@
 		<dependency>
 			<groupId>se.sundsvall.dept44</groupId>
 			<artifactId>dept44-starter-jpa-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.opensearch</groupId>
+			<artifactId>opensearch-testcontainers</artifactId>
+			<version>${opensearch-testcontainers.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

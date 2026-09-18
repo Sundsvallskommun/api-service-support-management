@@ -791,7 +791,7 @@ class ErrandMapperTest {
 
 		assertThat(entity).hasNoNullFieldsOrPropertiesExcept(
 			"assignedGroupId", "assignedUserId", "attachments", "resolution", "description", "channel", "escalationEmail", "parameters", "businessRelated", "suspend", "previousStatus", "tempPreviousStatus", "timeMeasures", "contactReasonDescription",
-			"accessLabels", "phases", "version", "measures");
+			"accessLabels", "phases", "version", "measures", "decisions", "statements", "investigations", "communications");
 		assertThat(entity.getAssignedGroupId()).isNull();
 		assertThat(entity.getAssignedUserId()).isNull();
 		assertThat(entity.getAttachments()).isNull();

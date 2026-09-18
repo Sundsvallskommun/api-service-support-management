@@ -3,14 +3,19 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
 
 @Embeddable
 public class DbExternalTag {
 
 	@Column(name = "\"key\"")
+	@KeywordField(normalizer = LOWERCASE)
 	private String key;
 
 	@Column(name = "\"value\"")
+	@KeywordField(normalizer = LOWERCASE)
 	private String value;
 
 	public static DbExternalTag create() {

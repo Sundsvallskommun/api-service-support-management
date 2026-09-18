@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2506/access/ad/one01lbl"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test11_accessThroughOneLabel/responses/api-accessmapper-one01lbl.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-one01lbl"
+}

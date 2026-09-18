@@ -22,6 +22,7 @@ import se.sundsvall.supportmanagement.api.model.communication.WebMessageAttachme
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -139,7 +140,7 @@ class CommunicationMapperTest {
 
 			final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
 
-			assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "errandAttachments", "senderUserId", "ccRecipients");
+			assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "errand", "externalId", "errandAttachments", "senderUserId", "ccRecipients");
 			assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
 			assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 			assertThat(communicationEntity.getTarget()).isEqualTo(emailRequest.getRecipient());
@@ -165,7 +166,7 @@ class CommunicationMapperTest {
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, smsRequest);
 
-		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments", "senderUserId", "htmlMessageBody", "ccRecipients");
+		assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "errandNumber", "errand", "externalId", "subject", "attachments", "emailHeaders", "errandAttachments", "senderUserId", "htmlMessageBody", "ccRecipients");
 		assertThat(communicationEntity.getSender()).isEqualTo(smsRequest.getSender());
 		assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 		assertThat(communicationEntity.getTarget()).isEqualTo(smsRequest.getRecipient());
@@ -189,10 +190,12 @@ class CommunicationMapperTest {
 				.withInternal(true)
 				.withAttachments(List.of(new WebMessageAttachment().withFileName("name").withBase64EncodedString("base64EncodedString")));
 
-			final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, ERRAND_NUMBER, webMessageRequest, fullName, adUser);
+			final var errand = ErrandEntity.create().withErrandNumber(ERRAND_NUMBER);
+			final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, errand, webMessageRequest, fullName, adUser);
 
 			assertThat(communicationEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "externalId", "sender", "target", "recipients", "subject", "errandAttachments", "emailHeaders", "htmlMessageBody", "ccRecipients");
 			assertThat(communicationEntity.getErrandNumber()).isEqualTo(ERRAND_NUMBER);
+			assertThat(communicationEntity.getErrand()).isSameAs(errand);
 			assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 			assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.WEB_MESSAGE);
 			assertThat(communicationEntity.getSender()).isEqualTo(fullName);
