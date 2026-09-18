@@ -52,7 +52,8 @@ class ErrandSearchResource {
 		| `status:new`, `stakeholders.lastName:berg` | a value in a specific field |
 		| `title:(vatten OR gas)` | several terms against one field |
 		| `jsonParameters.vehicle.regNo:abc123`, `jsonParameters.vehicle.regNo.raw:abc123` | a JSON parameter by key and path, as words or as the exact value |
-		| `berg*`, `b?rg`, `*ander*` | wildcards |
+		| `berg*`, `b?rg`, `*ander*` | wildcards in a value |
+		| `jsonParameters.\\*.regNo:abc123`, `\\*.probability:3` | a wildcard in a field name, escaped, standing for any part of the path |
 		| `bergh~1` | fuzzy, at most one edit away |
 		| `created:[2025-01-01 TO 2025-12-31]`, `created:>=2025-06-01`, `created:{* TO now-7d}` | ranges, with date math |
 		| `_exists_:assignedUserId` | the field has a value |
