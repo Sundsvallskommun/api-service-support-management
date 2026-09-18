@@ -174,6 +174,18 @@ class ErrandSearchIT extends AbstractAppTest {
 		assertThat(search("/2281/NAMESPACE-1/errands/search", "storgatan")).containsExactly("NS1-25010099");
 	}
 
+	/**
+	 * A star, escaped, stands for any part of a field name and spans dots, so a path can be left out or a field looked for
+	 * under every JSON parameter at once.
+	 */
+	@Test
+	void test16_wildcardsInFieldNames() {
+		assertThat(search(PATH, "jsonParameters.\\*.regNo:abc123")).containsExactly(LEAK);
+		assertThat(search(PATH, "jsonParameters.vehicle.\\*.name:bergström")).containsExactly(LEAK);
+		assertThat(search(PATH, "\\*.supplier:ljusbolaget")).containsExactly(LIGHTING);
+		assertThat(search(PATH, "jsonParameters.\\*.regNo.raw:xyz789")).containsExactly(LIGHTING);
+	}
+
 	@Test
 	void test15_reindex() {
 		setupCall()
