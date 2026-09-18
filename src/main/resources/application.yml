@@ -1,3 +1,7 @@
+search:
+  max-result-window: 10000
+  reindex:
+    lock-at-most-for: PT6H
 scheduler:
   emailreader:
     name: fetch_emails
@@ -149,6 +153,31 @@ spring:
           schema-generation:
             database:
               action: none
+      hibernate:
+        search:
+          # Off unless the environment has an OpenSearch instance. The search endpoint answers 503 while off.
+          enabled: false
+          backend:
+            # Pinned instead of detected so that starting the application never depends on the cluster being up
+            version: opensearch:3.6
+            version_check:
+              enabled: false
+            protocol: http
+            hosts: localhost:9200
+            analysis:
+              configurer: class:se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer
+            schema_management:
+              # How the JSON parameters, which the entity mapping cannot describe, are mapped as they come
+              mapping_file: search-mapping.json
+          schema_management:
+            # The index schema is created by SearchSchemaInitializer after startup and by a full reindex
+            strategy: none
+          indexing:
+            plan:
+              synchronization:
+                # MariaDB is the source of truth and the index is rebuildable, so a request never waits for or
+                # fails on OpenSearch. Indexing failures are logged.
+                strategy: async
   security:
     oauth2:
       client:

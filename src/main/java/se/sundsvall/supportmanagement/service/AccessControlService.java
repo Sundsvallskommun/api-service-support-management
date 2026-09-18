@@ -42,6 +42,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -765,12 +766,68 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Creates specification filter ensuring user has access to sent in resource at the required level.
+	 * Which errands of a namespace the requesting user reaches, as data rather than as a query, so that the one decision
+	 * can be rendered both as the specification guarding every endpoint and as the predicate the search index is asked
+	 * with.
 	 * <p>
-	 * Access granted through the labels of the access mapper is combined with access granted through a role the user holds
-	 * on the errand itself. The two are unioned, so a role can only ever add access for principals the access mapper does
-	 * not know about,
-	 * never reduce what it already granted.
+	 * An errand is reached through the labels when every access label of it is among the allowed ones, and through
+	 * reporting when its reporter is the user. The two are unioned, so reporting can only ever add access, never reduce
+	 * what the labels already granted. A route that is null is closed: labels grant nothing at the required level, or the
+	 * namespace grants reporters nothing there. A route that is open but empty (no allowed labels, or no ad account to
+	 * match) reaches nothing, which is not the same thing as being closed only in what it says, since both leave the errand
+	 * out.
+	 *
+	 * @param enforced          false when the namespace does not enforce access control, in which case every errand is
+	 *                          reached
+	 * @param allowedLabels     labels through which the user reaches errands, null when labels grant nothing at the level
+	 * @param reporterAdAccount ad account whose reported errands are reached, null when the namespace grants reporters
+	 *                          nothing at the level
+	 */
+	public record AccessScope(boolean enforced, Set<MetadataLabelEntity> allowedLabels, String reporterAdAccount) {
+
+		private static final AccessScope UNRESTRICTED = new AccessScope(false, null, null);
+
+		/** Ids of the allowed labels, empty when labels grant nothing. */
+		public Set<String> allowedLabelIds() {
+			return ofNullable(allowedLabels).orElse(emptySet()).stream()
+				.map(MetadataLabelEntity::getId)
+				.collect(Collectors.toSet());
+		}
+	}
+
+	/**
+	 * Resolves which errands the requesting user reaches for sent in resource at the required level.
+	 * <p>
+	 * Labels say which errands the user reaches, the access mapper resources say which operations they may perform at all,
+	 * and both must allow. Errands reported by the user are reached besides, which their labels may say nothing at all
+	 * about.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  user           user
+	 * @param  resource       resource being guarded
+	 * @param  required       lowest access level accepted for the operation
+	 * @return                the scope, unrestricted if access control is not enabled on the namespace
+	 */
+	public AccessScope accessScope(String namespace, String municipalityId, Identifier user, ProtectedResource resource, Access.AccessLevelEnum required) {
+		final var config = namespaceConfigService.get(namespace, municipalityId);
+
+		if (!config.isAccessControl()) {
+			return AccessScope.UNRESTRICTED;
+		}
+
+		final var access = accessMapperService.getAccessSnapshot(municipalityId, namespace, user);
+		final var grant = resourceGrant(config, access, resource);
+
+		final var allowedLabels = grant.permits(required) ? allowedLabels(config, access, grant, resource, required) : null;
+		final var reporterAdAccount = grantsReporterAccess(config, resource, required) ? adAccountOf(user) : null;
+
+		return new AccessScope(true, allowedLabels, reporterAdAccount);
+	}
+
+	/**
+	 * Creates specification filter ensuring user has access to sent in resource at the required level, see
+	 * {@link #accessScope(String, String, Identifier, ProtectedResource, Access.AccessLevelEnum)}.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -780,26 +837,22 @@ public class AccessControlService {
 	 * @return                specification if access control is enabled on namespace, conjunction otherwise
 	 */
 	public Specification<ErrandEntity> withAccessControl(String namespace, String municipalityId, Identifier user, ProtectedResource resource, Access.AccessLevelEnum required) {
-		final var config = namespaceConfigService.get(namespace, municipalityId);
+		return toSpecification(accessScope(namespace, municipalityId, user, resource, required));
+	}
 
-		if (!config.isAccessControl()) {
+	private static Specification<ErrandEntity> toSpecification(AccessScope scope) {
+		if (!scope.enforced()) {
 			return (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 		}
 
 		final var clauses = new ArrayList<Specification<ErrandEntity>>();
-		final var access = accessMapperService.getAccessSnapshot(municipalityId, namespace, user);
 
-		// Labels say which errands the user reaches, the access mapper resources say which operations they may perform at
-		// all, and both must allow.
-		final var grant = resourceGrant(config, access, resource);
-
-		if (grant.permits(required)) {
-			clauses.add(hasAllowedMetadataLabels(allowedLabels(config, access, grant, resource, required)));
+		if (nonNull(scope.allowedLabels())) {
+			clauses.add(hasAllowedMetadataLabels(scope.allowedLabels()));
 		}
 
-		// Errands reported by the user, which their labels may say nothing at all about.
-		if (grantsReporterAccess(config, resource, required)) {
-			clauses.add(isReportedBy(adAccountOf(user)));
+		if (nonNull(scope.reporterAdAccount())) {
+			clauses.add(isReportedBy(scope.reporterAdAccount()));
 		}
 
 		return clauses.stream()

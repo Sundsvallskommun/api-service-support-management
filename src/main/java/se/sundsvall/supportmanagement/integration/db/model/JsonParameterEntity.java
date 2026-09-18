@@ -13,6 +13,7 @@ import jakarta.persistence.Version;
 import java.util.Objects;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import se.sundsvall.supportmanagement.integration.db.search.JsonParameterValue;
 
 import static jakarta.persistence.FetchType.LAZY;
 import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
@@ -26,7 +27,7 @@ import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
 	uniqueConstraints = @UniqueConstraint(name = "uq_json_parameter_errand_id_key", columnNames = {
 		"errand_id", "parameter_key"
 	}))
-public class JsonParameterEntity {
+public class JsonParameterEntity implements JsonParameterValue {
 
 	@Id
 	@UuidGenerator

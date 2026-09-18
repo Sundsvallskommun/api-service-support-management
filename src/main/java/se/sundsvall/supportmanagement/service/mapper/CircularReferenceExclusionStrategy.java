@@ -9,6 +9,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigCondition
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
@@ -49,7 +50,10 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		// What the measure itself declares: the attachments it uses, which the errand already holds, its JSON parameters,
 		// which are the measure's rather than the errand's, and the artefact it follows from, which points back at the errand.
 		Map.entry(MeasureEntity.class, Set.of("attachments", "jsonParameters", "decisionEntity", "statementEntity")),
-		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)));
+		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)),
+		// Collections the errand holds for the search index alone. They are read and written through resources of their
+		// own and have never been part of the snapshot, and the communications point back at the errand.
+		Map.entry(ErrandEntity.class, Set.of("decisions", "statements", "investigations", "communications")));
 
 	public static CircularReferenceExclusionStrategy create() {
 		return new CircularReferenceExclusionStrategy();

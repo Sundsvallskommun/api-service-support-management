@@ -250,6 +250,41 @@ spring:
 - **No additional setup is required** for database initialization, as long as the database connection settings are
   correctly configured.
 
+### Errand Search
+
+`GET /{municipalityId}/{namespace}/errands/search` searches an OpenSearch index that
+[Hibernate Search](https://hibernate.org/search/) keeps in step with the errands and everything attached to them:
+stakeholders, parameters, JSON parameters, phases, measures, decisions, statements, investigations and communications.
+The `query` parameter is a Lucene query string, documented in full on the endpoint in the API documentation.
+
+Search is off unless the environment has an OpenSearch instance, and the endpoint answers 503 while it is off:
+
+```yaml
+spring:
+  jpa:
+    properties:
+      hibernate:
+        search:
+          enabled: true
+          backend:
+            hosts: my-opensearch:9200
+```
+
+The database is the source of truth and the index is disposable. Indexing follows every commit without holding the
+request up, so an OpenSearch that cannot be reached is logged and never fails a request, and the index schema is created
+after startup rather than during it, so the service starts without OpenSearch. Whatever the index missed is put right by
+`POST /{municipalityId}/{namespace}/errands/search/reindex`, which rebuilds the namespace from the database in the
+background, or with `full=true` recreates the whole index, which a changed mapping calls for. Errands created before
+search was introduced are indexed the same way. `/actuator/health` reports the cluster under `openSearch`.
+
+Locally, an instance is one command away:
+
+```bash
+docker run -p 9200:9200 -e discovery.type=single-node -e DISABLE_SECURITY_PLUGIN=true -e DISABLE_INSTALL_DEMO_CONFIG=true opensearchproject/opensearch:3.6.0
+```
+
+The integration tests start one of their own through Testcontainers.
+
 ### Additional Notes
 
 - **Application Profiles:**

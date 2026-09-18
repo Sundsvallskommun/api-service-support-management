@@ -1,0 +1,30 @@
+{
+	"date_detection": false,
+	"numeric_detection": false,
+	"dynamic_templates": [
+		{
+			"json_parameter_objects": {
+				"path_match": "*jsonParameters.*",
+				"match_mapping_type": "object",
+				"mapping": {
+					"type": "object"
+				}
+			}
+		},
+		{
+			"json_parameter_values": {
+				"path_match": "*jsonParameters.*",
+				"mapping": {
+					"type": "text",
+					"analyzer": "text_sv",
+					"fields": {
+						"raw": {
+							"type": "keyword",
+							"normalizer": "lowercase_normalizer"
+						}
+					}
+				}
+			}
+		}
+	]
+}
