@@ -1,5 +1,5 @@
 {
 	"title": "Conflict",
 	"status": 409,
-	"detail": "A job is already running for namespace 'NAMESPACE-1' in municipality with id '2281'"
+	"detail": "Label 'f4d6e210-633b-48a6-ad0a-7be839b28762' already has a move in progress"
 }

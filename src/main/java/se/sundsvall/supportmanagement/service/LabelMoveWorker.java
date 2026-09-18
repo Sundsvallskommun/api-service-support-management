@@ -148,8 +148,9 @@ public class LabelMoveWorker {
 	private int restowErrands(final LabelMoveRun run) {
 		var pageable = PageRequest.of(0, batchSize, Sort.by("id"));
 		var processed = 0;
+		var hasMore = true;
 
-		while (true) {
+		while (hasMore) {
 			final var page = errandsRepository.findByLabelsMetadataLabelId(run.labelId(), pageable);
 			if (page.isEmpty()) {
 				break;
@@ -159,9 +160,7 @@ public class LabelMoveWorker {
 			processed += page.getNumberOfElements();
 			jobService.updateProgress(run.jobId(), processed);
 
-			if (!page.hasNext()) {
-				break;
-			}
+			hasMore = page.hasNext();
 			pageable = pageable.next();
 		}
 

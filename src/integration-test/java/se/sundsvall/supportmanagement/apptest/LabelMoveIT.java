@@ -21,7 +21,7 @@ import static java.time.Duration.ofMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -69,8 +69,8 @@ class LabelMoveIT extends AbstractAppTest {
 	// References SUBTYPE-3 and SUBTYPE-4 directly - moving SUBTYPE-4 is what restows it
 	private static final String AFFECTED_ERRAND = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, created, modified) "
-		+ "VALUES ('bbbbbbbb-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, NOW(), NOW())";
+	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+		+ "VALUES ('bbbbbbbb-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, 'f4d6e210-633b-48a6-ad0a-7be839b28762', NOW(), NOW())";
 
 	@Autowired
 	private MetadataLabelRepository metadataLabelRepository;
@@ -121,7 +121,7 @@ class LabelMoveIT extends AbstractAppTest {
 	void test03_moveLabelCycleIsRefusedAndNothingChanges() {
 		setupCall()
 			.withServicePath(PATH + "/" + TYPE_2 + "/move")
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(BAD_REQUEST)
@@ -138,7 +138,7 @@ class LabelMoveIT extends AbstractAppTest {
 	void test04_moveLabelIsRefusedWhileAnotherJobIsRunning() {
 		setupCall()
 			.withServicePath(PATH + "/" + SUBTYPE_4 + "/move")
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(CONFLICT)
@@ -155,7 +155,7 @@ class LabelMoveIT extends AbstractAppTest {
 	private JobResponse startMove(final String labelId, final String requestFile) throws Exception {
 		return setupCall()
 			.withServicePath(PATH + "/" + labelId + "/move")
-			.withHttpMethod(PUT)
+			.withHttpMethod(POST)
 			.withRequest(requestFile)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(ACCEPTED)

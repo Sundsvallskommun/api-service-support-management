@@ -120,7 +120,7 @@ public class MetadataService {
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
-	private static final String ALREADY_RUNNING = "A job is already running for namespace '%s' in municipality with id '%s'";
+	private static final String MOVE_ALREADY_IN_PROGRESS = "Label '%s' already has a move in progress";
 	private static final String COULD_NOT_START = "Label move could not be started: %s";
 	private static final String UNKNOWN_CALLER = "unknown";
 	private static final int RESOURCE_PATH_MAX_LENGTH = 255;
@@ -444,9 +444,8 @@ public class MetadataService {
 	/**
 	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
 	 * <p>
-	 * Refused outright if another job is already under way for the namespace, since a move re-parents shared state
-	 * (the label tree and the errands under it) that a second run — of any kind — could just as easily be reading or
-	 * writing at the same time.
+	 * Refused outright if a move is already under way for this label, since a second run could just as easily be
+	 * reading or writing the same label tree and errands at the same time.
 	 * <p>
 	 * Kept transactional (not read-only, since {@link JobService#create} writes within it) so that the session
 	 * validation opens against stays open for as long as {@link #validateAndFindLabelToMove} needs it — the cycle
@@ -455,15 +454,58 @@ public class MetadataService {
 	 */
 	@Transactional
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var canonicalLabelId = context.labelToMove().getId();
 
-		var affectedErrandCount = errandsRepository.countByLabelsMetadataLabelId(labelId);
-		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount);
+		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL, canonicalLabelId)) {
+			throw Problem.valueOf(CONFLICT, MOVE_ALREADY_IN_PROGRESS.formatted(canonicalLabelId));
+		}
+
+		var allMovedIds = collectMovedLabelIds(canonicalLabelId, context.descendants());
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
+		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
+		var startedBy = startedBy();
+
+		try {
+			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), startedBy)));
+		} catch (final Exception e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			jobService.fail(jobId, COULD_NOT_START.formatted(e.getMessage()));
+
+			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START.formatted(e.getMessage()));
+		}
 
 		return jobService.get(namespace, municipalityId, jobId);
 	}
 
-	private MetadataLabelEntity validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
+	/**
+	 * The caller a label move is recorded against. Read here, on the request thread, since the thread carrying out the
+	 * run has no identifier of its own to read.
+	 */
+	private static String startedBy() {
+		return ofNullable(Identifier.get())
+			.map(Identifier::getValue)
+			.orElse(UNKNOWN_CALLER);
+	}
+
+	/**
+	 * The moved label together with every descendant under it, so that an errand tagged with any label in the subtree
+	 * counts as affected — regardless of whether the ancestor-chain invariant every errand is meant to carry has actually
+	 * caught up with it yet.
+	 */
+	private static Set<String> collectMovedLabelIds(final String labelId, final List<MetadataLabelEntity> descendants) {
+		return Stream.concat(Stream.of(labelId), descendants.stream().map(MetadataLabelEntity::getId))
+			.collect(Collectors.toSet());
+	}
+
+	/**
+	 * A label found to move, together with the descendants a move carries along with it — fetched once here so that
+	 * validating the resulting resource paths and collecting the ids a move affects don't each ask the database for the
+	 * same subtree.
+	 */
+	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {}
+
+	private LabelMoveContext validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
 		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, labelId, namespace, municipalityId)));
 

@@ -4,6 +4,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -22,6 +23,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 
 /**
  * Label Metadata IT tests.
@@ -45,6 +47,9 @@ class MetadataLabelIT extends AbstractAppTest {
 	private static final String MUNICIPALITY_2262 = "2262";
 	private static final String CONTACTCENTER = "CONTACTCENTER";
 	private static final String MUNICIPALITY_2584 = "2584";
+
+	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+		+ "VALUES ('cccccccc-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, 'ffe5f120-6a3b-4404-ace8-8ea87b559907', NOW(), NOW())";
 
 	@Test
 	void test01_createLabels() {
@@ -316,19 +321,13 @@ class MetadataLabelIT extends AbstractAppTest {
 
 	@Test
 	@DisplayName("Verification that a second real move on a label already moving is refused, since the two runs would race on the same errands")
+	@Sql(statements = RUNNING_MOVE_LABEL_JOB)
+	@SqlMergeMode(MERGE)
 	void test15_startLabelMoveRefusedWhilePreviousMoveIsPending() {
 		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/ffe5f120-6a3b-4404-ace8-8ea87b559907/move";
 
-		// First move — accepted, leaves the label with a PENDING job
-		setupCall()
-			.withServicePath(path)
-			.withHttpMethod(POST)
-			.withRequest(REQUEST_FILE)
-			.withContentType(APPLICATION_JSON)
-			.withExpectedResponseStatus(ACCEPTED)
-			.sendRequestAndVerifyResponse();
-
-		// Second move on the same label — refused while the first one is still PENDING
+		// A move for this label is already RUNNING (seeded above) - a real first request racing a real second one would
+		// leave the same window open only as long as the first take to run, which is not something to depend on here.
 		setupCall()
 			.withServicePath(path)
 			.withHttpMethod(POST)
