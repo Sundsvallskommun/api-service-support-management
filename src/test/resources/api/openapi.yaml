@@ -8589,8 +8589,8 @@ paths:
                 type: string
         "403":
           description: "Forbidden - the method does not match who writes the decision:\
-            \ MANUAL requires an AD account, AUTOMATIC the process consumer of the\
-            \ namespace"
+            \ MANUAL requires an AD account, AUTOMATIC a caller that is not one -\
+            \ in a namespace with a process consumer, that consumer"
           content:
             application/problem+json:
               schema:
@@ -15366,8 +15366,8 @@ paths:
                 $ref: "#/components/schemas/Decision"
         "403":
           description: "Forbidden - the method does not match who writes the decision:\
-            \ MANUAL requires an AD account, AUTOMATIC the process consumer of the\
-            \ namespace"
+            \ MANUAL requires an AD account, AUTOMATIC a caller that is not one -\
+            \ in a namespace with a process consumer, that consumer"
           content:
             application/problem+json:
               schema:

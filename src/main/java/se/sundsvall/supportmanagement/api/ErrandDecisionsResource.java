@@ -73,7 +73,7 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.formatOrNull;
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 class ErrandDecisionsResource {
 
-	private static final String FORBIDDEN_METHOD = "Forbidden - the method does not match who writes the decision: MANUAL requires an AD account, AUTOMATIC the process consumer of the namespace";
+	private static final String FORBIDDEN_METHOD = "Forbidden - the method does not match who writes the decision: MANUAL requires an AD account, AUTOMATIC a caller that is not one - in a namespace with a process consumer, that consumer";
 	private static final String DECISION_LOCKED = "Conflict - the decision can no longer be changed, as the process of the errand has run to its end or the decision is completed on an errand with a process";
 
 	private final ErrandDecisionService service;

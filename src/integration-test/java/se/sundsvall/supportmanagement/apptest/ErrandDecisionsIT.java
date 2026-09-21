@@ -29,6 +29,7 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 
 /**
  * Errand Decisions IT tests, including the terms a decision carries, the attachments linked to it and the JSON
@@ -361,6 +362,30 @@ class ErrandDecisionsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(decisionRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).hasSize(1);
+	}
+
+	/**
+	 * Verifies that in a namespace without a process consumer an automatic decision is taken from a caller that is not an
+	 * ad account.
+	 */
+	@Test
+	void test23_aServiceWritesAnAutomaticDecisionWhereNoProcessRuns() {
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "e-service; type=processEngine")
+			.withServicePath(PATH)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of(PATH + "/" + UUID_PATTERN))
+			.sendRequestAndVerifyResponse();
+
+		assertThat(decisionRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.filteredOn(decision -> "Automatiskt beslut".equals(decision.getTitle()))
+			.singleElement()
+			.satisfies(decision -> {
+				assertThat(decision.getMethod()).isEqualTo(DecisionMethod.AUTOMATIC);
+				assertThat(decision.getCreatedBy()).isEqualTo("e-service");
+			});
 	}
 
 	/** Counts the terms of the decision, read with SQL. */

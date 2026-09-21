@@ -87,6 +87,7 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 68 | **Etikettskrivningen avvisar också nycklar som stavas som `processKey` eller `processStartMode` på annat sätt** (versaler, blanksteg runt)                                                                                                                                                                                                | Bara de två kontrollerna i §7.7                                                                                                                                     | Utan den tredje regeln går `processstartmode: MANUAL` igenom båda kontrollerna och läses som inget läge alls, alltså `AUTOMATIC` — exakt den tysta feltolkning kontrollerna finns för — §7.7                                                                                                                                                                                                                 |
 | 69 | **En start "på väg" är varje olevererad rad för ärendet med `start_allowed = 1`**, oavsett subtyp                                                                                                                                                                                                                                         | Bara rader med subtypen `PROCESS`                                                                                                                                   | En automatisk start som ännu inte levererats är lika mycket en start på väg; en knapptryckning ovanpå den hade gett pw två startlov för samma ärende — §5.10                                                                                                                                                                                                                                                 |
 | 70 | **`startable.status` hålls till `ProcessStartability` av `withStatus(enum)`, inte av `@ValidEnumValue`**                                                                                                                                                                                                                                  | Annotationen, som beslut 42 anger                                                                                                                                   | Fältet är `READ_ONLY` och valideras aldrig; annotationen hade inte haft någon verkan. Samma mönster som `ErrandProcess.processStatus` i läsmodellen                                                                                                                                                                                                                                                          |
+| 71 | **I ett namespace utan `PROCESS_CONSUMER` godtas `AUTOMATIC` från varje anropare som inte är ett AD-konto, som på main** (2026-09-21). Beslut 56 gäller bara namespace med processkonsument                                                                                                                                               | `403` för `AUTOMATIC` i varje namespace utan processkonsument                                                                                                       | Användarens beslut. Main tillät det, och en tjänst som redan skriver automatiska beslut hade slutat fungera när alkt-sprint driftsattes — §7.5                                                                                                                                                                                                                                                               |
 
 ---
 
@@ -2049,14 +2050,17 @@ fortfarande:
 
 Två kan fatta beslutet, men de går in samma väg:
 
-|               Fall               |  `method`   |          Vem skriver           |                               Känns igen på                               |
-|----------------------------------|-------------|--------------------------------|---------------------------------------------------------------------------|
-| Handläggaren fattar beslutet     | `MANUAL`    | ett AD-konto                   | `X-Sent-By` med `type=adAccount`, och RW på beslutet                      |
-| Processen fattar beslutet självt | `AUTOMATIC` | namespacets `PROCESS_CONSUMER` | `X-Sent-By` har samma värde som `PROCESS_CONSUMER`, och är inget AD-konto |
+|                             Fall                             |  `method`   |          Vem skriver           |                               Känns igen på                               |
+|--------------------------------------------------------------|-------------|--------------------------------|---------------------------------------------------------------------------|
+| Handläggaren fattar beslutet                                 | `MANUAL`    | ett AD-konto                   | `X-Sent-By` med `type=adAccount`, och RW på beslutet                      |
+| Processen fattar beslutet självt                             | `AUTOMATIC` | namespacets `PROCESS_CONSUMER` | `X-Sent-By` har samma värde som `PROCESS_CONSUMER`, och är inget AD-konto |
+| En tjänst fattar beslutet, i ett namespace utan processmotor | `AUTOMATIC` | vilken tjänst som helst        | `X-Sent-By` är inget AD-konto (beslut 71)                                 |
 
-**Regeln kontrolleras när beslutet kommer in** (beslut 56): `AUTOMATIC` godtas bara från namespacets
-`PROCESS_CONSUMER`, `MANUAL` bara från ett AD-konto. Allt annat ger `403`, också `AUTOMATIC` i ett namespace
-som saknar processmotor. Utan den kontrollen skulle en handläggare kunna stämpla sitt eget beslut som
+**Regeln kontrolleras när beslutet kommer in** (beslut 56 och 71): `MANUAL` godtas bara från ett AD-konto och
+`AUTOMATIC` bara från en anropare som inte är det. Har namespacet en `PROCESS_CONSUMER` godtas `AUTOMATIC` bara
+från den. Allt annat ger `403`. I ett namespace utan processmotor gäller alltså handläggningsmodellens regel från
+main oförändrad, så att en tjänst som redan skriver automatiska beslut där inte slutar fungera när
+processintegrationen driftsätts. Utan den kontrollen skulle en handläggare kunna stämpla sitt eget beslut som
 automatiskt, eller en process stämpla sitt som manuellt — och det är just den skillnaden man måste kunna svara
 på i efterhand (förvaltningslagen 28 § och dataskyddsförordningen artikel 22 om automatiserat
 beslutsfattande). Metoden som prövas är den beslutet får efter skrivningen, så en `PATCH` som utelämnar

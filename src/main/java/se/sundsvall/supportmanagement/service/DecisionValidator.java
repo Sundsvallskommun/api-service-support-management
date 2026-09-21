@@ -30,8 +30,8 @@ import static se.sundsvall.supportmanagement.service.ErrandProcessService.hasCom
  * <b>How many decisions an errand may hold</b> is a setting of the namespace. A namespace that has not asked for a
  * restriction is not restricted.
  * <p>
- * <b>Who may claim which method</b>: a manual decision is written by an ad account, and an automatic one by the process
- * consumer of the namespace and nobody else.
+ * <b>Who may claim which method</b>: a manual decision is written by an ad account, and an automatic one by a caller
+ * that is not one - in a namespace with a process consumer, by that consumer and nobody else.
  * <p>
  * <b>Which outcomes there are</b> is for the namespace to say, in its metadata. The recommendation of an investigation
  * is held to the same outcomes.
@@ -48,7 +48,7 @@ public class DecisionValidator {
 
 	private static final String SINGLE_DECISION_PER_ERRAND = "Errand with id '%s' already holds a decision, and namespace '%s' for municipality with id '%s' allows only one";
 	private static final String MANUAL_REQUIRES_AD_ACCOUNT = "A decision with method MANUAL has to be written by an ad account";
-	private static final String AUTOMATIC_WITHOUT_PROCESS_CONSUMER = "A decision with method AUTOMATIC is written by the process consumer of the namespace, and namespace '%s' for municipality with id '%s' has none";
+	private static final String AUTOMATIC_REQUIRES_OTHER_THAN_AD_ACCOUNT = "A decision with method AUTOMATIC cannot be written by an ad account";
 	private static final String AUTOMATIC_REQUIRES_PROCESS_CONSUMER = "A decision with method AUTOMATIC can only be written by '%s', the process consumer of namespace '%s' for municipality with id '%s'";
 	private static final String BAD_OUTCOME = "'%s' is not a valid decision outcome for namespace '%s' and municipality with id '%s'";
 	private static final String PROCESS_LIFE_OVER = "The process of errand with id '%s' has run to its end, and its decisions can no longer be changed";
@@ -85,7 +85,9 @@ public class DecisionValidator {
 	}
 
 	/**
-	 * Rejects a method the caller is not the kind of caller for.
+	 * Rejects a method the caller is not the kind of caller for, with 403. MANUAL has to be written by an ad account, and
+	 * AUTOMATIC by a caller that is not one. In a namespace with a process consumer, AUTOMATIC has to be written by that
+	 * consumer.
 	 * <p>
 	 * The method to pass is the one the decision ends up with - on a patch the stored one when the request names none.
 	 * <p>
@@ -112,8 +114,14 @@ public class DecisionValidator {
 			return;
 		}
 
-		final var consumer = namespaceConfigService.getProcessConsumer(namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(FORBIDDEN, AUTOMATIC_WITHOUT_PROCESS_CONSUMER.formatted(namespace, municipalityId)));
+		final var consumer = namespaceConfigService.getProcessConsumer(namespace, municipalityId).orElse(null);
+
+		if (isNull(consumer)) {
+			if (writtenByPerson) {
+				throw Problem.valueOf(FORBIDDEN, AUTOMATIC_REQUIRES_OTHER_THAN_AD_ACCOUNT);
+			}
+			return;
+		}
 
 		if (writtenByPerson || isNull(identifier) || !consumer.equals(identifier.getValue())) {
 			throw Problem.valueOf(FORBIDDEN, AUTOMATIC_REQUIRES_PROCESS_CONSUMER.formatted(consumer, namespace, municipalityId));

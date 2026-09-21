@@ -843,8 +843,9 @@ a process adds:
 - **Creating, changing and deleting a decision** is logged as an errand event with the sub type `DECISION` and moves
   the version of the errand, so that a work step holding an older `ETag` gets `412`. Its terms, attachment links and
   JSON parameters do neither.
-- **Who may claim which method:** `MANUAL` is written by an AD account, `AUTOMATIC` only by the process consumer of the
-  namespace, recognised by the value of `X-Sent-By`. Anything else is `403`. The process row that made an automatic
+- **Who may claim which method:** `MANUAL` is written by an AD account, and `AUTOMATIC` by a caller that is not one. In
+  a namespace with a process consumer, `AUTOMATIC` is written only by that consumer, recognised by the value of
+  `X-Sent-By`. Anything else is `403`. The process row that made an automatic
   decision is set by SupportManagement in `errandProcessId`, and is never taken from the request.
 - **When a decision is locked**, and only on an errand that has a process:
   - once the process has run to its end (`COMPLETED`), no decision of the errand can be created, changed or deleted;

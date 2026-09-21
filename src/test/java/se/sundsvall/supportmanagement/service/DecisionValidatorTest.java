@@ -287,14 +287,35 @@ class DecisionValidatorTest {
 		assertThat(problem.getStatus()).isEqualTo(FORBIDDEN);
 	}
 
-	/**
-	 * A namespace that runs no process has nobody who can write an automatic decision.
-	 */
-	@Test
-	void anAutomaticDecisionInANamespaceWithoutAProcessConsumerIsRejected() {
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"e-service; type=processEngine", "81471222-5798-11e9-ae24-57fa13b361e1; type=partyId"
+	})
+	void anAutomaticDecisionInANamespaceWithoutAProcessConsumerIsTakenFromACallerThatIsNotAnAdAccount(final String sentBy) {
 
 		// Arrange
-		Identifier.set(Identifier.parse(PROCESS_CONSUMER + "; type=processEngine"));
+		Identifier.set(Identifier.parse(sentBy));
+		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateMethod(NAMESPACE, MUNICIPALITY_ID, AUTOMATIC));
+	}
+
+	@Test
+	void anAutomaticDecisionWithoutAnIdentifierIsTakenInANamespaceWithoutAProcessConsumer() {
+
+		// Arrange
+		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateMethod(NAMESPACE, MUNICIPALITY_ID, AUTOMATIC));
+	}
+
+	@Test
+	void anAdAccountCannotWriteAnAutomaticDecisionInANamespaceWithoutAProcessConsumer() {
+
+		// Arrange
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 
 		// Act
@@ -302,7 +323,7 @@ class DecisionValidatorTest {
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(FORBIDDEN);
-		assertThat(problem.getMessage()).contains("AUTOMATIC", NAMESPACE, MUNICIPALITY_ID);
+		assertThat(problem.getMessage()).contains("AUTOMATIC", "ad account");
 	}
 
 	/**
