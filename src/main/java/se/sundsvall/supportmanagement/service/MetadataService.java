@@ -525,11 +525,12 @@ public class MetadataService {
 			? newParent.getResourcePath() + "/" + labelToMove.getResourceName()
 			: labelToMove.getResourceName();
 
-		validateNoPathCollision(namespace, municipalityId, labelToMove, newPath);
+		validatePathNotTaken(namespace, municipalityId, labelToMove.getId(), newPath);
 
 		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
 			namespace, municipalityId, labelToMove.getResourcePath() + "/");
 
+		validateNoDescendantPathCollision(namespace, municipalityId, labelToMove, newPath, descendants);
 		validateResourcePathLength(labelToMove, newPath, descendants);
 
 		return new LabelMoveContext(labelToMove, descendants);
@@ -564,12 +565,22 @@ public class MetadataService {
 		}
 	}
 
-	private void validateNoPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final String newPath) {
-		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, newPath)
-			.filter(existing -> !Objects.equals(existing.getId(), labelToMove.getId()))
+	private void validatePathNotTaken(final String namespace, final String municipalityId, final String movingLabelId, final String candidatePath) {
+		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, candidatePath)
+			.filter(existing -> !Objects.equals(existing.getId(), movingLabelId))
 			.ifPresent(existing -> {
-				throw Problem.valueOf(CONFLICT, "A label with path '%s' already exists under the destination".formatted(newPath));
+				throw Problem.valueOf(CONFLICT, "A label with path '%s' already exists under the destination".formatted(candidatePath));
 			});
+	}
+
+	/**
+	 * A descendant's resulting path can collide just as easily as the moved label's own, since both land under a
+	 * destination neither of them has occupied before — checked here, once the subtree {@link #validateResourcePathLength}
+	 * also needs has been read, rather than folded into the moved label's own check above.
+	 */
+	private void validateNoDescendantPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final String newPath, final List<MetadataLabelEntity> descendants) {
+		var oldPrefixLength = labelToMove.getResourcePath().length();
+		descendants.forEach(descendant -> validatePathNotTaken(namespace, municipalityId, descendant.getId(), newPath + descendant.getResourcePath().substring(oldPrefixLength)));
 	}
 
 	/**

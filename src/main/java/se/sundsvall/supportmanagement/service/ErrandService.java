@@ -185,11 +185,7 @@ public class ErrandService {
 		final var entity = errand.getLabels() != null
 			? persistLabelUpdate(errandEntity)
 			: repository.saveAndFlush(errandEntity);
-		if (errand.getLabels() != null) {
-			errandLabelService.settleAccessLabels(errandEntity);
-		}
 
-		final var entity = repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
@@ -296,10 +292,6 @@ public class ErrandService {
 		return repository.count(fullFilter);
 	}
 
-	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
-		return repository.saveAndFlush(entity);
-	}
-
 	/**
 	 * Restows a batch of errands - each one's label set rebuilt from its access labels (leaves) outward - in a
 	 * transaction of its own, separate from whatever transaction (if any) the caller is running in. Used by the
@@ -324,10 +316,13 @@ public class ErrandService {
 			.toList();
 
 		errand.setLabels(leafLabels);
-		errandLabelService.settleAccessLabels(errand);
 		persistLabelUpdate(errand);
 	}
 
+	/**
+	 * Settles access labels from whatever label set the entity carries, then persists it - shared by every caller that
+	 * writes a label change, so that none of them has to remember to settle access labels before saving.
+	 */
 	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
 		errandLabelService.settleAccessLabels(entity);
 		return repository.saveAndFlush(entity);

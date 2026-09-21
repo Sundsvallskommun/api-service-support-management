@@ -628,19 +628,6 @@ class ErrandServiceTest {
 	}
 
 	@Test
-	void persistLabelUpdate_savesAndReturnsEntity() {
-		var errand = ErrandEntity.create().withId(ERRAND_ID);
-
-		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
-
-		var result = service.persistLabelUpdate(errand);
-
-		assertThat(result).isSameAs(errand);
-		verify(errandRepositoryMock).saveAndFlush(errand);
-		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock, errandLabelServiceMock);
-	}
-
-	@Test
 	@DisplayName("Verification that a migration batch restows each errand's labels from its access labels and settles them through ErrandLabelService")
 	void persistLabelMigrationBatch_rebuildsEachErrandsLabelsFromItsAccessLabels() {
 		var leafId = "leaf-id";
@@ -663,8 +650,6 @@ class ErrandServiceTest {
 		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
 	}
 
-	@ParameterizedTest
-	@MethodSource("argumentsForExpandRelation")
 	@Test
 	void persistLabelUpdate_settlesAccessLabelsAndSaves() {
 		var errand = ErrandEntity.create();

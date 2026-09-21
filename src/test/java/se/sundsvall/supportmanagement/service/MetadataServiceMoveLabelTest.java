@@ -251,12 +251,40 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.empty());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOME/CHILD/"))
 			.thenReturn(List.of(descendant));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "TARGET/CHILD/" + longDescendantSuffix))
+			.thenReturn(Optional.empty());
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.moveLabel(NAMESPACE, MUNICIPALITY_ID, LABEL_ID,
 				LabelMoveRequest.create().withNewParentId(NEW_PARENT_ID).withDryRun(true)))
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
 			.withMessageContaining("exceeds the maximum");
+	}
+
+	@Test
+	@DisplayName("Verification that a move is rejected when it is a descendant's resulting path, not the moved label's own, that would collide with an existing label")
+	void moveLabel_descendantPathCollision_throws409() {
+		var label = labelEntity(LABEL_ID, "CHILD", "SOME/CHILD");
+		var newParent = labelEntity(NEW_PARENT_ID, "TARGET", "TARGET");
+		var descendant = labelEntity("descendant-id", "LEAF", "SOME/CHILD/LEAF");
+		var collision = labelEntity("other-id", "LEAF", "TARGET/CHILD/LEAF");
+
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(label));
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(NEW_PARENT_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(newParent));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "TARGET/CHILD"))
+			.thenReturn(Optional.empty());
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOME/CHILD/"))
+			.thenReturn(List.of(descendant));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "TARGET/CHILD/LEAF"))
+			.thenReturn(Optional.of(collision));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.moveLabel(NAMESPACE, MUNICIPALITY_ID, LABEL_ID,
+				LabelMoveRequest.create().withNewParentId(NEW_PARENT_ID).withDryRun(true)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(CONFLICT.value()))
+			.withMessageContaining("TARGET/CHILD/LEAF");
 	}
 
 	@Test
@@ -304,6 +332,8 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.empty());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "ROOT/"))
 			.thenReturn(List.of(child));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "TARGET/ROOT/CHILD"))
+			.thenReturn(Optional.empty());
 		// An errand tagged only with the descendant - not the moved label itself - must still be counted
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID, "child-id"))).thenReturn(5L);
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))

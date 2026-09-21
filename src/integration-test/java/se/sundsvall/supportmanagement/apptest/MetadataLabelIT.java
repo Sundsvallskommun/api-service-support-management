@@ -3,12 +3,22 @@ package se.sundsvall.supportmanagement.apptest;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.integration.db.JobRepository;
+import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
 
+import static java.time.Duration.ofMillis;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -24,6 +34,9 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
 
 /**
  * Label Metadata IT tests.
@@ -50,6 +63,9 @@ class MetadataLabelIT extends AbstractAppTest {
 
 	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
 		+ "VALUES ('cccccccc-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, 'ffe5f120-6a3b-4404-ace8-8ea87b559907', NOW(), NOW())";
+
+	@Autowired
+	private JobRepository jobRepository;
 
 	@Test
 	void test01_createLabels() {
@@ -304,19 +320,31 @@ class MetadataLabelIT extends AbstractAppTest {
 
 	@Test
 	@DisplayName("Verification that starting a real move (dryRun=false) is accepted and answered with a PENDING job carrying the affected errand count as its total")
-	void test14_startLabelMoveCreatesJob() {
+	void test14_startLabelMoveCreatesJob() throws Exception {
 		// ffe5f120 is DEEPSUBTYPE-1, referenced by errand 147d355f — so the job total should be 1
 		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/ffe5f120-6a3b-4404-ace8-8ea87b559907/move";
 
-		setupCall()
+		final var job = setupCall()
 			.withServicePath(path)
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(ACCEPTED)
 			.withExpectedResponseHeader(LOCATION, List.of("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/jobs/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
+			.sendRequest()
+			.andReturnBody(JobResponse.class);
+
+		assertThat(job.getType()).isEqualTo(JobType.MOVE_LABEL);
+		assertThat(job.getStatus()).isEqualTo(JobStatus.PENDING);
+		assertThat(job.getProgress()).isZero();
+		assertThat(job.getTotal()).isEqualTo(1);
+		assertThat(job.getProcessed()).isZero();
+
+		// The run is carried out on a thread of its own - waited out here, since the framework's own stub verification
+		// runs right after this method returns and would otherwise race the audit call the run still has left to make.
+		final var ended = awaitEndOf(job.getJobId());
+
+		assertThat(ended.getStatus()).isEqualTo(COMPLETED);
 	}
 
 	@Test
@@ -340,19 +368,42 @@ class MetadataLabelIT extends AbstractAppTest {
 
 	@Test
 	@DisplayName("Verification that a real move to a destination with a multi-level ancestor chain succeeds, since the cycle check walks that chain through LAZY parent proxies and needs a session open to do it")
-	void test16_startLabelMoveToDeepDestinationSucceeds() {
+	void test16_startLabelMoveToDeepDestinationSucceeds() throws Exception {
 		// 8d0ac81c is SUBTYPE-1 (under TYPE-1 under CATEGORY-1); moved under f4d6e210, SUBTYPE-4 (under TYPE-2 under
 		// CATEGORY-1) — walking from SUBTYPE-4 up to CATEGORY-1 to check for a cycle crosses two LAZY parent hops
 		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/8d0ac81c-9c56-43b7-95cd-fa3c3592666d/move";
 
-		setupCall()
+		final var job = setupCall()
 			.withServicePath(path)
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
 			.withExpectedResponseStatus(ACCEPTED)
-			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
+			.sendRequest()
+			.andReturnBody(JobResponse.class);
+
+		// The run is carried out on a thread of its own - waited out here, since the framework's own stub verification
+		// runs right after this method returns and would otherwise race the audit call the run still has left to make.
+		final var ended = awaitEndOf(job.getJobId());
+
+		assertThat(ended.getStatus()).isEqualTo(COMPLETED);
+	}
+
+	/**
+	 * Waits for a label-move run to reach a state it cannot leave and hands back the job as it ended. Answered by the
+	 * job table rather than by anything held on this side, which is what a caller following the run would read as well.
+	 */
+	private JobEntity awaitEndOf(final String jobId) {
+		await()
+			.atMost(120, SECONDS)
+			.pollDelay(ofMillis(0))
+			.pollInterval(ofMillis(250))
+			.until(() -> jobRepository.findById(jobId)
+				.map(JobEntity::getStatus)
+				.filter(List.of(COMPLETED, STOPPED, FAILED)::contains)
+				.isPresent());
+
+		return jobRepository.findById(jobId).orElseThrow();
 	}
 
 }
