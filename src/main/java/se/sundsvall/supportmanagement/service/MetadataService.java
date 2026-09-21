@@ -517,7 +517,7 @@ public class MetadataService {
 	private void validateNoPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final String newPath) {
 		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, newPath)
 			.filter(existing -> !Objects.equals(existing.getId(), labelToMove.getId()))
-			.ifPresent(existing -> {
+			.ifPresent(_ -> {
 				throw Problem.valueOf(CONFLICT, "A label with path '%s' already exists under the destination".formatted(newPath));
 			});
 	}

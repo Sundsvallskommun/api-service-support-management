@@ -1,5 +1,17 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
+import net.javacrumbs.jsonunit.core.Option;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.StatementRepository;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -14,20 +26,6 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-
-import java.util.List;
-import net.javacrumbs.jsonunit.core.Option;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.StatementRepository;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 
 /**
  * Errand Statements IT tests.
@@ -46,7 +44,6 @@ class ErrandStatementsIT extends AbstractAppTest {
 	private static final String STATEMENT_ID = "f1000000-0000-0000-0000-000000000001";
 	private static final String DRAFT_STATEMENT_ID = "f1000000-0000-0000-0000-000000000002";
 	private static final String MEASURE_ID = "ee000000-0000-0000-0000-000000000200";
-	private static final String LINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000001";
 	private static final String UNLINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000002";
 
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/statements";
