@@ -10,13 +10,11 @@ import java.util.stream.Stream;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.AccessControlService;
-import se.sundsvall.supportmanagement.service.AccessControlService.AccessScope;
+import se.sundsvall.supportmanagement.service.access.AccessScope;
+import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 
-import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -57,12 +55,6 @@ public class ErrandSearchAccess {
 	// A field with its value: a group in parentheses, a range in brackets or braces, or a single term
 	private static final Pattern FIELDED_TERM = Pattern.compile("[\\w.\\\\*?-]+:(?:\\([^)]*\\)|\\[[^\\]]*\\]|\\{[^}]*\\}|\\S+)");
 	private static final Pattern OPERATORS = Pattern.compile("\\b(?:AND|OR|NOT|TO)\\b|&&|\\|\\||[+\\-!()]");
-
-	private final AccessControlService accessControlService;
-
-	public ErrandSearchAccess(final AccessControlService accessControlService) {
-		this.accessControlService = accessControlService;
-	}
 
 	/**
 	 * One closed field or start of field names, and why.
@@ -107,28 +99,24 @@ public class ErrandSearchAccess {
 	 */
 	public record Plan(AccessScope scope, List<String> fields) {}
 
-	public Access resolve(final String namespace, final String municipalityId, final Identifier user) {
-		final var errand = accessControlService.accessScope(namespace, municipalityId, user, ProtectedResource.ERRAND, R);
-		if (!errand.enforced()) {
-			return new Access(errand, List.of(), null);
+	public Access resolve(final NamespaceGrant grant) {
+		if (!grant.enforced()) {
+			return new Access(grant.scope(), List.of(), null);
 		}
 
-		final var closedResources = closedResources(namespace, municipalityId, user);
-		final var fieldAccess = accessControlService.searchFieldAccess(namespace, municipalityId, user);
-
-		final var labelsOpen = nonNull(errand.allowedLabels()) && !errand.allowedLabels().isEmpty();
-		final var reporterOpen = nonNull(errand.reporterAdAccount());
+		final var closedResources = closedResources(grant);
+		final var labelsOpen = nonNull(grant.labels()) && grant.labels().reachesAnything();
 
 		final var covered = new ArrayList<>(closedResources);
-		covered.addAll(closedFields(fieldAccess.covered()));
+		covered.addAll(closedFields(isNull(grant.labels()) ? null : grant.labels().readable()));
 		final var reported = new ArrayList<>(closedResources);
-		reported.addAll(closedFields(fieldAccess.reported()));
+		reported.addAll(closedFields(isNull(grant.reporter()) ? null : grant.reporter().readable()));
 
 		// The reporter fields are the rule when they are the only route, and a second rule beside the labels otherwise
 		if (!labelsOpen) {
-			return new Access(errand, List.copyOf(reported), null);
+			return new Access(grant.scope(), List.copyOf(reported), null);
 		}
-		return new Access(errand, List.copyOf(covered), reporterOpen ? List.copyOf(reported) : null);
+		return new Access(grant.scope(), List.copyOf(covered), nonNull(grant.reporter()) ? List.copyOf(reported) : null);
 	}
 
 	/**
@@ -153,14 +141,10 @@ public class ErrandSearchAccess {
 		return new Plan(scope, fields);
 	}
 
-	private List<Closed> closedResources(final String namespace, final String municipalityId, final Identifier user) {
+	private static List<Closed> closedResources(final NamespaceGrant grant) {
 		final var closed = new ArrayList<Closed>();
 		for (final var resource : ProtectedResource.values()) {
-			if (resource.getSearchFields().isEmpty()) {
-				continue;
-			}
-			final var scope = accessControlService.accessScope(namespace, municipalityId, user, resource, R);
-			if (isNull(scope.allowedLabels()) || scope.allowedLabels().isEmpty()) {
+			if (!resource.getSearchFields().isEmpty() && !grant.reaches(resource)) {
 				resource.getSearchFields().forEach(field -> closed.add(new Closed(field, null, "Resource '%s'".formatted(resource.getPath()))));
 			}
 		}

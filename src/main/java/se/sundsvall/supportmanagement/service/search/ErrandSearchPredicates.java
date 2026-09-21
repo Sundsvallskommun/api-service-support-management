@@ -10,7 +10,7 @@ import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.service.AccessControlService.AccessScope;
+import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toSet;

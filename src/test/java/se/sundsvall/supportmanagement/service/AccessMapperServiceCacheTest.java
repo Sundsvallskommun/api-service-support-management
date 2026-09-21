@@ -16,7 +16,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.AopTestUtils;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.service.model.AccessSnapshot;
+import se.sundsvall.supportmanagement.service.access.AccessSnapshot;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static java.util.Collections.emptyMap;

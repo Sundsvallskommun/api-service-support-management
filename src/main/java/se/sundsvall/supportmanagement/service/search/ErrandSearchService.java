@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.config.SearchProperties;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static java.util.Map.entry;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
@@ -100,7 +101,8 @@ public class ErrandSearchService {
 		verifySortable(pageable.getSort());
 
 		final var user = Identifier.get();
-		final var plan = searchAccess.plan(query, pageable.getSort(), searchAccess.resolve(namespace, municipalityId, user));
+		final var grant = accessControlService.namespaceGrant(namespace, municipalityId, user, R);
+		final var plan = searchAccess.plan(query, pageable.getSort(), searchAccess.resolve(grant));
 
 		final SearchResult<ErrandEntity> result;
 		try {
