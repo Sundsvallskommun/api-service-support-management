@@ -40,6 +40,7 @@ class ErrandProcessReportTest {
 		final var started = now();
 		final var error = ProcessError.create().withCode("INCIDENT");
 		final var activity = ProcessActivity.create().withActivityId("review_phase");
+		final var signal = ProcessSignal.create().withName("granskning-godkand");
 
 		final var report = ErrandProcessReport.create()
 			.withProcessService("pw-alkt")
@@ -52,7 +53,8 @@ class ErrandProcessReportTest {
 			.withErrandVersion(7L)
 			.withStarted(started)
 			.withError(error)
-			.withActivities(List.of(activity));
+			.withActivities(List.of(activity))
+			.withAwaitingSignals(List.of(signal));
 
 		assertThat(report.getProcessService()).isEqualTo("pw-alkt");
 		assertThat(report.getProcessKey()).isEqualTo("alkt-ansokan");
@@ -65,6 +67,7 @@ class ErrandProcessReportTest {
 		assertThat(report.getStarted()).isEqualTo(started);
 		assertThat(report.getError()).isEqualTo(error);
 		assertThat(report.getActivities()).containsExactly(activity);
+		assertThat(report.getAwaitingSignals()).containsExactly(signal);
 	}
 
 	@Test

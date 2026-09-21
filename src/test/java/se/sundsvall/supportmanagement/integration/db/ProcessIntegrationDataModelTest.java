@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
 import static java.time.Clock.systemDefaultZone;
@@ -58,6 +60,9 @@ class ProcessIntegrationDataModelTest {
 
 	@Autowired
 	private ErrandProcessActivityRepository errandProcessActivityRepository;
+
+	@Autowired
+	private ErrandProcessSignalRepository errandProcessSignalRepository;
 
 	@Test
 	@DisplayName("Verification that an entry written before any process instance exists is removed with the errand, since errand_id is the only thing tying it to anything")
@@ -119,6 +124,64 @@ class ProcessIntegrationDataModelTest {
 			.get()
 			.extracting(ErrandProcessEntity::getId)
 			.isEqualTo(live.getId());
+	}
+
+	@Test
+	@DisplayName("Verification that what a process waits for goes with its process row, and so with the errand, two cascades down")
+	void theSignalsOfAProcessAreCascadedAwayWithTheErrand() {
+		final var errandId = createErrand();
+		final var process = saveProcess(errandId, WAITING);
+		final var signalId = saveSignal(process.getId(), "granskning-godkand").getId();
+
+		errandsRepository.deleteById(errandId);
+		errandsRepository.flush();
+
+		assertThat(errandProcessSignalRepository.existsById(signalId)).isFalse();
+		assertThat(errandProcessRepository.existsById(process.getId())).isFalse();
+	}
+
+	@Test
+	@DisplayName("Verification that an instance can wait for a name once")
+	void anInstanceWaitsForANameOnce() {
+		final var processId = saveProcess(createErrand(), WAITING).getId();
+		saveSignal(processId, "granskning-godkand");
+
+		assertThatExceptionOfType(DataIntegrityViolationException.class)
+			.isThrownBy(() -> saveSignal(processId, "granskning-godkand"));
+	}
+
+	/**
+	 * The service compares names exactly, as the process engine does, and deduplicates a report on that alone. The column
+	 * has to compare them the same way: under the default collation every one of these is the same name, and a report
+	 * naming two of them would be refused by the key on every retry.
+	 */
+	@Test
+	@DisplayName("Verification that names differing only in case, accents or a trailing space are different signals")
+	void namesDifferingOnlyInCaseAccentsOrATrailingSpaceAreDifferentSignals() {
+		final var process = saveProcess(createErrand(), WAITING);
+		final var names = List.of("aterremiss", "Aterremiss", "återremiss", "aterremiss ");
+
+		names.forEach(name -> saveSignal(process.getId(), name));
+
+		assertThat(errandProcessSignalRepository.findByErrandProcessIdOrderBySortOrderAsc(process.getId()))
+			.extracting(ErrandProcessSignalEntity::getName)
+			.containsExactlyInAnyOrderElementsOf(names);
+	}
+
+	@Test
+	@DisplayName("Verification that two instances may wait for the same name")
+	void twoInstancesMayWaitForTheSameName() {
+		final var first = saveSignal(saveProcess(createErrand(), WAITING).getId(), "granskning-godkand").getId();
+		final var second = saveSignal(saveProcess(createErrand(), WAITING).getId(), "granskning-godkand").getId();
+
+		assertThat(errandProcessSignalRepository.existsById(first)).isTrue();
+		assertThat(errandProcessSignalRepository.existsById(second)).isTrue();
+	}
+
+	private ErrandProcessSignalEntity saveSignal(final String errandProcessId, final String name) {
+		return errandProcessSignalRepository.saveAndFlush(ErrandProcessSignalEntity.create()
+			.withErrandProcessId(errandProcessId)
+			.withName(name));
 	}
 
 	private String createErrand() {

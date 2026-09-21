@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.model.process;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
@@ -55,6 +56,12 @@ public class ErrandProcess {
 
 	@Schema(description = "Why the process failed, set when the state says it did")
 	private ProcessError error;
+
+	@Schema(description = """
+		What the process waits for from a handler right now: the signals a handler can send to step it past the gate it \
+		stands at, through POST .../processes/{processInstanceId}/signals. Empty when the process waits for no person, \
+		which is the normal case for a gate the process passes by itself, and always empty for a process that has ended.""")
+	private List<ProcessSignal> awaitingSignals;
 
 	@Schema(description = "When the process was first registered on the errand", examples = "2026-09-14T08:55:11.121+02:00")
 	@DateTimeFormat(iso = ISO.DATE_TIME)
@@ -201,6 +208,19 @@ public class ErrandProcess {
 		return this;
 	}
 
+	public List<ProcessSignal> getAwaitingSignals() {
+		return awaitingSignals;
+	}
+
+	public void setAwaitingSignals(final List<ProcessSignal> awaitingSignals) {
+		this.awaitingSignals = awaitingSignals;
+	}
+
+	public ErrandProcess withAwaitingSignals(final List<ProcessSignal> awaitingSignals) {
+		this.awaitingSignals = awaitingSignals;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -229,7 +249,7 @@ public class ErrandProcess {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, processService, processKey, processInstanceId, processStatus, currentActivityId, currentActivityName, started, ended, error, created, modified);
+		return Objects.hash(id, processService, processKey, processInstanceId, processStatus, currentActivityId, currentActivityName, started, ended, error, awaitingSignals, created, modified);
 	}
 
 	@Override
@@ -251,6 +271,7 @@ public class ErrandProcess {
 			&& Objects.equals(started, other.started)
 			&& Objects.equals(ended, other.ended)
 			&& Objects.equals(error, other.error)
+			&& Objects.equals(awaitingSignals, other.awaitingSignals)
 			&& Objects.equals(created, other.created)
 			&& Objects.equals(modified, other.modified);
 	}
@@ -268,6 +289,7 @@ public class ErrandProcess {
 			", started=" + started +
 			", ended=" + ended +
 			", error=" + error +
+			", awaitingSignals=" + awaitingSignals +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

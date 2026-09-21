@@ -8,11 +8,14 @@ import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
+import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
@@ -23,11 +26,15 @@ public final class ErrandProcessMapper {
 
 	/**
 	 * Maps an instance to the model served both under {@code /processes} and as the {@code process} field of an errand.
+	 * <p>
+	 * The signals are always set, so that a process waiting for no one says so with an empty list rather than by leaving
+	 * the field out, and a process that has ended waits for no one.
 	 *
-	 * @param  entity the instance to map.
-	 * @return        the instance as it is read.
+	 * @param  entity  the instance to map.
+	 * @param  signals what the instance waits for from a handler, in the order the process reported it.
+	 * @return         the instance as it is read.
 	 */
-	public static ErrandProcess toErrandProcess(final ErrandProcessEntity entity) {
+	public static ErrandProcess toErrandProcess(final ErrandProcessEntity entity, final List<ErrandProcessSignalEntity> signals) {
 		return ErrandProcess.create()
 			.withId(entity.getId())
 			.withProcessService(entity.getProcessService())
@@ -39,13 +46,39 @@ public final class ErrandProcessMapper {
 			.withStarted(entity.getStarted())
 			.withEnded(entity.getEnded())
 			.withError(toProcessError(entity))
+			.withAwaitingSignals(toProcessSignals(entity, signals))
 			.withCreated(entity.getCreated())
 			.withModified(entity.getModified());
 	}
 
-	public static List<ErrandProcess> toErrandProcesses(final List<ErrandProcessEntity> entities) {
+	/**
+	 * Maps instances, each with its own signals.
+	 *
+	 * @param  entities           the instances to map.
+	 * @param  signalsByProcessId the signals of the instances, keyed by the id of the process row. An instance with no
+	 *                            entry waits for no one.
+	 * @return                    the instances as they are read, in the order given.
+	 */
+	public static List<ErrandProcess> toErrandProcesses(final List<ErrandProcessEntity> entities, final Map<String, List<ErrandProcessSignalEntity>> signalsByProcessId) {
 		return entities.stream()
-			.map(ErrandProcessMapper::toErrandProcess)
+			.map(entity -> toErrandProcess(entity, signalsByProcessId.getOrDefault(entity.getId(), emptyList())))
+			.toList();
+	}
+
+	/**
+	 * What an instance waits for, which is nothing once it has ended, whatever rows it left behind. A signal to an ended
+	 * process is refused, and a process is ended by more than its own report - the relay ends one the process engine
+	 * refuses - so the rule is held here, where every reading passes, rather than on each path that ends a process.
+	 */
+	private static List<ProcessSignal> toProcessSignals(final ErrandProcessEntity entity, final List<ErrandProcessSignalEntity> signals) {
+		if (entity.getProcessStatus().isTerminal()) {
+			return emptyList();
+		}
+
+		return signals.stream()
+			.map(signal -> ProcessSignal.create()
+				.withName(signal.getName())
+				.withLabel(signal.getLabel()))
 			.toList();
 	}
 

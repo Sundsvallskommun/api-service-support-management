@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.process;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,6 +45,7 @@ class ErrandProcessTest {
 		final var created = now().plusMinutes(1);
 		final var modified = now().plusMinutes(2);
 		final var error = ProcessError.create().withCode("INCIDENT");
+		final var signal = ProcessSignal.create().withName("granskning-godkand");
 
 		final var process = ErrandProcess.create()
 			.withId("id")
@@ -56,6 +58,7 @@ class ErrandProcessTest {
 			.withStarted(started)
 			.withEnded(ended)
 			.withError(error)
+			.withAwaitingSignals(List.of(signal))
 			.withCreated(created)
 			.withModified(modified);
 
@@ -69,6 +72,7 @@ class ErrandProcessTest {
 		assertThat(process.getStarted()).isEqualTo(started);
 		assertThat(process.getEnded()).isEqualTo(ended);
 		assertThat(process.getError()).isEqualTo(error);
+		assertThat(process.getAwaitingSignals()).containsExactly(signal);
 		assertThat(process.getCreated()).isEqualTo(created);
 		assertThat(process.getModified()).isEqualTo(modified);
 	}

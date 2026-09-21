@@ -6657,6 +6657,116 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/processes/{processInstanceId}/signals:
+    post:
+      tags:
+      - Errand processes
+      summary: Signal process
+      description: "Steps a process past the gate it waits at, by sending one of the\
+        \ signals listed in awaitingSignals of the process. The signal is recorded\
+        \ and handed on to the process, which decides what it means where it stands\
+        \ - so 202 says the signal is on its way, not that the process has moved on.\
+        \ Read the errand again to see where it went. Sending a signal does not consume\
+        \ it: until the process reports where it went, the same signal is accepted\
+        \ again, so a client should not offer it twice. Only a person may send a signal,\
+        \ and the request carries its name and nothing else: a reason for the step\
+        \ belongs in a note on the errand."
+      operationId: signalProcess
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: processInstanceId
+        in: path
+        description: Process instance id
+        required: true
+        schema:
+          type: string
+          maxLength: 64
+          minLength: 0
+        example: 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessSignalRequest"
+        required: true
+      responses:
+        "202":
+          description: Accepted — the signal is recorded and handed on to the process
+        "403":
+          description: "Forbidden — the caller is not an ad account, or may not reach\
+            \ the errand"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: "Not found — the errand does not exist, or has no such process\
+            \ instance"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict — the process does not wait for the signal right\
+            \ now, or has ended. Read the errand again rather than retrying"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/{errandId}/notifications:
     get:
       tags:
@@ -19399,8 +19509,8 @@ components:
       - value
     ErrandProcessReport:
       type: object
-      description: "What a process reports about itself: the state it is in and what\
-        \ it did"
+      description: "What a process reports about itself: the state it is in, what\
+        \ it did and what it waits for"
       properties:
         processService:
           type: string
@@ -19487,6 +19597,17 @@ components:
           items:
             $ref: "#/components/schemas/ProcessActivity"
           maxItems: 100
+          minItems: 0
+        awaitingSignals:
+          type: array
+          description: "What the process waits for from a handler right now: the signals\
+            \ a handler can send to step it past the gate it stands at. Replaces what\
+            \ the previous report said, and a report that leaves it out or sends it\
+            \ empty says the process waits for no person, which is the normal case\
+            \ for a gate the process passes by itself."
+          items:
+            $ref: "#/components/schemas/ProcessSignal"
+          maxItems: 50
           minItems: 0
       required:
       - processKey
@@ -19591,6 +19712,29 @@ components:
           - Timeout against Employee after 30 s
           maxLength: 2048
           minLength: 0
+    ProcessSignal:
+      type: object
+      description: "A signal the process waits for from a handler: a gate it can be\
+        \ stepped past by hand"
+      properties:
+        name:
+          type: string
+          description: "The message name of the signal in the process model. It is\
+            \ what a handler sends to step the process on, and what the process correlates\
+            \ on - exactly as given, case included."
+          examples:
+          - granskning-godkand
+          maxLength: 128
+          minLength: 0
+        label:
+          type: string
+          description: "Display text for the choice, taken from the process model"
+          examples:
+          - Godkänn granskning
+          maxLength: 255
+          minLength: 0
+      required:
+      - name
     ErrandProcess:
       type: object
       description: "A process attached to an errand, and its state"
@@ -19652,6 +19796,15 @@ components:
         error:
           $ref: "#/components/schemas/ProcessError"
           description: "Why the process failed, set when the state says it did"
+        awaitingSignals:
+          type: array
+          description: "What the process waits for from a handler right now: the signals\
+            \ a handler can send to step it past the gate it stands at, through POST\
+            \ .../processes/{processInstanceId}/signals. Empty when the process waits\
+            \ for no person, which is the normal case for a gate the process passes\
+            \ by itself, and always empty for a process that has ended."
+          items:
+            $ref: "#/components/schemas/ProcessSignal"
         created:
           type: string
           format: date-time
@@ -21730,6 +21883,22 @@ components:
           examples:
           - 0
           readOnly: true
+    ProcessSignalRequest:
+      type: object
+      description: A request to step a process past a gate it waits at
+      properties:
+        signal:
+          type: string
+          description: "The name of the signal to send, which has to be one of awaitingSignals\
+            \ on the process right now, exactly as given there. The process decides\
+            \ what the signal means where it stands - sending one steps past nothing\
+            \ the process does not allow."
+          examples:
+          - granskning-godkand
+          maxLength: 128
+          minLength: 0
+      required:
+      - signal
     CreateErrandNoteRequest:
       type: object
       description: CreateErrandNoteRequest model

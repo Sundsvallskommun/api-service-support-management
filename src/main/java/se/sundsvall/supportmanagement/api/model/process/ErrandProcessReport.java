@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.model.process;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -15,14 +16,14 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import static java.util.Optional.ofNullable;
 
 /**
- * What a process reports about itself: the state it is in and what it did. The body of both write
+ * What a process reports about itself: the state it is in, what it did and what it waits for. The body of both write
  * paths under {@code /processes}.
  * <p>
  * Kept apart from {@link ErrandProcess}, which is what a process is read as. Three fields belong to the report and to
  * nothing else - the external task, the errand version and the activities - and in a shared model they would show in
  * every read without ever being filled there.
  */
-@Schema(description = "What a process reports about itself: the state it is in and what it did")
+@Schema(description = "What a process reports about itself: the state it is in, what it did and what it waits for")
 public class ErrandProcessReport {
 
 	@Schema(description = "The service running the process, matching the process consumer configured for the namespace", examples = "pw-alkt")
@@ -83,6 +84,14 @@ public class ErrandProcessReport {
 	@Valid
 	@Size(max = 100, message = "may contain at most 100 activities")
 	private List<ProcessActivity> activities;
+
+	@Schema(description = """
+		What the process waits for from a handler right now: the signals a handler can send to step it past the gate it \
+		stands at. Replaces what the previous report said, and a report that leaves it out or sends it empty says the \
+		process waits for no person, which is the normal case for a gate the process passes by itself.""")
+	@Valid
+	@Size(max = 50, message = "may contain at most 50 signals")
+	private List<@NotNull ProcessSignal> awaitingSignals;
 
 	public static ErrandProcessReport create() {
 		return new ErrandProcessReport();
@@ -234,9 +243,22 @@ public class ErrandProcessReport {
 		return this;
 	}
 
+	public List<ProcessSignal> getAwaitingSignals() {
+		return awaitingSignals;
+	}
+
+	public void setAwaitingSignals(final List<ProcessSignal> awaitingSignals) {
+		this.awaitingSignals = awaitingSignals;
+	}
+
+	public ErrandProcessReport withAwaitingSignals(final List<ProcessSignal> awaitingSignals) {
+		this.awaitingSignals = awaitingSignals;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(processService, processKey, processInstanceId, processStatus, currentActivityId, currentActivityName, externalTaskId, errandVersion, started, error, activities);
+		return Objects.hash(processService, processKey, processInstanceId, processStatus, currentActivityId, currentActivityName, externalTaskId, errandVersion, started, error, activities, awaitingSignals);
 	}
 
 	@Override
@@ -258,7 +280,8 @@ public class ErrandProcessReport {
 			&& Objects.equals(errandVersion, other.errandVersion)
 			&& Objects.equals(started, other.started)
 			&& Objects.equals(error, other.error)
-			&& Objects.equals(activities, other.activities);
+			&& Objects.equals(activities, other.activities)
+			&& Objects.equals(awaitingSignals, other.awaitingSignals);
 	}
 
 	@Override
@@ -275,6 +298,7 @@ public class ErrandProcessReport {
 			", started=" + started +
 			", error=" + error +
 			", activities=" + activities +
+			", awaitingSignals=" + awaitingSignals +
 			'}';
 	}
 }

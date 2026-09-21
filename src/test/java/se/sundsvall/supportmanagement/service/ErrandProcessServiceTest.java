@@ -6,10 +6,13 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -24,11 +27,14 @@ import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
+import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
@@ -46,6 +52,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.WARN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
@@ -74,6 +81,9 @@ class ErrandProcessServiceTest {
 	private ErrandProcessActivityRepository activityRepositoryMock;
 
 	@Mock
+	private ErrandProcessSignalRepository signalRepositoryMock;
+
+	@Mock
 	private AccessControlService accessControlServiceMock;
 
 	@Mock
@@ -91,6 +101,9 @@ class ErrandProcessServiceTest {
 	@Captor
 	private ArgumentCaptor<ErrandProcessActivityEntity> activityCaptor;
 
+	@Captor
+	private ArgumentCaptor<Iterable<ErrandProcessSignalEntity>> signalsCaptor;
+
 	private ErrandProcessService service;
 
 	/**
@@ -99,7 +112,7 @@ class ErrandProcessServiceTest {
 	 */
 	@BeforeEach
 	void setUp() {
-		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock, transactionManagerMock, CLOCK);
+		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, signalRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock, transactionManagerMock, CLOCK);
 
 		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue(PROCESS_SERVICE));
 		lenient().when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(PROCESS_SERVICE));
@@ -345,15 +358,20 @@ class ErrandProcessServiceTest {
 
 	@Test
 	void registeringAStartOfAnInstanceAlreadyReportedOnTouchesNothing() {
-		final var existing = entity(PROCESS_INSTANCE_ID, WAITING).withCurrentActivityId("granska");
+		final var existing = entity(PROCESS_INSTANCE_ID, WAITING).withId("rowId").withCurrentActivityId("granska");
 		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+		when(signalRepositoryMock.findByErrandProcessIdOrderBySortOrderAsc("rowId")).thenReturn(List.of(signal("rowId", "granskning-godkand", "Godkänn granskning", 0)));
 
-		final var result = service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID));
+		final var result = service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID)
+			.withAwaitingSignals(List.of(ProcessSignal.create().withName("something-else"))));
 
 		assertThat(result.created()).isFalse();
 		assertThat(result.process().getProcessStatus()).isEqualTo(WAITING.name());
 		assertThat(result.process().getCurrentActivityId()).isEqualTo("granska");
+		assertThat(result.process().getAwaitingSignals()).extracting(ProcessSignal::getName).containsExactly("granskning-godkand");
 		verify(processRepositoryMock, never()).saveAndFlush(any());
+		verify(signalRepositoryMock, never()).saveAll(any());
+		verify(signalRepositoryMock, never()).deleteAll(any());
 		verifyNoInteractions(activityRepositoryMock);
 	}
 
@@ -469,6 +487,96 @@ class ErrandProcessServiceTest {
 		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
 
 		verifyNoInteractions(activityRepositoryMock);
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	// What the process waits for from a handler
+	// ---------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * A signal still awaited keeps its row, since a flush inserts before it deletes and a name deleted and inserted anew
+	 * in the same flush would collide with itself in the unique key.
+	 */
+	@Test
+	void aReportReplacesWhatTheInstanceWaitsFor() {
+		final var approve = signal("rowId", "granskning-godkand", "Godkänn granskning", 0);
+		final var reject = signal("rowId", "granskning-avvisad", "Skicka tillbaka", 1);
+		givenKnownInstance(entity(PROCESS_INSTANCE_ID, WAITING).withId("rowId"), approve, reject);
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(WAITING).withAwaitingSignals(List.of(
+			ProcessSignal.create().withName("granskning-avvisad").withLabel("Skicka tillbaka för komplettering"),
+			ProcessSignal.create().withName("beslut-fattat").withLabel("Beslut fattat"))));
+
+		verify(signalRepositoryMock).deleteAll(signalsCaptor.capture());
+		assertThat(signalsCaptor.getValue()).containsExactly(approve);
+		verify(signalRepositoryMock).saveAll(signalsCaptor.capture());
+		assertThat(signalsCaptor.getValue())
+			.extracting(ErrandProcessSignalEntity::getErrandProcessId, ErrandProcessSignalEntity::getName, ErrandProcessSignalEntity::getLabel, ErrandProcessSignalEntity::getSortOrder)
+			.containsExactly(
+				tuple("rowId", "granskning-avvisad", "Skicka tillbaka för komplettering", 0),
+				tuple("rowId", "beslut-fattat", "Beslut fattat", 1));
+		assertThat(signalsCaptor.getValue()).first().isSameAs(reject);
+		assertThat(result.process().getAwaitingSignals())
+			.extracting(ProcessSignal::getName)
+			.containsExactly("granskning-avvisad", "beslut-fattat");
+	}
+
+	/**
+	 * A report describes the whole state of the process, so leaving the signals out says the same as sending none.
+	 */
+	@ParameterizedTest
+	@NullAndEmptySource
+	void aReportWithoutSignalsSaysTheProcessWaitsForNoOne(final List<ProcessSignal> awaitingSignals) {
+		final var approve = signal("rowId", "granskning-godkand", "Godkänn granskning", 0);
+		givenKnownInstance(entity(PROCESS_INSTANCE_ID, WAITING).withId("rowId"), approve);
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING).withAwaitingSignals(awaitingSignals));
+
+		verify(signalRepositoryMock).deleteAll(signalsCaptor.capture());
+		assertThat(signalsCaptor.getValue()).containsExactly(approve);
+		verify(signalRepositoryMock).saveAll(signalsCaptor.capture());
+		assertThat(signalsCaptor.getValue()).isEmpty();
+		assertThat(result.process().getAwaitingSignals()).isEmpty();
+	}
+
+	/**
+	 * Names are compared exactly, as the process engine compares them: a name reported twice is one signal, while names
+	 * differing in case or in a trailing space are two.
+	 */
+	@Test
+	void theSameNameReportedTwiceIsStoredOnceTheFirstKept() {
+		givenKnownInstance(entity(PROCESS_INSTANCE_ID, WAITING).withId("rowId"));
+
+		service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(WAITING).withAwaitingSignals(List.of(
+			ProcessSignal.create().withName("granskning-godkand").withLabel("First"),
+			ProcessSignal.create().withName("granskning-godkand").withLabel("Second"),
+			ProcessSignal.create().withName("Granskning-Godkand"),
+			ProcessSignal.create().withName("granskning-godkand "))));
+
+		verify(signalRepositoryMock).saveAll(signalsCaptor.capture());
+		assertThat(signalsCaptor.getValue())
+			.extracting(ErrandProcessSignalEntity::getName, ErrandProcessSignalEntity::getLabel, ErrandProcessSignalEntity::getSortOrder)
+			.containsExactly(
+				tuple("granskning-godkand", "First", 0),
+				tuple("Granskning-Godkand", null, 1),
+				tuple("granskning-godkand ", null, 2));
+	}
+
+	@Test
+	void theFirstReportAboutAnInstanceStoresWhatItWaitsForWithoutAskingWhatItWaitedForBefore() {
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> ((ErrandProcessEntity) invocation.getArgument(0)).withId("rowId"));
+		when(signalRepositoryMock.saveAll(any())).thenAnswer(invocation -> copyOf(invocation.getArgument(0)));
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(WAITING)
+			.withAwaitingSignals(List.of(ProcessSignal.create().withName("granskning-godkand").withLabel("Godkänn granskning"))));
+
+		verify(signalRepositoryMock).saveAll(signalsCaptor.capture());
+		assertThat(signalsCaptor.getValue())
+			.extracting(ErrandProcessSignalEntity::getErrandProcessId, ErrandProcessSignalEntity::getName)
+			.containsExactly(tuple("rowId", "granskning-godkand"));
+		assertThat(result.process().getAwaitingSignals()).containsExactly(ProcessSignal.create().withName("granskning-godkand").withLabel("Godkänn granskning"));
+		verify(signalRepositoryMock, never()).findByErrandProcessIdOrderBySortOrderAsc(any());
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -731,15 +839,27 @@ class ErrandProcessServiceTest {
 	@Test
 	void readingTheProcessesAnswersWithTheEnvelope() {
 		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID))
-			.thenReturn(List.of(entity("newest", RUNNING), entity("oldest", COMPLETED)));
+			.thenReturn(List.of(entity("newest", WAITING).withId("row-newest"), entity("oldest", COMPLETED).withId("row-oldest")));
+		when(signalRepositoryMock.findByErrandProcessIdInOrderBySortOrderAsc(List.of("row-newest", "row-oldest")))
+			.thenReturn(List.of(signal("row-newest", "granskning-godkand", "Godkänn granskning", 0)));
 
 		final var processes = service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		assertThat(processes.getProcesses())
-			.extracting(ErrandProcess::getProcessInstanceId)
-			.containsExactly("newest", "oldest");
+			.extracting(ErrandProcess::getProcessInstanceId, process -> process.getAwaitingSignals().stream().map(ProcessSignal::getName).toList())
+			.containsExactly(
+				tuple("newest", List.of("granskning-godkand")),
+				tuple("oldest", List.of()));
 		assertThat(processes.getStartable()).isNull();
 		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS, R);
+	}
+
+	@Test
+	void readingTheProcessesOfAnErrandThatNeverHadOneAsksForNoSignals() {
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of());
+
+		assertThat(service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID).getProcesses()).isEmpty();
+		verifyNoInteractions(signalRepositoryMock);
 	}
 
 	@Test
@@ -789,26 +909,45 @@ class ErrandProcessServiceTest {
 	// Enrichment of the errand
 	// ---------------------------------------------------------------------------------------------------------------
 
+	/**
+	 * The signals are asked for once for the page, and only for the processes the errands show - the older rows of an
+	 * errand are thrown away before the question is put.
+	 */
 	@Test
-	void theLatestProcessPerErrandIsReadInOneQuery() {
+	void theLatestProcessPerErrandAndWhatItWaitsForAreReadInOneQueryEach() {
 		when(processRepositoryMock.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("errand-1", "errand-2"), MUNICIPALITY_ID, NAMESPACE)).thenReturn(List.of(
-			entity("newest-1", FAILED).withErrandId("errand-1"),
-			entity("older-1", COMPLETED).withErrandId("errand-1"),
-			entity("newest-2", RUNNING).withErrandId("errand-2")));
+			entity("newest-1", FAILED).withId("row-newest-1").withErrandId("errand-1"),
+			entity("older-1", COMPLETED).withId("row-older-1").withErrandId("errand-1"),
+			entity("newest-2", WAITING).withId("row-newest-2").withErrandId("errand-2")));
+		when(signalRepositoryMock.findByErrandProcessIdInOrderBySortOrderAsc(List.of("row-newest-1", "row-newest-2"))).thenReturn(List.of(
+			signal("row-newest-2", "granskning-godkand", "Godkänn granskning", 0),
+			signal("row-newest-2", "granskning-avvisad", "Skicka tillbaka", 1)));
 
 		final var processes = service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1", "errand-2"));
 
 		assertThat(processes).hasSize(2);
 		assertThat(processes.get("errand-1").getProcessInstanceId()).isEqualTo("newest-1");
+		assertThat(processes.get("errand-1").getAwaitingSignals()).isEmpty();
 		assertThat(processes.get("errand-2").getProcessInstanceId()).isEqualTo("newest-2");
+		assertThat(processes.get("errand-2").getAwaitingSignals()).extracting(ProcessSignal::getName).containsExactly("granskning-godkand", "granskning-avvisad");
 		verify(processRepositoryMock, times(1)).findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(any(), anyString(), anyString());
+		verify(signalRepositoryMock, times(1)).findByErrandProcessIdInOrderBySortOrderAsc(any());
+		verifyNoMoreInteractions(signalRepositoryMock);
+	}
+
+	@Test
+	void aPageWithoutASingleProcessAsksForNoSignals() {
+		when(processRepositoryMock.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("errand-1"), MUNICIPALITY_ID, NAMESPACE)).thenReturn(List.of());
+
+		assertThat(service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1"))).isEmpty();
+		verifyNoInteractions(signalRepositoryMock);
 	}
 
 	@Test
 	void noErrandsAsksTheDatabaseNothing() {
 		assertThat(service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of())).isEmpty();
 		assertThat(service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, null)).isEmpty();
-		verifyNoInteractions(processRepositoryMock);
+		verifyNoInteractions(processRepositoryMock, signalRepositoryMock);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -829,6 +968,30 @@ class ErrandProcessServiceTest {
 			.withActivityType("PHASE")
 			.withActivityId(activityId)
 			.withOccurredAt(now(systemDefault()));
+	}
+
+	/**
+	 * An instance the service already knows, waiting for what is sent in. What is saved is handed back as it was sent,
+	 * which is what the repository does for rows that are new or already managed.
+	 */
+	private void givenKnownInstance(final ErrandProcessEntity instance, final ErrandProcessSignalEntity... stored) {
+		when(processRepositoryMock.findByProcessInstanceId(instance.getProcessInstanceId())).thenReturn(Optional.of(instance));
+		when(processRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(signalRepositoryMock.findByErrandProcessIdOrderBySortOrderAsc(instance.getId())).thenReturn(List.of(stored));
+		when(signalRepositoryMock.saveAll(any())).thenAnswer(invocation -> copyOf(invocation.getArgument(0)));
+	}
+
+	private static List<ErrandProcessSignalEntity> copyOf(final Iterable<ErrandProcessSignalEntity> signals) {
+		return StreamSupport.stream(signals.spliterator(), false).toList();
+	}
+
+	private static ErrandProcessSignalEntity signal(final String errandProcessId, final String name, final String label, final int sortOrder) {
+		return ErrandProcessSignalEntity.create()
+			.withId(errandProcessId + "-" + name)
+			.withErrandProcessId(errandProcessId)
+			.withName(name)
+			.withLabel(label)
+			.withSortOrder(sortOrder);
 	}
 
 	private static ErrandProcessEntity entity(final String processInstanceId, final ProcessStatus status) {
