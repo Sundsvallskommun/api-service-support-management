@@ -22,6 +22,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.search.ErrandReindexService;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
 
@@ -38,6 +39,13 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 @RequestMapping("/{municipalityId}/{namespace}/errands/search")
 @Tag(name = "Errand search", description = "Full text search of errands")
 class ErrandSearchResource {
+
+	private static final String ERRAND_FIELDS = "`" + ErrandIndex.ERRAND_NUMBER + "`, `" + ErrandIndex.TITLE + "`, `" + ErrandIndex.DESCRIPTION + "`, `" + ErrandIndex.CONTACT_REASON_DESCRIPTION
+		+ "`, `" + ErrandIndex.CONTACT_REASON + ".reason`, `" + ErrandIndex.STATUS + "`, `" + ErrandIndex.CATEGORY + "`, `" + ErrandIndex.TYPE + "`, `" + ErrandIndex.RESOLUTION + "`, `"
+		+ ErrandIndex.CHANNEL + "`, `" + ErrandIndex.PRIORITY + "`, `" + ErrandIndex.REPORTER_USER_ID + "`, `" + ErrandIndex.ASSIGNED_USER_ID + "`, `" + ErrandIndex.ASSIGNED_GROUP_ID + "`, `"
+		+ ErrandIndex.ESCALATION_EMAIL + "`, `" + ErrandIndex.BUSINESS_RELATED + "`, `" + ErrandIndex.CREATED + "`, `" + ErrandIndex.MODIFIED + "`, `" + ErrandIndex.TOUCHED + "`, `"
+		+ ErrandIndex.SUSPENDED_FROM + "`, `" + ErrandIndex.SUSPENDED_TO + "`, `" + ErrandIndex.EXTERNAL_TAGS + ".key`, `" + ErrandIndex.EXTERNAL_TAG_VALUE + "`, `" + ErrandIndex.LABELS + "."
+		+ ErrandIndex.METADATA_LABEL_ID + "`, `" + ErrandIndex.ATTACHMENTS + ".fileName`, `" + ErrandIndex.ATTACHMENTS + ".mimeType`.";
 
 	static final String QUERY_DESCRIPTION = """
 		A [Lucene query string](https://opensearch.org/docs/latest/query-dsl/full-text/query-string/), searched in an index \
@@ -62,10 +70,9 @@ class ErrandSearchResource {
 		A bare word is a search term, it is only a field name when followed by a colon. The characters \
 		`+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \\ /` are part of the syntax and are escaped with a backslash when meant literally.
 
-		Fields of the errand: `errandNumber`, `title`, `description`, `contactReasonDescription`, `contactReason.reason`, \
-		`status`, `category`, `type`, `resolution`, `channel`, `priority`, `reporterUserId`, `assignedUserId`, `assignedGroupId`, \
-		`escalationEmail`, `businessRelated`, `created`, `modified`, `touched`, `suspendedFrom`, `suspendedTo`, \
-		`externalTags.key`, `externalTags.value`, `labels.metadataLabelId`, `attachments.fileName`, `attachments.mimeType`.
+		Fields of the errand: \
+		""" + ERRAND_FIELDS + """
+
 		Of its stakeholders: `stakeholders.externalId`, `stakeholders.externalIdType`, `stakeholders.role`, `stakeholders.firstName`, \
 		`stakeholders.lastName`, `stakeholders.organizationName`, `stakeholders.address`, `stakeholders.careOf`, `stakeholders.zipCode`, \
 		`stakeholders.city`, `stakeholders.country`, `stakeholders.contactChannels.type`, `stakeholders.contactChannels.value`, \

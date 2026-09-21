@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
 import java.util.List;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 
 /**
  * Resources that can be guarded by access control. Each constant carries a hierarchical path which access patterns are
@@ -13,8 +14,8 @@ import java.util.List;
 public enum ProtectedResource {
 
 	ERRAND("errand"),
-	ATTACHMENT("errand/attachment", "attachments."),
-	COMMUNICATION("errand/communication", "communications."),
+	ATTACHMENT("errand/attachment", ErrandIndex.under(ErrandIndex.ATTACHMENTS)),
+	COMMUNICATION("errand/communication", ErrandIndex.under(ErrandIndex.COMMUNICATIONS)),
 	COMMUNICATION_ATTACHMENT("errand/communication/attachment"),
 	CONVERSATION("errand/conversation"),
 	CONVERSATION_MESSAGE("errand/conversation/message"),
@@ -22,12 +23,12 @@ public enum ProtectedResource {
 	EVENT("errand/event"),
 	NOTE("errand/note"),
 	NOTE_REVISION("errand/note/revision"),
-	PARAMETER("errand/parameter", "parameters."),
-	JSON_PARAMETER("errand/json-parameter", "jsonParameters.", "jsonParametersText"),
-	MEASURE("errand/measure", "measures."),
-	STATEMENT("errand/statement", "statements."),
-	INVESTIGATION("errand/investigation", "investigations."),
-	DECISION("errand/decision", "decisions."),
+	PARAMETER("errand/parameter", ErrandIndex.under(ErrandIndex.PARAMETERS)),
+	JSON_PARAMETER("errand/json-parameter", ErrandIndex.under(ErrandIndex.JSON_PARAMETERS), ErrandIndex.JSON_PARAMETERS_TEXT),
+	MEASURE("errand/measure", ErrandIndex.under(ErrandIndex.MEASURES)),
+	STATEMENT("errand/statement", ErrandIndex.under(ErrandIndex.STATEMENTS)),
+	INVESTIGATION("errand/investigation", ErrandIndex.under(ErrandIndex.INVESTIGATIONS)),
+	DECISION("errand/decision", ErrandIndex.under(ErrandIndex.DECISIONS)),
 	NOTIFICATION("errand/notification"),
 	REVISION("errand/revision"),
 	TIME_MEASURE("errand/time-measure"),

@@ -76,10 +76,11 @@ class ErrandSearchServiceTest {
 
 	@Test
 	void sortablePropertiesMapToIndexFields() {
-		assertThat(ErrandSearchService.SORTABLE_PROPERTIES)
-			.containsEntry("title", "title_sort")
-			.containsEntry("created", "created")
-			.containsEntry("errandNumber", "errandNumber")
-			.hasSize(16);
+		assertThat(ErrandIndexModel.sortableProperties()).containsExactly("assignedGroupId", "assignedUserId", "category", "channel", "created", "errandNumber", "modified", "priority",
+			"reporterUserId", "resolution", "status", "suspendedFrom", "suspendedTo", "title", "touched", "type");
+		assertThat(ErrandIndexModel.sortField("title")).contains("title_sort");
+		assertThat(ErrandIndexModel.sortField("category")).contains("category");
+		assertThat(ErrandIndexModel.sortField("suspendedTo")).contains("suspendedTo");
+		assertThat(ErrandIndexModel.sortField("description")).isEmpty();
 	}
 }

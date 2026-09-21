@@ -10,6 +10,7 @@ import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static java.util.Objects.isNull;
@@ -22,28 +23,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 @Component
 public class ErrandSearchPredicates {
 
-	/**
-	 * Where a query without a field looks. Every text field of the errand and what hangs off it, plus the identifiers a
-	 * user is likely to paste into a search box.
-	 */
-	static final List<String> DEFAULT_FIELDS = List.of(
-		"errandNumber", "title", "description", "contactReasonDescription",
-		"externalTags.value",
-		"stakeholders.externalId", "stakeholders.firstName", "stakeholders.lastName", "stakeholders.organizationName", "stakeholders.address",
-		"stakeholders.city", "stakeholders.careOf", "stakeholders.contactChannels.value", "stakeholders.parameters.values",
-		"parameters.values", "jsonParametersText", "attachments.fileName",
-		"phases.phase.displayName",
-		"measures.title", "measures.description", "measures.goal", "measures.acceptMotivation", "measures.resultText", "measures.jsonParametersText",
-		"decisions.title", "decisions.description", "decisions.legalBasis", "decisions.justification", "decisions.jsonParametersText",
-		"statements.title", "statements.description", "statements.counterpartyName", "statements.question", "statements.responseText", "statements.jsonParametersText",
-		"investigations.title", "investigations.description", "investigations.summary", "investigations.conclusion", "investigations.recommendationMotivation",
-		"investigations.jsonParametersText",
-		"communications.subject", "communications.messageBody");
-
-	static final String MUNICIPALITY_ID_FIELD = "municipalityId";
-	static final String NAMESPACE_FIELD = "namespace";
-	static final String REPORTER_USER_ID_FIELD = "reporterUserId";
-	static final String ACCESS_LABEL_ID_FIELD = "accessLabels.metadataLabelId";
+	static final String MUNICIPALITY_ID_FIELD = ErrandIndex.MUNICIPALITY_ID;
+	static final String NAMESPACE_FIELD = ErrandIndex.NAMESPACE;
+	static final String REPORTER_USER_ID_FIELD = ErrandIndex.REPORTER_USER_ID;
+	static final String ACCESS_LABEL_ID_FIELD = ErrandIndex.ACCESS_LABEL_ID;
 
 	private final MetadataLabelRepository metadataLabelRepository;
 
@@ -58,7 +41,7 @@ public class ErrandSearchPredicates {
 	 *
 	 * @param f      the factory
 	 * @param query  the query string
-	 * @param fields the fields a word without a field is looked for in, see {@link ErrandSearchAccess#searchableFields}
+	 * @param fields the fields a word without a field is looked for in
 	 */
 	public SearchPredicate query(final SearchPredicateFactory f, final String query, final List<String> fields) {
 		if (isBlank(query)) {
