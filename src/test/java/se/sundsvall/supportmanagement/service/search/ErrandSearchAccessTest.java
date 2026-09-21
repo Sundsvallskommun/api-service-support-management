@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.search;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +34,18 @@ class ErrandSearchAccessTest {
 	private static final Set<ProtectedResource> EVERY_RESOURCE = Set.of(ProtectedResource.COMMUNICATION, ProtectedResource.DECISION, ProtectedResource.STATEMENT,
 		ProtectedResource.INVESTIGATION, ProtectedResource.MEASURE, ProtectedResource.PARAMETER, ProtectedResource.JSON_PARAMETER, ProtectedResource.ATTACHMENT);
 
-	private final ErrandSearchAccess access = new ErrandSearchAccess();
+	/** A cut of the text fields of the real index, enough to tell the closures apart. */
+	private static final List<String> TEXT_FIELDS = List.of("attachments.fileName", "communications.subject", "communications.messageBody", "contactReasonDescription",
+		"decisions.title", "decisions.justification", "description", "errandNumber", "externalTags.value", "jsonParametersText", "measures.title", "parameters.values",
+		"stakeholders.lastName", "title");
+
+	private final ErrandSearchAccess access = new ErrandSearchAccess(new ErrandIndexModel(null) {
+
+		@Override
+		public List<String> textFields() {
+			return TEXT_FIELDS;
+		}
+	});
 
 	private ErrandSearchAccess.Plan plan(final String query, final Sort sort, final NamespaceGrant grant) {
 		return access.plan(query, sort, grant);
@@ -67,7 +79,7 @@ class ErrandSearchAccessTest {
 	void everythingIsOpenWithoutAccessControl() {
 		final var plan = plan("communications.subject:x AND \\*.probability:3", Sort.by("created"), NamespaceGrant.UNRESTRICTED);
 
-		assertThat(plan.fields()).isEqualTo(ErrandSearchPredicates.DEFAULT_FIELDS);
+		assertThat(plan.fields()).isEqualTo(TEXT_FIELDS);
 		assertThat(plan.scope().enforced()).isFalse();
 	}
 
@@ -178,6 +190,6 @@ class ErrandSearchAccessTest {
 		assertThat(plan("description:x", UNSORTED, grant).scope().reporterAdAccount()).isNull();
 		assertThat(plan("title:x", Sort.by("created"), grant).scope().reporterAdAccount()).isNull();
 		assertThat(plan("vatten", UNSORTED, grant).scope().reporterAdAccount()).isNull();
-		assertThat(plan("vatten", UNSORTED, grant).fields()).isEqualTo(ErrandSearchPredicates.DEFAULT_FIELDS);
+		assertThat(plan("vatten", UNSORTED, grant).fields()).isEqualTo(TEXT_FIELDS);
 	}
 }

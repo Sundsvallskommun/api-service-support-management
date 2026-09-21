@@ -44,6 +44,12 @@ public class ErrandSearchAccess {
 	 */
 	public record Plan(AccessScope scope, List<String> fields) {}
 
+	private final ErrandIndexModel index;
+
+	public ErrandSearchAccess(final ErrandIndexModel index) {
+		this.index = index;
+	}
+
 	/**
 	 * Holds the query and the sort to the grant, and settles what the search runs with.
 	 *
@@ -51,7 +57,7 @@ public class ErrandSearchAccess {
 	 */
 	public Plan plan(final String query, final Sort sort, final NamespaceGrant grant) {
 		if (!grant.enforced()) {
-			return new Plan(grant.scope(), ErrandSearchPredicates.DEFAULT_FIELDS);
+			return new Plan(grant.scope(), index.textFields());
 		}
 
 		final var labelsOpen = nonNull(grant.labels()) && grant.labels().reachesAnything();
@@ -63,14 +69,14 @@ public class ErrandSearchAccess {
 			refusal(query, sort, closure).ifPresent(refusal -> {
 				throw refusal;
 			});
-			return new Plan(grant.scope(), closure.open(ErrandSearchPredicates.DEFAULT_FIELDS));
+			return new Plan(grant.scope(), closure.open(index.textFields()));
 		}
 
 		final var covered = FieldClosure.of(grant, grant.labels().readable());
 		refusal(query, sort, covered).ifPresent(refusal -> {
 			throw refusal;
 		});
-		final var fields = covered.open(ErrandSearchPredicates.DEFAULT_FIELDS);
+		final var fields = covered.open(index.textFields());
 
 		if (isNull(reported)) {
 			return new Plan(grant.scope(), fields);

@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.service.search;
 import com.google.gson.JsonObject;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
-import java.util.Map;
 import org.hibernate.search.backend.elasticsearch.ElasticsearchExtension;
 import org.hibernate.search.engine.search.query.SearchResult;
 import org.hibernate.search.engine.search.sort.dsl.SearchSortFactory;
@@ -22,10 +21,10 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.config.SearchProperties;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
-import static java.util.Map.entry;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 
@@ -40,28 +39,6 @@ public class ErrandSearchService {
 
 	static final String UNSUPPORTED_SORT = "Sorting on '%s' is not supported by search. Sortable properties are: %s";
 	static final String BEYOND_RESULT_WINDOW = "Page %d of size %d reaches beyond the %d results a search can page through. Narrow the search instead";
-
-	/**
-	 * The properties a search result can be sorted on and the index fields that carry them. Text is analyzed into words and
-	 * cannot be sorted on, so a text property sorts on its keyword twin.
-	 */
-	static final Map<String, String> SORTABLE_PROPERTIES = Map.ofEntries(
-		entry("created", "created"),
-		entry("modified", "modified"),
-		entry("touched", "touched"),
-		entry("suspendedFrom", "suspendedFrom"),
-		entry("suspendedTo", "suspendedTo"),
-		entry("errandNumber", "errandNumber"),
-		entry("title", "title_sort"),
-		entry("status", "status"),
-		entry("category", "category"),
-		entry("type", "type"),
-		entry("priority", "priority"),
-		entry("resolution", "resolution"),
-		entry("channel", "channel"),
-		entry("reporterUserId", "reporterUserId"),
-		entry("assignedUserId", "assignedUserId"),
-		entry("assignedGroupId", "assignedGroupId"));
 
 	private final EntityManager entityManager;
 	private final AccessControlService accessControlService;
@@ -147,7 +124,7 @@ public class ErrandSearchService {
 
 		if (sort.isUnsorted()) {
 			clauses.add(clause(SCORE, SortOrder.DESC));
-			clauses.add(clause(SORTABLE_PROPERTIES.get("created"), SortOrder.DESC));
+			clauses.add(clause(ErrandIndex.CREATED, SortOrder.DESC));
 		} else {
 			sort.forEach(order -> clauses.add(clause(toIndexField(order.getProperty()), order.isAscending() ? SortOrder.ASC : SortOrder.DESC)));
 		}
@@ -171,10 +148,7 @@ public class ErrandSearchService {
 	}
 
 	private static String toIndexField(final String property) {
-		final var field = SORTABLE_PROPERTIES.get(property);
-		if (field == null) {
-			throw Problem.valueOf(BAD_REQUEST, UNSUPPORTED_SORT.formatted(property, SORTABLE_PROPERTIES.keySet().stream().sorted().toList()));
-		}
-		return field;
+		return ErrandIndexModel.sortField(property)
+			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, UNSUPPORTED_SORT.formatted(property, ErrandIndexModel.sortableProperties())));
 	}
 }

@@ -109,8 +109,8 @@ class ErrandSearchPredicatesTest {
 		when(factoryMock.matchAll()).thenReturn(matchAllMock);
 		when(matchAllMock.toPredicate()).thenReturn(predicateMock);
 
-		assertThat(predicates().query(factoryMock, " ", ErrandSearchPredicates.DEFAULT_FIELDS)).isSameAs(predicateMock);
-		assertThat(predicates().query(factoryMock, null, ErrandSearchPredicates.DEFAULT_FIELDS)).isSameAs(predicateMock);
+		assertThat(predicates().query(factoryMock, " ", List.of("title"))).isSameAs(predicateMock);
+		assertThat(predicates().query(factoryMock, null, List.of("title"))).isSameAs(predicateMock);
 		verify(factoryMock, never()).queryString();
 	}
 
@@ -127,7 +127,6 @@ class ErrandSearchPredicatesTest {
 		verify(queryStringFieldStepMock).fields("title", "description");
 		verify(queryStringFieldMoreStepMock).matching("vatten status:new");
 		verify(queryStringOptionsMock).defaultOperator(BooleanOperator.AND);
-		assertThat(ErrandSearchPredicates.DEFAULT_FIELDS).contains("title", "description", "stakeholders.lastName", "jsonParametersText", "communications.messageBody", "measures.jsonParametersText");
 	}
 
 	@Test

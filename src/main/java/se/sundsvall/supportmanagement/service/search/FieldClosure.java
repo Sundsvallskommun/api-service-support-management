@@ -23,8 +23,6 @@ import static java.util.Objects.isNull;
  */
 record FieldClosure(List<Closed> rules) {
 
-	private static final String JSON_PARAMETERS = "jsonParameters.";
-
 	static final FieldClosure OPEN = new FieldClosure(List.of());
 
 	/**
@@ -76,7 +74,8 @@ record FieldClosure(List<Closed> rules) {
 				if (isNull(keys)) {
 					field.getSearchFields().forEach(name -> rules.add(new Closed(name, null, description)));
 				} else if (!keys.isEmpty()) {
-					field.getSearchFields().forEach(name -> rules.add(JSON_PARAMETERS.equals(name)
+					// Keys that are paths keep the granted ones open under the object; anything else the keys share closes
+					field.getSearchFields().forEach(name -> rules.add(field.getIndex().keysArePaths() && name.endsWith(".")
 						? new Closed(name, keys, description)
 						: new Closed(name, null, description + " beyond its keys")));
 				}
