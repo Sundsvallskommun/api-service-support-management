@@ -1488,7 +1488,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ErrandProcess"
+              $ref: "#/components/schemas/ErrandProcessReport"
         required: true
       responses:
         "200":
@@ -6598,7 +6598,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ErrandProcess"
+              $ref: "#/components/schemas/ErrandProcessReport"
         required: true
       responses:
         "200":
@@ -19507,16 +19507,11 @@ components:
       - key
       - schemaId
       - value
-    ErrandProcess:
+    ErrandProcessReport:
       type: object
-      description: "A process attached to an errand, and its state"
+      description: "What a process reports about itself: the state it is in, what\
+        \ it did and what it waits for"
       properties:
-        id:
-          type: string
-          description: Unique id of the process row
-          examples:
-          - 1f0e4c21-4ba9-4f39-8a3b-9a6a1a9d1b77
-          readOnly: true
         processService:
           type: string
           description: "The service running the process, matching the process consumer\
@@ -19577,7 +19572,6 @@ components:
           - a91c7f30-4d2b-11f0-9e21-0242ac120004
           maxLength: 64
           minLength: 0
-          writeOnly: true
         errandVersion:
           type: integer
           format: int64
@@ -19586,61 +19580,35 @@ components:
             \ therefore has no If-Match of its own."
           examples:
           - 7
-          writeOnly: true
         started:
           type: string
           format: date-time
-          description: When the process started
+          description: When the process started. A later report that leaves it out
+            does not clear it
           examples:
           - 2026-09-14T08:55:11.004+02:00
-        ended:
-          type: string
-          format: date-time
-          description: "When the process reached a state it does not leave. Set by\
-            \ this service from the reported state rather than taken from the report,\
-            \ and cleared again if the instance comes back to life."
-          examples:
-          - 2026-09-20T14:03:11.882+02:00
-          readOnly: true
         error:
           $ref: "#/components/schemas/ProcessError"
           description: "Why the process failed, set when the state says it did"
         activities:
           type: array
           description: "What the process did, appended to the activity log of the\
-            \ errand in the same call as the state. Read back through GET /errands/{errandId}/process-activities\
-            \ rather than here."
+            \ errand in the same call as the state. Read back through GET /errands/{errandId}/process-activities."
           items:
             $ref: "#/components/schemas/ProcessActivity"
           maxItems: 100
           minItems: 0
-          writeOnly: true
         awaitingSignals:
           type: array
           description: "What the process waits for from a handler right now: the signals\
-            \ a handler can send to step it past the gate it stands at. Replaced as\
-            \ a whole by every report, and a report that leaves it out or sends it\
+            \ a handler can send to step it past the gate it stands at. Replaces what\
+            \ the previous report said, and a report that leaves it out or sends it\
             \ empty says the process waits for no person, which is the normal case\
-            \ for a gate the process passes by itself. Always empty for a process\
-            \ that has ended."
+            \ for a gate the process passes by itself."
           items:
             $ref: "#/components/schemas/ProcessSignal"
           maxItems: 50
           minItems: 0
-        created:
-          type: string
-          format: date-time
-          description: When the process was first registered on the errand
-          examples:
-          - 2026-09-14T08:55:11.121+02:00
-          readOnly: true
-        modified:
-          type: string
-          format: date-time
-          description: When the state of the process was last updated
-          examples:
-          - 2026-09-14T09:02:45.004+02:00
-          readOnly: true
       required:
       - processKey
       - processService
@@ -19767,6 +19735,88 @@ components:
           minLength: 0
       required:
       - name
+    ErrandProcess:
+      type: object
+      description: "A process attached to an errand, and its state"
+      properties:
+        id:
+          type: string
+          description: Unique id of the process row
+          examples:
+          - 1f0e4c21-4ba9-4f39-8a3b-9a6a1a9d1b77
+        processService:
+          type: string
+          description: The service running the process
+          examples:
+          - pw-alkt
+        processKey:
+          type: string
+          description: "The process model this instance runs, as the process engine\
+            \ names it"
+          examples:
+          - alkt-ansokan
+        processInstanceId:
+          type: string
+          description: "Id of the process instance in the process engine. Left out\
+            \ for a start that failed, since it never produced one"
+          examples:
+          - 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
+        processStatus:
+          type: string
+          description: "The state the process is in: RUNNING, WAITING, RETRYING, COMPLETED\
+            \ or FAILED. Carried as a string rather than as an enum so that a value\
+            \ added later does not break a client that generated one from this schema."
+          examples:
+          - RUNNING
+        currentActivityId:
+          type: string
+          description: "Identifier of the activity the process is at, as the process\
+            \ model names it"
+          examples:
+          - investigation_phase
+        currentActivityName:
+          type: string
+          description: Display name of the activity the process is at
+          examples:
+          - Utredning
+        started:
+          type: string
+          format: date-time
+          description: When the process started
+          examples:
+          - 2026-09-14T08:55:11.004+02:00
+        ended:
+          type: string
+          format: date-time
+          description: "When the process reached a state it does not leave. Set by\
+            \ this service from the reported state, and cleared again if the instance\
+            \ comes back to life."
+          examples:
+          - 2026-09-20T14:03:11.882+02:00
+        error:
+          $ref: "#/components/schemas/ProcessError"
+          description: "Why the process failed, set when the state says it did"
+        awaitingSignals:
+          type: array
+          description: "What the process waits for from a handler right now: the signals\
+            \ a handler can send to step it past the gate it stands at, through POST\
+            \ .../processes/{processInstanceId}/signals. Empty when the process waits\
+            \ for no person, which is the normal case for a gate the process passes\
+            \ by itself, and always empty for a process that has ended."
+          items:
+            $ref: "#/components/schemas/ProcessSignal"
+        created:
+          type: string
+          format: date-time
+          description: When the process was first registered on the errand
+          examples:
+          - 2026-09-14T08:55:11.121+02:00
+        modified:
+          type: string
+          format: date-time
+          description: When the state of the process was last updated
+          examples:
+          - 2026-09-14T09:02:45.004+02:00
     EmailIntegration:
       type: object
       description: Email integration config model

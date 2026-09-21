@@ -81,6 +81,7 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 62 | **Kommandona har en egen tjänst, `ProcessCommandService`**, bredvid `ErrandProcessService`                                                                                                                                                                                                                                                | Signalen som metod i `ErrandProcessService`                                                                                                                         | `ErrandProcessService` äger det processen rapporterar och läsningen av det; ett kommando är ingetdera och behöver `EventService`. Startkommandot i T12 hör hemma där också — §5.9                                                                                                                                                                                                                            |
 | 63 | **En signal i ett namespace utan `PROCESS_CONSUMER` ⇒ `400`**, som för processrapporten                                                                                                                                                                                                                                                   | Att låta publiceringen avgöra                                                                                                                                       | Publiceringen skriver ingen rad där, och knappen hade sett ut att fungera utan att något hände — §5.9                                                                                                                                                                                                                                                                                                        |
 | 64 | **En signal förbrukar ingenting: skyddet mot dubbelklick är processens nästa rapport** (2026-09-21)                                                                                                                                                                                                                                       | Att tömma instansens väntade signaler när en godtas; att förbruka bara den tryckta                                                                                  | Användarens beslut. SM vet inte vad en signal besvarar, och en gissning döljer knappar som gäller eller skyddar bara halvt. Ett andra klick före rapporten tas emot av pw som en signal ingen grind väntar på — §5.9                                                                                                                                                                                         |
+| 65 | **Rapporten har en egen modell, `ErrandProcessReport`, och `ErrandProcess` är bara läsmodellen** (2026-09-21)                                                                                                                                                                                                                             | En modell för båda, med rapportens egna fält märkta `WRITE_ONLY`                                                                                                    | Användarens beslut. Fält som syns i lässchemat men aldrig fylls förvirrar, och en genererad klient bär dem i sin typ — §5.3                                                                                                                                                                                                                                                                                  |
 
 ---
 
@@ -853,27 +854,40 @@ dessutom om ett enskilt ärende, inte om hela namespacet, och den besvaras av ak
 ### 5.3 Modellerna i API:et
 
 ```java
-/** Bade subresurs under /processes och projektion pa Errand - en modell, inte tva. */
-@Schema(description = "A process attached to an errand, and its state")
-public class ErrandProcess {
-    @Schema(accessMode = READ_ONLY)  private String id;
-    private String processService;                  // required on write
-    private String processKey;                      // required on write
+/** Kroppen i PUT och POST under /processes - det processen rapporterar om sig sjalv (beslut 65). */
+@Schema(description = "What a process reports about itself: the state it is in, what it did and what it waits for")
+public class ErrandProcessReport {
+    @NotBlank private String processService;
+    @NotBlank private String processKey;
     private String processInstanceId;               // required i POST, tas ur pathen i PUT
-    private String processStatus;                   // required on write; ett av ProcessStatus, @ValidEnumValue (beslut 42)
+    @NotBlank private String processStatus;         // ett av ProcessStatus, @ValidEnumValue (beslut 42)
     private String currentActivityId;
     private String currentActivityName;
-    @Schema(accessMode = WRITE_ONLY) private String externalTaskId;  // idempotensnyckel for activities
-    @Schema(accessMode = WRITE_ONLY) private Long errandVersion;     // valfri; versionen steget laste (6.3)
+    private String externalTaskId;                  // idempotensnyckel for activities
+    private Long errandVersion;                     // valfri; versionen steget laste (6.3)
     private OffsetDateTime started;
-    @Schema(accessMode = READ_ONLY)  private OffsetDateTime ended;   // satt av SM ur statusen
-    @Valid                           private ProcessError error;
-    @Schema(accessMode = WRITE_ONLY) private List<ProcessActivity> activities;  // lases via egen endpoint
+    @Valid private ProcessError error;
+    @Valid @Size(max = 100) private List<ProcessActivity> activities;  // lases via egen endpoint
     @Valid @Size(max = 50)
-    private List<@NotNull ProcessSignal> awaitingSignals;  // vad processen vantar pa fran handlaggaren (5.9).
-                                                    //  Alltid en lista vid lasning, tom nar ingen vantas
-    @Schema(accessMode = READ_ONLY)  private OffsetDateTime created;
-    @Schema(accessMode = READ_ONLY)  private OffsetDateTime modified;
+    private List<@NotNull ProcessSignal> awaitingSignals;  // vad processen vantar pa fran handlaggaren (5.9)
+}
+
+/** Processen som den lases - bade under /processes och som Errand.process. */
+@Schema(description = "A process attached to an errand, and its state")
+public class ErrandProcess {
+    private String id;
+    private String processService;
+    private String processKey;
+    private String processInstanceId;               // saknas for en start som misslyckades
+    private String processStatus;
+    private String currentActivityId;
+    private String currentActivityName;
+    private OffsetDateTime started;
+    private OffsetDateTime ended;                   // satt av SM ur statusen
+    private ProcessError error;
+    private List<ProcessSignal> awaitingSignals;    // alltid en lista, tom nar ingen vantas eller processen avslutats
+    private OffsetDateTime created;
+    private OffsetDateTime modified;
 }
 
 /** Ett val handlaggaren kan gora for att stega processen vidare. Namnen kommer ur BPMN, SM tolkar dem inte. */
@@ -947,11 +961,12 @@ utgår).
 del av `ErrandProcess` är fritext om en person — `error.message` beskriver ett tekniskt fel och får enligt
 §11 inte bära personuppgifter.
 
-**En modell, inte två.** `ErrandProcess` används både som svar från `/processes` och som fältet på ärendet.
-De tre fälten som bara hör hemma i en rapport — `externalTaskId`, `errandVersion` och `activities` — är
-`WRITE_ONLY` och syns aldrig när man läser, och modellen serialiseras utan null-fält. Alternativet, två
-snarlika modeller som ska hållas i takt, glider isär första gången någon lägger till ett fält på bara det
-ena hållet.
+**En modell för rapporten och en för läsningen** (beslut 65). `ErrandProcessReport` är kroppen i
+`PUT`/`POST .../processes`, och `ErrandProcess` är det som läses, både från `/processes` och som fältet på
+ärendet. Ett tidigare utkast använde en enda modell med rapportens tre egna fält — `externalTaskId`,
+`errandVersion` och `activities` — märkta `WRITE_ONLY`. De syntes då i lässchemat utan att någonsin fyllas,
+och en genererad klient bar dem i sin typ för processen. Priset för två modeller är att ett fält som hör till
+båda måste läggas till på båda ställena.
 
 **`processInstanceId` går att skriva.** `POST` skickar den i kroppen — det är själva poängen med att
 registrera en start (§5.1) — medan `PUT` tar den ur adressen. Skickas den ändå med i en `PUT` måste den
@@ -2705,7 +2720,7 @@ pw-alkt) följer tjänst i stället för ordning.
 - Batchberikningen är "senaste per ärende" och fortfarande **en** fråga — verifieras med query-räkning.
 - `GET .../processes` sorterar nyast först.
 - `findErrands` gör **en** fråga för berikningen (verifieras med query-räkning, inte ögonmått).
-- `ErrandProcess` används som **en** modell för både subresursen och `errand.process`; `externalTaskId`, `errandVersion` och `activities` syns aldrig i ett lässvar (§5.3).
+- `ErrandProcess` är samma modell för subresursen och `errand.process`. Rapporten har en egen modell, `ErrandProcessReport`, så `externalTaskId`, `errandVersion` och `activities` finns inte i lässchemat (§5.3, beslut 65).
 - `PUT` med ett `processInstanceId` i kroppen som skiljer sig från pathens ⇒ `400`.
 - Notis som skapas av en processkrivning har en avsändare i `createdBy`, inte tom sträng: `EventService.createNotification` faller tillbaka på identitetens värde när `getAdUser()` är null (§1.8).
 - `PROCESS` tillagt i `ErrandField` och filtrerat av `roleBasedFieldResolver` (§5.3). Test för båda riktningarna: namespace **utan** åtkomstkontroll ⇒ fältet syns; begränsad användare i ett namespace **med** åtkomstkontroll som inte räknat upp `PROCESS` ⇒ fältet utelämnas.

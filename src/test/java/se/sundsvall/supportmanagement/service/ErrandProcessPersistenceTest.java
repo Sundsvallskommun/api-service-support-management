@@ -22,6 +22,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
@@ -476,8 +477,8 @@ class ErrandProcessPersistenceTest {
 			.withReporterUserId("joe01doe")).getId();
 	}
 
-	private static ErrandProcess report(final ProcessStatus status) {
-		return ErrandProcess.create()
+	private static ErrandProcessReport report(final ProcessStatus status) {
+		return ErrandProcessReport.create()
 			.withProcessService(PROCESS_SERVICE)
 			.withProcessKey(PROCESS_KEY)
 			.withProcessStatus(status);

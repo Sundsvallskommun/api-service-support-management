@@ -13,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
@@ -65,7 +66,14 @@ class ErrandProcessResourceTest {
 		return Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "processInstanceId", PROCESS_INSTANCE_ID);
 	}
 
-	private static ErrandProcess report() {
+	private static ErrandProcessReport report() {
+		return ErrandProcessReport.create()
+			.withProcessService("pw-alkt")
+			.withProcessKey("alkt-ansokan")
+			.withProcessStatus(RUNNING);
+	}
+
+	private static ErrandProcess process() {
 		return ErrandProcess.create()
 			.withProcessService("pw-alkt")
 			.withProcessKey("alkt-ansokan")
@@ -74,8 +82,8 @@ class ErrandProcessResourceTest {
 
 	@Test
 	void reportProcessCreatingTheRowAnswersWithItsLocation() {
-		when(serviceMock.reportProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(PROCESS_INSTANCE_ID), any(ErrandProcess.class)))
-			.thenReturn(new ErrandProcessResult(report().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), true));
+		when(serviceMock.reportProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(PROCESS_INSTANCE_ID), any(ErrandProcessReport.class)))
+			.thenReturn(new ErrandProcessResult(process().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), true));
 
 		final var response = webTestClient.put()
 			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
@@ -90,13 +98,13 @@ class ErrandProcessResourceTest {
 		assertThat(response.getResponseHeaders().getLocation().getPath())
 			.isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/processes/" + PROCESS_INSTANCE_ID);
 		assertThat(response.getResponseBody().getId()).isEqualTo("rowId");
-		verify(serviceMock).reportProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(PROCESS_INSTANCE_ID), any(ErrandProcess.class));
+		verify(serviceMock).reportProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(PROCESS_INSTANCE_ID), any(ErrandProcessReport.class));
 	}
 
 	@Test
 	void reportProcessUpdatingTheRowAnswersOk() {
 		when(serviceMock.reportProcess(any(), any(), any(), any(), any()))
-			.thenReturn(new ErrandProcessResult(report().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), false));
+			.thenReturn(new ErrandProcessResult(process().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), false));
 
 		final var response = webTestClient.put()
 			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
@@ -113,8 +121,8 @@ class ErrandProcessResourceTest {
 
 	@Test
 	void registerProcessAnswersWithTheLocationOfTheInstance() {
-		when(serviceMock.registerProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(ErrandProcess.class)))
-			.thenReturn(new ErrandProcessResult(report().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), true));
+		when(serviceMock.registerProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(ErrandProcessReport.class)))
+			.thenReturn(new ErrandProcessResult(process().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), true));
 
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))
@@ -136,7 +144,7 @@ class ErrandProcessResourceTest {
 	@Test
 	void registeringAStartThatFailedAnswersCreatedWithoutALocation() {
 		when(serviceMock.registerProcess(any(), any(), any(), any()))
-			.thenReturn(new ErrandProcessResult(report().withProcessStatus(FAILED).withProcessInstanceId(null), true));
+			.thenReturn(new ErrandProcessResult(process().withProcessStatus(FAILED).withProcessInstanceId(null), true));
 
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))
@@ -153,7 +161,7 @@ class ErrandProcessResourceTest {
 	@Test
 	void registerProcessOfAnInstanceAlreadyKnownAnswersOk() {
 		when(serviceMock.registerProcess(any(), any(), any(), any()))
-			.thenReturn(new ErrandProcessResult(report().withProcessInstanceId(PROCESS_INSTANCE_ID), false));
+			.thenReturn(new ErrandProcessResult(process().withProcessInstanceId(PROCESS_INSTANCE_ID), false));
 
 		webTestClient.post()
 			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))
@@ -166,7 +174,7 @@ class ErrandProcessResourceTest {
 	@Test
 	void readErrandProcesses() {
 		when(serviceMock.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
-			.thenReturn(ErrandProcesses.create().withProcesses(List.of(report().withProcessInstanceId(PROCESS_INSTANCE_ID))));
+			.thenReturn(ErrandProcesses.create().withProcesses(List.of(process().withProcessInstanceId(PROCESS_INSTANCE_ID))));
 
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))

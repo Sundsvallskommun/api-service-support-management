@@ -24,6 +24,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
@@ -951,8 +952,8 @@ class ErrandProcessServiceTest {
 
 	// ---------------------------------------------------------------------------------------------------------------
 
-	private static ErrandProcess report(final ProcessStatus status) {
-		return ErrandProcess.create()
+	private static ErrandProcessReport report(final ProcessStatus status) {
+		return ErrandProcessReport.create()
 			.withProcessService(PROCESS_SERVICE)
 			.withProcessKey(PROCESS_KEY)
 			.withProcessStatus(status);

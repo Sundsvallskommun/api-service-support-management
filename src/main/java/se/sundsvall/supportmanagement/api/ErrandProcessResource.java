@@ -31,6 +31,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
@@ -95,7 +96,7 @@ class ErrandProcessResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
 		@Parameter(name = "processInstanceId", description = "Process instance id", example = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33") @Size(max = 64) @PathVariable final String processInstanceId,
-		@Valid @NotNull @RequestBody final ErrandProcess report) {
+		@Valid @NotNull @RequestBody final ErrandProcessReport report) {
 
 		return respond(service.reportProcess(namespace, municipalityId, errandId, processInstanceId, report), municipalityId, namespace, errandId);
 	}
@@ -119,7 +120,7 @@ class ErrandProcessResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Valid @NotNull @RequestBody final ErrandProcess report) {
+		@Valid @NotNull @RequestBody final ErrandProcessReport report) {
 
 		return respond(service.registerProcess(namespace, municipalityId, errandId, report), municipalityId, namespace, errandId);
 	}

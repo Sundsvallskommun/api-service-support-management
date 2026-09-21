@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
@@ -131,7 +132,7 @@ public class ErrandProcessService {
 	 * @param  report            what the process reported.
 	 * @return                   the state of the process after the report, and whether the report created it.
 	 */
-	public ErrandProcessResult reportProcess(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
+	public ErrandProcessResult reportProcess(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		if (nonNull(report.getProcessInstanceId()) && !processInstanceId.equals(report.getProcessInstanceId())) {
 			throw Problem.valueOf(BAD_REQUEST, INSTANCE_ID_MISMATCH.formatted(report.getProcessInstanceId(), processInstanceId));
 		}
@@ -141,7 +142,7 @@ public class ErrandProcessService {
 		return writeWithCollisionRecovery(errandId, processInstanceId, () -> reportInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
 	}
 
-	private ErrandProcessResult reportInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
+	private ErrandProcessResult reportInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		verifyErrandVersion(lockErrandForWriting(namespace, municipalityId, errandId), report);
 
 		final var existing = processRepository.findByProcessInstanceId(processInstanceId).orElse(null);
@@ -186,7 +187,7 @@ public class ErrandProcessService {
 	 * @param  report         the start being registered.
 	 * @return                the state of the process, and whether the registration created it.
 	 */
-	public ErrandProcessResult registerProcess(final String namespace, final String municipalityId, final String errandId, final ErrandProcess report) {
+	public ErrandProcessResult registerProcess(final String namespace, final String municipalityId, final String errandId, final ErrandProcessReport report) {
 		final var processInstanceId = report.getProcessInstanceId();
 
 		if (isNull(processInstanceId) && FAILED != toProcessStatus(report)) {
@@ -198,7 +199,7 @@ public class ErrandProcessService {
 		return writeWithCollisionRecovery(errandId, processInstanceId, () -> registerInTransaction(namespace, municipalityId, errandId, processInstanceId, report));
 	}
 
-	private ErrandProcessResult registerInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
+	private ErrandProcessResult registerInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		verifyErrandVersion(lockErrandForWriting(namespace, municipalityId, errandId), report);
 
 		return ofNullable(processInstanceId)
@@ -218,7 +219,7 @@ public class ErrandProcessService {
 	 * registration would let an instance started on a stale permission in through the report - and the registration would
 	 * then find the row and answer 200, instead of the conflict that tells the process engine to abort the instance.
 	 */
-	private ErrandProcessResult createProcess(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
+	private ErrandProcessResult createProcess(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
 
 		verifyProcessLifeNotOver(instances, errandId);
@@ -383,7 +384,7 @@ public class ErrandProcessService {
 	 * rules do buy is that {@code process_service} is a column someone guarantees rather than free text, that a namespace
 	 * running no process cannot collect rows for one, and that the log and the notification of the errand name an author.
 	 */
-	private void verifySenderOfReport(final String namespace, final String municipalityId, final ErrandProcess report) {
+	private void verifySenderOfReport(final String namespace, final String municipalityId, final ErrandProcessReport report) {
 		if (isNull(getExecutingUser())) {
 			throw Problem.valueOf(BAD_REQUEST, MISSING_IDENTIFIER.formatted(SENT_BY_HEADER));
 		}
@@ -406,7 +407,7 @@ public class ErrandProcessService {
 		}
 	}
 
-	private static void verifySameProcessKey(final ErrandProcessEntity entity, final ErrandProcess report) {
+	private static void verifySameProcessKey(final ErrandProcessEntity entity, final ErrandProcessReport report) {
 		if (!entity.getProcessKey().equals(report.getProcessKey())) {
 			throw Problem.valueOf(CONFLICT, OTHER_PROCESS_KEY.formatted(entity.getErrandId(), report.getProcessKey()));
 		}
@@ -448,7 +449,7 @@ public class ErrandProcessService {
 	 * that would itself be live, exactly as the key is: a terminal row leaves the slot empty and can never take one that
 	 * is occupied, which is what lets a start that failed be registered while the instance it failed to replace lives on.
 	 */
-	private static void verifyNoOtherLiveInstance(final List<ErrandProcessEntity> instances, final String errandId, final String processInstanceId, final ErrandProcess report) {
+	private static void verifyNoOtherLiveInstance(final List<ErrandProcessEntity> instances, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		if (toProcessStatus(report).isTerminal()) {
 			return;
 		}
@@ -474,7 +475,7 @@ public class ErrandProcessService {
 	 * it now is. The log line is the only trace a refused report leaves, and it is logged as routine rather than as a
 	 * fault: how often it happens is worth knowing, not any single occurrence.
 	 */
-	private void verifyErrandVersion(final ErrandEntity errand, final ErrandProcess report) {
+	private void verifyErrandVersion(final ErrandEntity errand, final ErrandProcessReport report) {
 		final var readVersion = report.getErrandVersion();
 
 		if (isNull(readVersion) || readVersion.equals(errand.getVersion())) {
@@ -503,7 +504,7 @@ public class ErrandProcessService {
 	 * @return the task that was already working when this report came in, or null if the place was free. The id
 	 *         rather than a yes or no, since the warning names both tasks to be worth acting on.
 	 */
-	private String trackOutstandingTask(final ErrandProcessEntity entity, final ErrandProcess report) {
+	private String trackOutstandingTask(final ErrandProcessEntity entity, final ErrandProcessReport report) {
 		final var reporting = report.getExternalTaskId();
 		final var outstanding = entity.getOutstandingExternalTaskId();
 
@@ -569,7 +570,7 @@ public class ErrandProcessService {
 	 * which is the answer the key gives as well, since null is distinct in a unique index. Asked before writing rather
 	 * than recovered from afterwards, since a violation would take the rest of the report down with it.
 	 */
-	private void storeActivities(final ErrandProcessEntity process, final String errandId, final ErrandProcess report) {
+	private void storeActivities(final ErrandProcessEntity process, final String errandId, final ErrandProcessReport report) {
 		final var activities = ofNullable(report.getActivities()).orElse(emptyList());
 
 		if (activities.isEmpty()) {
@@ -610,7 +611,7 @@ public class ErrandProcessService {
 	 * @param  report  what the process reported.
 	 * @return         the signals the instance waits for after the report, in the order reported.
 	 */
-	private List<ErrandProcessSignalEntity> replaceAwaitingSignals(final ErrandProcessEntity process, final List<ErrandProcessSignalEntity> stored, final ErrandProcess report) {
+	private List<ErrandProcessSignalEntity> replaceAwaitingSignals(final ErrandProcessEntity process, final List<ErrandProcessSignalEntity> stored, final ErrandProcessReport report) {
 		final var reusable = stored.stream().collect(Collectors.toMap(ErrandProcessSignalEntity::getName, identity()));
 		final var awaited = new LinkedHashMap<String, ErrandProcessSignalEntity>();
 

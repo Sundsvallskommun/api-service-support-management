@@ -143,11 +143,11 @@ class ProcessIntegrationDataModelTest {
 	@Test
 	@DisplayName("Verification that an instance can wait for a name once")
 	void anInstanceWaitsForANameOnce() {
-		final var process = saveProcess(createErrand(), WAITING);
-		saveSignal(process.getId(), "granskning-godkand");
+		final var processId = saveProcess(createErrand(), WAITING).getId();
+		saveSignal(processId, "granskning-godkand");
 
 		assertThatExceptionOfType(DataIntegrityViolationException.class)
-			.isThrownBy(() -> saveSignal(process.getId(), "granskning-godkand"));
+			.isThrownBy(() -> saveSignal(processId, "granskning-godkand"));
 	}
 
 	/**
