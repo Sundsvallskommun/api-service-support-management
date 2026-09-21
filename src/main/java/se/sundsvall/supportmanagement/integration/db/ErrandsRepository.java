@@ -34,10 +34,8 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	long countByLabelsMetadataLabelId(String metadataLabelId);
 
-	/**
-	 * The errands touched by one label or any of its descendants, each counted once even though an errand carrying the
-	 * full ancestor chain of one of its labels may match more than one id in the sent in set.
-	 */
+	// Distinct: an errand tagged with more than one of the given ids (e.g. the moved label itself and one of its
+	// descendants, both stored per the ancestor-chain-expansion invariant) must still be counted once.
 	long countDistinctByLabelsMetadataLabelIdIn(Collection<String> metadataLabelIds);
 
 	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);

@@ -326,6 +326,11 @@ public class ErrandService {
 		return repository.count(fullFilter);
 	}
 
+	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
+		errandLabelService.settleAccessLabels(entity);
+		return repository.saveAndFlush(entity);
+	}
+
 	se.sundsvall.dept44.support.Relation expandRelation(final String referredFromAsString) {
 		final var relation = Relation.parseRelation(referredFromAsString);
 		if (isNull(relation.getSource())) {
