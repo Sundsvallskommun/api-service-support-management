@@ -9,6 +9,7 @@
 			"currentActivityId": "granska-ansokan",
 			"currentActivityName": "Granska ansokan",
 			"started": "${json-unit.any-string}",
+			"awaitingSignals": [],
 			"created": "${json-unit.any-string}"
 		}
 	]

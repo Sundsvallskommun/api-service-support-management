@@ -84,6 +84,7 @@ TRUNCATE table decision_outcome;
 TRUNCATE table statement_outcome;
 TRUNCATE table job;
 TRUNCATE table errand_process_activity;
+TRUNCATE table errand_process_signal;
 TRUNCATE table errand_process;
 TRUNCATE table process_event_outbox;
 SET FOREIGN_KEY_CHECKS = 1;

@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManagerFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
@@ -22,13 +23,16 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
+import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -76,6 +80,9 @@ class ErrandProcessPersistenceTest {
 
 	@Autowired
 	private ErrandProcessActivityRepository errandProcessActivityRepository;
+
+	@Autowired
+	private ErrandProcessSignalRepository errandProcessSignalRepository;
 
 	@Autowired
 	private RevisionRepository revisionRepository;
@@ -304,17 +311,35 @@ class ErrandProcessPersistenceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that the processes of a whole page are read in one query, asked by counting statements rather than by looking at the code")
-	void theProcessesOfAPageAreReadInOneQuery() {
+	@DisplayName("Verification that the processes of a whole page and what they wait for are read in two queries, asked by counting statements rather than by looking at the code")
+	void theProcessesOfAPageAndTheirSignalsAreReadInTwoQueries() {
 		final var errandIds = List.of(createErrand(), createErrand(), createErrand());
-		errandIds.forEach(errandId -> errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance-" + errandId, report(RUNNING)));
+		errandIds.forEach(errandId -> errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance-" + errandId, report(WAITING)
+			.withAwaitingSignals(List.of(signal("granskning-godkand"), signal("granskning-avvisad")))));
 		entityManager.flush();
 		entityManager.clear();
 
 		final var statistics = statistics();
 		statistics.clear();
-		errandProcessService.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, errandIds);
+		final var processes = errandProcessService.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, errandIds);
 
+		assertThat(processes.values()).hasSize(3).allSatisfy(process -> assertThat(process.getAwaitingSignals())
+			.extracting(ProcessSignal::getName)
+			.containsExactly("granskning-godkand", "granskning-avvisad"));
+		assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);
+	}
+
+	@Test
+	@DisplayName("Verification that a page on which no errand has a process costs the one query it always did")
+	void aPageWithoutProcessesIsReadInOneQuery() {
+		final var errandIds = List.of(createErrand(), createErrand());
+		entityManager.flush();
+		entityManager.clear();
+
+		final var statistics = statistics();
+		statistics.clear();
+
+		assertThat(errandProcessService.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, errandIds)).isEmpty();
 		assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
 	}
 
@@ -326,10 +351,11 @@ class ErrandProcessPersistenceTest {
 	 * the query that actually reached the database rather than about a method call.
 	 */
 	@Test
-	@DisplayName("Verification that listing errands looks up the processes of the whole page once, not once per errand")
-	void listingErrandsLooksUpTheProcessesOfThePageOnce() {
+	@DisplayName("Verification that listing errands looks up the processes of the whole page and what they wait for once each, not once per errand")
+	void listingErrandsLooksUpTheProcessesOfThePageAndTheirSignalsOnce() {
 		final var errandIds = List.of(createErrand(), createErrand(), createErrand());
-		errandIds.forEach(errandId -> errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance-" + errandId, report(RUNNING)));
+		errandIds.forEach(errandId -> errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance-" + errandId, report(WAITING)
+			.withAwaitingSignals(List.of(signal("granskning-godkand")))));
 		entityManager.flush();
 		entityManager.clear();
 
@@ -338,8 +364,58 @@ class ErrandProcessPersistenceTest {
 
 		final var page = errandService.findErrands(NAMESPACE, MUNICIPALITY_ID, null, PageRequest.of(0, 50));
 
-		assertThat(page.getContent()).hasSize(3).allSatisfy(errand -> assertThat(errand.getProcess().getProcessStatus()).isEqualTo(RUNNING.name()));
-		assertThat(processQueryExecutions(statistics)).isEqualTo(1);
+		assertThat(page.getContent()).hasSize(3).allSatisfy(errand -> {
+			assertThat(errand.getProcess().getProcessStatus()).isEqualTo(WAITING.name());
+			assertThat(errand.getProcess().getAwaitingSignals()).extracting(ProcessSignal::getName).containsExactly("granskning-godkand");
+		});
+		assertThat(queryExecutions(statistics, ErrandProcessEntity.class)).isEqualTo(1);
+		assertThat(queryExecutions(statistics, ErrandProcessSignalEntity.class)).isEqualTo(1);
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	// What the process waits for from a handler
+	// ---------------------------------------------------------------------------------------------------------------
+
+	@Test
+	@DisplayName("Verification that every report replaces what the instance waits for, in the order reported, and that an empty one leaves nothing")
+	void everyReportReplacesWhatTheInstanceWaitsFor() {
+		final var errandId = createErrand();
+
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance", report(WAITING)
+			.withAwaitingSignals(List.of(signal("granskning-godkand"), signal("granskning-avvisad"))));
+		assertThat(awaitedBy(errandId)).containsExactly("granskning-godkand", "granskning-avvisad");
+
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance", report(WAITING)
+			.withAwaitingSignals(List.of(signal("beslut-fattat"), signal("granskning-avvisad"))));
+		assertThat(awaitedBy(errandId)).containsExactly("beslut-fattat", "granskning-avvisad");
+
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance", report(WAITING).withAwaitingSignals(List.of()));
+		assertThat(awaitedBy(errandId)).isEmpty();
+	}
+
+	/**
+	 * The trap this guards against sits in the flush: inserts run before deletions, so a signal deleted and inserted
+	 * anew in one report would meet its own old row in the unique key and fail the report. Kept rows are what avoids it,
+	 * and keeping one is also what shows here - the row keeps its id.
+	 */
+	@Test
+	@DisplayName("Verification that a signal still awaited keeps its row, whatever its label and place become")
+	void aSignalStillAwaitedKeepsItsRow() {
+		final var errandId = createErrand();
+
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance", report(WAITING)
+			.withAwaitingSignals(List.of(signal("granskning-avvisad"), signal("granskning-godkand"))));
+		entityManager.flush();
+		final var rowIdBefore = rowIdOf(errandId, "granskning-godkand");
+
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "instance", report(WAITING)
+			.withAwaitingSignals(List.of(signal("beslut-fattat"), signal("granskning-godkand").withLabel("Godkänn"))));
+		entityManager.flush();
+		entityManager.clear();
+
+		assertThat(rowIdOf(errandId, "granskning-godkand")).isEqualTo(rowIdBefore);
+		assertThat(errandProcessService.readProcesses(NAMESPACE, MUNICIPALITY_ID, errandId).getProcesses().getFirst().getAwaitingSignals())
+			.containsExactly(signal("beslut-fattat"), signal("granskning-godkand").withLabel("Godkänn"));
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -351,14 +427,42 @@ class ErrandProcessPersistenceTest {
 	}
 
 	/**
-	 * How many times a query against the process table ran, whatever the query looks like - the point is the count, and
-	 * pinning the generated text would break on any rename of the method behind it.
+	 * How many times a query against the table of an entity ran, whatever the query looks like - the point is the count,
+	 * and pinning the generated text would break on any rename of the method behind it. Matched on the entity name as a
+	 * word, since one entity name can be the start of another.
 	 */
-	private static long processQueryExecutions(final Statistics statistics) {
+	private static long queryExecutions(final Statistics statistics, final Class<?> entity) {
+		final var entityName = Pattern.compile("\\b" + entity.getSimpleName() + "\\b");
+
 		return Arrays.stream(statistics.getQueries())
-			.filter(query -> query.contains(ErrandProcessEntity.class.getSimpleName()))
+			.filter(query -> entityName.matcher(query).find())
 			.mapToLong(query -> statistics.getQueryStatistics(query).getExecutionCount())
 			.sum();
+	}
+
+	/**
+	 * What the instance of an errand waits for, as the database holds it, in the order it was reported.
+	 */
+	private List<String> awaitedBy(final String errandId) {
+		entityManager.flush();
+
+		return errandProcessRepository.findByErrandIdOrderByCreatedDesc(errandId).stream()
+			.flatMap(process -> errandProcessSignalRepository.findByErrandProcessIdOrderBySortOrderAsc(process.getId()).stream())
+			.map(ErrandProcessSignalEntity::getName)
+			.toList();
+	}
+
+	private String rowIdOf(final String errandId, final String name) {
+		return errandProcessRepository.findByErrandIdOrderByCreatedDesc(errandId).stream()
+			.flatMap(process -> errandProcessSignalRepository.findByErrandProcessIdOrderBySortOrderAsc(process.getId()).stream())
+			.filter(signal -> signal.getName().equals(name))
+			.map(ErrandProcessSignalEntity::getId)
+			.findFirst()
+			.orElseThrow();
+	}
+
+	private static ProcessSignal signal(final String name) {
+		return ProcessSignal.create().withName(name);
 	}
 
 	private String createErrand() {

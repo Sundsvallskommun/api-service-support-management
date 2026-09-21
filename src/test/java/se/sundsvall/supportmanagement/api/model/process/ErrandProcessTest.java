@@ -46,6 +46,7 @@ class ErrandProcessTest {
 		final var modified = now().plusMinutes(2);
 		final var error = ProcessError.create().withCode("INCIDENT");
 		final var activity = ProcessActivity.create().withActivityId("review_phase");
+		final var signal = ProcessSignal.create().withName("granskning-godkand");
 
 		final var process = ErrandProcess.create()
 			.withId("id")
@@ -61,6 +62,7 @@ class ErrandProcessTest {
 			.withEnded(ended)
 			.withError(error)
 			.withActivities(List.of(activity))
+			.withAwaitingSignals(List.of(signal))
 			.withCreated(created)
 			.withModified(modified);
 
@@ -77,6 +79,7 @@ class ErrandProcessTest {
 		assertThat(process.getEnded()).isEqualTo(ended);
 		assertThat(process.getError()).isEqualTo(error);
 		assertThat(process.getActivities()).containsExactly(activity);
+		assertThat(process.getAwaitingSignals()).containsExactly(signal);
 		assertThat(process.getCreated()).isEqualTo(created);
 		assertThat(process.getModified()).isEqualTo(modified);
 	}

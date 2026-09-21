@@ -580,20 +580,29 @@ class ProcessEventPublisherTest {
 		verify(activityRepositoryMock, never()).save(any());
 	}
 
-	@Test
-	@DisplayName("Verification that the button still works on the errands with the most traffic, which is where the brake would otherwise silence it")
-	void aStartCommandIsPublishedThoughTheBrakeHasTripped() {
+	/**
+	 * The buttons have to work on the errands with the most traffic, which is where the brake would otherwise silence
+	 * them: the start would answer 202 and start nothing, the signal would leave the process waiting at its gate. What
+	 * the command carries - the chosen key, the name of the gate - is the whole point of the row.
+	 */
+	@ParameterizedTest
+	@MethodSource("commands")
+	@DisplayName("Verification that a command is published though the brake has tripped, carrying what it carries")
+	void aCommandIsPublishedThoughTheBrakeHasTripped(final EventSubType subType, final ProcessCommand command) {
 		givenNamespaceRunsProcess();
 		givenNoInstances();
-		lenient().when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(APPLICATION, AUTOMATIC, List.of(APPLICATION)));
+		givenLabels(APPLICATION, AUTOMATIC);
 		lenient().when(outboxRepositoryMock.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(eq(ERRAND_ID), any())).thenReturn(THRESHOLD + 1L);
 
-		publisher.publish(errand(), CREATE, PROCESS, EXECUTED_BY, REQUEST_GROUP_ID, new ProcessCommand(APPLICATION, null), false);
+		publisher.publish(errand(), UPDATE, subType, EXECUTED_BY, REQUEST_GROUP_ID, command, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
+		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo(subType.getValue());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(APPLICATION);
-		assertThat(outboxCaptor.getValue().isStartAllowed()).isTrue();
+		assertThat(outboxCaptor.getValue().getSignalName()).isEqualTo(command.signalName());
+		assertThat(outboxCaptor.getValue().isStartAllowed()).isEqualTo(PROCESS == subType);
 		verify(outboxRepositoryMock, never()).countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(any(), any());
+		verify(activityRepositoryMock, never()).save(any());
 	}
 
 	@Test

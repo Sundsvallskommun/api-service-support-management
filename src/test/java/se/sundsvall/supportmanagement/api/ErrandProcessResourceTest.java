@@ -15,7 +15,9 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
+import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
+import se.sundsvall.supportmanagement.service.ProcessCommandService;
 import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static java.time.OffsetDateTime.now;
@@ -26,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -50,6 +53,9 @@ class ErrandProcessResourceTest {
 
 	@MockitoBean
 	private ErrandProcessService serviceMock;
+
+	@MockitoBean
+	private ProcessCommandService commandServiceMock;
 
 	private static Map<String, Object> errandVariables() {
 		return Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID);
@@ -172,6 +178,24 @@ class ErrandProcessResourceTest {
 		assertThat(response.getResponseBody().getProcesses()).hasSize(1);
 		assertThat(response.getResponseBody().getStartable()).isNull();
 		verify(serviceMock).readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+	}
+
+	/**
+	 * Accepted rather than created or ok: the signal is recorded and on its way, and what it does is for the process to
+	 * decide.
+	 */
+	@Test
+	void signalProcessAnswersAcceptedWithoutABody() {
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESS_PATH + "/signals").build(instanceVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(ProcessSignalRequest.create().withSignal("granskning-godkand"))
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		verify(commandServiceMock).signalProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, "granskning-godkand");
+		verifyNoInteractions(serviceMock);
 	}
 
 	@Test

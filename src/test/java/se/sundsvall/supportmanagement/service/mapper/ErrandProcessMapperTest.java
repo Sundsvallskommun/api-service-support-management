@@ -7,11 +7,16 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
+import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
@@ -22,6 +27,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Activity
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcess;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessActivityEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessEntity;
@@ -54,7 +60,9 @@ class ErrandProcessMapperTest {
 			.withModified(modified);
 		entity.applyStatus(RUNNING, CLOCK);
 
-		final var process = toErrandProcess(entity);
+		final var process = toErrandProcess(entity, List.of(
+			ErrandProcessSignalEntity.create().withName("granskning-godkand").withLabel("Godkänn granskning"),
+			ErrandProcessSignalEntity.create().withName("granskning-avvisad")));
 
 		assertThat(process.getId()).isEqualTo("id");
 		assertThat(process.getProcessService()).isEqualTo("pw-alkt");
@@ -66,6 +74,9 @@ class ErrandProcessMapperTest {
 		assertThat(process.getStarted()).isEqualTo(started);
 		assertThat(process.getEnded()).isNull();
 		assertThat(process.getError()).isEqualTo(ProcessError.create().withCode("INCIDENT").withMessage("Timeout"));
+		assertThat(process.getAwaitingSignals()).containsExactly(
+			ProcessSignal.create().withName("granskning-godkand").withLabel("Godkänn granskning"),
+			ProcessSignal.create().withName("granskning-avvisad"));
 		assertThat(process.getCreated()).isEqualTo(created);
 		assertThat(process.getModified()).isEqualTo(modified);
 	}
@@ -75,9 +86,26 @@ class ErrandProcessMapperTest {
 		final var entity = ErrandProcessEntity.create().withId("id").withProcessKey("alkt-ansokan");
 		entity.applyStatus(RUNNING, CLOCK);
 
-		assertThat(toErrandProcess(entity))
+		assertThat(toErrandProcess(entity, List.of()))
 			.extracting(ErrandProcess::getExternalTaskId, ErrandProcess::getErrandVersion, ErrandProcess::getActivities)
 			.containsOnlyNulls();
+	}
+
+	/**
+	 * A signal to an ended process is refused, so a button offered for one could only ever fail. Held here because more
+	 * than a report ends a process: the relay does too, and leaves the rows behind.
+	 */
+	@ParameterizedTest
+	@EnumSource(value = ProcessStatus.class, names = {
+		"COMPLETED", "FAILED"
+	})
+	void aProcessThatHasEndedWaitsForNoOneWhateverRowsItLeftBehind(final ProcessStatus status) {
+		final var entity = ErrandProcessEntity.create().withId("id");
+		entity.applyStatus(status, CLOCK);
+
+		assertThat(toErrandProcess(entity, List.of(ErrandProcessSignalEntity.create().withName("granskning-godkand"))).getAwaitingSignals())
+			.isNotNull()
+			.isEmpty();
 	}
 
 	@Test
@@ -85,19 +113,23 @@ class ErrandProcessMapperTest {
 		final var entity = ErrandProcessEntity.create().withId("id");
 		entity.applyStatus(RUNNING, CLOCK);
 
-		assertThat(toErrandProcess(entity).getError()).isNull();
+		assertThat(toErrandProcess(entity, List.of()).getError()).isNull();
 	}
 
 	@Test
-	void toErrandProcessesKeepsTheOrderItIsGiven() {
+	void toErrandProcessesKeepsTheOrderItIsGivenAndGivesEachInstanceItsOwnSignals() {
 		final var first = ErrandProcessEntity.create().withId("first");
 		final var second = ErrandProcessEntity.create().withId("second");
 		first.applyStatus(COMPLETED, CLOCK);
-		second.applyStatus(RUNNING, CLOCK);
+		second.applyStatus(WAITING, CLOCK);
 
-		assertThat(toErrandProcesses(List.of(first, second)))
-			.extracting(ErrandProcess::getId)
-			.containsExactly("first", "second");
+		final var signal = ErrandProcessSignalEntity.create().withErrandProcessId("second").withName("granskning-godkand");
+
+		assertThat(toErrandProcesses(List.of(first, second), Map.of("second", List.of(signal))))
+			.extracting(ErrandProcess::getId, process -> process.getAwaitingSignals().stream().map(ProcessSignal::getName).toList())
+			.containsExactly(
+				tuple("first", List.of()),
+				tuple("second", List.of("granskning-godkand")));
 	}
 
 	@Test
