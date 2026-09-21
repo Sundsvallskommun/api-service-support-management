@@ -402,8 +402,8 @@ class EventServiceTest {
 	}
 
 	/**
-	 * A process engine is not an ad account, and asking only for one would leave the handler with a notification saying
-	 * it came from nobody. The identifier says what it is called, and that is who the notification is from.
+	 * A write made by a process engine gives a notification whose sender is the value of the identifier, although it is
+	 * not an ad account.
 	 */
 	@Test
 	void aNotificationOfAWriteMadeByAProcessNamesTheProcessAsItsSender() {
@@ -429,10 +429,6 @@ class EventServiceTest {
 		assertThat(notificationCaptor.getValue().getCreatedBy()).isNull();
 	}
 
-	/**
-	 * Every errand event passes here, which is the whole reason publication hangs off this method rather than off the
-	 * errand service: an intake that writes no revision would otherwise never reach a process.
-	 */
 	@Test
 	void everyErrandEventIsHandedToTheProcessPublisher() {
 		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
@@ -477,8 +473,8 @@ class EventServiceTest {
 	}
 
 	/**
-	 * A change to a decision is an update of the errand, logged without a revision since the decision is no part of it,
-	 * and whether it concludes the decision is carried through to the publisher untouched.
+	 * A change to a decision is logged as an update of the errand without a revision, and whether it concludes the
+	 * decision is carried through to the publisher untouched.
 	 */
 	@ParameterizedTest
 	@ValueSource(booleans = {

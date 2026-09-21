@@ -63,9 +63,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 /**
  * The process resource against the migrated schema, where the two unique keys and the errand cascade are real.
  * <p>
- * What can only be asked here is what the database itself decides: that a report leaves the revision table alone, that
- * the race between a work step and the registration of its own start comes out the same in either order, and that the
- * process shown on an errand is read for a whole page in one query rather than once per errand.
+ * Verifies what the database itself decides: that a report leaves the revision table alone, that the race between a
+ * work step and the registration of its own start comes out the same in either order, and that the process shown on an
+ * errand is read for a whole page in one query.
  */
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("junit")
@@ -111,8 +111,8 @@ class ErrandProcessPersistenceTest {
 	private EntityManagerFactory entityManagerFactory;
 
 	/**
-	 * Every path here reads the configuration of the namespace, since that is what says whether access control applies.
-	 * With none, the read answers 404 long before the process is reached.
+	 * Creates the configuration of the namespace, which every path here reads to tell whether access control applies.
+	 * Without it, the read answers 404 before the process is reached.
 	 */
 	@BeforeEach
 	void createNamespaceConfig() {
@@ -201,10 +201,6 @@ class ErrandProcessPersistenceTest {
 			});
 	}
 
-	/**
-	 * Kept apart from the retry below because a refusal rolls its transaction back, and this test shares one with the
-	 * next thing it would do.
-	 */
 	@Test
 	@DisplayName("Verification that a process which ran to its end is never started over")
 	void aCompletedProcessLifeIsOver() {
@@ -371,11 +367,8 @@ class ErrandProcessPersistenceTest {
 	}
 
 	/**
-	 * The list view is asked the one question a statement count cannot answer for it: whether the processes of the page
-	 * are looked up once or once per errand. Counting statements around the whole read would count the collections of
-	 * every errand as well, which are lazy and have always been read one errand at a time - so the answer would say
-	 * nothing about this lookup. Counting the executions of the process query alone leaves those out, and answers about
-	 * the query that actually reached the database rather than about a method call.
+	 * Counts the executions of the process query and of the signal query alone, leaving out the lazy collections of the
+	 * errands, which are read one errand at a time.
 	 */
 	@Test
 	@DisplayName("Verification that listing errands looks up the processes of the whole page and what they wait for once each, not once per errand")
@@ -439,11 +432,6 @@ class ErrandProcessPersistenceTest {
 		assertThat(awaitedBy(errandId)).isEmpty();
 	}
 
-	/**
-	 * The trap this guards against sits in the flush: inserts run before deletions, so a signal deleted and inserted
-	 * anew in one report would meet its own old row in the unique key and fail the report. Kept rows are what avoids it,
-	 * and keeping one is also what shows here - the row keeps its id.
-	 */
 	@Test
 	@DisplayName("Verification that a signal still awaited keeps its row, whatever its label and place become")
 	void aSignalStillAwaitedKeepsItsRow() {
@@ -473,9 +461,8 @@ class ErrandProcessPersistenceTest {
 	}
 
 	/**
-	 * How many times a query against the table of an entity ran, whatever the query looks like - the point is the count,
-	 * and pinning the generated text would break on any rename of the method behind it. Matched on the entity name as a
-	 * word, since one entity name can be the start of another.
+	 * How many times a query against the table of an entity ran, whatever the query looks like. A query is matched on the
+	 * entity name as a whole word.
 	 */
 	private static long queryExecutions(final Statistics statistics, final Class<?> entity) {
 		final var entityName = Pattern.compile("\\b" + entity.getSimpleName() + "\\b");

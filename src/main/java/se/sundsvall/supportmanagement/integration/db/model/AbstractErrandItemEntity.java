@@ -32,21 +32,18 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
  * Base class for the handling artefacts of an errand: statement, investigation, decision and measure.
  * <p>
  * <b>Inherited ONLY by</b> {@link StatementEntity}, {@link InvestigationEntity}, {@link DecisionEntity} and
- * {@link MeasureEntity}. What they have in common is that each documents a step of handling with a life cycle of its
- * own, a deadline of its own and an outcome of its own. Stakeholder, attachment and notification belong to the errand
- * too but have none of that, and must not inherit from here - dragging {@code dueAt}, {@code status} and {@code type}
- * into them is exactly the mistake this javadoc exists to prevent.
+ * {@link MeasureEntity}, each of which documents a step of handling with a life cycle of its own, a deadline of its own
+ * and an outcome of its own. Stakeholder, attachment and notification belong to the errand too but have none of that,
+ * and must not inherit from here.
  * <p>
- * There is no table, no discriminator and no polymorphic query. The subclasses share shape, not storage: each gets a
- * table of its own and invariants of its own. What the sharing buys is that the compiler keeps the four in step - a new
- * common column is added in one place, and none of them can drift away from the others in silence.
+ * There is no table, no discriminator and no polymorphic query. The subclasses share the columns declared here, not
+ * storage: each gets a table of its own and invariants of its own.
  * <p>
  * The type parameter carries the subclass through the fluent setters, so that {@code StatementEntity.create()
- * .withId(id).withTitle(title)} stays a chain of {@code StatementEntity} rather than degrading to this class at the
- * first inherited field.
+ * .withId(id).withTitle(title)} stays a chain of {@code StatementEntity}.
  * <p>
- * The association to the errand is declared here but named per subclass with {@code @AssociationOverride}: InnoDB has
- * one namespace for foreign keys across the whole schema, so four subclasses sharing a constraint name would collide.
+ * The association to the errand is declared here, and each subclass gives its foreign key a name of its own with
+ * {@code @AssociationOverride}, since a foreign key name must be unique across the whole schema.
  *
  * @param <T> the concrete subclass, so that the fluent setters return it.
  */
@@ -66,8 +63,8 @@ public abstract class AbstractErrandItemEntity<T extends AbstractErrandItemEntit
 	private ErrandEntity errandEntity;
 
 	/**
-	 * Redundant against the errand, and deliberately so: the resources filter and authorize on it without loading the
-	 * errand.
+	 * The municipality of the errand, held on the artefact as well for the resources to filter and authorize on without
+	 * loading the errand.
 	 */
 	@Column(name = "municipality_id", nullable = false, length = 8)
 	private String municipalityId;
@@ -75,7 +72,7 @@ public abstract class AbstractErrandItemEntity<T extends AbstractErrandItemEntit
 	@Column(name = "namespace", nullable = false, length = 32)
 	private String namespace;
 
-	/** The word of the line of business, not an enum. */
+	/** The type of the artefact, as a free-text word of the line of business. */
 	@Column(name = "type", length = 128)
 	private String type;
 
@@ -90,7 +87,7 @@ public abstract class AbstractErrandItemEntity<T extends AbstractErrandItemEntit
 	@Column(name = "description", length = LONG32)
 	private String description;
 
-	/** The deadline. A passed deadline is a question the business asks about all four. */
+	/** The deadline of the artefact. */
 	@Column(name = "due_at")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime dueAt;
@@ -330,8 +327,8 @@ public abstract class AbstractErrandItemEntity<T extends AbstractErrandItemEntit
 	}
 
 	/**
-	 * Equality over the fields declared here. Subclasses chain to this so that inherited fields count, and the errand is
-	 * left out of it since it points back at an object that holds this one.
+	 * Equality over the fields declared here, apart from the errand. Subclasses chain to this so that inherited fields
+	 * count.
 	 */
 	@Override
 	public boolean equals(final Object o) {

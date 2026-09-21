@@ -44,8 +44,7 @@ public interface Action {
 	boolean validForOperationType(OperationType operationType);
 
 	/**
-	 * The operations this action runs on. A config may narrow this set and may not widen it, so a client configuring one
-	 * has to be able to read it rather than discover it by being refused.
+	 * The operations this action runs on. A config may narrow this set and may not widen it.
 	 */
 	Set<OperationType> getValidOperationTypes();
 }

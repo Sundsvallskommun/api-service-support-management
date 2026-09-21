@@ -50,18 +50,14 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
 /**
  * The decisions of an errand, and the terms they carry.
  * <p>
- * How many decisions an errand may hold is a setting of the namespace rather than a unique key, since interim
- * decisions, partial decisions and reconsideration are ordinary in some lines of business and unheard of in others.
- * {@link DecisionValidator} is what upholds it.
+ * How many decisions an errand may hold is a setting of the namespace, upheld by {@link DecisionValidator}.
  * <p>
- * The investigation a decision rests on is resolved through the errand rather than taken as an id and trusted, which is
- * what keeps a decision from resting on the investigation of a different errand.
+ * The investigation a decision rests on is resolved through the errand, so a decision cannot rest on the investigation
+ * of a different errand.
  * <p>
- * Creating, changing and deleting a decision is a change to the errand: it moves the version of the errand, so that a
- * work step holding an older one is told the basis it read has changed, and it writes an event with the sub type
- * DECISION, which is what wakes a process waiting for the decision. The terms, the attachment links and the JSON
- * parameters do neither. The process waits for the decision to be concluded, and every further event would only count
- * towards the emergency brake.
+ * Creating, changing and deleting a decision is a change to the errand: it moves the version of the errand and writes
+ * an event with the sub type DECISION, which wakes a process waiting for the decision. The terms, the attachment links
+ * and the JSON parameters do neither.
  * <p>
  * Every write but those to the JSON parameters is held to {@link DecisionValidator#validateChangeable}.
  */
@@ -137,8 +133,8 @@ public class ErrandDecisionService {
 	}
 
 	/**
-	 * A lock is answered before a stale version, since a decision that can no longer be changed will not become
-	 * changeable by being read again.
+	 * Updates a decision of the errand. A decision that can no longer be changed is rejected before its version is
+	 * checked against {@code If-Match}.
 	 */
 	@Transactional
 	public Decision updateErrandDecision(final String namespace, final String municipalityId, final String errandId, final String decisionId, final String ifMatch, final Decision decision) {
@@ -300,10 +296,10 @@ public class ErrandDecisionService {
 	}
 
 	/**
-	 * Writes the event of a change to the decision, which is how the process of the errand learns of it.
+	 * Writes the event of a change to the decision, through which the process of the errand learns of it.
 	 * <p>
-	 * Caught and logged like every other errand event. A publication that fails has already marked the transaction for
-	 * rollback, so the decision is not left saved while the process is never told.
+	 * A failure is caught and logged, as for every other errand event. A publication that fails has already marked the
+	 * transaction for rollback, so the decision is not saved either.
 	 */
 	private void recordChange(final ErrandEntity errandEntity, final String message, final boolean concludesDecision) {
 		try {
@@ -346,8 +342,7 @@ public class ErrandDecisionService {
 	}
 
 	/**
-	 * The terms are part of the decision as it is served, so a change to one of them moves the version its ETag carries -
-	 * otherwise a caller holding the ETag from before would not be told the decision had changed.
+	 * Moves the version of the decision, which its ETag carries, for a change to one of its terms.
 	 */
 	private void markChanged(final DecisionEntity decisionEntity) {
 		entityManager.lock(decisionEntity, OPTIMISTIC_FORCE_INCREMENT);
@@ -361,8 +356,8 @@ public class ErrandDecisionService {
 	}
 
 	/**
-	 * The investigation is fetched through the errand, so an id belonging to another errand finds nothing and is
-	 * answered as the 404 it is rather than written as a reference across errands.
+	 * The investigation of the errand with the given id, or null when no id is given. The investigation is fetched through
+	 * the errand, so an id belonging to another errand is answered with 404.
 	 */
 	private InvestigationEntity resolveInvestigation(final String namespace, final String municipalityId, final String errandId, final String investigationId) {
 		return ofNullable(investigationId)

@@ -76,8 +76,7 @@ public class ServiceUtil {
 
 	/**
 	 * Who wrote the request, whoever they are - an ad account when a caseworker writes, a consumer name when a process
-	 * does. Unlike {@link #getAdUser()} this does not insist on a person, since the handling artefacts are written by
-	 * both and recording only one of them would leave half the writes unattributed.
+	 * does. Unlike {@link #getAdUser()} this does not insist on a person.
 	 *
 	 * @return the identity of the caller, or null when the request carries none.
 	 */
@@ -89,15 +88,12 @@ public class ServiceUtil {
 
 	/**
 	 * Signals if sent in identifier belongs to the user making the request, which is what ownership of a subscriber, a
-	 * subscription or a notification is decided on. The access mapper says nothing about ownership - being allowed to
-	 * reach an errand does not make someone the owner of another user's settings for it.
+	 * subscription or a notification is decided on.
 	 * <p>
 	 * Identifiers are stored in their wire form ("adAccount"), which is {@link Identifier#getTypeString()} rather than
 	 * the {@link Identifier.Type} enum. A request without an identifier owns nothing.
 	 * <p>
-	 * Compared without regard to case, matching how a reporter is recognised in AccessControlService. Ad account names
-	 * are not case sensitive and nothing normalises the value on the way in, so a subscriber stored as JO12DOE would
-	 * otherwise be locked out of their own settings the moment they arrive as jo12doe.
+	 * Both type and value are compared without regard to case.
 	 *
 	 * @param  identifierType  type of the stored identifier, in wire form
 	 * @param  identifierValue value of the stored identifier
@@ -115,8 +111,7 @@ public class ServiceUtil {
 	}
 
 	/**
-	 * Holds the group the request belongs to, cut to the width the tables storing it give it. The header is set by the
-	 * caller, and a value longer than a uuid would otherwise fail every write that records the group.
+	 * Holds the group the request belongs to, cut to the width the tables storing it give it.
 	 *
 	 * @param requestGroupId the raw header value, or null when the request carried none
 	 */

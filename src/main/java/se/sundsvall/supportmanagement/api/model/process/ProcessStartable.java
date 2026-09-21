@@ -10,11 +10,9 @@ import static java.util.Optional.ofNullable;
 /**
  * Whether a process may be started for an errand, and which one.
  * <p>
- * The status is carried as a string rather than as an enum, because its own contract is that values are added over
- * time: a client is told to treat what it does not recognise as not startable, and a generated enum would throw on the
- * value instead of letting it. {@link ProcessStartability} remains the set this service may answer with - it is what
- * {@link #withStatus(ProcessStartability)} takes, so a value outside it cannot be published by mistake - but it is kept
- * off the wire so that adding one is not a new version of this API.
+ * The status is published as a string, and values may be added over time: a client treats a value it does not
+ * recognise as not startable. {@link ProcessStartability} is the set of values this service answers with, and
+ * {@link #withStatus(ProcessStartability)} sets the status from it.
  */
 @Schema(description = "Whether a process may be started for an errand, and which one")
 public class ProcessStartable {
@@ -54,8 +52,7 @@ public class ProcessStartable {
 	}
 
 	/**
-	 * Takes the enum rather than a string, which is what keeps the published values a closed set on this side of the wire
-	 * while leaving them open on the other.
+	 * Sets the status to the name of the given {@link ProcessStartability}, or to null when it is null.
 	 */
 	public ProcessStartable withStatus(final ProcessStartability status) {
 		this.status = ofNullable(status).map(Enum::name).orElse(null);

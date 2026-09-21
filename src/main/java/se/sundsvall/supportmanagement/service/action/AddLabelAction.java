@@ -93,9 +93,8 @@ public class AddLabelAction extends AbstractAction {
 	/**
 	 * Puts the labels of the action on the errand, unless doing so would leave it naming a process it does not belong to.
 	 * <p>
-	 * This runs from a scheduled job and passes no endpoint, so there is nobody to answer with the 400 the same change
-	 * gets through the API. The labels are left off instead, and the guard writes what happened on the errand - without
-	 * which the process would quietly stop being woken and nothing anywhere would say why.
+	 * A refused change leaves the labels off and answers false, and the guard writes what happened on the errand.
+	 * Otherwise answers whether any label was added.
 	 */
 	@Override
 	public boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {

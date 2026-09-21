@@ -30,39 +30,24 @@ import static se.sundsvall.supportmanagement.service.ProcessErrorLog.CONFIG_ACTI
 /**
  * Holds the labels of an errand to the one process it belongs to.
  * <p>
- * Which process that is gets read off the labels ({@link ProcessKeySelector}), and a label change announces itself to
- * nobody. Both of the ways the labels can stop answering are silent, and both leave an errand that simply stops moving,
- * found when somebody wonders why nothing is happening:
- *
- * <pre>
- * two labels naming two processes -&gt; they resolve to neither, and no process is started or told anything
- * the label naming the process exchanged for another -&gt; the instance that is running is never told, and nothing fails
- * </pre>
- *
- * So two rules, asked in that order:
+ * The process is read off the labels ({@link ProcessKeySelector}). Two rules are asked, in this order:
  * <ol>
  * <li>The labels of an errand may name at most one process. This is asked of every errand, whether it has a process or
- * not - an errand pointing at two processes is wrong before anything has been started from it.</li>
+ * not.</li>
  * <li>From the moment an errand has a process row, its labels have to go on resolving to the key they resolved to
- * before - unless the change points them at the process the errand actually runs, which is a repair rather than a move.
- * It holds for a process that has finished too: a completed instance ends the process life of the errand, and labels
- * naming another process would suggest a new one could be started.</li>
+ * before, unless the change points them at the process the errand actually runs. This holds for a process that has
+ * finished too.</li>
  * </ol>
  *
- * Only the key is held still. The start mode is read off the same labels and may be changed freely - it says whether SM
- * starts the process for the handler rather than which process the errand runs, and changing it is the way automatic
- * start is rolled out.
+ * Only the key is held still. The start mode is read off the same labels and may be changed freely.
  * <p>
- * Three writers reach the labels, and a check on only some of them is no check at all:
+ * The three writers that reach the labels, and what a refusal gives each of them:
  *
  * <pre>
  * POST /errands            -&gt; ErrandService.createErrand      -&gt; 400, and only rule 1: a new errand has no process
  * PATCH /errands/{id}      -&gt; ErrandService.updateErrand      -&gt; 400
  * a scheduled job          -&gt; AddLabelAction.executeAction    -&gt; the labels are left off, and an entry says so
  * </pre>
- *
- * The scheduled writer passes no endpoint and has no caller to answer, which is why its refusal is written on the
- * errand rather than thrown. Without it the process would quietly stop being woken and nothing anywhere would say why.
  */
 @Component
 public class ProcessKeyGuard {
@@ -108,10 +93,10 @@ public class ProcessKeyGuard {
 	}
 
 	/**
-	 * Rule 1, asked of the labels an errand is created with. Rule 2 is not asked, since an errand being created has no
-	 * process to be moved away from - and no id to look one up by yet.
+	 * Rule 1, asked of the labels an errand is created with. Throws 400 when they name more than one process. Rule 2 is
+	 * not asked.
 	 *
-	 * @param labels the labels the errand would be created with, ancestors and all, since those are labels it wears too.
+	 * @param labels the labels the errand would be created with, ancestors included.
 	 */
 	public void verifyNewLabels(final Collection<ErrandLabelEmbeddable> labels) {
 		final var ids = idsOf(labels);
@@ -127,11 +112,11 @@ public class ProcessKeyGuard {
 	}
 
 	/**
-	 * Both rules, asked of a label change on an errand that exists.
+	 * Both rules, asked of a label change on an errand that exists. Throws 400 when the change is refused.
 	 *
 	 * @param errandId     the errand being changed.
 	 * @param labelsBefore the labels it wore before the change.
-	 * @param labelsAfter  the labels it would wear after it, ancestors and all, since those are labels it wears too.
+	 * @param labelsAfter  the labels it would wear after it, ancestors included.
 	 */
 	public void verifyLabelChange(final String errandId, final Collection<ErrandLabelEmbeddable> labelsBefore, final Collection<ErrandLabelEmbeddable> labelsAfter) {
 		findRefusal(errandId, labelsBefore, labelsAfter).ifPresent(refusal -> {
@@ -140,11 +125,8 @@ public class ProcessKeyGuard {
 	}
 
 	/**
-	 * The same rules for a writer with no caller to answer.
-	 * <p>
-	 * The refusal is written as an error entry on the errand rather than thrown, since the scheduled job behind it has
-	 * nowhere to send a 400 and nobody watching it run. The entry is the only thing that makes a label which never
-	 * arrived visible at all.
+	 * Both rules, asked of a label change made by a writer with no caller to answer, such as a scheduled job. A refusal is
+	 * not thrown but logged and written as an error entry on the errand, once per window.
 	 *
 	 * @param  errandId     the errand being changed.
 	 * @param  labelsBefore the labels it wears.
@@ -165,19 +147,12 @@ public class ProcessKeyGuard {
 	/**
 	 * Why the labels may not be settled on the errand, and empty when they may.
 	 * <p>
-	 * Rule 2 compares what the labels resolve to before with what they would resolve to after, rather than either of
-	 * them with the key the errand runs. That is what catches the key being taken away as well as the key being
-	 * exchanged - an errand left naming no process stops being told anything just as quietly as one naming the wrong
-	 * one.
+	 * Rule 2 compares the key the labels resolve to before with the key they would resolve to after, so a key taken away
+	 * is refused as well as a key exchanged. A change that leaves the labels naming the process the errand actually runs
+	 * is let through whatever they named before.
 	 * <p>
-	 * A change that leaves the labels naming the process the errand actually runs is let through whatever they named
-	 * before. Without that the comparison would have no way back for an errand whose labels have already lost the key -
-	 * putting it back on is a change like any other - and it is the one label change that cannot point the errand at
-	 * anything it is not already pointed at.
-	 * <p>
-	 * A change that does not touch the labels is answered before anything is read, since it is nearly every change
-	 * there is. The process rows are read only once rule 1 has passed, so an errand that runs no process costs the one
-	 * label lookup rule 1 needs and nothing more.
+	 * A change that does not touch the labels is answered before anything is read, and the process rows are read only
+	 * once rule 1 has passed.
 	 */
 	private Optional<Refusal> findRefusal(final String errandId, final Collection<ErrandLabelEmbeddable> labelsBefore, final Collection<ErrandLabelEmbeddable> labelsAfter) {
 		final var idsBefore = idsOf(labelsBefore);
@@ -219,7 +194,7 @@ public class ProcessKeyGuard {
 		return Optional.of(new Refusal(MOVES_KEY_ERROR_CODE, MOVES_KEY.formatted(errandId, describe(keyBefore), describe(keyAfter), ProcessKeySelector.excerptOf(running))));
 	}
 
-	/** Rule 1, held apart so that the errand being created and the errand being changed ask it in the same words. */
+	/** Rule 1: a refusal when the labels name more than one process, and empty when they do not. */
 	private Optional<Refusal> ambiguityIn(final ProcessKeySelection selection) {
 		if (!selection.isAmbiguous()) {
 			return Optional.empty();
@@ -242,8 +217,7 @@ public class ProcessKeyGuard {
 	}
 
 	/**
-	 * A label an errand wears whose metadata label is gone is passed over rather than thrown on, exactly as it is when
-	 * the resolution reads it off a loaded errand.
+	 * The metadata labels of the sent in ids. An id whose metadata label is gone is passed over without an error.
 	 */
 	private List<MetadataLabelEntity> labelsOf(final Set<String> ids, final Map<String, MetadataLabelEntity> labelsById) {
 		return ids.stream()

@@ -22,7 +22,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 
 /**
- * Status Metadata IT tests.
+ * External id type Metadata IT tests.
  */
 @WireMockAppTestSuite(files = "classpath:/MetadataExternalIdTypeIT/", classes = Application.class)
 @Sql({

@@ -138,9 +138,6 @@ class ErrandStatementsIT extends AbstractAppTest {
 			.as("the measure stayed, without the reference").isNull();
 	}
 
-	/**
-	 * A statement of another errand is not this errand's to reach. The lookup names both, so it finds nothing.
-	 */
 	@Test
 	void test06_readingStatementOfAnotherErrandGives404() {
 		setupCall()
@@ -151,7 +148,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The life cycle has to add up: a statement cannot be out with the counterparty without having been sent.
+	 * A statement cannot be out with the counterparty without having been sent.
 	 */
 	@Test
 	void test07_activeWithoutSentAtIsRejected() {
@@ -177,7 +174,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An ETag that has moved on says so rather than overwriting what somebody else wrote.
+	 * A patch with an ETag that has moved on is answered with 412 and overwrites nothing.
 	 */
 	@Test
 	void test09_staleIfMatchIsRejected() {
@@ -259,7 +256,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The outcomes are the namespace's to register, and one it has not registered is refused rather than written.
+	 * The outcomes are the namespace's to register, and one it has not registered is refused and not written.
 	 */
 	@Test
 	void test16_anOutcomeTheNamespaceHasNotRegisteredIsRejected() {

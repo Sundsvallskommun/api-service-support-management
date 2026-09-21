@@ -110,10 +110,9 @@ public final class ErrandMapper {
 	/**
 	 * Updates the errand from sent in patch, leaving the keys of keyed fields the caller may not write untouched.
 	 * <p>
-	 * Keyed fields are replaced wholesale by a patch, so without that guard a caller restricted to a few keys would
-	 * silently delete every key they are not even allowed to see, simply by patching back what they were served. The
-	 * guard is the write grant rather than the read one, since a namespace may hold a key to read: such a key is served
-	 * to the caller, so a patch of theirs carries it, and it must survive that patch exactly as it stands.
+	 * Keyed fields are replaced wholesale by a patch, apart from the keys the caller may not write: those keep exactly
+	 * what they hold, whether or not the patch carries them. The guard is the write grant, so a key the caller may read
+	 * but not write survives the patch as it stands.
 	 *
 	 * @param  entity      errand to update
 	 * @param  errand      patch to apply
@@ -229,9 +228,8 @@ public final class ErrandMapper {
 	/**
 	 * The keys of sent in json parameters that would come out of a patch different from how they stand on the errand.
 	 * <p>
-	 * The stored value is compared as a parsed document rather than as the text it is stored as, so that a caller
-	 * patching back what they were served is not told they changed something merely by writing the same object with its
-	 * keys in another order.
+	 * The stored value is compared as a parsed document, so the same object written with its keys in another order is
+	 * no change.
 	 */
 	public static List<String> changedJsonParameterKeys(final ErrandEntity entity, final List<JsonParameter> jsonParameters) {
 		if (isNull(jsonParameters)) {
@@ -279,8 +277,7 @@ public final class ErrandMapper {
 
 	/**
 	 * Maps a single field of an errand. Keyed fields limit themselves to sent in keys, an empty set meaning the whole
-	 * collection. The enrichment carries what a field cannot be read off the errand row, which is what a field kept out of
-	 * the errand aggregate on purpose needs.
+	 * collection. The enrichment carries what a field cannot read off the errand row.
 	 */
 	@FunctionalInterface
 	private interface FieldMapper {
@@ -288,8 +285,7 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * One entry per {@link ErrandField}, so exposing a new field is a matter of adding a constant and an entry here.
-	 * {@code ErrandMapperTest} asserts that the two stay in step.
+	 * The mapper of each {@link ErrandField}, one entry per constant.
 	 */
 	private static final Map<ErrandField, FieldMapper> FIELD_MAPPERS = new EnumMap<>(Map.ofEntries(
 		entry(ErrandField.ID, (errand, e, _, _) -> errand.setId(e.getId())),
@@ -325,9 +321,8 @@ public final class ErrandMapper {
 		entry(ErrandField.EXTERNAL_TAGS, (errand, e, keys, _) -> errand.setExternalTags(filterByKey(toExternalTags(e.getExternalTags()), ExternalTag::getKey, keys)))));
 
 	/**
-	 * Reads each field off an errand as a request carries it, so that a patch naming a field its sender does not hold
-	 * can be spotted without every caller knowing which property that is. One entry per {@link ErrandField}, held to
-	 * the constants by the same test that holds the mappers to them.
+	 * Reads each field off an errand as a request carries it, which is how a patch naming a field its sender does not
+	 * hold is spotted. One entry per {@link ErrandField}.
 	 */
 	private static final Map<ErrandField, Function<Errand, Object>> FIELD_READERS = new EnumMap<>(Map.ofEntries(
 		entry(ErrandField.ID, Errand::getId),
@@ -385,9 +380,6 @@ public final class ErrandMapper {
 	 * Maps errands according to the fields the requesting user may see of each of them, together with what a whole page
 	 * of them has been enriched with. A user nothing restricts, which the resolver signals with null, receives the full
 	 * errand.
-	 * <p>
-	 * The enrichment is required rather than defaulted, so that a caller reaching a field read outside the errand row
-	 * has to say what it holds instead of silently getting nothing.
 	 *
 	 * @param  entities      errands to map
 	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see per errand
@@ -405,9 +397,9 @@ public final class ErrandMapper {
 	 * Maps an errand according to the fields the requesting user may see of it, together with what it has been enriched
 	 * with. A user nothing restricts, which the resolver signals with null, receives the full errand.
 	 * <p>
-	 * The enrichment reaches the errand through the very same field mappers as everything else, so a field read from
-	 * outside the errand row is filtered by the role based mapping exactly as one read from inside it. A user the mapping
-	 * does not grant the field simply never has its mapper called.
+	 * The enrichment reaches the errand through the same field mappers as everything else, so a field read from outside
+	 * the errand row is filtered by the role based mapping like one read from inside it. A field the mapping does not
+	 * grant the user never has its mapper called.
 	 *
 	 * @param  entity        errand to map
 	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see for the errand
@@ -434,10 +426,8 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys. The same
-	 * mappers a role mapped errand is built from, so a conversion exists in one place only and the two projections
-	 * cannot drift apart - nor can a field reach one of them and not the other, which is what left phases and actions
-	 * served to an unrestricted user and dropped from every restricted one.
+	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys, built by the
+	 * same field mappers as a role mapped errand.
 	 * <p>
 	 * The one property left out is activePhaseId, which is inbound only: a request names the phase to move the errand
 	 * into, and the response carries the phases themselves, of which the active one is the phase not yet ended.
@@ -571,9 +561,8 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Collects into a mutable list, which Hibernate requires to manage the measures of the errand. The measures are also
-	 * added to and removed from one at a time through ErrandMeasureService, and an immutable list from Stream.toList
-	 * would fail those with an UnsupportedOperationException, which dept44 translates to 501.
+	 * Maps the measures to entities of the errand, collected into a mutable list, which Hibernate needs to manage the
+	 * measures and ErrandMeasureService needs to add and remove them one at a time.
 	 */
 	private static List<MeasureEntity> toMeasureEntities(final List<Measure> measures, final ErrandEntity errandEntity) {
 		return ofNullable(measures).orElse(emptyList()).stream()

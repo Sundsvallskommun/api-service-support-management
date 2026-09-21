@@ -33,23 +33,17 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import static org.hibernate.type.SqlTypes.VARCHAR;
 
 /**
- * A measure on an errand.
+ * A measure on an errand, one of the four handling artefacts.
  * <p>
- * The oldest of the four handling artefacts, and the reason the other three were shaped after it rather than the other
- * way around. It carries fields inherited from the action plan flow of a single line of business - {@code goal},
- * {@code accept} and {@code acceptMotivation}. A new line of business must not fill them with anything other than what
- * they mean. Where an accept step is needed, it belongs in a JSON parameter.
+ * It carries the fields {@code goal}, {@code accept} and {@code acceptMotivation} of the action plan flow of a single
+ * line of business. A new line of business must not fill them with anything other than what they mean. Where an
+ * accept step is needed, it belongs in a JSON parameter.
  * <p>
- * The rework fields of that same flow were dropped rather than carried forward, having never been filled by anything.
+ * Two inherited columns are overridden: {@code type} is 255 characters here and 128 in the base class, and
+ * {@code description} is 3000 characters.
  * <p>
- * Two inherited fields are overridden rather than migrated. {@code type} is 255 characters here and 128 in the base
- * class, and {@code description} is 3000 rather than a long text: narrowing a column that already holds data would
- * truncate it in silence, and a long text buys nothing over the length the goal and the description were widened to.
- * <p>
- * Rows that predate the shared shape had their municipality and namespace filled from their errand, and their status
- * read from {@code executed}: {@code COMPLETED} where it was set, {@code ACTIVE} otherwise. The foreign key to the
- * errand cascades in the database as it does for the other three artefacts, although the errand still holds measures
- * as a collection - a removal that bypasses the persistence context must not fail on the one table that differs.
+ * The foreign key to the errand cascades in the database as it does for the other three artefacts, although the errand
+ * also holds measures as a collection.
  */
 @Entity
 @Table(name = "measure",
@@ -108,13 +102,13 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 	@Column(name = "result_text", length = LONG32)
 	private String resultText;
 
-	/** Where the measure comes from: it follows from a decision. Set to null rather than cascading. */
+	/** Where the measure comes from: it follows from a decision. Set to null when the decision is removed. */
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "decision_id", foreignKey = @ForeignKey(name = "fk_measure_decision_id"))
 	@OnDelete(action = OnDeleteAction.SET_NULL)
 	private DecisionEntity decisionEntity;
 
-	/** Or from the response to a statement. Set to null rather than cascading. */
+	/** Or from the response to a statement. Set to null when the statement is removed. */
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "statement_id", foreignKey = @ForeignKey(name = "fk_measure_statement_id"))
 	@OnDelete(action = OnDeleteAction.SET_NULL)

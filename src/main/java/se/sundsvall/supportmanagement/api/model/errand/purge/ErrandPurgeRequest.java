@@ -14,12 +14,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 /**
  * Instruction for a purge run.
  * <p>
- * The cutoff is an explicit point in time rather than a retention period, which keeps a run reproducible regardless of
- * when it is started and lets the same resource serve any retention rule the caller cares to apply.
- * <p>
- * Purging cannot be undone, so dryRun carries no default. Leaving it out is far more likely to be an oversight than a
- * considered request to erase several hundred thousand errands, and a caller that has to write the intent out cannot
- * make that mistake silently.
+ * The cutoff is an explicit point in time, not a retention period. Purging cannot be undone, and dryRun carries no
+ * default, so the caller always has to state whether the run deletes anything.
  */
 @Schema(description = "Errand purge request model")
 public class ErrandPurgeRequest {

@@ -159,10 +159,9 @@ public class HandoverPreviewService {
 	}
 
 	/**
-	 * The errand only stores the status technical name, so the human readable display name of the source status is looked
-	 * up among the source namespace statuses to render {@code status.source.displayName}. The lookup deliberately includes
-	 * deprecated statuses — the errand's current status should be rendered even if it has since been deprecated. Returns
-	 * {@code null} when the errand has no status or the status is not (or no longer) configured in the source namespace.
+	 * Looks up the human readable display name of the status of the errand among the source namespace statuses, for
+	 * {@code status.source.displayName}. Deprecated statuses are included in the lookup. Returns {@code null} when the
+	 * errand has no status or the status is not (or no longer) configured in the source namespace.
 	 */
 	private String resolveSourceStatusDisplayName(final List<StatusEntity> sourceStatuses, final String statusName) {
 		return ofNullable(statusName)

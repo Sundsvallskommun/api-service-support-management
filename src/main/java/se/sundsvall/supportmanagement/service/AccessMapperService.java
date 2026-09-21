@@ -59,9 +59,7 @@ public class AccessMapperService {
 	 * they reach, the roles selecting what they see of an errand, and the resources saying which operations they may
 	 * perform at all.
 	 * <p>
-	 * All three come out of one answer of the access mapper, since the endpoint filters by type but is no cheaper for it,
-	 * and one answer is a single moment in time rather than three that may disagree. Held in one cache entry per user and
-	 * namespace, so that a request needing all three costs one call rather than one per type.
+	 * All three come out of one answer of the access mapper, held in one cache entry per user and namespace.
 	 *
 	 * @param  municipalityId municipality id
 	 * @param  namespace      namespace
@@ -87,11 +85,10 @@ public class AccessMapperService {
 	}
 
 	/**
-	 * Resolves the labels the user reaches at each level. Kept apart per level rather than unioned, since which level a
-	 * label is granted at is what separates an errand the user reads fully from one they only have limited read for.
+	 * Resolves the labels the user reaches, kept apart per level: which level a label is granted at separates an errand
+	 * the user reads fully from one they only have limited read for.
 	 * <p>
-	 * The levels are resolved together in one read, so that they cannot be answered from three different states of the
-	 * label table - the same reason the three types come out of one answer of the access mapper.
+	 * The levels are resolved together in one read of the label table.
 	 */
 	private Map<Access.AccessLevelEnum, Set<MetadataLabelEntity>> toLabelsByLevel(String namespace, String municipalityId, List<AccessGroup> accessGroups) {
 		final Map<Access.AccessLevelEnum, List<String>> patternsByLevel = new EnumMap<>(Access.AccessLevelEnum.class);
@@ -138,11 +135,8 @@ public class AccessMapperService {
 	}
 
 	/**
-	 * The access entries of sent in type.
-	 * <p>
-	 * Since the request no longer asks the access mapper for one type, this filter is the only thing keeping labels,
-	 * roles and resources apart - a label pattern read as a role would grant access the access mapper never gave.
-	 * Entries carrying no level or no pattern are dropped, as neither can be matched against anything.
+	 * The access entries of sent in type, which is what keeps labels, roles and resources apart within the one answer of
+	 * the access mapper. Entries carrying no level or no pattern are dropped.
 	 */
 	private static Stream<Access> accessOf(List<AccessGroup> accessGroups, String type) {
 		return ofNullable(accessGroups).orElse(emptyList()).stream()

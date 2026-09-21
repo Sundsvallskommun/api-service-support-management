@@ -4,9 +4,9 @@ import jakarta.persistence.Embeddable;
 import java.util.Objects;
 
 /**
- * Reusable identifier (type + value) embeddable. Owning entities provide column names via
- * {@code @AttributeOverrides} since the same embeddable is used for both the principal identifier
- * (identifier_type, identifier_value) and createdBy (created_by_type, created_by_value).
+ * Reusable identifier (type + value) embeddable, used for both the principal identifier
+ * (identifier_type, identifier_value) and createdBy (created_by_type, created_by_value). Owning entities
+ * provide column names via {@code @AttributeOverrides}.
  */
 @Embeddable
 public class IdentifierEmbeddable {

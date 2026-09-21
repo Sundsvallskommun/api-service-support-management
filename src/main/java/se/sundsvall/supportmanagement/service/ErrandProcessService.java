@@ -67,12 +67,9 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecuti
 /**
  * The state a process reports about an errand, and the reading of it.
  * <p>
- * Two write paths lead here, and the difference between them is the whole point: reporting on an instance creates the
- * row or updates it, while registering a start only ever creates one. A process engine can hand out the first work step
- * before the call that started the process has answered, so a report may arrive before the registration of the start it
- * belongs to. With one path creating or updating and the other only creating, neither order is an error - without that
- * rule the service that started a perfectly healthy process would be told its errand already had one, and would abort
- * it.
+ * Two write paths lead here: reporting on an instance creates the row or updates it, while registering a start only
+ * ever creates one. A report may arrive before the registration of the start it belongs to, and neither order is an
+ * error.
  */
 @Service
 public class ErrandProcessService {
@@ -183,8 +180,7 @@ public class ErrandProcessService {
 	/**
 	 * Registers a start, whether it produced an instance or failed to.
 	 * <p>
-	 * Never updates. An instance already registered is answered with what it says right now and nothing is touched,
-	 * because the report that registered it came from the process itself and is newer than this registration.
+	 * Never updates: an instance already registered is answered with what it says right now, and nothing is touched.
 	 *
 	 * @param  namespace      the namespace of the errand.
 	 * @param  municipalityId the municipality of the errand.
@@ -220,9 +216,7 @@ public class ErrandProcessService {
 	 * Creates the row for an instance this service has not seen, from either write path.
 	 * <p>
 	 * Both paths are held to the rules of a single process per errand, the first report of a work step as much as the
-	 * registration of a start. A work step can report before its start is registered, so rules asked only by the
-	 * registration would let an instance started on a stale permission in through the report - and the registration would
-	 * then find the row and answer 200, instead of the conflict that tells the process engine to abort the instance.
+	 * registration of a start, and a report breaking them is refused with 409.
 	 */
 	private ErrandProcessResult createProcess(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
@@ -266,9 +260,9 @@ public class ErrandProcessService {
 	/**
 	 * The activity log of an errand.
 	 * <p>
-	 * Read per errand rather than per instance, since the entries explaining why no process ever started belong to no
-	 * instance and could not be reached at all otherwise. Narrowing to an instance therefore leaves them out, which is
-	 * the point of narrowing, and narrowing to an instance the errand never had leaves nothing rather than everything.
+	 * The log of the errand includes the entries that belong to no instance, such as those explaining why no process ever
+	 * started. Narrowing to an instance leaves those entries out, and narrowing to an instance the errand never had
+	 * returns an empty page.
 	 *
 	 * @param  namespace         the namespace of the errand.
 	 * @param  municipalityId    the municipality of the errand.
@@ -294,16 +288,11 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * The latest process of every one of sent in errands, which is what the {@code process} field of an errand shows.
+	 * The latest process of every one of the given errands, which is what the {@code process} field of an errand shows.
+	 * The latest process is returned whether it is live or not, a start that failed and a completed process included.
 	 * <p>
-	 * The latest rather than the live one, since a start that failed leaves no live instance behind and a completed
-	 * process leaves none either. Showing only the live one would render both as an errand with no process at all, and a
-	 * mistyped process key would be invisible.
-	 * <p>
-	 * One query for the whole page, and one more for the signals of the processes it found - two in all however many
-	 * errands the page holds, and a page without a single process never asks for signals. The rows arrive newest first,
-	 * so the first one seen per errand is the latest one. Deduplicated before the signals are read, since an errand whose
-	 * process start has failed repeatedly carries a row per attempt and all but the newest are thrown away.
+	 * Reads the processes of all the errands in one query, and the signals of the latest ones in one more; no signals are
+	 * read when none of the errands has a process. Only the newest row per errand is kept, before the signals are read.
 	 *
 	 * @param  namespace      the namespace of the errands.
 	 * @param  municipalityId the municipality of the errands.
@@ -345,21 +334,10 @@ public class ErrandProcessService {
 	/**
 	 * Runs a write, and recovers from losing a race for one of the unique keys.
 	 * <p>
-	 * Both keys can be hit by the same insert, so which one gave way says nothing about what to do. The second attempt
-	 * settles it instead, by reading before it writes exactly as the first did: a row that appeared meanwhile sends the
-	 * report down the update path, and one that stands in the way is refused as the conflict it is, named. That reading
-	 * has to happen after the transaction that lost has been rolled back, since a constraint violation leaves it
-	 * unusable, which is why the second attempt is a transaction of its own.
-	 * <p>
-	 * A violation that survives that second attempt is therefore not contention: contention would have been seen and
-	 * answered by the checks the attempt begins with. What is left is a row this service cannot write at all - a value
-	 * too long for its column, a key it collides with for reasons no concurrent writer explains - and it is raised as
-	 * the fault it is rather than dressed up as a conflict, since a report answered with 409 tells a process engine to
-	 * abort the process it just started. It is logged once, where it leaves this service.
-	 * <p>
-	 * Asking the database afterwards which rows exist cannot tell the two apart, and must not be tried: on the update
-	 * path the row and the live slot were both already taken by this very report, so every such question answers yes
-	 * whatever the true cause was.
+	 * The write runs in a transaction of its own. When it violates an integrity constraint, it is logged and run once
+	 * more in a new transaction, which reads before it writes exactly as the first attempt did: a row that appeared
+	 * meanwhile sends the report down the update path, and one that stands in the way is refused with a 409 naming it. A
+	 * violation in the second attempt is raised as it is, not as a conflict.
 	 */
 	private ErrandProcessResult writeWithCollisionRecovery(final String errandId, final String processInstanceId, final Supplier<ErrandProcessResult> attempt) {
 		try {
@@ -372,12 +350,8 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * Takes the write lock on the errand, which is what serialises the reports of one errand against each other. The
-	 * checks below read what other reports have written and would otherwise be answering a question that is no longer
-	 * true by the time the row is inserted.
-	 * <p>
-	 * Hands the errand back, since the version it carries is what a report claiming to have read the errand is held
-	 * against, and it has to be the version behind the lock rather than one read before it.
+	 * Takes the write lock on the errand, which serialises the reports of one errand against each other, and hands the
+	 * errand back as read behind the lock. Its version is what a report claiming to have read the errand is held against.
 	 */
 	private ErrandEntity lockErrandForWriting(final String namespace, final String municipalityId, final String errandId) {
 		return accessControlService.getErrand(namespace, municipalityId, errandId, true, PROCESS, RW);
@@ -386,11 +360,8 @@ public class ErrandProcessService {
 	/**
 	 * Checks a report against the process configuration of the namespace before anything is written.
 	 * <p>
-	 * Validation rather than authorization, and answered as such. {@code X-Sent-By} is set by the caller and nothing
-	 * behind it is verified - this service authenticates no one, the gateway does - so refusing a report with 403 would
-	 * claim a check that was never made and send the caller looking for credentials over a field in the body. What the
-	 * rules do buy is that {@code process_service} is a column someone guarantees rather than free text, that a namespace
-	 * running no process cannot collect rows for one, and that the log and the notification of the errand name an author.
+	 * Answers 400 when the {@code X-Sent-By} header is missing, when the namespace has no process consumer, and when the
+	 * report names another process service than the process consumer of the namespace.
 	 */
 	private void verifySenderOfReport(final String namespace, final String municipalityId, final ErrandProcessReport report) {
 		if (isNull(getExecutingUser())) {
@@ -406,8 +377,7 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * Refuses an instance registered on another errand. The other errand is not named, since it can belong to another
-	 * namespace or municipality than the caller has any business with.
+	 * Refuses an instance registered on another errand with 409, without naming the other errand.
 	 */
 	private static void verifyBelongsToErrand(final ErrandProcessEntity entity, final String errandId) {
 		if (!errandId.equals(entity.getErrandId())) {
@@ -428,9 +398,8 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * Refuses a new instance on an errand whose process has run to its end. A completed instance and a failed one leave
-	 * the same empty slot in the unique key behind, so this is the rule asked of the rows instead: a failed start is
-	 * recovered from, a completed process is not.
+	 * Refuses a new instance with 409 on an errand whose process has run to its end. An errand whose process failed may
+	 * still be given a new instance.
 	 */
 	private static void verifyProcessLifeNotOver(final List<ErrandProcessEntity> instances, final String errandId) {
 		if (hasCompletedProcess(instances)) {
@@ -441,8 +410,8 @@ public class ErrandProcessService {
 	/**
 	 * Whether the process life of an errand is over.
 	 * <p>
-	 * One rule with two uses: a completed process is never started again, and the decisions of its errand can no longer
-	 * be changed. A failed process leaves the life open, since it is recovered from.
+	 * Once it is, a process is never started for the errand again, and the decisions of the errand can no longer be
+	 * changed. A failed process leaves the life open.
 	 *
 	 * @param  instances the process rows of the errand, as {@link ErrandProcessRepository#findByErrandIdOrderByCreatedDesc}
 	 *                   reads them.
@@ -453,9 +422,9 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * Refuses a second live instance, which is the rule {@code uq_ep_one_active_per_errand} holds. Asked only of a row
-	 * that would itself be live, exactly as the key is: a terminal row leaves the slot empty and can never take one that
-	 * is occupied, which is what lets a start that failed be registered while the instance it failed to replace lives on.
+	 * Refuses a second live instance with 409, which is the rule {@code uq_ep_one_active_per_errand} holds. Only a report
+	 * that would leave its row live is checked, so a terminal report - a start that failed among them - is taken while
+	 * another instance lives on.
 	 */
 	private static void verifyNoOtherLiveInstance(final List<ErrandProcessEntity> instances, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		if (toProcessStatus(report).isTerminal()) {
@@ -472,16 +441,14 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * Refuses a report whose picture of the errand has gone stale.
+	 * Refuses a report whose picture of the errand has gone stale, with 412 when the report carries an errand version
+	 * other than the current one.
 	 * <p>
-	 * This is the If-Match of a work step that reads the errand and then acts outside this service - sends a letter,
-	 * calls another party - and therefore never writes back and has no header to carry one on. It is optional for that
-	 * reason: a step that neither reads nor writes the errand sends no version, and is held against nothing.
+	 * This is the If-Match of a work step that reads the errand and then acts outside this service. The version is
+	 * optional: a report that carries none is held against nothing.
 	 * <p>
-	 * Answered before anything is written, so a refused report leaves neither state nor activities behind. For the step
-	 * it is a 412 like any other: report RETRYING, throw, and let the process engine run it again against the errand as
-	 * it now is. The log line is the only trace a refused report leaves, and it is logged as routine rather than as a
-	 * fault: how often it happens is worth knowing, not any single occurrence.
+	 * Answered before anything is written, so a refused report leaves neither state nor activities behind, only a line
+	 * logged at info level.
 	 */
 	private void verifyErrandVersion(final ErrandEntity errand, final ErrandProcessReport report) {
 		final var readVersion = report.getErrandVersion();
@@ -500,17 +467,13 @@ public class ErrandProcessService {
 	 * Notes which external task is working on the instance right now, and answers whether another one already was.
 	 * <p>
 	 * A work step announces itself with RUNNING and reports again when it is done, so the place is taken between those
-	 * two reports and empty the rest of the time. Steps that run one after another therefore never meet here: the
-	 * process engine completes a task before it hands out the next one, so the report that empties the place has always
-	 * arrived before the next task announces itself. Two that do meet are two branches of the same instance running at
-	 * once, which the process models are not allowed to have.
+	 * two reports and empty the rest of the time. Two tasks that meet here are two branches of the same instance running
+	 * at once.
 	 * <p>
 	 * Only the task standing in the place empties it. A report from another task that does not announce itself, or a
-	 * report naming no task at all - the registration of a start among them - says nothing about the task standing there
-	 * and leaves the place as it found it.
+	 * report naming no task at all - the registration of a start among them - leaves the place as it found it.
 	 *
-	 * @return the task that was already working when this report came in, or null if the place was free. The id
-	 *         rather than a yes or no, since the warning names both tasks to be worth acting on.
+	 * @return the task that was already working when this report came in, or null if the place was free.
 	 */
 	private String trackOutstandingTask(final ErrandProcessEntity entity, final ErrandProcessReport report) {
 		final var reporting = report.getExternalTaskId();
@@ -535,21 +498,10 @@ public class ErrandProcessService {
 	/**
 	 * Records that two work steps were running at once, and takes the report anyway.
 	 * <p>
-	 * Refusing one of them would silence the very entry that reveals the model is breaking the rule, and would leave
-	 * the two steps knocking each other out with nothing on the errand to say why.
-	 * <p>
-	 * Written once per instance, while every occurrence is logged as a warning. Branches that pass each other keep doing
-	 * so for as long as the model has the gateway, and the log a handler reads on the errand would otherwise drown in a
-	 * fault it has already been told about.
-	 * <p>
-	 * That entry is written without an activity id, so that {@code uq_epa_idempotency} - which counts null as
-	 * distinct - can never refuse it. A constraint violation here would take the report it was found in down with
-	 * it, which is the opposite of the point.
-	 * <p>
-	 * The entry names both tasks and says what to do about them. Whoever reads it is looking at an errand, not at a
-	 * BPMN file, and the fix is in the model rather than anywhere they can reach from here - so a warning that only
-	 * announced the problem would be read once and left alone. The error code is what an alert is built on, since the
-	 * message carries the two task ids and is therefore different every time.
+	 * Every occurrence is logged as a warning, while the entry in the activity log of the errand is written once per
+	 * instance. The entry names both tasks, says what to do about them and carries an error code for an alert to be built
+	 * on. It is written without an activity id, so {@code uq_epa_idempotency}, which counts null as distinct, never
+	 * refuses it.
 	 */
 	private void logConcurrentTasks(final ErrandProcessEntity process, final String errandId, final String externalTaskId, final String displacedTaskId) {
 		LOG.warn("Concurrent external tasks on process instance '{}' of errand '{}': task '{}' reported RUNNING while task '{}' was still working",
@@ -573,10 +525,10 @@ public class ErrandProcessService {
 	/**
 	 * Appends the activities of a report to the log of the errand.
 	 * <p>
-	 * A replayed report must add nothing, and {@code uq_epa_idempotency} says when two entries are the same one: the
-	 * instance, the external task and the activity. Entries missing either half of the key are appended as they come,
-	 * which is the answer the key gives as well, since null is distinct in a unique index. Asked before writing rather
-	 * than recovered from afterwards, since a violation would take the rest of the report down with it.
+	 * A replayed report adds nothing: an entry is left out when the log already holds one for the same instance, external
+	 * task and activity, which is the key of {@code uq_epa_idempotency}, or when the report repeats it. Entries without an
+	 * external task id or an activity id are appended as they come. The log is read for duplicates before anything is
+	 * written.
 	 */
 	private void storeActivities(final ErrandProcessEntity process, final String errandId, final ErrandProcessReport report) {
 		final var activities = ofNullable(report.getActivities()).orElse(emptyList());
@@ -606,13 +558,11 @@ public class ErrandProcessService {
 	/**
 	 * Lays what the process now waits for from a handler over what it waited for before.
 	 * <p>
-	 * The report describes the whole state of the process, so the signals are replaced rather than merged, and a report
-	 * carrying none says the process waits for no person. The same name reported twice is one signal, the first kept.
-	 * Names are compared exactly, as the process engine and the column compare them.
+	 * The signals of the report replace those stored, and a report carrying none leaves the process waiting for no
+	 * person. The same name reported twice is one signal, the first kept. Names are compared exactly.
 	 * <p>
-	 * A row whose name is still awaited is kept and brought up to date rather than deleted and inserted again. A flush
-	 * runs inserts before deletions, so a name inserted anew would meet the row being replaced in
-	 * {@code uq_eps_process_name} before that row was gone.
+	 * A row whose name is still awaited is kept and brought up to date with the label and order of the report; the rows
+	 * of names no longer awaited are deleted.
 	 *
 	 * @param  process the instance the report is about.
 	 * @param  stored  the signals the instance waited for before the report.

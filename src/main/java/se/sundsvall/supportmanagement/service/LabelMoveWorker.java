@@ -42,11 +42,9 @@ public class LabelMoveWorker {
 	}
 
 	/**
-	 * Access labels are meant to mirror the leaves of an errand's full label set, so an errand matched by the query
-	 * above - which requires the moved label to be present in that full set - should always carry at least one. One
-	 * with none anyway is not safe to rebuild from: emptying its labels along with it would silently take away who
-	 * can reach it, which is a worse outcome than leaving a stale chain in place. Left untouched instead, with a
-	 * warning, since whatever put it in that state needs looking at rather than being papered over here.
+	 * Rebuilds the labels of the errand as the ancestor chains of its access labels (the leaves), and persists them.
+	 * <p>
+	 * An errand without access labels is left untouched, with a warning, and keeps the labels it has.
 	 */
 	void rebuildLabels(final ErrandEntity errand) {
 		var accessLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList());

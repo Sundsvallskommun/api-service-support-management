@@ -4,11 +4,9 @@ package se.sundsvall.supportmanagement.integration.db.model.enums;
  * Whether SM gives the start permission to an errand event by itself, or leaves it to a handler pressing a button.
  * <p>
  * Read from the {@code processStartMode} attribute of the same label that carries the process key, and never on its
- * own: an errand whose labels point in two directions would otherwise be able to take the key from one of them and the
- * mode from the other.
+ * own.
  * <p>
- * Not a mapped column. The value is stored as free label metadata, and this enum is what SM is willing to read out of
- * it.
+ * Not a mapped column. The value is stored as free label metadata, and this enum holds the values SM reads out of it.
  */
 public enum ProcessStartMode {
 

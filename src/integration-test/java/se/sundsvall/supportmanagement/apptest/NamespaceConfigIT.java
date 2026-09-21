@@ -223,8 +223,8 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 	/**
-	 * The values the access configuration accepts, published as data so that exposing a new field or guarding a new
-	 * resource does not alter the contract. The fixture is the whole definition, so adding either shows up here.
+	 * The values the access configuration accepts, published as data. The response is compared against the whole
+	 * definition.
 	 */
 	@Test
 	void test12_getAccessDefinition() {

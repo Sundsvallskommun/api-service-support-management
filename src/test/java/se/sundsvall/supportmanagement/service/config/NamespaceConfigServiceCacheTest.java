@@ -147,11 +147,6 @@ class NamespaceConfigServiceCacheTest {
 		assertThat(namespaceConfigService.get(NAMESPACE, MUNICIPALITY_ID)).isEqualTo(after);
 	}
 
-	/**
-	 * Asked on every errand event, so both are answered from the cache - and both are what a namespace is connected to its
-	 * process through. Were either left in the cache by a write, the configuration could not be changed while the service
-	 * runs, however much a successful write looks like it did.
-	 */
 	@Test
 	void theProcessConfigurationIsAnsweredFromCache() {
 		when(mock.getProcessConsumer(any(), any())).thenReturn(Optional.of("pw-alkt")).thenThrow(new RuntimeException("Result should be cached!"));

@@ -59,10 +59,8 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.TRIGGER_PR
  * The chain that lets a process end: a decision is written, the errand event it gives is published, and the process
  * waiting for the decision is told.
  * <p>
- * A row that is never written looks exactly like an event that never happened, so every write below that is expected to
- * reach the process is also held to having been logged as an errand event with the sub type DECISION - a missing row is
- * then always the doing of publication. The relay is left out: rows stay undelivered, which is what lets the brake be
- * tripped by rows written here.
+ * Every write expected to reach the process is also held to having been logged as an errand event with the sub type
+ * DECISION. The relay is not run, so the rows written stay undelivered.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandDecisionProcessIT/", classes = Application.class)
 @ExtendWith(OutputCaptureExtension.class)
@@ -149,9 +147,9 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Loop guard layer 1 holds for the decision too: the process does not need to be woken by what it decided itself,
-	 * even though a decision being concluded passes the emergency brake. The decision still names the process that made
-	 * it, and the service says which that is.
+	 * Loop guard layer 1 holds for a decision the process concludes itself: no row is written, although a concluded
+	 * decision passes the emergency brake. The decision names the live process as the one that made it, whatever the body
+	 * says.
 	 */
 	@Test
 	@DisplayName("Verification that the process concluding its own decision is not woken by it, and is recorded as the one that made it")
@@ -164,8 +162,7 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Both directions, since the difference between a decision a person made and one a process made is what has to hold
-	 * afterwards.
+	 * Both directions are refused with 403, on create as well as on update, and nothing is written.
 	 */
 	@Test
 	@DisplayName("Verification that a decision cannot claim the method of the other kind of writer")
@@ -185,8 +182,7 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	/**
 	 * While the process lives a decision can be written again, until it is concluded. After that it is locked as it
 	 * stands - taking it back to a draft and deleting it included - and so are its terms, its attachments and the
-	 * attachments of the errand it rests on. Its JSON parameters are not, since legal force and service of the decision
-	 * are only known after it is made.
+	 * attachments of the errand it rests on. Its JSON parameters are not.
 	 */
 	@Test
 	@DisplayName("Verification that a decision is written again while the process lives, and locked once concluded")
@@ -219,9 +215,9 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A decision being concluded by a caseworker is the one event a waiting process needs. The brake tripped by other
-	 * traffic on the errand holds back an ordinary change to the decision, and a decision the process concludes itself
-	 * without asking not to be woken - which is how a process would loop - but not the caseworker's conclusion.
+	 * With the emergency brake tripped by other traffic on the errand, an ordinary change to the decision and a decision
+	 * the process concludes itself without asking not to be woken give no row, while a caseworker concluding the decision
+	 * gives one.
 	 */
 	@Test
 	@DisplayName("Verification that a decision concluded by a caseworker reaches the process past a tripped emergency brake, and one concluded by the process does not")
@@ -244,8 +240,8 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The same completed process that is never started again locks every decision of its errand, whatever their status,
-	 * and a new one too. The JSON parameters stay open.
+	 * A completed process, which is never started again, locks every decision of its errand whatever their status, and a
+	 * new decision too. The JSON parameters stay open.
 	 */
 	@Test
 	@DisplayName("Verification that no decision of an errand whose process has run to its end can be written")
@@ -278,8 +274,8 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An errand that has never had a process is never locked. Its event log is what makes the changes traceable,
-	 * and every one of them still moves the version of the errand.
+	 * An errand that has never had a process is never locked. Every change is written to the event log and moves the
+	 * version of the errand.
 	 */
 	@Test
 	@DisplayName("Verification that a completed decision on an errand without a process can be changed and deleted")
@@ -337,8 +333,8 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The decision is data of the errand and goes with it. A process row, which only ever goes with its errand, is no
-	 * foreign key of the decision, so the decision stays even if the row were removed on its own.
+	 * Deleting the errand deletes its decisions. The process row a decision names is no foreign key of it, so removing the
+	 * row on its own leaves the decision and its reference to the row as they were.
 	 */
 	@Test
 	@DisplayName("Verification that deleting the errand takes its decisions along, and that removing a process row does not")
@@ -353,9 +349,8 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The justification nearly always holds personal data, and the payload log of the service is on by default. The masked
-	 * value has to be found where the justification was, request and response alike, or the test would pass just as well
-	 * with the payload log switched off.
+	 * The justification is masked in the payload log: the masked value is found where the justification was, in the
+	 * request and in the response alike.
 	 */
 	@Test
 	@DisplayName("Verification that the justification of a decision appears in no log line, going in or coming out")
@@ -417,7 +412,7 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Delivered rows within the window are what the brake counts, and as many as it allows trip it.
+	 * Trips the emergency brake of the errand by writing as many delivered rows inside its window as it allows.
 	 */
 	private void tripTheBrake(final String errandId) {
 		for (var i = 0; i < 20; i++) {

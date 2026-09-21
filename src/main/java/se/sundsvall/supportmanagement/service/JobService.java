@@ -35,10 +35,8 @@ public class JobService {
 	private static final String NOT_REPORTED_ON = "Job was not reported on for %s and is taken to have ended with the instance carrying it out";
 
 	/**
-	 * The states a job works in. Held in one place because the guard that keeps two runs of a kind out of the same
-	 * namespace and the sweep that ends jobs nobody is reporting on must agree on what counts as under way: a state one
-	 * of them treats as active and the other does not is either a namespace blocked for good or a run ended under a
-	 * thread still working on it.
+	 * The states in which a job counts as under way, both for the guard that keeps two runs of a kind out of the same
+	 * namespace and for the sweep that ends jobs nobody is reporting on.
 	 */
 	private static final List<JobStatus> ACTIVE_STATUSES = List.of(JobStatus.PENDING, RUNNING);
 
@@ -54,8 +52,8 @@ public class JobService {
 	}
 
 	/**
-	 * Creates a job that works on one label, so that a caller wanting to know whether that label already has a run under
-	 * way has something to ask {@link #hasActiveJob(String, String, JobType, String)} about.
+	 * Creates a job that works on one label, which {@link #hasActiveJob(String, String, JobType, String)} can then be
+	 * asked about.
 	 */
 	@Transactional
 	public String create(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
@@ -63,9 +61,7 @@ public class JobService {
 	}
 
 	/**
-	 * Shared, un-annotated so that neither {@code create} overload above reaches its own {@code @Transactional} through
-	 * a plain {@code this} call rather than the proxy — a transaction is already open by the time either gets here,
-	 * started by whichever overload the caller actually invoked from outside.
+	 * Saves a new job and returns its id, in the transaction of the {@code create} overload that was called.
 	 */
 	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
 		return jobRepository.save(JobEntity.create()
@@ -124,12 +120,10 @@ public class JobService {
 	}
 
 	/**
-	 * Asks a job to stop. It is marked as stopped straight away, and the work itself ends once it notices - which is what
-	 * lets a job be stopped from an instance other than the one carrying it out.
+	 * Asks a job to stop. It is marked as stopped straight away, and the work itself ends once it notices, whichever
+	 * instance is carrying it out.
 	 * <p>
-	 * The kind of job is part of what is looked up rather than checked afterwards. Every kind of work shares this table,
-	 * and each reaches it through a resource of its own, so an id that belongs to another kind of job is answered as not
-	 * found: a caller asking to stop a purge must not be able to halt an unrelated job by sending its id instead.
+	 * The job is looked up by its kind as well, so an id that belongs to another kind of job is answered as not found.
 	 *
 	 * @param  namespace      namespace the job belongs to.
 	 * @param  municipalityId id of the municipality the job belongs to.
@@ -169,14 +163,8 @@ public class JobService {
 	}
 
 	/**
-	 * What a job is allowed to keep as its message.
-	 * <p>
-	 * A reason is often built from the message of an exception, which can carry whatever a caller sent in, and what is
-	 * stored here is read back through the API and written to a log by whoever reads it. Line breaks and control
-	 * characters are taken out at this point, so that no producer has to remember to.
-	 * <p>
-	 * The length is bounded for the same reason: the column holds a sentence for a person to read, and a message that
-	 * arrives carrying a whole stack trace should be cut rather than fill the row.
+	 * What a job is allowed to keep as its message: line breaks and control characters are taken out, and a message
+	 * longer than {@code MAX_MESSAGE_LENGTH} characters is cut and ended with an ellipsis.
 	 */
 	private static String toStoredMessage(final String message) {
 		return ofNullable(sanitizeForLogging(message))
@@ -189,8 +177,7 @@ public class JobService {
 	}
 
 	/**
-	 * Whether a job of one kind is already under way, for work that only rules out another run of its own kind rather
-	 * than every other job in the namespace.
+	 * Whether a job of one kind is already under way in the namespace. Jobs of other kinds are not considered.
 	 */
 	public boolean hasActiveJob(final String namespace, final String municipalityId, final JobType type) {
 		return jobRepository.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(namespace, municipalityId, type, ACTIVE_STATUSES);
@@ -207,19 +194,14 @@ public class JobService {
 	/**
 	 * Ends the jobs that stopped being reported on.
 	 * <p>
-	 * Work writes to its job as it goes, so a job that has not been written to for far longer than it takes to report is
-	 * one whose instance is no longer there to write it: taken down mid run by a restart, an eviction, or something the
-	 * thread could not report on its way out. Nothing else would ever move it. The row would read as running for as long
-	 * as it lives, and the guard that keeps two runs of a kind out of the same namespace would go on refusing every run
-	 * of that kind from then on.
-	 * <p>
-	 * A job ended here that in fact still has a run behind it costs nothing: what a run reads to know whether it is still
-	 * wanted is the job, so it stops itself at the next batch rather than carrying on against a job that has ended.
+	 * An active job that has not been written to within {@code staleAfter} - or, never written to, was created longer ago
+	 * than that - is taken to have ended with the instance carrying it out, and is marked as failed with a message saying
+	 * so. A run still behind a job ended here stops itself at its next batch, as it reads the job to know whether it is
+	 * still wanted.
 	 *
 	 * @param  staleAfter how long a job may go without being written to before it is taken to have ended with its
 	 *                    instance.
-	 * @return            the jobs that were ended, so that a caller can say which work was left half done rather than
-	 *                    only how much of it there was.
+	 * @return            the jobs that were ended.
 	 */
 	@Transactional
 	public List<JobEntity> failStaleJobs(final Duration staleAfter) {

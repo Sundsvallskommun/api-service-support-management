@@ -29,8 +29,8 @@ public final class ErrandProcessMapper {
 	/**
 	 * Maps an instance to the model served both under {@code /processes} and as the {@code process} field of an errand.
 	 * <p>
-	 * The signals are always set, so that a process waiting for no one says so with an empty list rather than by leaving
-	 * the field out, and a process that has ended waits for no one.
+	 * The signals are always set: a process waiting for no one has an empty list, and a process that has ended waits for
+	 * no one.
 	 *
 	 * @param  entity  the instance to map.
 	 * @param  signals what the instance waits for from a handler, in the order the process reported it.
@@ -80,9 +80,7 @@ public final class ErrandProcessMapper {
 	}
 
 	/**
-	 * What an instance waits for, which is nothing once it has ended, whatever rows it left behind. A signal to an ended
-	 * process is refused, and a process is ended by more than its own report - the relay ends one the process engine
-	 * refuses - so the rule is held here, where every reading passes, rather than on each path that ends a process.
+	 * What an instance waits for, which is nothing once it has ended, whatever rows it left behind.
 	 */
 	private static List<ProcessSignal> toProcessSignals(final ErrandProcessEntity entity, final List<ErrandProcessSignalEntity> signals) {
 		if (entity.getProcessStatus().isTerminal()) {
@@ -99,20 +97,17 @@ public final class ErrandProcessMapper {
 	/**
 	 * The reported state as the enum this service works in.
 	 * <p>
-	 * The report carries it as a string so that the published schema does not pin the set, and the value is held to that
-	 * set by validation before it ever reaches here - so an unknown one is a bug rather than a bad request, and is left to
-	 * fail as one.
+	 * The report carries the state as a string, which validation has held to the set of states before it reaches here.
 	 *
 	 * @param  report the report to read the state of.
-	 * @return        the state the report carries.
+	 * @return        the state the report carries, or null when it names none.
 	 */
 	public static ProcessStatus toProcessStatus(final ErrandProcessReport report) {
 		return EnumUtils.getEnum(ProcessStatus.class, report.getProcessStatus());
 	}
 
 	/**
-	 * The error of an instance, or null when the row carries neither half of one. Kept apart from the row so that a
-	 * process that never failed answers with no error object rather than with an empty one.
+	 * The error of an instance, or null when the row carries neither half of one.
 	 */
 	private static ProcessError toProcessError(final ErrandProcessEntity entity) {
 		if (isNull(entity.getErrorCode()) && isNull(entity.getErrorMessage())) {
@@ -152,11 +147,9 @@ public final class ErrandProcessMapper {
 	/**
 	 * Lays a report over an instance that already exists.
 	 * <p>
-	 * The report describes the whole state of the process, so the error is replaced rather than merged: an instance that
-	 * reports itself running again after an incident was resolved by hand must not keep the message from the incident.
-	 * The start time is the exception, since it is a fact about the instance rather than about its current state, and a
-	 * later report that leaves it out is not saying the process never started. The service and the key of the process
-	 * identify the row and are settled when it is created.
+	 * The current activity and the error are replaced by those of the report, so a report without an error clears the
+	 * stored one, and the state is applied. The start time is kept when the report leaves it out. The service and the key
+	 * of the process identify the row and are left as they were set when it was created.
 	 *
 	 * @param entity the instance to update.
 	 * @param report what the process reported.

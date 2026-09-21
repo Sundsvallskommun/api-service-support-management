@@ -594,7 +594,7 @@ class RevisionServiceTest {
 
 	/**
 	 * Hands every chunk straight back to what the caller passed, so that a test sees the removal the deleter would have
-	 * carried out rather than only the call asking for it.
+	 * carried out.
 	 */
 	private void runChunksImmediately() {
 		doAnswer(invocation -> {

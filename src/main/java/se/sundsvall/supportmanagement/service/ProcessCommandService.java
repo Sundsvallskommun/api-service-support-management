@@ -52,13 +52,10 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
  * starting the handling by hand, and stepping a process past a gate it waits at.
  * <p>
  * A command changes nothing on the errand, writes no revision and moves no version. It leaves two things behind: an
- * entry in the activity log naming who sent it, which is what answers afterwards who started or stepped the process and
- * when, and an event that carries it to the process. It notifies no one - the process is its only audience.
+ * entry in the activity log naming who sent it and when, and an event that carries it to the process. It notifies no
+ * one.
  * <p>
- * Only an ad account may send one, and anyone else is refused with 403 before anything is written. A command is a
- * person's decision about the process, and the entry it leaves has to say which person - a service name answers
- * nothing. Publication does not lean on the check: it waives layer 1 of the loop guard for commands of its own accord,
- * so a command that got past it would still reach the process rather than be silenced.
+ * Only an ad account may send one, and anyone else is refused with 403 before anything is written.
  */
 @Service
 public class ProcessCommandService {
@@ -136,8 +133,8 @@ public class ProcessCommandService {
 	 * otherwise                                    -&gt; AVAILABLE, with every key the labels name
 	 * </pre>
 	 *
-	 * Once the errand has a process row - a failed start included - only the key of that process counts, since every
-	 * instance of an errand runs the same process. The start mode of the labels is not read.
+	 * Once the errand has a process row - a failed start included - only the key of that process counts. The start mode
+	 * of the labels is not read.
 	 *
 	 * @param  runsProcesses whether the namespace of the errand has a process consumer.
 	 * @param  instances     the process rows of the errand, as
@@ -212,22 +209,15 @@ public class ProcessCommandService {
 	/**
 	 * Steps a process past the gate it waits at, by sending it one of the signals it waits for.
 	 * <p>
-	 * The signal is a request and forces nothing. The gate decides what it means where the process stands, which is why a
-	 * handler may send a signal but never set the state of a process: a step the law requires cannot be skipped by
-	 * posting the right string.
+	 * The signal is a request and forces nothing: the gate decides what it means where the process stands.
 	 * <p>
 	 * Only a signal the process waits for right now is taken, matched exactly as the process named it. Anything else is
-	 * refused with 409 and writes nothing: a process that has reported that it moved on waits for something else, and the
-	 * old button stops working.
+	 * refused with 409 and writes nothing.
 	 * <p>
 	 * Taking a signal consumes nothing. Until the process reports where it went, the same signal is taken again - a double
-	 * click writes two entries and two events, and the process engine correlates the first and passes the second over as
-	 * a signal no gate waits for any more. That is a decision rather than an oversight: the next report of the process is
-	 * what closes the gate, and SM does not second-guess the model about what one signal answers.
+	 * click writes two entries and two events.
 	 * <p>
-	 * The errand is locked before anything else is read. The reads that follow then see the report the lock waited for
-	 * rather than the one before it - under repeatable read the snapshot is taken at the first plain read of the
-	 * transaction, and a read ahead of the lock would pin the transaction to what stood before the report committed.
+	 * The errand is locked before anything else is read, so the reads that follow see a report the lock waited for.
 	 *
 	 * @param namespace         the namespace of the errand.
 	 * @param municipalityId    the municipality of the errand.

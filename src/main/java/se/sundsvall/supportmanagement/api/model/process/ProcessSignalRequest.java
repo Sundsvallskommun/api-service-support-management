@@ -6,9 +6,8 @@ import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 /**
- * A handler stepping a process past a gate. It carries the name of the gate and nothing else: a reason given for the
- * step belongs in a note on the errand, which is kept as long as the errand and guarded like the rest of it, while the
- * activity log of the process is swept after a year and may hold no personal data.
+ * A handler stepping a process past a gate. It carries the name of the gate and nothing else; a reason for the step
+ * belongs in a note on the errand.
  */
 @Schema(description = "A request to step a process past a gate it waits at")
 public class ProcessSignalRequest {

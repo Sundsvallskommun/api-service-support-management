@@ -39,12 +39,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * The deleter is what a single errand delete and a retention purge have in common, so what is worth pinning down is
- * that every table and every neighbouring service the errand reaches into is covered, and that the removal does not
- * come apart when one of those services is unavailable.
+ * Tests of {@link ErrandDataDeleter}, shared by a single errand delete and a retention purge: that every table and
+ * every
+ * neighbouring service the errand reaches into is covered, and that the removal does not come apart when one of those
+ * services is unavailable.
  * <p>
- * The chunked deleter is used for real rather than mocked, since handing the ids over is part of what these tests are
- * checking.
+ * The chunked deleter is used for real, not mocked, so the ids handed to it are part of what is verified.
  */
 @ExtendWith(MockitoExtension.class)
 class ErrandDataDeleterTest {

@@ -70,22 +70,18 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearTrigg
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setTriggerProcess;
 
 /**
- * The whole round between SupportManagement and its process, with WireMock standing in for pw-alkt, and the question
- * the round is run for: do the two services stop waking each other?
+ * The whole round between SupportManagement and its process, with WireMock standing in for pw-alkt, run to verify that
+ * the two services stop waking each other.
  * <p>
- * Two of the three layers of the loop guard leave nothing behind when they work - a row never written looks exactly
- * like an event that never happened. The danger is therefore not a guard that is missing but one that is too wide: a
- * filter silencing more than it should stops the process from being woken, and nobody notices until someone asks why an
- * errand stands still. Every write below is therefore held to having become an errand event in the event log, so that a
- * missing row is always the doing of publication, and every row written is held to reaching pw-alkt.
+ * Every write below is held to having become an errand event in the event log, and every row written is held to
+ * reaching pw-alkt.
  * <p>
  * The test plays the part of pw-alkt that calls back: it reads what reached the stub, and answers the way pw-alkt does
  * - registering the start, reporting on its work step and patching the errand. SupportManagement delivers on its own,
- * through the direct run, so the test waits for rows to be delivered rather than for time to pass.
+ * through the direct run, and the test waits for rows to be delivered.
  * <p>
  * Commands are issued through {@link EventService#createProcessCommandEvent}, which is where the start and signal
- * endpoints hand them over. The endpoints and their checks - the 403 for a caller without an ad account among them - are
- * not what this test asks about: the signal endpoint is tried over the wire in {@link ProcessSignalIT}, and the start
+ * endpoints hand them over. The signal endpoint is tested over the wire in {@link ProcessSignalIT}, and the start
  * endpoint in {@link ProcessStartIT}.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessLoopGuardIT/", classes = Application.class)
@@ -185,13 +181,8 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Commands pass layer 1 because publication waives it for them, and not merely because only handlers reach them.
-	 * <p>
-	 * The endpoints are to refuse a caller without an ad account, and the header is not honoured for an ad account, so a
-	 * command would get past layer 1 even without a waiver. Leaning on that chain would make the buttons depend on the 403
-	 * staying in place: were it lost, a command sent with the header every process engine sets would be silenced rather
-	 * than refused, which is the quietest failure there is. Here the commands reach publication exactly that way, and an
-	 * ordinary change in the same context shows that layer 1 is armed there.
+	 * Commands sent as a process engine, with the header asking not to be woken, still pass layer 1, while an ordinary
+	 * change in the same context is held back by it.
 	 */
 	@Test
 	@DisplayName("Verification that a command passes layer 1 of its own accord, so the buttons do not lean on the check keeping machines away from them")
@@ -219,9 +210,8 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An identity header that cannot be parsed leaves the request without an identity at all. Layer 1 never reads the
-	 * identity other than to exempt an ad account, so the process is still obeyed, and the price is only that the row
-	 * written without the header names no one.
+	 * An identity header that cannot be parsed leaves the request without an identity at all. Layer 1 still holds back a
+	 * change sent with the header, and the row written without the header names no one.
 	 */
 	@Test
 	@DisplayName("Verification that a process whose identity cannot be read is still obeyed when it asks not to be woken")
@@ -241,7 +231,7 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	/**
 	 * The creation is the event that starts the process: the label says nothing about the start mode, which reads as
 	 * automatic, and the errand has never had a process. It is also the one write whose labels have never been read from
-	 * the database, and a publication reading only what Hibernate has filled in would find no process on them at all.
+	 * the database, and the row it writes still names the process key.
 	 */
 	private String aHandlerCreatesAnErrandWearingTheProcessLabel() {
 		final var response = restTemplate.exchange(ERRANDS_PATH, POST, new HttpEntity<>("""
@@ -300,8 +290,8 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Layer 1. The patch became an errand event like any other, so the missing row is the doing of publication - and the
-	 * identity of the process is nowhere among the rows, which is how it shows in operation that the header works.
+	 * Layer 1. The patch becomes an errand event like any other but writes no row, and the identity of the process is
+	 * nowhere among the rows.
 	 */
 	private void theProcessPatchesTheErrandAskingNotToBeWoken(final String errandId) {
 		assertThat(rowsWrittenDuring(() -> patchErrand(errandId, PROCESS_ENGINE, DO_NOT_WAKE))).isEmpty();
@@ -321,10 +311,9 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The step that tells a working filter from one that silences everything. The request is the one the process sent,
-	 * header and all, and only the identity differs: the header is not honoured for an ad account, so a handler's change
-	 * wakes the process however the client sets it. Without that rule anyone could make their writes invisible to the
-	 * process. The event asks for no start, since the process is alive.
+	 * The request is the one the process sent, header and all, and only the identity differs: the header is not honoured
+	 * for an ad account, so a handler's change wakes the process however the client sets it. The event asks for no
+	 * start, since the process is alive.
 	 */
 	private void aHandlerSendsTheSamePatchWithTheHeaderKept(final String errandId) {
 		final var rows = rowsWrittenDuring(() -> patchErrand(errandId, HANDLER_IDENTITY, DO_NOT_WAKE));
@@ -340,13 +329,12 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Layer 1 rests on a header the sender sets itself. A process that forgets it patches the errand, is woken by its own
-	 * change and patches again, round after round, until layer 2 or 3 catches it. A changed errand is a trigger of the
-	 * namespace, so here it is the brake: the loop stops once as many events as the brake allows have reached the
-	 * process within its window, those of the handler's writes included. The rows the loop did write carry the identity
-	 * of the process, which is how the fault shows in operation.
+	 * A process that forgets the header patches the errand, is woken by its own change and patches again, round after
+	 * round. A changed errand is a trigger of the namespace, so here the brake catches it: the loop stops once as many
+	 * events as the brake allows have reached the process within its window, those of the handler's writes included. The
+	 * rows the loop did write carry the identity of the process.
 	 * <p>
-	 * The rounds are bounded, so that a brake that never trips fails the test rather than running it for ever.
+	 * The rounds are bounded, so a brake that never trips fails the test.
 	 */
 	private void theProcessForgetsTheHeaderUntilTheBrakeCatchesIt(final String errandId) {
 		final var maxEvents = processEngineProperties.loopGuard().maxEventsPerErrand();
@@ -370,11 +358,8 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 
 	/**
 	 * Layer 3 now holds back every ordinary change of the errand, a handler's included, and says so once on the errand
-	 * however many events it drops. The brake is about one errand and not about the service, so the health of the relay
-	 * is left alone.
-	 * <p>
-	 * The health is read before the scheduled run as well as after it. The run resets the indicator before it judges the
-	 * relay, so only the reading before it could show a brake that had marked the service unhealthy.
+	 * however many events it drops. The health of the relay is left alone, and is read both before and after a scheduled
+	 * run.
 	 */
 	private void theTrippedBrakeHoldsBackOrdinaryChanges(final String errandId) {
 		assertThat(rowsWrittenDuring(() -> patchErrand(errandId, HANDLER_IDENTITY, null))).isEmpty();
@@ -396,8 +381,8 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A signal is a handler pressing a button at a gate the process waits at, not something that happened to the errand.
-	 * It passes the brake, and the triggers of the namespace, which do not name it.
+	 * A handler's signal to the waiting process passes the brake, and the triggers of the namespace, which do not name
+	 * it.
 	 */
 	private void aHandlerSignalsTheWaitingProcessPastTheBrake(final String errandId) {
 		final var rows = rowsWrittenDuring(() -> issueCommand(Identifier.parse(HANDLER_IDENTITY), null, errandId, SIGNAL, new ProcessCommand(null, SIGNAL_NAME)));
@@ -416,13 +401,10 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The button that must never be swallowed. The brake lies before the triggers, so without the exception an errand with
-	 * lively traffic would take the handler's start command, answer 202 and start nothing - on exactly the errands with
-	 * the most to do.
+	 * A handler's start command passes the brake.
 	 * <p>
-	 * The process fails first, since a start is only offered for an errand without a live process, and starting again
-	 * after a failure is what the button is for. An ordinary change right before the command shows that the brake still
-	 * holds at that moment, the failure notwithstanding.
+	 * The process fails first, since a start is only offered for an errand without a live process. An ordinary change
+	 * right before the command shows that the brake still holds at that moment, the failure notwithstanding.
 	 */
 	private void aHandlerStartsTheFailedProcessAgainPastTheBrake(final String errandId) {
 		reportAsProcess(PUT, instancePath(errandId), """
@@ -452,10 +434,8 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 
 	/**
 	 * Patches the errand the way both the process and the handler do in this test: the same field, the same headers but
-	 * for those sent in. Each patch writes a value the errand has not had before, since a patch that changes nothing
-	 * normally writes no revision and no event, and would leave no row for a reason that has nothing to do with the loop
-	 * guard.
-	 * That the change became an event, made by the sender, is checked here for every patch.
+	 * for those sent in. Each patch writes a value the errand has not had before, so that every patch writes a revision
+	 * and an event. That the change became an event, made by the sender, is checked here for every patch.
 	 */
 	private void patchErrand(final String errandId, final String sentBy, final String triggerProcess) {
 		final var body = """
@@ -526,8 +506,8 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The bodies of the requests matching the pattern that reached WireMock while the call ran, told apart by id rather
-	 * than by time, since two requests can be logged within the same millisecond.
+	 * The bodies of the requests matching the pattern that reached WireMock while the call ran, told apart from the
+	 * earlier ones by id.
 	 */
 	private List<JsonNode> requestsMadeDuring(final RequestPatternBuilder pattern, final Runnable call) {
 		final var before = wiremock.findAll(pattern).stream().map(LoggedRequest::getId).collect(toSet());

@@ -216,8 +216,7 @@ class ErrandMeasureMapperTest {
 	}
 
 	/**
-	 * The measure as the errand carries it never reaches for its attachments, which is what spares a listing of errands a
-	 * query per measure.
+	 * The measure as the errand carries it never reaches for its attachments.
 	 */
 	@Test
 	void testToMeasuresWithoutAttachments() {
@@ -330,8 +329,8 @@ class ErrandMeasureMapperTest {
 	}
 
 	/**
-	 * The measure of the errand payload carries no JSON parameters, so a patch keeping a measure keeps them too rather
-	 * than reading their absence as an instruction to remove them.
+	 * The measure of the errand payload carries no JSON parameters, so a patch keeping a measure leaves its JSON
+	 * parameters as they are.
 	 */
 	@Test
 	void testMergeMeasuresLeavesTheJsonParametersOfARetainedMeasureAlone() {

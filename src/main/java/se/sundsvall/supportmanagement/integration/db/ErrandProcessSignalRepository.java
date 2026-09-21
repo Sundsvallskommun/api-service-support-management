@@ -20,8 +20,7 @@ public interface ErrandProcessSignalRepository extends JpaRepository<ErrandProce
 	List<ErrandProcessSignalEntity> findByErrandProcessIdOrderBySortOrderAsc(String errandProcessId);
 
 	/**
-	 * What several instances wait for, read in one query for all of them rather than one per instance, which is what
-	 * keeps a page of errands at a fixed number of queries.
+	 * What several instances wait for, read in one query for all of them.
 	 *
 	 * @param  errandProcessIds the instances to look at.
 	 * @return                  the signals of those instances, each instance's in the order the process reported them.

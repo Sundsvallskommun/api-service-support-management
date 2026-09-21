@@ -70,8 +70,7 @@ class ArtefactAttachmentServiceTest {
 	}
 
 	/**
-	 * The invariant JPA cannot express: the two foreign keys of the join table know nothing about each other, so the
-	 * attachment is fetched through the errand. One belonging to another errand is answered as the absence it is.
+	 * The attachment is fetched through the errand, and one belonging to another errand is answered as not found.
 	 */
 	@Test
 	void linkingAnAttachmentOfAnotherErrandGivesNotFound() {
@@ -91,8 +90,7 @@ class ArtefactAttachmentServiceTest {
 	}
 
 	/**
-	 * An attachment already linked is recognised by its id without regard to case, as the lookup through the errand
-	 * recognises it.
+	 * An attachment already linked is recognised by its id without regard to case.
 	 */
 	@Test
 	void linkingTheSameAttachmentTwiceIsAConflict() {
@@ -160,7 +158,7 @@ class ArtefactAttachmentServiceTest {
 	}
 
 	/**
-	 * An element without an id, or no element at all, is skipped rather than matched on a null.
+	 * An element without an id, or no element at all, is skipped and never matched on a null.
 	 */
 	@Test
 	void anAttachmentWithoutAnIdIsNotMatched() {

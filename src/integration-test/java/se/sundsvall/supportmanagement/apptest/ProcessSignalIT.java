@@ -54,13 +54,11 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.TRIGGER_PR
  * Manual stepping over the wire: the process reports what it waits for, the errand shows it, a handler presses one of
  * the buttons, and the name of the gate reaches the process.
  * <p>
- * The name is the point of the whole chain - it is what the process engine correlates on - so the row is not only held
- * to having been written but to carrying the name, and the event pw-alkt receives is held to the same. A signal that
- * is refused is held to having written nothing at all: no activity entry, no outbox row, no errand event.
+ * The outbox row and the event pw-alkt receives are both verified to carry the name of the signal. A signal that is
+ * refused is verified to have written nothing at all: no activity entry, no outbox row, no errand event.
  * <p>
- * The namespace of testdata-it.sql names no process triggers at all, which is what makes every signal published here
- * proof that the triggers have no say over a command. The direct run is off, so rows stay undelivered until a test
- * delivers them the way it would - which is also what lets the brake be tripped by rows written here.
+ * The namespace of testdata-it.sql names no process triggers at all, so every signal published here is published
+ * without one. The direct run is off, so rows stay undelivered until a test delivers them.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessSignalIT/", classes = Application.class)
 @Sql({
@@ -115,9 +113,8 @@ class ProcessSignalIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The whole chain, from the report of the process to the event pw-alkt receives. The errand is given a handler, so
-	 * that a notification would have somebody to go to - a signal notifies no one, and that is only shown where there is
-	 * someone it could have reached.
+	 * The whole chain, from the report of the process to the event pw-alkt receives. Also verifies that the signal
+	 * notifies no one, although the errand has a handler.
 	 */
 	@Test
 	@DisplayName("Verification that an awaited signal gives an activity entry naming the sender, and an event carrying the name of the gate all the way to pw-alkt")
@@ -187,8 +184,7 @@ class ProcessSignalIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The entry a signal leaves has to say which person stepped the process on, so anyone else is refused - with or without
-	 * an identity, and before anything is written.
+	 * Covers a caller with an identity of another type as well as one without any identity.
 	 */
 	@Test
 	@DisplayName("Verification that a signal from a caller that is not an ad account is refused with 403 and writes nothing")
@@ -220,10 +216,6 @@ class ProcessSignalIT extends AbstractAppTest {
 		assertNothingWrittenBy(() -> assertThat(signal(ERRAND_ID, PROCESS_INSTANCE_ID, APPROVE, HANDLER_IDENTITY)).isEqualTo(CONFLICT));
 	}
 
-	/**
-	 * The brake lies before the triggers, so without the exception for commands an errand with lively traffic would take
-	 * the signal, answer 202 and step nothing - on exactly the errands with the most going on.
-	 */
 	@Test
 	@DisplayName("Verification that a signal reaches the process though the emergency brake has tripped for the errand")
 	void test05_aSignalPassesATrippedBrake() {
@@ -330,9 +322,8 @@ class ProcessSignalIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Delivered rows within the window are what the brake counts, and as many as it allows trip it. Taken from the
-	 * configuration and held to the question the brake asks, so that a raised limit cannot leave the test passing on an
-	 * errand the brake never stopped.
+	 * Trips the emergency brake for the errand by writing as many delivered rows within the window as the configured
+	 * limit allows, and verifies that the count the brake asks for reaches that limit.
 	 */
 	private void tripTheBrake() {
 		final var guard = processEngineProperties.loopGuard();

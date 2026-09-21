@@ -21,9 +21,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 /**
  * The outcomes the response to a statement may have, registered per namespace.
  * <p>
- * Nothing is seeded. What the code needs to know about an outcome is registered with it rather than read from its name:
- * {@link #isResponded()} says whether the outcome means that the counterparty responded, which decides whether a
- * statement completed with it needs the time of the response.
+ * Nothing is seeded. {@link #isResponded()} says whether the outcome means that the counterparty responded, which
+ * decides whether a statement completed with it needs the time of the response.
  */
 @Entity
 @Table(name = "statement_outcome",

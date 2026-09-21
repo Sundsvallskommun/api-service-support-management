@@ -23,8 +23,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 /**
  * Append-only log of what the process did, and of what kept it from doing anything.
  * <p>
- * Process agnostic on purpose: the type and the identifier of an activity are free strings that SM stores without
- * interpreting them, so a new process engine needs no change here.
+ * Process agnostic: the type and the identifier of an activity are free strings that SM stores without interpreting
+ * them.
  */
 @Entity
 @Table(name = "errand_process_activity",
@@ -41,8 +41,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 public class ErrandProcessActivityEntity {
 
 	/**
-	 * Public and used by the annotation below, so that a writer building a message out of values it does not control can
-	 * cut it to fit rather than have the insert refused. An entry that reports a fault may not cause one.
+	 * The width of the message column. Used by the annotation below, and by a writer building a message out of values it
+	 * does not control to cut the message to fit.
 	 */
 	public static final int MESSAGE_LENGTH = 2048;
 
@@ -52,8 +52,8 @@ public class ErrandProcessActivityEntity {
 	private String id;
 
 	/**
-	 * Null for the entries written when no process instance exists - an ambiguous label, or the emergency brake. Those
-	 * are precisely the entries that explain why no process started, so they cannot be made to depend on one.
+	 * Null for the entries written when no process instance exists, such as for an ambiguous label or the emergency
+	 * brake.
 	 */
 	@Column(name = "errand_process_id", length = 36)
 	private String errandProcessId;

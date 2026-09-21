@@ -44,8 +44,7 @@ class ErrandAccessServiceTest {
 	private ErrandAccessService service;
 
 	/**
-	 * The identifier is a thread local the request filter sets, so it is set and cleared here rather than left to
-	 * whatever another test on the same thread happened to leave behind.
+	 * Sets the identifier, a thread local the request filter otherwise sets, before each test. It is cleared after each.
 	 */
 	@BeforeEach
 	void setUp() {

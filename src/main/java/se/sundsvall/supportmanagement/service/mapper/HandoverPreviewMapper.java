@@ -94,17 +94,15 @@ public class HandoverPreviewMapper {
 	/**
 	 * Builds the source handling section: the non-deprecated statuses configured in the <em>source</em> namespace,
 	 * selectable when choosing how the source errand is handled (the {@code sourceHandling} part of the actual handover
-	 * request). Unlike the other candidate lists, these are source namespace options — the status set on the source errand
-	 * after handover must exist there, not in the target.
+	 * request). These are options of the source namespace, not of the target.
 	 */
 	public static SourceHandling toSourceHandling(final List<StatusEntity> sourceStatuses) {
 		return SourceHandling.create().withStatusCandidates(toStatusCandidates(sourceStatuses));
 	}
 
 	/**
-	 * Maps each non-deprecated target category name to the names of its non-deprecated types. A {@link LinkedHashMap}
-	 * keeps the category order from the repository (sorted by sort order); the merge function is only a defensive no-op
-	 * since category names are unique within a namespace.
+	 * Maps each non-deprecated target category name to the names of its non-deprecated types, in the order of the given
+	 * categories. Should a category name occur more than once, the first one is kept.
 	 */
 	public static Map<String, List<String>> toClassificationCandidates(final List<CategoryEntity> categories) {
 		return ofNullable(categories).orElse(emptyList()).stream()
@@ -154,9 +152,8 @@ public class HandoverPreviewMapper {
 
 	/**
 	 * Builds the classification mapping with an auto-suggested category/type. The category is matched by exact technical
-	 * name, and the type only by exact name <em>within</em> the matched category (a type is meaningless without its
-	 * category). The errand stores classification as names only (no source display name is resolved), so display-name
-	 * matching does not apply here. {@code suggestedType} stays {@code null} when the category did not match.
+	 * name, and the type only by exact name <em>within</em> the matched category. There is no display-name matching.
+	 * {@code suggestedType} stays {@code null} when the category did not match.
 	 */
 	public static ClassificationMapping toClassificationMapping(final ErrandEntity errand, final Map<String, List<String>> candidates) {
 		final var source = (errand.getCategory() == null && errand.getType() == null) ? null
@@ -181,19 +178,17 @@ public class HandoverPreviewMapper {
 
 	/**
 	 * Builds the label mapping section: the shared candidate pool (the selectable target labels, always present) plus one
-	 * mapping per source label. The pool lives on the group rather than on each mapping so it is available to the client
-	 * even when the source errand has no labels, and is not duplicated per source label.
+	 * mapping per source label. The pool is present even when the source errand has no labels.
 	 *
 	 * <p>
 	 * Each mapping's auto-suggested target follows the priority order specific to labels: a match on the hierarchical
 	 * resource path (the full path first, then progressively shorter ancestor paths), then a case-insensitive exact match
-	 * on the display name. Labels carry no technical name (they are identified by uuid), so name matching does not apply.
+	 * on the display name. There is no name matching.
 	 * </p>
 	 *
 	 * <p>
 	 * Both the candidate pool and the mappings are ordered by resource path, segment by segment and case-insensitively (see
-	 * {@link #RESOURCE_PATH_COMPARATOR}), with unset paths last. The group sorts the candidates itself rather than trusting
-	 * the caller, so the returned ordering holds regardless of how the candidate list was produced.
+	 * {@link #RESOURCE_PATH_COMPARATOR}), with unset paths last, whatever order the candidates are given in.
 	 * </p>
 	 */
 	public static LabelMappingGroup toLabelMappingGroup(final ErrandEntity errand, final List<LabelCandidate> candidates) {
@@ -223,10 +218,10 @@ public class HandoverPreviewMapper {
 	}
 
 	/**
-	 * Builds the contact reason mapping with an auto-suggested target. The {@code reason} is a GUI-visible text string, so
-	 * it is matched first (exact, then case-insensitive); only if it does not match any target is the secondary
-	 * {@code displayName} tried (case-insensitive). The target {@code reason} is always returned so it can be selected from
-	 * the candidate list, and so its casing is preserved. Deprecated target contact reasons are excluded.
+	 * Builds the contact reason mapping with an auto-suggested target. The {@code reason} is matched first (exact, then
+	 * case-insensitive); only if it does not match any target is the secondary {@code displayName} tried
+	 * (case-insensitive). The suggestion is always the {@code reason} of the target, in the casing of the target.
+	 * Deprecated target contact reasons are excluded.
 	 */
 	public static ContactReasonMapping toContactReasonMapping(final ErrandEntity errand, final List<ContactReasonEntity> targetContactReasons) {
 		final var activeTargets = activeContactReasons(targetContactReasons);
@@ -288,8 +283,7 @@ public class HandoverPreviewMapper {
 	/**
 	 * Compares two non-null resource paths hierarchically: each path is split into its slash-separated segments and the
 	 * segments are compared pairwise (case-insensitively). When one path is an ancestor prefix of the other, the shorter
-	 * (the ancestor) sorts first. This keeps children grouped directly under their parent, unlike a plain lexicographic
-	 * comparison where the separator can interleave with other characters.
+	 * (the ancestor) sorts first. This keeps children grouped directly under their parent.
 	 */
 	private static int compareResourcePathsHierarchically(final String left, final String right) {
 		final var leftSegments = left.split(RESOURCE_PATH_SEPARATOR, -1);

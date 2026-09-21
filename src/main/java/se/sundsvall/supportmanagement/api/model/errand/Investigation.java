@@ -18,10 +18,7 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 /**
- * An investigation of an errand.
- * <p>
- * The sections are read here but written through their own resource, since each has a life of its own and an
- * assessment that is asked about across errands.
+ * An investigation of an errand. The sections are read here but written through their own resource.
  */
 @Schema(description = "Investigation model")
 public class Investigation {

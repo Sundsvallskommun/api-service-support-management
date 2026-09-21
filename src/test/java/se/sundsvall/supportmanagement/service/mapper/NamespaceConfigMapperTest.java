@@ -402,7 +402,7 @@ class NamespaceConfigMapperTest {
 	}
 
 	/**
-	 * The rows of a namespace built by {@link #createEntity} are immutable, so process rows are added by rebuilding them.
+	 * Adds process rows to a namespace built by {@link #createEntity}, by rebuilding its immutable rows.
 	 */
 	private static NamespaceConfigEntity withProcessRows(final NamespaceConfigEntity entity, final NamespaceConfigValueEmbeddable... rows) {
 		final var values = new ArrayList<>(entity.getValues());
@@ -423,9 +423,7 @@ class NamespaceConfigMapperTest {
 	}
 
 	/**
-	 * The access definition is what a client configuring access reads instead of an enum of the schema, so it has to
-	 * publish
-	 * every value that is actually accepted. A field or resource missing from it would be configurable but undiscoverable.
+	 * Verifies that the access definition publishes every field and every resource, in the order of their enums.
 	 */
 	@Test
 	void toAccessDefinitionPublishesEveryFieldAndResource() {

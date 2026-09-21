@@ -19,11 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 
 /**
- * Publication from the writes that reach an errand through neither the API nor the errand service.
- * <p>
- * The email intake writes no revision, and a scheduled action has no request behind it. Both are the reason publication
- * hangs off the event service rather than off a comparison of revisions, and a write dropped on either way would show up
- * in no other test - the errand would simply be updated and the process never told.
+ * Publication from the writes that reach an errand through neither the API nor the errand service: the email intake,
+ * which writes no revision, and a scheduled action, which has no request behind it.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessEventPublicationIT/", classes = Application.class)
 @Sql({
@@ -83,9 +80,8 @@ class ProcessEventPublicationIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The label is added with no request behind it, and it is the label naming the process. A scheduled action that did
-	 * not record its change left an errand given its process this way without a process until something else wrote to
-	 * it, and the label the action has just added is one Hibernate has not filled in either.
+	 * The label is added with no request behind it, and it is the label naming the process. The action records its
+	 * change as a new revision, and the executed action is removed.
 	 */
 	@Test
 	@DisplayName("Verification that the process label a scheduled action gives an errand reaches the process, with the permission to start it")

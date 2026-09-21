@@ -230,8 +230,8 @@ class ErrandProcessResource {
 	}
 
 	/**
-	 * Answers created for a row this write brought into being and ok for one that was already there, which is the whole
-	 * difference between the two write paths as seen from outside.
+	 * Answers 201 created for a row this write brought into being, with a location header when the row has a process
+	 * instance id, and 200 ok for a row that was already there.
 	 */
 	private static ResponseEntity<ErrandProcess> respond(final ErrandProcessResult result, final String municipalityId, final String namespace, final String errandId) {
 		if (!result.created()) {

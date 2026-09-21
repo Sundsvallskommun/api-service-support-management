@@ -35,15 +35,13 @@ public class ProcessEventCleanup {
 	private final Clock clock;
 
 	/**
-	 * How many rows one delete removes. Each batch is a transaction of its own, so a large backlog is never one large
-	 * transaction.
+	 * How many rows one delete removes. Each batch is a transaction of its own.
 	 */
 	@Value("${scheduler.process-cleanup.batch-size:1000}")
 	private int batchSize = 1000;
 
 	/**
-	 * How long an entry of the activity log is kept. The log tells how a process ran rather than what was decided on the
-	 * errand, which keeps its own history, so it is not kept for as long as the errand is.
+	 * How long an entry of the activity log is kept.
 	 */
 	@Value("${scheduler.process-cleanup.activity-retention:P365D}")
 	private Duration activityRetention = Duration.ofDays(365);
@@ -82,8 +80,8 @@ public class ProcessEventCleanup {
 	}
 
 	/**
-	 * Six windows of the emergency brake, and a day at the least. The brake counts delivered rows inside its window, so a
-	 * row has to outlive the window, and the day leaves room to see what was delivered when something has gone wrong.
+	 * How long a delivered row is kept: six windows of the emergency brake, and a day at the least. A row thereby outlives
+	 * the window in which the brake counts it.
 	 */
 	Duration retention() {
 		final var windows = processEngineProperties.loopGuard().window().multipliedBy(WINDOWS_KEPT);

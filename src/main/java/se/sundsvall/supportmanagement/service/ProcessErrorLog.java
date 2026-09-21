@@ -15,18 +15,13 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Activity
 /**
  * The error entries SM itself writes on an errand, about faults that keep its process from being told or started.
  * <p>
- * Each is written once per errand, fault and window rather than once per occurrence. The faults reported here repeat
- * for as long as their cause stands - a loop producing hundreds of events, labels pointing at two processes, a process
- * key the process engine has never deployed - and an entry per occurrence would drown the log they are reported in. The
- * idempotency key of the log does not help: both the instance and the external task are null for these entries, and
- * null is distinct in a unique index.
+ * Each is written once per errand, fault and window, not once per occurrence.
  */
 @Component
 public class ProcessErrorLog {
 
 	/**
-	 * A fault in how the errand or its labels are set up, rather than in anything the process did. Named here since more
-	 * than one writer reports one.
+	 * A fault in how the errand or its labels are set up, rather than in anything the process did.
 	 */
 	static final String CONFIG_ACTIVITY_TYPE = "CONFIG";
 
@@ -46,10 +41,8 @@ public class ProcessErrorLog {
 	 * @param errandId        the errand to write the entry on.
 	 * @param errandProcessId the process row the entry belongs to, or null when the fault happened without one.
 	 * @param activityType    the kind of entry.
-	 * @param errorCode       the code of the fault, which is what a repetition is recognised by. Two faults of one kind -
-	 *                        an ambiguous key and an oversized one - therefore never hide each other.
-	 * @param message         what is wrong and what to do about it. Cut to fit its column, since an entry that reports a
-	 *                        fault may not cause one.
+	 * @param errorCode       the code of the fault, which is what a repetition is recognised by.
+	 * @param message         what is wrong and what to do about it. Cut to fit its column.
 	 */
 	public void writeOncePerWindow(final String errandId, final String errandProcessId, final String activityType, final String errorCode, final String message) {
 		final var now = OffsetDateTime.now(clock).truncatedTo(MILLIS);
@@ -69,12 +62,8 @@ public class ProcessErrorLog {
 	}
 
 	/**
-	 * How far back the log is asked before another entry for the same fault is written.
-	 * <p>
-	 * Deliberately the window of the emergency brake, and named here so that the sharing is visible rather than read out
-	 * of an expression. It is one setting for two things: raising the brake window to an hour also makes an ambiguous
-	 * errand report itself once an hour. That is the intended reading of "once per errand and window", and if the two
-	 * ever need to differ this is the one place to split them.
+	 * How far back the log is asked before another entry for the same fault is written: the window of the emergency
+	 * brake, so changing the brake window also changes how often a fault is reported.
 	 */
 	private OffsetDateTime windowStart(final OffsetDateTime now) {
 		return now.minus(processEngineProperties.loopGuard().window());

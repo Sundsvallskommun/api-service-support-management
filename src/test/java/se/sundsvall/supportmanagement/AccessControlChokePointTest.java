@@ -20,14 +20,8 @@ import static org.zalando.fauxpas.FauxPas.throwingFunction;
 /**
  * Reminds developers to route errand access through {@link AccessControlService}.
  * <p>
- * Reaching {@link ErrandsRepository} directly is how access control gets forgotten: the errand is fetched, the caller
- * is
- * never checked, and nothing fails. A new user facing service therefore has to make a deliberate choice here rather
- * than silently bypassing the guard.
- * <p>
- * This is an early warning, not a proof of correctness. Holding an {@link AccessControlService} says nothing about
- * whether it is actually consulted on every path, so code review and acceptance testing in a test environment are
- * still required.
+ * Every component injecting {@link ErrandsRepository} has to inject {@link AccessControlService} as well, or be listed
+ * as exempt. Whether the service is actually consulted on every path is not verified.
  */
 class AccessControlChokePointTest {
 

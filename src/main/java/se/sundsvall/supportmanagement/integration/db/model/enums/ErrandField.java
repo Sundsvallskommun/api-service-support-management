@@ -5,9 +5,8 @@ package se.sundsvall.supportmanagement.integration.db.model.enums;
  * a
  * key, which allows a namespace to expose individual entries instead of the whole collection.
  * <p>
- * Each constant carries the property it names on the errand, which is what the API reports rather than the constant
- * itself. A client matches the answer against the payload it is rendering, and adding a field here then leaves the
- * published contract alone instead of widening an enum in it.
+ * Each constant carries the property it names on the errand, which is what the API reports in place of the constant
+ * itself.
  */
 public enum ErrandField {
 
@@ -70,8 +69,8 @@ public enum ErrandField {
 
 	/**
 	 * The resource a write to this field is guarded on where it has an endpoint of its own, null for the fields only
-	 * ever written through the errand. What the caller may do with such a field follows that resource rather than the
-	 * errand, since that is what the endpoint accepting the write is guarded on.
+	 * ever written through the errand. Such a field is writable to a caller holding either the errand or that resource at
+	 * read/write.
 	 */
 	public ProtectedResource getWriteResource() {
 		return writeResource;

@@ -22,10 +22,8 @@ import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 /**
- * A request for a statement and the statement that came back, in the same row.
- * <p>
- * An unanswered statement is an answered one minus the response fields. Splitting them into two entities would have
- * given a relation that is always zero-to-one and a join on every read.
+ * A request for a statement and the statement that came back, in the same row. An unanswered statement leaves the
+ * response fields empty.
  */
 @Entity
 @Table(name = "statement",
@@ -41,15 +39,15 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 
 	/**
-	 * The counterparty. Deliberately its own fields rather than a foreign key to stakeholder: the body asked for a
-	 * statement is almost never a party to the errand, and making it one blurs what a party is.
+	 * The name of the counterparty the statement is requested from. The counterparty is held in fields of its own, not
+	 * as a stakeholder of the errand.
 	 */
 	@Column(name = "counterparty_name", nullable = false)
 	private String counterpartyName;
 
 	/**
-	 * The identity follows {@link StakeholderEntity}: a free id plus a type from the external-id-type metadata of the
-	 * namespace. One field for the identity, not two that can contradict each other.
+	 * The identity of the counterparty, as in {@link StakeholderEntity}: a free id, typed by
+	 * {@code counterpartyExternalIdType} from the external-id-type metadata of the namespace.
 	 */
 	@Column(name = "counterparty_external_id")
 	private String counterpartyExternalId;
@@ -85,8 +83,8 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	private String responseText;
 
 	/**
-	 * The dispatch that carried the statement. Nullable and without a JPA relation: the statement is to survive the
-	 * communication being cleaned up, and a paper dispatch has none.
+	 * The id of the communication that carried the statement, null for a paper dispatch. Held without a JPA relation,
+	 * so the statement survives the communication being removed.
 	 */
 	@Column(name = "communication_id", length = 36)
 	private String communicationId;
@@ -94,11 +92,9 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	/**
 	 * The attachments of the errand this statement uses.
 	 * <p>
-	 * A relation on top of the ownership of the errand rather than an ownership of its own: nothing cascades towards the
-	 * attachment, and a row of the join table is removed by the database when either side goes. The statement owns the
-	 * join table, so linking or unlinking an attachment moves its version like any other change to it.
-	 * <p>
-	 * A list rather than a set, since a set would hash the attachments, and an attachment hashes its file and its errand.
+	 * The attachments stay owned by the errand: nothing cascades towards the attachment, and a row of the join table is
+	 * removed by the database when either side goes. The statement owns the join table, so linking or unlinking an
+	 * attachment moves its version like any other change to it.
 	 */
 	@ManyToMany
 	@JoinTable(name = "statement_attachment",
@@ -117,8 +113,8 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	private List<AttachmentEntity> attachments;
 
 	/**
-	 * The JSON parameters of the statement, kept beside it rather than among those of the errand - see
-	 * {@link AbstractArtefactJsonParameterEntity}. Written through this collection, and removed with the statement.
+	 * The JSON parameters of the statement, held apart from those of the errand. Written through this collection, and
+	 * removed with the statement.
 	 */
 	@OneToMany(mappedBy = "statementEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("key")

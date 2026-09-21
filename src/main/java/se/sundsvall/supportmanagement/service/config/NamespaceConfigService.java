@@ -122,18 +122,9 @@ public class NamespaceConfigService {
 	/**
 	 * Verifies the process configuration of the namespace.
 	 * <p>
-	 * The consumer is checked against the one process engine the service can actually deliver to, since the name is the
-	 * delivery address rather than a label: a misspelt one would otherwise be accepted and then leave every event of the
-	 * namespace undeliverable, which shows up as errands that stop moving rather than as a configuration error.
-	 * <p>
-	 * Access control is refused alongside a consumer for a reason that is technical rather than a policy. The access
-	 * mapper answers for AD accounts only, and a process engine has none, so it would be denied everything it asks for -
-	 * and denied silently, as the process reports the failure as something to retry and the errand simply stands still.
-	 * The day the access mapper can grant access to machine identities, this is the only thing that has to be lifted.
-	 * <p>
-	 * A namespace running a process has to trigger on {@link #REQUIRED_PROCESS_TRIGGERS}, and a command may not be listed
-	 * at all. Both mistakes are silent otherwise: a missing trigger leaves errands waiting for an event that is never
-	 * published, and a listed command looks as if the list had a say over it, which it never has.
+	 * A trigger may be listed only once, and a command may not be listed at all. The consumer, when set, must be the one
+	 * process engine the service delivers to, access control may not be active alongside it, and the namespace has to
+	 * trigger on {@link #REQUIRED_PROCESS_TRIGGERS}.
 	 */
 	private void validateProcessConfiguration(NamespaceConfig request) {
 		final var triggers = ofNullable(request.getProcessTriggers()).orElse(emptyList());
@@ -174,12 +165,9 @@ public class NamespaceConfigService {
 	/**
 	 * Rejects any grant the namespace would store twice.
 	 * <p>
-	 * Checked on the mapped rows rather than on the request, because that is the shape the unique constraint applies to
-	 * and every way of writing the same grant collapses into it: a resource listed twice, the same resource listed at two
-	 * levels, two field entries naming the same field, or a key repeated within one field. The level is deliberately left
-	 * out of the comparison, exactly as it is left out of the constraint, since a resource granted at two levels is a
-	 * contradiction rather than two grants. Without this the database refuses the write and the caller is told 500 for
-	 * what is plainly a bad request.
+	 * Checked on the mapped rows, by scope, type and value as the unique constraint is, which catches a resource listed
+	 * twice, the same resource listed at two levels, two field entries naming the same field, or a key repeated within one
+	 * field. The level is left out of the comparison.
 	 */
 	private void validateNoDuplicateGrants(NamespaceConfigEntity config) {
 		final var seen = new HashSet<String>();
@@ -193,12 +181,8 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * Keys expose single entries of a collection, so they only make sense for a field holding one - and so does a level,
-	 * which says what the holder may do with those entries.
-	 * <p>
-	 * Limited read is not among the levels a field is held at. It says an errand is reachable but trimmed, which is a
-	 * statement about the errand rather than about one of its fields, and letting it through would leave a level that
-	 * reads as a restriction while restricting nothing.
+	 * Verifies the field entries of one scope. Keys and a level may only be set for a field holding a keyed collection,
+	 * and limited read is not accepted as the level of a field.
 	 */
 	private void validateFields(List<FieldAccess> fields, String scope) {
 		final var applicable = ofNullable(fields).orElse(emptyList());
@@ -249,11 +233,8 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * Signals if access control is active for the namespace. A namespace with no configuration at all answers false rather
-	 * than failing, since it cannot have access control switched on, which is also why this cannot simply delegate to
-	 * {@link #get(String, String)}.
-	 * <p>
-	 * Cached in its own right, since it is asked on every request reaching a namespace scoped resource.
+	 * Signals if access control is active for the namespace. A namespace with no configuration at all answers false. Cached
+	 * in its own right.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -268,11 +249,8 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * The process engine the namespace delivers its events to, or empty for a namespace that runs no process at all.
-	 * <p>
-	 * Cached in its own right for the same reason as {@link #isAccessControlActive(String, String)}: it is asked on every
-	 * process write, and answering it through {@link #get(String, String)} would throw for a namespace that has no
-	 * configuration rather than saying it has no process.
+	 * The process engine the namespace delivers its events to, or empty for a namespace that runs no process at all or has
+	 * no configuration. Cached in its own right.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -285,10 +263,8 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * The event sub types that wake the process of the namespace, and an empty set for a namespace that has named none.
-	 * <p>
-	 * Cached and answered on its own for the same reason as {@link #getProcessConsumer(String, String)}: it is asked on
-	 * every errand event of a namespace that runs a process.
+	 * The event sub types that wake the process of the namespace, and an empty set for a namespace that has named none or
+	 * has no configuration. Cached in its own right.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -303,8 +279,8 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * The values the access configuration accepts. Resolved from the enums themselves rather than stored, so it needs no
-	 * namespace of its own and cannot fall out of step with what is actually enforced.
+	 * The values the access configuration accepts, resolved from the enums that are enforced. The same for every
+	 * namespace.
 	 */
 	public AccessDefinition getAccessDefinition() {
 		return mapper.toAccessDefinition();

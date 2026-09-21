@@ -58,8 +58,8 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.formatOrNull;
 /**
  * The decisions of an errand, together with the attachments and the business content that belong to them.
  * <p>
- * The attachments have no read operation here on purpose. An attachment linked to a decision <em>is</em> an attachment
- * of the errand, and is read - content and all - through
+ * The attachments have no read operation here. An attachment linked to a decision is an attachment of the errand, and
+ * is read - content and all - through
  * {@code GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}}. What this resource adds is
  * which attachments belong to the decision.
  */

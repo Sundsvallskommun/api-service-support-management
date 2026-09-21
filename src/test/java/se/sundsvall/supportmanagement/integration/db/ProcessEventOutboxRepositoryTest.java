@@ -18,9 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
 
 /**
- * What is worth pinning down against a real database is which rows a delivery run is allowed to see, and what the
- * emergency brake counts. Both are questions about time and about state at once, and neither reads as intended from the
- * method name alone.
+ * Tests of {@link ProcessEventOutboxRepository} against a real database: which rows a delivery run is allowed to see,
+ * and what the emergency brake counts.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -36,9 +35,7 @@ class ProcessEventOutboxRepositoryTest {
 	private ProcessEventOutboxRepository processEventOutboxRepository;
 
 	/**
-	 * Reads a moment out of the test data the way the entities do: as a wall clock in the default zone of the JVM. Taking
-	 * it off the clock of the machine instead would leave every assertion here depending on the build and the database
-	 * agreeing on a time zone, which they do not.
+	 * Reads a moment out of the test data the way the entities do: as a wall clock in the default zone of the JVM.
 	 */
 	private static OffsetDateTime at(final String wallClock) {
 		return LocalDateTime.parse(wallClock).atZone(systemDefault()).toOffsetDateTime();

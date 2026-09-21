@@ -585,10 +585,6 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequest();
 	}
 
-	/**
-	 * The regression guard under the whole concurrency model of the process integration: it rests on the errand version
-	 * already being enforced here, since a work step that writes back to the errand has nothing else to hold on to.
-	 */
 	@Test
 	void test38_patchErrandWithAStaleIfMatch() {
 		setupCall()
@@ -602,8 +598,8 @@ class ErrandsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A label is referred to by its id alone, and the id reaches a label of any namespace. This one lives in NAMESPACE-1
-	 * of another municipality, and would have brought its access rules and any process key along.
+	 * A label is referred to by its id alone. This one lives in NAMESPACE-1 of another municipality, and a patch naming
+	 * it is refused without writing a revision.
 	 */
 	@Test
 	void test39_patchErrandWithALabelOfAnotherMunicipalityIsRefused() {
@@ -621,11 +617,8 @@ class ErrandsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An errand just created and the same errand just read used to make two different snapshots: the one read carried
-	 * the metadata of its labels and the status it was loaded with, had empty collections where the other had none, and
-	 * listed its labels in the order the database gave them. The first patch after a creation therefore wrote a revision,
-	 * and an event, even when it changed nothing. The label is a leaf, so an ancestor is added when the errand is created
-	 * and the labels are read back in another order than they were written.
+	 * A patch changing nothing, sent right after the errand was created, writes no revision. The label is a leaf, so an
+	 * ancestor is added when the errand is created and the labels are read back in another order than they were written.
 	 */
 	@Test
 	void test40_aPatchChangingNothingRightAfterACreationWritesNoRevision() {
@@ -655,8 +648,7 @@ class ErrandsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The other half of the pair {@code ErrandCommunicationIT} holds: a resource grant carrying the write of one resource
-	 * of an errand leaves the errand itself refused, since no grant vouches for writing what the labels are held against.
+	 * A resource grant carrying the write of one resource of an errand leaves a patch of the errand itself refused.
 	 */
 	@Test
 	void test41_patchErrandOnAnErrandHeldAtReadIsNotAllowed() {

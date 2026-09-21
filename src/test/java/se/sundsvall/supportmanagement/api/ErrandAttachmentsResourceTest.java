@@ -130,8 +130,7 @@ class ErrandAttachmentsResourceTest {
 	}
 
 	/**
-	 * The only place the purpose is written. It belongs to the attachment rather than to any link to it, which is what
-	 * lets the errand show it in its own attachment list.
+	 * The only place the purpose is written, on the attachment itself.
 	 */
 	@Test
 	void updateErrandAttachment() {

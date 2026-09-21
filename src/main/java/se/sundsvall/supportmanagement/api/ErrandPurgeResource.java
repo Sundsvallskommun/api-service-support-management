@@ -37,10 +37,8 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 /**
  * Bulk removal of errands that have passed their retention period.
  * <p>
- * A purge walks a namespace one errand at a time and can run for hours, so it is answered with 202 and a job rather
- * than being held open for the duration of the work. Progress is followed through the job resource, the same way as for
- * every other long running piece of work, and a run that turns out to be wrong can be stopped without waiting for it to
- * reach the end.
+ * A purge walks a namespace one errand at a time and can run for hours, so it is answered with 202 and a job.
+ * Progress is followed through the job resource, and a run can be stopped before it reaches the end.
  */
 @RestController
 @Validated

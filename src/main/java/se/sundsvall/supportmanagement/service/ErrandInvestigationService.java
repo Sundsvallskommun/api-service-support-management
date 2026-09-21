@@ -301,7 +301,7 @@ public class ErrandInvestigationService {
 
 	/**
 	 * The sections are part of the investigation as it is served, so a change to one of them moves the version its ETag
-	 * carries - otherwise a caller holding the ETag from before would not be told the investigation had changed.
+	 * carries.
 	 */
 	private void markChanged(final InvestigationEntity investigationEntity) {
 		entityManager.lock(investigationEntity, OPTIMISTIC_FORCE_INCREMENT);
@@ -315,8 +315,8 @@ public class ErrandInvestigationService {
 	}
 
 	/**
-	 * The section key is unique per investigation in the database. Checking it here turns what would surface as a
-	 * constraint violation deep in the flush into the conflict it is.
+	 * Refuses with a conflict a section key that another section of the investigation already holds, compared without
+	 * regard to case. The section key is unique per investigation in the database.
 	 */
 	private void verifySectionKeyIsFree(final InvestigationEntity investigationEntity, final String sectionKey, final String ownSectionId) {
 		ofNullable(sectionKey)

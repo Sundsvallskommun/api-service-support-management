@@ -61,14 +61,14 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 /**
  * The relay against pw-alkt over the wire, with WireMock standing in for it.
  * <p>
- * What the tests below the relay cannot show: which answers leave a row as it was and which consume it, read back from
- * the database rather than from a log; that what pw-alkt receives is the row as it stands; that the order within an
- * errand survives both the batch limit and a failure; and that the direct run, the scheduled run and a full pool can
- * meet without delivering anything twice or failing the write of an errand.
+ * Verifies which answers leave a row as it was and which consume it, read back from the database; that what pw-alkt
+ * receives is the row as it stands; that the order within an errand survives both the batch limit and a failure; and
+ * that the direct run, the scheduled run and a full pool can meet without delivering anything twice or failing the
+ * write of an errand.
  * <p>
  * Rows are written straight into the table, aged by setting when they were written, so that the scheduled run takes
- * them without waiting out the transaction buffer. The ones that come from a write to an errand are there to exercise
- * the direct run, which only a committed publication starts.
+ * them without waiting out the transaction buffer. The rows that come from a write to an errand exercise the direct
+ * run, which only a committed publication starts.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessEventRelayIT/", classes = Application.class)
 @TestPropertySource(properties = {
@@ -536,11 +536,8 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Adds blocked runs while the pool has room, and answers whether every thread is busy and the queue is full.
-	 * <p>
-	 * Filled until full rather than with a count worked out in advance: threads left idle by the direct runs of earlier
-	 * tests take runs off the queue while it is being filled, so a counted fill leaves the queue one or two short. A run is
-	 * only added while there is room, which is why none of them is ever dropped.
+	 * Adds blocked runs while the pool has room, and answers whether every thread is busy and the queue is full. A run is
+	 * only added while there is room, so none of them is ever dropped.
 	 */
 	private boolean fillPool(final CountDownLatch release) {
 		while (processEventExecutor.getQueueSize() < processEventExecutor.getQueueCapacity() || processEventExecutor.getPoolSize() < processEventExecutor.getMaxPoolSize()) {

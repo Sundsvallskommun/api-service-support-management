@@ -10,12 +10,8 @@ import java.lang.annotation.Target;
 import se.sundsvall.supportmanagement.api.validation.impl.ValidEnumValueConstraintValidator;
 
 /**
- * Holds a string field to the values of an enum without publishing the enum itself.
- * <p>
- * A field typed as an enum becomes an enum in the schema, and a client that generated one from it throws the day a
- * value
- * is added rather than ignoring what it does not know. Keeping the field a string and naming the set here leaves the
- * wire open and the service closed: an unknown value is still refused, and refused as the bad request it is.
+ * Holds a string field to the values of an enum without publishing the enum itself. The field stays a string in the
+ * schema, and a value outside the enum is refused as a bad request.
  */
 @Documented
 @Target({

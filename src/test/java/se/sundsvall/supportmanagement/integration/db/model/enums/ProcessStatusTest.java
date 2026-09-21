@@ -17,9 +17,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.values;
 
 /**
- * Every value is listed, and the listing is checked against the enum, so a value added later fails here rather than
- * silently defaulting to something. Which value is terminal decides whether an errand can be given a second live
- * process instance, and that is not a judgement to leave to whoever adds the next state.
+ * Verifies which values of {@link ProcessStatus} are terminal. Every value is listed, and the listing is checked
+ * against the enum, so a value added later fails here until it is listed.
  */
 class ProcessStatusTest {
 

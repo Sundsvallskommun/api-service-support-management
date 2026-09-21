@@ -299,9 +299,8 @@ class ErrandStatementsResourceTest {
 	}
 
 	/**
-	 * The key is mandatory in the body even though the path carries it too - {@code JsonParameter.key} is
-	 * {@code @NotBlank},
-	 * so a body that omits it never reaches the check that compares the two.
+	 * The key is mandatory in the body even though the path carries it too: {@code JsonParameter.key} is
+	 * {@code @NotBlank}, so a body that omits it is refused with 400.
 	 */
 	@Test
 	void updateStatementJsonParameterWithoutAKeyInTheBody() {
@@ -318,8 +317,7 @@ class ErrandStatementsResourceTest {
 	}
 
 	/**
-	 * A key in the body that disagrees with the one in the path is a mistake worth naming rather than silently picking
-	 * one of.
+	 * A key in the body that disagrees with the one in the path is refused with 400.
 	 */
 	@Test
 	void updateStatementJsonParameterWithMismatchingKey() {

@@ -19,8 +19,8 @@ public final class ErrandDecisionMapper {
 	private ErrandDecisionMapper() {}
 
 	/**
-	 * The investigation is passed in already resolved rather than looked up from the id on the model, so that the
-	 * caller has had to fetch it through the errand and a reference across errands cannot be written.
+	 * Maps a decision to a new entity of the errand. The investigation the decision rests on is passed in already
+	 * resolved, and must have been fetched through the errand.
 	 */
 	public static DecisionEntity toDecisionEntity(final Decision decision, final ErrandEntity errandEntity, final InvestigationEntity investigationEntity, final String namespace,
 		final String municipalityId) {

@@ -17,10 +17,8 @@ class ProcessEventDirectRunConfig {
 	/**
 	 * Threads for the direct runs of the relay, kept apart from the scheduler pool and from the request threads.
 	 * <p>
-	 * Bounded, and a direct run arriving at a full pool is dropped rather than refused. The default policy throws in the
-	 * thread that has just committed the errand, which is the thread serving the write, so a busy relay would answer a
-	 * write that went through with an error. Dropping costs time and nothing else, since the scheduled run takes every
-	 * row a direct run did not.
+	 * Bounded, and a direct run arriving at a full pool is dropped with a warning, without anything being thrown in the
+	 * thread serving the write. The scheduled run takes every row a direct run did not.
 	 */
 	@Bean(PROCESS_EVENT_EXECUTOR)
 	ThreadPoolTaskExecutor processEventExecutor(final ProcessEngineProperties processEngineProperties) {

@@ -75,10 +75,9 @@ public class NamespaceConfigMapper {
 		.thenComparing(FieldAtLevel::level, Comparator.nullsFirst(Comparator.naturalOrder()));
 
 	/**
-	 * The values the access configuration accepts, published so that a client configuring access reads them from here
-	 * rather than from an enum of the schema - which is what lets a field or a resource be added without altering the
-	 * contract. Each field also carries the property it names on the errand, and each resource the path it is guarded
-	 * on, so that a configuration can be matched up with what the access of an errand reports.
+	 * The values the access configuration accepts, for a client configuring access to read. Each field also carries the
+	 * property it names on the errand, and each resource the path it is guarded on, so that a configuration can be
+	 * matched up with what the access of an errand reports.
 	 */
 	public AccessDefinition toAccessDefinition() {
 		return AccessDefinition.create()
@@ -156,12 +155,10 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * Rebuilds the triggers of the namespace from the rows holding them. Read through
-	 * {@link ConfigPropertyExtractor#getValues(NamespaceConfigEntity, String)} rather than the single valued reader, which
-	 * would leave all but the first trigger without effect.
+	 * Rebuilds the triggers of the namespace from all the rows holding them, read through
+	 * {@link ConfigPropertyExtractor#getValues(NamespaceConfigEntity, String)}.
 	 * <p>
-	 * Values that no longer resolve to a known event sub type are skipped, so a stale row cannot make the whole
-	 * configuration unreadable.
+	 * Values that no longer resolve to a known event sub type are skipped with a warning.
 	 */
 	public List<EventSubType> toProcessTriggers(final NamespaceConfigEntity entity) {
 		final var triggers = ConfigPropertyExtractor.<String>getValues(entity, PROPERTY_PROCESS_TRIGGER).stream()
@@ -180,7 +177,7 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * Toggles added after a configuration was created read as disabled rather than failing the whole request.
+	 * Reads a toggle that a configuration may lack, a missing one as disabled.
 	 */
 	private boolean readOptionalToggle(final NamespaceConfigEntity entity, final String key) {
 		return ofNullable(ConfigPropertyExtractor.<Boolean>getNullableValue(entity, key)).orElse(false);
@@ -280,8 +277,7 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * Values that no longer resolve to a known resource are skipped, so a stale row cannot make the whole configuration
-	 * unreadable.
+	 * Values that no longer resolve to a known resource are skipped with a warning.
 	 */
 	private List<ProtectedResource> toResources(final List<NamespaceConfigAccessGrantEmbeddable> grants) {
 		final var resources = grants.stream()
@@ -307,8 +303,7 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * Values that no longer resolve to a known resource or level are skipped, so a stale row cannot make the whole
-	 * configuration unreadable.
+	 * Values that no longer resolve to a known resource or level are skipped with a warning.
 	 */
 	private List<ResourceAccess> toResourceAccesses(final List<NamespaceConfigAccessGrantEmbeddable> grants) {
 		final var resources = grants.stream()
@@ -330,12 +325,10 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * Values that no longer resolve to a known field are skipped, for the same reason.
+	 * Values that no longer resolve to a known field are skipped with a warning.
 	 * <p>
 	 * A grant carrying no key means the whole collection, so it wins over any grant naming individual keys of the same
-	 * field, mirroring how the keys of two scopes are merged when access is resolved. That only holds within one level:
-	 * a field granted wholesale at the level of the errand and restricted to read for one of its keys is two grants
-	 * saying different things, and collapsing them would lose the narrower one.
+	 * field at the same level. Grants of the same field at different levels are returned as separate field accesses.
 	 */
 	private List<FieldAccess> toFieldAccesses(final List<NamespaceConfigAccessGrantEmbeddable> grants) {
 		final Map<FieldAtLevel, List<String>> keysByField = new LinkedHashMap<>();
@@ -379,8 +372,8 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * A field as one scope grants it, since the same field may be granted at more than one level - wholesale at the level
-	 * of the errand, say, with a single key of it held to read.
+	 * A field together with the level one scope grants it at, so the same field granted at more than one level - wholesale
+	 * at the level of the errand, say, with a single key of it held to read - is kept as separate grants.
 	 */
 	private record FieldAtLevel(ErrandField field, AccessLevel level) {}
 }

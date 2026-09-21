@@ -333,9 +333,8 @@ class ErrandsResourceTest {
 	}
 
 	/**
-	 * Measures are part of the errand payload, so the ordinary read, change a field, patch it back round trip hands them
-	 * straight back - version and all. Every read-only field a measure carries has to survive that, or the round trip the
-	 * measures are merged for is not one a client can actually make.
+	 * A patch of the errand that hands a measure back as it was read, read-only fields and version included, is
+	 * accepted.
 	 */
 	@Test
 	void updateErrandAcceptsAMeasureReadStraightBack() {

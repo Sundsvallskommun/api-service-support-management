@@ -7,8 +7,8 @@ import java.io.Serial;
  * acceptance or a refusal for good, did not answer in time, could not be reached, or is being left alone by its circuit
  * breaker.
  * <p>
- * Thrown rather than returned, because what it means is that the transaction the delivery runs in must not be
- * committed. The row stays exactly as it was, and the next run tries again.
+ * Thrown to roll back the transaction the delivery runs in, so the row stays exactly as it was and the next run tries
+ * again.
  */
 public class PwAlktUnavailableException extends RuntimeException {
 

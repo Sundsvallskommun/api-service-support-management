@@ -27,26 +27,21 @@ import static se.sundsvall.supportmanagement.service.ErrandProcessService.hasCom
 /**
  * Upholds the rules a decision carries that the database does not.
  * <p>
- * <b>How many decisions an errand may hold</b> is a question the lines of business answer differently. Interim
- * decisions, partial decisions and reconsideration are ordinary where one line of business expects exactly one decision
- * per errand, so the restriction is a setting of the namespace rather than a unique key. A namespace that has not asked
- * for it is not restricted.
+ * <b>How many decisions an errand may hold</b> is a setting of the namespace. A namespace that has not asked for a
+ * restriction is not restricted.
  * <p>
- * <b>Who may claim which method</b> follows from administrative law. Without the check a caseworker could stamp their
- * own decision as automatic, or a process stamp its own as manual - and that is precisely the difference that has to be
- * answerable afterwards. A manual decision is written by an ad account, and an automatic one by the process consumer of
- * the namespace and nobody else.
+ * <b>Who may claim which method</b>: a manual decision is written by an ad account, and an automatic one by the process
+ * consumer of the namespace and nobody else.
  * <p>
  * <b>Which outcomes there are</b> is for the namespace to say, in its metadata. The recommendation of an investigation
- * is held to the same outcomes, since it proposes a decision.
+ * is held to the same outcomes.
  * <p>
- * <b>When a decision can no longer be changed</b> is a question only for errands that have a process. Once the process
- * has run to its end, no decision of the errand is written to any more - the same completed process that is never
- * started again. And once a decision is completed on such an errand it is locked as it stands, since the process has
- * gone on from it: a correction is a new errand, referred from this one. An errand without a process is never locked,
- * and its event log is what makes the changes traceable. The JSON parameters of a decision stand outside both locks,
- * since what they carry - legal force, service of the decision - is known only after it is made. What a locked decision
- * rests on - the attachments it links, the investigation it names - cannot be removed from under it either.
+ * <b>When a decision can no longer be changed</b> applies only to errands that have a process. Once the process has run
+ * to its end, no decision of the errand is written to any more. Once a decision is completed on such an errand it is
+ * locked as it stands. An errand without a process is never locked. The JSON parameters of a decision stand outside
+ * both
+ * locks. What a locked decision rests on - the attachments it links, the investigation it names - cannot be removed
+ * either.
  */
 @Component
 public class DecisionValidator {
@@ -93,13 +88,10 @@ public class DecisionValidator {
 	 * Rejects a method the caller is not the kind of caller for.
 	 * <p>
 	 * The method to pass is the one the decision ends up with - on a patch the stored one when the request names none.
-	 * Checking only what a patch carries would let a caseworker change an automatic decision by leaving the method out,
-	 * and the decision would still claim to be automatic.
 	 * <p>
 	 * The process consumer is recognised by the value of {@code X-Sent-By}, whatever type the header gives it, as long as
-	 * it is not an ad account. The header is set by the caller, so this holds the stamp to the intent of the caller rather
-	 * than proving who it is - which is what the check is for: a decision cannot be given the method of the other kind of
-	 * writer by mistake.
+	 * it is not an ad account. The header is set by the caller, so the check holds the method to the intent of the caller
+	 * and does not prove who the caller is.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId municipality of the errand.
@@ -129,15 +121,12 @@ public class DecisionValidator {
 	}
 
 	/**
-	 * Rejects an outcome the namespace has not registered.
-	 * <p>
-	 * Checked against what the request carries rather than against what is stored, so that an outcome the namespace has
-	 * since removed does not stand in the way of every later change to a decision that was given it.
+	 * Rejects an outcome the namespace has not registered. Only the outcome the request carries is checked, not the one
+	 * already stored.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId municipality of the errand.
-	 * @param outcome        the outcome, or the recommendation, the request carries. Null is left alone, since a patch
-	 *                       says nothing about the fields it omits.
+	 * @param outcome        the outcome, or the recommendation, the request carries. Null is left alone.
 	 */
 	public void validateOutcome(final String namespace, final String municipalityId, final String outcome) {
 		ofNullable(outcome).ifPresent(value -> {
@@ -151,8 +140,8 @@ public class DecisionValidator {
 	 * Rejects a write to a decision that can no longer be changed, or a new decision on an errand whose process has run to
 	 * its end.
 	 * <p>
-	 * What is locked is the decision as stored. A patch concluding a decision is let through, and the next write after it
-	 * is not - which is also what keeps a concluded decision from being taken back to a draft.
+	 * What is locked is the decision as stored. A patch completing a decision is let through, and every write after it is
+	 * rejected, including one taking it back to a draft.
 	 *
 	 * @param errandId the errand the decision belongs to.
 	 * @param decision the decision written to, or null when one is being created.
@@ -172,10 +161,8 @@ public class DecisionValidator {
 	}
 
 	/**
-	 * Rejects removing an attachment of the errand that a decision which can no longer be changed has linked.
-	 * <p>
-	 * The link would otherwise go with the attachment, through the cascade of the database and past every rule of the
-	 * decision. Only removal through the API is held to this - the purge of an errand takes everything with it.
+	 * Rejects removing an attachment of the errand that a decision which can no longer be changed has linked. Only removal
+	 * through the API is held to this - the purge of an errand removes everything.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId municipality of the errand.
@@ -191,9 +178,6 @@ public class DecisionValidator {
 
 	/**
 	 * Rejects removing an investigation that a decision which can no longer be changed rests on.
-	 * <p>
-	 * The database sets the reference of the decision to null when the investigation goes, which would change a locked
-	 * decision past every rule of it - and the reference could not be put back, since the decision is locked.
 	 *
 	 * @param namespace       namespace of the errand.
 	 * @param municipalityId  municipality of the errand.
@@ -208,8 +192,8 @@ public class DecisionValidator {
 	}
 
 	/**
-	 * The lock of {@link #validateChangeable} for what a decision rests on, asked of the decisions rather than of one. Most
-	 * of what is removed rests under no decision, and is let through without a look at the process.
+	 * Applies the lock of {@link #validateChangeable} to what the decisions of the errand rest on. What no decision rests
+	 * on is let through without reading the process.
 	 */
 	private void validateNotRestedOnByLockedDecision(final String errandId, final BooleanSupplier restedOn, final BooleanSupplier restedOnByCompleted, final String message) {
 		if (!restedOn.getAsBoolean()) {
@@ -227,8 +211,8 @@ public class DecisionValidator {
 	}
 
 	/**
-	 * A namespace configured before the setting existed, or configured without it, reads as unrestricted rather than
-	 * failing the request.
+	 * Tells whether the namespace allows only one decision per errand. A namespace without a configuration, or with one
+	 * that lacks the setting, reads as unrestricted.
 	 */
 	private boolean singleDecisionPerErrand(final String namespace, final String municipalityId) {
 		return namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)

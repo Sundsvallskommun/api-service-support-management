@@ -78,7 +78,7 @@ class DecisionValidatorTest {
 	private DecisionValidator validator;
 
 	/**
-	 * The identifier is bound to the thread, which the test classes run before this one share.
+	 * Clears the identifier bound to the thread, which is shared with the test classes run before this one.
 	 */
 	@BeforeEach
 	@AfterEach
@@ -120,7 +120,7 @@ class DecisionValidatorTest {
 	}
 
 	/**
-	 * A namespace configured before the setting existed reads as unrestricted rather than failing the request.
+	 * A namespace configuration without the setting reads as unrestricted, and the request does not fail.
 	 */
 	@Test
 	void cardinalityIsUncheckedWhenTheSettingIsAbsentFromTheConfiguration() {
@@ -196,8 +196,8 @@ class DecisionValidatorTest {
 	}
 
 	/**
-	 * The difference between a decision a person made and one a process made has to be answerable afterwards, which is why
-	 * neither side may claim the other.
+	 * The process consumer is refused a manual decision with 403: neither a person nor a process may claim the method of
+	 * the other.
 	 */
 	@Test
 	void theProcessConsumerCannotWriteAManualDecision() {
@@ -338,8 +338,7 @@ class DecisionValidatorTest {
 	}
 
 	/**
-	 * An errand without a process is never locked - not even a completed decision on it - since there is no process for
-	 * the decision to have been handed on to. The revision history is what makes its changes traceable.
+	 * An errand without a process is never locked, not even a completed decision on it.
 	 */
 	@ParameterizedTest
 	@EnumSource(ItemStatus.class)
@@ -354,8 +353,8 @@ class DecisionValidatorTest {
 	}
 
 	/**
-	 * While the process lives, the decision can be written again - the step preparing it may have to correct itself, and a
-	 * caseworker may find a typing error. A failed process leaves the process life open, since it is recovered from.
+	 * While the process lives, a decision not yet completed can be written again. A failed process leaves the process
+	 * life open.
 	 */
 	@ParameterizedTest
 	@EnumSource(value = ItemStatus.class, names = "COMPLETED", mode = EXCLUDE)
@@ -384,7 +383,7 @@ class DecisionValidatorTest {
 	}
 
 	/**
-	 * The same completed process that is never started again. It locks every decision of the errand, and a new one too.
+	 * A completed process, which is never started again, locks every decision of the errand, and a new one too.
 	 */
 	@ParameterizedTest
 	@EnumSource(ItemStatus.class)
@@ -404,7 +403,7 @@ class DecisionValidatorTest {
 	}
 
 	/**
-	 * Most attachments belong to no decision, and those are not held up by a single further question.
+	 * An attachment no decision has linked is removable after a single lookup, without the process rows being read.
 	 */
 	@Test
 	void anAttachmentNoDecisionHasLinkedIsRemovable() {
@@ -471,7 +470,7 @@ class DecisionValidatorTest {
 	}
 
 	/**
-	 * The database would set the reference of the decision to null, which is a change to it.
+	 * An investigation no decision rests on is removable after a single lookup, without the process rows being read.
 	 */
 	@Test
 	void anInvestigationNoDecisionRestsOnIsRemovable() {

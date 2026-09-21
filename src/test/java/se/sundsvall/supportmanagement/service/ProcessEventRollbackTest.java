@@ -24,15 +24,10 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 
 /**
- * A publication that cannot write its row has to take the errand change down with it.
+ * A publication that cannot write its row has to take the errand change down with it: the transaction is marked
+ * rollback only, and the errand change is not committed whatever the caller does with the exception.
  * <p>
- * Every call site of {@code createErrandEvent} catches Exception and logs a warning, so an exception on its own would
- * leave the errand saved and the process none the wiser - exactly the problem the outbox is there to solve. The
- * transaction is therefore marked rollback only, and the errand change cannot be committed whatever the caller does
- * with the exception.
- * <p>
- * Verified by writing to the errand and reading it back afterwards rather than by inspecting a log, since what is at
- * stake is whether the change survived.
+ * Verified by writing to the errand and reading it back afterwards.
  */
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles({

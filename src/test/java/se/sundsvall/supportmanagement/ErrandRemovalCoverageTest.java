@@ -22,18 +22,13 @@ import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Reminds developers that a table pointing at an errand has to be taken with it when the errand goes.
+ * Verifies that every table pointing at an errand is taken with it when the errand is removed, by the single delete
+ * as well as by the retention purge.
  * <p>
- * An errand is removed in two places - the single delete and the retention purge - and both end by deleting the errand
- * row. Whatever still points at it then stops the removal: the row cannot go, the transaction fails, and the errand
- * stays. For a purge that shows up only as a number in the job it reports against, one errand at a time, in production.
+ * A table is covered when the database cascades it, when {@link ErrandEntity} maps it so that JPA cascades it, or when
+ * {@link ErrandDataDeleter} removes the rows itself.
  * <p>
- * Three things make a table safe. The database can cascade it, {@link ErrandEntity} can map it so that JPA cascades it,
- * or {@link ErrandDataDeleter} can remove the rows itself. A new table needs one of the three, and a unidirectional
- * many to one gets none of them by default - which is why this test exists rather than the rule being left to memory.
- * <p>
- * This is an early warning, not a proof. It reads the schema the entities generate, so a table added by a migration
- * alone is invisible to it.
+ * The test reads the schema the entities generate, so a table added by a migration alone is invisible to it.
  */
 class ErrandRemovalCoverageTest {
 
@@ -41,7 +36,7 @@ class ErrandRemovalCoverageTest {
 
 	/**
 	 * Constraints on the errand table, and whether the database takes the rows with it. Read from the schema with the
-	 * whitespace flattened, since the statements are written across several lines.
+	 * whitespace flattened.
 	 */
 	private static final Pattern FOREIGN_KEY_TO_ERRAND = Pattern.compile(
 		"alter table (?:if exists )?(\\w+) add constraint \\w+ foreign key \\(\\w+\\) references errand \\(id\\)( on delete cascade)?;");
@@ -125,8 +120,7 @@ class ErrandRemovalCoverageTest {
 	}
 
 	/**
-	 * Guards the reading rather than the code: a mapping the test cannot resolve to a table would quietly widen what
-	 * counts as covered.
+	 * Verifies that every collection an errand holds resolves to a table name.
 	 */
 	@Test
 	void theCollectionsOfAnErrandResolveToTables() {

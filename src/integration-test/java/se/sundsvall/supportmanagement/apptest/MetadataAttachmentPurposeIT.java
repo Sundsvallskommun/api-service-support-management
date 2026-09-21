@@ -148,7 +148,7 @@ class MetadataAttachmentPurposeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A purpose an attachment still carries is not removed from under it, the same rule the labels of an errand follow.
+	 * A purpose an attachment still carries is not removed from under it, and the delete is refused with 400.
 	 */
 	@Test
 	void test09_deletingAPurposeInUseIsRejected() {

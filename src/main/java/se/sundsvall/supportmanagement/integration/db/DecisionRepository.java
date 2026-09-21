@@ -10,9 +10,8 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 /**
  * Reads the decisions of an errand through its errand.
  * <p>
- * Every lookup names the namespace, the municipality and the errand, so that belonging to the errand is a consequence
- * of the query rather than a check somebody has to remember. Asking for an artefact of another errand finds nothing,
- * and the caller turns that into a 404.
+ * Every lookup names the namespace, the municipality and the errand. Asking for an artefact of another errand finds
+ * nothing, and the caller turns that into a 404.
  */
 @CircuitBreaker(name = "decisionRepository")
 public interface DecisionRepository extends JpaRepository<DecisionEntity, String> {

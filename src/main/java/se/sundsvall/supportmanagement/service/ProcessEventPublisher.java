@@ -42,10 +42,8 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
 /**
  * Turns an errand event into a row in the outbox, in the same transaction as the change the event is about.
  * <p>
- * Hung last in {@link EventService#createErrandEvent}, which is the one passage every errand event goes through -
- * the email intake and the web messages included, neither of which writes a revision. Hanging it off the errand service
- * and comparing revisions instead would have left the process blind to exactly those. A command comes in beside it,
- * through {@link EventService#createProcessCommandEvent}.
+ * Called last in {@link EventService#createErrandEvent}, which every errand event goes through, the email intake and
+ * the web messages included. A command comes in through {@link EventService#createProcessCommandEvent}.
  * <p>
  * The rule it applies, step by step:
  *
@@ -66,23 +64,15 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  * 7. insert the row, addressed to the process consumer of the namespace, and signal that it is there
  * </pre>
  *
- * Layer 1 goes on intent rather than on identity: a process saying itself that it does not want to be woken is what
- * saves SM from having to recognise every process engine by name.
+ * Layer 1 lets a process ask, through the header, not to be woken by its own writes.
  * <p>
- * The three layers are there for machine traffic about an errand, and two kinds of event pass them all. A command is
- * a person pressing a button rather than something that happened to the errand. A deletion cannot loop, since the
- * errand is gone, and holding it back would leave the process instance running for an errand that no longer exists.
+ * The three layers guard the machine traffic about an errand. Commands and deletions pass them all.
  * <p>
- * A decision concluded by a handler passes the emergency brake and nothing else. It is the one event a process waiting
- * for its decision needs, and a brake tripped by unrelated traffic would otherwise leave the errand waiting for ever. A
- * person pressing a button is no loop, and a decision is concluded once, since it is locked afterwards. A decision the
- * process concludes itself is held to the brake like any other write of the process. The process triggers still have
- * their say.
+ * A decision concluded by a handler passes the emergency brake and nothing else; the process triggers still apply. A
+ * decision the process concludes itself is held to the brake like any other write of the process.
  * <p>
- * A publication that fails may not be swallowed. Every call site of {@code createErrandEvent} catches Exception and
- * logs a warning, so a publication that merely threw would leave the errand change saved while the process was never
- * told - the very thing the outbox exists to prevent. The transaction is therefore marked rollback only before the
- * exception is handed on, and the errand change goes down with the row whatever the caller does with it.
+ * When a publication fails, the transaction is marked rollback only before the exception is handed on, so the errand
+ * change is rolled back with the row whatever the caller does with the exception.
  */
 @Component
 public class ProcessEventPublisher {
@@ -227,11 +217,9 @@ public class ProcessEventPublisher {
 	/**
 	 * The event type a process is told, refusing one no process knows while the caller is still there to fail.
 	 * <p>
-	 * A process engine knows a creation, an update and a deletion, and nothing else. Left to the delivery, any other type
-	 * would be a row the relay can never turn into an event - read first again on every run, it would hold back every later
-	 * event of its errand until it aged out. Nothing publishes another type today; this is for the next call site that
-	 * does. It is asked before the loop guard and the triggers, so that such a call fails in the first test that reaches it
-	 * rather than in production on the day a namespace starts triggering on its sub type.
+	 * A process is told of a creation, an update or a deletion; any other type throws {@link IllegalArgumentException}. It
+	 * is asked before the loop guard and the triggers, so another type fails the call even when the event would have been
+	 * dropped.
 	 * <p>
 	 * The switch has no default, so a type added to the event log does not compile until it has been decided here.
 	 */
@@ -246,24 +234,17 @@ public class ProcessEventPublisher {
 	 * Layer 1 of the loop guard: did the caller want to wake the process at all?
 	 * <p>
 	 * Only an exact false, trimmed and whatever its casing, keeps the row from being written. Everything else - a
-	 * missing header, an empty one, nonsense - wakes the process, and the direction is chosen on purpose. One row too
-	 * many is a needless wake that layers 2 and 3 catch, while one row too few is a process left waiting for ever with
-	 * nobody noticing.
+	 * missing header, an empty one, nonsense - wakes the process.
 	 * <p>
-	 * The header is not honoured for ad accounts. A handler's write wakes the process however the client sets it, and
-	 * that closes the one hole a freely set header would otherwise open: somebody else's integration quietly silencing
-	 * real errand changes. The machine to machine calls are precisely the ones without an ad account.
+	 * The header is not honoured for ad accounts: a handler's write wakes the process however the client sets it.
 	 */
 	private boolean isOptedOut() {
 		return isNull(getAdUser()) && Strings.CI.equals(OPT_OUT, StringUtils.trimToNull(getTriggerProcess()));
 	}
 
 	/**
-	 * Whether the event is a decision concluded by an ad account, the one kind that passes the emergency brake.
-	 * <p>
-	 * A person cannot loop. A process can, since every decision it creates concluded is a new one: were its own
-	 * conclusions let past the brake, a process that forgot to ask not to be woken would create decision after decision
-	 * with nothing to stop it. And a process concluding a decision has no need to be told of it.
+	 * Whether the event is a decision concluded by an ad account, the one kind that passes the emergency brake. A
+	 * decision concluded without an ad account is held to the brake.
 	 */
 	private static boolean concludedByPerson(final boolean concludesDecision) {
 		return concludesDecision && nonNull(getAdUser());
@@ -272,9 +253,8 @@ public class ProcessEventPublisher {
 	/**
 	 * Layer 3 of the loop guard: how fast are events reaching the process of this errand?
 	 * <p>
-	 * Only delivered rows are counted. Counting the ones still waiting would let a delivery outage trip the brake by
-	 * itself - the rows pile up because nothing gets through, the brake reads the pile as a loop, and an outage that
-	 * only cost time turns into permanent event loss, at the very moment nothing at all was getting through.
+	 * Only delivered rows are counted; rows still waiting for delivery do not trip the brake. A tripped brake is logged
+	 * and written as an error entry once per window.
 	 */
 	private boolean isRateExceeded(final ErrandEntity errand) {
 		final var guard = processEngineProperties.loopGuard();
@@ -293,9 +273,8 @@ public class ProcessEventPublisher {
 	/**
 	 * What the labels say, asked for every event but a deletion.
 	 * <p>
-	 * A deletion starts nothing and needs no key, and by the time one is published the errand it belongs to is normally
-	 * already gone - along with the labels, which can no longer be read off the detached entity. Not asking is part of
-	 * what lets the deletion be published at all.
+	 * For a deletion the labels are not read and {@link ProcessKeySelection#NONE} is returned, so a deletion can be
+	 * published after the errand and its labels are gone.
 	 */
 	private ProcessKeySelection selectFromLabels(final ErrandEntity errand, final EventType eventType) {
 		return DELETE == eventType ? ProcessKeySelection.NONE : processKeySelector.select(errand);
@@ -304,13 +283,11 @@ public class ProcessEventPublisher {
 	/**
 	 * Which process the row is for.
 	 * <p>
-	 * A start command carries its own key and it goes before everything else: the handler has already chosen, and
-	 * resolving that choice again here would find two keys on an ambiguous errand and drop the command in exactly the
-	 * case it exists for.
+	 * The key a command carries goes before everything else, so a start command on an errand with ambiguous labels is
+	 * published with the key the handler chose.
 	 * <p>
-	 * After that the instance answers before the labels do. Once an errand has a process instance the key is nailed
-	 * down, and a label that is changed or removed can no longer change what is published. Every instance of an errand
-	 * runs the same process, so it does not matter which of them answers.
+	 * After that the instance answers before the labels do. Once an errand has a process instance the key is fixed, and
+	 * a label that is changed or removed no longer changes what is published.
 	 */
 	private String resolveProcessKey(final ProcessCommand command, final List<ErrandProcessEntity> instances, final ProcessKeySelection selection) {
 		return ofNullable(command)
@@ -323,17 +300,15 @@ public class ProcessEventPublisher {
 	/**
 	 * Whether this event may give birth to a process instance.
 	 * <p>
-	 * Worked out once, here, and carried along with the event, so that the process engine has to know neither the start
-	 * mode of the labels nor the process history of the errand. It costs no extra query: step 5 already reads the
-	 * process rows of the errand, and both halves of the question are answered from them. Only a start command asks for
-	 * an instance to be born; a signal is aimed at one that already runs.
+	 * The answer is carried along with the event, so the process engine needs neither the start mode of the labels nor
+	 * the process history of the errand. It is answered from the process rows already read in step 5. A start command is
+	 * allowed to start an instance; a signal is not.
 	 * <p>
-	 * The mode counts only when it comes from the label naming the key the row carries. An errand whose failed instance
-	 * ran one process while its labels now point at another would otherwise take the key from the instance and the mode
-	 * from a label that has nothing to do with it.
+	 * Any other event is allowed only when the label naming the key the row carries has the start mode AUTOMATIC, and the
+	 * errand has neither a live nor a completed process instance.
 	 * <p>
-	 * The permission is optimistic and the registration is authoritative. A process can reach its end between
-	 * publication and delivery, and the conflict answered when a start is registered is the safety net for that.
+	 * The permission is optimistic and the registration is authoritative: a process can reach its end between
+	 * publication and delivery, and registering the start then answers with a conflict.
 	 */
 	private boolean isStartAllowed(final EventSubType eventSubType, final String processKey, final List<ErrandProcessEntity> instances, final ProcessKeySelection selection) {
 		if (eventSubType.isCommand()) {
@@ -349,17 +324,13 @@ public class ProcessEventPublisher {
 	/**
 	 * Takes the errand change down with the row that could not be written.
 	 * <p>
-	 * With no transaction there is nothing to roll back and the errand is already saved, so the failure is logged as the
-	 * error it is and the call is left alone. Every way in has a transaction today, so it should never happen.
+	 * The transaction is marked rollback only and the failure is handed on to the caller without being logged here, a
+	 * checked one wrapped in an {@link IllegalStateException}. With no transaction there is nothing to roll back and the
+	 * errand is already saved, so the failure is logged as an error and not rethrown.
 	 * <p>
-	 * The transaction is reached through the aspect, and that is why {@link #publish} carries a transaction annotation of
-	 * its own. Without one, the status is bound only when the caller reached here through an annotated method, and a
-	 * caller running its own transaction template - as the process service does, for the sake of its collision recovery -
-	 * would get a complaint about there being no transaction instead of the rollback, losing the original failure with
-	 * it. Supports rather than required, since a write without a transaction is to be reported and not given one.
-	 * <p>
-	 * The failure is handed on rather than logged here: the caller catches it, and what surfaces from the rollback is
-	 * logged where it is turned into a response.
+	 * The transaction status is reached through the aspect, and is bound by the transaction annotation of
+	 * {@link #publish}, also for a caller running its own transaction template. The propagation is supports, so a write
+	 * without a transaction is reported and not given one.
 	 */
 	private void failPublication(final ErrandEntity errand, final Exception cause) {
 		if (!TransactionSynchronizationManager.isActualTransactionActive()) {

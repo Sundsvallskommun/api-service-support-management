@@ -39,9 +39,8 @@ class MetadataMeasureTypeResourceFailureTest {
 	private WebTestClient webTestClient;
 
 	/**
-	 * The scalar group these replaced carried @NotBlank, so a group has never been allowed to be blank. That much is the
-	 * model's to say on either verb; whether groups have to be named at all differs between creating and updating, and
-	 * is answered by the service.
+	 * A blank measure group is refused by the model, before the service is called. Whether groups have to be named at
+	 * all is answered by the service.
 	 */
 	@ParameterizedTest
 	@MethodSource("invalidMeasureGroupsArguments")

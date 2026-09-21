@@ -495,9 +495,6 @@ class ProcessCommandServiceTest {
 		verify(eventServiceMock).createProcessCommandEvent(UPDATE, "En signal har skickats till processen i ärendet: granskning-godkand.", errand, false, SIGNAL, new ProcessCommand(null, SIGNAL_NAME));
 	}
 
-	/**
-	 * The identity header is set by the caller, and an entry that fails to insert would take the signal down with it.
-	 */
 	@Test
 	void anEntryNamingAnOversizedSenderIsCutToFitItsColumn() {
 		asHandler("x".repeat(MESSAGE_LENGTH * 2));
@@ -510,8 +507,7 @@ class ProcessCommandServiceTest {
 	}
 
 	/**
-	 * The entry a signal leaves has to say which person stepped the process on. The refusal comes before anything is
-	 * looked at, let alone written.
+	 * The refusal comes before anything is looked at, let alone written.
 	 */
 	@Test
 	@DisplayName("Verification that a signal from a caller that is not an ad account is refused with 403 and writes nothing")
@@ -540,10 +536,6 @@ class ProcessCommandServiceTest {
 		verifyNothingWritten();
 	}
 
-	/**
-	 * Publication writes nothing for a namespace running no process, so a signal taken there would be a button that seems
-	 * to work and moves nothing.
-	 */
 	@Test
 	void aSignalInANamespaceRunningNoProcessIsRejected() {
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
@@ -559,11 +551,6 @@ class ProcessCommandServiceTest {
 		verifyNoInteractions(processRepositoryMock, signalRepositoryMock);
 	}
 
-	/**
-	 * Under repeatable read the snapshot of a transaction is taken at its first plain read. Were the configuration read
-	 * ahead of the lock, the signal would be judged against the signals as they stood before the report the lock waited
-	 * for - and be taken for a gate that report had just closed.
-	 */
 	@Test
 	@DisplayName("Verification that the errand is locked before anything else is read")
 	void theErrandIsLockedBeforeAnythingIsRead() {
@@ -655,8 +642,7 @@ class ProcessCommandServiceTest {
 	}
 
 	/**
-	 * The process engine tells message names apart by case, so a name matched regardless of it would reach the process as
-	 * a name no gate listens for, and be lost there without a trace.
+	 * A signal that differs from an awaited one only in case is refused with 409 and writes nothing.
 	 */
 	@Test
 	void aSignalIsMatchedExactlyAsTheProcessNamedIt() {

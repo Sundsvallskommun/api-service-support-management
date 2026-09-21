@@ -113,8 +113,7 @@ class MetadataDecisionOutcomeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Removing an outcome takes it out of what may be given from now on. A decision already given it keeps it, the way an
-	 * errand keeps a status that has been removed.
+	 * Removing an outcome takes it out of what may be given from now on. A decision already given it keeps it.
 	 */
 	@Test
 	void test06_deleteDecisionOutcome() {

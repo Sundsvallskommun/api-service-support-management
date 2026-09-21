@@ -26,9 +26,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 /**
  * The state of a process instance attached to an errand.
  * <p>
- * The errand is referenced by id only, and the foreign key lives in the database alone. A JPA relation would put the
- * process into the errand aggregate, and a revision snapshot copies the whole errand - every report from a work step
- * would then produce a revision that says nothing about the errand.
+ * The errand is referenced by id only, and the foreign key lives in the database alone. The process is not part of the
+ * errand aggregate, and a change to it produces no revision of the errand.
  */
 @Entity
 @Table(name = "errand_process",
@@ -77,12 +76,10 @@ public class ErrandProcessEntity {
 	private String currentActivityName;
 
 	/**
-	 * The external task that reported RUNNING and has not reported since. Cleared when that task reports again, which
-	 * is what a work step does when it hands in the report it was written to produce.
+	 * The external task that reported RUNNING and has not reported since. Cleared when that task reports again.
 	 * <p>
-	 * Kept so that a second task reporting RUNNING while another still stands here can be recognised for what it is: a
-	 * parallel branch, which the process models are not allowed to have. Sequential steps never meet here, since the
-	 * process engine completes a task before it hands out the next one.
+	 * A second task reporting RUNNING while another still stands here is recognised as a parallel branch, which the
+	 * process models are not allowed to have.
 	 */
 	@Column(name = "outstanding_external_task_id", length = 64)
 	private String outstandingExternalTaskId;
@@ -102,10 +99,9 @@ public class ErrandProcessEntity {
 	private OffsetDateTime ended;
 
 	/**
-	 * TRUE while the instance lives and null once it is terminal, never FALSE. Null is distinct in a unique index, which
-	 * is what lets {@code uq_ep_one_active_per_errand} allow an errand any number of finished instances but only one live
-	 * one. FALSE would take a slot of its own and cap the finished ones at one instead. Owned by
-	 * {@link #applyStatus(ProcessStatus, Clock)}.
+	 * TRUE while the instance lives and null once it is terminal, never FALSE, so that
+	 * {@code uq_ep_one_active_per_errand} allows an errand any number of finished instances but only one live one. Owned
+	 * by {@link #applyStatus(ProcessStatus, Clock)}.
 	 */
 	@Column(name = "active_marker")
 	private Boolean activeMarker;
@@ -133,14 +129,12 @@ public class ErrandProcessEntity {
 	}
 
 	/**
-	 * The only way to set the status, and therefore the only place where the active marker and the end time can be told
-	 * what the status means. Set past this method the marker is left behind, and the database rule of one live instance
-	 * per errand is lost with it.
+	 * The only way to set the status. Sets the active marker and the end time to match it: a terminal status clears the
+	 * marker and sets the end time from the clock.
 	 * <p>
-	 * A status that is alive again clears the end time, which is what happens when an incident is resolved by hand and a
-	 * FAILED instance resumes. It also gives the marker back, so the instance can find the place taken by another one
-	 * started meanwhile - the unique constraint says so, and the caller has to tell the handler which instance is in the
-	 * way.
+	 * A status that is alive again, as when an incident is resolved by hand and a FAILED instance resumes, clears the end
+	 * time and gives the marker back. The instance can then find the place taken by another one started meanwhile - the
+	 * unique constraint says so, and the caller has to tell the handler which instance is in the way.
 	 *
 	 * @param status the state the process is in.
 	 * @param clock  the clock the end time is read from.

@@ -116,8 +116,8 @@ class ErrandProcessServiceTest {
 	private ErrandProcessService service;
 
 	/**
-	 * Every write path checks its sender against the process configuration of the namespace, so the happy path needs both
-	 * an identifier and a configured consumer. Stubbed leniently because the read paths ask for neither.
+	 * Sets an identifier and a configured process consumer, which every write path checks its sender against. Both are
+	 * stubbed leniently, and the read paths ask for neither.
 	 */
 	@BeforeEach
 	void setUp() {
@@ -137,10 +137,6 @@ class ErrandProcessServiceTest {
 	// The sender of a report, checked against the configuration of the namespace
 	// ---------------------------------------------------------------------------------------------------------------
 
-	/**
-	 * Answered as validation rather than as authorization, which is the whole reason these are 400 and not 403: nothing
-	 * behind {@code X-Sent-By} is verified, so refusing with 403 would claim a check the service never made.
-	 */
 	@Test
 	void aReportFromAServiceThatIsNotTheConsumerOfTheNamespaceIsRejected() {
 		final var report = report(RUNNING).withProcessService("pw-someone-else");
@@ -166,10 +162,6 @@ class ErrandProcessServiceTest {
 		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
 	}
 
-	/**
-	 * The rule that lets the reading side skip its lookup entirely for a namespace running no process: with no rows
-	 * possible, there is nothing to read.
-	 */
 	@Test
 	void aReportToANamespaceWithNoProcessConsumerIsRejected() {
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
@@ -184,10 +176,6 @@ class ErrandProcessServiceTest {
 		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
 	}
 
-	/**
-	 * Without an identifier the notification of the errand and the activity log stand without an author, which is the
-	 * thing the fallback in EventService was added to prevent.
-	 */
 	@Test
 	void aReportWithoutAnIdentifierIsRejected() {
 		Identifier.remove();
@@ -256,9 +244,6 @@ class ErrandProcessServiceTest {
 		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
 	}
 
-	/**
-	 * The errand the instance belongs to can sit in another namespace or municipality, so the refusal does not name it.
-	 */
 	@Test
 	void anInstanceRegisteredOnAnotherErrandIsRefusedWithoutNamingThatErrand() {
 		final var existing = entity(PROCESS_INSTANCE_ID, RUNNING).withErrandId("anotherErrand");
@@ -310,10 +295,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * The race the start permission leaves open: an instance started on an errand whose process has already run its
-	 * course, whose first work step reports before the start is registered. Were the rule asked only when a start is
-	 * registered, the report would create the row and the registration would find it and answer 200 - and the process
-	 * engine would never learn that it has to abort the instance.
+	 * An instance started on an errand whose process has already run its course, whose first work step reports before
+	 * the start is registered.
 	 */
 	@Test
 	void aReportCreatingAnInstanceOnAnErrandWhoseProcessHasRunItsCourseIsRefused() {
@@ -328,8 +311,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * A failed instance reporting itself alive again asks for the place it gave up when it ended, and the answer has to
-	 * name the instance holding it rather than leaving the unique key to say only that something collided.
+	 * A failed instance reporting itself alive again asks for the place it gave up when it ended, and is refused with a
+	 * 409 naming the instance holding it.
 	 */
 	@Test
 	void anInstanceComingBackToLifeIsToldWhichInstanceTookItsPlace() {
@@ -348,8 +331,7 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * A terminal row leaves the slot of the unique key empty, so it can never take one that is occupied. Asking the
-	 * question of it anyway would refuse a start that failed while an older instance is still alive.
+	 * A report of a failed instance creates its row while an older instance is still alive.
 	 */
 	@Test
 	void aTerminalRowIsWrittenEvenWhileAnotherInstanceLives() {
@@ -473,8 +455,7 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * Null is distinct in a unique index, so the database would let both of these through. The service says the same
-	 * thing, rather than inventing a stricter rule the constraint does not hold.
+	 * Two equal activities in a report naming no external task are both stored, and the log is not read for duplicates.
 	 */
 	@Test
 	void activitiesWithoutAnExternalTaskAreAllStored() {
@@ -504,8 +485,7 @@ class ErrandProcessServiceTest {
 	// ---------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * A signal still awaited keeps its row, since a flush inserts before it deletes and a name deleted and inserted anew
-	 * in the same flush would collide with itself in the unique key.
+	 * A signal still awaited keeps its row, and a signal no longer awaited is deleted.
 	 */
 	@Test
 	void aReportReplacesWhatTheInstanceWaitsFor() {
@@ -532,7 +512,7 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * A report describes the whole state of the process, so leaving the signals out says the same as sending none.
+	 * Leaving the signals out of a report says the same as sending none.
 	 */
 	@ParameterizedTest
 	@NullAndEmptySource
@@ -550,8 +530,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * Names are compared exactly, as the process engine compares them: a name reported twice is one signal, while names
-	 * differing in case or in a trailing space are two.
+	 * Names are compared exactly: a name reported twice is one signal, while names differing in case or in a trailing
+	 * space are two.
 	 */
 	@Test
 	void theSameNameReportedTwiceIsStoredOnceTheFirstKept() {
@@ -594,8 +574,8 @@ class ErrandProcessServiceTest {
 	// ---------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * The 412 a work step that only reads the errand gets in place of the If-Match it has no way to send, and the whole
-	 * reason the field exists. Neither the state nor the activities of the report are written.
+	 * A report read at an older version of the errand is refused with 412. Neither the state nor the activities of the
+	 * report are written.
 	 */
 	@Test
 	void aReportReadAtAVersionTheErrandHasLeftBehindIsRefused() {
@@ -626,8 +606,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * A step that neither reads nor writes the errand sends no version, and then nothing is checked at all - not even the
-	 * errand it would have been checked against, which is what leaving it unstubbed here says.
+	 * A report that sends no version is checked against nothing at all - not even the errand, which is left unstubbed
+	 * here.
 	 */
 	@Test
 	void aReportWithoutAVersionIsHeldAgainstNothing() {
@@ -657,8 +637,8 @@ class ErrandProcessServiceTest {
 	// ---------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Two branches of one instance working at the same time, which the process models are not allowed to have. The report
-	 * is taken anyway: refusing it would silence the very entry that reveals the model is breaking the rule.
+	 * Two branches of one instance working at the same time: the collision is written to the activity log, and the
+	 * report is taken anyway.
 	 */
 	@Test
 	void aSecondTaskAnnouncingItselfIsLoggedAndItsReportIsStillTaken() {
@@ -689,8 +669,7 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * Logged once per instance. The two branches keep passing each other for as long as the model has the gateway,
-	 * and the log this would otherwise fill is the one a handler reads on the errand.
+	 * The collision is written to the activity log once per instance.
 	 */
 	@Test
 	void aFurtherCollisionOnTheSameInstanceIsNotLoggedAgain() {
@@ -705,8 +684,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * Steps running one after another never meet, and that is what keeps the warning from firing on every process there
-	 * is: the report a step hands in when it is done empties the place before the next task announces itself.
+	 * Steps running one after another never meet: the report a step hands in when it is done empties the place before
+	 * the next task announces itself.
 	 */
 	@Test
 	void tasksTakingTurnsRaiseNoWarning() {
@@ -727,9 +706,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * The report a step hands in when it is done empties the place even when it does not say RUNNING, which is what a
-	 * step that leaves the process waiting reports. Without that the next task to announce itself would be taken for a
-	 * parallel branch, and every process with a wait state would raise the warning.
+	 * The report a step hands in when it is done empties the place even when it does not say RUNNING, as when the step
+	 * leaves the process waiting, and the next task to announce itself raises no warning.
 	 */
 	@Test
 	void aClosingReportFromTheWorkingTaskEmptiesThePlace() {
@@ -747,8 +725,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * Only the task standing in the place empties it. A closing report from another task says nothing about the one still
-	 * working, and emptying the place on it would hide the overlap with the next task to announce itself.
+	 * Only the task standing in the place empties it. A closing report from another task leaves the one still working
+	 * where it is.
 	 */
 	@Test
 	void aClosingReportFromAnotherTaskLeavesTheWorkingOneWhereItIs() {
@@ -763,8 +741,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * A report naming no task - the registration of a start, among others - says nothing about the task standing on the
-	 * row, and must not be read as that task having finished.
+	 * A report naming no task - the registration of a start, among others - leaves the task standing on the row where it
+	 * is.
 	 */
 	@Test
 	void aReportNamingNoTaskLeavesTheOutstandingOneWhereItIs() {
@@ -808,9 +786,7 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * A violation that survives the second attempt is not contention: contention would have been seen by the checks the
-	 * attempt begins with and refused as the conflict it is, named. Dressing it up as 409 would tell a process engine
-	 * that this errand already had its process, and it would abort the one it just started.
+	 * A violation that survives the second attempt is raised as the violation it is, not as a 409.
 	 */
 	@Test
 	void aViolationThatSurvivesTheSecondAttemptIsRaisedAsItIs() {
@@ -824,10 +800,8 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * The report of a work step on a row that already exists is the case a lookup after the fact cannot judge: the row
-	 * and the live slot of the errand were both taken by this very report before it wrote anything, so asking the
-	 * database whether they are occupied answers yes whatever the true cause was. Only the second attempt can tell the
-	 * two apart, and this is what keeps a broken activity from being reported as a race that never happened.
+	 * A violation raised while the activities of a report on an existing row are stored survives the second attempt, and
+	 * is raised as it is.
 	 */
 	@Test
 	void aViolationOnTheUpdatePathIsNotMistakenForContention() {
@@ -1004,8 +978,7 @@ class ErrandProcessServiceTest {
 	}
 
 	/**
-	 * An instance the service already knows, waiting for what is sent in. What is saved is handed back as it was sent,
-	 * which is what the repository does for rows that are new or already managed.
+	 * An instance the service already knows, waiting for what is sent in. What is saved is handed back as it was sent.
 	 */
 	private void givenKnownInstance(final ErrandProcessEntity instance, final ErrandProcessSignalEntity... stored) {
 		when(processRepositoryMock.findByProcessInstanceId(instance.getProcessInstanceId())).thenReturn(Optional.of(instance));

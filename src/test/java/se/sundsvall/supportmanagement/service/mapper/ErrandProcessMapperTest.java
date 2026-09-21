@@ -87,10 +87,6 @@ class ErrandProcessMapperTest {
 		assertThat(process.getModified()).isEqualTo(modified);
 	}
 
-	/**
-	 * A signal to an ended process is refused, so a button offered for one could only ever fail. Held here because more
-	 * than a report ends a process: the relay does too, and leaves the rows behind.
-	 */
 	@ParameterizedTest
 	@EnumSource(value = ProcessStatus.class, names = {
 		"COMPLETED", "FAILED"

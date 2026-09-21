@@ -336,9 +336,7 @@ class NamespaceConfigServiceTest {
 	}
 
 	/**
-	 * The duplicate checks run against the mapped rows, so they are exercised through the real mapper - a request shape
-	 * only collides once it has been flattened into grants, and reproducing that flattening in the test would let the two
-	 * drift apart.
+	 * A service with the real mapper, for the duplicate checks, which run against the mapped rows.
 	 */
 	private NamespaceConfigService serviceWithRealMapper() {
 		return new NamespaceConfigService(configRepositoryMock, new NamespaceConfigMapper());
@@ -477,8 +475,7 @@ class NamespaceConfigServiceTest {
 	}
 
 	/**
-	 * A namespace running a process that is never told of a new process label, or of a decision being made, leaves its
-	 * errands standing still without any error anywhere - so the configuration is refused instead.
+	 * A namespace with a process consumer is refused unless its process triggers include both ERRAND and DECISION.
 	 */
 	@ParameterizedTest
 	@MethodSource("incompleteProcessTriggers")
@@ -521,8 +518,7 @@ class NamespaceConfigServiceTest {
 	}
 
 	/**
-	 * A command always reaches the process, so listing one would suggest the list had a say over it. That holds whether
-	 * the namespace runs a process or not.
+	 * A command among the process triggers is refused, whether the namespace runs a process or not.
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
@@ -541,7 +537,7 @@ class NamespaceConfigServiceTest {
 	}
 
 	/**
-	 * Triggers without a consumer have nobody to wake, but they are harmless and are kept for when a consumer is added.
+	 * Triggers without a consumer are accepted and kept.
 	 */
 	@Test
 	void createWithProcessTriggersButNoProcessConsumer() {

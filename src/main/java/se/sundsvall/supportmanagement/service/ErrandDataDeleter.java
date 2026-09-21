@@ -20,18 +20,14 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 /**
  * Removes everything that hangs off an errand and is not swept away by deleting the errand row itself.
  * <p>
- * Shared by the single errand delete and by the retention purge so that the two cannot drift apart: whatever one of
- * them cleans up the other cleans up too, and a table added here is covered by both from the moment it is added.
+ * Used by both the single errand delete and the retention purge.
  * <p>
- * Notes live in a neighbouring service and are guarded here. An errand must not survive because that service is down,
- * so a failure there is logged and the errand is removed regardless: an orphaned note is a smaller problem than an
- * errand that cannot be deleted at all.
+ * Notes live in a neighbouring service and are guarded here: a failure there is logged and the errand is removed
+ * regardless, leaving its notes behind.
  * <p>
- * Conversations are not guarded here, even though they too reach a neighbouring service. Every call that leaves the
- * service is already caught inside {@link ConversationService#deleteByErrandId(ErrandEntity)}, one conversation and
- * one relation at a time. What can still reach this class is therefore a write to the local database, and by then the
- * transaction the removal runs in is already marked for rollback. Catching it would not let the errand go. It would
- * only hide why it stayed, and leave a caller with a delete that answered success while removing nothing.
+ * Conversations are not guarded here. {@link ConversationService#deleteByErrandId(ErrandEntity)} handles the failures
+ * of the neighbouring service itself, one conversation and one relation at a time, and any failure it passes on fails
+ * the removal.
  */
 @Component
 public class ErrandDataDeleter {
@@ -76,18 +72,14 @@ public class ErrandDataDeleter {
 	/**
 	 * Removes everything belonging to the errand except the errand row, which the caller deletes once this returns.
 	 * <p>
-	 * Attachment ids are passed in rather than read here, since the two callers reach them differently: a delete reads
-	 * them through the access check that guards attachments, while a purge takes them straight off the entity because it
-	 * runs with no caller to authorize.
+	 * The attachments removed are the ones whose ids the caller passes in.
 	 * <p>
-	 * Relations are left alone. The ones a conversation owns are removed by the conversation itself, and the rest are the
-	 * relation service's to keep or drop.
+	 * Relations are left alone. The ones a conversation owns are removed by the conversation itself, and the rest are left
+	 * to the relation service.
 	 * <p>
-	 * <b>The errand is detached by the time this returns</b>, deliberately and in every case. Removing the
-	 * communications empties the persistence context to keep an entire correspondence from piling up in the heap, and
-	 * the attachments are removed with the errand out of the context so that nothing is cascaded back into place.
-	 * Everything read off the errand here is therefore read up front, and a caller needing more of it afterwards has to
-	 * read that before calling.
+	 * <b>The errand is detached by the time this returns</b>, in every case: removing the communications empties the
+	 * persistence context, and the attachments are removed with the errand out of the context. A caller needing more of
+	 * the errand afterwards has to read that before calling.
 	 *
 	 * @param entity        the errand being removed.
 	 * @param attachmentIds ids of the attachments to remove along with it.
@@ -126,18 +118,11 @@ public class ErrandDataDeleter {
 	}
 
 	/**
-	 * Removes the attachments of an errand together with the files they hold.
+	 * Removes the attachments of an errand together with the files they hold, without loading the files.
 	 * <p>
-	 * The rows are named rather than loaded, and that is what this method is for. An attachment cascades its removal
-	 * onto its data, and a cascade reaches the data by loading it - which means the whole file in the heap, for every
-	 * attachment of the errand at once, held until the transaction commits. An errand may carry fifty megabytes per
-	 * attachment and any number of them, so what that costs is set by what somebody once uploaded rather than by
-	 * anything this service controls.
-	 * <p>
-	 * The ids of the data rows are therefore read without the files, and both tables are then emptied of those rows by
-	 * removals that load nothing. The attachments go first, since they are the ones holding the foreign key. Doing it
-	 * this way means the cascade is bypassed rather than relied on, which is why the data rows are removed here
-	 * explicitly instead of being left to follow.
+	 * The ids of the data rows are read without the files, and both tables are then emptied of those rows by removals
+	 * that load nothing, so the cascade from an attachment onto its data is bypassed and the data rows are removed here
+	 * explicitly. The attachments go first, since they hold the foreign key.
 	 *
 	 * @param attachmentIds ids of the attachments to remove.
 	 */
@@ -159,12 +144,11 @@ public class ErrandDataDeleter {
 	/**
 	 * Removes the notes of an errand, however many there are.
 	 * <p>
-	 * The first page is asked for over and over rather than the pages being walked, since every note that is read is also
-	 * removed and the notes behind it move up to take its place. A page that did not fill up is the last one: what was
-	 * read has just been removed, so anything still there would have been on that page.
+	 * The first page is asked for in every round, since every note that is read is also removed and the notes behind it
+	 * move up to take its place. A page that did not fill up is the last one.
 	 * <p>
-	 * The rounds are capped all the same. A note reported as removed that comes back on the next read would otherwise
-	 * keep the caller here for good, and a purge is carried out one errand at a time by a single thread.
+	 * The rounds are capped, and a warning is logged when the cap is reached with notes still being returned. A failure
+	 * is logged and the remaining notes are left.
 	 */
 	private void deleteNotes(final String municipalityId, final String errandId) {
 		try {

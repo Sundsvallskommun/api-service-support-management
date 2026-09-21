@@ -109,10 +109,6 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	/**
-	 * The batch is capped where a report is validated rather than where it is written, so a report too large to be one
-	 * work step is refused before it reaches the database at all.
-	 */
 	@Test
 	void aReportCarryingMoreThanAHundredActivitiesIsRejected() {
 		final var report = validReport()
@@ -138,10 +134,6 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	/**
-	 * The error of a failed process is often a stack trace, and one longer than its column has to be refused as a bad
-	 * request rather than reach the insert and fail as a server error - which would leave the failure unreported.
-	 */
 	@Test
 	void aReportWithAnErrorMessageLongerThanItsColumnIsRejected() {
 		final var report = validReport()
@@ -211,10 +203,6 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	/**
-	 * Both columns are fed from the process model, and a name or label longer than its column has to be refused as a bad
-	 * request rather than fail the insert as a server error.
-	 */
 	@Test
 	void aReportWithASignalLongerThanItsColumnsIsRejected() {
 		final var report = validReport()
@@ -265,9 +253,6 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	/**
-	 * A null in the list would otherwise reach the service and fail there as a server error.
-	 */
 	@Test
 	void aReportWithAnEmptySlotAmongItsSignalsIsRejected() {
 		final var response = webTestClient.put()
@@ -357,10 +342,6 @@ class ErrandProcessResourceFailureTest {
 			Arguments.of("{\"signal\": \"   \"}"));
 	}
 
-	/**
-	 * The name travels all the way to the outbox, where a name that does not fit fails the signal rather than being cut
-	 * to one that would correlate another gate. Refused here, it never gets that far.
-	 */
 	@Test
 	void aSignalLongerThanTheNamesAProcessCanWaitForIsRejected() {
 		final var response = webTestClient.post()
@@ -438,9 +419,8 @@ class ErrandProcessResourceFailureTest {
 	}
 
 	/**
-	 * Every endpoint is enumerated because the constraint is written out once per method: dropping it from one of them
-	 * leaves the others green, and the write paths are the ones a process engine and a handler call. Each is sent a body
-	 * that is valid for it, so the namespace is the only thing to object to.
+	 * Every endpoint is sent an invalid namespace together with a body that is valid for it, so the namespace is the only
+	 * thing to object to.
 	 */
 	@ParameterizedTest
 	@MethodSource("anInvalidNamespaceArguments")

@@ -17,8 +17,8 @@ public class PwAlktConfiguration {
 	public static final String CLIENT_ID = "pw-alkt";
 
 	/**
-	 * Lets a 422 through as itself rather than as a bad gateway. It is the one answer that refuses an event for good, and
-	 * the relay has to be able to tell it apart from everything that is worth trying again.
+	 * Lets a 422 through as itself rather than as a bad gateway, so that the relay can tell the answer that refuses an
+	 * event for good apart from everything it tries again.
 	 */
 	@Bean
 	FeignBuilderCustomizer feignBuilderCustomizer(final ClientRegistrationRepository clientRepository, final PwAlktProperties pwAlktProperties) {

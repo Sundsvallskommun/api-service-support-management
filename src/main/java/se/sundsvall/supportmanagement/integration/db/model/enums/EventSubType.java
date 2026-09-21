@@ -19,10 +19,8 @@ public enum EventSubType {
 	}
 
 	/**
-	 * Whether the event is a request aimed at the process rather than something that happened to the errand.
-	 * <p>
-	 * The manual start and the manual step are both a person pressing a button, which is why they pass the process
-	 * triggers and the emergency brake: neither an errand change to be filtered nor a loop to be broken.
+	 * Whether the event is a request aimed at the process rather than something that happened to the errand: the manual
+	 * start or the manual step. Commands pass the process triggers and the emergency brake.
 	 *
 	 * @return true for the two command sub types
 	 */

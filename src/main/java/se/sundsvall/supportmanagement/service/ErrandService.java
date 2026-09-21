@@ -171,8 +171,7 @@ public class ErrandService {
 	}
 
 	/**
-	 * What the errands of a page carry beyond their own rows, read in one query for the whole page rather than one per
-	 * errand.
+	 * What the errands of a page carry beyond their own rows, read in one query for the whole page.
 	 */
 	private ErrandEnrichment enrichmentOf(final String namespace, final String municipalityId, final List<ErrandEntity> entities) {
 		return new ErrandEnrichment(errandProcessService.findLatestProcesses(namespace, municipalityId, entities.stream()
@@ -265,17 +264,12 @@ public class ErrandService {
 	/**
 	 * Removes an errand that has passed its retention period, along with everything belonging to it.
 	 * <p>
-	 * Called by the purge, which runs on a cutoff rather than on behalf of a caller, and therefore differs from
-	 * {@link #deleteErrand(String, String, String, String)} on two points. There is no user to authorize, so no access
-	 * check is made. And no event is written: an event per removed errand would cost a remote call for every one of them
-	 * and would leave behind a record of the very errand the purge exists to remove. What is removed is the same in both
-	 * cases, and is held in {@link #removeErrand(ErrandEntity, List)}.
+	 * Called by the purge. Unlike {@link #deleteErrand(String, String, String, String)} no access check is made and no
+	 * event is written. What is removed is the same in both cases, and is held in
+	 * {@link #removeErrand(ErrandEntity, List)}.
 	 * <p>
 	 * Runs in a transaction of its own, so that an errand that cannot be removed neither rolls back the errands already
-	 * removed nor stops the run. An errand that is already gone is not an error - it is the outcome the purge wanted -
-	 * but it was not this call that removed it, which is what the answer distinguishes. That matters for the counters of
-	 * a run: an errand deleted by a caller, or by a second purge on another instance, between the batch being read and
-	 * this call must not be counted as removed twice.
+	 * removed nor stops the run. An errand that is already gone is not an error, and is answered with false.
 	 *
 	 * @param  namespace      namespace of the errand.
 	 * @param  municipalityId id of the municipality of the errand.
@@ -299,14 +293,8 @@ public class ErrandService {
 	}
 
 	/**
-	 * Removes an errand: everything hanging off it, its revisions and the errand row itself.
-	 * <p>
-	 * Shared by the single errand delete and by the retention purge. The two differ on what surrounds a removal - who is
-	 * authorized, what is logged, which transaction it runs in and where the attachment ids come from - but not on what
-	 * is removed, and holding that in one place is what keeps them from drifting apart.
-	 * <p>
-	 * The revisions go with the errand in both cases, since each of them holds a full serialized snapshot of it and
-	 * leaving them behind would keep a complete copy of what the removal set out to remove.
+	 * Removes an errand: everything hanging off it, its revisions and the errand row itself. Used by both the single
+	 * errand delete and the retention purge.
 	 *
 	 * @param entity        the errand to remove.
 	 * @param attachmentIds ids of the attachments to remove along with it.
@@ -365,7 +353,8 @@ public class ErrandService {
 	}
 
 	/**
-	 * Logs the errand having been created. A log that cannot be written is not worth failing the request it describes.
+	 * Logs the errand having been created. A log that cannot be written is logged as a warning and does not fail the
+	 * request.
 	 */
 	private void logCreateEvent(final ErrandEntity entity, final RevisionResult revision) {
 		try {

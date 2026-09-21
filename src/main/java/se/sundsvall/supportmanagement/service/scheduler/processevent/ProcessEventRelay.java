@@ -43,28 +43,20 @@ import static se.sundsvall.supportmanagement.service.mapper.ProcessEventMapper.t
 /**
  * Takes rows out of the outbox, hands them to pw-alkt, and acknowledges them in the same transaction.
  * <p>
- * Started two ways that do the same thing. The scheduled run is the truth of the system and takes whatever is waiting;
- * the direct run takes the rows of one errand as soon as the transaction that wrote them is committed. The direct run
- * only brings a delivery forward: dropped, the scheduled run delivers the row within a minute, and when both reach for
- * the same row the one that comes second finds it delivered.
+ * Started two ways that do the same thing. The scheduled run takes whatever is waiting; the direct run takes the rows
+ * of one errand as soon as the transaction that wrote them is committed. A row the direct run does not deliver is
+ * delivered by the scheduled run, and when both reach for the same row the one that comes second finds it delivered.
  * <p>
- * Rows are delivered per errand, one transaction per group, which keeps the order within an errand and lets an errand
- * whose delivery fails hold back no one but itself.
+ * Rows are delivered per errand, oldest first, one transaction per group, so an errand whose delivery fails holds back
+ * no other errand. A group is delivered in full or not at all: a delivery that does not go through rolls its
+ * transaction back, the rows stay exactly as they were, and the next run tries again. There is no retry counter, no
+ * backoff and no dead letter.
  * <p>
- * The pattern is the one {@code V1_48__simplify_notification_dispatch} gave the notification dispatch: no retry
- * counter, no backoff and no dead letter to keep in step. A delivery that does not go through takes its transaction
- * down, the rows stay exactly as they were, and the next run tries again - an undelivered row is its own receipt that
- * the work remains.
+ * pw-alkt can be given the same event more than once, since a transaction rolled back after pw-alkt took one row gives
+ * it that row again.
  * <p>
- * Two things follow. pw-alkt has to take an event it has been given before, since a transaction rolled back after
- * pw-alkt took one row gives it that row again. And a group is delivered in full or not at all, which is what keeps
- * the order within an errand when something fails.
- * <p>
- * The transactions are opened through a {@link TransactionTemplate} rather than {@code @Transactional}, since they are
- * opened from inside the class, where no proxy would see the call. The template has to be given both settings itself:
- * a transaction of its own for every group, and read committed isolation, which keeps the locking read of a group from
- * also locking the gaps a publication writes its new rows into. Left out, neither fails anything - the isolation of
- * the database takes over, and errand writes wait for pw-alkt to answer.
+ * Every group gets a transaction of its own with read committed isolation, which keeps the locking read of a group
+ * from also locking the gaps new outbox rows are written into.
  */
 @Component
 public class ProcessEventRelay {
@@ -92,14 +84,14 @@ public class ProcessEventRelay {
 	private final Clock clock;
 
 	/**
-	 * How many rows one run takes at most. The fetch has a limit so that a backlog cannot make a single run unbounded.
+	 * How many rows one run takes at most.
 	 */
 	@Value("${scheduler.process-event.batch-size:200}")
 	private int batchSize = 200;
 
 	/**
-	 * How old a row must be before the scheduled run takes it. Without it the run could reach past a transaction that is
-	 * still being committed and deliver a later row of an errand before an earlier one.
+	 * How old a row must be before the scheduled run takes it. Gives transactions still being committed time to finish,
+	 * so that the rows of an errand are delivered in order.
 	 */
 	@Value("${scheduler.process-event.transaction-buffer:PT5S}")
 	private Duration transactionBuffer = Duration.ofSeconds(5);
@@ -139,13 +131,9 @@ public class ProcessEventRelay {
 	/**
 	 * The scheduled run.
 	 * <p>
-	 * Drops what has aged out first, so that nothing the relay has given up on is delivered after all. Then takes the
-	 * oldest rows, at most a batch of them, and delivers them errand by errand. An errand that fails is left for the next
-	 * run and the others go on.
-	 * <p>
-	 * An open circuit breaker ends the run, since every errand after it would meet the same answer. That holds because the
-	 * breaker counts only calls that never got an answer. Were a refusal of a single event counted as well, the few events
-	 * pw-alkt never takes - which are read first again every run - would keep the breaker open for every other errand.
+	 * Drops what has aged out first. Then takes the oldest rows, at most a batch of them, and delivers them errand by
+	 * errand. An errand that fails is left for the next run and the others go on. An open circuit breaker of pw-alkt ends
+	 * the run.
 	 */
 	public void relay() {
 		dropAllAgedOut();
@@ -164,8 +152,8 @@ public class ProcessEventRelay {
 	/**
 	 * The direct run, for the rows of one errand.
 	 * <p>
-	 * Not held to the transaction buffer, since it starts only once its own transaction is committed. It is held to the
-	 * age limit: a row that has aged out is the scheduled run's to drop.
+	 * Called once the transaction that wrote the rows is committed, and takes them without waiting for the transaction
+	 * buffer. Only rows within the age limit are taken; a row that has aged out is left for the scheduled run to drop.
 	 *
 	 * @param  errandId                   the errand whose rows were just written.
 	 * @throws PwAlktUnavailableException when the rows did not reach pw-alkt, which leaves them for the scheduled run.
@@ -181,11 +169,8 @@ public class ProcessEventRelay {
 	/**
 	 * What is wrong with the relay, if anything.
 	 * <p>
-	 * Measured on the age of the oldest undelivered row, not on whether there is one. Every publication leaves a row
-	 * behind until the next run takes it, so a condition on existence would report the relay unhealthy during normal
-	 * operation - and an indicator that is always red is one nobody looks at.
-	 * <p>
-	 * A row addressed to anything but pw-alkt is reported at once, since no run will ever take it.
+	 * Measured on the age of the oldest undelivered row: the relay is unhealthy once that row is older than the
+	 * configured limit. An undelivered row addressed to anything but pw-alkt, which no run takes, is reported at once.
 	 *
 	 * @return the fault, or empty when the relay is healthy.
 	 */
@@ -205,7 +190,7 @@ public class ProcessEventRelay {
 	/**
 	 * Delivers a group for the scheduled run, which leaves a group that fails for the next run and goes on with the rest.
 	 *
-	 * @return false when the circuit breaker of pw-alkt is open, which every group after this one would meet as well.
+	 * @return false when the circuit breaker of pw-alkt is open, true otherwise.
 	 */
 	private boolean deliverOrLeaveForNextRun(final String errandId, final List<String> rowIds) {
 		try {
@@ -225,13 +210,11 @@ public class ProcessEventRelay {
 	/**
 	 * Delivers one group of rows, all for the same errand, oldest first, in a transaction of its own.
 	 * <p>
-	 * The rows are read again under a write lock, keeping only those still undelivered. That is what makes the direct
-	 * run and the scheduled run harmless to each other: whichever reaches a row second waits for the first and then
-	 * finds it delivered. Waiting is on purpose - skipping the locked rows instead would let a later row of the errand
-	 * past an earlier one still being delivered.
+	 * The rows are read again under a write lock, keeping only those still undelivered: whichever run reaches a row
+	 * second waits for the first and then finds it delivered.
 	 * <p>
-	 * A refusal for good is recorded once every call in the group has been made, so that the lock it takes on the errand
-	 * is held for the bookkeeping and not across calls to pw-alkt.
+	 * A row pw-alkt refuses for good is acknowledged as well. The refusals are recorded once every call in the group has
+	 * been made, so the lock that recording takes on the errand is not held across calls to pw-alkt.
 	 *
 	 * @param  rowIds                     the rows to deliver.
 	 * @throws PwAlktUnavailableException when a row does not go through, which rolls the transaction back and leaves every
@@ -263,14 +246,12 @@ public class ProcessEventRelay {
 	}
 
 	/**
-	 * Drops undelivered rows that have aged past the last resort, oldest first and at most a batch at a time, in a
-	 * transaction of its own.
+	 * Drops undelivered rows that have aged out, oldest first and at most a batch at a time, in a transaction of its own.
 	 * <p>
-	 * A dropped row means a process never got to know something, so each one is logged as an error naming what it takes
-	 * to find the errand and the event again. It should never happen.
+	 * Each dropped row is logged as an error naming the errand and the event.
 	 * <p>
 	 * The rows are found without a lock and then locked by id, the same way a delivery locks them, so that asking for aged
-	 * rows never waits for a delivery of rows that have not aged at all.
+	 * rows never waits for a delivery of rows that have not aged.
 	 *
 	 * @param  createdBefore the moment a row has to predate to be dropped.
 	 * @param  limit         the most rows to drop in one go.
@@ -296,27 +277,23 @@ public class ProcessEventRelay {
 	}
 
 	/**
-	 * Sorted here rather than by the locking query, which then has nothing to gain from walking the index of undelivered
-	 * rows instead of the primary key. Walked that way, a locking read would also lock the gap a publication writes its new
-	 * row into, and hold every errand write back until pw-alkt had answered.
+	 * Sorts the rows oldest first, by creation time and then by id.
 	 */
 	private static List<ProcessEventOutboxEntity> oldestFirst(final List<ProcessEventOutboxEntity> rows) {
+		// Not in the locking query: ordered by the index of undelivered rows it would also lock the gap new rows go into.
 		return rows.stream()
 			.sorted(comparing(ProcessEventOutboxEntity::getCreated).thenComparing(ProcessEventOutboxEntity::getId))
 			.toList();
 	}
 
 	/**
-	 * Puts a refusal for good in the history of the errand rather than in a flag on a row. The refusal itself is logged
-	 * where the answer of pw-alkt is read.
+	 * Records a refusal for good in the process history of the errand, at most once per errand and window.
 	 * <p>
-	 * The live instance of the errand is failed, if it has one. Usually it has none - a key that was never deployed never
-	 * started anything - and then only the entry is written, without an instance. A mistyped key refuses every event of
-	 * the errand, which is why the entry is written once per errand and window.
+	 * The live process instance of the errand, if it has one, is failed with the error code and message; without one,
+	 * only the history entry is written.
 	 * <p>
-	 * The errand is locked first, which is how the reports of a process are serialised against each other, since the
-	 * instance would otherwise be failed underneath a report being written. A deletion, or an errand that is gone,
-	 * leaves nothing to write on, and the log is all there is.
+	 * The errand is locked first, which serialises this against the other reports of the process. Nothing is written
+	 * for a deletion or for an errand that no longer exists.
 	 */
 	private void recordRejection(final ProcessEventOutboxEntity row) {
 		if (DELETE.getValue().equals(row.getEventType())

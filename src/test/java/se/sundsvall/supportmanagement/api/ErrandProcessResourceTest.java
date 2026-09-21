@@ -140,10 +140,6 @@ class ErrandProcessResourceTest {
 			.isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/processes/" + PROCESS_INSTANCE_ID);
 	}
 
-	/**
-	 * A start that failed produced no instance, so there is no subresource to point at - and building one anyway would
-	 * hand out a link ending in the word null.
-	 */
 	@Test
 	void registeringAStartThatFailedAnswersCreatedWithoutALocation() {
 		when(serviceMock.registerProcess(any(), any(), any(), any()))
@@ -193,10 +189,6 @@ class ErrandProcessResourceTest {
 		verify(serviceMock).readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
-	/**
-	 * Accepted rather than created or ok: the signal is recorded and on its way, and what it does is for the process to
-	 * decide.
-	 */
 	@Test
 	void signalProcessAnswersAcceptedWithoutABody() {
 		webTestClient.post()

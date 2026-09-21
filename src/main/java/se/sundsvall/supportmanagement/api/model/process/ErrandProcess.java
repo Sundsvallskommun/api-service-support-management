@@ -136,7 +136,7 @@ public class ErrandProcess {
 	}
 
 	/**
-	 * Takes the enum, which is what keeps this service from publishing a state it does not have.
+	 * Sets the process status to the name of the given enum constant, or to null when none is given.
 	 */
 	public ErrandProcess withProcessStatus(final ProcessStatus processStatus) {
 		this.processStatus = ofNullable(processStatus).map(Enum::name).orElse(null);

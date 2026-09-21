@@ -426,13 +426,9 @@ public class MetadataService {
 	/**
 	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
 	 * <p>
-	 * The re-stuvning (re-parenting of affected errand labels) that carries the move out is not wired up yet — the job
-	 * is created here and stays PENDING until a worker that performs it is added.
-	 * <p>
-	 * Kept transactional (not read-only, since {@link JobService#create} writes within it) so that the session
-	 * validation opens against stays open for as long as {@link #validateAndFindLabelToMove} needs it — the cycle
-	 * check walks LAZY {@code parent} proxies one hop at a time, and each hop past the first needs the session to
-	 * still be there to load from.
+	 * The move is validated, and rejected when the label already has a move in progress. The job is created with the
+	 * number of affected errands as its total and stays PENDING, as the re-stuvning (re-parenting of affected errand
+	 * labels) that carries the move out is not wired up to the job yet.
 	 */
 	@Transactional
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
@@ -458,9 +454,7 @@ public class MetadataService {
 	}
 
 	/**
-	 * The moved label plus the descendants that move with it — read once by {@link #validateAndFindLabelToMove} and
-	 * reused by both callers, so that neither {@link #moveLabel} nor {@link #startLabelMove} re-reads the descendant
-	 * tree that validation already fetched.
+	 * The moved label plus the descendants that move with it, as read by {@link #validateAndFindLabelToMove}.
 	 */
 	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {
 	}
@@ -500,9 +494,8 @@ public class MetadataService {
 	}
 
 	/**
-	 * {@code labelId} must be the moved label's id as stored, not the raw path variable — a client sending the same
-	 * UUID in a different case would otherwise never match {@code current.getId()} on the way up, since both sides
-	 * of the comparison have to come from the same, canonical source to line up.
+	 * Rejects a new parent that is the moved label itself or one of its descendants. {@code labelId} must be the moved
+	 * label's id as stored, not the raw path variable, as the ids are compared case-sensitively.
 	 */
 	private static void validateNoCycle(final String labelId, final MetadataLabelEntity newParent) {
 		if (newParent == null) {
@@ -530,9 +523,8 @@ public class MetadataService {
 	}
 
 	/**
-	 * The moved label's new path, and the new path every descendant it carries along would get, must each fit the
-	 * resource_path column — rejected here, before any row is touched, rather than surfacing as a database error
-	 * partway through the restructuring.
+	 * Rejects the move when the new path of the moved label, or the new path of any descendant it carries along, is longer
+	 * than the resource_path column allows. Checked before any row is touched.
 	 */
 	private static void validateResourcePathLength(final MetadataLabelEntity labelToMove, final String newPath, final List<MetadataLabelEntity> descendants) {
 		rejectIfTooLong(newPath);
@@ -572,8 +564,7 @@ public class MetadataService {
 	/**
 	 * Resolves the labels of the namespace matching each group of resource path patterns.
 	 * <p>
-	 * The labels are read once for every group rather than once per group, so that the groups are answered from a single
-	 * state of the label table and a caller resolving several of them pays one read.
+	 * The labels of the namespace are read once for all groups, and not at all when no group carries a pattern.
 	 *
 	 * @param  namespace            namespace
 	 * @param  municipalityId       municipality id
@@ -834,11 +825,7 @@ public class MetadataService {
 	// =================================================================
 
 	/**
-	 * A measure type belongs to at least one group - a type in no group cannot be found by the one thing measure types
-	 * are looked up by.
-	 * <p>
-	 * Held here rather than on the model, which the update shares: a constraint there would demand the groups of every
-	 * patch, where every other property of a measure type may be left out.
+	 * Rejects a measure type that names no group. A measure type belongs to at least one group.
 	 */
 	private static void verifyMeasureGroupsNamed(final List<String> measureGroups) {
 		if (isEmpty(measureGroups)) {
@@ -901,10 +888,6 @@ public class MetadataService {
 
 	/**
 	 * The properties a measure type may be sorted by, which is every scalar it carries.
-	 * <p>
-	 * The groups became a collection, and a collection cannot be sorted on. A request naming one sorted a measure type
-	 * before that and would otherwise reach the query derivation as a property that is not there, which answers 500
-	 * without saying what is wrong.
 	 */
 	private static final Set<String> SORTABLE_MEASURE_TYPE_PROPERTIES = Arrays.stream(MeasureTypeEntity.class.getDeclaredFields())
 		.filter(field -> !field.isSynthetic())

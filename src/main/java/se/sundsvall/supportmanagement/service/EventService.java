@@ -156,9 +156,8 @@ public class EventService {
 	}
 
 	/**
-	 * Tells the process of the errand about the event, last and in the transaction of the change itself.
-	 * <p>
-	 * The notification flag has no say here - an outbox row is no notice to a handler but a message to a process.
+	 * Tells the process of the errand about the event, last and in the transaction of the change itself, whatever the
+	 * notification flag says.
 	 */
 	private void publishToProcess(final ErrandEntity errandEntity, final EventType eventType, final EventSubType subtype, final ProcessCommand command, final boolean concludesDecision) {
 		processEventPublisher.publish(errandEntity, eventType, subtype, executingIdentity(), getRequestGroupId(), command, concludesDecision);
@@ -198,11 +197,7 @@ public class EventService {
 
 	/**
 	 * Who the write was made by, which is what the notification says it came from and what the outbox row is stamped
-	 * with.
-	 * <p>
-	 * Whatever the identifier of the request calls itself, whether that is an ad account or not - a process engine
-	 * reporting on an errand is no ad account, and asking only for one would leave the handler with a notification from
-	 * nobody and the outbox row with no trace of who wrote it.
+	 * with: the value of the identifier of the request whatever its type, or null when there is none.
 	 */
 	private static String executingIdentity() {
 		return ofNullable(getExecutingUser())

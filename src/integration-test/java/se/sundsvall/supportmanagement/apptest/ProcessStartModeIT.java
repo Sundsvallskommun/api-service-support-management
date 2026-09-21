@@ -123,8 +123,7 @@ class ProcessStartModeIT extends AbstractAppTest {
 
 	/**
 	 * The errand runs the application process and wears a MANUAL application label and an AUTOMATIC supervision label.
-	 * The row carries the key of the instance, and a start mode read off the supervision label would give it the
-	 * permission.
+	 * The row carries the key of the instance, and no permission to start, as the MANUAL application label says.
 	 */
 	@Test
 	@DisplayName("Verification that the start mode is read only off the label naming the key the event carries")

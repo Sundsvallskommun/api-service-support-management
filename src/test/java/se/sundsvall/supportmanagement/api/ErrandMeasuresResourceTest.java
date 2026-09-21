@@ -220,7 +220,7 @@ class ErrandMeasuresResourceTest {
 	}
 
 	/**
-	 * A link carries nothing of its own, so there is no body to send.
+	 * Linking an attachment to a measure sends no body.
 	 */
 	@Test
 	void linkMeasureAttachment() {
