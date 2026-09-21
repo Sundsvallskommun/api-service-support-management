@@ -14,8 +14,8 @@ import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.AccessControlService.ErrandAccessResolution;
-import se.sundsvall.supportmanagement.service.AccessControlService.FieldGrant;
+import se.sundsvall.supportmanagement.service.access.ErrandAccessResolution;
+import se.sundsvall.supportmanagement.service.access.FieldGrant;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;

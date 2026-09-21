@@ -17,7 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.AccessControlService.KeyAccess;
+import se.sundsvall.supportmanagement.service.access.KeyAccess;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;

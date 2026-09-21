@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.model;
+package se.sundsvall.supportmanagement.service.access;
 
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.Collection;

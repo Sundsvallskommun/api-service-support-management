@@ -9,8 +9,8 @@ import se.sundsvall.supportmanagement.api.model.access.ErrandFieldKeyAccess;
 import se.sundsvall.supportmanagement.api.model.access.ErrandResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.service.AccessControlService.ErrandAccessResolution;
-import se.sundsvall.supportmanagement.service.AccessControlService.FieldGrant;
+import se.sundsvall.supportmanagement.service.access.ErrandAccessResolution;
+import se.sundsvall.supportmanagement.service.access.FieldGrant;
 
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;

@@ -20,7 +20,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.model.AccessSnapshot;
+import se.sundsvall.supportmanagement.service.access.AccessSnapshot;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
