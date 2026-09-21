@@ -221,6 +221,15 @@ class ProcessKeySelectorTest {
 	}
 
 	@Test
+	@DisplayName("Verification that two labels naming different processes with different start modes give no start mode at all, in either order")
+	void labelsNamingDifferentProcessesGiveNoStartMode() {
+		assertThat(selector.select(errandWith(label(APPLICATION, "MANUAL"), label(SUPERVISION, "AUTOMATIC"))))
+			.isEqualTo(new ProcessKeySelection(null, null, List.of(APPLICATION, SUPERVISION)));
+		assertThat(selector.select(errandWith(label(SUPERVISION, "AUTOMATIC"), label(APPLICATION, "MANUAL"))))
+			.isEqualTo(new ProcessKeySelection(null, null, List.of(APPLICATION, SUPERVISION)));
+	}
+
+	@Test
 	@DisplayName("Verification that a MANUAL on one of two labels naming the same process wins over the other label's silence")
 	void aManualAmongLabelsSharingAKeyWins() {
 		final var selection = selector.select(errandWith(label(APPLICATION, null), label(APPLICATION, "MANUAL")));

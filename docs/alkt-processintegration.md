@@ -82,6 +82,11 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 63 | **En signal i ett namespace utan `PROCESS_CONSUMER` ⇒ `400`**, som för processrapporten                                                                                                                                                                                                                                                   | Att låta publiceringen avgöra                                                                                                                                       | Publiceringen skriver ingen rad där, och knappen hade sett ut att fungera utan att något hände — §5.9                                                                                                                                                                                                                                                                                                        |
 | 64 | **En signal förbrukar ingenting: skyddet mot dubbelklick är processens nästa rapport** (2026-09-21)                                                                                                                                                                                                                                       | Att tömma instansens väntade signaler när en godtas; att förbruka bara den tryckta                                                                                  | Användarens beslut. SM vet inte vad en signal besvarar, och en gissning döljer knappar som gäller eller skyddar bara halvt. Ett andra klick före rapporten tas emot av pw som en signal ingen grind väntar på — §5.9                                                                                                                                                                                         |
 | 65 | **Rapporten har en egen modell, `ErrandProcessReport`, och `ErrandProcess` är bara läsmodellen** (2026-09-21)                                                                                                                                                                                                                             | En modell för båda, med rapportens egna fält märkta `WRITE_ONLY`                                                                                                    | Användarens beslut. Fält som syns i lässchemat men aldrig fylls förvirrar, och en genererad klient bär dem i sin typ — §5.3                                                                                                                                                                                                                                                                                  |
+| 66 | **Kuvertet från `GET .../processes` heter `ErrandProcessOverview`** (2026-09-21)                                                                                                                                                                                                                                                          | `ErrandProcesses`                                                                                                                                                   | Användarens beslut: pluralformen förväxlades med `ErrandProcess`. JSON på tråden är oförändrad, bara schemanamnet byts — pw-alkts genererade klient följer med nästa gång dess kopia av specen uppdateras — §5.10                                                                                                                                                                                            |
+| 67 | **När ärendet har en processrad, också en misslyckad start, erbjuds och godtas bara den processens nyckel**                                                                                                                                                                                                                               | Att erbjuda alla nycklar som etiketterna pekar ut                                                                                                                   | Registreringen avvisar en instans av en annan process med `409` (alla instanser av ett ärende kör samma process). Pekar etiketterna efter en metadataändring på en annan nyckel hade knappen tänts för en start som pw sedan måste avbryta. Etiketterna utan den nyckeln ger `NO_PROCESS_KEY` och `400` — §5.10                                                                                              |
+| 68 | **Etikettskrivningen avvisar också nycklar som stavas som `processKey` eller `processStartMode` på annat sätt** (versaler, blanksteg runt)                                                                                                                                                                                                | Bara de två kontrollerna i §7.7                                                                                                                                     | Utan den tredje regeln går `processstartmode: MANUAL` igenom båda kontrollerna och läses som inget läge alls, alltså `AUTOMATIC` — exakt den tysta feltolkning kontrollerna finns för — §7.7                                                                                                                                                                                                                 |
+| 69 | **En start "på väg" är varje olevererad rad för ärendet med `start_allowed = 1`**, oavsett subtyp                                                                                                                                                                                                                                         | Bara rader med subtypen `PROCESS`                                                                                                                                   | En automatisk start som ännu inte levererats är lika mycket en start på väg; en knapptryckning ovanpå den hade gett pw två startlov för samma ärende — §5.10                                                                                                                                                                                                                                                 |
+| 70 | **`startable.status` hålls till `ProcessStartability` av `withStatus(enum)`, inte av `@ValidEnumValue`**                                                                                                                                                                                                                                  | Annotationen, som beslut 42 anger                                                                                                                                   | Fältet är `READ_ONLY` och valideras aldrig; annotationen hade inte haft någon verkan. Samma mönster som `ErrandProcess.processStatus` i läsmodellen                                                                                                                                                                                                                                                          |
 
 ---
 
@@ -832,7 +837,7 @@ processinstans, och därmed varken något arbetssteg eller någon som kan rappor
 ### 5.2 Vad som går att läsa ut
 
 ```
-GET .../errands/{errandId}/processes            -> 200 ErrandProcesses
+GET .../errands/{errandId}/processes            -> 200 ErrandProcessOverview
                                                    { startable, processes }; nyast först i listan,
                                                    normalt exakt ett element (§5.10)
 GET .../errands/{errandId}/process-activities   -> 200 Page<ProcessActivity>
@@ -1372,7 +1377,7 @@ Beskrivningarna i specen är därför skrivna för den som läser dem i Swagger,
 /** Svaret fran GET .../processes. Kuvert, inte naken lista - se ovan. */
 @Schema(description = """
     The processes attached to an errand, and whether a new one may be started right now.""")
-public class ErrandProcesses {
+public class ErrandProcessOverview {
 
     @Schema(description = """
         Whether a process may be started for this errand right now. Read this before offering a start
@@ -1396,9 +1401,12 @@ public class ProcessStartable {
         LIVE_INSTANCE - a process is already running for this errand.
         PROCESS_COMPLETED - a process has already run to its end. An errand has one process life; a new
         process means a new errand.
-        NO_PROCESS_KEY - no label on the errand carries a processKey attribute, so there is nothing to
-        start. Setting the right label is the fix.
+        NO_PROCESS_KEY - no label on the errand carries a processKey attribute the errand can be started
+        with, so there is nothing to start. Setting the right label is the fix.
         NO_PROCESS_ENGINE - this namespace does not run processes at all.
+        The answer is the same whether or not the labels start the process on their own: an errand whose
+        process starts by itself is AVAILABLE too, and starting it by hand is how a start that failed is
+        tried again.
         Treat any value you do not recognise as not startable - values may be added over time.""",
         examples = "AVAILABLE")
     private String status;          // skrivs med ProcessStartability (beslut 42)
@@ -1408,7 +1416,9 @@ public class ProcessStartable {
         the errand. One element is the normal case: send it - or send nothing - to POST
         .../processes/start. Two or more elements mean the errand carries labels pointing at different
         processes and a person has to choose: ask the user and send the chosen key, otherwise the request
-        is rejected with 400. Empty whenever status is not AVAILABLE.""")
+        is rejected with 400. An errand runs one process for the whole of its life, so once it has had one
+        - a start that failed included - only the key of that process is offered. Empty whenever status is
+        not AVAILABLE.""")
     private List<String> processKeys;
 }
 
@@ -1420,9 +1430,10 @@ public class ProcessStartRequest {
 
     @Schema(description = """
         Which process to start. May be omitted when startable.processKeys holds exactly one key, and is
-        required when it holds several. The value must be one of those keys: a request cannot name a
-        process that the labels of the errand do not point at.""",
+        required when it holds several. The value must be one of those keys, exactly as given there: a
+        request cannot name a process that the labels of the errand do not point at.""",
         examples = "supervision")
+    @Size(max = 128)
     private String processKey;
 }
 ```
@@ -1446,13 +1457,13 @@ X-Sent-By: abc12def; type=adAccount
 { "processKey": "supervision" }
 ```
 
-|  Kod  |                                                                                      När                                                                                      |
-|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `202` | Avsikten är registrerad och publicerad                                                                                                                                        |
-| `400` | Ärendet har ingen `processKey` på sina etiketter; flera är möjliga men kroppen pekar inte ut någon; nyckeln i kroppen finns inte bland ärendets; namespacet har ingen process |
-| `403` | Anroparen är ingen AD-identitet                                                                                                                                               |
-| `404` | Ärendet finns inte, eller ligger i ett annat namespace                                                                                                                        |
-| `409` | Ärendet har en levande processinstans; ett avslutat processliv (§7.4); eller en oskickad start med en **annan** nyckel redan på väg                                           |
+|  Kod  |                                                                                                                När                                                                                                                |
+|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `202` | Avsikten är registrerad och publicerad                                                                                                                                                                                            |
+| `400` | Ärendet har ingen `processKey` som går att starta på sina etiketter; flera är möjliga men kroppen pekar inte ut någon; nyckeln i kroppen finns inte bland ärendets; nyckeln är längre än 128 tecken; namespacet har ingen process |
+| `403` | Anroparen är ingen AD-identitet                                                                                                                                                                                                   |
+| `404` | Ärendet finns inte, eller ligger i ett annat namespace                                                                                                                                                                            |
+| `409` | Ärendet har en levande processinstans; ett avslutat processliv (§7.4); eller en oskickad start med en **annan** nyckel redan på väg                                                                                               |
 
 Felen är samma regler som `startable` redovisar, och det är med flit: gränssnittet tänder knappen efter
 `status` utan att duplicera kontrollerna, och servern avvisar ändå det som hunnit ändras däremellan. Med ett
@@ -1464,6 +1475,14 @@ utan att skicka någon nyckel blir svaret `400`. Det är det enda fall där `sta
 får göra det (§7.7). Därför fungerar knappen även i automatiskt läge — och det är den vägen man startar om
 efter en misslyckad start, eftersom en `FAILED` instans varken är levande eller avslutad (§7.4 regel 4).
 
+**Har ärendet en processrad erbjuds bara den processens nyckel** (beslut 67). Registreringen avvisar en
+instans av en annan process med `409`, eftersom alla instanser av ett ärende kör samma process, och
+etiketterna hålls fast vid den nyckeln (§7.4 regel 5). Men en ändring i etikettens metadata går förbi
+spärren, och då hade knappen tänts för en start som pw fått avbryta. Etiketter som inte längre namnger
+ärendets process ger därför `NO_PROCESS_KEY`, och kommandot svarar `400` med processens nyckel i texten —
+rätt etikett tillbaka är åtgärden. Samma filter gör att ett tvetydigt ärende med en misslyckad start bara
+erbjuder den nyckel som redan är vald.
+
 #### Vad skrivningen gör
 
 1. **En aktivitetspost** med `activityType = START`, `activityId` = den valda nyckeln, `severity = INFO`
@@ -1474,10 +1493,14 @@ efter en misslyckad start, eftersom en `FAILED` instans varken är levande eller
    filtreras varken av `PROCESS_TRIGGER` eller av nödbromsen (§6.5), och radens `process_key` är den
    **valda** nyckeln — den löses inte upp ur etiketterna på nytt vid publiceringen, eftersom valet redan är
    gjort.
-3. **Ingen andra rad, om det redan ligger en oskickad startrad med samma nyckel.** Svaret blir `202` ändå.
-   Det är dubbelklicksskyddet, och det är billigt — `idx_peo_guard` täcker frågan. Ligger den väntande
-   raden på en **annan** nyckel är det inget dubbelklick utan ett ändrat val, och svaret är `409` som säger
-   att en start med en annan process redan är på väg. Att tysta den tryckningen hade startat fel process.
+3. **Ingen andra rad, om det redan ligger en oskickad startrad med samma nyckel.** Svaret blir `202` ändå,
+   och varken aktivitetspost eller händelse skrivs. En startrad är varje olevererad rad för ärendet med
+   `start_allowed = 1`, också en automatisk start som ännu inte levererats (beslut 69). Det är
+   dubbelklicksskyddet, och det är billigt — `idx_peo_guard` täcker frågan. Ligger den väntande raden på en
+   **annan** nyckel är det inget dubbelklick utan ett ändrat val, och svaret är `409` som säger att en start
+   med en annan process redan är på väg. Att tysta den tryckningen hade startat fel process. Ärendet låses
+   före alla andra läsningar, så två samtidiga tryckningar bedöms efter varandra och den andra ser raden
+   den första skrev.
 
 Skyddet är värt sin kod trots att `409` från pw:s `POST .../processes` finns bakom: enligt §5.1 kan Operaton
 lämna ut det första arbetssteget innan starten ens hunnit registreras, så en instans som avbryts kan redan
@@ -2206,9 +2229,13 @@ insert into metadata_label_attribute (metadata_label_id, `key`, `value`) values
 | `MANUAL`    | Bara kommandot i §5.10 sätter lovet                                          |
 | Saknas      | Som `AUTOMATIC`. Den som inte rör attributet märker ingen skillnad mot i dag |
 
-**Två kontroller vid skrivning av etiketten, båda `400`:** värdet måste vara exakt `AUTOMATIC` eller
-`MANUAL`, och `processStartMode` utan `processKey` på samma etikett avvisas eftersom attributet är
-meningslöst ensamt.
+**Tre kontroller vid skrivning av etiketten, alla `400`:** värdet måste vara exakt `AUTOMATIC` eller
+`MANUAL`, `processStartMode` utan `processKey` på samma etikett avvisas eftersom attributet är
+meningslöst ensamt, och en nyckel som stavas som `processKey` eller `processStartMode` på annat sätt —
+andra versaler, blanksteg runt — avvisas (beslut 68). Utan den tredje går `processstartmode: MANUAL`
+igenom de två första och läses som inget läge alls. Kontrollerna gäller `POST` och `PUT` av
+`/metadata/labels`, de enda vägarna som skriver etikettattribut, och varje fel namnger etiketten med dess
+sökväg av resursnamn.
 
 Skälet till att kontrollerna ligger vid skrivningen och inte vid läsningen är att attributnycklar **inte**
 är whitelistade (§1.6). En etikett med `processstartmode` — litet s — skulle annars tyst betyda
@@ -2226,8 +2253,8 @@ aldrig läget för sig.
 Tre följder av det syns i koden. Har ärendet en instans vars nyckel etiketterna inte längre pekar ut ges inget
 startlov alls, eftersom nyckeln då kommer från instansen och läget annars skulle komma från en etikett som inte har med
 den att göra. Bär två etiketter samma nyckel men olika lägen vinner `MANUAL`, eftersom det är en uttalad önskan om att
-ingenting ska starta av sig självt. Och tills valideringen vid etikettskrivning finns (T12) läses ett oläsbart värde
-som `MANUAL`, med en WARN-rad i loggen.
+ingenting ska starta av sig självt. Och ett oläsbart värde, som efter T12 bara kan komma in förbi API:t — direkt i
+databasen, som i exemplet ovan, eller från före valideringen — läses som `MANUAL`, med en WARN-rad i loggen.
 
 #### Varför på etiketten och ingen annanstans
 
@@ -2707,7 +2734,7 @@ pw-alkt) följer tjänst i stället för ordning.
 
 ### T3 — Process-API (SM)
 
-**Bygg:** `ErrandProcessResource` (`PUT`, `POST`, `GET` under `.../errands/{errandId}/processes`) och ärendescopad `GET .../process-activities` med valfritt `processInstanceId`-filter (§5.2); `ErrandProcessService`; API-modellerna (§5.3); `Errand.process` + batchberikning i `readErrand`/`findErrands`; regenerera `openapi.yaml`. Fältet `awaitingSignals` på samma modell hör till T11 — bygg det inte här. `GET .../processes` ska däremot svara med kuvertet `ErrandProcesses` (§5.10) redan här; fältet `startable` fylls i T12.
+**Bygg:** `ErrandProcessResource` (`PUT`, `POST`, `GET` under `.../errands/{errandId}/processes`) och ärendescopad `GET .../process-activities` med valfritt `processInstanceId`-filter (§5.2); `ErrandProcessService`; API-modellerna (§5.3); `Errand.process` + batchberikning i `readErrand`/`findErrands`; regenerera `openapi.yaml`. Fältet `awaitingSignals` på samma modell hör till T11 — bygg det inte här. `GET .../processes` ska däremot svara med kuvertet `ErrandProcessOverview` (§5.10) redan här; fältet `startable` fylls i T12.
 
 **Acceptans:**
 - `PUT` två gånger ⇒ `revision`-tabellen oförändrad (skyddar mot framtida `@OneToMany` på `ErrandEntity`).
@@ -2880,6 +2907,8 @@ Testerna: `ProcessSignalIT` kör varvet över tråden — rapport, ärendet, sig
 **Bygg:** `startAllowed` i händelsemodellen (§5.4) — kolumnen skapas i T1:s `V1_60` och fylls redan i T5; attributet `processStartMode` med validering vid etikettskrivning (§7.7); `startable` i kuvertet runt `GET .../processes` (§5.10); `POST .../processes/start` med `ProcessStartRequest`; aktivitetspost med `activityType = START`; regenerera `openapi.yaml`.
 
 `ProcessKeySelector` med paret nyckel och läge, uträkningen av startlovet i publiceringens steg 6 och kommandonas undantag från triggerfiltret och nödbromsen byggdes i T5. Kvar här är reglerna runt attributet och vägen in för handläggaren.
+
+Byggd på `sm-a11` (2026-09-21). Kontrollerna vid etikettskrivning ligger i `@ValidProcessLabelAttributes` på `POST` och `PUT` av `/metadata/labels`, med en tredje regel om felstavade nycklar (beslut 68). Reglerna för startbarheten finns på ett ställe, `ProcessCommandService.startOptionsOf`, som både `startable` och kommandot läser, och en start med en annan process än den ärendet redan kört erbjuds aldrig (beslut 67). Dubbelklicksskyddet räknar varje olevererad rad med `start_allowed = 1` (beslut 69). Kuvertet heter `ErrandProcessOverview` (beslut 66), och `startable.status` hålls till `ProcessStartability` av byggaren i stället för av `@ValidEnumValue` (beslut 70). Testerna: `ProcessStartIT` kör kommandot och `startable` över tråden mot ett namespace utan triggers, med nödbromsen utlöst och hela vägen till pw-alkt. `ProcessStartModeIT` kör startlovet på ärendehändelser och etikettskrivningens kontroller. `ErrandProcessPersistenceTest` räknar frågorna i listsvaret.
 
 **Acceptans:**
 - Etikett med `processStartMode: MANUAL` ⇒ `POST /errands` skapar ärendet, publicerar en rad med `start_allowed = 0`, och ingen process startar. Samma etikett med `AUTOMATIC` ⇒ `start_allowed = 1` och processen startar.

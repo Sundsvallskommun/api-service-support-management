@@ -21,8 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessOverview;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
-import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
@@ -53,11 +53,13 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS_ACTIVITY;
+import static se.sundsvall.supportmanagement.service.ProcessCommandService.startOptionsOf;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcess;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessActivityEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcesses;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessActivity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessStartable;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessStatus;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.updateErrandProcessEntity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
@@ -101,6 +103,7 @@ public class ErrandProcessService {
 	private final ErrandProcessSignalRepository signalRepository;
 	private final AccessControlService accessControlService;
 	private final NamespaceConfigService namespaceConfigService;
+	private final ProcessKeySelector processKeySelector;
 	private final TransactionTemplate transactionTemplate;
 	private final Clock clock;
 
@@ -110,6 +113,7 @@ public class ErrandProcessService {
 		final ErrandProcessSignalRepository signalRepository,
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
+		final ProcessKeySelector processKeySelector,
 		final PlatformTransactionManager transactionManager,
 		final Clock clock) {
 
@@ -118,6 +122,7 @@ public class ErrandProcessService {
 		this.signalRepository = signalRepository;
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
+		this.processKeySelector = processKeySelector;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
 		this.clock = clock;
 	}
@@ -237,21 +242,24 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * Every process an errand has had, newest first, in the envelope that leaves room for saying whether a new one may be
-	 * started.
+	 * Every process an errand has had, newest first, together with whether a new one may be started right now.
+	 * <p>
+	 * Whether one may be started is answered by {@link ProcessCommandService#startOptionsOf}, from the process rows read
+	 * for the list. The labels of the errand are read only when no process row stands in the way.
 	 *
 	 * @param  namespace      the namespace of the errand.
 	 * @param  municipalityId the municipality of the errand.
 	 * @param  errandId       the errand to read.
-	 * @return                the processes of the errand.
+	 * @return                the processes of the errand, and whether one may be started.
 	 */
 	@Transactional(readOnly = true)
-	public ErrandProcesses readProcesses(final String namespace, final String municipalityId, final String errandId) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, PROCESS, R);
-
+	public ErrandProcessOverview readProcesses(final String namespace, final String municipalityId, final String errandId) {
+		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, false, PROCESS, R);
 		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
+		final var runsProcesses = namespaceConfigService.getProcessConsumer(namespace, municipalityId).isPresent();
 
-		return ErrandProcesses.create()
+		return ErrandProcessOverview.create()
+			.withStartable(toProcessStartable(startOptionsOf(runsProcesses, instances, () -> processKeySelector.select(errand))))
 			.withProcesses(toErrandProcesses(instances, signalsOf(instances)));
 	}
 

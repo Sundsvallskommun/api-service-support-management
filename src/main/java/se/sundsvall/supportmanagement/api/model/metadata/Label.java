@@ -44,7 +44,14 @@ public class Label {
 	private List<Label> labels;
 
 	@Schema(
-		description = "Free-form key/value data owned by the client. Stored and returned as-is by the service, which does not interpret the contents (apart from rejecting duplicate keys per label). Keys are conventions agreed between clients (e.g. 'escalationEmail').")
+		description = """
+			Free-form key/value data owned by the client, stored and returned as-is. Duplicate keys per label are rejected, \
+			and two keys are read by the service itself. processKey names the process an errand wearing the label runs. \
+			processStartMode says whether that process starts by itself when the errand changes (AUTOMATIC, which is also \
+			what leaving it out means) or only when a handler starts it (MANUAL); it has to be exactly one of those two, \
+			and is allowed only on a label that also has processKey. Both keys are matched exactly as spelled, and a key \
+			spelled like either of them in any other way is rejected. Other keys are conventions agreed between clients \
+			(e.g. 'escalationEmail').""")
 	@Valid
 	@JsonInclude(JsonInclude.Include.NON_EMPTY)
 	private List<LabelAttribute> attributes;

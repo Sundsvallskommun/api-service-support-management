@@ -102,6 +102,21 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> labelsArguments(String method) {
 		return Stream.of(
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "TILLSYN",
+				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
+				LabelAttribute.create().withKey("processStartMode").withValue("manual"))),
+				tuples(
+					tuple(method + ".labels", "label 'TILLSYN' has the processStartMode 'manual', which must be exactly one of [AUTOMATIC, MANUAL]"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "ALKT").withLabels(List.of(
+				createLabelWithAttributes("class", "TILLSYN",
+					LabelAttribute.create().withKey("processStartMode").withValue("MANUAL"))))),
+				tuples(
+					tuple(method + ".labels", "label 'ALKT/TILLSYN' has a processStartMode but no processKey, and a start mode means nothing without the process it starts"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "TILLSYN",
+				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
+				LabelAttribute.create().withKey("processstartmode").withValue("MANUAL"))),
+				tuples(
+					tuple(method + ".labels", "label 'TILLSYN' has the attribute 'processstartmode', which is read only when spelled exactly 'processStartMode'"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
 				LabelAttribute.create().withKey("dup").withValue("a"),
 				LabelAttribute.create().withKey("dup").withValue("b"))),

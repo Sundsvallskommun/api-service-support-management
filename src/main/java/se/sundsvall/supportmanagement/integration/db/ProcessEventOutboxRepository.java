@@ -93,6 +93,15 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	long countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(String errandId, OffsetDateTime createdAfter);
 
 	/**
+	 * The starts of one errand still on their way to the process engine: its undelivered rows carrying the permission to
+	 * start a process, whether a start command or an ordinary errand event gave it. Covered by {@code idx_peo_guard}.
+	 *
+	 * @param  errandId the errand whose starts to read.
+	 * @return          the undelivered rows of the errand that carry the permission to start a process.
+	 */
+	List<ProcessEventOutboxEntity> findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(String errandId);
+
+	/**
 	 * The oldest undelivered row.
 	 * <p>
 	 * Health is measured in its age, not in how many rows are waiting: every publication leaves a row behind until the

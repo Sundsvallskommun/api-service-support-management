@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
@@ -52,6 +53,31 @@ class MetadataLabelResourceTest {
 		final var labels = List.of(
 			Label.create().withClassification("classification").withResourceName("RESOURCE_1"),
 			Label.create().withClassification("classification").withResourceName("RESOURCE_2"));
+
+		// Act
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(labels)
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		// Assert and verify
+		verify(metadataServiceMock).createLabels(NAMESPACE, MUNICIPALITY_ID, labels);
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void createWithProcessAttributes() {
+
+		// Arrange
+		final var labels = List.of(
+			Label.create().withClassification("classification").withResourceName("ANSOKAN").withAttributes(List.of(
+				LabelAttribute.create().withKey("processKey").withValue("alkt-ansokan"))),
+			Label.create().withClassification("classification").withResourceName("TILLSYN").withAttributes(List.of(
+				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
+				LabelAttribute.create().withKey("processStartMode").withValue("MANUAL"))));
 
 		// Act
 		webTestClient.post()

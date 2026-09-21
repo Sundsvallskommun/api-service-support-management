@@ -7,30 +7,27 @@ import java.util.Objects;
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 /**
- * The processes attached to an errand.
- * <p>
- * An envelope rather than a bare list, because the interesting case is the errand that has no process at all. An empty
- * list says that none is running, but not whether that is because the errand is waiting for someone to press a button,
- * because its process already reached its end and may never be started again, or because it carries no process label.
- * Only a field beside the list can carry that, and giving the list an envelope from the start is what lets the answer
- * be added without the response changing type.
+ * The processes an errand has had, together with whether a new one may be started for it right now and why not when it
+ * cannot be. The response of {@code GET .../errands/{errandId}/processes}.
  */
 @Schema(description = "The processes attached to an errand, and whether a new one may be started right now")
-public class ErrandProcesses {
+public class ErrandProcessOverview {
 
 	@Schema(description = """
-		Whether a process may be started for this errand right now, and why not when it cannot be. Not answered yet: \
-		the field is absent until starting a process is offered by this API. Read it before offering a start action to \
-		the user, and treat its absence as unknown rather than as available.""", accessMode = READ_ONLY)
+		Whether a process may be started for this errand right now, and why not when it cannot be. Read this before \
+		offering a start action to the user. The same rules are enforced by POST .../processes/start, which answers 400 \
+		or 409 when they are not met - so a client that ignores this field can never start something it should not. It \
+		can only show a button that fails.""", accessMode = READ_ONLY)
 	private ProcessStartable startable;
 
 	@Schema(description = """
 		Every process this errand has had, most recent first. Normally exactly one element. An empty list is not an \
-		error and does not mean the errand is broken.""", accessMode = READ_ONLY)
+		error and does not mean the errand is broken: see startable for whether a process can be started, and why not \
+		if it cannot.""", accessMode = READ_ONLY)
 	private List<ErrandProcess> processes;
 
-	public static ErrandProcesses create() {
-		return new ErrandProcesses();
+	public static ErrandProcessOverview create() {
+		return new ErrandProcessOverview();
 	}
 
 	public ProcessStartable getStartable() {
@@ -41,7 +38,7 @@ public class ErrandProcesses {
 		this.startable = startable;
 	}
 
-	public ErrandProcesses withStartable(final ProcessStartable startable) {
+	public ErrandProcessOverview withStartable(final ProcessStartable startable) {
 		this.startable = startable;
 		return this;
 	}
@@ -54,7 +51,7 @@ public class ErrandProcesses {
 		this.processes = processes;
 	}
 
-	public ErrandProcesses withProcesses(final List<ErrandProcess> processes) {
+	public ErrandProcessOverview withProcesses(final List<ErrandProcess> processes) {
 		this.processes = processes;
 		return this;
 	}
@@ -72,13 +69,13 @@ public class ErrandProcesses {
 		if (obj == null || getClass() != obj.getClass()) {
 			return false;
 		}
-		final ErrandProcesses other = (ErrandProcesses) obj;
+		final ErrandProcessOverview other = (ErrandProcessOverview) obj;
 		return Objects.equals(startable, other.startable) && Objects.equals(processes, other.processes);
 	}
 
 	@Override
 	public String toString() {
-		return "ErrandProcesses{" +
+		return "ErrandProcessOverview{" +
 			"startable=" + startable +
 			", processes=" + processes +
 			'}';

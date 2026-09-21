@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
@@ -35,8 +36,10 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
+import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -54,6 +57,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_ENGINE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.WARN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
@@ -90,6 +96,9 @@ class ErrandProcessServiceTest {
 	private NamespaceConfigService namespaceConfigServiceMock;
 
 	@Mock
+	private ProcessKeySelector processKeySelectorMock;
+
+	@Mock
 	private PlatformTransactionManager transactionManagerMock;
 
 	@Captor
@@ -112,7 +121,8 @@ class ErrandProcessServiceTest {
 	 */
 	@BeforeEach
 	void setUp() {
-		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, signalRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock, transactionManagerMock, CLOCK);
+		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, signalRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock, processKeySelectorMock, transactionManagerMock,
+			CLOCK);
 
 		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue(PROCESS_SERVICE));
 		lenient().when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(PROCESS_SERVICE));
@@ -836,8 +846,13 @@ class ErrandProcessServiceTest {
 	// Reading
 	// ---------------------------------------------------------------------------------------------------------------
 
+	/**
+	 * Verifies that an errand running its process is answered with LIVE_INSTANCE without its labels being read.
+	 */
 	@Test
-	void readingTheProcessesAnswersWithTheEnvelope() {
+	void readingTheProcessesAnswersWithTheOverview() {
+		final var errand = ErrandEntity.create().withId(ERRAND_ID);
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, PROCESS, R)).thenReturn(errand);
 		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID))
 			.thenReturn(List.of(entity("newest", WAITING).withId("row-newest"), entity("oldest", COMPLETED).withId("row-oldest")));
 		when(signalRepositoryMock.findByErrandProcessIdInOrderBySortOrderAsc(List.of("row-newest", "row-oldest")))
@@ -850,16 +865,34 @@ class ErrandProcessServiceTest {
 			.containsExactly(
 				tuple("newest", List.of("granskning-godkand")),
 				tuple("oldest", List.of()));
-		assertThat(processes.getStartable()).isNull();
-		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS, R);
+		assertThat(processes.getStartable()).isEqualTo(ProcessStartable.create().withStatus(LIVE_INSTANCE).withProcessKeys(List.of()));
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, PROCESS, R);
+		verifyNoInteractions(processKeySelectorMock);
 	}
 
 	@Test
 	void readingTheProcessesOfAnErrandThatNeverHadOneAsksForNoSignals() {
+		final var errand = ErrandEntity.create().withId(ERRAND_ID);
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, PROCESS, R)).thenReturn(errand);
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of());
+		when(processKeySelectorMock.select(errand)).thenReturn(new ProcessKeySelection(PROCESS_KEY, ProcessStartMode.MANUAL, List.of(PROCESS_KEY)));
+
+		final var processes = service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThat(processes.getProcesses()).isEmpty();
+		assertThat(processes.getStartable()).isEqualTo(ProcessStartable.create().withStatus(AVAILABLE).withProcessKeys(List.of(PROCESS_KEY)));
+		verifyNoInteractions(signalRepositoryMock);
+	}
+
+	@Test
+	void readingTheProcessesInANamespaceRunningNoProcessSaysSo() {
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, PROCESS, R)).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
+		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of());
 
-		assertThat(service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID).getProcesses()).isEmpty();
-		verifyNoInteractions(signalRepositoryMock);
+		assertThat(service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID).getStartable())
+			.isEqualTo(ProcessStartable.create().withStatus(NO_PROCESS_ENGINE).withProcessKeys(List.of()));
+		verifyNoInteractions(processKeySelectorMock);
 	}
 
 	@Test

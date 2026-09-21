@@ -9,11 +9,13 @@ import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.service.model.ProcessStartOptions;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -63,6 +65,18 @@ public final class ErrandProcessMapper {
 		return entities.stream()
 			.map(entity -> toErrandProcess(entity, signalsByProcessId.getOrDefault(entity.getId(), emptyList())))
 			.toList();
+	}
+
+	/**
+	 * Maps whether a process may be started for an errand to the {@code startable} field of the process overview.
+	 *
+	 * @param  options whether a start is possible, and the keys it may name.
+	 * @return         the answer as it is read.
+	 */
+	public static ProcessStartable toProcessStartable(final ProcessStartOptions options) {
+		return ProcessStartable.create()
+			.withStatus(options.status())
+			.withProcessKeys(options.processKeys());
 	}
 
 	/**

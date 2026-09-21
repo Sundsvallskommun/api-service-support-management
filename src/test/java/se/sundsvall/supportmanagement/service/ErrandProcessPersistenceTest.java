@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -21,19 +22,26 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
+import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -44,6 +52,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.tuple;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessError.create;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
@@ -87,6 +97,9 @@ class ErrandProcessPersistenceTest {
 
 	@Autowired
 	private RevisionRepository revisionRepository;
+
+	@Autowired
+	private MetadataLabelRepository metadataLabelRepository;
 
 	@Autowired
 	private NamespaceConfigService namespaceConfigService;
@@ -237,20 +250,33 @@ class ErrandProcessPersistenceTest {
 	// ---------------------------------------------------------------------------------------------------------------
 
 	@Test
-	@DisplayName("Verification that the envelope lists every process of the errand, newest first")
-	void theEnvelopeListsTheProcessesNewestFirst() {
+	@DisplayName("Verification that the overview lists every process of the errand, newest first, and that a live one stands in the way of a start")
+	void theOverviewListsTheProcessesNewestFirst() {
 		final var errandId = createErrand();
 		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "older", report(FAILED).withStarted(now(systemDefault()).minusDays(2)));
 		errandProcessRepository.findByProcessInstanceId("older").ifPresent(entity -> entity.setCreated(now(systemDefault()).minusDays(2)));
 		errandProcessRepository.flush();
 		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "newer", report(RUNNING));
 
-		final var envelope = errandProcessService.readProcesses(NAMESPACE, MUNICIPALITY_ID, errandId);
+		final var overview = errandProcessService.readProcesses(NAMESPACE, MUNICIPALITY_ID, errandId);
 
-		assertThat(envelope.getStartable()).isNull();
-		assertThat(envelope.getProcesses())
+		assertThat(overview.getStartable()).isEqualTo(ProcessStartable.create().withStatus(LIVE_INSTANCE).withProcessKeys(List.of()));
+		assertThat(overview.getProcesses())
 			.extracting(ErrandProcess::getProcessInstanceId)
 			.containsExactly("newer", "older");
+	}
+
+	@Test
+	@DisplayName("Verification that an errand without a process is offered the key its label names, read from the database, whatever the start mode")
+	void anErrandWithoutAProcessIsOfferedTheKeyOfItsLabel() {
+		final var errandId = createErrandWearing(processLabel("MANUAL"));
+		entityManager.flush();
+		entityManager.clear();
+
+		final var overview = errandProcessService.readProcesses(NAMESPACE, MUNICIPALITY_ID, errandId);
+
+		assertThat(overview.getProcesses()).isEmpty();
+		assertThat(overview.getStartable()).isEqualTo(ProcessStartable.create().withStatus(AVAILABLE).withProcessKeys(List.of(PROCESS_KEY)));
 	}
 
 	@Test
@@ -373,6 +399,25 @@ class ErrandProcessPersistenceTest {
 		assertThat(queryExecutions(statistics, ErrandProcessSignalEntity.class)).isEqualTo(1);
 	}
 
+	@Test
+	@DisplayName("Verification that listing errands that could be started asks nothing about starting them: one process lookup for the page, and no label or outbox lookup")
+	void listingStartableErrandsCostsNoLookupPerErrand() {
+		final var label = processLabel("MANUAL");
+		final var errandIds = List.of(createErrandWearing(label), createErrandWearing(label), createErrandWearing(label));
+		entityManager.flush();
+		entityManager.clear();
+
+		final var statistics = statistics();
+		statistics.clear();
+
+		final var page = errandService.findErrands(NAMESPACE, MUNICIPALITY_ID, null, PageRequest.of(0, 50));
+
+		assertThat(page.getContent()).extracting(Errand::getId).containsExactlyInAnyOrderElementsOf(errandIds);
+		assertThat(queryExecutions(statistics, ErrandProcessEntity.class)).isEqualTo(1);
+		assertThat(queryExecutions(statistics, MetadataLabelEntity.class)).isZero();
+		assertThat(queryExecutions(statistics, ProcessEventOutboxEntity.class)).isZero();
+	}
+
 	// ---------------------------------------------------------------------------------------------------------------
 	// What the process waits for from a handler
 	// ---------------------------------------------------------------------------------------------------------------
@@ -467,14 +512,34 @@ class ErrandProcessPersistenceTest {
 	}
 
 	private String createErrand() {
-		return errandsRepository.saveAndFlush(ErrandEntity.create()
+		return errandsRepository.saveAndFlush(errand()).getId();
+	}
+
+	private String createErrandWearing(final MetadataLabelEntity label) {
+		return errandsRepository.saveAndFlush(errand()
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(label.getId()))))).getId();
+	}
+
+	private static ErrandEntity errand() {
+		return ErrandEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
 			.withErrandNumber("PPT-" + UUID.randomUUID())
 			.withTitle("TITLE")
 			.withStatus("STATUS")
 			.withPriority("MEDIUM")
-			.withReporterUserId("joe01doe")).getId();
+			.withReporterUserId("joe01doe");
+	}
+
+	private MetadataLabelEntity processLabel(final String startMode) {
+		return metadataLabelRepository.saveAndFlush(MetadataLabelEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withClassification("CATEGORY")
+			.withResourceName("TILLSYN")
+			.withAttributes(new ArrayList<>(List.of(
+				LabelAttributeEmbeddable.create().withKey("processKey").withValue(PROCESS_KEY),
+				LabelAttributeEmbeddable.create().withKey("processStartMode").withValue(startMode)))));
 	}
 
 	private static ErrandProcessReport report(final ProcessStatus status) {

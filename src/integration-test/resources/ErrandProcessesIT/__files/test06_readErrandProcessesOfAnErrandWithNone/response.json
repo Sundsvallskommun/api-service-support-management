@@ -1,3 +1,7 @@
 {
+	"startable": {
+		"status": "NO_PROCESS_KEY",
+		"processKeys": []
+	},
 	"processes": []
 }

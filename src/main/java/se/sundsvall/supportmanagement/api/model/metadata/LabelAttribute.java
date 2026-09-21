@@ -4,7 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Objects;
 
-@Schema(description = "Label attribute model. Free-form key/value data owned by the client; not interpreted by the service. Keys are conventions agreed between clients (e.g. 'escalationEmail').")
+@Schema(
+	description = "Label attribute model. Free-form key/value data owned by the client. Keys are conventions agreed between clients (e.g. 'escalationEmail'), except processKey and processStartMode, which the service reads itself - see attributes on the label.")
 public class LabelAttribute {
 
 	@Schema(description = "Attribute key", examples = "escalationEmail")

@@ -40,8 +40,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 @Component
 public class ProcessKeySelector {
 
-	static final String PROCESS_KEY_ATTRIBUTE = "processKey";
-	static final String PROCESS_START_MODE_ATTRIBUTE = "processStartMode";
+	/** The label attributes read here, matched exactly as spelled. */
+	public static final String PROCESS_KEY_ATTRIBUTE = "processKey";
+	public static final String PROCESS_START_MODE_ATTRIBUTE = "processStartMode";
 
 	/** How much of a key is worth showing in a message that reports what is wrong with it. */
 	private static final int KEY_EXCERPT_LENGTH = 64;
@@ -181,9 +182,9 @@ public class ProcessKeySelector {
 		final var mode = EnumUtils.getEnumIgnoreCase(ProcessStartMode.class, value.trim());
 
 		if (isNull(mode)) {
-			// Until the label write refuses a value this cannot read, one can be sitting there. Someone put it there on
-			// purpose, so the answer is the one that cannot start a process nobody asked for - and the errand is still
-			// startable by hand.
+			// The label write refuses such a value, so this one came in past the API - straight into the database, or before
+			// the check existed. Someone put it there on purpose, so the answer is the one that cannot start a process nobody
+			// asked for - and the errand is still startable by hand.
 			LOG.warn("Label '{}' carries an unreadable process start mode '{}' and is treated as MANUAL", sanitizeForLogging(label.getId()), sanitizeForLogging(value));
 			return MANUAL;
 		}

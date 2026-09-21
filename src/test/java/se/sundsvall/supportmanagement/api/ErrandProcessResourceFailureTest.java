@@ -23,6 +23,7 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartRequest;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
 import se.sundsvall.supportmanagement.service.ProcessCommandService;
 
@@ -48,6 +49,7 @@ class ErrandProcessResourceFailureTest {
 	private static final String PROCESSES_PATH = "/{municipalityId}/{namespace}/errands/{errandId}/processes";
 	private static final String PROCESS_PATH = PROCESSES_PATH + "/{processInstanceId}";
 	private static final String SIGNALS_PATH = PROCESS_PATH + "/signals";
+	private static final String START_PATH = PROCESSES_PATH + "/start";
 	private static final String ACTIVITIES_PATH = "/{municipalityId}/{namespace}/errands/{errandId}/process-activities";
 	private static final String NAMESPACE = "namespace";
 	private static final String INVALID_NAMESPACE = "invalid,namespace";
@@ -309,6 +311,44 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
+	@Test
+	void aStartNamingAKeyLongerThanTheProcessKeysCanBeIsRejected() {
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(START_PATH).build(errandVariables(NAMESPACE)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(ProcessStartRequest.create().withProcessKey("k".repeat(129)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("processKey", "size must be between 0 and 128"));
+
+		verifyNoInteractions(serviceMock, commandServiceMock);
+	}
+
+	@Test
+	void aStartOfAnErrandWithAnInvalidIdIsRejected() {
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(START_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", "not-a-uuid")))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("startProcess.errandId", "not a valid UUID"));
+
+		verifyNoInteractions(serviceMock, commandServiceMock);
+	}
+
 	private static Stream<Arguments> aSignalWithoutANameArguments() {
 		return Stream.of(
 			Arguments.of("{}"),
@@ -431,6 +471,7 @@ class ErrandProcessResourceFailureTest {
 			Arguments.of(PUT, PROCESS_PATH, instanceVariables(INVALID_NAMESPACE), validReport(), "reportProcess.namespace"),
 			Arguments.of(POST, PROCESSES_PATH, errandVariables(INVALID_NAMESPACE), validReport(), "registerProcess.namespace"),
 			Arguments.of(POST, SIGNALS_PATH, instanceVariables(INVALID_NAMESPACE), ProcessSignalRequest.create().withSignal("granskning-godkand"), "signalProcess.namespace"),
+			Arguments.of(POST, START_PATH, errandVariables(INVALID_NAMESPACE), ProcessStartRequest.create(), "startProcess.namespace"),
 			Arguments.of(GET, PROCESSES_PATH, errandVariables(INVALID_NAMESPACE), null, "readErrandProcesses.namespace"),
 			Arguments.of(GET, ACTIVITIES_PATH, errandVariables(INVALID_NAMESPACE), null, "readErrandProcessActivities.namespace"));
 	}
