@@ -69,3 +69,16 @@ create table if not exists errand_process_activity (
     constraint fk_epa_errand foreign key (errand_id)
         references errand (id) on delete cascade
 ) engine=InnoDB;
+
+create table if not exists errand_process_signal (
+    id                varchar(36)  not null,
+    errand_process_id varchar(36)  not null,
+    name              varchar(128) character set utf8mb4 collate utf8mb4_nopad_bin not null,
+    label             varchar(255),
+    sort_order        int          default 0 not null,
+    created           datetime(3)  not null,
+    primary key (id),
+    constraint uq_eps_process_name unique (errand_process_id, name),
+    constraint fk_eps_process foreign key (errand_process_id)
+        references errand_process (id) on delete cascade
+) engine=InnoDB;

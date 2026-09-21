@@ -25,9 +25,11 @@ import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
@@ -39,6 +41,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.function.Function.identity;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
@@ -77,7 +80,7 @@ public class ErrandProcessService {
 	private static final String OTHER_LIVE_INSTANCE = "The errand '%s' already has a live process instance '%s' and cannot be given another one";
 	private static final String OTHER_PROCESS_KEY = "The errand '%s' already runs a process other than '%s', and every instance of an errand runs the same process";
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again";
-	private static final String NO_PROCESS_CONSUMER = "The namespace '%s' in municipality '%s' has no process consumer configured and runs no process";
+	static final String NO_PROCESS_CONSUMER = "The namespace '%s' in municipality '%s' has no process consumer configured and runs no process";
 	private static final String WRONG_PROCESS_CONSUMER = "The process service '%s' is not the process consumer of namespace '%s', which is '%s'";
 	private static final String MISSING_IDENTIFIER = "A report must carry the identifier of its sender in the '%s' header, since it is what the activity log and the notification of the errand name as the author";
 	private static final String ERRAND_CHANGED = "The errand has changed since version %s, which the report says it was read at";
@@ -94,6 +97,7 @@ public class ErrandProcessService {
 
 	private final ErrandProcessRepository processRepository;
 	private final ErrandProcessActivityRepository activityRepository;
+	private final ErrandProcessSignalRepository signalRepository;
 	private final AccessControlService accessControlService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final TransactionTemplate transactionTemplate;
@@ -102,6 +106,7 @@ public class ErrandProcessService {
 	public ErrandProcessService(
 		final ErrandProcessRepository processRepository,
 		final ErrandProcessActivityRepository activityRepository,
+		final ErrandProcessSignalRepository signalRepository,
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
 		final PlatformTransactionManager transactionManager,
@@ -109,6 +114,7 @@ public class ErrandProcessService {
 
 		this.processRepository = processRepository;
 		this.activityRepository = activityRepository;
+		this.signalRepository = signalRepository;
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
@@ -163,7 +169,9 @@ public class ErrandProcessService {
 
 		storeActivities(saved, errandId, report);
 
-		return new ErrandProcessResult(toErrandProcess(saved), false);
+		final var signals = replaceAwaitingSignals(saved, signalRepository.findByErrandProcessIdOrderBySortOrderAsc(saved.getId()), report);
+
+		return new ErrandProcessResult(toErrandProcess(saved, signals), false);
 	}
 
 	/**
@@ -197,7 +205,7 @@ public class ErrandProcessService {
 			.flatMap(processRepository::findByProcessInstanceId)
 			.map(existing -> {
 				verifyBelongsToErrand(existing, errandId);
-				return new ErrandProcessResult(toErrandProcess(existing), false);
+				return new ErrandProcessResult(toErrandProcess(existing, signalRepository.findByErrandProcessIdOrderBySortOrderAsc(existing.getId())), false);
 			})
 			.orElseGet(() -> createProcess(namespace, municipalityId, errandId, processInstanceId, report));
 	}
@@ -224,7 +232,7 @@ public class ErrandProcessService {
 		final var saved = processRepository.saveAndFlush(entity);
 		storeActivities(saved, errandId, report);
 
-		return new ErrandProcessResult(toErrandProcess(saved), true);
+		return new ErrandProcessResult(toErrandProcess(saved, replaceAwaitingSignals(saved, emptyList(), report)), true);
 	}
 
 	/**
@@ -240,8 +248,10 @@ public class ErrandProcessService {
 	public ErrandProcesses readProcesses(final String namespace, final String municipalityId, final String errandId) {
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, PROCESS, R);
 
+		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
+
 		return ErrandProcesses.create()
-			.withProcesses(toErrandProcesses(processRepository.findByErrandIdOrderByCreatedDesc(errandId)));
+			.withProcesses(toErrandProcesses(instances, signalsOf(instances)));
 	}
 
 	/**
@@ -281,9 +291,10 @@ public class ErrandProcessService {
 	 * process leaves none either. Showing only the live one would render both as an errand with no process at all, and a
 	 * mistyped process key would be invisible.
 	 * <p>
-	 * One query for the whole page. The rows arrive newest first, so the first one seen per errand is the latest one.
-	 * Deduplicated before they are mapped, since an errand whose process start has failed repeatedly carries a row per
-	 * attempt and all but the newest are thrown away.
+	 * One query for the whole page, and one more for the signals of the processes it found - two in all however many
+	 * errands the page holds, and a page without a single process never asks for signals. The rows arrive newest first,
+	 * so the first one seen per errand is the latest one. Deduplicated before the signals are read, since an errand whose
+	 * process start has failed repeatedly carries a row per attempt and all but the newest are thrown away.
 	 *
 	 * @param  namespace      the namespace of the errands.
 	 * @param  municipalityId the municipality of the errands.
@@ -296,12 +307,30 @@ public class ErrandProcessService {
 			return emptyMap();
 		}
 
-		final var latestPerErrand = new LinkedHashMap<String, ErrandProcess>();
+		final var latestPerErrand = new LinkedHashMap<String, ErrandProcessEntity>();
 
 		processRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(errandIds, municipalityId, namespace)
-			.forEach(entity -> latestPerErrand.computeIfAbsent(entity.getErrandId(), _ -> toErrandProcess(entity)));
+			.forEach(entity -> latestPerErrand.putIfAbsent(entity.getErrandId(), entity));
 
-		return latestPerErrand;
+		final var signals = signalsOf(latestPerErrand.values());
+		final var processes = new LinkedHashMap<String, ErrandProcess>();
+
+		latestPerErrand.forEach((errandId, entity) -> processes.put(errandId, toErrandProcess(entity, signals.getOrDefault(entity.getId(), emptyList()))));
+
+		return processes;
+	}
+
+	/**
+	 * The signals of every instance sent in, read in one query for all of them and keyed by the id of the process row.
+	 * Instances waiting for no one have no entry, and no instances at all ask nothing of the database.
+	 */
+	private Map<String, List<ErrandProcessSignalEntity>> signalsOf(final Collection<ErrandProcessEntity> instances) {
+		if (instances.isEmpty()) {
+			return emptyMap();
+		}
+
+		return signalRepository.findByErrandProcessIdInOrderBySortOrderAsc(instances.stream().map(ErrandProcessEntity::getId).toList()).stream()
+			.collect(Collectors.groupingBy(ErrandProcessSignalEntity::getErrandProcessId));
 	}
 
 	/**
@@ -563,6 +592,40 @@ public class ErrandProcessService {
 			.toList();
 
 		activityRepository.saveAll(toStore);
+	}
+
+	/**
+	 * Lays what the process now waits for from a handler over what it waited for before.
+	 * <p>
+	 * The report describes the whole state of the process, so the signals are replaced rather than merged, and a report
+	 * carrying none says the process waits for no person. The same name reported twice is one signal, the first kept.
+	 * Names are compared exactly, as the process engine and the column compare them.
+	 * <p>
+	 * A row whose name is still awaited is kept and brought up to date rather than deleted and inserted again. A flush
+	 * runs inserts before deletions, so a name inserted anew would meet the row being replaced in
+	 * {@code uq_eps_process_name} before that row was gone.
+	 *
+	 * @param  process the instance the report is about.
+	 * @param  stored  the signals the instance waited for before the report.
+	 * @param  report  what the process reported.
+	 * @return         the signals the instance waits for after the report, in the order reported.
+	 */
+	private List<ErrandProcessSignalEntity> replaceAwaitingSignals(final ErrandProcessEntity process, final List<ErrandProcessSignalEntity> stored, final ErrandProcess report) {
+		final var reusable = stored.stream().collect(Collectors.toMap(ErrandProcessSignalEntity::getName, identity()));
+		final var awaited = new LinkedHashMap<String, ErrandProcessSignalEntity>();
+
+		for (final var signal : ofNullable(report.getAwaitingSignals()).orElse(emptyList())) {
+			if (!awaited.containsKey(signal.getName())) {
+				awaited.put(signal.getName(), ofNullable(reusable.remove(signal.getName()))
+					.orElseGet(() -> ErrandProcessSignalEntity.create().withErrandProcessId(process.getId()).withName(signal.getName()))
+					.withLabel(signal.getLabel())
+					.withSortOrder(awaited.size()));
+			}
+		}
+
+		signalRepository.deleteAll(reusable.values());
+
+		return signalRepository.saveAll(awaited.values());
 	}
 
 	/**

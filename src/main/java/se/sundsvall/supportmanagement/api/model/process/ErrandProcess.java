@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -97,6 +98,15 @@ public class ErrandProcess {
 	@Valid
 	@Size(max = 100, message = "may contain at most 100 activities")
 	private List<ProcessActivity> activities;
+
+	@Schema(description = """
+		What the process waits for from a handler right now: the signals a handler can send to step it past the gate it \
+		stands at. Replaced as a whole by every report, and a report that leaves it out or sends it empty says the process \
+		waits for no person, which is the normal case for a gate the process passes by itself. Always empty for a process \
+		that has ended.""")
+	@Valid
+	@Size(max = 50, message = "may contain at most 50 signals")
+	private List<@NotNull ProcessSignal> awaitingSignals;
 
 	@Schema(description = "When the process was first registered on the errand", examples = "2026-09-14T08:55:11.121+02:00", accessMode = READ_ONLY)
 	@DateTimeFormat(iso = ISO.DATE_TIME)
@@ -282,6 +292,19 @@ public class ErrandProcess {
 		return this;
 	}
 
+	public List<ProcessSignal> getAwaitingSignals() {
+		return awaitingSignals;
+	}
+
+	public void setAwaitingSignals(final List<ProcessSignal> awaitingSignals) {
+		this.awaitingSignals = awaitingSignals;
+	}
+
+	public ErrandProcess withAwaitingSignals(final List<ProcessSignal> awaitingSignals) {
+		this.awaitingSignals = awaitingSignals;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -310,7 +333,7 @@ public class ErrandProcess {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, processService, processKey, processInstanceId, processStatus, currentActivityId, currentActivityName, externalTaskId, errandVersion, started, ended, error, activities, created, modified);
+		return Objects.hash(id, processService, processKey, processInstanceId, processStatus, currentActivityId, currentActivityName, externalTaskId, errandVersion, started, ended, error, activities, awaitingSignals, created, modified);
 	}
 
 	@Override
@@ -335,6 +358,7 @@ public class ErrandProcess {
 			&& Objects.equals(ended, other.ended)
 			&& Objects.equals(error, other.error)
 			&& Objects.equals(activities, other.activities)
+			&& Objects.equals(awaitingSignals, other.awaitingSignals)
 			&& Objects.equals(created, other.created)
 			&& Objects.equals(modified, other.modified);
 	}
@@ -355,6 +379,7 @@ public class ErrandProcess {
 			", ended=" + ended +
 			", error=" + error +
 			", activities=" + activities +
+			", awaitingSignals=" + awaitingSignals +
 			", created=" + created +
 			", modified=" + modified +
 			'}';

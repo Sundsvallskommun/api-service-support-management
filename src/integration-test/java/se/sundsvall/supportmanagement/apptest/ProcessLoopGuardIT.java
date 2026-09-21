@@ -84,8 +84,9 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setTrigger
  * through the direct run, so the test waits for rows to be delivered rather than for time to pass.
  * <p>
  * Commands are issued through {@link EventService#createProcessCommandEvent}, which is where the start and signal
- * endpoints are to hand them over. The endpoints are built in tasks of their own, and their checks - the 403 for a
- * caller without an ad account among them - are not what this test asks about.
+ * endpoints hand them over. The endpoints and their checks - the 403 for a caller without an ad account among them - are
+ * not what this test asks about: the signal endpoint is tried over the wire in {@link ProcessSignalIT}, and the start
+ * endpoint is built in a task of its own.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessLoopGuardIT/", classes = Application.class)
 @TestPropertySource(properties = "process-engine.direct-run.enabled=true")

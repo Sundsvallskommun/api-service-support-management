@@ -33,14 +33,19 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
+import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
+import se.sundsvall.supportmanagement.service.ProcessCommandService;
 import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static java.util.Objects.isNull;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
+import static org.springframework.http.ResponseEntity.accepted;
 import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.http.ResponseEntity.status;
@@ -49,7 +54,8 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
 /**
- * The process attached to an errand: what it reports about itself, and what a handler reads of it.
+ * The process attached to an errand: what it reports about itself, what a handler reads of it, and the signals a
+ * handler steps it on with.
  */
 @RestController
 @Validated
@@ -62,9 +68,11 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class ErrandProcessResource {
 
 	private final ErrandProcessService service;
+	private final ProcessCommandService commandService;
 
-	ErrandProcessResource(final ErrandProcessService service) {
+	ErrandProcessResource(final ErrandProcessService service, final ProcessCommandService commandService) {
 		this.service = service;
+		this.commandService = commandService;
 	}
 
 	@PutMapping(path = "/processes/{processInstanceId}", consumes = APPLICATION_JSON_VALUE, produces = {
@@ -114,6 +122,36 @@ class ErrandProcessResource {
 		@Valid @NotNull @RequestBody final ErrandProcess report) {
 
 		return respond(service.registerProcess(namespace, municipalityId, errandId, report), municipalityId, namespace, errandId);
+	}
+
+	@PostMapping(path = "/processes/{processInstanceId}/signals", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
+	@Operation(summary = "Signal process", description = """
+		Steps a process past the gate it waits at, by sending one of the signals listed in awaitingSignals of the process. \
+		The signal is recorded and handed on to the process, which decides what it means where it stands - so 202 says the \
+		signal is on its way, not that the process has moved on. Read the errand again to see where it went. Sending a \
+		signal does not consume it: until the process reports where it went, the same signal is accepted again, so a \
+		client should not offer it twice. Only a person may send a signal, and the request carries its name and nothing \
+		else: a reason for the step belongs in a note on the errand.""", responses = {
+		@ApiResponse(responseCode = "202", description = "Accepted — the signal is recorded and handed on to the process", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403",
+			description = "Forbidden — the caller is not an ad account, or may not reach the errand",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "404",
+			description = "Not found — the errand does not exist, or has no such process instance",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409",
+			description = "Conflict — the process does not wait for the signal right now, or has ended. Read the errand again rather than retrying",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Void> signalProcess(
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
+		@Parameter(name = "processInstanceId", description = "Process instance id", example = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33") @Size(max = 64) @PathVariable final String processInstanceId,
+		@Valid @NotNull @RequestBody final ProcessSignalRequest request) {
+
+		commandService.signalProcess(namespace, municipalityId, errandId, processInstanceId, request.getSignal());
+		return accepted().header(CONTENT_TYPE, ALL_VALUE).build();
 	}
 
 	@GetMapping(path = "/processes", produces = {

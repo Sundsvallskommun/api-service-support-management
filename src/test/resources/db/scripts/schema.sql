@@ -390,6 +390,16 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table errand_process_signal (
+        sort_order integer not null,
+        created datetime(3) not null,
+        errand_process_id varchar(36) not null,
+        id varchar(36) not null,
+        name varchar(128) character set utf8mb4 collate utf8mb4_nopad_bin not null,
+        label varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
     create table external_id_type (
         deprecated bit not null,
         sort_order integer,
@@ -1208,6 +1218,9 @@
 
     alter table if exists errand_process_activity 
        add constraint uq_epa_idempotency unique (errand_process_id, external_task_id, activity_id);
+
+    alter table if exists errand_process_signal 
+       add constraint uq_eps_process_name unique (errand_process_id, name);
 
     create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);

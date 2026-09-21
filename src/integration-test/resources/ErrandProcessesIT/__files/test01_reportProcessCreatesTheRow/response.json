@@ -6,5 +6,6 @@
 	"processStatus": "RUNNING",
 	"currentActivityId": "granska-ansokan",
 	"currentActivityName": "Granska ansokan",
+	"awaitingSignals": [],
 	"created": "${json-unit.any-string}"
 }

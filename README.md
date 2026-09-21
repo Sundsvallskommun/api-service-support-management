@@ -656,6 +656,8 @@ is always allowed, as it resolves the errand to a single key.
   `ERROR` entry is written. Only delivered events are counted, so a delivery outage never trips it.
 - A deletion passes the trigger filter, the header and the brake alike: it cannot loop, and holding it back would leave
   the process running for an errand that no longer exists.
+- So does a command, such as a handler's signal: it is a person pressing a button rather than something that happened
+  to the errand, and a signal swallowed by the brake would leave the process waiting at its gate.
 - A decision concluded by an AD account passes the brake, and nothing else. It is the event a waiting process needs,
   and a person is no loop. A decision the process concludes itself is held to the brake like any other write of the
   process.
@@ -666,14 +668,47 @@ is always allowed, as it resolves the errand to a single key.
 
 All under `/{municipalityId}/{namespace}/errands/{errandId}`:
 
-| Method |               Path               |                               Purpose                               |
-|--------|----------------------------------|---------------------------------------------------------------------|
-| `PUT`  | `/processes/{processInstanceId}` | The process engine reports the state of an instance                 |
-| `POST` | `/processes`                     | The process engine registers a start, including one that failed     |
-| `GET`  | `/processes`                     | Every process the errand has had, newest first                      |
-| `GET`  | `/process-activities`            | The activity log of the errand, optionally narrowed to one instance |
+| Method |                   Path                   |                               Purpose                               |
+|--------|------------------------------------------|---------------------------------------------------------------------|
+| `PUT`  | `/processes/{processInstanceId}`         | The process engine reports the state of an instance                 |
+| `POST` | `/processes`                             | The process engine registers a start, including one that failed     |
+| `GET`  | `/processes`                             | Every process the errand has had, newest first                      |
+| `POST` | `/processes/{processInstanceId}/signals` | A handler steps the process past the gate it waits at               |
+| `GET`  | `/process-activities`                    | The activity log of the errand, optionally narrowed to one instance |
 
 The errand itself carries the latest process in `errand.process`.
+
+### Stepping a process by hand
+
+Whether a step waits for a person is decided in the process model, not in SupportManagement. A gate that waits for a
+named message is a manual one, and the process engine reports the names it waits for in `awaitingSignals` of its
+report — a name and a display label each. SupportManagement stores them without interpreting them, replaces them as a
+whole with every report, and shows them on `errand.process`. An empty list means the process waits for no person, and
+a process that has ended always waits for no one.
+
+A handler answers with `POST .../processes/{processInstanceId}/signals` and `{ "signal": "<name>" }`:
+
+| Code  |                                           When                                           |
+|-------|------------------------------------------------------------------------------------------|
+| `202` | The signal is recorded and handed on to the process                                      |
+| `400` | `signal` is missing or blank, or the namespace has no process consumer                   |
+| `403` | The caller is not an AD account                                                          |
+| `404` | The errand does not exist, or has no such process instance                               |
+| `409` | The process does not wait for the signal right now, or has ended — read the errand again |
+
+- The name has to match one of `awaitingSignals` **exactly**, case included, since that is what the process engine
+  correlates on. Names are stored and compared exactly too, so names differing only in case are two signals. A button
+  pressed after the process has reported that it moved on is a `409`, not a second step.
+- **Sending a signal consumes nothing.** Until the process reports where it went, the same signal is accepted again: a
+  double click writes two entries and two events, and the process engine correlates the first and ignores the second.
+  The user interface should therefore not offer a button again once it has been pressed, until the errand is read anew.
+- An accepted signal writes an entry of type `SIGNAL` to the activity log, naming the sender, and an errand event with
+  the sub type `SIGNAL`, which carries the name to the process in `signalName`. It changes nothing on the errand,
+  moves no version and **sends no notification**.
+- Only AD accounts may send one: the entry it leaves has to say which person stepped the process on, and a service
+  name answers nothing. Publication does not depend on the check — commands pass the loop guard of their own accord.
+- The signal carries a name and nothing else. A reason for the step belongs in a note on the errand, which is kept as
+  long as the errand, while the activity log is swept after a year.
 
 ### The decision
 

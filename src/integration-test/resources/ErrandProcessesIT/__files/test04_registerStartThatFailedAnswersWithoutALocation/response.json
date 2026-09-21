@@ -8,5 +8,6 @@
 		"code": "START_FAILED",
 		"message": "Timeout against the process engine"
 	},
+	"awaitingSignals": [],
 	"created": "${json-unit.any-string}"
 }
