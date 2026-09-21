@@ -18,7 +18,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
@@ -69,8 +69,8 @@ class ErrandProcessResourceFailureTest {
 		return Map.of("namespace", namespace, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID);
 	}
 
-	private static ErrandProcess validReport() {
-		return ErrandProcess.create()
+	private static ErrandProcessReport validReport() {
+		return ErrandProcessReport.create()
 			.withProcessService("pw-alkt")
 			.withProcessKey("alkt-ansokan")
 			.withProcessStatus(RUNNING);
@@ -81,7 +81,7 @@ class ErrandProcessResourceFailureTest {
 		final var response = webTestClient.put()
 			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(ErrandProcess.create())
+			.bodyValue(ErrandProcessReport.create())
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

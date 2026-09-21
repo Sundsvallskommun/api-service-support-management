@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.process;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,7 +44,6 @@ class ErrandProcessTest {
 		final var created = now().plusMinutes(1);
 		final var modified = now().plusMinutes(2);
 		final var error = ProcessError.create().withCode("INCIDENT");
-		final var activity = ProcessActivity.create().withActivityId("review_phase");
 
 		final var process = ErrandProcess.create()
 			.withId("id")
@@ -55,12 +53,9 @@ class ErrandProcessTest {
 			.withProcessStatus(RUNNING)
 			.withCurrentActivityId("investigation_phase")
 			.withCurrentActivityName("Utredning")
-			.withExternalTaskId("externalTaskId")
-			.withErrandVersion(7L)
 			.withStarted(started)
 			.withEnded(ended)
 			.withError(error)
-			.withActivities(List.of(activity))
 			.withCreated(created)
 			.withModified(modified);
 
@@ -71,12 +66,9 @@ class ErrandProcessTest {
 		assertThat(process.getProcessStatus()).isEqualTo(RUNNING.name());
 		assertThat(process.getCurrentActivityId()).isEqualTo("investigation_phase");
 		assertThat(process.getCurrentActivityName()).isEqualTo("Utredning");
-		assertThat(process.getExternalTaskId()).isEqualTo("externalTaskId");
-		assertThat(process.getErrandVersion()).isEqualTo(7L);
 		assertThat(process.getStarted()).isEqualTo(started);
 		assertThat(process.getEnded()).isEqualTo(ended);
 		assertThat(process.getError()).isEqualTo(error);
-		assertThat(process.getActivities()).containsExactly(activity);
 		assertThat(process.getCreated()).isEqualTo(created);
 		assertThat(process.getModified()).isEqualTo(modified);
 	}
@@ -88,23 +80,19 @@ class ErrandProcessTest {
 	}
 
 	/**
-	 * The model is written and read through the same class, and what keeps the three report only fields out of a read is
-	 * that nothing sets them there and that nulls are left out of the serialised form. Both halves are asserted here,
-	 * since either one alone would let the external task of a work step leak into the errand of a handler.
+	 * What a process has not got is left out rather than sent as null: a start that failed has no instance, and a process
+	 * that never failed has no error.
 	 */
 	@Test
-	void aReadProjectionSerialisesWithoutTheWriteOnlyFields() {
+	void whatAProcessHasNotGotIsLeftOut() {
 		final var json = OBJECT_MAPPER.writeValueAsString(ErrandProcess.create()
 			.withId("id")
 			.withProcessService("pw-alkt")
 			.withProcessKey("alkt-ansokan")
-			.withProcessInstanceId("processInstanceId")
 			.withProcessStatus(RUNNING));
 
 		assertThat(json)
-			.doesNotContain("externalTaskId")
-			.doesNotContain("errandVersion")
-			.doesNotContain("activities")
+			.doesNotContain("processInstanceId")
 			.doesNotContain("ended")
 			.doesNotContain("error")
 			.contains("\"processStatus\":\"RUNNING\"");

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.EnumUtils;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
@@ -22,9 +23,6 @@ public final class ErrandProcessMapper {
 
 	/**
 	 * Maps an instance to the model served both under {@code /processes} and as the {@code process} field of an errand.
-	 * <p>
-	 * The three write only fields are left alone here, which together with nulls being dropped from the serialised form
-	 * is what keeps them out of every read.
 	 *
 	 * @param  entity the instance to map.
 	 * @return        the instance as it is read.
@@ -54,14 +52,14 @@ public final class ErrandProcessMapper {
 	/**
 	 * The reported state as the enum this service works in.
 	 * <p>
-	 * The report carries it as a string so that the published schema does not pin the set (see {@link ErrandProcess}), and
-	 * the value is held to that set by validation before it ever reaches here - so an unknown one is a bug rather than a
-	 * bad request, and is left to fail as one.
+	 * The report carries it as a string so that the published schema does not pin the set, and the value is held to that
+	 * set by validation before it ever reaches here - so an unknown one is a bug rather than a bad request, and is left to
+	 * fail as one.
 	 *
 	 * @param  report the report to read the state of.
 	 * @return        the state the report carries.
 	 */
-	public static ProcessStatus toProcessStatus(final ErrandProcess report) {
+	public static ProcessStatus toProcessStatus(final ErrandProcessReport report) {
 		return EnumUtils.getEnum(ProcessStatus.class, report.getProcessStatus());
 	}
 
@@ -89,7 +87,7 @@ public final class ErrandProcessMapper {
 	 * @param  report            what the process reported.
 	 * @return                   the row to insert, without its state.
 	 */
-	public static ErrandProcessEntity toErrandProcessEntity(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcess report) {
+	public static ErrandProcessEntity toErrandProcessEntity(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		return ErrandProcessEntity.create()
 			.withErrandId(errandId)
 			.withMunicipalityId(municipalityId)
@@ -117,7 +115,7 @@ public final class ErrandProcessMapper {
 	 * @param report what the process reported.
 	 * @param clock  the clock the end time is read from.
 	 */
-	public static void updateErrandProcessEntity(final ErrandProcessEntity entity, final ErrandProcess report, final Clock clock) {
+	public static void updateErrandProcessEntity(final ErrandProcessEntity entity, final ErrandProcessReport report, final Clock clock) {
 		entity.setCurrentActivityId(report.getCurrentActivityId());
 		entity.setCurrentActivityName(report.getCurrentActivityName());
 		entity.setErrorCode(errorCodeOf(report));
@@ -128,11 +126,11 @@ public final class ErrandProcessMapper {
 		entity.applyStatus(toProcessStatus(report), clock);
 	}
 
-	private static String errorCodeOf(final ErrandProcess report) {
+	private static String errorCodeOf(final ErrandProcessReport report) {
 		return ofNullable(report.getError()).map(ProcessError::getCode).orElse(null);
 	}
 
-	private static String errorMessageOf(final ErrandProcess report) {
+	private static String errorMessageOf(final ErrandProcessReport report) {
 		return ofNullable(report.getError()).map(ProcessError::getMessage).orElse(null);
 	}
 

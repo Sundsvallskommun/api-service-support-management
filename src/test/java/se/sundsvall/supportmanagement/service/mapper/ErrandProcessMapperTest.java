@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
@@ -71,16 +72,6 @@ class ErrandProcessMapperTest {
 	}
 
 	@Test
-	void toErrandProcessLeavesTheReportOnlyFieldsUnset() {
-		final var entity = ErrandProcessEntity.create().withId("id").withProcessKey("alkt-ansokan");
-		entity.applyStatus(RUNNING, CLOCK);
-
-		assertThat(toErrandProcess(entity))
-			.extracting(ErrandProcess::getExternalTaskId, ErrandProcess::getErrandVersion, ErrandProcess::getActivities)
-			.containsOnlyNulls();
-	}
-
-	@Test
 	void aProcessThatNeverFailedCarriesNoErrorObject() {
 		final var entity = ErrandProcessEntity.create().withId("id");
 		entity.applyStatus(RUNNING, CLOCK);
@@ -104,7 +95,7 @@ class ErrandProcessMapperTest {
 	void toErrandProcessEntityCarriesEverythingButTheState() {
 		final var started = now(systemDefault());
 
-		final var entity = toErrandProcessEntity("NAMESPACE", "2281", "errandId", "processInstanceId", ErrandProcess.create()
+		final var entity = toErrandProcessEntity("NAMESPACE", "2281", "errandId", "processInstanceId", ErrandProcessReport.create()
 			.withProcessService("pw-alkt")
 			.withProcessKey("alkt-ansokan")
 			.withCurrentActivityId("investigation_phase")
@@ -134,7 +125,7 @@ class ErrandProcessMapperTest {
 			.withErrorMessage("Timeout");
 		entity.applyStatus(FAILED, CLOCK);
 
-		updateErrandProcessEntity(entity, ErrandProcess.create().withProcessStatus(RUNNING), CLOCK);
+		updateErrandProcessEntity(entity, ErrandProcessReport.create().withProcessStatus(RUNNING), CLOCK);
 
 		assertThat(entity.getErrorCode()).isNull();
 		assertThat(entity.getErrorMessage()).isNull();
@@ -148,7 +139,7 @@ class ErrandProcessMapperTest {
 		final var entity = ErrandProcessEntity.create().withStarted(started);
 		entity.applyStatus(RUNNING, CLOCK);
 
-		updateErrandProcessEntity(entity, ErrandProcess.create().withProcessStatus(COMPLETED), CLOCK);
+		updateErrandProcessEntity(entity, ErrandProcessReport.create().withProcessStatus(COMPLETED), CLOCK);
 
 		assertThat(entity.getStarted()).isEqualTo(started);
 		assertThat(entity.getEnded()).isEqualTo(OffsetDateTime.now(CLOCK));
