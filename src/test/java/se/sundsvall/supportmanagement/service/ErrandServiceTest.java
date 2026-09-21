@@ -665,6 +665,22 @@ class ErrandServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("argumentsForExpandRelation")
+	@Test
+	void persistLabelUpdate_settlesAccessLabelsAndSaves() {
+		var errand = ErrandEntity.create();
+
+		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
+
+		var result = service.persistLabelUpdate(errand);
+
+		assertThat(result).isSameAs(errand);
+		verify(errandLabelServiceMock).settleAccessLabels(errand);
+		verify(errandRepositoryMock).saveAndFlush(errand);
+		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@ParameterizedTest
+	@MethodSource("argumentsForExpandRelation")
 	void expandRelation(final String input, final boolean expectSuccess, final Class<? extends Exception> expectedException) {
 		if (expectSuccess) {
 			assertThatNoException().isThrownBy(() -> service.expandRelation(input));

@@ -182,13 +182,14 @@ public class ErrandService {
 		// phase is judged by what its status will be and not only by whether the patch happens to name one.
 		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
 
+		final var entity = errand.getLabels() != null
+			? persistLabelUpdate(errandEntity)
+			: repository.saveAndFlush(errandEntity);
 		if (errand.getLabels() != null) {
 			errandLabelService.settleAccessLabels(errandEntity);
 		}
 
-		final var entity = errand.getLabels() != null
-			? persistLabelUpdate(errandEntity)
-			: repository.saveAndFlush(errandEntity);
+		final var entity = repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
@@ -325,6 +326,11 @@ public class ErrandService {
 		errand.setLabels(leafLabels);
 		errandLabelService.settleAccessLabels(errand);
 		persistLabelUpdate(errand);
+	}
+
+	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
+		errandLabelService.settleAccessLabels(entity);
+		return repository.saveAndFlush(entity);
 	}
 
 	se.sundsvall.dept44.support.Relation expandRelation(final String referredFromAsString) {

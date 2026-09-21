@@ -494,16 +494,19 @@ public class MetadataService {
 	 * caught up with it yet.
 	 */
 	private static Set<String> collectMovedLabelIds(final String labelId, final List<MetadataLabelEntity> descendants) {
-		return Stream.concat(Stream.of(labelId), descendants.stream().map(MetadataLabelEntity::getId))
-			.collect(Collectors.toSet());
+		var ids = new HashSet<String>();
+		ids.add(labelId);
+		descendants.forEach(descendant -> ids.add(descendant.getId()));
+		return ids;
 	}
 
 	/**
-	 * A label found to move, together with the descendants a move carries along with it — fetched once here so that
-	 * validating the resulting resource paths and collecting the ids a move affects don't each ask the database for the
-	 * same subtree.
+	 * The moved label plus the descendants that move with it — read once by {@link #validateAndFindLabelToMove} and
+	 * reused by both callers, so that neither {@link #moveLabel} nor {@link #startLabelMove} re-reads the descendant
+	 * tree that validation already fetched.
 	 */
-	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {}
+	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {
+	}
 
 	private LabelMoveContext validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
 		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)

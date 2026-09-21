@@ -305,6 +305,32 @@ class LabelMoveWorkerTest {
 		verify(errandsRepositoryMock, never()).findByLabelsMetadataLabelId(any(), any());
 	}
 
+	@Test
+	void rebuildLabels_emptyAccessLabels_leftUntouched() {
+		var errand = ErrandEntity.create()
+			.withAccessLabels(List.of())
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")));
+
+		worker.rebuildLabels(errand);
+
+		assertThat(errand.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly("stale-id");
+	}
+
+	@Test
+	void rebuildLabels_nullAccessLabels_leftUntouched() {
+		var errand = ErrandEntity.create()
+			.withAccessLabels(null)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")));
+
+		worker.rebuildLabels(errand);
+
+		assertThat(errand.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly("stale-id");
+	}
+
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
 		verifyNoMoreInteractions(errandsRepositoryMock, metadataLabelRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock);

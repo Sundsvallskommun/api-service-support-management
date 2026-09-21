@@ -5,15 +5,17 @@ import java.util.HashSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
@@ -27,6 +29,8 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
  */
 @Component
 public class LabelMoveWorker {
+
+	private static final Logger LOG = LoggerFactory.getLogger(LabelMoveWorker.class);
 
 	private static final Logger LOG = LoggerFactory.getLogger(LabelMoveWorker.class);
 
@@ -69,6 +73,13 @@ public class LabelMoveWorker {
 			.forEach(this::rebuildLabels);
 	}
 
+	/**
+	 * Access labels are meant to mirror the leaves of an errand's full label set, so an errand matched by the query
+	 * above - which requires the moved label to be present in that full set - should always carry at least one. One
+	 * with none anyway is not safe to rebuild from: emptying its labels along with it would silently take away who
+	 * can reach it, which is a worse outcome than leaving a stale chain in place. Left untouched instead, with a
+	 * warning, since whatever put it in that state needs looking at rather than being papered over here.
+	 */
 	void rebuildLabels(final ErrandEntity errand) {
 		errand.setLabels(computeNewLabels(errand));
 		errandService.persistLabelUpdate(errand);
@@ -168,8 +179,15 @@ public class LabelMoveWorker {
 	}
 
 	private List<ErrandLabelEmbeddable> computeNewLabels(final ErrandEntity errand) {
-		var leafIds = errand.getAccessLabels().stream()
-			.map(a -> a.getMetadataLabelId())
+		var accessLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList());
+
+		if (accessLabels.isEmpty()) {
+			LOG.warn("Errand {} references the moved label but has no access labels to rebuild from - left untouched", errand.getId());
+			return;
+		}
+
+		var leafIds = accessLabels.stream()
+			.map(AccessLabelEmbeddable::getMetadataLabelId)
 			.toList();
 
 		var labelEntities = metadataLabelRepository.findAllById(leafIds);

@@ -304,6 +304,7 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.empty());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "ROOT/"))
 			.thenReturn(List.of(child));
+		// An errand tagged only with the descendant - not the moved label itself - must still be counted
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID, "child-id"))).thenReturn(5L);
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of());
@@ -360,9 +361,6 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.of(label));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD"))
 			.thenReturn(Optional.empty());
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, LABEL_ID)).thenReturn(false);
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
-			.thenReturn(List.of());
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(3L);
 		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3, LABEL_ID)).thenReturn("job-id");
 		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(jobResponse);
