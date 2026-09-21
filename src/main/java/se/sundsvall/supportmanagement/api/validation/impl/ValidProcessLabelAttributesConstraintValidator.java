@@ -41,6 +41,9 @@ public class ValidProcessLabelAttributesConstraintValidator implements Constrain
 	/** The most characters of a caller's value repeated in a message about it. */
 	private static final int VALUE_EXCERPT_LENGTH = 64;
 
+	/** Joins the resource names of a label and its ancestors into its path, as the resource path of a label is built. */
+	private static final String RESOURCE_PATH_SEPARATOR = "/";
+
 	private static final String MISSPELLED_KEY = "label '%s' has the attribute '%s', which is read only when spelled exactly '%s'";
 	private static final String UNKNOWN_START_MODE = "label '%s' has the processStartMode '%s', which must be exactly one of %s";
 	private static final String START_MODE_WITHOUT_KEY = "label '%s' has a processStartMode but no processKey, and a start mode means nothing without the process it starts";
@@ -64,7 +67,7 @@ public class ValidProcessLabelAttributesConstraintValidator implements Constrain
 		ofNullable(labels).orElse(emptyList()).stream()
 			.filter(Objects::nonNull)
 			.forEach(label -> {
-				final var path = isNull(parentPath) ? label.getResourceName() : parentPath + "/" + label.getResourceName();
+				final var path = isNull(parentPath) ? label.getResourceName() : parentPath + RESOURCE_PATH_SEPARATOR + label.getResourceName();
 				collectFaults(path, ofNullable(label.getAttributes()).orElse(emptyList()), faults);
 				collectFaults(label.getLabels(), path, faults);
 			});
