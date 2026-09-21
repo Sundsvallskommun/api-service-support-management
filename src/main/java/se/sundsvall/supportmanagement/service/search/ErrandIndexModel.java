@@ -1,19 +1,16 @@
 package se.sundsvall.supportmanagement.service.search;
 
 import com.google.gson.JsonElement;
-import jakarta.persistence.EntityManagerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.hibernate.search.engine.backend.metamodel.IndexDescriptor;
 import org.hibernate.search.engine.backend.metamodel.IndexFieldDescriptor;
-import org.hibernate.search.mapper.orm.Search;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
@@ -38,8 +35,8 @@ public class ErrandIndexModel {
 	private final List<String> textFields;
 
 	@Autowired
-	public ErrandIndexModel(final EntityManagerFactory entityManagerFactory, final SearchAvailability availability) {
-		this(availability.isEnabled() ? Search.mapping(entityManagerFactory).indexedEntity(ErrandEntity.class).indexManager().descriptor() : null);
+	public ErrandIndexModel(final OpenSearchClient openSearch, final SearchAvailability availability) {
+		this(availability.isEnabled() ? openSearch.errandIndex() : null);
 	}
 
 	/**

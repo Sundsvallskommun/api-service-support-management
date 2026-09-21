@@ -9,9 +9,6 @@ import net.javacrumbs.shedlock.core.LockConfiguration;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.core.SimpleLock;
 import org.elasticsearch.client.Request;
-import org.elasticsearch.client.RestClient;
-import org.hibernate.search.backend.elasticsearch.ElasticsearchBackend;
-import org.hibernate.search.backend.elasticsearch.index.ElasticsearchIndexManager;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
 import org.slf4j.Logger;
@@ -46,14 +43,16 @@ public class ErrandReindexService {
 		{"query": {"bool": {"filter": [{"term": {"municipalityId": "%s"}}, {"term": {"namespace": "%s"}}]}}}""";
 
 	private final EntityManagerFactory entityManagerFactory;
+	private final OpenSearchClient openSearch;
 	private final LockProvider lockProvider;
 	private final SearchAvailability availability;
 	private final SearchProperties properties;
 	private final AccessControlService accessControlService;
 
-	public ErrandReindexService(final EntityManagerFactory entityManagerFactory, final LockProvider lockProvider, final SearchAvailability availability, final SearchProperties properties,
-		final AccessControlService accessControlService) {
+	public ErrandReindexService(final EntityManagerFactory entityManagerFactory, final OpenSearchClient openSearch, final LockProvider lockProvider, final SearchAvailability availability,
+		final SearchProperties properties, final AccessControlService accessControlService) {
 		this.entityManagerFactory = entityManagerFactory;
+		this.openSearch = openSearch;
 		this.lockProvider = lockProvider;
 		this.availability = availability;
 		this.properties = properties;
@@ -124,17 +123,13 @@ public class ErrandReindexService {
 	 * here, so this goes to OpenSearch directly with the same two fields the search filters on.
 	 */
 	private void purgeNamespace(final String namespace, final String municipalityId) {
-		final var mapping = Search.mapping(entityManagerFactory);
-		final var index = mapping.indexedEntity(ErrandEntity.class).indexManager().unwrap(ElasticsearchIndexManager.class).descriptor().writeName();
-		final var client = mapping.backend().unwrap(ElasticsearchBackend.class).client(RestClient.class);
-
-		final var request = new Request("POST", "/" + index + "/_delete_by_query");
+		final var request = new Request("POST", "/" + openSearch.errandWriteIndex() + "/_delete_by_query");
 		request.addParameter("conflicts", "proceed");
 		request.addParameter("refresh", "true");
 		request.setJsonEntity(PURGE_QUERY.formatted(municipalityId, namespace));
 
 		try {
-			client.performRequest(request);
+			openSearch.restClient().performRequest(request);
 		} catch (final IOException e) {
 			throw new UncheckedIOException("Documents of namespace '%s' for municipality '%s' could not be removed from the search index".formatted(namespace, municipalityId), e);
 		}
