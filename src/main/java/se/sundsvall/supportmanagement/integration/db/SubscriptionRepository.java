@@ -60,4 +60,28 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
 		@Param("namespace") String namespace,
 		@Param("errandId") String errandId,
 		@Param("now") OffsetDateTime now);
+
+	/**
+	 * Checks whether any active NAMESPACE-level subscription exists whose subscriber has an EMAIL channel.
+	 * Used to determine if CREATE events should generate dispatch entries even when sendNotification is false.
+	 * Only EMAIL subscribers are considered so that existing INTERNAL-only subscribers are not affected.
+	 */
+	@Query("""
+		select case when count(s) > 0 then true else false end
+		from SubscriptionEntity s
+		join s.subscriber sub
+		join sub.channels ch
+		where sub.municipalityId = :municipalityId
+		and sub.namespace = :namespace
+		and s.targetType = NAMESPACE
+		and ch.type = se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL
+		and (s.expiresAt is null or s.expiresAt > :now)
+		and (sub.pausedFrom is null
+		     or :now < sub.pausedFrom
+		     or (sub.pausedUntil is not null and :now >= sub.pausedUntil))
+		""")
+	boolean existsActiveNamespaceSubscriptionWithEmailChannel(
+		@Param("municipalityId") String municipalityId,
+		@Param("namespace") String namespace,
+		@Param("now") OffsetDateTime now);
 }

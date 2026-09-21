@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -44,6 +45,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.RESTRICTED;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
@@ -62,6 +64,7 @@ public class ErrandService {
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+	private static final String NOTIFICATION_SCOPE_RESTRICTED = "RESTRICTED";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
@@ -171,7 +174,7 @@ public class ErrandService {
 	}
 
 	@Transactional
-	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final String ifMatch, final Errand errand) {
+	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final String ifMatch, final String notificationScope, final Errand errand) {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
 		// Verified and resolved before the errand is touched, so that patching it does not flush mid transaction, and so
@@ -202,7 +205,8 @@ public class ErrandService {
 			: repository.saveAndFlush(errandEntity);
 
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
-		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
+		final var subtype = NOTIFICATION_SCOPE_RESTRICTED.equalsIgnoreCase(notificationScope) ? RESTRICTED : ERRAND;
+		logUpdateEvent(entity, revisionService.createErrandRevision(entity), subtype);
 
 		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable()), classificationDisplayNames);
 	}
@@ -211,7 +215,7 @@ public class ErrandService {
 	public void deleteErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
-		if (ifMatch == null) {
+		if (ifMatch == null && LOG.isDebugEnabled()) {
 			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, entity.getVersion());
@@ -432,7 +436,7 @@ public class ErrandService {
 	 * Holds the errand to the version the caller believes it is at, noting the requests that leave it to chance.
 	 */
 	private void requireMatchingVersion(final String ifMatch, final Long version, final String id, final String namespace, final String municipalityId) {
-		if (isNull(ifMatch)) {
+		if (isNull(ifMatch) && LOG.isDebugEnabled()) {
 			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 
@@ -453,13 +457,13 @@ public class ErrandService {
 	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final EventSubType subtype) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), subtype);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}

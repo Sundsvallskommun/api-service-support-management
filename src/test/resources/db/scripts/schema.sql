@@ -261,6 +261,23 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table email_dispatch_outbox (
+        attempts integer not null,
+        created datetime(3) not null,
+        last_attempted datetime(3),
+        municipality_id varchar(8) not null,
+        identifier_type varchar(16),
+        namespace varchar(32) not null,
+        errand_id varchar(36) not null,
+        id varchar(36) not null,
+        subscriber_id varchar(36) not null,
+        errand_number varchar(255),
+        event_summary text,
+        identifier_value varchar(255),
+        recipient_email varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
     create table email_worker_config (
         add_sender_as_stakeholder bit,
         days_of_inactivity_before_reject integer,

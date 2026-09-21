@@ -330,7 +330,7 @@ class ErrandsResourceTest {
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, errandInstance)).thenReturn(updatedInstance);
 
 		// Call
 		final var response = webTestClient.patch()
@@ -345,7 +345,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance);
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, errandInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
@@ -370,7 +370,7 @@ class ErrandsResourceTest {
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, errandInstance)).thenReturn(updatedInstance);
 
 		// Call
 		webTestClient.patch()
@@ -381,7 +381,7 @@ class ErrandsResourceTest {
 			.expectStatus().isOk();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance);
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, errandInstance);
 	}
 
 	@Test
@@ -393,7 +393,7 @@ class ErrandsResourceTest {
 			.withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, emptyInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, emptyInstance)).thenReturn(updatedInstance);
 
 		// Call
 		final var response = webTestClient.patch()
@@ -408,7 +408,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, emptyInstance);
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, emptyInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
@@ -419,7 +419,7 @@ class ErrandsResourceTest {
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, errandInstance)).thenReturn(updatedInstance);
 
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
@@ -433,7 +433,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errandInstance);
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, errandInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 
@@ -445,7 +445,7 @@ class ErrandsResourceTest {
 		final var updatedInstance = Errand.create().withId(ERRAND_ID);
 
 		// Mock
-		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ifMatch, errandInstance)).thenReturn(updatedInstance);
+		when(errandServiceMock.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ifMatch, null, errandInstance)).thenReturn(updatedInstance);
 
 		// Call
 		final var response = webTestClient.patch()
@@ -461,7 +461,7 @@ class ErrandsResourceTest {
 			.getResponseBody();
 
 		// Verification
-		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ifMatch, errandInstance);
+		verify(errandServiceMock).updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ifMatch, null, errandInstance);
 		assertThat(response).isEqualTo(updatedInstance);
 	}
 

@@ -11,6 +11,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationCha
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
+import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,13 +34,20 @@ class NotificationChannelDispatcherTest {
 	@Mock
 	private SubscriberNotificationService subscriberNotificationServiceMock;
 
+	@Mock
+	private SubscriberEmailService subscriberEmailServiceMock;
+
 	@InjectMocks
 	private NotificationChannelDispatcher dispatcher;
 
 	private static SubscriberEntity subscriberWith(final NotificationChannelType type) {
+		return subscriberWith(type, null);
+	}
+
+	private static SubscriberEntity subscriberWith(final NotificationChannelType type, final String destination) {
 		return SubscriberEntity.create()
 			.withId("subscriber-id")
-			.withChannels(List.of(NotificationChannelEmbeddable.create().withType(type)));
+			.withChannels(List.of(NotificationChannelEmbeddable.create().withType(type).withDestination(destination)));
 	}
 
 	@Test
@@ -53,6 +61,7 @@ class NotificationChannelDispatcherTest {
 
 		// Assert
 		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		verifyNoInteractions(subscriberEmailServiceMock);
 	}
 
 	@Test
@@ -65,19 +74,36 @@ class NotificationChannelDispatcherTest {
 		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
 
 		// Assert
-		verifyNoInteractions(subscriberNotificationServiceMock);
+		verifyNoInteractions(subscriberNotificationServiceMock, subscriberEmailServiceMock);
 	}
 
 	@Test
-	void sendEmailChannelIsSkippedUntilImplemented() {
+	void sendEmailChannelEnqueuesOutboxEntry() {
 
 		// Arrange
-		final var subscriber = subscriberWith(NotificationChannelType.EMAIL);
+		final var subscriber = subscriberWith(NotificationChannelType.EMAIL, "test@example.com");
+		final var channel = subscriber.getChannels().getFirst();
 
 		// Act
 		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
 
 		// Assert
+		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, channel, subscriber, EVENTS);
+		verifyNoInteractions(subscriberNotificationServiceMock);
+	}
+
+	@Test
+	void sendEmailChannelWithoutDestinationEnqueuesOutboxEntry() {
+
+		// Arrange
+		final var subscriber = subscriberWith(NotificationChannelType.EMAIL);
+		final var channel = subscriber.getChannels().getFirst();
+
+		// Act
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+
+		// Assert
+		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, channel, subscriber, EVENTS);
 		verifyNoInteractions(subscriberNotificationServiceMock);
 	}
 
