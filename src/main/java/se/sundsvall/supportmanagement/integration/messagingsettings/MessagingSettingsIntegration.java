@@ -48,13 +48,13 @@ public class MessagingSettingsIntegration {
 				retrieveOptionalValue(KEY_REPORTER_SUPPORT_TEXT, messagingSettings).orElse(null), // This is not a mandatory setting
 				retrieveValue(KEY_CONTACT_INFORMATION_URL, messagingSettings),
 				retrieveOptionalValue(KEY_KATLA_URL, messagingSettings).orElse("<Add katla_url configuration to namespace in messaging settings>"),
-				retrieveValue(KEY_SMS_SENDER, messagingSettings),
+				retrieveOptionalValue(KEY_SMS_SENDER, messagingSettings).orElse(null),
 				retrieveValue(KEY_CONTACT_INFORMATION_EMAIL, messagingSettings),
 				retrieveOptionalValue(KEY_CONTACT_INFORMATION_EMAIL_NAME, messagingSettings).orElse(retrieveValue(KEY_CONTACT_INFORMATION_EMAIL, messagingSettings)));
 		} catch (final ThrowableProblem e) {
 			LOG.error("{} for namespace '{}' and department with name '{}' within municipality '{}'", e.getMessage(), sanitizeForLogging(namespace), sanitizeForLogging(departmentName), sanitizeForLogging(municipalityId));
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "One or more mandatory settings %s are absent for namespace '%s' and department with name '%s' within municipality with id '%s'"
-				.formatted(List.of(KEY_CONTACT_INFORMATION_EMAIL, KEY_CONTACT_INFORMATION_URL, KEY_SMS_SENDER), namespace, departmentName, municipalityId));
+				.formatted(List.of(KEY_CONTACT_INFORMATION_EMAIL, KEY_CONTACT_INFORMATION_URL), namespace, departmentName, municipalityId));
 		}
 	}
 

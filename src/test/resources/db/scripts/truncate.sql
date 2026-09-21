@@ -60,6 +60,7 @@ TRUNCATE table subscriber_event_filter;
 TRUNCATE table subscriber_channel;
 TRUNCATE table subscriber;
 TRUNCATE table notification_dispatch;
+TRUNCATE table email_dispatch_outbox;
 TRUNCATE table subscriber_notification_event;
 TRUNCATE table subscriber_notification;
 TRUNCATE table measure;
