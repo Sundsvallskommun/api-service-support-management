@@ -102,7 +102,7 @@ public class ErrandSearchService {
 
 		final var user = Identifier.get();
 		final var grant = accessControlService.namespaceGrant(namespace, municipalityId, user, R);
-		final var plan = searchAccess.plan(query, pageable.getSort(), searchAccess.resolve(grant));
+		final var plan = searchAccess.plan(query, pageable.getSort(), grant);
 
 		final SearchResult<ErrandEntity> result;
 		try {
