@@ -578,6 +578,87 @@ this is **opt-in per namespace** and off by default: a namespace without a proce
 unaffected by everything below. The full design, in Swedish, is in
 [`docs/alkt-processintegration.md`](docs/alkt-processintegration.md).
 
+### Onboarding a new process
+
+How a new line of business gets its errands driven by a process. There are two cases, and they differ in what they
+cost:
+
+|                                 Case                                 |                                     What it takes                                      | Release of SupportManagement? |
+|----------------------------------------------------------------------|----------------------------------------------------------------------------------------|-------------------------------|
+| A new process in a process service that is already known (`pw-alkt`) | Configuration in SupportManagement, and the process deployed in the process service    | No                            |
+| A new process service                                                | Code and configuration in SupportManagement, a new API in WSO2, and the service itself | Yes                           |
+
+Every environment needs `integration.pw-alkt.url` and the OAuth2 client `pw-alkt` (`token-uri`, `client-id` and
+`client-secret`) whether or not any namespace runs a process: the service does not start without them.
+
+#### A new process in a known process service
+
+1. **Model and deploy the process** in the process service. Its process definition key is what SupportManagement
+   calls the process key, and it is matched exactly. Follow the modelling rules in §9.2 of the
+   [design document](docs/alkt-processintegration.md): a wait
+   state reads the errand again when it is entered, a manual gate is a named message event (never a user task), no
+   parallel branches change the errand, and the last step before every end event is a work step reporting the process
+   as completed. SupportManagement does not check that a key is deployed; the process service answers `422` for one it
+   does not know, and the event is then dropped with an `ERROR` entry on the errand.
+2. **Connect the namespace** in its namespace config (`POST` or `PUT /{municipalityId}/{namespace}/namespace-config`):
+   - `processConsumer`: `pw-alkt`;
+   - `processTriggers`: at least `ERRAND` and `DECISION`, plus every other sub type the process should be woken by, such
+     as `MESSAGE` or `ATTACHMENT`;
+   - `accessControl`: `false`, since a process consumer cannot be combined with access control.
+
+   See [Turning it on](#turning-it-on).
+
+3. **Point the labels at the process.** Give the label, or labels, of the errands the process is to run the attribute
+   `processKey` with the process definition key, and `processStartMode` `MANUAL` to begin with
+   (`PUT /{municipalityId}/{namespace}/metadata/labels`). An errand's labels may name one process key only. See
+   [Which process an errand belongs to](#which-process-an-errand-belongs-to) and [Label rules](#label-rules).
+
+4. **Try it by hand.** Create an errand wearing the label. `GET .../errands/{errandId}/processes` answers
+   `startable.status` `AVAILABLE` with the key, `POST .../processes/start` starts the process, and within seconds the
+   instance shows in the list and its entries in `GET .../process-activities`. See
+   [Starting a process by hand](#starting-a-process-by-hand).
+
+5. **Switch to automatic start** by setting `processStartMode` to `AUTOMATIC`, or removing it, once the chain behaves.
+   From then on every errand event that passes the triggers starts the process for an errand that has neither a live
+   nor a completed process — and that includes **existing errands already wearing the label, the next time they
+   change**. Switching back is the same attribute change; neither needs a release.
+
+Whether events are getting through is visible in the health indicator `process_event_relay`, which turns unhealthy
+when the oldest undelivered event is older than `scheduler.process-event.unhealthy-after`.
+
+#### A new process service
+
+The relay delivers only to `pw-alkt`, through one Feign client. A process service of its own is therefore a release of
+SupportManagement:
+
+|                                              Step                                              |           Where            |
+|------------------------------------------------------------------------------------------------|----------------------------|
+| An OAuth2 client registration and provider for the service                                     | `application.yml`          |
+| A Feign client with its configuration and properties, like `PwAlktClient`                      | code and `application.yml` |
+| The relay delivering to the new consumer, and the validation of `processConsumer` accepting it | code                       |
+| An API for the service in WSO2, which all REST traffic between the services passes             | WSO2                       |
+
+After that the namespace is connected exactly as above, with the new consumer's name in `processConsumer`.
+
+The process service in turn has to keep the contract `pw-alkt` keeps:
+
+- **Take events** at `POST /{municipalityId}/{namespace}/process/errand-events` (see
+  [`pw-alkt-api.yaml`](src/main/resources/integrations/pw-alkt-api.yaml)). Answer `202` when the event is taken, and
+  `422` only for an event it can never take, such as an unknown process key — that event is dropped for good, while
+  every other answer is retried until `scheduler.process-event.max-age`. The same event can arrive twice.
+- **Start a process** only when the errand has no live instance, the event carries a `processKey` and `startAllowed`
+  is `true`, with the errand id as business key. Register the start with `POST .../errands/{errandId}/processes`, a
+  failed one included, and abort the new instance if the answer is `409`.
+- **Wake the process** on every other event: correlate the message `errandUpdated`, or `signalName` when the sub type
+  is `SIGNAL`. A correlation that finds no wait state is normal and answered `202`.
+- **Delete the instance** when the event type is `DELETE`.
+- **Report** the state of the instance from every work step with `PUT .../processes/{processInstanceId}`: the status,
+  the current activity, the activities performed, `awaitingSignals` for the gate it waits at, and `errandVersion` for
+  the version of the errand the step read. A step that changes the errand sends `If-Match` with that version. A `412`
+  means the errand changed since; the step is retried against the errand as it now is.
+- **Identify itself** in every call with `X-Sent-By: <consumer>; type=processEngine` and `processService` set to the
+  consumer name, and send `X-Trigger-Process: false` on its writes, so that they do not wake the process again.
+
 ### Turning it on
 
 Two namespace config values decide it:
