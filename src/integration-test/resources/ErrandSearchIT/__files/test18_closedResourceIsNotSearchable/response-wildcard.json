@@ -1,5 +1,5 @@
 {
 	"title": "Forbidden",
 	"status": 403,
-	"detail": "A wildcard in a field name is not available to user 'fro01lin', who may not search every resource of the errand"
+	"detail": "A wildcard in a field name is not available to user 'fro01lin', who may not search every field of the errand"
 }

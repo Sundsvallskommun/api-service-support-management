@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
+import java.util.List;
+
 /**
  * Fields of an errand that a role based mapping may emit. Keyed fields are the errand collections whose elements carry
  * a
@@ -11,7 +13,7 @@ package se.sundsvall.supportmanagement.integration.db.model.enums;
  */
 public enum ErrandField {
 
-	ID("id", false),
+	ID("id", false, null),
 	ERRAND_NUMBER("errandNumber", false),
 	TITLE("title", false),
 	STATUS("status", false),
@@ -22,38 +24,47 @@ public enum ErrandField {
 	TOUCHED("touched", false),
 	PRIORITY("priority", false),
 	DESCRIPTION("description", false),
-	CLASSIFICATION("classification", false),
+	CLASSIFICATION("classification", false, null, "category", "type"),
 	REPORTER_USER_ID("reporterUserId", false),
 	ASSIGNED_USER_ID("assignedUserId", false),
 	ASSIGNED_GROUP_ID("assignedGroupId", false),
 	BUSINESS_RELATED("businessRelated", false),
-	SUSPENSION("suspension", false),
-	CONTACT_REASON("contactReason", false),
+	SUSPENSION("suspension", false, null, "suspendedFrom", "suspendedTo"),
+	CONTACT_REASON("contactReason", false, null, "contactReason."),
 	CONTACT_REASON_DESCRIPTION("contactReasonDescription", false),
 	ESCALATION_EMAIL("escalationEmail", false),
-	LABELS("labels", false),
-	STAKEHOLDERS("stakeholders", false),
-	MEASURES("measures", false),
-	ACTIVE_NOTIFICATIONS("activeNotifications", false),
-	PHASES("phases", false),
-	ACTIONS("actions", false),
-	VERSION("version", false),
-	PARAMETERS("parameters", true, ProtectedResource.PARAMETER),
-	JSON_PARAMETERS("jsonParameters", true, ProtectedResource.JSON_PARAMETER),
-	EXTERNAL_TAGS("externalTags", true);
+	LABELS("labels", false, null, "labels."),
+	STAKEHOLDERS("stakeholders", false, null, "stakeholders."),
+	MEASURES("measures", false, null, "measures."),
+	ACTIVE_NOTIFICATIONS("activeNotifications", false, null),
+	PHASES("phases", false, null, "phases."),
+	ACTIONS("actions", false, null),
+	VERSION("version", false, null),
+	PARAMETERS("parameters", true, ProtectedResource.PARAMETER, "parameters."),
+	JSON_PARAMETERS("jsonParameters", true, ProtectedResource.JSON_PARAMETER, "jsonParameters.", "jsonParametersText"),
+	EXTERNAL_TAGS("externalTags", true, null, "externalTags.");
 
 	private final String propertyName;
 	private final boolean keyed;
 	private final ProtectedResource writeResource;
+	private final List<String> searchFields;
 
+	/**
+	 * A field the search index holds under the name of the property.
+	 */
 	ErrandField(final String propertyName, final boolean keyed) {
-		this(propertyName, keyed, null);
+		this(propertyName, keyed, null, propertyName);
 	}
 
-	ErrandField(final String propertyName, final boolean keyed, final ProtectedResource writeResource) {
+	/**
+	 * @param searchFields the fields of the search index that hold this field, by their names or, for a name ending in a
+	 *                     dot, by the start of their names. None for a field the index does not hold.
+	 */
+	ErrandField(final String propertyName, final boolean keyed, final ProtectedResource writeResource, final String... searchFields) {
 		this.propertyName = propertyName;
 		this.keyed = keyed;
 		this.writeResource = writeResource;
+		this.searchFields = List.of(searchFields);
 	}
 
 	/**
@@ -74,5 +85,13 @@ public enum ErrandField {
 	 */
 	public ProtectedResource getWriteResource() {
 		return writeResource;
+	}
+
+	/**
+	 * The fields of the search index that hold this field. What a role keeps from a user of the field, it keeps from
+	 * them in a search.
+	 */
+	public List<String> getSearchFields() {
+		return searchFields;
 	}
 }

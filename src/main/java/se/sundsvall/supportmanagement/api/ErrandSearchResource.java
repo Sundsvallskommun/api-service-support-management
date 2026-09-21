@@ -82,9 +82,12 @@ class ErrandSearchResource {
 		A search without a field looks in the text of all of the above.
 
 		Errands are searched at full read: an errand the user reaches at limited read only is not found. Where a namespace \
-		enforces access control, the fields of a resource the user may not read (communications, decisions, statements, \
-		investigations, measures, parameters, JSON parameters, attachments) are left out of a search without a field, a query \
-		naming one of them is refused with 403, and so is a wildcard in a field name.""";
+		enforces access control, what the user may not read they may not search either: the fields of a resource their labels do \
+		not reach (communications, decisions, statements, investigations, measures, parameters, JSON parameters, attachments), \
+		the fields their roles keep from them, and the keys of parameters and JSON parameters their roles do not grant. Such \
+		fields are left out of a search without a field, and a query naming one of them, or sorting on one, is refused with 403, \
+		as is a wildcard in a field name. Errands the user reported are searched along with the rest only while the query keeps \
+		to the reporter fields of the namespace.""";
 
 	static final String SORT_DESCRIPTION = "Without a sort the best matches come first, newest first among equals. Sortable properties: " +
 		"created, modified, touched, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +

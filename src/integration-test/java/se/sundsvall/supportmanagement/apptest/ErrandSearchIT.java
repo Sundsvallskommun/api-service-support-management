@@ -242,6 +242,60 @@ class ErrandSearchIT extends AbstractAppTest {
 		assertThat(searchAs(RESOURCE_CONTROLLED_PATH, "communications.subject:hemligt", "com01red")).containsExactly("FL-23020001");
 	}
 
+	/**
+	 * A case officer whose role sees the title, one parameter key and one JSON parameter key. The labels reach every
+	 * errand, but the search keeps to what the role sees: the granted JSON key is searchable, the hidden one and the
+	 * description are refused, free text does not find what the hidden key holds, and a sort on a field the role does
+	 * not see is refused too.
+	 */
+	@Test
+	void test20_roleKeepsFieldsAndKeysFromTheSearch() {
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "smo02key")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "jsonParameters.granted-json.visible:true", "smo02key")).containsExactly("AP-23020003");
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "survive", "smo02key")).isEmpty();
+
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH, "description:x"))
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-field.json")
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH, "jsonParameters.hidden-json.secret:survive"))
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-key.json")
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH + "?sort=created,desc", ""))
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-sort.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * The reporter, whom the access mapper grants nothing, is held to the reporter fields of the namespace on their own
+	 * errand: found by title, refused on the description.
+	 */
+	@Test
+	void test21_reporterIsHeldToTheReporterFields() {
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "title:e-service", "rob01rep")).containsExactly("AP-23020003");
+
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH, "description:x"))
+			.withHeader(SENT_BY_HEADER, "rob01rep; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-field.json")
+			.sendRequestAndVerifyResponse();
+	}
+
 	private List<String> search(final String path, final String query) {
 		return errandNumbers(page(path, query));
 	}

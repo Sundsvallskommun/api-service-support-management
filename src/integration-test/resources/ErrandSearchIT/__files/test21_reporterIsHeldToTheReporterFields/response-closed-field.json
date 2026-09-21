@@ -1,0 +1,5 @@
+{
+	"title": "Forbidden",
+	"status": 403,
+	"detail": "Field 'description' not searchable by user 'rob01rep'"
+}

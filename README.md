@@ -284,9 +284,12 @@ docker run -p 9200:9200 -e discovery.type=single-node -e DISABLE_SECURITY_PLUGIN
 ```
 
 Access control applies to the query, not only to the answer: errands are searched at full read, and where a namespace
-enforces access control a query naming a field of a resource the user may not read (communications, decisions and so
-on) is refused with 403, since a hit or a miss would tell what the field holds. The rebuild endpoint is held to the
-namespace configuration grant.
+enforces access control a query naming what the user may not read - a field of a resource their labels do not reach
+(communications, decisions and so on), a field their roles keep from them, or a key of a parameter or JSON parameter
+their roles do not grant - is refused with 403, since a hit or a miss would tell what the field holds. The same goes for
+sorting on such a field, and free text looks only in what is open. Errands the user reported are searched along with the
+rest only while the query keeps to the reporter fields. Which index fields carry a resource or a field is declared on
+`ProtectedResource` and `ErrandField`. The rebuild endpoint is held to the namespace configuration grant.
 
 JSON parameters are indexed as they come, every scalar under `jsonParameters.<key>.<path>` as text with a keyword twin
 under `.raw`, which is what makes them searchable by path without a schema. Two things follow from that. A path has to
