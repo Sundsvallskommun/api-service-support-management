@@ -1,0 +1,102 @@
+package se.sundsvall.supportmanagement.service.access;
+
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.data.jpa.domain.Specification;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+/**
+ * The access of a user rendered as JPA specifications, which is how the database enforces what
+ * {@link NamespaceGrantResolver} decided. The search index renders the same {@link AccessScope} in its own terms.
+ */
+public final class ErrandAccessSpecifications {
+
+	private static final String ID_ATTRIBUTE = "id";
+	private static final String REPORTER_USER_ID_ATTRIBUTE = "reporterUserId";
+	private static final String ACCESS_LABELS_ATTRIBUTE = "accessLabels";
+	private static final String METADATA_LABEL_ID_ATTRIBUTE = "metadataLabelId";
+
+	private ErrandAccessSpecifications() {}
+
+	/**
+	 * The errands sent in scope reaches: those the labels cover, and those the user reported, unioned. A scope that is
+	 * not enforced reaches every errand, one with neither route open reaches none.
+	 */
+	public static Specification<ErrandEntity> withAccessControl(final AccessScope scope) {
+		if (!scope.enforced()) {
+			return (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+		}
+
+		final var clauses = new ArrayList<Specification<ErrandEntity>>();
+
+		if (nonNull(scope.allowedLabels())) {
+			clauses.add(hasAllowedMetadataLabels(scope.allowedLabels()));
+		}
+
+		if (nonNull(scope.reporterAdAccount())) {
+			clauses.add(isReportedBy(scope.reporterAdAccount()));
+		}
+
+		return clauses.stream()
+			.reduce(Specification::or)
+			.orElse((_, _, criteriaBuilder) -> criteriaBuilder.disjunction());
+	}
+
+	/**
+	 * Matches errands reported by sent in user. A null user matches nothing, so an absent or non AD identifier can never
+	 * match errands lacking a reporter.
+	 *
+	 * @param  adAccount ad account of the requesting user, or null
+	 * @return           specification matching errands reported by sent in user
+	 */
+	public static Specification<ErrandEntity> isReportedBy(String adAccount) {
+		return (root, _, criteriaBuilder) -> isNull(adAccount)
+			? criteriaBuilder.disjunction()
+			: criteriaBuilder.equal(root.get(REPORTER_USER_ID_ATTRIBUTE), adAccount);
+	}
+
+	/**
+	 * Matches errands whose every access label is among sent in allowed labels.
+	 * <p>
+	 * Expressed as "has no access label outside the allowed set" rather than by counting labels and matching labels and
+	 * comparing the two. One correlated subquery instead of two aggregating ones, and it stops at the first offending
+	 * label rather than counting every row. An errand carrying no access labels has nothing outside the set and stays
+	 * accessible to everyone, which is the same rule as the counting form giving 0 == 0.
+	 *
+	 * @param  allowedLabels labels the user may see, no access at all if empty
+	 * @return               specification matching errands fully covered by sent in labels
+	 */
+	public static Specification<ErrandEntity> hasAllowedMetadataLabels(Set<MetadataLabelEntity> allowedLabels) {
+		return (root, query, criteriaBuilder) -> {
+			if (allowedLabels == null || allowedLabels.isEmpty()) {
+				return criteriaBuilder.disjunction(); // No access if no allowed labels
+			}
+
+			final var allowedLabelIds = allowedLabels.stream()
+				.map(MetadataLabelEntity::getId)
+				.collect(Collectors.toSet());
+
+			final Subquery<Integer> labelsOutsideAllowed = query.subquery(Integer.class);
+			final Root<ErrandEntity> subRoot = labelsOutsideAllowed.from(ErrandEntity.class);
+			final Join<ErrandEntity, AccessLabelEmbeddable> labelJoin = subRoot.join(ACCESS_LABELS_ATTRIBUTE, JoinType.INNER);
+
+			labelsOutsideAllowed.select(criteriaBuilder.literal(1))
+				.where(
+					criteriaBuilder.equal(subRoot.get(ID_ATTRIBUTE), root.get(ID_ATTRIBUTE)),
+					labelJoin.get(METADATA_LABEL_ID_ATTRIBUTE).in(allowedLabelIds).not());
+
+			return criteriaBuilder.not(criteriaBuilder.exists(labelsOutsideAllowed));
+		};
+	}
+
+}

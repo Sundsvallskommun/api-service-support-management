@@ -23,8 +23,8 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
-import se.sundsvall.supportmanagement.service.search.ErrandReindexService;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
+import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;

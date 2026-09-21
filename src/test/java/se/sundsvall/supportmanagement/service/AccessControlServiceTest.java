@@ -57,8 +57,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.hasAllowedMetadataLabels;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.isReportedBy;
+import static se.sundsvall.supportmanagement.service.access.ErrandAccessSpecifications.hasAllowedMetadataLabels;
+import static se.sundsvall.supportmanagement.service.access.ErrandAccessSpecifications.isReportedBy;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
 @ExtendWith(MockitoExtension.class)

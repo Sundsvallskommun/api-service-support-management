@@ -11,6 +11,8 @@ import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.config.SearchProperties;
 import se.sundsvall.supportmanagement.service.AccessControlService;
+import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
+import se.sundsvall.supportmanagement.service.search.index.SearchAvailability;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
