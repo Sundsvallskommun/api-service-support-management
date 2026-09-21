@@ -12,12 +12,7 @@ import net.javacrumbs.shedlock.core.SimpleLock;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RestClient;
-import org.hibernate.search.backend.elasticsearch.ElasticsearchBackend;
-import org.hibernate.search.backend.elasticsearch.index.ElasticsearchIndexManager;
-import org.hibernate.search.backend.elasticsearch.metamodel.ElasticsearchIndexDescriptor;
-import org.hibernate.search.engine.backend.Backend;
 import org.hibernate.search.mapper.orm.Search;
-import org.hibernate.search.mapper.orm.entity.SearchIndexedEntity;
 import org.hibernate.search.mapper.orm.mapping.SearchMapping;
 import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
 import org.hibernate.search.mapper.orm.massindexing.MassIndexerFilteringTypeStep;
@@ -85,37 +80,19 @@ class ErrandReindexServiceTest {
 	private AccessControlService accessControlServiceMock;
 
 	@Mock
-	private SearchIndexedEntity<ErrandEntity> indexedEntityMock;
-
-	@Mock
-	private ElasticsearchIndexManager indexManagerMock;
-
-	@Mock
-	private ElasticsearchIndexDescriptor indexDescriptorMock;
-
-	@Mock
-	private Backend backendMock;
-
-	@Mock
-	private ElasticsearchBackend elasticsearchBackendMock;
+	private OpenSearchClient openSearchMock;
 
 	@Mock
 	private RestClient restClientMock;
 
 	private ErrandReindexService service(final boolean enabled) {
-		return new ErrandReindexService(entityManagerFactoryMock, lockProviderMock, new SearchAvailability(enabled),
+		return new ErrandReindexService(entityManagerFactoryMock, openSearchMock, lockProviderMock, new SearchAvailability(enabled),
 			new SearchProperties(10000, new SearchProperties.Reindex(LOCK_AT_MOST_FOR)), accessControlServiceMock);
 	}
 
 	private void purgeAnswers() throws IOException {
-		when(searchMappingMock.indexedEntity(ErrandEntity.class)).thenReturn(indexedEntityMock);
-		when(indexedEntityMock.indexManager()).thenReturn(indexManagerMock);
-		when(indexManagerMock.unwrap(ElasticsearchIndexManager.class)).thenReturn(indexManagerMock);
-		when(indexManagerMock.descriptor()).thenReturn(indexDescriptorMock);
-		when(indexDescriptorMock.writeName()).thenReturn("errand-write");
-		when(searchMappingMock.backend()).thenReturn(backendMock);
-		when(backendMock.unwrap(ElasticsearchBackend.class)).thenReturn(elasticsearchBackendMock);
-		when(elasticsearchBackendMock.client(RestClient.class)).thenReturn(restClientMock);
+		when(openSearchMock.errandWriteIndex()).thenReturn("errand-write");
+		when(openSearchMock.restClient()).thenReturn(restClientMock);
 		when(restClientMock.performRequest(any())).thenReturn(null);
 	}
 
@@ -231,13 +208,10 @@ class ErrandReindexServiceTest {
 	@Test
 	void reindexReleasesTheLockWhenStartingFails() {
 		when(lockProviderMock.lock(any())).thenReturn(Optional.of(lockMock));
+		when(openSearchMock.errandWriteIndex()).thenThrow(new IllegalStateException("no search mapping"));
 
-		try (final MockedStatic<Search> search = mockStatic(Search.class)) {
-			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenThrow(new IllegalStateException("no search mapping"));
-
-			final var service = service(true);
-			assertThrows(IllegalStateException.class, () -> service.reindex(NAMESPACE, MUNICIPALITY_ID, false));
-		}
+		final var service = service(true);
+		assertThrows(IllegalStateException.class, () -> service.reindex(NAMESPACE, MUNICIPALITY_ID, false));
 
 		verify(lockMock).unlock();
 	}

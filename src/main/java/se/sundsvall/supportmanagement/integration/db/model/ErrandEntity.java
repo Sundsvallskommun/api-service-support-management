@@ -19,6 +19,7 @@ import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.search.engine.backend.types.Sortable;
@@ -279,10 +280,15 @@ public class ErrandEntity {
 	@IndexedEmbedded(name = ErrandIndex.MEASURES)
 	private List<MeasureEntity> measures;
 
-	// The four below exist for the search index only. Decisions, statements and investigations are read and written
-	// through their own resources, and communications are tied to the errand by its number rather than a key, so none of
-	// them is otherwise a collection on the errand. Nothing cascades through them, and they are kept out of equals,
-	// hashCode and toString so that comparing or logging an errand never loads them.
+	/**
+	 * The associations below, which exist for the search index only. Decisions, statements and investigations are read
+	 * and written through their own resources, and communications are tied to the errand by its number rather than a
+	 * key, so none of them is otherwise a collection on the errand. Nothing cascades through them, they are kept out of
+	 * equals, hashCode and toString so that comparing or logging an errand never loads them, and the errand listing
+	 * refuses to filter on them, since they were never reachable there and are guarded on their own resources.
+	 */
+	public static final Set<String> INDEX_ONLY_ASSOCIATIONS = Set.of("decisions", "statements", "investigations", "communications");
+
 	@OneToMany(mappedBy = "errandEntity", fetch = LAZY)
 	@IndexedEmbedded(name = ErrandIndex.DECISIONS)
 	private List<DecisionEntity> decisions;

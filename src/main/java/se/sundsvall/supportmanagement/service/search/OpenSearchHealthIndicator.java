@@ -1,10 +1,6 @@
 package se.sundsvall.supportmanagement.service.search;
 
-import jakarta.persistence.EntityManagerFactory;
 import org.elasticsearch.client.Request;
-import org.elasticsearch.client.RestClient;
-import org.hibernate.search.backend.elasticsearch.ElasticsearchBackend;
-import org.hibernate.search.mapper.orm.Search;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
@@ -27,17 +23,16 @@ public class OpenSearchHealthIndicator implements HealthIndicator {
 
 	private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
-	private final EntityManagerFactory entityManagerFactory;
+	private final OpenSearchClient openSearch;
 
-	public OpenSearchHealthIndicator(final EntityManagerFactory entityManagerFactory) {
-		this.entityManagerFactory = entityManagerFactory;
+	public OpenSearchHealthIndicator(final OpenSearchClient openSearch) {
+		this.openSearch = openSearch;
 	}
 
 	@Override
 	public Health health() {
 		try {
-			final var client = Search.mapping(entityManagerFactory).backend().unwrap(ElasticsearchBackend.class).client(RestClient.class);
-			final var response = client.performRequest(new Request("GET", "/_cluster/health"));
+			final var response = openSearch.restClient().performRequest(new Request("GET", "/_cluster/health"));
 			final var body = MAPPER.readTree(response.getEntity().getContent());
 			final var status = body.path("status").asString();
 
