@@ -17,10 +17,13 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant.LabelRoute;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant.ReporterRoute;
+import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 /**
@@ -39,13 +42,13 @@ class ErrandSearchAccessTest {
 		"decisions.title", "decisions.justification", "description", "errandNumber", "externalTags.value", "jsonParametersText", "measures.title", "parameters.values",
 		"stakeholders.lastName", "title");
 
-	private final ErrandSearchAccess access = new ErrandSearchAccess(new ErrandIndexModel(null) {
+	private final ErrandSearchAccess access = new ErrandSearchAccess(indexModel());
 
-		@Override
-		public List<String> textFields() {
-			return TEXT_FIELDS;
-		}
-	});
+	private static ErrandIndexModel indexModel() {
+		final var model = mock(ErrandIndexModel.class);
+		when(model.textFields()).thenReturn(TEXT_FIELDS);
+		return model;
+	}
 
 	private ErrandSearchAccess.Plan plan(final String query, final Sort sort, final NamespaceGrant grant) {
 		return access.plan(query, sort, grant);

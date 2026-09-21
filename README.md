@@ -288,8 +288,24 @@ enforces access control a query naming what the user may not read - a field of a
 (communications, decisions and so on), a field their roles keep from them, or a key of a parameter or JSON parameter
 their roles do not grant - is refused with 403, since a hit or a miss would tell what the field holds. The same goes for
 sorting on such a field, and free text looks only in what is open. Errands the user reported are searched along with the
-rest only while the query keeps to the reporter fields. Which index fields carry a resource or a field is declared on
-`ProtectedResource` and `ErrandField`. The rebuild endpoint is held to the namespace configuration grant.
+rest only while the query keeps to the reporter fields. The rebuild endpoint is held to the namespace configuration grant.
+
+How the pieces hold together, from the API to the index:
+
+- `ErrandField` names the properties of the API model a role may be kept from; `ErrandMapper` maps each of them from the
+  entity, and `ProtectedResource` names the resources guarded on their own.
+- `ErrandIndex` (`integration/db/search`) names the fields of the index. The entity mapping declares its fields under
+  those names, and `ErrandField` and `ProtectedResource` bind to them, so a renamed field is a compile error rather than
+  an empty search. `ErrandIndexModel` reads the rest from Hibernate Search and checks every declared name against the
+  index when the service starts.
+- `NamespaceGrant` (`service/access`) is what a user holds in a namespace: the label route and the reporter route, each
+  with what may be read, and the resources the labels reach. `NamespaceGrantResolver` decides it from the namespace
+  configuration and one snapshot of the access mapper; `AccessControlService` fetches those, enforces the decision and
+  loads errands; `ErrandAccessSpecifications` renders it for the database.
+- `service/search` renders the same grant for the index: `FieldClosure` says what a route keeps closed,
+  `QueryStringFields` what a query names, `ErrandSearchAccess` puts the two together, `ErrandSearchPredicates` builds the
+  query. `service/search/index` is the index itself: rebuild, schema, health, and the one facade (`SearchIndexing`) the
+  services writing the database may use.
 
 JSON parameters are indexed as they come, every scalar under `jsonParameters.<key>.<path>` as text with a keyword twin
 under `.raw`, which is what makes them searchable by path without a schema. Two things follow from that. A path has to

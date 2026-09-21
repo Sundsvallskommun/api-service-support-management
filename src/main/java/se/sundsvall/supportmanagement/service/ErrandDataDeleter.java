@@ -13,7 +13,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProje
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-import se.sundsvall.supportmanagement.service.search.SearchIndexing;
+import se.sundsvall.supportmanagement.service.search.index.SearchIndexing;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;

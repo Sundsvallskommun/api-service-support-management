@@ -9,6 +9,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
+import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;

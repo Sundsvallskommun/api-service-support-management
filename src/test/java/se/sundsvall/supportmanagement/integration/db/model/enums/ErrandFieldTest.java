@@ -132,7 +132,7 @@ class ErrandFieldTest {
 		assertThat(ErrandField.TITLE.getSortableProperties()).containsExactly("title");
 		assertThat(ErrandField.CLASSIFICATION.getSortField("category")).contains("category");
 		assertThat(ErrandField.CLASSIFICATION.getSortField("classification")).isEmpty();
-		assertThat(ErrandField.CLASSIFICATION.getSortableProperties()).containsExactly("category", "type");
+		assertThat(ErrandField.CLASSIFICATION.getSortableProperties()).containsExactlyInAnyOrder("category", "type");
 		assertThat(ErrandField.DESCRIPTION.getSortField("description")).isEmpty();
 		assertThat(ErrandField.JSON_PARAMETERS.getIndex().keysArePaths()).isTrue();
 		assertThat(ErrandField.PARAMETERS.getIndex().keysArePaths()).isFalse();

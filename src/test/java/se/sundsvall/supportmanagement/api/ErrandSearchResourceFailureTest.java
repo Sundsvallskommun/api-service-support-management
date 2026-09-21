@@ -11,8 +11,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.service.search.ErrandReindexService;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
+import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;

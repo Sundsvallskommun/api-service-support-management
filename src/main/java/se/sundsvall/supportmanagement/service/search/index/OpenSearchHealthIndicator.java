@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.search;
+package se.sundsvall.supportmanagement.service.search.index;
 
 import org.elasticsearch.client.Request;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

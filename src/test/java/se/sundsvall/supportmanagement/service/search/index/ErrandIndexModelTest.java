@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.search;
+package se.sundsvall.supportmanagement.service.search.index;
 
 import com.google.gson.JsonElement;
 import java.util.List;

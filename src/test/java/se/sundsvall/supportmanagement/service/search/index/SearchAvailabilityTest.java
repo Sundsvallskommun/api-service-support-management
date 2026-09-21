@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.search;
+package se.sundsvall.supportmanagement.service.search.index;
 
 import org.junit.jupiter.api.Test;
 import se.sundsvall.dept44.problem.ThrowableProblem;

@@ -23,6 +23,8 @@ import se.sundsvall.supportmanagement.config.SearchProperties;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.AccessControlService;
+import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
+import se.sundsvall.supportmanagement.service.search.index.SearchAvailability;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
