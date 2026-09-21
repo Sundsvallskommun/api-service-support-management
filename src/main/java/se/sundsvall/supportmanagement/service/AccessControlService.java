@@ -161,26 +161,65 @@ public class AccessControlService {
 		return errandEntity -> {
 			final var reporter = isReporter(adAccount, errandEntity);
 			final var coverage = coverageOf(fullReadLabelIds, readableLabelIds, errandEntity, reporter);
-			final var applicable = restrictedFields(config, coverage, namespaceRoles);
-
-			// Reporter fields widen a restriction, they never introduce one.
-			if (isNull(applicable)) {
-				return FieldAccessResolution.unrestricted();
-			}
-
-			if (reporter) {
-				applicable.addAll(ofNullable(config.getReporterAccess()).map(ReporterAccess::getFields).orElse(emptyList()));
-			}
-
-			// Here the reporter fields stand on their own rather than on top of a limited read, so the minimum is applied
-			// after them instead of before: a namespace saying what its reporters see may keep that narrower than limited
-			// read, while one saying nothing at all falls back to the minimum rather than to an errand carrying no fields.
-			if (Coverage.REPORTER_ONLY == coverage && applicable.isEmpty()) {
-				applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
-			}
-
-			return new FieldAccessResolution(toFields(applicable), toFields(writableOf(applicable)));
+			return fieldAccess(config, coverage, namespaceRoles, reporter);
 		};
+	}
+
+	/**
+	 * What the user may read and write of an errand they hold with sent in coverage.
+	 */
+	private static FieldAccessResolution fieldAccess(NamespaceConfig config, Coverage coverage, Set<String> namespaceRoles, boolean reporter) {
+		final var applicable = restrictedFields(config, coverage, namespaceRoles);
+
+		// Reporter fields widen a restriction, they never introduce one.
+		if (isNull(applicable)) {
+			return FieldAccessResolution.unrestricted();
+		}
+
+		if (reporter) {
+			applicable.addAll(ofNullable(config.getReporterAccess()).map(ReporterAccess::getFields).orElse(emptyList()));
+		}
+
+		// Here the reporter fields stand on their own rather than on top of a limited read, so the minimum is applied
+		// after them instead of before: a namespace saying what its reporters see may keep that narrower than limited
+		// read, while one saying nothing at all falls back to the minimum rather than to an errand carrying no fields.
+		if (Coverage.REPORTER_ONLY == coverage && applicable.isEmpty()) {
+			applicable.addAll(DEFAULT_LIMITED_READ_FIELDS);
+		}
+
+		return new FieldAccessResolution(toFields(applicable), toFields(writableOf(applicable)));
+	}
+
+	/**
+	 * What the user may read of the errands a search finds, resolved without an errand in hand.
+	 * <p>
+	 * A search finds errands the labels of the user cover at full read, and errands they reported. For the first, the
+	 * coverage is full by construction and what restricts the user is their roles alone; for the second, when the labels
+	 * do not cover the errand, the reporter fields alone. Neither depends on the errand, which is what lets the search
+	 * hold a query to them before any errand is read, see
+	 * {@link se.sundsvall.supportmanagement.service.search.ErrandSearchAccess}.
+	 *
+	 * @param covered  what the user may read of an errand their labels cover, null when nothing restricts them
+	 * @param reported what the user may read of an errand they reported and their labels do not cover
+	 */
+	public record SearchFieldAccess(Map<ErrandField, Set<String>> covered, Map<ErrandField, Set<String>> reported) {
+
+		private static final SearchFieldAccess UNRESTRICTED = new SearchFieldAccess(null, null);
+	}
+
+	public SearchFieldAccess searchFieldAccess(String namespace, String municipalityId, Identifier user) {
+		final var config = namespaceConfigService.get(namespace, municipalityId);
+
+		if (!config.isAccessControl()) {
+			return SearchFieldAccess.UNRESTRICTED;
+		}
+
+		final var access = accessMapperService.getAccessSnapshot(municipalityId, namespace, user);
+		final var namespaceRoles = config.isRoleBasedMapping() ? access.roles() : Set.<String>of();
+
+		return new SearchFieldAccess(
+			fieldAccess(config, Coverage.FULL, namespaceRoles, false).readable(),
+			fieldAccess(config, Coverage.REPORTER_ONLY, namespaceRoles, true).readable());
 	}
 
 	/**

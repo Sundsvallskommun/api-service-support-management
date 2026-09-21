@@ -100,16 +100,15 @@ public class ErrandSearchService {
 		verifySortable(pageable.getSort());
 
 		final var user = Identifier.get();
-		final var access = searchAccess.resolve(namespace, municipalityId, user);
-		searchAccess.verifyQuery(query, access);
+		final var plan = searchAccess.plan(query, pageable.getSort(), searchAccess.resolve(namespace, municipalityId, user));
 
 		final SearchResult<ErrandEntity> result;
 		try {
 			result = Search.session(entityManager).search(ErrandEntity.class)
 				.where(f -> f.bool()
 					.filter(predicates.tenant(f, namespace, municipalityId))
-					.filter(predicates.access(f, access.errand(), namespace, municipalityId))
-					.must(predicates.query(f, query, searchAccess.searchableFields(access))))
+					.filter(predicates.access(f, plan.scope(), namespace, municipalityId))
+					.must(predicates.query(f, query, plan.fields())))
 				.sort(f -> toSort(f, pageable.getSort()))
 				.fetch((int) pageable.getOffset(), pageable.getPageSize());
 		} catch (final SearchException e) {

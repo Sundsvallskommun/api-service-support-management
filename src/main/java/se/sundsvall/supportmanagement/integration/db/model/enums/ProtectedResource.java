@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
+import java.util.List;
+
 /**
  * Resources that can be guarded by access control. Each constant carries a hierarchical path which access patterns are
  * matched against, allowing a single pattern to cover a whole subtree, e.g. "errand/communication/**" for the
@@ -11,8 +13,8 @@ package se.sundsvall.supportmanagement.integration.db.model.enums;
 public enum ProtectedResource {
 
 	ERRAND("errand"),
-	ATTACHMENT("errand/attachment"),
-	COMMUNICATION("errand/communication"),
+	ATTACHMENT("errand/attachment", "attachments."),
+	COMMUNICATION("errand/communication", "communications."),
 	COMMUNICATION_ATTACHMENT("errand/communication/attachment"),
 	CONVERSATION("errand/conversation"),
 	CONVERSATION_MESSAGE("errand/conversation/message"),
@@ -20,12 +22,12 @@ public enum ProtectedResource {
 	EVENT("errand/event"),
 	NOTE("errand/note"),
 	NOTE_REVISION("errand/note/revision"),
-	PARAMETER("errand/parameter"),
-	JSON_PARAMETER("errand/json-parameter"),
-	MEASURE("errand/measure"),
-	STATEMENT("errand/statement"),
-	INVESTIGATION("errand/investigation"),
-	DECISION("errand/decision"),
+	PARAMETER("errand/parameter", "parameters."),
+	JSON_PARAMETER("errand/json-parameter", "jsonParameters.", "jsonParametersText"),
+	MEASURE("errand/measure", "measures."),
+	STATEMENT("errand/statement", "statements."),
+	INVESTIGATION("errand/investigation", "investigations."),
+	DECISION("errand/decision", "decisions."),
 	NOTIFICATION("errand/notification"),
 	REVISION("errand/revision"),
 	TIME_MEASURE("errand/time-measure"),
@@ -49,13 +51,25 @@ public enum ProtectedResource {
 	SUBSCRIBER_NOTIFICATION("subscriber-notification");
 
 	private final String path;
+	private final List<String> searchFields;
 
-	ProtectedResource(final String path) {
+	ProtectedResource(final String path, final String... searchFields) {
 		this.path = path;
+		this.searchFields = List.of(searchFields);
 	}
 
 	public String getPath() {
 		return path;
+	}
+
+	/**
+	 * The fields of the search index that hold this resource, by their names or, for a name ending in a dot, by the start
+	 * of their names. Empty for a resource the index does not hold, which is every resource not belonging to an errand
+	 * and the errand itself, whose own fields are named by {@link ErrandField}. What is guarded on the resource is
+	 * guarded on these in a search.
+	 */
+	public List<String> getSearchFields() {
+		return searchFields;
 	}
 
 	/**

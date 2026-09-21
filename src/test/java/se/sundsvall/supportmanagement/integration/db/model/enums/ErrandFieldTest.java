@@ -112,4 +112,17 @@ class ErrandFieldTest {
 			.as("properties of the errand that no ErrandField names")
 			.containsExactlyInAnyOrderElementsOf(UNRESTRICTABLE);
 	}
+
+	@Test
+	void searchFieldsFollowThePropertyUnlessSaidOtherwise() {
+		assertThat(ErrandField.TITLE.getSearchFields()).containsExactly("title");
+		assertThat(ErrandField.CLASSIFICATION.getSearchFields()).containsExactly("category", "type");
+		assertThat(ErrandField.SUSPENSION.getSearchFields()).containsExactly("suspendedFrom", "suspendedTo");
+		assertThat(ErrandField.STAKEHOLDERS.getSearchFields()).containsExactly("stakeholders.");
+		assertThat(ErrandField.JSON_PARAMETERS.getSearchFields()).containsExactly("jsonParameters.", "jsonParametersText");
+		assertThat(ErrandField.ID.getSearchFields()).isEmpty();
+		assertThat(ErrandField.VERSION.getSearchFields()).isEmpty();
+		assertThat(ErrandField.ACTIONS.getSearchFields()).isEmpty();
+		assertThat(ErrandField.ACTIVE_NOTIFICATIONS.getSearchFields()).isEmpty();
+	}
 }
