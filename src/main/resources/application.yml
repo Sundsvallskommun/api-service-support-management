@@ -40,6 +40,12 @@ scheduler:
     maximum-execution-time: PT4M
     transaction-buffer: PT10S
     max-age: P30D
+  email-dispatch:
+    name: process_email_dispatch
+    cron: "*/30 * * * * *"
+    shedlock-lock-at-most-for: PT2M
+    maximum-execution-time: PT1M
+    max-attempts: 5
   attachment-hash:
     name: compute_attachment_hash
     enabled: true

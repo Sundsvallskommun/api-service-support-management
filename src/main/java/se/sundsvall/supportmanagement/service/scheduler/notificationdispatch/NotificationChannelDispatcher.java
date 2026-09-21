@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
+import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
 
 @Component
 public class NotificationChannelDispatcher {
@@ -14,9 +15,11 @@ public class NotificationChannelDispatcher {
 	private static final Logger LOG = LoggerFactory.getLogger(NotificationChannelDispatcher.class);
 
 	private final SubscriberNotificationService subscriberNotificationService;
+	private final SubscriberEmailService subscriberEmailService;
 
-	public NotificationChannelDispatcher(final SubscriberNotificationService subscriberNotificationService) {
+	public NotificationChannelDispatcher(final SubscriberNotificationService subscriberNotificationService, final SubscriberEmailService subscriberEmailService) {
 		this.subscriberNotificationService = subscriberNotificationService;
+		this.subscriberEmailService = subscriberEmailService;
 	}
 
 	/**
@@ -29,9 +32,8 @@ public class NotificationChannelDispatcher {
 		for (final var channel : subscriber.getChannels()) {
 			switch (channel.getType()) {
 				case INTERNAL -> subscriberNotificationService.create(errandId, errandNumber, subscriber, events);
-				// When this is implemented, store in a table that will be processed in it own transaction, rollback can occur here, and
-				// we don't want duplicate SMS/EMAIL.
-				case SMS, EMAIL -> LOG.warn("Channel type: {} is not yet implemented, skipping delivery for errand: {} subscriber: {}", channel.getType(), errandId, subscriber.getId());
+				case EMAIL -> subscriberEmailService.enqueue(errandId, errandNumber, channel, subscriber, events);
+				case SMS -> LOG.warn("Channel type: {} is not yet implemented, skipping delivery for errand: {} subscriber: {}", channel.getType(), errandId, subscriber.getId());
 			}
 		}
 	}

@@ -81,6 +81,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.RESTRICTED;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -354,7 +355,7 @@ class ErrandServiceTest {
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
-		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, buildErrand());
+		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, buildErrand());
 
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 		assertThat(response.getSuspension()).extracting("suspendedFrom", "suspendedTo").containsExactlyInAnyOrder(entity.getSuspendedFrom(), entity.getSuspendedTo());
@@ -366,6 +367,30 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
+	}
+
+	@Test
+	void updateExistingErrandWithRestrictedNotificationScope() {
+		final var entity = buildErrandEntity();
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, "RESTRICTED", buildErrand());
+
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, RESTRICTED);
 	}
 
 	@Test
@@ -381,7 +406,7 @@ class ErrandServiceTest {
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId("reason", NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
 
-		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, buildErrand());
+		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, buildErrand());
 
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 
@@ -406,7 +431,7 @@ class ErrandServiceTest {
 		final var patch = Errand.create().withParameters(List.of(Parameter.create().withKey("salary").withValues(List.of("secret"))));
 
 		// The whole errand patch is bound by the same key grants as the dedicated parameter endpoints.
-		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch))
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, patch))
 			.isInstanceOf(ThrowableProblem.class)
 			.extracting("status").isEqualTo(UNAUTHORIZED);
 
@@ -422,7 +447,7 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> Map.of(ErrandField.ID, Set.<String>of())));
 		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
 
-		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withTitle("new title"));
+		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, Errand.create().withTitle("new title"));
 
 		assertThat(response.getId()).isEqualTo(ERRAND_ID);
 		assertThat(response).hasAllNullFieldsOrPropertiesExcept("id");
@@ -462,7 +487,7 @@ class ErrandServiceTest {
 		doThrow(Problem.valueOf(BAD_REQUEST, "'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'"))
 			.when(measureValidatorMock).validate(errand.getMeasures(), NAMESPACE, MUNICIPALITY_ID);
 
-		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, null, errand))
 			.hasMessage("Bad Request: 'INVALID_TYPE' is not a valid measure type for namespace 'namespace' and municipality with id 'municipalityId'");
 
 		// The request is held to the measure types before the errand is touched, so nothing downstream of that runs.

@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.1"
+  version: "16.2"
 servers:
 - url: http://localhost:41931
   description: Generated server url
@@ -11130,6 +11130,13 @@ paths:
       - name: If-Match
         in: header
         description: Optional ETag for optimistic locking — omit to skip version check
+        required: false
+        schema:
+          type: string
+      - name: X-Notification-Scope
+        in: header
+        description: When set to RESTRICTED the update event is only visible to subscribers
+          that explicitly subscribe to the RESTRICTED subtype
         required: false
         schema:
           type: string

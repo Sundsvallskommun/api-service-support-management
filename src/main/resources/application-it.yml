@@ -39,6 +39,9 @@ scheduler:
     cron: "-"
   notification-dispatch:
     cron: "-"
+    transaction-buffer: PT0S
+  email-dispatch:
+    cron: "-"
   attachment-hash:
     cron: "-"
   job:

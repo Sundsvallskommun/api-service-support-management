@@ -1,0 +1,50 @@
+[
+	{
+		"id": "475dcfd4-21d5-4f1d-9aac-fbf247f889b8",
+		"municipalityId": "2281",
+		"created": "2025-05-01T15:00:00Z",
+		"updated": "2025-05-01T16:00:00Z",
+		"values": [
+			{
+				"key": "department_name",
+				"value": "Namespace 1",
+				"type": "STRING"
+			},
+			{
+				"key": "namespace",
+				"value": "NAMESPACE-1",
+				"type": "STRING"
+			},
+			{
+				"key": "support_text",
+				"value": "Hej %s, ärende %s har uppdaterats. Se %s för detaljer. Ref: %s",
+				"type": "STRING"
+			},
+			{
+				"key": "contact_information_email",
+				"value": "no-reply@test.local",
+				"type": "STRING"
+			},
+			{
+				"key": "contact_information_email_name",
+				"value": "Sundsvalls kommun",
+				"type": "STRING"
+			},
+			{
+				"key": "contact_information_url",
+				"value": "https://support.test.local/",
+				"type": "STRING"
+			},
+			{
+				"key": "sms_sender",
+				"value": "SUNDSVALL",
+				"type": "STRING"
+			},
+			{
+				"key": "katla_url",
+				"value": "https://katla.test.local/arende/",
+				"type": "STRING"
+			}
+		]
+	}
+]
