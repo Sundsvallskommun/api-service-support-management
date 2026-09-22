@@ -41,16 +41,10 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 
 /**
  * Holds the in memory answer of {@link AccessControlService#resolveErrandAccess} to the specification
- * {@link AccessControlService#withAccessControl} builds, which is what actually guards every endpoint.
+ * {@link AccessControlService#withAccessControl} builds, which guards every endpoint.
  * <p>
- * The endpoint reporting access exists so that a client renders only the controls their next request would be allowed
- * to make. That is worth nothing if the two disagree: an answer the specification would refuse is a caller invited to
- * make a request that then fails with 401. Rather than assert either side in isolation, every combination is put to
- * both and the two are required to agree.
- * <p>
- * Holding one reported level against all three required levels is also what pins the monotonicity
- * {@code AccessControlService#highestLevel} relies on: a rule demanding less of the labels for a write than for a read
- * would report a level the specification then contradicts, and fails here.
+ * Every combination is put to both, the reported level is held against each of the three required levels, and the two
+ * are required to agree.
  */
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -113,8 +107,7 @@ class AccessControlSpecificationParityTest {
 	}
 
 	/**
-	 * Every shape a user and a resource of an errand can meet in. The reporter axis is left out, being orthogonal to the
-	 * resource and already held above, which is what keeps the case count in the dozens.
+	 * Every shape a user and a resource of an errand can meet in, leaving out whether the user reported the errand.
 	 */
 	static Stream<Arguments> resourceCombinations() {
 		final List<Set<MetadataLabelEntity>> grantedLabels = List.of(Set.of(), Set.of(LABEL), Set.of(OTHER_LABEL));
@@ -125,8 +118,8 @@ class AccessControlSpecificationParityTest {
 	}
 
 	/**
-	 * The same question asked of a resource of the errand rather than of the errand itself, which is where the level
-	 * demanded of the labels stops following the operation and starts following what the resource grant carries.
+	 * The same question asked of a resource of the errand, where the level demanded of the labels follows what the
+	 * resource grant carries.
 	 */
 	@ParameterizedTest(name = "resource={0} labelled={1} labels={2} grantedAt={3} resourceAccessControl={4}")
 	@MethodSource("resourceCombinations")
@@ -155,7 +148,7 @@ class AccessControlSpecificationParityTest {
 
 	/**
 	 * The level the report gives one resource of the errand, or null where it gives none - including where it refuses
-	 * the user the errand altogether, which no resource of it outlives.
+	 * the user the errand altogether.
 	 */
 	private Access.AccessLevelEnum reportedResourceLevel(final ErrandEntity errand, final ProtectedResource resource) {
 		try {
@@ -166,8 +159,7 @@ class AccessControlSpecificationParityTest {
 	}
 
 	/**
-	 * The level the report gives the errand, or null where it refuses the user altogether, which is the answer the
-	 * specification gives by matching no row at any level.
+	 * The level the report gives the errand, or null where it refuses the user altogether.
 	 */
 	private Access.AccessLevelEnum reportedErrandLevel(final ErrandEntity errand) {
 		try {

@@ -264,7 +264,7 @@ class ErrandInvestigationsResourceTest {
 	}
 
 	/**
-	 * A link carries nothing of its own, so there is no body to send.
+	 * Verifies that an attachment is linked to the investigation by a request without a body.
 	 */
 	@Test
 	void linkInvestigationAttachment() {

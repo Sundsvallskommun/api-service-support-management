@@ -45,7 +45,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * The attachment and JSON parameter side of the decision service - the part that hands the work to the two services
- * written once for all the handling artefacts.
+ * shared by all the handling artefacts.
  */
 @ExtendWith(MockitoExtension.class)
 class ErrandDecisionServiceArtefactTest {

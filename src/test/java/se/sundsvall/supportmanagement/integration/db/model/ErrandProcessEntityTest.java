@@ -43,8 +43,7 @@ class ErrandProcessEntityTest {
 	}
 
 	/**
-	 * The three properties left out are the ones applyStatus owns. They have no setter to exercise, which is the point of
-	 * them, and the bean matcher counts a property it cannot write to as broken.
+	 * Verifies the bean, leaving out the three properties applyStatus owns, which have no setter.
 	 */
 	@Test
 	void testBean() {
@@ -168,10 +167,6 @@ class ErrandProcessEntityTest {
 		assertThat(entity.getEnded()).isNull();
 	}
 
-	/**
-	 * The three properties are read here before they are looked for as writable, so that a reflection call which found
-	 * nothing at all fails the test rather than passing it: absence proves nothing until presence is established.
-	 */
 	@Test
 	@DisplayName("Verification that the status has no way in past applyStatus, which is what keeps the marker from drifting")
 	void statusHasNoPublicSetter() {

@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "The labels of the errand 'ab000000-0000-0000-0000-0000000000b2' point at more than one process (alkt-ansokan, alkt-tillsyn), and the request has to name the one to start"
+}

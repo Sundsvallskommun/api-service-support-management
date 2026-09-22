@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -23,13 +25,19 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
+import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
+import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
+import se.sundsvall.supportmanagement.service.model.ProcessStartOptions;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
@@ -42,11 +50,22 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_ENGINE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_KEY;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
+import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS;
 
@@ -60,6 +79,8 @@ class ProcessCommandServiceTest {
 	private static final String PROCESS_ROW_ID = "rowId";
 	private static final String SIGNAL_NAME = "granskning-godkand";
 	private static final String SIGNAL_LABEL = "Godkänn granskning";
+	private static final String APPLICATION = "alkt-ansokan";
+	private static final String SUPERVISION = "alkt-tillsyn";
 	private static final String HANDLER = "joe01doe";
 	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-21T10:15:30.123456Z"), ZoneId.of("UTC"));
 
@@ -79,6 +100,12 @@ class ProcessCommandServiceTest {
 	private ErrandProcessActivityRepository activityRepositoryMock;
 
 	@Mock
+	private ProcessEventOutboxRepository outboxRepositoryMock;
+
+	@Mock
+	private ProcessKeySelector processKeySelectorMock;
+
+	@Mock
 	private EventService eventServiceMock;
 
 	@Captor
@@ -90,7 +117,8 @@ class ProcessCommandServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		service = new ProcessCommandService(accessControlServiceMock, namespaceConfigServiceMock, processRepositoryMock, signalRepositoryMock, activityRepositoryMock, eventServiceMock, CLOCK);
+		service = new ProcessCommandService(accessControlServiceMock, namespaceConfigServiceMock, processRepositoryMock, signalRepositoryMock, activityRepositoryMock, outboxRepositoryMock,
+			processKeySelectorMock, eventServiceMock, CLOCK);
 
 		asHandler(HANDLER);
 		lenient().when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of("pw-alkt"));
@@ -101,6 +129,388 @@ class ProcessCommandServiceTest {
 	void tearDown() {
 		Identifier.remove();
 	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	// Whether a process may be started
+	// ---------------------------------------------------------------------------------------------------------------
+
+	@Test
+	@DisplayName("Verification that an errand without a process whose labels name one may be started with that key, whatever the start mode")
+	void anErrandWithoutAProcessMayBeStartedWithTheKeyOfItsLabels() {
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(), () -> selection(SUPERVISION, MANUAL)))
+			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(SUPERVISION)));
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(), () -> selection(SUPERVISION, AUTOMATIC)))
+			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(SUPERVISION)));
+	}
+
+	@Test
+	@DisplayName("Verification that an errand whose labels point in two directions offers both keys, so that a person can choose")
+	void anAmbiguousErrandOffersEveryKey() {
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(), () -> ambiguous(APPLICATION, SUPERVISION)))
+			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION, SUPERVISION)));
+	}
+
+	@Test
+	@DisplayName("Verification that the namespace, a live instance and a completed one stand in the way in that order, and that none of them reads the labels")
+	void theObstaclesAreAnsweredWithoutReadingTheLabels() {
+		final Supplier<ProcessKeySelection> neverAsked = () -> {
+			throw new AssertionError("the labels were read although a process row stood in the way");
+		};
+
+		assertThat(ProcessCommandService.startOptionsOf(false, List.of(instance(WAITING, APPLICATION)), neverAsked).status()).isEqualTo(NO_PROCESS_ENGINE);
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(WAITING, APPLICATION), instance(COMPLETED, APPLICATION)), neverAsked).status()).isEqualTo(LIVE_INSTANCE);
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(FAILED, APPLICATION), instance(COMPLETED, APPLICATION)), neverAsked).status()).isEqualTo(PROCESS_COMPLETED);
+	}
+
+	@Test
+	@DisplayName("Verification that no key is offered alongside an obstacle")
+	void anObstacleNamesNoKey() {
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(COMPLETED, APPLICATION)), () -> selection(APPLICATION, AUTOMATIC)).processKeys()).isEmpty();
+		assertThat(ProcessStartOptions.unavailable(LIVE_INSTANCE).processKeys()).isEmpty();
+		assertThat(new ProcessStartOptions(NO_PROCESS_KEY, List.of(APPLICATION)).processKeys()).isEmpty();
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> new ProcessStartOptions(AVAILABLE, List.of()));
+	}
+
+	@Test
+	@DisplayName("Verification that an errand without a single label naming a process has nothing to start")
+	void anErrandWithoutAProcessKeyHasNothingToStart() {
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(), () -> ProcessKeySelection.NONE)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
+	}
+
+	@Test
+	@DisplayName("Verification that an errand whose only instance failed offers only the key of the process it has run")
+	void anErrandWithAFailedStartOffersOnlyItsOwnProcess() {
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(FAILED, APPLICATION)), () -> ambiguous(APPLICATION, SUPERVISION)))
+			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION)));
+		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(FAILED, APPLICATION)), () -> selection(SUPERVISION, AUTOMATIC)))
+			.isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	// Starting by hand
+	// ---------------------------------------------------------------------------------------------------------------
+
+	@Test
+	@DisplayName("Verification that a start leaves an entry naming the sender without a process instance, and an event carrying the chosen key, and notifies no one")
+	void aStartIsLoggedAndHandedOnWithItsKey() {
+		givenLabels(selection(SUPERVISION, MANUAL));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		verify(activityRepositoryMock).save(activityCaptor.capture());
+		assertThat(activityCaptor.getValue()).satisfies(entry -> {
+			assertThat(entry.getErrandProcessId()).isNull();
+			assertThat(entry.getErrandId()).isEqualTo(ERRAND_ID);
+			assertThat(entry.getActivityType()).isEqualTo("START");
+			assertThat(entry.getActivityId()).isEqualTo(SUPERVISION);
+			assertThat(entry.getActivityName()).isNull();
+			assertThat(entry.getSeverity()).isEqualTo(INFO);
+			assertThat(entry.getMessage()).isEqualTo("start of process 'alkt-tillsyn' requested by joe01doe");
+			assertThat(entry.getExternalTaskId()).isNull();
+			assertThat(entry.getErrorCode()).isNull();
+			assertThat(entry.getOccurredAt()).isEqualTo(OffsetDateTime.parse("2026-09-21T10:15:30.123Z"));
+		});
+		verify(eventServiceMock).createProcessCommandEvent(UPDATE, "En start av processen har begärts i ärendet: alkt-tillsyn.", errand, false, EventSubType.PROCESS,
+			new ProcessCommand(SUPERVISION, null));
+	}
+
+	@ParameterizedTest
+	@EnumSource(ProcessStartMode.class)
+	@DisplayName("Verification that a start does not read the start mode of the labels")
+	void aStartIsTakenWhateverTheStartMode(final ProcessStartMode startMode) {
+		givenLabels(selection(APPLICATION, startMode));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION);
+
+		verify(eventServiceMock).createProcessCommandEvent(any(), any(), any(), anyBoolean(), any(), any());
+	}
+
+	@Test
+	@DisplayName("Verification that a start after a start that failed is taken, as the recovery it is")
+	void aStartAfterAFailedStartIsTaken() {
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(instance(FAILED, APPLICATION)));
+		givenLabels(selection(APPLICATION, AUTOMATIC));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		verify(eventServiceMock).createProcessCommandEvent(UPDATE, "En start av processen har begärts i ärendet: alkt-ansokan.", errand, false, EventSubType.PROCESS,
+			new ProcessCommand(APPLICATION, null));
+	}
+
+	@Test
+	void aStartEntryNamingAnOversizedSenderIsCutToFitItsColumn() {
+		asHandler("x".repeat(MESSAGE_LENGTH * 2));
+		givenLabels(selection(APPLICATION, MANUAL));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		verify(activityRepositoryMock).save(activityCaptor.capture());
+		assertThat(activityCaptor.getValue().getMessage()).hasSize(MESSAGE_LENGTH).startsWith("start of process 'alkt-ansokan' requested by xxx");
+	}
+
+	@Test
+	@DisplayName("Verification that a start from a caller that is not an ad account is refused with 403 before anything is read or written")
+	void aStartFromAMachineIsRefused() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue("pw-alkt"));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(403);
+				assertThat(problem.getDetail()).contains("ad account");
+			});
+
+		verifyNothingWritten();
+		verifyNoInteractions(accessControlServiceMock, processRepositoryMock, processKeySelectorMock, outboxRepositoryMock);
+	}
+
+	@Test
+	void aStartWithoutAnyIdentityIsRefused() {
+		Identifier.remove();
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
+			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(403));
+
+		verifyNothingWritten();
+	}
+
+	@Test
+	void aStartOfAnErrandThatDoesNotExistIsNotFound() {
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW)).thenThrow(Problem.valueOf(NOT_FOUND, "not found"));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
+			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(404));
+
+		verifyNothingWritten();
+		verifyNoInteractions(processRepositoryMock);
+	}
+
+	@Test
+	void aStartInANamespaceRunningNoProcessIsRejected() {
+		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains(NAMESPACE);
+			});
+
+		verifyNothingWritten();
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = ProcessStatus.class, names = {
+		"RUNNING", "WAITING", "RETRYING"
+	})
+	void aStartOfAnErrandWithALiveProcessIsAConflict(final ProcessStatus status) {
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(instance(status, APPLICATION)));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).contains("live process");
+			});
+
+		verifyNothingWritten();
+	}
+
+	@Test
+	void aStartOfAnErrandWhoseProcessRanToItsEndIsAConflict() {
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(instance(COMPLETED, APPLICATION)));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).contains("ran to its end");
+			});
+
+		verifyNothingWritten();
+	}
+
+	@Test
+	void aStartOfAnErrandWithoutAProcessKeyIsRejected() {
+		givenLabels(ProcessKeySelection.NONE);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains("No label of the errand");
+			});
+
+		verifyNothingWritten();
+	}
+
+	@Test
+	void aStartOfAnErrandWhoseLabelsNoLongerNameItsProcessIsRejectedNamingThatProcess() {
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(instance(FAILED, APPLICATION)));
+		givenLabels(selection(SUPERVISION, AUTOMATIC));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, SUPERVISION))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains(APPLICATION);
+			});
+
+		verifyNothingWritten();
+	}
+
+	@Test
+	@DisplayName("Verification that a start of an errand whose labels point in two directions has to name the key, and names both when it does not")
+	void aStartOfAnAmbiguousErrandHasToChoose() {
+		givenLabels(ambiguous(APPLICATION, SUPERVISION));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains(APPLICATION, SUPERVISION);
+			});
+
+		verifyNothingWritten();
+	}
+
+	@Test
+	@DisplayName("Verification that the key chosen among those of an ambiguous errand is the one handed on, rather than resolved again from the labels")
+	void theChosenKeyOfAnAmbiguousErrandIsHandedOn() {
+		givenLabels(ambiguous(APPLICATION, SUPERVISION));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, SUPERVISION);
+
+		verify(eventServiceMock).createProcessCommandEvent(UPDATE, "En start av processen har begärts i ärendet: alkt-tillsyn.", errand, false, EventSubType.PROCESS,
+			new ProcessCommand(SUPERVISION, null));
+	}
+
+	@Test
+	void aStartNamingAKeyTheLabelsDoNotOfferIsRejected() {
+		givenLabels(selection(APPLICATION, MANUAL));
+
+		for (final var requested : List.of(SUPERVISION, "Alkt-Ansokan", " alkt-ansokan")) {
+			assertThatExceptionOfType(ThrowableProblem.class)
+				.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requested))
+				.satisfies(problem -> {
+					assertThat(problem.getStatus().value()).isEqualTo(400);
+					assertThat(problem.getDetail()).contains("is not one the errand");
+				});
+		}
+
+		verifyNothingWritten();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"", " ", "\t"
+	})
+	@DisplayName("Verification that a blank key is no key named, so the one process the labels offer is started")
+	void aBlankKeyStartsTheOnlyProcessOffered(final String blank) {
+		givenLabels(selection(APPLICATION, MANUAL));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, blank);
+
+		verify(eventServiceMock).createProcessCommandEvent(UPDATE, "En start av processen har begärts i ärendet: alkt-ansokan.", errand, false, EventSubType.PROCESS,
+			new ProcessCommand(APPLICATION, null));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"", " "
+	})
+	@DisplayName("Verification that a blank key on an errand whose labels offer several processes chooses none of them")
+	void aBlankKeyOnAnAmbiguousErrandChoosesNothing(final String blank) {
+		givenLabels(ambiguous(APPLICATION, SUPERVISION));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, blank))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains("has to name the one to start");
+			});
+
+		verifyNothingWritten();
+	}
+
+	@Test
+	void aStartWhoseLabelCarriesAnOversizedKeyIsRejected() {
+		final var oversized = "k".repeat(PROCESS_KEY_LENGTH + 1);
+		givenLabels(selection(oversized, MANUAL));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains(String.valueOf(PROCESS_KEY_LENGTH + 1)).doesNotContain(oversized);
+			});
+
+		verifyNothingWritten();
+	}
+
+	/**
+	 * The start on its way may be an earlier press or, in automatic mode, an errand event not yet delivered. Either way the
+	 * press is recorded, and the process is handed no second start.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"PROCESS", "ERRAND"
+	})
+	@DisplayName("Verification that a press while a start with the same key is on its way is recorded with its entry and its event, but not published")
+	void aPressWhileAStartWithTheSameKeyIsOnItsWayIsRecordedButNotPublished(final String subTypeOnItsWay) {
+		givenLabels(selection(APPLICATION, AUTOMATIC));
+		when(outboxRepositoryMock.findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(ERRAND_ID))
+			.thenReturn(List.of(waitingStart(APPLICATION).withEventSubType(subTypeOnItsWay)));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		verify(activityRepositoryMock).save(activityCaptor.capture());
+		assertThat(activityCaptor.getValue()).satisfies(entry -> {
+			assertThat(entry.getActivityType()).isEqualTo("START");
+			assertThat(entry.getActivityId()).isEqualTo(APPLICATION);
+			assertThat(entry.getMessage()).isEqualTo("start of process 'alkt-ansokan' requested by joe01doe");
+		});
+		verify(eventServiceMock).createProcessCommandEventWithoutPublication(UPDATE, "En start av processen har begärts i ärendet: alkt-ansokan.", errand, false,
+			EventSubType.PROCESS);
+		verifyNoMoreInteractions(eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a start while one of another process is on its way is a conflict that writes nothing")
+	void aPressWithAnotherKeyWhileAStartIsOnItsWayIsAConflict() {
+		givenLabels(ambiguous(APPLICATION, SUPERVISION));
+		when(outboxRepositoryMock.findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(ERRAND_ID)).thenReturn(List.of(waitingStart(APPLICATION)));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, SUPERVISION))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).contains(APPLICATION, SUPERVISION);
+			});
+
+		verifyNothingWritten();
+	}
+
+	@Test
+	@DisplayName("Verification that the errand is locked before anything else is read for a start")
+	void theErrandIsLockedBeforeAStartReadsAnything() {
+		givenLabels(selection(APPLICATION, MANUAL));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		final var order = inOrder(accessControlServiceMock, namespaceConfigServiceMock, processRepositoryMock, processKeySelectorMock, outboxRepositoryMock);
+		order.verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW);
+		order.verify(namespaceConfigServiceMock).getProcessConsumer(NAMESPACE, MUNICIPALITY_ID);
+		order.verify(processRepositoryMock).findByErrandIdOrderByCreatedDesc(ERRAND_ID);
+		order.verify(processKeySelectorMock).select(errand);
+		order.verify(outboxRepositoryMock).findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(ERRAND_ID);
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------
+	// Signals
+	// ---------------------------------------------------------------------------------------------------------------
 
 	@Test
 	@DisplayName("Verification that an awaited signal leaves an entry naming the sender and an event carrying the name of the signal, and notifies no one")
@@ -135,9 +545,6 @@ class ProcessCommandServiceTest {
 		verify(eventServiceMock).createProcessCommandEvent(UPDATE, "En signal har skickats till processen i ärendet: granskning-godkand.", errand, false, SIGNAL, new ProcessCommand(null, SIGNAL_NAME));
 	}
 
-	/**
-	 * The identity header is set by the caller, and an entry that fails to insert would take the signal down with it.
-	 */
 	@Test
 	void anEntryNamingAnOversizedSenderIsCutToFitItsColumn() {
 		asHandler("x".repeat(MESSAGE_LENGTH * 2));
@@ -150,8 +557,7 @@ class ProcessCommandServiceTest {
 	}
 
 	/**
-	 * The entry a signal leaves has to say which person stepped the process on. The refusal comes before anything is
-	 * looked at, let alone written.
+	 * The refusal comes before anything is looked at, let alone written.
 	 */
 	@Test
 	@DisplayName("Verification that a signal from a caller that is not an ad account is refused with 403 and writes nothing")
@@ -180,10 +586,6 @@ class ProcessCommandServiceTest {
 		verifyNothingWritten();
 	}
 
-	/**
-	 * Publication writes nothing for a namespace running no process, so a signal taken there would be a button that seems
-	 * to work and moves nothing.
-	 */
 	@Test
 	void aSignalInANamespaceRunningNoProcessIsRejected() {
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
@@ -199,11 +601,6 @@ class ProcessCommandServiceTest {
 		verifyNoInteractions(processRepositoryMock, signalRepositoryMock);
 	}
 
-	/**
-	 * Under repeatable read the snapshot of a transaction is taken at its first plain read. Were the configuration read
-	 * ahead of the lock, the signal would be judged against the signals as they stood before the report the lock waited
-	 * for - and be taken for a gate that report had just closed.
-	 */
 	@Test
 	@DisplayName("Verification that the errand is locked before anything else is read")
 	void theErrandIsLockedBeforeAnythingIsRead() {
@@ -295,8 +692,7 @@ class ProcessCommandServiceTest {
 	}
 
 	/**
-	 * The process engine tells message names apart by case, so a name matched regardless of it would reach the process as
-	 * a name no gate listens for, and be lost there without a trace.
+	 * A signal that differs from an awaited one only in case is refused with 409 and writes nothing.
 	 */
 	@Test
 	void aSignalIsMatchedExactlyAsTheProcessNamedIt() {
@@ -318,6 +714,32 @@ class ProcessCommandServiceTest {
 
 		when(processRepositoryMock.findByProcessInstanceIdAndErrandId(PROCESS_INSTANCE_ID, ERRAND_ID)).thenReturn(Optional.of(instance));
 		lenient().when(signalRepositoryMock.findByErrandProcessIdOrderBySortOrderAsc(PROCESS_ROW_ID)).thenReturn(List.of(awaited));
+	}
+
+	private void givenLabels(final ProcessKeySelection selection) {
+		when(processKeySelectorMock.select(errand)).thenReturn(selection);
+	}
+
+	private static ErrandProcessEntity instance(final ProcessStatus status, final String processKey) {
+		final var instance = ErrandProcessEntity.create()
+			.withId(PROCESS_ROW_ID)
+			.withErrandId(ERRAND_ID)
+			.withProcessKey(processKey)
+			.withProcessInstanceId(PROCESS_INSTANCE_ID);
+		instance.applyStatus(status, CLOCK);
+		return instance;
+	}
+
+	private static ProcessKeySelection selection(final String processKey, final ProcessStartMode startMode) {
+		return new ProcessKeySelection(processKey, startMode, List.of(processKey));
+	}
+
+	private static ProcessKeySelection ambiguous(final String... processKeys) {
+		return new ProcessKeySelection(null, null, List.of(processKeys));
+	}
+
+	private static ProcessEventOutboxEntity waitingStart(final String processKey) {
+		return ProcessEventOutboxEntity.create().withErrandId(ERRAND_ID).withProcessKey(processKey).withStartAllowed(true);
 	}
 
 	private static ErrandProcessSignalEntity awaited(final String name, final String label) {

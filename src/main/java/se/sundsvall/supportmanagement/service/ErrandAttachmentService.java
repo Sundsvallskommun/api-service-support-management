@@ -145,10 +145,8 @@ public class ErrandAttachmentService {
 	/**
 	 * Writes what the attachment is for, named by the id of an attachment purpose of the namespace.
 	 * <p>
-	 * The only way to set it. What a file is for belongs to the file rather than to any one link to it, which is what lets
-	 * the errand show it in its own attachment list and what lets an attachment belonging to no handling artefact carry one
-	 * at all. A request without a purpose leaves the stored one standing; clearing it is
-	 * {@link #deleteErrandAttachmentPurpose}.
+	 * The only way to set it. The purpose belongs to the attachment itself, not to any one link to it. A request without
+	 * a purpose leaves the stored one standing; clearing it is {@link #deleteErrandAttachmentPurpose}.
 	 */
 	@Transactional
 	public ErrandAttachment updateErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId,
@@ -257,9 +255,8 @@ public class ErrandAttachmentService {
 	}
 
 	/**
-	 * The purpose is part of the errand as its revisions record it, so a change gets a revision and an event of its own -
-	 * otherwise it would surface in the next unrelated revision, attributed to whoever made that one. Flushed before the
-	 * snapshot, which would otherwise hold a modified timestamp the commit then replaces.
+	 * Gives a change of the purpose a revision and an event of its own. The attachments are flushed before the revision
+	 * snapshot is taken, so the snapshot holds the modified timestamp that is committed.
 	 */
 	private void recordChange(final ErrandEntity errandEntity) {
 		attachmentRepository.flush();
@@ -281,7 +278,7 @@ public class ErrandAttachmentService {
 	}
 
 	/**
-	 * Looked up within the namespace, so a purpose of another namespace is refused rather than borrowed.
+	 * Looks the purpose up within the namespace. A purpose of another namespace is refused with 400.
 	 */
 	private AttachmentPurposeEntity findPurposeOrElseThrow(final String namespace, final String municipalityId, final String purposeId) {
 		return attachmentPurposeRepository.findByIdAndNamespaceAndMunicipalityId(purposeId, namespace, municipalityId)

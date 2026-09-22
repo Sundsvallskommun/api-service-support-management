@@ -10,11 +10,10 @@ import java.time.LocalDate;
 import static java.time.format.DateTimeFormatter.ISO_DATE;
 
 /**
- * Writes a date as the date it is, and - more to the point - keeps Gson from reflecting into {@link LocalDate}.
+ * Writes a {@link LocalDate} as an ISO date, and keeps Gson from reflecting into it.
  * <p>
- * Gson resolves the adapter for a field type when it binds the class, before any exclusion strategy has a say about
- * whether the field is written. A type it cannot reflect into therefore fails the whole snapshot even when the field
- * holding it is excluded, and {@code java.time} is closed to reflection on a modern JDK.
+ * Needed for a snapshot of any class holding a {@link LocalDate} field, including a field an exclusion strategy leaves
+ * out.
  */
 public class LocalDateSerializer implements JsonSerializer<LocalDate> {
 

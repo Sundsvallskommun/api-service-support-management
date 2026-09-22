@@ -6466,9 +6466,10 @@ paths:
       tags:
       - Errand processes
       summary: Read errand processes
-      description: "Every process the errand has had, most recent first, in an envelope\
-        \ that also has room for whether a new one may be started. An empty list is\
-        \ not an error."
+      description: "Every process the errand has had, most recent first, together\
+        \ with whether a new one may be started right now and why not when it cannot\
+        \ be - which is what a start button is lit, dimmed and explained by. An empty\
+        \ list is not an error."
       operationId: readErrandProcesses
       parameters:
       - name: municipalityId
@@ -6518,10 +6519,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrandProcesses"
+                $ref: "#/components/schemas/ErrandProcessOverview"
             application/problem+json:
               schema:
-                $ref: "#/components/schemas/ErrandProcesses"
+                $ref: "#/components/schemas/ErrandProcessOverview"
         "404":
           description: Not found
           content:
@@ -6749,6 +6750,113 @@ paths:
         "409":
           description: "Conflict — the process does not wait for the signal right\
             \ now, or has ended. Read the errand again rather than retrying"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/processes/start:
+    post:
+      tags:
+      - Errand processes
+      summary: Start process
+      description: "Starts the handling of an errand by hand - the \"start handling\"\
+        \ button. Offer it when startable.status from GET .../processes is AVAILABLE,\
+        \ in automatic start mode as well as in manual: in automatic mode it is how\
+        \ a start that failed is tried again. The body may be left out when startable.processKeys\
+        \ holds one key; when it holds several, send the key the user chose. Only\
+        \ a person may start a process, and the start is recorded with who sent it.\
+        \ 202 says the start is recorded and on its way, not that the process runs:\
+        \ the process shows in GET .../processes once the process engine has registered\
+        \ it, normally within seconds. Until then startable still says AVAILABLE -\
+        \ show the start as on its way rather than as not started. A start pressed\
+        \ while one with the same key is on its way - sent by hand, or an automatic\
+        \ start not yet delivered - is recorded like any other, starts nothing more\
+        \ and is answered 202. 400 is answered when no label of the errand names a\
+        \ process it can be started with, when the labels name several and the request\
+        \ chose none, when the request names a key that is not among them, and when\
+        \ the namespace runs no processes."
+      operationId: startProcess
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessStartRequest"
+      responses:
+        "202":
+          description: Accepted — the start is recorded and handed on to the process
+        "403":
+          description: "Forbidden — the caller is not an ad account, or may not reach\
+            \ the errand"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not found — the errand does not exist in the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict — the errand already has a live process, its process\
+            \ has run to its end, or a start of another process is already on its\
+            \ way"
           content:
             application/problem+json:
               schema:
@@ -8482,8 +8590,8 @@ paths:
                 type: string
         "403":
           description: "Forbidden - the method does not match who writes the decision:\
-            \ MANUAL requires an AD account, AUTOMATIC the process consumer of the\
-            \ namespace"
+            \ MANUAL requires an AD account, AUTOMATIC a caller that is not one -\
+            \ in a namespace with a process consumer, that consumer"
           content:
             application/problem+json:
               schema:
@@ -15259,8 +15367,8 @@ paths:
                 $ref: "#/components/schemas/Decision"
         "403":
           description: "Forbidden - the method does not match who writes the decision:\
-            \ MANUAL requires an AD account, AUTOMATIC the process consumer of the\
-            \ namespace"
+            \ MANUAL requires an AD account, AUTOMATIC a caller that is not one -\
+            \ in a namespace with a process consumer, that consumer"
           content:
             application/problem+json:
               schema:
@@ -19348,10 +19456,16 @@ components:
             $ref: "#/components/schemas/Label"
         attributes:
           type: array
-          description: "Free-form key/value data owned by the client. Stored and returned\
-            \ as-is by the service, which does not interpret the contents (apart from\
-            \ rejecting duplicate keys per label). Keys are conventions agreed between\
-            \ clients (e.g. 'escalationEmail')."
+          description: "Free-form key/value data owned by the client, stored and returned\
+            \ as-is. Duplicate keys per label are rejected, and two keys are read\
+            \ by the service itself. processKey names the process an errand wearing\
+            \ the label runs. processStartMode says whether that process starts by\
+            \ itself when the errand changes (AUTOMATIC, which is also what leaving\
+            \ it out means) or only when a handler starts it (MANUAL); it has to be\
+            \ exactly one of those two, and is allowed only on a label that also has\
+            \ processKey. Both keys are matched exactly as spelled, and a key spelled\
+            \ like either of them in any other way is rejected. Other keys are conventions\
+            \ agreed between clients (e.g. 'escalationEmail')."
           items:
             $ref: "#/components/schemas/LabelAttribute"
       required:
@@ -19359,22 +19473,25 @@ components:
       - resourceName
     LabelAttribute:
       type: object
-      description: Label attribute model. Free-form key/value data owned by the client;
-        not interpreted by the service. Keys are conventions agreed between clients
-        (e.g. 'escalationEmail').
+      description: "Label attribute model. Free-form key/value data owned by the client.\
+        \ Keys are conventions agreed between clients (e.g. 'escalationEmail'), except\
+        \ processKey and processStartMode, which the service reads itself - see attributes\
+        \ on the label."
       properties:
         key:
           type: string
           description: Attribute key
           examples:
           - escalationEmail
-          minLength: 1
+          maxLength: 255
+          minLength: 0
         value:
           type: string
           description: Attribute value
           examples:
           - escalation@example.com
-          minLength: 1
+          maxLength: 16383
+          minLength: 0
       required:
       - key
       - value
@@ -21899,6 +22016,21 @@ components:
           minLength: 0
       required:
       - signal
+    ProcessStartRequest:
+      type: object
+      description: A request to start a process for an errand
+      properties:
+        processKey:
+          type: string
+          description: "Which process to start. May be omitted, or left blank, when\
+            \ startable.processKeys holds exactly one key, and is required when it\
+            \ holds several. The value must be one of those keys, exactly as given\
+            \ there: a request cannot name a process that the labels of the errand\
+            \ do not point at."
+          examples:
+          - supervision
+          maxLength: 128
+          minLength: 0
     CreateErrandNoteRequest:
       type: object
       description: CreateErrandNoteRequest model
@@ -23783,7 +23915,7 @@ components:
           examples:
           - John
       readOnly: true
-    ErrandProcesses:
+    ErrandProcessOverview:
       type: object
       description: "The processes attached to an errand, and whether a new one may\
         \ be started right now"
@@ -23791,16 +23923,18 @@ components:
         startable:
           $ref: "#/components/schemas/ProcessStartable"
           description: "Whether a process may be started for this errand right now,\
-            \ and why not when it cannot be. Not answered yet: the field is absent\
-            \ until starting a process is offered by this API. Read it before offering\
-            \ a start action to the user, and treat its absence as unknown rather\
-            \ than as available."
+            \ and why not when it cannot be. Read this before offering a start action\
+            \ to the user. The same rules are enforced by POST .../processes/start,\
+            \ which answers 400 or 409 when they are not met - so a client that ignores\
+            \ this field can never start something it should not. It can only show\
+            \ a button that fails."
           readOnly: true
         processes:
           type: array
           description: "Every process this errand has had, most recent first. Normally\
             \ exactly one element. An empty list is not an error and does not mean\
-            \ the errand is broken."
+            \ the errand is broken: see startable for whether a process can be started,\
+            \ and why not if it cannot."
           items:
             $ref: "#/components/schemas/ErrandProcess"
           readOnly: true
@@ -23814,20 +23948,28 @@ components:
             \ other value says why one cannot be. LIVE_INSTANCE - a process is already\
             \ running for this errand. PROCESS_COMPLETED - a process has already run\
             \ to its end. An errand has one process life; a new process means a new\
-            \ errand. NO_PROCESS_KEY - no label on the errand carries a process key,\
-            \ so there is nothing to start. Setting the right label is the fix. NO_PROCESS_ENGINE\
-            \ - this namespace does not run processes at all. Treat any value you\
-            \ do not recognise as not startable - values may be added over time."
+            \ errand. NO_PROCESS_KEY - no label on the errand carries a processKey\
+            \ attribute the errand can be started with, so there is nothing to start.\
+            \ Setting the right label is the fix. NO_PROCESS_ENGINE - this namespace\
+            \ does not run processes at all. The answer is the same whether or not\
+            \ the labels start the process on their own: an errand whose process starts\
+            \ by itself is AVAILABLE too, and starting it by hand is how a start that\
+            \ failed is tried again. Treat any value you do not recognise as not startable\
+            \ - values may be added over time."
           examples:
           - AVAILABLE
           readOnly: true
         processKeys:
           type: array
           description: "The process keys that are eligible to start, taken from the\
-            \ process key attribute on the labels of the errand. One element is the\
-            \ normal case. Two or more elements mean the errand carries labels pointing\
-            \ at different processes and a person has to choose. Empty whenever status\
-            \ is not AVAILABLE."
+            \ processKey attribute on the labels of the errand. One element is the\
+            \ normal case: send it - or send nothing - to POST .../processes/start.\
+            \ Two or more elements mean the errand carries labels pointing at different\
+            \ processes and a person has to choose: ask the user and send the chosen\
+            \ key, otherwise the request is rejected with 400. An errand runs one\
+            \ process for the whole of its life, so once it has had one - a start\
+            \ that failed included - only the key of that process is offered. Empty\
+            \ whenever status is not AVAILABLE."
           items:
             type: string
           readOnly: true

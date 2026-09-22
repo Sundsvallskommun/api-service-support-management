@@ -19,9 +19,9 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 /**
  * One errand change on its way to a process engine, written in the same transaction as the change itself.
  * <p>
- * There is no relation to the errand, neither here nor in the database: a DELETE event has to outlive the errand it is
- * about. There is no retry bookkeeping either, since delivery and acknowledgement share a transaction - an undelivered
- * row is its own receipt that the work remains.
+ * There is no relation to the errand, neither here nor in the database, so a DELETE event outlives the errand it is
+ * about. There is no retry bookkeeping either: delivery and acknowledgement share a transaction, and a row that is
+ * undelivered is still to be delivered.
  */
 @Entity
 @Table(name = "process_event_outbox",
@@ -34,11 +34,8 @@ public class ProcessEventOutboxEntity {
 
 	/**
 	 * The widths of the columns fed from values this service does not control - a free text label attribute and the
-	 * identity header of the caller.
-	 * <p>
-	 * Public and used by the annotations below, so that the writer can hold a value against the column it is headed for
-	 * without the two numbers drifting apart. What the writer does when a value does not fit is its own decision, and
-	 * differs per column: a key that is cut is a different process, while an identity that is cut is still a trace.
+	 * identity header of the caller. Used by the column annotations below, and by the writer to hold a value against the
+	 * column it is headed for.
 	 */
 	public static final int PROCESS_KEY_LENGTH = 128;
 	public static final int SIGNAL_NAME_LENGTH = 128;
@@ -65,7 +62,7 @@ public class ProcessEventOutboxEntity {
 	@Column(name = "process_service", nullable = false, length = 64)
 	private String processService;
 
-	/** Required for CREATE and UPDATE. A DELETE is published without it, since the process engine matches on the errand. */
+	/** Required for CREATE and UPDATE. A DELETE is published without it and matched on the errand. */
 	@Column(name = "process_key", length = PROCESS_KEY_LENGTH)
 	private String processKey;
 
@@ -93,8 +90,8 @@ public class ProcessEventOutboxEntity {
 	private OffsetDateTime created;
 
 	/**
-	 * Set instead of removing the row, because the emergency brake counts delivered rows in a time window and needs them
-	 * around for a while.
+	 * When the row was delivered, and null until then. A delivered row is kept, and counted by the emergency brake within
+	 * its time window.
 	 */
 	@Column(name = "delivered_at", columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)

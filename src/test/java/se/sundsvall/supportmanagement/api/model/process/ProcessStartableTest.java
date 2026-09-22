@@ -37,8 +37,7 @@ class ProcessStartableTest {
 	}
 
 	/**
-	 * The status leaves this service as a string so that a value added later does not break a client that generated an
-	 * enum from the schema, while the builder still takes the enum so nothing outside the set can be published.
+	 * The builder takes the enum and carries its name as the status, and null as null.
 	 */
 	@Test
 	void theStatusIsCarriedAsAStringOfTheEnumName() {

@@ -8,10 +8,8 @@ import static java.util.Collections.emptyMap;
 /**
  * What mapping an errand needs beyond the errand row itself.
  * <p>
- * The process of an errand deliberately has no JPA relation: a revision is a copy of the whole errand, and a report
- * from every work step would fill the revision table with copies saying nothing about the errand. It is therefore read
- * separately - once for a whole page of errands rather than once per errand - and handed to the mapper here, keyed by
- * errand id.
+ * The process of an errand has no JPA relation to the errand. It is read separately - once for a whole page of
+ * errands - and handed to the mapper here, keyed by errand id.
  *
  * @param processes the latest process per errand id, holding no entry for an errand that has none.
  */
@@ -19,7 +17,7 @@ public record ErrandEnrichment(Map<String, ErrandProcess> processes) {
 
 	private static final ErrandEnrichment EMPTY = new ErrandEnrichment(emptyMap());
 
-	/** Nothing read, which maps an errand exactly as it did before the process field existed. */
+	/** Nothing read, which maps an errand without its process. */
 	public static ErrandEnrichment empty() {
 		return EMPTY;
 	}

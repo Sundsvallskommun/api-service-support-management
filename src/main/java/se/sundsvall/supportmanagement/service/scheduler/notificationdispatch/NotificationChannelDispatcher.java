@@ -22,8 +22,7 @@ public class NotificationChannelDispatcher {
 	/**
 	 * Delivers the events a subscriber should be notified about on each of the subscriber's channels.
 	 * <p>
-	 * Failures are propagated so the caller can roll back and reschedule the whole group, rather than leaving some
-	 * subscribers notified and others not.
+	 * Failures are propagated so the caller can roll back and reschedule the whole group.
 	 */
 	public void send(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final List<NotificationDispatchEntity> events) {
 		for (final var channel : subscriber.getChannels()) {

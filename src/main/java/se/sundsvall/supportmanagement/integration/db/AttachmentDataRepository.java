@@ -7,9 +7,8 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 /**
  * The blobs attachments are made of.
  * <p>
- * Reached directly only to remove rows. A data row is otherwise always reached through the attachment that points at
- * it, and is normally removed by the cascade on that association - which a removal by id deliberately bypasses, since
- * cascading means loading the file to delete it.
+ * Reached directly only to remove rows by id, which does not load the file. A data row is otherwise always reached
+ * through the attachment that points at it, and is normally removed by the cascade on that association.
  */
 @CircuitBreaker(name = "attachmentDataRepository")
 public interface AttachmentDataRepository extends JpaRepository<AttachmentDataEntity, Integer> {

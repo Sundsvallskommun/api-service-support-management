@@ -19,10 +19,8 @@ public interface AttachmentRepository extends JpaRepository<AttachmentEntity, St
 	/**
 	 * Find the ids of the data rows the sent in attachments point at.
 	 * <p>
-	 * Only those ids are read, and that is the point of the method. An attachment cascades its removal onto its data,
-	 * and cascading means loading - which for a data row means the whole file in the heap. An errand carrying scanned
-	 * documents holds more of them than there is heap to load them into, so a removal names the rows instead of
-	 * reaching them.
+	 * Only those ids are read, without loading the files, so a removal can name the data rows instead of reaching them
+	 * through the cascade from the attachment.
 	 *
 	 * @param  ids ids of the attachments.
 	 * @return     the ids of the data rows they point at.

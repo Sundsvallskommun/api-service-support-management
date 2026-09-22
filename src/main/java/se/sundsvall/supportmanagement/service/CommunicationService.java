@@ -380,9 +380,8 @@ public class CommunicationService {
 	}
 
 	/**
-	 * The batch request already sent, folded into the single-recipient shape a communication record expects - persisted
-	 * as one record of this notification rather than sent again, since the batch call already reached every address
-	 * on it.
+	 * Folds the batch request already sent into the single-recipient shape a communication record expects, with the
+	 * recipients joined by commas. Used to persist one record of the notification, not to send it again.
 	 */
 	private static EmailRequest toReporterEmailRequest(final EmailBatchRequest batch, final List<String> recipients) {
 		return EmailRequest.create()
@@ -434,9 +433,7 @@ public class CommunicationService {
 	/**
 	 * Removes every communication of an errand.
 	 * <p>
-	 * Only the ids are read, and the communications are then removed a chunk at a time. A communication holds its
-	 * message as both text and html, each of them long text, so an errand carrying a correspondence of any length is
-	 * more than the heap can hold all at once - which is what reading them before removing any would ask of it.
+	 * Only the ids are read, and the communications are then removed a chunk at a time.
 	 * <p>
 	 * Removing in chunks empties the persistence context as it goes, so an entity a caller was holding is detached by
 	 * the time this returns.

@@ -434,8 +434,8 @@ class ErrandAttachmentServiceTest {
 	}
 
 	/**
-	 * The only place the purpose is written. It is looked up within the namespace by its id, and the change is recorded
-	 * like any other change to the attachments of the errand.
+	 * The purpose is looked up within the namespace by its id, and the change is recorded like any other change to the
+	 * attachments of the errand.
 	 */
 	@Test
 	void updateErrandAttachment() {
@@ -460,8 +460,8 @@ class ErrandAttachmentServiceTest {
 	}
 
 	/**
-	 * A patch says nothing about what it omits, so a body without a purpose leaves the stored one standing - and an
-	 * errand that did not change gets no revision and no event.
+	 * A body without a purpose leaves the stored one standing, and an errand that did not change gets no revision and no
+	 * event.
 	 */
 	@Test
 	void updateErrandAttachmentWithoutPurposeLeavesItAlone() {
@@ -482,7 +482,8 @@ class ErrandAttachmentServiceTest {
 	}
 
 	/**
-	 * A purpose of another namespace, or none at all, is refused rather than borrowed.
+	 * A purpose the namespace does not hold, whether it belongs to another namespace or does not exist at all, is refused
+	 * with 400.
 	 */
 	@Test
 	void updateErrandAttachmentWithUnknownPurposeGivesBadRequest() {

@@ -93,6 +93,20 @@ public class EventService {
 	}
 
 	/**
+	 * Writes the event of a command without handing the command on to the process, for a command the process already has
+	 * on its way. Like {@link #createProcessCommandEvent} it makes no revision, and the event points at none.
+	 *
+	 * @param eventType        the type of the event.
+	 * @param message          the text of the event.
+	 * @param errandEntity     the errand the command is aimed at.
+	 * @param sendNotification whether the handler of the errand is to be notified.
+	 * @param subtype          the kind of command.
+	 */
+	public void createProcessCommandEventWithoutPublication(final EventType eventType, final String message, final ErrandEntity errandEntity, final boolean sendNotification, final EventSubType subtype) {
+		writeErrandEvent(eventType, message, errandEntity, null, null, sendNotification, subtype);
+	}
+
+	/**
 	 * Writes the event of a change to one of the decisions of the errand, and tells the process of the errand about it.
 	 * <p>
 	 * A decision is no part of the revision of the errand, so the event points at none. A decision being concluded is what
@@ -156,9 +170,8 @@ public class EventService {
 	}
 
 	/**
-	 * Tells the process of the errand about the event, last and in the transaction of the change itself.
-	 * <p>
-	 * The notification flag has no say here - an outbox row is no notice to a handler but a message to a process.
+	 * Tells the process of the errand about the event, last and in the transaction of the change itself, whatever the
+	 * notification flag says.
 	 */
 	private void publishToProcess(final ErrandEntity errandEntity, final EventType eventType, final EventSubType subtype, final ProcessCommand command, final boolean concludesDecision) {
 		processEventPublisher.publish(errandEntity, eventType, subtype, executingIdentity(), getRequestGroupId(), command, concludesDecision);
@@ -198,11 +211,7 @@ public class EventService {
 
 	/**
 	 * Who the write was made by, which is what the notification says it came from and what the outbox row is stamped
-	 * with.
-	 * <p>
-	 * Whatever the identifier of the request calls itself, whether that is an ad account or not - a process engine
-	 * reporting on an errand is no ad account, and asking only for one would leave the handler with a notification from
-	 * nobody and the outbox row with no trace of who wrote it.
+	 * with: the value of the identifier of the request whatever its type, or null when there is none.
 	 */
 	private static String executingIdentity() {
 		return ofNullable(getExecutingUser())

@@ -14,10 +14,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivity
 public interface ErrandProcessActivityRepository extends JpaRepository<ErrandProcessActivityEntity, String> {
 
 	/**
-	 * The log of an errand.
-	 * <p>
-	 * Read per errand rather than per instance, since the entries that explain why no process started have no instance to
-	 * be found by.
+	 * The log of an errand, including the entries written without an instance, such as those explaining why no process
+	 * started.
 	 *
 	 * @param  errandId the errand to read.
 	 * @param  pageable the page to read.
@@ -38,11 +36,8 @@ public interface ErrandProcessActivityRepository extends JpaRepository<ErrandPro
 	/**
 	 * The entries an external task has already written for an instance.
 	 * <p>
-	 * Read before a report is stored, so that a replayed report adds nothing: {@code uq_epa_idempotency} would refuse the
-	 * duplicate, but a constraint violation poisons the transaction the rest of the report is being written in, and
-	 * asking first is what keeps a retry a plain success rather than an error to recover from. Entries without an external
-	 * task are never matched here, which is the same answer the constraint gives, since null is distinct in a unique
-	 * index.
+	 * Read before a report is stored, so that a replayed report adds nothing. Entries without an external task are never
+	 * matched.
 	 *
 	 * @param  errandProcessId the instance the report belongs to.
 	 * @param  externalTaskId  the external task the report was made from.
@@ -53,9 +48,7 @@ public interface ErrandProcessActivityRepository extends JpaRepository<ErrandPro
 	/**
 	 * Whether an errand already carries an entry for a fault inside a window.
 	 * <p>
-	 * What it is for is to write the entries that report a jammed errand once per errand, fault and window instead of once
-	 * per discarded event. {@code uq_epa_idempotency} does not help there: both the instance and the external task are
-	 * null for those entries, and null is distinct in a unique index, so the error would drown the log it is reported in.
+	 * Used to write the entries that report a jammed errand once per errand, fault and window.
 	 *
 	 * @param  errandId     the errand to look at.
 	 * @param  errorCode    the code of the fault to look for.
@@ -68,8 +61,6 @@ public interface ErrandProcessActivityRepository extends JpaRepository<ErrandPro
 	 * Whether an instance already carries an entry of a kind.
 	 * <p>
 	 * Asked before the warning about two work steps running at once is written, so that it is written once per instance.
-	 * Branches that pass each other do so for as long as the model has the gateway, and a log the handler reads would
-	 * drown in a fault it has already been told about.
 	 *
 	 * @param  errandProcessId the instance to look at.
 	 * @param  activityType    the kind of entry to look for.

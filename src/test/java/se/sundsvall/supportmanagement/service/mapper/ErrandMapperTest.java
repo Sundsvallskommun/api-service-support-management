@@ -400,9 +400,7 @@ class ErrandMapperTest {
 	}
 
 	/**
-	 * The process of an errand is read outside the errand row, and this is what says it is filtered by the role based
-	 * mapping all the same. Asked in both directions, since a field that quietly bypasses the mapping works perfectly
-	 * well in a namespace that has no access control at all - which is every namespace using it first.
+	 * The process of an errand is read outside the errand row, and is filtered by the role based mapping all the same.
 	 */
 	@Test
 	void testProcessIsMappedWhenTheRestrictionNamesIt() {
@@ -458,8 +456,7 @@ class ErrandMapperTest {
 	}
 
 	/**
-	 * Phases and actions were served to a caller nothing restricted and dropped from every restricted one, with no grant
-	 * that could give them back. They are fields like any other now, so a restriction naming them carries them.
+	 * Phases and actions are fields like any other, so a restriction naming them carries them.
 	 */
 	@Test
 	void testToErrandWithAccessControlMapsPhasesAndActionsWhenTheyAreGranted() {
@@ -486,9 +483,7 @@ class ErrandMapperTest {
 	}
 
 	/**
-	 * A field without a reader is not merely unread: verifyWritableFields walks the readers, so a field missing one is a
-	 * field a patch may name without holding it. The mappers are held to the constants above, and these have to be held
-	 * to them for the same reason.
+	 * Every errand field has a reader, which verifyWritableFields walks when it checks the fields a patch names.
 	 */
 	@Test
 	void testEveryErrandFieldHasAReader() {
@@ -705,9 +700,8 @@ class ErrandMapperTest {
 	}
 
 	/**
-	 * Measures are added to and removed from one at a time through ErrandMeasureService, so the list Hibernate ends up
-	 * managing has to be mutable. Stream.toList would make every later create or delete of a measure fail with an
-	 * UnsupportedOperationException, which dept44 reports as 501.
+	 * The measure list of the mapped entity is mutable, so that ErrandMeasureService can add and remove measures one at a
+	 * time.
 	 */
 	@Test
 	void testToErrandEntityGivesAMutableMeasureList() {

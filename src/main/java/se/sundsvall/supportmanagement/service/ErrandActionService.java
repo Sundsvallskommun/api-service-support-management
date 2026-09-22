@@ -154,8 +154,7 @@ public class ErrandActionService {
 
 	/**
 	 * Whether a config reacts to the operation at hand. An empty set on the config means every operation the action
-	 * supports, which is what a config written before operation types existed holds. The action is consulted either way:
-	 * the set may only narrow what the action supports, and a config stored before that was enforced can hold more.
+	 * supports. The action is consulted either way, so a stored set can only narrow what the action supports.
 	 */
 	private static boolean reactsTo(ActionConfigEntity config, Action action, OperationType operationType) {
 		if (!action.validForOperationType(operationType)) {

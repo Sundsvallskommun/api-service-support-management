@@ -16,9 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ErrandFieldTest {
 
 	/**
-	 * The property of every field has to exist on the errand, since the API reports it in place of the constant and a
-	 * client looks it up in the payload. Renaming a property of the errand without renaming it here would leave the
-	 * report pointing at something that is not there.
+	 * Verifies that the property every field names exists on the errand.
 	 */
 	@Test
 	void everyFieldNamesAPropertyOfTheErrand() {
@@ -34,10 +32,7 @@ class ErrandFieldTest {
 	}
 
 	/**
-	 * Existing on the errand is not enough on its own - a field naming the wrong property of it would satisfy that and
-	 * still report the access of one field under the name of another. The property is written out on the constant rather
-	 * than derived from it so that renaming a property of the errand cannot quietly rename it in the published contract,
-	 * and this holds the two to each other in the ordinary case where they correspond.
+	 * Verifies that the property every field names is the name of its constant in camel case.
 	 */
 	@Test
 	void everyFieldNamesThePropertyItsConstantCorrespondsTo() {
@@ -53,9 +48,8 @@ class ErrandFieldTest {
 	}
 
 	/**
-	 * A write resource says the field has an endpoint of its own, which is what the access of an errand reports its keys
-	 * by instead of by the errand. Only a keyed collection can have one, since the endpoints serving a field one key at
-	 * a time are the only ones there are.
+	 * Verifies that only the parameters and the JSON parameters, keyed fields served by an endpoint of their own, carry a
+	 * write resource.
 	 */
 	@Test
 	void onlyTheKeyedFieldsServedByAnEndpointCarryAWriteResource() {
@@ -81,22 +75,13 @@ class ErrandFieldTest {
 	}
 
 	/**
-	 * Properties of the errand deliberately left unrestrictable. Only the phase a request names to move the errand into
-	 * is left, which no response ever carries - the phases themselves are restrictable, and the active one is the phase
-	 * among them not yet ended.
-	 * <p>
-	 * A property a response does carry belongs in a field instead. Left out of one, it is not merely unrestricted: it
-	 * reaches a caller nothing restricts and is dropped from every restricted one, with no grant that can give it back.
+	 * Properties of the errand that no field names: only the phase a request names to move the errand into, which no
+	 * response carries.
 	 */
 	private static final Set<String> UNRESTRICTABLE = Set.of("activePhaseId");
 
 	/**
-	 * The direction the other tests do not cover: a property added to the errand has to be named by a field, or named
-	 * here as one that is deliberately not.
-	 * <p>
-	 * An errand is built from the mappers of these fields, so a property no field names is not merely unrestricted - it
-	 * is never written at all, and would be absent from every response rather than from a restricted one. Adding a
-	 * property therefore has to fail here until the field, and with it the mapper, is added too.
+	 * Verifies that every property of the errand is named by a field or listed in {@link #UNRESTRICTABLE}.
 	 */
 	@Test
 	void everyPropertyOfTheErrandIsNamedByAFieldOrDeliberatelyNot() {

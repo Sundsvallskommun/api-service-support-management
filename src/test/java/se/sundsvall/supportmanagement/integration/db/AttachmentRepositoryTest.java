@@ -19,12 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
 
 /**
- * What these tests are here for is the one thing about attachments that cannot be read off the code: whether removing
- * them loads the files they hold. A file is a blob of up to fifty megabytes, an errand may carry any number of them,
- * and a retention purge walks errands by the thousand - so a removal that loads what it removes is a removal that ends
- * the service rather than the errand.
+ * Verifies that removing attachments does not load the files they hold.
  * <p>
- * Statistics are what answers that, since a load leaves no other trace. They are switched on for this test alone.
+ * Hibernate statistics, switched on for this test alone, tell whether a file was loaded.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)

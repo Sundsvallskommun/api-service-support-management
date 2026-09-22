@@ -41,9 +41,8 @@ public class SpecificationBuilder<T> {
 	/**
 	 * Matches errands that have not been touched since the sent in point in time.
 	 * <p>
-	 * Which timestamp says when an errand was last touched depends on what has happened to it, so the first one that is
-	 * set decides. An errand carrying none of them is left out: one that cannot be dated cannot be shown to be old
-	 * enough to act on, and the coalesce answers null for it.
+	 * The first of touched, modified and created that is set says when an errand was last touched. An errand carrying
+	 * none of them is left out.
 	 *
 	 * @param  cutoff the point in time an errand must have been untouched since
 	 * @return        specification matching errands last touched before the sent in point in time
@@ -56,8 +55,8 @@ public class SpecificationBuilder<T> {
 	}
 
 	/**
-	 * Matches errands whose id sorts after the sent in one, which is how a walk over a namespace carries on from where
-	 * the previous batch ended without stepping over what moved up behind a removed errand.
+	 * Matches errands whose id sorts after the sent in one, which lets a walk over a namespace carry on from where the
+	 * previous batch ended.
 	 *
 	 * @param  id the id the previous batch ended on
 	 * @return    specification matching errands that come after the sent in id
@@ -67,8 +66,7 @@ public class SpecificationBuilder<T> {
 	}
 
 	/**
-	 * Matches errands reported by sent in user. A null user matches nothing, so an absent or non AD identifier can never
-	 * match errands lacking a reporter.
+	 * Matches errands reported by sent in user. A null user matches nothing, not even errands lacking a reporter.
 	 *
 	 * @param  adAccount ad account of the requesting user, or null
 	 * @return           specification matching errands reported by sent in user
@@ -82,10 +80,8 @@ public class SpecificationBuilder<T> {
 	/**
 	 * Matches errands whose every access label is among sent in allowed labels.
 	 * <p>
-	 * Expressed as "has no access label outside the allowed set" rather than by counting labels and matching labels and
-	 * comparing the two. One correlated subquery instead of two aggregating ones, and it stops at the first offending
-	 * label rather than counting every row. An errand carrying no access labels has nothing outside the set and stays
-	 * accessible to everyone, which is the same rule as the counting form giving 0 == 0.
+	 * Expressed as "has no access label outside the allowed set", in one correlated subquery. An errand carrying no
+	 * access labels has nothing outside the set and is matched for any non-empty set of allowed labels.
 	 *
 	 * @param  allowedLabels labels the user may see, no access at all if empty
 	 * @return               specification matching errands fully covered by sent in labels

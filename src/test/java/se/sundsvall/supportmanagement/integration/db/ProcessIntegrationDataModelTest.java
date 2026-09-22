@@ -28,19 +28,13 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
 
 /**
- * The rules the process tables lean on live in the database rather than in the code: the errand cascade that keeps
- * orphans out, and the unique index that lets an errand carry one live process instance and any number of finished
- * ones. None of them exist in a schema generated from the entities, so they can only be verified where Flyway has run,
- * and that is what the dbtest profile is for - unlike the repository tests beside it, which run on the schema the junit
- * profile builds from the entity metadata.
+ * Verifies the rules the process tables get from the database, on the schema Flyway migrates under the dbtest profile:
+ * the errand cascade that keeps orphans out, and the unique index that lets an errand carry one live process instance
+ * and any number of finished ones.
  * <p>
- * That the context starts at all is a check in itself: the profile holds the mapped entities against the migrated
- * schema rather than letting them alter it.
+ * The context starting is a check in itself: the profile validates the mapped entities against the migrated schema.
  * <p>
  * What a cascade left behind is asked with {@code existsById}, which runs a count against the database.
- * {@code findById}
- * would answer out of the persistence context, which still holds the instance it loaded and would report a row the
- * database removed without telling JPA.
  */
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles({
@@ -150,11 +144,6 @@ class ProcessIntegrationDataModelTest {
 			.isThrownBy(() -> saveSignal(processId, "granskning-godkand"));
 	}
 
-	/**
-	 * The service compares names exactly, as the process engine does, and deduplicates a report on that alone. The column
-	 * has to compare them the same way: under the default collation every one of these is the same name, and a report
-	 * naming two of them would be refused by the key on every retry.
-	 */
 	@Test
 	@DisplayName("Verification that names differing only in case, accents or a trailing space are different signals")
 	void namesDifferingOnlyInCaseAccentsOrATrailingSpaceAreDifferentSignals() {

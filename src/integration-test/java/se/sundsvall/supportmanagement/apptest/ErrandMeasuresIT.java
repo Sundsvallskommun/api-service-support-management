@@ -140,7 +140,7 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An ETag that has moved on says so rather than overwriting what somebody else wrote.
+	 * An update carrying an ETag that has moved on is refused with 412, and does not overwrite what somebody else wrote.
 	 */
 	@Test
 	void test17_staleIfMatchIsRejectedOnUpdate() {
@@ -171,8 +171,8 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Patching the errand with the measures it was just served must leave them exactly where they were. They are
-	 * addressable in their own right, so regenerating their ids would break every Location handed out by a create.
+	 * Patching the errand with the measures it was just served leaves their ids and creation times as they were, so an
+	 * id handed out by a create still resolves.
 	 */
 	@Test
 	void test06_patchErrandKeepsMeasureIds() {

@@ -34,10 +34,8 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
 /**
  * A decision on an errand.
  * <p>
- * Fixed fields rather than a free document, because an administrative decision has a form that follows from the
- * administrative law and looks the same whether it concerns a building permit, income support or supervision: the
- * outcome, who made it, when, on what legal basis or delegation point, and why. That form belongs in the model, where
- * it is checked on the way in, shows up in the API specification and can be searched.
+ * Holds the form of an administrative decision as fixed fields: the outcome, who made it, when, on what legal basis or
+ * delegation point, and why.
  */
 @Entity
 @Table(name = "decision",
@@ -56,7 +54,7 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@Column(name = "outcome", nullable = false)
 	private String outcome;
 
-	/** MANUAL or AUTOMATIC. The difference has to be answerable afterwards. */
+	/** How the decision was made: MANUAL or AUTOMATIC. */
 	@Enumerated(STRING)
 	@JdbcTypeCode(VARCHAR)
 	@Column(name = "method", length = 16, nullable = false)
@@ -87,22 +85,22 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@Column(name = "appealable")
 	private Boolean appealable;
 
-	/** Period of validity. LocalDate: validity is counted in days, not in points in time. */
+	/** Period of validity, counted in days. */
 	@Column(name = "valid_from")
 	private LocalDate validFrom;
 
 	@Column(name = "valid_to")
 	private LocalDate validTo;
 
-	/** The investigation the decision rests on. Nullable, and set to null rather than cascading when it is removed. */
+	/** The investigation the decision rests on. Nullable, and set to null when the investigation is removed. */
 	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name = "investigation_id", foreignKey = @ForeignKey(name = "fk_decision_investigation_id"))
 	@OnDelete(action = OnDeleteAction.SET_NULL)
 	private InvestigationEntity investigationEntity;
 
 	/**
-	 * The process row that made the decision. Null for manual decisions, and without a JPA relation or foreign key: a
-	 * process row only goes together with its errand.
+	 * The id of the process row that made the decision, held without a JPA relation or foreign key. Null for manual
+	 * decisions.
 	 * <p>
 	 * Set by the decision service, never taken from a request: the live process row of the errand when the decision is
 	 * automatic.

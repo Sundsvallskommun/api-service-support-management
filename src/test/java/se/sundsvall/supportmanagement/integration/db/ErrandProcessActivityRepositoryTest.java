@@ -20,8 +20,7 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 
 /**
- * The log is read per errand rather than per instance, and the entries with no instance are the reason why: they are
- * what explains that no process started at all.
+ * Tests of {@link ErrandProcessActivityRepository}, including the entries that have no process instance.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -39,9 +38,7 @@ class ErrandProcessActivityRepositoryTest {
 	private ErrandProcessActivityRepository errandProcessActivityRepository;
 
 	/**
-	 * Reads a moment out of the test data the way the entities do: as a wall clock in the default zone of the JVM. Taking
-	 * it off the clock of the machine instead would leave every assertion here depending on the build and the database
-	 * agreeing on a time zone, which they do not.
+	 * Reads a moment out of the test data the way the entities do: as a wall clock in the default zone of the JVM.
 	 */
 	private static OffsetDateTime at(final String wallClock) {
 		return LocalDateTime.parse(wallClock).atZone(systemDefault()).toOffsetDateTime();
@@ -81,10 +78,6 @@ class ErrandProcessActivityRepositoryTest {
 			.containsExactly("epa-config-2");
 	}
 
-	/**
-	 * What a replayed report is compared against. Entries of the same instance written by another work step must not
-	 * come back, or a report would be taken for a replay of one it has nothing to do with.
-	 */
 	@Test
 	@DisplayName("Verification that the entries of one external task are found without dragging in the rest of the instance")
 	void findByErrandProcessIdAndExternalTaskId() {

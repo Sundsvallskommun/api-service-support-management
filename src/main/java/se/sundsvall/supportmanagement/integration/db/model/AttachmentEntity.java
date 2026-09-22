@@ -69,13 +69,13 @@ public class AttachmentEntity {
 	 * What the attachment is for, as registered for the namespace. Optional - an attachment without one is shown as any
 	 * other.
 	 * <p>
-	 * A property of the file rather than of any link to it, so the errand can show it in its own attachment list and an
-	 * attachment belonging to no handling artefact can still carry one. The consequence is that it is a single value: an
-	 * attachment serving one purpose for a statement serves the same purpose everywhere it is linked.
+	 * A property of the file, not of any link to it: the errand shows it in its own attachment list, an attachment
+	 * belonging to no handling artefact can carry one, and an attachment serving one purpose for a statement serves the
+	 * same purpose everywhere it is linked.
 	 * <p>
-	 * A reference rather than a copy of the name, the way the labels of an errand are, so a purpose given a new name or
-	 * display name in the metadata is shown as such wherever it is used. Nothing cascades either way: clearing the
-	 * reference leaves the purpose in the metadata, and a purpose still referenced cannot be removed from it.
+	 * A reference to the purpose in the metadata, so a purpose given a new name or display name there is shown as such
+	 * wherever it is used. Nothing cascades either way: clearing the reference leaves the purpose in the metadata, and a
+	 * purpose still referenced cannot be removed from it.
 	 */
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "attachment_purpose_id", foreignKey = @ForeignKey(name = "fk_attachment_attachment_purpose_id"))
@@ -210,8 +210,8 @@ public class AttachmentEntity {
 	}
 
 	/**
-	 * The id of the data row this attachment points at, without the row being loaded. Read only: the association is
-	 * what sets it, which is why there is no setter to go with this.
+	 * The id of the data row this attachment points at, without the row being loaded. Read only: it is set through the
+	 * association.
 	 *
 	 * @return the id of the data row, or null for an attachment that has not been written yet.
 	 */

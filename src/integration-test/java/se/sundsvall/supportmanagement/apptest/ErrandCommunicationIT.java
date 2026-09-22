@@ -377,7 +377,7 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	/**
 	 * A first line officer whose labels reach the errand at read only, and whom the access mapper grants the messages of
 	 * its conversations at read/write. The grant carries the write, so the message is accepted - while the errand itself
-	 * stays refused to them, which {@code ErrandsIT} holds the other half of.
+	 * stays refused to them, as {@code ErrandsIT} verifies.
 	 */
 	@Test
 	void test26_createConversationMessageOnAnErrandHeldAtRead() throws FileNotFoundException {

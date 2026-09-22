@@ -13,11 +13,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
 
-class ErrandProcessesTest {
+class ErrandProcessOverviewTest {
 
 	@Test
 	void bean() {
-		MatcherAssert.assertThat(ErrandProcesses.class, allOf(
+		MatcherAssert.assertThat(ErrandProcessOverview.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -30,17 +30,17 @@ class ErrandProcessesTest {
 		final var startable = ProcessStartable.create().withStatus(AVAILABLE);
 		final var process = ErrandProcess.create().withId("id");
 
-		final var processes = ErrandProcesses.create()
+		final var overview = ErrandProcessOverview.create()
 			.withStartable(startable)
 			.withProcesses(List.of(process));
 
-		assertThat(processes.getStartable()).isEqualTo(startable);
-		assertThat(processes.getProcesses()).containsExactly(process);
+		assertThat(overview.getStartable()).isEqualTo(startable);
+		assertThat(overview.getProcesses()).containsExactly(process);
 	}
 
 	@Test
 	void noDirtOnCreatedBean() {
-		assertThat(ErrandProcesses.create()).hasAllNullFieldsOrProperties();
-		assertThat(new ErrandProcesses()).hasAllNullFieldsOrProperties();
+		assertThat(ErrandProcessOverview.create()).hasAllNullFieldsOrProperties();
+		assertThat(new ErrandProcessOverview()).hasAllNullFieldsOrProperties();
 	}
 }

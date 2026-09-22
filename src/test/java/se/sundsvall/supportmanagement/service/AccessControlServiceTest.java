@@ -172,8 +172,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * The reporter of an errand no label of theirs reaches was never granted limited read for it, so limited read has
-	 * nothing to add and the reporter fields may be narrower than it. The two are independent grants.
+	 * A reporter whose labels do not reach the errand sees the reporter fields alone, even where those are narrower than
+	 * what limited read shows. Limited read is a separate grant they do not hold.
 	 */
 	@Test
 	void roleBasedFieldResolverHoldsAReporterOutsideTheirLabelsToTheReporterFields() {
@@ -190,8 +190,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A reporter their labels do reach the errand through keeps everything limited read shows them, since reporting an
-	 * errand may never show someone less of it than a limited read user who did not report it.
+	 * A reporter whose labels reach the errand at limited read sees the limited read fields and the reporter fields
+	 * together.
 	 */
 	@Test
 	void roleBasedFieldResolverUnionsReporterOnTopOfLimitedRead() {
@@ -209,8 +209,7 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A namespace granting the reporter its errands without saying what of them they see falls back to the minimum,
-	 * rather than to an errand carrying no fields whatsoever.
+	 * A namespace granting the reporter its errands without configuring any fields gives the reporter the minimum fields.
 	 */
 	@Test
 	void roleBasedFieldResolverFallsBackToTheMinimumForAReporterWithoutConfiguredFields() {
@@ -411,7 +410,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A denied specification is a bare disjunction, which is what the criteria builder produces for "matches nothing".
+	 * Whether the specification matches anything. A denied specification is the bare disjunction the criteria builder
+	 * gives for "matches nothing".
 	 */
 	private static boolean matches(final Specification<ErrandEntity> specification) {
 		final var criteriaBuilder = mock(CriteriaBuilder.class);
@@ -802,8 +802,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A field that is not keyed carries no level, so a role either holds it or does not. A patch naming one it does not
-	 * hold is naming a field it was never served, and is refused rather than applied in part.
+	 * A field that is not keyed carries no level, so a role either holds it or does not. A patch naming one the role does
+	 * not hold is refused with 403 as a whole.
 	 */
 	@Test
 	void verifyKeyAccessRefusesAFieldTheRoleDoesNotHold() {
@@ -917,9 +917,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * The grant of the access mapper is what says the user may perform the operation, so the labels are left only having
-	 * to reach the errand at read. Limited read labels stay out of it - a write is never permitted on an errand the user
-	 * cannot see in full.
+	 * With resource access control on, a resource granted at read/write lets labels reaching the errand at read carry a
+	 * write of that resource. Limited read labels never do.
 	 */
 	@Test
 	void withAccessControlLetsAResourceGrantCarryAWrite() {
@@ -935,8 +934,7 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * Without resource access control there is no second axis, so the labels carry the write themselves - which is what
-	 * every namespace holding its labels alone relies on.
+	 * Without resource access control, a write is carried by the labels granted at read/write alone.
 	 */
 	@Test
 	void withAccessControlLeavesAWriteToTheLabelsWithoutResourceAccessControl() {
@@ -950,7 +948,7 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * The errand itself is what the labels are held against, so no grant can vouch for writing it.
+	 * A resource grant never carries a write of the errand itself, which takes labels granted at read/write.
 	 */
 	@Test
 	void withAccessControlNeverLetsAResourceGrantCarryAnErrandWrite() {
@@ -966,7 +964,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * Lowering what the labels ask does not lower what the grant asks: the two axes still both have to allow.
+	 * A write of a resource the access mapper grants at read only matches no errand, whatever the labels reach: the
+	 * labels and the grant both have to allow it.
 	 */
 	@Test
 	void withAccessControlStillDemandsTheResourceGrantForAWrite() {
@@ -1160,8 +1159,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A field carries no level of its own, so what may be written is read off the errand. Keys are held against it, since
-	 * a key of an errand reached at read is never writable.
+	 * The keys granted to a role are reported at no more than the level of the errand, so on an errand reached at read a
+	 * granted key is read only.
 	 */
 	@Test
 	void resolveErrandAccessHoldsKeysAgainstTheLevelOfTheErrand() {
@@ -1213,7 +1212,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * The reporter clause reaches no errand for a caller carrying no ad account, exactly as the specification does not.
+	 * A reporter identified by party id rather than by ad account is not recognised as the reporter, and is refused with
+	 * 403.
 	 */
 	@Test
 	void resolveErrandAccessRefusesAReporterIdentifiedByPartyId() {
@@ -1229,9 +1229,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * hasAllowedMetadataLabels reaches no errand at all for a user holding no labels, where covers would call an
-	 * unlabelled errand covered by the empty set. Reporting the looser of the two would promise access the endpoints
-	 * refuse.
+	 * A user holding no labels is refused with 403 even on an unlabelled errand, as hasAllowedMetadataLabels reaches no
+	 * errand at all for them.
 	 */
 	@Test
 	void resolveErrandAccessRefusesAUserHoldingNoLabelsOnAnUnlabelledErrand() {
@@ -1279,8 +1278,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A key restriction is all or nothing, so a namespace naming keys makes those the only reachable ones and each is
-	 * listed with what may be done to it. A key held to read sits next to one that may be written.
+	 * A namespace naming keys makes those the only reachable ones, and each is listed with what may be done to it: a key
+	 * held to read next to one that may be written.
 	 */
 	@Test
 	void resolveErrandAccessListsEveryKeyOfAKeyedCollectionGrantedByKey() {
@@ -1294,8 +1293,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A key the errand does not carry yet is listed exactly as a stored one is, since the grant says what may be written
-	 * and not what happens to be there. This is what lets a form be rendered editable before anything is saved to it.
+	 * A granted key the errand does not carry yet is listed exactly as a stored one is: the report follows the grant, not
+	 * what is stored.
 	 */
 	@Test
 	void resolveErrandAccessListsAGrantedKeyTheErrandDoesNotCarry() {
@@ -1308,10 +1307,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * The one grant this response cannot express: a namespace may hand out a whole keyed collection and still hold it to
-	 * read. There are no keys to carry the restriction and a field carries no level of its own, so such a caller is
-	 * reported as reaching every key at the level of the errand - which overstates what the write paths accept. No
-	 * namespace configures this, and expressing it would mean giving every field a level back.
+	 * A whole keyed collection held to read is reported as reaching every key at the level of the errand, which
+	 * overstates what the write paths accept.
 	 */
 	@Test
 	void resolveErrandAccessReportsAWholeKeyedCollectionHeldToReadAsUnrestricted() {
@@ -1323,8 +1320,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A resource of an errand held at read is reported at what its own grant carries, since that is what the endpoint
-	 * serving it accepts. The errand itself stays at read - no grant vouches for writing it.
+	 * A resource of an errand held at read is reported at the level its own grant carries, while the errand itself stays
+	 * at read.
 	 */
 	@Test
 	void resolveErrandAccessReportsAWritableResourceOnAnErrandHeldAtRead() {
@@ -1341,9 +1338,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * A field carrying no key restriction has no keys to carry a level, so before it carried one of its own the report
-	 * could not say that parameters are writable on an errand held at read - the caller was told to follow the errand
-	 * and would have hidden an edit the endpoint accepts.
+	 * A field without key restriction that a resource of its own serves is reported at the level of that resource, while
+	 * the fields written through the errand follow the errand.
 	 */
 	@Test
 	void resolveErrandAccessReportsAFieldWithoutKeyRestrictionByTheResourceServingIt() {
@@ -1368,8 +1364,8 @@ class AccessControlServiceTest {
 	}
 
 	/**
-	 * And the keys of a field written through that resource are reported by it too, so the report cannot invite a client
-	 * to render a form the endpoint would then refuse - nor withhold one it would accept.
+	 * The keys of a field that a resource of its own serves are reported at the level of that resource, while the keys of
+	 * a field written through the errand follow the errand.
 	 */
 	@Test
 	void resolveErrandAccessReportsKeysOfAFieldByTheResourceServingIt() {

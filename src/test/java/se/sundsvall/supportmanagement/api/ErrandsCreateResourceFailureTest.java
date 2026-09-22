@@ -770,9 +770,8 @@ class ErrandsCreateResourceFailureTest {
 	}
 
 	/**
-	 * Measures reaching the service as part of the errand are validated exactly as one posted to the measure resource is.
-	 * Without cascading into them an unknown accept value would reach the mapper and surface as a 500, and a measure
-	 * missing its required fields would be persisted blank.
+	 * Measures reaching the service as part of the errand are validated exactly as one posted to the measure resource is,
+	 * so an unknown accept value and missing required fields are refused with 400.
 	 */
 	@Test
 	void createErrandWithInvalidMeasure() {

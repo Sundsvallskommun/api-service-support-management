@@ -117,7 +117,7 @@ class ErrandDecisionServiceTest {
 	private ErrandDecisionService service;
 
 	/**
-	 * The identifier is bound to the thread, which the test classes run before this one share.
+	 * Clears the identifier bound to the thread, which is shared with the test classes run before this one.
 	 */
 	@BeforeEach
 	@AfterEach
@@ -139,7 +139,7 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * Persisting gives the instance its id, and the service reads the id off it.
+	 * Stubs saveAndFlush to give the saved instance its id, as persisting does.
 	 */
 	private void mockSaveAssigningId() {
 		when(decisionRepositoryMock.saveAndFlush(any())).thenAnswer(invocation -> invocation.<DecisionEntity>getArgument(0).withId(DECISION_ID));
@@ -176,9 +176,8 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * A manual decision is made by no process, so it names no process row and the process rows are not even read for it.
-	 * The request is refused as a whole before the version of the errand is moved, and the event is written last, once the
-	 * decision is in the database.
+	 * A manual decision names no process row, and the process rows are not read for it. The request is validated before
+	 * the version of the errand is moved, and the event is written last, once the decision is in the database.
 	 */
 	@Test
 	void createErrandDecision() {
@@ -251,7 +250,7 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * A decision created already concluded is the one event the waiting process needs, and says so.
+	 * A decision created already concluded writes its event marked as concluding the decision.
 	 */
 	@Test
 	void createErrandDecisionAlreadyConcluded() {
@@ -268,7 +267,7 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * The service says which process made an automatic decision, and the body has no say in it.
+	 * An automatic decision names the live process of the errand, whatever process row the body names.
 	 */
 	@Test
 	void createAutomaticErrandDecisionNamesTheLiveProcess() {
@@ -322,7 +321,7 @@ class ErrandDecisionServiceTest {
 
 	/**
 	 * The investigation is looked up through the errand, so an id belonging to another errand finds nothing and is
-	 * answered as a 404 rather than written as a reference across errands.
+	 * answered with 404.
 	 */
 	@Test
 	void createErrandDecisionWithInvestigationOfAnotherErrand() {
@@ -342,8 +341,7 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * What the validator accepts is DecisionValidatorTest's business. What matters here is that its rejection stops the
-	 * request before anything is looked up or written.
+	 * A rejection by the validator stops the request before anything is looked up or written.
 	 */
 	@Test
 	void createErrandDecisionRejectedByValidator() {
@@ -381,8 +379,8 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * Access is settled before the cardinality rule of the namespace is consulted, so a caller without access to the errand
-	 * cannot learn from a 409 whether it already holds a decision.
+	 * Access is settled first: a caller without access to the errand is refused before the validator, and with it the
+	 * cardinality rule of the namespace, is consulted.
 	 */
 	@Test
 	void createErrandDecisionWithoutAccess() {
@@ -560,7 +558,7 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * The patch that completes the decision is the event the waiting process needs, and says so.
+	 * The patch that completes the decision writes its event marked as concluding the decision.
 	 */
 	@ParameterizedTest
 	@EnumSource(value = ItemStatus.class, names = "COMPLETED", mode = EXCLUDE)
@@ -598,8 +596,8 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * A decision that can no longer be changed is answered with the conflict before its version is even looked at - reading
-	 * it again would not make it changeable.
+	 * A decision that can no longer be changed is answered with 409 before its version is looked at, and is left as it
+	 * was.
 	 */
 	@Test
 	void updateErrandDecisionThatCanNoLongerBeChanged() {
@@ -745,7 +743,7 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * The JSON parameters of the decision are its own and go with it, so removing the decision is all there is to it.
+	 * Removing the decision takes its JSON parameters with it, without a call to remove them on their own.
 	 */
 	@Test
 	void deleteErrandDecision() {
@@ -770,7 +768,7 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * Deleting a decision that can no longer be changed would be the one change the lock is there to stop.
+	 * A decision that can no longer be changed is not deleted, and the request is answered with 409.
 	 */
 	@Test
 	void deleteErrandDecisionThatCanNoLongerBeChanged() {
@@ -789,8 +787,8 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * The event is written whatever becomes of it: a failed event log is logged rather than failing the deletion, and a
-	 * failed publication has already marked the transaction for rollback on its own.
+	 * A failing decision event is logged and does not fail the deletion. A failed publication marks the transaction for
+	 * rollback on its own.
 	 */
 	@Test
 	void deleteErrandDecisionWhoseEventFails() {
@@ -851,9 +849,8 @@ class ErrandDecisionServiceTest {
 	}
 
 	/**
-	 * The id is read off the very instance added to the decision, once the flush has persisted it. saveAndFlush would
-	 * merge the already managed decision, and the merge persists a copy of the new term - the instance added here would
-	 * never get its id. The stubbed flush assigns the id the way the persist does, to that instance alone.
+	 * The id is read off the very instance added to the decision once the flush has persisted it, and saveAndFlush is
+	 * not called. The stubbed flush assigns the id the way the persist does, to that instance alone.
 	 */
 	@Test
 	void createDecisionTerm() {

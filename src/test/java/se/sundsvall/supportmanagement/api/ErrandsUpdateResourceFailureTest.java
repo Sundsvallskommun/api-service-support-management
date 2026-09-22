@@ -420,8 +420,7 @@ class ErrandsUpdateResourceFailureTest {
 	}
 
 	/**
-	 * A key the database would take for another one - here by the trailing space its comparison ignores - is refused
-	 * before it gets that far.
+	 * A key outside the allowed characters, here one with a trailing space, is refused before it reaches the service.
 	 */
 	@Test
 	void updateErrandWithJsonParameterKeyOutsideTheAllowedCharacters() {

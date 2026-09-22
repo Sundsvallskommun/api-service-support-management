@@ -82,13 +82,10 @@ public class ErrandNoteService {
 	}
 
 	/**
-	 * Fetches a note and verifies it belongs to sent in errand. Notes live in another service, which has no endpoint for
-	 * fetching a note by id and case together, so the link has to be checked here. Authorising the errand says nothing
-	 * about a note hanging off a different one.
+	 * Fetches a note from the notes service and verifies it belongs to sent in errand.
 	 * <p>
-	 * A note belonging elsewhere answers 404 rather than 401, so the response cannot be used to tell whether a note
-	 * exists on an errand the user may not reach. A note without a case id is treated the same way, since nothing ties
-	 * it to this errand.
+	 * A note belonging elsewhere, or carrying no case id, answers 404, so the response does not tell whether a note
+	 * exists on an errand the user may not reach.
 	 *
 	 * @param  municipalityId municipality id
 	 * @param  errandId       id of the errand the note must belong to, which notes carry as their case id

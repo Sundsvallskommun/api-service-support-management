@@ -19,11 +19,9 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 /**
- * The process resource over the wire.
- * <p>
- * What this asks that the tests below the resource cannot: that the paths route, that the write only fields of the
- * report never come back in a response, that a created row answers with a Location pointing at itself, and that the
- * refusals reach the caller as the status codes the process engine acts on rather than as exceptions.
+ * The process resource over the wire: that the paths route, that the write only fields of the report never come back
+ * in a response, that a created row answers with a Location pointing at itself, and that the refusals reach the caller
+ * as the status codes the process engine acts on.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandProcessesIT/", classes = Application.class)
 @Sql({
@@ -91,7 +89,7 @@ class ErrandProcessesIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A start that failed carries no instance, so there is nothing to point a location at - and the row is still created.
+	 * A start that failed carries no instance and is answered without a location, and the row is still created.
 	 */
 	@Test
 	void test04_registerStartThatFailedAnswersWithoutALocation() {
@@ -116,8 +114,7 @@ class ErrandProcessesIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An errand that never had a process answers with an empty list rather than 404 - the envelope is the answer, and an
-	 * empty list is not an error.
+	 * An errand that never had a process answers with an empty list, not with 404.
 	 */
 	@Test
 	void test06_readErrandProcessesOfAnErrandWithNone() {
@@ -140,8 +137,7 @@ class ErrandProcessesIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Narrowing the log to one instance leaves the entries belonging to no instance out, which is the point of narrowing
-	 * it: those entries explain why no process started and belong to the errand rather than to a process.
+	 * Narrowing the log to one instance leaves the entries belonging to no instance out.
 	 */
 	@Test
 	void test08_readProcessActivitiesNarrowedToAnInstance() {
@@ -234,8 +230,8 @@ class ErrandProcessesIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Two branches of one instance working at the same time. Both reports are taken - refusing one would silence the
-	 * entry that reveals the model is breaking the rule - and the warning stands in the log afterwards.
+	 * Two branches of one instance working at the same time. Both reports are taken, and the warning stands in the log
+	 * afterwards.
 	 */
 	@Test
 	void test14_twoTasksWorkingAtOnceAreWarnedAboutAndBothReportsAreTaken() {

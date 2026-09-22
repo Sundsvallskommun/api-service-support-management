@@ -102,6 +102,21 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> labelsArguments(String method) {
 		return Stream.of(
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "TILLSYN",
+				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
+				LabelAttribute.create().withKey("processStartMode").withValue("manual"))),
+				tuples(
+					tuple(method + ".labels", "label 'TILLSYN' has the processStartMode 'manual', which must be exactly one of [AUTOMATIC, MANUAL]"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "ALKT").withLabels(List.of(
+				createLabelWithAttributes("class", "TILLSYN",
+					LabelAttribute.create().withKey("processStartMode").withValue("MANUAL"))))),
+				tuples(
+					tuple(method + ".labels", "label 'ALKT/TILLSYN' has a processStartMode but no processKey, and a start mode means nothing without the process it starts"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "TILLSYN",
+				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
+				LabelAttribute.create().withKey("processstartmode").withValue("MANUAL"))),
+				tuples(
+					tuple(method + ".labels", "label 'TILLSYN' has the attribute 'processstartmode', which is read only when spelled exactly 'processStartMode'"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
 				LabelAttribute.create().withKey("dup").withValue("a"),
 				LabelAttribute.create().withKey("dup").withValue("b"))),
@@ -113,6 +128,27 @@ class MetadataLabelResourceFailureTest {
 					LabelAttribute.create().withKey("k").withValue("v2"))))),
 				tuples(
 					tuple(method + ".labels", "each label must have unique attribute keys"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
+				LabelAttribute.create().withKey("k".repeat(256)).withValue("v"))),
+				tuples(
+					tuple(method + ".labels[0].attributes[0].key", "size must be between 0 and 255"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
+				LabelAttribute.create().withKey("k").withValue("v".repeat(16384)))),
+				tuples(
+					tuple(method + ".labels[0].attributes[0].value", "size must be between 0 and 16383"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RES").withLabels(List.of(
+				createLabelWithAttributes("class", "CHILD",
+					LabelAttribute.create().withKey("k".repeat(256)).withValue("v"),
+					LabelAttribute.create().withKey("k").withValue("v".repeat(16384)))))),
+				tuples(
+					tuple(method + ".labels[0].labels[0].attributes[0].key", "size must be between 0 and 255"),
+					tuple(method + ".labels[0].labels[0].attributes[1].value", "size must be between 0 and 16383"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RES").withLabels(List.of(
+				createLabel(null, "CHILD"),
+				createLabel("class", "child")))),
+				tuples(
+					tuple(method + ".labels[0].labels[0].classification", "must not be blank"),
+					tuple(method + ".labels[0].labels[1].resourceName", "can only contain A-Z, 0-9 and _"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME_1"), createLabel("class", "RESOURCE_NAME_1")),
 				tuples(
 					tuple(method + ".labels", "each entry must have unique resourceName compared to its siblings"))),

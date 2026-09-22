@@ -22,14 +22,11 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 
 /**
- * The JSON parameters of a handling artefact, kept beside the artefact rather than among those of the errand.
+ * Verifies that the JSON parameters of a handling artefact are kept beside the artefact, apart from those of the errand.
  * <p>
  * The errand and each of its artefacts hold parameters of their own: neither shows the other's, and a key one of them
  * uses is free for the others. The parameters of an artefact go with it, where an attachment linked to it stays on the
- * errand. These cases are what say so, and each of them checks both halves: what went, and what stayed.
- * <p>
- * Counted with SQL rather than read back through JPA, since a collection in memory can be stale where the database is
- * right - and it is the database these cases are about.
+ * errand. Each case checks both what went and what stayed, counted with SQL in the database.
  */
 @WireMockAppTestSuite(files = "classpath:/ArtefactJsonParameterCascadeIT/", classes = Application.class)
 @Sql({
@@ -99,8 +96,7 @@ class ArtefactJsonParameterCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Removing the statement takes its content with it - which is the whole difference from an attachment - and leaves
-	 * what the errand holds itself.
+	 * Removing the statement takes its content with it, and leaves what the errand holds itself.
 	 */
 	@Test
 	void test03_deletingStatementTakesItsParameters() {

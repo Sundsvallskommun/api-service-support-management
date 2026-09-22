@@ -21,7 +21,7 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
  * <p>
  * The rows of an instance are replaced by every report of the process, so no rows at all means the process waits for
  * no person. The name is the message name in the process model and is relayed back as it came; this service interprets
- * none of them, which is what keeps a gate added to the model from needing a change here.
+ * none of them.
  * <p>
  * The instance is referenced by id only, like the other process tables, and the foreign key lives in the database
  * alone.
@@ -44,9 +44,7 @@ public class ErrandProcessSignalEntity {
 	private String errandProcessId;
 
 	/**
-	 * Compared byte for byte, trailing spaces included, as the process engine compares message names. The default
-	 * collation would take names differing in case, accents or trailing spaces for one, and a report naming two such
-	 * would then be refused by {@code uq_eps_process_name} on every retry.
+	 * The message name, compared byte for byte, trailing spaces included, as the process engine compares message names.
 	 */
 	@Column(name = "name", nullable = false, length = 128, columnDefinition = "varchar(128) character set utf8mb4 collate utf8mb4_nopad_bin")
 	private String name;

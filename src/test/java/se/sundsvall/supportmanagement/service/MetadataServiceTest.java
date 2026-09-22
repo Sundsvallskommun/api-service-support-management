@@ -1868,10 +1868,6 @@ class MetadataServiceTest {
 		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 	}
 
-	/**
-	 * A measure type in no group cannot be found by the one thing measure types are looked up by, so a creation has to
-	 * name them.
-	 */
 	@Test
 	void createMeasureTypeRefusesATypeNamingNoGroup() {
 		final var exception = assertThrows(ThrowableProblem.class,
@@ -1882,10 +1878,7 @@ class MetadataServiceTest {
 		verifyNoInteractions(measureTypeRepositoryMock);
 	}
 
-	/**
-	 * An update shares the model, so leaving the groups out has to keep meaning "unchanged" - every other property of a
-	 * measure type may be left out of a patch.
-	 */
+	/** A patch that leaves the groups out keeps the groups the measure type already has. */
 	@Test
 	void updateMeasureTypeAcceptsAPatchLeavingTheGroupsOut() {
 		final var id = "dd000000-0000-0000-0000-000000000100";
@@ -1899,7 +1892,6 @@ class MetadataServiceTest {
 		assertThat(result.getMeasureGroups()).containsExactly("MANAGERS");
 	}
 
-	/** Emptying them is a different thing from leaving them out, and is refused. */
 	@Test
 	void updateMeasureTypeRefusesEmptiedGroups() {
 		final var exception = assertThrows(ThrowableProblem.class,
@@ -1911,8 +1903,7 @@ class MetadataServiceTest {
 	}
 
 	/**
-	 * The groups became a collection, which cannot be sorted on. Sorting by one used to work, so the caller is told what
-	 * is wrong rather than meeting the query derivation, which answers 500 and says nothing.
+	 * A sort on the measure groups, which are a collection, is refused with 400 and a message naming the property.
 	 */
 	@Test
 	void findMeasureTypesRefusesASortOnTheGroups() {
@@ -2168,8 +2159,7 @@ class MetadataServiceTest {
 	}
 
 	/**
-	 * A purpose still given to an attachment stays, the way a label still on an errand does. Clearing it from the
-	 * attachments comes first.
+	 * A purpose still given to an attachment is not deleted; it has to be cleared from the attachments first.
 	 */
 	@Test
 	void deleteAttachmentPurposeInUse() {
@@ -2254,9 +2244,7 @@ class MetadataServiceTest {
 		verify(attachmentPurposeRepositoryMock).save(entity);
 	}
 
-	/**
-	 * A name another purpose of the namespace already has is refused, rather than left to the unique key of the table.
-	 */
+	/** A name another purpose of the namespace already has is refused. */
 	@Test
 	void updateAttachmentPurposeToANameAnotherPurposeHas() {
 		// Setup
@@ -2460,9 +2448,7 @@ class MetadataServiceTest {
 		verify(decisionOutcomeRepositoryMock).save(entity);
 	}
 
-	/**
-	 * A name another outcome of the namespace already has is refused, rather than left to the unique key of the table.
-	 */
+	/** A name another outcome of the namespace already has is refused. */
 	@Test
 	void updateDecisionOutcomeToANameAnotherOutcomeHas() {
 		// Setup
@@ -2685,9 +2671,7 @@ class MetadataServiceTest {
 		verify(statementOutcomeRepositoryMock).save(entity);
 	}
 
-	/**
-	 * A name another outcome of the namespace already has is refused, rather than left to the unique key of the table.
-	 */
+	/** A name another outcome of the namespace already has is refused. */
 	@Test
 	void updateStatementOutcomeToANameAnotherOutcomeHas() {
 		// Setup

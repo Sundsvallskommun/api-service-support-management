@@ -1,0 +1,23 @@
+{
+	"content": [
+		{
+			"id": "${json-unit.any-string}",
+			"activityType": "LOOP_GUARD",
+			"severity": "ERROR",
+			"message": "emergency brake tripped: 20 events, the most allowed, have reached the process of this errand within PT10M, and further events are being dropped. Something is waking the errand in a loop - find what writes to it, and check that the process asks not to be woken by its own writes",
+			"errorCode": "EVENT_RATE_EXCEEDED",
+			"occurredAt": "${json-unit.any-string}",
+			"created": "${json-unit.any-string}"
+		}
+	],
+	"pageable": "${json-unit.ignore}",
+	"totalPages": 1,
+	"last": true,
+	"totalElements": 1,
+	"size": 50,
+	"number": 0,
+	"sort": "${json-unit.ignore}",
+	"first": true,
+	"numberOfElements": 1,
+	"empty": false
+}

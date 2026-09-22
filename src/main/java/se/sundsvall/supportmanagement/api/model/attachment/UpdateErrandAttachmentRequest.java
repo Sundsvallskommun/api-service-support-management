@@ -5,10 +5,10 @@ import jakarta.validation.Valid;
 import java.util.Objects;
 
 /**
- * What can be written about an attachment of the errand once it is there.
+ * What can be written about an attachment of the errand once it is there: what it is for.
  * <p>
- * Deliberately not {@link ErrandAttachment}, which describes the file and is what the operation answers with. Its name,
- * its type and its content are set when it is uploaded; what it is for is the one thing that is decided afterwards.
+ * The name, type and content of the attachment are set when it is uploaded, and the operation answers with
+ * {@link ErrandAttachment}.
  */
 @Schema(description = "Writable properties of an errand attachment")
 public class UpdateErrandAttachmentRequest {

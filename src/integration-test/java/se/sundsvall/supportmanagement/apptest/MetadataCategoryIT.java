@@ -23,7 +23,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 
 /**
- * Status Metadata IT tests.
+ * Category Metadata IT tests.
  */
 @WireMockAppTestSuite(files = "classpath:/MetadataCategoryIT/", classes = Application.class)
 @Sql({

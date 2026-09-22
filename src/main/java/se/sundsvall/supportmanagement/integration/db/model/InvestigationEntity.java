@@ -24,8 +24,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 /**
  * An investigation of an errand.
  * <p>
- * The frame is shared; the areas being assessed are rows, not columns. One line of business has four of them, another
- * has three others - and neither should force a migration on the other.
+ * The frame is shared; the areas being assessed are rows, not columns, so each line of business assesses areas of its
+ * own.
  */
 @Entity
 @Table(name = "investigation",
@@ -56,8 +56,7 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 
 	/**
 	 * The proposed decision, expressed in the language of the decision: one of the decision outcomes the namespace has
-	 * registered, like {@code DecisionEntity.outcome}. The same outcomes on purpose - it makes it answerable how often the
-	 * decision follows what the investigation proposed.
+	 * registered, like {@code DecisionEntity.outcome}, and comparable with the outcome of the decision.
 	 */
 	@Column(name = "recommendation")
 	private String recommendation;

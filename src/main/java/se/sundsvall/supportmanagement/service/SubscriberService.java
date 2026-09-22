@@ -124,9 +124,8 @@ public class SubscriberService {
 	}
 
 	/**
-	 * A subscriber describes how one user is notified, so only that user may change or remove it. Listing, reading and
-	 * creating stay open: finding a colleague's subscriber id is what makes subscribing a colleague possible, and that
-	 * workflow would break without it.
+	 * A subscriber describes how one user is notified, so only that user may change or remove it; anyone else is
+	 * refused with 403. Listing, reading and creating are not held to ownership.
 	 */
 	private void verifyOwnedByRequestingUser(final SubscriberEntity subscriber) {
 		final var owner = subscriber.getIdentifier();

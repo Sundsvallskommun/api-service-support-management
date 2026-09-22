@@ -124,7 +124,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The location names the section that was created, which takes the id of the section rather than of a copy of it.
+	 * The location names the section that was created, by the id of the section.
 	 */
 	@Test
 	void test05_createInvestigationSection() {
@@ -191,8 +191,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The section key is unique per investigation, and saying so here turns a constraint violation deep in the flush
-	 * into an answer the caller can act on.
+	 * The section key is unique per investigation, and a section reusing one is answered with 409.
 	 */
 	@Test
 	void test10_reusingASectionKeyIsAConflict() {
@@ -383,7 +382,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.as("the recommendation was not written").isNull();
 	}
 
-	/** Read with SQL rather than through JPA: the collections of a loaded entity are lazy, and the test has no session. */
+	/** Counts the investigation sections with the given id, read with SQL. */
 	private int sections(final String sectionId) {
 		return jdbcTemplate.queryForObject("select count(*) from investigation_section where id = ?", Integer.class, sectionId);
 	}

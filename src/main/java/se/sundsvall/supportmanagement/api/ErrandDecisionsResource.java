@@ -58,8 +58,8 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.formatOrNull;
 /**
  * The decisions of an errand, together with the attachments and the business content that belong to them.
  * <p>
- * The attachments have no read operation here on purpose. An attachment linked to a decision <em>is</em> an attachment
- * of the errand, and is read - content and all - through
+ * The attachments have no read operation here. An attachment linked to a decision is an attachment of the errand, and
+ * is read - content and all - through
  * {@code GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}}. What this resource adds is
  * which attachments belong to the decision.
  */
@@ -73,7 +73,7 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.formatOrNull;
 @ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 class ErrandDecisionsResource {
 
-	private static final String FORBIDDEN_METHOD = "Forbidden - the method does not match who writes the decision: MANUAL requires an AD account, AUTOMATIC the process consumer of the namespace";
+	private static final String FORBIDDEN_METHOD = "Forbidden - the method does not match who writes the decision: MANUAL requires an AD account, AUTOMATIC a caller that is not one - in a namespace with a process consumer, that consumer";
 	private static final String DECISION_LOCKED = "Conflict - the decision can no longer be changed, as the process of the errand has run to its end or the decision is completed on an errand with a process";
 
 	private final ErrandDecisionService service;

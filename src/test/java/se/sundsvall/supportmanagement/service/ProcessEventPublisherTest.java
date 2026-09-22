@@ -133,8 +133,7 @@ class ProcessEventPublisherTest {
 
 	/**
 	 * Only an exact false, trimmed and whatever its casing, keeps the row from being written. Everything else means wake
-	 * the process, and one row too many is the direction this leans in on purpose: a needless wake is caught by the two
-	 * layers below, while a missing one is a process left waiting for ever with nobody noticing.
+	 * the process.
 	 */
 	private static Stream<Arguments> headerValues() {
 		return Stream.of(
@@ -311,10 +310,6 @@ class ProcessEventPublisherTest {
 		verify(activityRepositoryMock, never()).save(any());
 	}
 
-	/**
-	 * A decision concluded by a handler is the event a waiting process needs, and a brake tripped by other traffic on the
-	 * errand would otherwise leave the process waiting for ever.
-	 */
 	@Test
 	@DisplayName("Verification that a decision concluded by a handler is published past a tripped brake, which is then neither asked nor reported")
 	void aConcludedDecisionPassesTheBrake() {
@@ -333,10 +328,6 @@ class ProcessEventPublisherTest {
 		verifyNoInteractions(activityRepositoryMock);
 	}
 
-	/**
-	 * Every decision a process creates concluded is a new one, so a process that forgot to ask not to be woken would
-	 * create decision after decision if its conclusions passed the brake.
-	 */
 	@Test
 	@DisplayName("Verification that a decision concluded by the process itself is held back by a tripped brake")
 	void aDecisionConcludedByTheProcessIsHeldBackByTheBrake() {
@@ -544,11 +535,6 @@ class ProcessEventPublisherTest {
 		verifyNoInteractions(activityRepositoryMock);
 	}
 
-	/**
-	 * The endpoints are to let only ad accounts issue a command, and the header is not honoured for an ad account, so a
-	 * command would pass layer 1 anyway. The waiver is what keeps the buttons from leaning on that: were the check in front
-	 * of them lost, a command carrying the header every process engine sets would be silenced rather than refused.
-	 */
 	@ParameterizedTest
 	@MethodSource("commands")
 	@DisplayName("Verification that a command asking not to wake the process from a machine identity is published all the same, since layer 1 is waived for commands of their own accord")
@@ -580,11 +566,6 @@ class ProcessEventPublisherTest {
 		verify(activityRepositoryMock, never()).save(any());
 	}
 
-	/**
-	 * The buttons have to work on the errands with the most traffic, which is where the brake would otherwise silence
-	 * them: the start would answer 202 and start nothing, the signal would leave the process waiting at its gate. What
-	 * the command carries - the chosen key, the name of the gate - is the whole point of the row.
-	 */
 	@ParameterizedTest
 	@MethodSource("commands")
 	@DisplayName("Verification that a command is published though the brake has tripped, carrying what it carries")

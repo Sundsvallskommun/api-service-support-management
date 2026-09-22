@@ -16,15 +16,13 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventDirectRunConfig.PROCESS_EVENT_EXECUTOR;
 
 /**
- * Starts a delivery as soon as a transaction that wrote to the outbox is committed, instead of leaving the row for the
- * next scheduled run.
+ * Starts a delivery as soon as a transaction that wrote to the outbox is committed, ahead of the next scheduled run.
  * <p>
- * It only brings the delivery forward. It wakes the relay, not the process - waking the process is what pw-alkt does
- * once the event reaches it - and it may be lost without anything being lost with it: dropped, failed or never started,
- * the scheduled run delivers the row within a minute.
+ * It only brings the delivery forward, and wakes the relay, not the process. A run that is dropped, fails or never
+ * starts loses nothing: the scheduled run delivers the row within a minute.
  * <p>
- * That is also why nothing here may fail the write that sent the signal. The pool drops a run it has no room for
- * rather than throwing in the committing thread, and whatever else goes wrong is logged and left to the scheduled run.
+ * Nothing here fails the write that sent the signal. The pool drops a run it has no room for without throwing in the
+ * committing thread, and whatever else goes wrong is logged and left to the scheduled run.
  */
 @Component
 public class ProcessEventDirectRun {
@@ -46,9 +44,9 @@ public class ProcessEventDirectRun {
 	}
 
 	/**
-	 * Hands the delivery to the pool once the row is committed, or at once when it was written without a transaction,
-	 * since it is saved already then. The pool drops a run it has no room for instead of refusing it, so handing it over
-	 * cannot throw in the thread that committed the errand.
+	 * Hands the delivery to the pool once the row is committed, or at once when it was written without a transaction.
+	 * The pool drops a run it has no room for, so handing it over does not throw in the thread that committed the
+	 * errand.
 	 *
 	 * @param event the signal that a row has been written.
 	 */

@@ -12,7 +12,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import static jakarta.persistence.FetchType.LAZY;
 
 /**
- * A JSON parameter of a decision. See {@link AbstractArtefactJsonParameterEntity} for why it is not one of the errand.
+ * A JSON parameter of a decision, held as described in {@link AbstractArtefactJsonParameterEntity}.
  */
 @Entity
 @Table(name = "decision_json_parameter",

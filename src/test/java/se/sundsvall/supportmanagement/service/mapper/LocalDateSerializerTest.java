@@ -19,8 +19,7 @@ class LocalDateSerializerTest {
 	}
 
 	/**
-	 * The point of the serializer is that Gson never reflects into {@link LocalDate}, which is closed to reflection on a
-	 * modern JDK. Registering it and writing a date is what proves that.
+	 * Gson with the serializer registered writes a date without reflecting into {@link LocalDate}.
 	 */
 	@Test
 	void gsonWritesADateWithoutReflectingIntoIt() {

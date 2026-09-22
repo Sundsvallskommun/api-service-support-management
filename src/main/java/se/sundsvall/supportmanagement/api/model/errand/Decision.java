@@ -23,9 +23,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 /**
  * A decision on an errand.
  * <p>
- * The outcome, who made it, when, on what legal basis and why are fixed fields rather than a free document, because an
- * administrative decision has a form that follows from the law. Whether the decision was made by a person or by a
- * process is recorded in the method, and has to remain answerable afterwards.
+ * The outcome, who made it, when, on what legal basis and why are fixed fields. Whether the decision was made by a
+ * person or by a process is recorded in the method.
  */
 @Schema(description = "Decision model")
 public class Decision {

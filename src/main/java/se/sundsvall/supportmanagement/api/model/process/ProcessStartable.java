@@ -10,11 +10,9 @@ import static java.util.Optional.ofNullable;
 /**
  * Whether a process may be started for an errand, and which one.
  * <p>
- * The status is carried as a string rather than as an enum, because its own contract is that values are added over
- * time: a client is told to treat what it does not recognise as not startable, and a generated enum would throw on the
- * value instead of letting it. {@link ProcessStartability} remains the set this service may answer with - it is what
- * {@link #withStatus(ProcessStartability)} takes, so a value outside it cannot be published by mistake - but it is kept
- * off the wire so that adding one is not a new version of this API.
+ * The status is published as a string, and values may be added over time: a client treats a value it does not
+ * recognise as not startable. {@link ProcessStartability} is the set of values this service answers with, and
+ * {@link #withStatus(ProcessStartability)} sets the status from it.
  */
 @Schema(description = "Whether a process may be started for an errand, and which one")
 public class ProcessStartable {
@@ -24,16 +22,21 @@ public class ProcessStartable {
 		LIVE_INSTANCE - a process is already running for this errand. \
 		PROCESS_COMPLETED - a process has already run to its end. An errand has one process life; a new process means a \
 		new errand. \
-		NO_PROCESS_KEY - no label on the errand carries a process key, so there is nothing to start. Setting the right \
-		label is the fix. \
+		NO_PROCESS_KEY - no label on the errand carries a processKey attribute the errand can be started with, so there \
+		is nothing to start. Setting the right label is the fix. \
 		NO_PROCESS_ENGINE - this namespace does not run processes at all. \
+		The answer is the same whether or not the labels start the process on their own: an errand whose process starts \
+		by itself is AVAILABLE too, and starting it by hand is how a start that failed is tried again. \
 		Treat any value you do not recognise as not startable - values may be added over time.""", examples = "AVAILABLE", accessMode = READ_ONLY)
 	private String status;
 
 	@Schema(description = """
-		The process keys that are eligible to start, taken from the process key attribute on the labels of the errand. \
-		One element is the normal case. Two or more elements mean the errand carries labels pointing at different \
-		processes and a person has to choose. Empty whenever status is not AVAILABLE.""", accessMode = READ_ONLY)
+		The process keys that are eligible to start, taken from the processKey attribute on the labels of the errand. \
+		One element is the normal case: send it - or send nothing - to POST .../processes/start. Two or more elements \
+		mean the errand carries labels pointing at different processes and a person has to choose: ask the user and send \
+		the chosen key, otherwise the request is rejected with 400. An errand runs one process for the whole of its life, \
+		so once it has had one - a start that failed included - only the key of that process is offered. Empty whenever \
+		status is not AVAILABLE.""", accessMode = READ_ONLY)
 	private List<String> processKeys;
 
 	public static ProcessStartable create() {
@@ -49,8 +52,7 @@ public class ProcessStartable {
 	}
 
 	/**
-	 * Takes the enum rather than a string, which is what keeps the published values a closed set on this side of the wire
-	 * while leaving them open on the other.
+	 * Sets the status to the name of the given {@link ProcessStartability}, or to null when it is null.
 	 */
 	public ProcessStartable withStatus(final ProcessStartability status) {
 		this.status = ofNullable(status).map(Enum::name).orElse(null);

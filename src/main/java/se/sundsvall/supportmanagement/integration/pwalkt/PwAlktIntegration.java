@@ -12,14 +12,10 @@ import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 /**
- * Hands errand events to pw-alkt, and decides what its answers mean.
+ * Hands errand events to pw-alkt, and decides what its answers mean. It is the one place the relay meets the transport.
  * <p>
- * The one place the relay meets the transport, which makes it the class to replace once the events travel over a
- * message queue instead.
- * <p>
- * Only a 422 is a refusal for good. It is the one answer that says something about the event rather than about the way
- * to pw-alkt. Everything else - a 5xx, a timeout, a 401 or a 404 from the gateway - is worth trying again: the row then
- * stays until whatever stood in the way has been fixed, and nothing is lost in the meantime.
+ * Only a 422 is a refusal for good. Everything else - a 5xx, a timeout, a 401 or a 404 from the gateway - is to be
+ * tried again, and the row stays until it has gone through.
  */
 @Component
 public class PwAlktIntegration {
@@ -33,9 +29,7 @@ public class PwAlktIntegration {
 	}
 
 	/**
-	 * Hands an event to pw-alkt.
-	 * <p>
-	 * A refusal for good is logged here, since this is the one place the reason pw-alkt gave for it is known.
+	 * Hands an event to pw-alkt. A refusal for good is logged here, with the reason pw-alkt gave for it.
 	 *
 	 * @param  municipalityId             the municipality of the errand.
 	 * @param  namespace                  the namespace of the errand.

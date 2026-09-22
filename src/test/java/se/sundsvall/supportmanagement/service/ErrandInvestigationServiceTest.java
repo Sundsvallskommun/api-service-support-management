@@ -93,7 +93,7 @@ class ErrandInvestigationServiceTest {
 	private ErrandInvestigationService service;
 
 	/**
-	 * The identifier is bound to the thread, which the test classes run before this one share.
+	 * Clears the identifier bound to the thread, which is shared with the test classes run before this one.
 	 */
 	@BeforeEach
 	@AfterEach
@@ -173,7 +173,6 @@ class ErrandInvestigationServiceTest {
 
 	/**
 	 * A process writes investigations as well as a caseworker does, and is recorded as the one who did.
-	 * Taking only ad accounts would leave its writes unattributed.
 	 */
 	@Test
 	void createErrandInvestigationWrittenByAProcess() {
@@ -247,8 +246,8 @@ class ErrandInvestigationServiceTest {
 	}
 
 	/**
-	 * The answer is built from what the flush hands back, since that is where the new version - and with it the
-	 * ETag of the response - comes from.
+	 * The answer is built from what the flush hands back, which carries the new version and with it the ETag of the
+	 * response.
 	 */
 	@Test
 	void updateErrandInvestigation() {
@@ -347,8 +346,8 @@ class ErrandInvestigationServiceTest {
 	}
 
 	/**
-	 * The JSON parameters of the investigation and of its sections are theirs and go with it, so removing the
-	 * investigation is all there is to it.
+	 * Removing the investigation takes its JSON parameters and those of its sections with it, without a call to remove
+	 * them on their own.
 	 */
 	@Test
 	void deleteErrandInvestigation() {
@@ -373,8 +372,8 @@ class ErrandInvestigationServiceTest {
 	}
 
 	/**
-	 * The database would take the reference away from a decision that can no longer be changed, so the investigation
-	 * stays - and the lock is answered before a stale version, as on the decision itself.
+	 * An investigation that a decision which can no longer be changed rests on is not deleted. The request is answered
+	 * with 409, ahead of a stale version.
 	 */
 	@Test
 	void deleteErrandInvestigationADecisionThatCanNoLongerBeChangedRestsOn() {
@@ -442,9 +441,7 @@ class ErrandInvestigationServiceTest {
 
 	/**
 	 * The id handed back is that of the very section added to the investigation, which gets it when the flush
-	 * persists it - the stubbed flush stands in for that. Saving the investigation instead would merge an entity
-	 * already managed, and the merge persists a copy of the new section: the copy gets the id, and the section
-	 * the id is read from never does.
+	 * persists it. The stubbed flush stands in for the persist.
 	 */
 	@Test
 	void createInvestigationSection() {
@@ -500,8 +497,7 @@ class ErrandInvestigationServiceTest {
 	}
 
 	/**
-	 * The database holds the key unique per investigation too, but there it would surface as a failed flush
-	 * rather than as the conflict it is.
+	 * A section key already taken within the investigation is refused with 409 before anything is flushed.
 	 */
 	@Test
 	void createInvestigationSectionWithATakenKey() {

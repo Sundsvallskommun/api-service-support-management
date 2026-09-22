@@ -8,8 +8,7 @@ import java.util.Objects;
 /**
  * A choice a handler can make to step a process past a gate it waits at.
  * <p>
- * Both fields come out of the process model and are relayed as they came. This service interprets neither, so a gate
- * added to the model reaches the user interface without anything changing here.
+ * Both fields come out of the process model and are relayed as they came, without being interpreted by this service.
  */
 @Schema(description = "A signal the process waits for from a handler: a gate it can be stepped past by hand")
 public class ProcessSignal {

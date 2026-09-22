@@ -67,8 +67,7 @@ class ErrandMeasuresResourceFailureTest {
 	}
 
 	/**
-	 * The columns behind these were widened to 3000 without the limit reaching the model, so text past it met the
-	 * database rather than the caller.
+	 * Goal and description longer than 3000 characters, the size of their columns, are refused with 400.
 	 */
 	@Test
 	void createErrandMeasureWithOverlongText() {
@@ -256,8 +255,8 @@ class ErrandMeasuresResourceFailureTest {
 	}
 
 	/**
-	 * The patch body is validated exactly as the create body is. Without that, an unknown accept value reaches the mapper
-	 * and comes back as a 500 rather than the bad request it is.
+	 * The values of a patch body are validated as those of a create body are, so an unknown accept value is refused with
+	 * 400.
 	 */
 	@Test
 	void updateErrandMeasureWithInvalidAccept() {

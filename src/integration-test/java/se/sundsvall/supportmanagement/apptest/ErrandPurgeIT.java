@@ -44,13 +44,12 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
 /**
  * Errand purge IT tests.
  * <p>
- * A purge is answered before it is carried out, so what comes back says only that a run was accepted. What each test is
- * really about is what the run left behind once it ended, which is why every one of them waits for the job to reach a
- * state it cannot leave before looking at anything.
+ * A purge is answered before it is carried out, so every test waits for the job to reach a state it cannot leave before
+ * checking what the run left behind.
  * <p>
  * The errands walked are the ones in PURGE-NAMESPACE, which exist for these tests alone. Six of the nine are reached by
  * the cutoff the tests use and three are not, among them the one lying exactly on it. The errands of every other
- * namespace in the shared test data - several of them older still - are what a run has to leave where they are.
+ * namespace in the shared test data - several of them older still - are to be left where they are.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandPurgeIT/", classes = Application.class)
 @Sql({
@@ -69,10 +68,8 @@ class ErrandPurgeIT extends AbstractAppTest {
 	private static final String SENT_BY = "joe01doe; type=adAccount";
 
 	/**
-	 * The cutoff the tests are run with, in UTC because that is the wall clock the timestamps in the test data are
-	 * written against: the database runs in UTC and the entities store their times normalized to it. The two errands
-	 * either side of the cutoff are one millisecond apart, so reading it in the zone the build happens to run in would
-	 * put both of them on the same side of it.
+	 * The cutoff the tests are run with, in UTC, the zone the timestamps in the test data are written in. The two errands
+	 * either side of it are one millisecond apart.
 	 */
 	private static final OffsetDateTime CUTOFF = LocalDateTime.of(2023, 1, 1, 0, 0).atOffset(UTC);
 	private static final String CUTOFF_PLACEHOLDER = "<CUTOFF>";
@@ -341,8 +338,7 @@ class ErrandPurgeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Asks for a purge and hands back the job it was answered with. A run is carried out on a thread of its own, so what
-	 * comes back says nothing yet about what it has done.
+	 * Asks for a purge and hands back the job it was answered with. The run is carried out on a thread of its own.
 	 */
 	private JobResponse startPurge(final String servicePath) throws Exception {
 		return setupCall()
@@ -357,8 +353,7 @@ class ErrandPurgeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Waits for the run to reach a state it cannot leave and hands back the job as it ended. Answered by the job table
-	 * rather than by anything held on this side, which is what a caller following the run would read as well.
+	 * Waits for the run to reach a state it cannot leave and hands back the job as it ended, read from the job table.
 	 */
 	private JobEntity awaitEndOf(final String jobId) {
 		await()
@@ -382,9 +377,8 @@ class ErrandPurgeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The blobs the purged errand held: one belonging to an attachment of its own, and one shared between a
-	 * communication attachment and the copy of it kept on the errand. Removing the errand has to leave neither of them,
-	 * and has to reach the shared one in an order that does not take it out from under something still pointing at it.
+	 * Counts the blobs the purged errand held: one belonging to an attachment of its own, and one shared between a
+	 * communication attachment and the copy of it kept on the errand.
 	 */
 	private int blobsOfThePurgedErrand() {
 		return jdbcTemplate.queryForObject("SELECT count(*) FROM attachment_data WHERE id IN (101, 102)", Integer.class);

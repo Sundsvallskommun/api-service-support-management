@@ -20,8 +20,8 @@ public class ValidEnumValueConstraintValidator implements ConstraintValidator<Va
 	}
 
 	/**
-	 * A null value is left to {@code @NotBlank} or {@code @NotNull} to refuse, since an optional field that was simply
-	 * left out is not an invalid one.
+	 * Accepts a name of one of the constants of the enum. A null value is accepted as well; refusing it is left to
+	 * {@code @NotBlank} or {@code @NotNull}.
 	 */
 	@Override
 	public boolean isValid(final String value, final ConstraintValidatorContext context) {

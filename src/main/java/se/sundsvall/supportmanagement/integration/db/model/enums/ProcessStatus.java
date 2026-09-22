@@ -27,10 +27,8 @@ public enum ProcessStatus {
 	}
 
 	/**
-	 * Drives the active marker, and with it how many live instances an errand can have.
-	 * <p>
-	 * WAITING is the trap: the process is not working, which reads as done. Counted as terminal it frees the marker,
-	 * and the errand can be given a second live instance.
+	 * Drives the active marker, and with it how many live instances an errand can have. WAITING is not terminal: a
+	 * waiting process is alive and keeps the marker.
 	 *
 	 * @return whether the process has run its course.
 	 */

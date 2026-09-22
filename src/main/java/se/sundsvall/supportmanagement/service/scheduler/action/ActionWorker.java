@@ -89,27 +89,19 @@ public class ActionWorker {
 
 	/**
 	 * Takes the action off the errand as well as out of the database.
-	 * <p>
-	 * The actions of an errand cascade. An action deleted while the errand still lists it is written back at flush as soon
-	 * as anything has read the list - the revision of a change reads all of it - and the action would then run again on
-	 * every scheduled run.
 	 */
 	private void removeAction(final ErrandEntity errand, final ErrandActionEntity actionEntity) {
+		// The actions cascade: one deleted while the errand still lists it is written back at flush, and runs again.
 		ofNullable(errand.getActions()).ifPresent(errandActions -> errandActions.removeIf(listed -> Objects.equals(listed.getId(), actionEntity.getId())));
 		errandActionRepository.delete(actionEntity);
 	}
 
 	/**
-	 * Records what a scheduled action did to the errand, the way a write through the API is recorded.
+	 * Records what a scheduled action did to the errand, the way a write through the API is recorded: a revision, and an
+	 * event for it, through which the process of the errand learns of the change.
 	 * <p>
-	 * An action runs with no request behind it, and a change it made used to be seen by nobody: not by the history of the
-	 * errand, not by the event log, and not by the process of the errand, which is told of a change through the event
-	 * alone. An errand given its process label by an action started no process until something else wrote to it.
-	 * <p>
-	 * Asked only of an action that says it changed the errand - an email sent leaves it as it was. No notification is
-	 * sent, since the change is the configuration of the namespace at work rather than somebody the handler would want to
-	 * hear from. The call is guarded like every other call site, which does not let a failed publication through:
-	 * publication marks the transaction for rollback, the action goes down with it, and the next run tries it again.
+	 * Asked only of an action that says it changed the errand. No notification is sent. A failed publication marks the
+	 * transaction for rollback, so the action is rolled back with it and tried again on the next run.
 	 */
 	private void logChange(final ErrandEntity errand) {
 		final var revision = revisionService.createErrandRevision(errand);

@@ -13,10 +13,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessOverview;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
-import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartRequest;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
 import se.sundsvall.supportmanagement.service.ProcessCommandService;
 import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
@@ -33,6 +35,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 
@@ -137,10 +140,6 @@ class ErrandProcessResourceTest {
 			.isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/processes/" + PROCESS_INSTANCE_ID);
 	}
 
-	/**
-	 * A start that failed produced no instance, so there is no subresource to point at - and building one anyway would
-	 * hand out a link ending in the word null.
-	 */
 	@Test
 	void registeringAStartThatFailedAnswersCreatedWithoutALocation() {
 		when(serviceMock.registerProcess(any(), any(), any(), any()))
@@ -174,24 +173,22 @@ class ErrandProcessResourceTest {
 	@Test
 	void readErrandProcesses() {
 		when(serviceMock.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
-			.thenReturn(ErrandProcesses.create().withProcesses(List.of(process().withProcessInstanceId(PROCESS_INSTANCE_ID))));
+			.thenReturn(ErrandProcessOverview.create()
+				.withStartable(ProcessStartable.create().withStatus(LIVE_INSTANCE).withProcessKeys(List.of()))
+				.withProcesses(List.of(process().withProcessInstanceId(PROCESS_INSTANCE_ID))));
 
 		final var response = webTestClient.get()
 			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))
 			.exchange()
 			.expectStatus().isOk()
-			.expectBody(ErrandProcesses.class)
+			.expectBody(ErrandProcessOverview.class)
 			.returnResult();
 
 		assertThat(response.getResponseBody().getProcesses()).hasSize(1);
-		assertThat(response.getResponseBody().getStartable()).isNull();
+		assertThat(response.getResponseBody().getStartable()).isEqualTo(ProcessStartable.create().withStatus(LIVE_INSTANCE).withProcessKeys(List.of()));
 		verify(serviceMock).readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 	}
 
-	/**
-	 * Accepted rather than created or ok: the signal is recorded and on its way, and what it does is for the process to
-	 * decide.
-	 */
 	@Test
 	void signalProcessAnswersAcceptedWithoutABody() {
 		webTestClient.post()
@@ -204,6 +201,44 @@ class ErrandProcessResourceTest {
 
 		verify(commandServiceMock).signalProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, "granskning-godkand");
 		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void startProcessWithAKeyAnswersAcceptedWithoutABody() {
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH + "/start").build(errandVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(ProcessStartRequest.create().withProcessKey("alkt-tillsyn"))
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		verify(commandServiceMock).startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "alkt-tillsyn");
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void startProcessWithoutABodyStartsTheOneProcessOfTheLabels() {
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH + "/start").build(errandVariables()))
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		verify(commandServiceMock).startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void startProcessWithAnEmptyBodyStartsTheOneProcessOfTheLabels() {
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH + "/start").build(errandVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue("{}")
+			.exchange()
+			.expectStatus().isAccepted();
+
+		verify(commandServiceMock).startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 	}
 
 	@Test

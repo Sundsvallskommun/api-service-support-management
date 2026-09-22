@@ -33,14 +33,13 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
 
 /**
- * What publication actually writes, held against a real row rather than a captured entity.
+ * Verifies what publication actually writes, read back from a real row of the outbox.
  * <p>
- * The start permission is worked out once, at publication, and travels with the event, so what the process engine acts
- * on is the column and nothing else. A completed process ends the process life of an errand and a failed start does
- * not: trying again after a failure is recovery, while a second process after a completed one is a new errand.
+ * The start permission is worked out once, at publication, and travels with the event. A completed process ends the
+ * process life of an errand and a failed start does not.
  * <p>
- * The other half is what publication refuses to write. A label attribute is free text of unbounded length while the
- * column it feeds is not, and the difference only shows against a database that enforces the width.
+ * The tests also verify what publication refuses to write: a process key, taken from a label attribute, that is longer
+ * than the column it feeds.
  */
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles({
@@ -172,7 +171,7 @@ class ProcessEventPublisherDatabaseTest {
 	}
 
 	/**
-	 * Written through the event service inside a transaction, which is the shape every way into publication has.
+	 * Publishes a message event for the errand through the event service, inside a transaction.
 	 */
 	private void publishAMessageEvent() {
 		new TransactionTemplate(transactionManager).executeWithoutResult(_ -> eventService.createErrandEvent(

@@ -19,9 +19,7 @@ public record ProcessEngineProperties(
 
 	/**
 	 * @param maxEventsPerErrand how many events one errand may have delivered to its process within the window before
-	 *                           further events are dropped. Only delivered events are counted, since counting the ones
-	 *                           still waiting would let a delivery outage trip the brake by itself and turn lost time
-	 *                           into lost events.
+	 *                           further events are dropped. Only delivered events are counted.
 	 * @param window             how far back the count reaches.
 	 */
 	public record LoopGuard(
@@ -32,8 +30,8 @@ public record ProcessEngineProperties(
 	}
 
 	/**
-	 * The direct run only brings a delivery forward: the scheduled run delivers every row a direct run did not, within a
-	 * minute. That is why a direct run arriving at a full pool is dropped rather than waited for.
+	 * The direct run only brings a delivery forward: the scheduled run delivers every row a direct run did not. A direct
+	 * run arriving at a full pool is dropped.
 	 *
 	 * @param enabled       whether a publication starts a delivery of its own once its transaction is committed. Off,
 	 *                      every row waits for the scheduled run.

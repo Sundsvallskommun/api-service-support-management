@@ -1,5 +1,17 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
+import net.javacrumbs.jsonunit.core.Option;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.StatementRepository;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -14,20 +26,6 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-
-import java.util.List;
-import net.javacrumbs.jsonunit.core.Option;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.StatementRepository;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 
 /**
  * Errand Statements IT tests.
@@ -46,7 +44,6 @@ class ErrandStatementsIT extends AbstractAppTest {
 	private static final String STATEMENT_ID = "f1000000-0000-0000-0000-000000000001";
 	private static final String DRAFT_STATEMENT_ID = "f1000000-0000-0000-0000-000000000002";
 	private static final String MEASURE_ID = "ee000000-0000-0000-0000-000000000200";
-	private static final String LINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000001";
 	private static final String UNLINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000002";
 
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/statements";
@@ -138,9 +135,6 @@ class ErrandStatementsIT extends AbstractAppTest {
 			.as("the measure stayed, without the reference").isNull();
 	}
 
-	/**
-	 * A statement of another errand is not this errand's to reach. The lookup names both, so it finds nothing.
-	 */
 	@Test
 	void test06_readingStatementOfAnotherErrandGives404() {
 		setupCall()
@@ -151,7 +145,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The life cycle has to add up: a statement cannot be out with the counterparty without having been sent.
+	 * A statement cannot be out with the counterparty without having been sent.
 	 */
 	@Test
 	void test07_activeWithoutSentAtIsRejected() {
@@ -177,7 +171,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An ETag that has moved on says so rather than overwriting what somebody else wrote.
+	 * A patch with an ETag that has moved on is answered with 412 and overwrites nothing.
 	 */
 	@Test
 	void test09_staleIfMatchIsRejected() {
@@ -259,7 +253,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The outcomes are the namespace's to register, and one it has not registered is refused rather than written.
+	 * The outcomes are the namespace's to register, and one it has not registered is refused and not written.
 	 */
 	@Test
 	void test16_anOutcomeTheNamespaceHasNotRegisteredIsRejected() {

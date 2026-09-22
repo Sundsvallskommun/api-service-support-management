@@ -29,19 +29,18 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 /**
  * Which process an errand belongs to, according to its own labels.
  * <p>
- * Only the labels the errand actually wears are read - the tree is walked neither up nor down. Were it walked, a
- * process could start to apply to an errand because someone moved a label in the metadata, and nothing about the errand
- * itself would have changed. For the same reason the resolution hangs on the attribute rather than on what the label is
- * called or where it sits, so renaming a label or moving it leaves the answer alone.
+ * Only the labels the errand actually wears are read - the tree is walked neither up nor down. The answer is read from
+ * the attributes of the labels only, so renaming a label or moving it does not change it.
  * <p>
- * SM does not check that the key names a process that exists. Only the process engine knows what is deployed, and it
- * answers 422 for a key it does not recognise.
+ * The key is not checked against the processes that are deployed; the process engine answers 422 for a key it does
+ * not recognise.
  */
 @Component
 public class ProcessKeySelector {
 
-	static final String PROCESS_KEY_ATTRIBUTE = "processKey";
-	static final String PROCESS_START_MODE_ATTRIBUTE = "processStartMode";
+	/** The label attributes read here, matched exactly as spelled. */
+	public static final String PROCESS_KEY_ATTRIBUTE = "processKey";
+	public static final String PROCESS_START_MODE_ATTRIBUTE = "processStartMode";
 
 	/** How much of a key is worth showing in a message that reports what is wrong with it. */
 	private static final int KEY_EXCERPT_LENGTH = 64;
@@ -59,11 +58,9 @@ public class ProcessKeySelector {
 	 * <p>
 	 * A label is read off the errand where Hibernate has filled it in, and looked up by id where it has not.
 	 * {@link ErrandLabelEmbeddable#getMetadataLabel()} is filled in only when the errand is loaded, so the labels of an
-	 * errand being created, and those a patch or a label action run as part of the write has just set, all point at
-	 * nothing. Read as they stand, precisely the writes that give an errand its process label would name no process, and
-	 * start none. The lookup is a single query, made only when such a label is there, so an errand read from the database
-	 * costs nothing more than before. A label the lookup does not find is passed over rather than thrown on, as one that
-	 * is gone always has been.
+	 * errand being created, and those a patch or a label action run as part of the write has just set, are looked up.
+	 * The lookup is a single query, made only when such a label is there. A label the lookup does not find is passed
+	 * over.
 	 *
 	 * @param  errand the errand to read.
 	 * @return        the one key the labels agree on together with its start mode, or a selection naming every key found
@@ -96,9 +93,8 @@ public class ProcessKeySelector {
 	 * The same answer, read out of labels rather than out of an errand.
 	 * <p>
 	 * For the question asked about labels an errand does not wear yet: whether changing them would move its process key.
-	 * {@link ErrandLabelEmbeddable#getMetadataLabel()} is filled in by Hibernate when the errand is loaded and is null on
-	 * a label that has only just been put together, so the caller asking that question looks the labels up itself and
-	 * hands them here.
+	 * {@link ErrandLabelEmbeddable#getMetadataLabel()} is null on a label that has only just been put together, so the
+	 * caller asking that question looks the labels up itself and hands them here.
 	 *
 	 * @param  labels the labels to read.
 	 * @return        the one key they agree on together with its start mode, or a selection naming every key found when
@@ -128,10 +124,8 @@ public class ProcessKeySelector {
 	/**
 	 * How a key is named in a message about it.
 	 * <p>
-	 * Shortened, since a message reporting what is wrong with a key may not be made of the key. It is held here, on the
-	 * class that owns what a process key is, rather than beside each message: the refusals and the error entries that
-	 * name a key are written in more than one place, and the one that has no outer limit of its own - the detail of a
-	 * 400 - is the one that needs this most.
+	 * Shortened, so that a message reporting what is wrong with a key is not made of the key. Used by the refusals and
+	 * the error entries that name a key.
 	 *
 	 * @param  key the key to name.
 	 * @return     the key, cut to the length worth showing.
@@ -155,8 +149,8 @@ public class ProcessKeySelector {
 	/**
 	 * The mode of an errand whose labels all name the same process.
 	 * <p>
-	 * Two labels carrying the same key are one process, but they can still disagree about the mode. A MANUAL among them
-	 * is a person saying that nothing should start on its own, and that answer wins over the other label's silence.
+	 * Two labels carrying the same key are one process, but they can still disagree about the mode. The mode is MANUAL
+	 * when any of them says MANUAL, and AUTOMATIC otherwise.
 	 */
 	private ProcessStartMode startModeOf(final List<Candidate> candidates) {
 		return candidates.stream().anyMatch(candidate -> MANUAL == candidate.startMode()) ? MANUAL : AUTOMATIC;
@@ -169,7 +163,8 @@ public class ProcessKeySelector {
 	}
 
 	/**
-	 * The start mode of one label. A label that says nothing about it behaves as it did before the attribute existed.
+	 * The start mode of one label, matched regardless of case: AUTOMATIC when the label says nothing about it, and MANUAL,
+	 * with a warning logged, when its value names no start mode.
 	 */
 	private ProcessStartMode toStartMode(final MetadataLabelEntity label) {
 		final var value = attribute(label, PROCESS_START_MODE_ATTRIBUTE);
@@ -181,9 +176,9 @@ public class ProcessKeySelector {
 		final var mode = EnumUtils.getEnumIgnoreCase(ProcessStartMode.class, value.trim());
 
 		if (isNull(mode)) {
-			// Until the label write refuses a value this cannot read, one can be sitting there. Someone put it there on
-			// purpose, so the answer is the one that cannot start a process nobody asked for - and the errand is still
-			// startable by hand.
+			// The label write refuses such a value, so this one came in past the API - straight into the database, or before
+			// the check existed. Someone put it there on purpose, so the answer is the one that cannot start a process nobody
+			// asked for - and the errand is still startable by hand.
 			LOG.warn("Label '{}' carries an unreadable process start mode '{}' and is treated as MANUAL", sanitizeForLogging(label.getId()), sanitizeForLogging(value));
 			return MANUAL;
 		}
@@ -199,6 +194,6 @@ public class ProcessKeySelector {
 			.orElse(null);
 	}
 
-	/** One label's answer, held together so that the mode can never be taken from another label than the key was. */
+	/** One label's answer: its process key together with its own start mode. */
 	private record Candidate(String key, ProcessStartMode startMode) {}
 }

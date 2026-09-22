@@ -70,7 +70,7 @@ class MeasureValidatorTest {
 	}
 
 	/**
-	 * A patch says nothing about the fields it leaves out, so a null is not something to reject here.
+	 * A field left out is skipped: it is neither rejected nor looked up.
 	 */
 	@Test
 	void skipsAbsentFields() {
@@ -81,8 +81,8 @@ class MeasureValidatorTest {
 	}
 
 	/**
-	 * The list form is what the errand entry point uses, and it must reach the same verdict as the measure resource does
-	 * on the same measure - an unknown role included.
+	 * The list form, used by the errand entry point, reaches the same verdict as the single form on the same measure,
+	 * and rejects an unknown role in any measure of the list.
 	 */
 	@Test
 	void rejectsUnknownRoleAnywhereInAList() {

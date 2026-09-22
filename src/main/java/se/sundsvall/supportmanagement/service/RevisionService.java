@@ -157,16 +157,10 @@ public class RevisionService {
 	}
 
 	/**
-	 * Removes every revision of an errand.
+	 * Removes every revision of an errand. No access check is made here; any authorization is up to the caller.
 	 * <p>
-	 * A revision holds a full serialized snapshot of the errand it belongs to, so a removal that left them behind would
-	 * keep a complete copy of everything it set out to remove. No access check is made here: the callers are the errand
-	 * delete, which has already authorized its caller, and the purge, which runs on a cutoff with no caller at all.
-	 * <p>
-	 * The ids are read first and the revisions removed a chunk at a time, since it is exactly that full snapshot which
-	 * makes reading them all at once expensive: an errand with a long history holds as many copies of itself as it has
-	 * been edited. This empties the persistence context as it goes, so an entity a caller was holding is detached by
-	 * the time this returns.
+	 * The ids are read first and the revisions removed a chunk at a time. This empties the persistence context as it goes,
+	 * so an entity a caller was holding is detached by the time this returns.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId id of the municipality of the errand.
@@ -284,10 +278,8 @@ public class RevisionService {
 	}
 
 	/**
-	 * Reads a snapshot the way two of them are compared and diffed, leaving out what says nothing about the errand.
-	 * <p>
-	 * The collections the database hands back in an order of its own - they have no order of their own - are put in
-	 * one, since the order an errand just written holds them in is not the order the same errand just read holds them in.
+	 * Reads a snapshot the way two of them are compared and diffed: the attributes that say nothing about the errand are
+	 * left out, and the collections without an order of their own are sorted by the field that tells their elements apart.
 	 */
 	private com.fasterxml.jackson.databind.JsonNode toJsonNode(final String value) {
 		try {
@@ -304,11 +296,8 @@ public class RevisionService {
 	}
 
 	/**
-	 * Leaves out the empty collections, for the question whether anything changed at all.
-	 * <p>
-	 * A collection nobody has touched is null on an errand just written and empty on the same errand just read, and that
-	 * is no change. Asked only when deciding whether to write a revision: a diff still shows a collection going from none
-	 * to empty, and a collection emptied as the removal of its elements.
+	 * Removes the empty collections from the node, at every level, so that a collection that is null and one that is empty
+	 * compare as equal. Used only when deciding whether to write a revision; a diff of two revisions keeps them.
 	 */
 	private static com.fasterxml.jackson.databind.JsonNode withoutEmptyCollections(final com.fasterxml.jackson.databind.JsonNode node) {
 		if (node instanceof final ObjectNode object) {

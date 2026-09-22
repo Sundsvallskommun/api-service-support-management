@@ -14,9 +14,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStat
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.DRAFT;
 
 /**
- * The link between a decision and an attachment is a join table, and the queries asking about it traverse the
- * collection - which is what these tests hold them to, beside the queries asking which decision rests on an
- * investigation.
+ * Tests the queries asking whether a decision links an attachment, which traverse the join table between them, and
+ * the queries asking which decision rests on an investigation.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)

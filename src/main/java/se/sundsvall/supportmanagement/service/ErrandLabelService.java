@@ -26,10 +26,9 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 /**
  * Settles the labels of an errand, and what they mean for who may reach it.
  * <p>
- * Held apart from {@link ErrandService} because every step of it reads the label tree from the database: the labels a
- * request names are held to the namespace and to the versions stored, an errand labelled with a leaf is expanded to the
- * ancestors of that leaf, and the access labels are the labels left once the ancestors are taken out again. None of it
- * can be settled from the errand alone, which is why it is not the work of a mapper.
+ * Every step reads the label tree from the database: the labels a request names are held to the namespace and to the
+ * versions stored, an errand labelled with a leaf is expanded to the ancestors of that leaf, and the access labels are
+ * the labels left once the ancestors are taken out again.
  */
 @Service
 public class ErrandLabelService {
@@ -48,9 +47,8 @@ public class ErrandLabelService {
 	 * Expands the labels of the errand to their ancestors, gives every label the metadata it points at, and settles from
 	 * them which labels decide who reaches it.
 	 * <p>
-	 * Run once the errand carries the labels it is going to keep, since every answer is read off them. The metadata is
-	 * filled in because Hibernate does so only when the errand is read, and a label the request has just set would
-	 * otherwise answer with nothing but its id - in the response to the very write that set it.
+	 * Must be run once the errand carries the labels it is going to keep, since every result is read off them. A label
+	 * without a metadata label, such as one the request has just set, is given the one read from the database.
 	 *
 	 * @param errandEntity errand whose labels have been set
 	 */
@@ -67,11 +65,10 @@ public class ErrandLabelService {
 	 * Holds the labels a request names to the namespace the errand lives in, and to the versions the request says they
 	 * are at.
 	 * <p>
-	 * A label is referred to by its id alone, and the id reaches a label in any namespace. Taken as it stands, an errand
-	 * could be given a label of another namespace - and with it the access rules and the process key of that namespace.
-	 * An id that names no label of the namespace is refused before anything is written, the same way whether the label
-	 * does not exist or belongs elsewhere, so that the answer says nothing about other namespaces. A label without an id
-	 * is refused as well, and a label whose version has moved on is answered with 412.
+	 * An id that names no label of the namespace and municipality is refused with 400 before anything is written, with
+	 * the same answer whether the label does not exist or belongs elsewhere, so the answer says nothing about other
+	 * namespaces. A label without an id is refused with 400 as well, and a label whose version has moved on is answered
+	 * with 412.
 	 *
 	 * @param namespace      the namespace of the errand.
 	 * @param municipalityId the municipality of the errand.
@@ -160,8 +157,8 @@ public class ErrandLabelService {
 	}
 
 	/**
-	 * The labels the errand wears, read by id: a label the mapper has just put together carries no metadata label of its
-	 * own, so the errand cannot answer for them.
+	 * Reads the metadata label behind every label the errand wears from the database, keyed by id, including labels the
+	 * mapper has just put together that carry no metadata label of their own.
 	 */
 	private Map<String, MetadataLabelEntity> lookUpLabelsOf(final ErrandEntity errandEntity) {
 		final var ids = labelIdsOf(errandEntity);

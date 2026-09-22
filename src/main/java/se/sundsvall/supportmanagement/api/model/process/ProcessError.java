@@ -7,8 +7,7 @@ import java.util.Objects;
 /**
  * Why a process stopped, as the process itself describes it.
  * <p>
- * Neither field is interpreted by SM. The code tells a failed start apart from an incident raised mid process, which is
- * the distinction the five process states deliberately do not carry.
+ * Neither field is interpreted by SM. The code tells a failed start apart from an incident raised mid process.
  */
 @Schema(description = "Why a process failed")
 public class ProcessError {

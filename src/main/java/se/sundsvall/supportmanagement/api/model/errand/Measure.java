@@ -21,10 +21,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 /**
  * The required fields are demanded of every measure that is not being patched on its own resource.
  * <p>
- * Patching a single measure says nothing about the fields it leaves out, so the OnUpdate group deliberately omits them.
- * Everywhere else - creating a measure, and carrying measures on the errand - a measure is expected to be complete,
- * which is what stops one from being persisted blank. The accept value is checked wherever it is supplied, since an
- * unknown one would otherwise reach the mapper and surface as a 500 rather than the bad request it is.
+ * The OnUpdate group, used when a single measure is patched, omits the required fields. Everywhere else - creating a
+ * measure, and carrying measures on the errand - a measure has to be complete. The accept value is checked wherever it
+ * is supplied.
  */
 @Schema(description = "Measure model")
 public class Measure {

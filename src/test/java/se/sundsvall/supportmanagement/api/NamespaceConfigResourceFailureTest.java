@@ -561,8 +561,7 @@ class NamespaceConfigResourceFailureTest {
 	}
 
 	/**
-	 * An explicit null among the operation types reached a Set.of, which refuses one with a NullPointerException rather
-	 * than answering the caller. An unknown operation was always a 400; a null now is too.
+	 * An explicit null among the operation types is answered with 400, like an unknown operation.
 	 */
 	@Test
 	void createActionConfigWithNullOperationType() {

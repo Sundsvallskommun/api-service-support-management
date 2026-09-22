@@ -14,15 +14,19 @@ import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.service.model.ProcessStartOptions;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
@@ -34,6 +38,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcesses;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessActivity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessStartable;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.updateErrandProcessEntity;
 
 class ErrandProcessMapperTest {
@@ -82,10 +87,6 @@ class ErrandProcessMapperTest {
 		assertThat(process.getModified()).isEqualTo(modified);
 	}
 
-	/**
-	 * A signal to an ended process is refused, so a button offered for one could only ever fail. Held here because more
-	 * than a report ends a process: the relay does too, and leaves the rows behind.
-	 */
 	@ParameterizedTest
 	@EnumSource(value = ProcessStatus.class, names = {
 		"COMPLETED", "FAILED"
@@ -121,6 +122,17 @@ class ErrandProcessMapperTest {
 			.containsExactly(
 				tuple("first", List.of()),
 				tuple("second", List.of("granskning-godkand")));
+	}
+
+	@Test
+	void toProcessStartableCarriesTheStatusAsItsNameAndTheKeys() {
+		assertThat(toProcessStartable(new ProcessStartOptions(AVAILABLE, List.of("alkt-ansokan", "alkt-tillsyn"))))
+			.isEqualTo(ProcessStartable.create().withStatus(AVAILABLE).withProcessKeys(List.of("alkt-ansokan", "alkt-tillsyn")));
+		assertThat(toProcessStartable(ProcessStartOptions.unavailable(PROCESS_COMPLETED)))
+			.satisfies(startable -> {
+				assertThat(startable.getStatus()).isEqualTo("PROCESS_COMPLETED");
+				assertThat(startable.getProcessKeys()).isEmpty();
+			});
 	}
 
 	@Test

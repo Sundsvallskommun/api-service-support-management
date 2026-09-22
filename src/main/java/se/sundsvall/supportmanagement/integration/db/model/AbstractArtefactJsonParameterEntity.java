@@ -16,13 +16,13 @@ import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
  * <p>
  * <b>Inherited by</b> {@link StatementJsonParameterEntity}, {@link InvestigationJsonParameterEntity},
  * {@link InvestigationSectionJsonParameterEntity}, {@link DecisionJsonParameterEntity} and
- * {@link MeasureJsonParameterEntity}. Each is kept in a table beside its owner rather than in {@code json_parameter},
- * which is what makes the parameter the owner's alone: the errand neither shows it nor governs it, the key rules the
- * namespace keeps for the JSON parameters of the errand do not reach it, and a key one owner uses is not taken from the
- * errand or from any other owner. Removing the owner removes its parameters.
+ * {@link MeasureJsonParameterEntity}. Each is kept in a table beside its owner, apart from {@code json_parameter}, and
+ * is the owner's alone: the errand neither shows it nor governs it, the key rules the namespace keeps for the JSON
+ * parameters of the errand do not reach it, and a key one owner uses is not taken from the errand or from any other
+ * owner. Removing the owner removes its parameters.
  * <p>
  * There is no table here and no polymorphic query - the subclasses share shape, not storage. The owner is declared in
- * each subclass, since each points at a table of its own.
+ * each subclass.
  * <p>
  * The key is unique per owner, compared without regard to case as the database compares it.
  *
@@ -122,7 +122,7 @@ public abstract class AbstractArtefactJsonParameterEntity<T extends AbstractArte
 	}
 
 	/**
-	 * Equality over the fields declared here. The owner is left out of it since it holds this parameter in turn.
+	 * Equality over the fields declared here. The owner is left out of it.
 	 */
 	@Override
 	public boolean equals(final Object o) {

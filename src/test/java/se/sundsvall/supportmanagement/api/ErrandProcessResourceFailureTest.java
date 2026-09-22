@@ -23,6 +23,7 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartRequest;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
 import se.sundsvall.supportmanagement.service.ProcessCommandService;
 
@@ -48,6 +49,7 @@ class ErrandProcessResourceFailureTest {
 	private static final String PROCESSES_PATH = "/{municipalityId}/{namespace}/errands/{errandId}/processes";
 	private static final String PROCESS_PATH = PROCESSES_PATH + "/{processInstanceId}";
 	private static final String SIGNALS_PATH = PROCESS_PATH + "/signals";
+	private static final String START_PATH = PROCESSES_PATH + "/start";
 	private static final String ACTIVITIES_PATH = "/{municipalityId}/{namespace}/errands/{errandId}/process-activities";
 	private static final String NAMESPACE = "namespace";
 	private static final String INVALID_NAMESPACE = "invalid,namespace";
@@ -107,10 +109,6 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	/**
-	 * The batch is capped where a report is validated rather than where it is written, so a report too large to be one
-	 * work step is refused before it reaches the database at all.
-	 */
 	@Test
 	void aReportCarryingMoreThanAHundredActivitiesIsRejected() {
 		final var report = validReport()
@@ -136,10 +134,6 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	/**
-	 * The error of a failed process is often a stack trace, and one longer than its column has to be refused as a bad
-	 * request rather than reach the insert and fail as a server error - which would leave the failure unreported.
-	 */
 	@Test
 	void aReportWithAnErrorMessageLongerThanItsColumnIsRejected() {
 		final var report = validReport()
@@ -209,10 +203,6 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	/**
-	 * Both columns are fed from the process model, and a name or label longer than its column has to be refused as a bad
-	 * request rather than fail the insert as a server error.
-	 */
 	@Test
 	void aReportWithASignalLongerThanItsColumnsIsRejected() {
 		final var report = validReport()
@@ -263,9 +253,6 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	/**
-	 * A null in the list would otherwise reach the service and fail there as a server error.
-	 */
 	@Test
 	void aReportWithAnEmptySlotAmongItsSignalsIsRejected() {
 		final var response = webTestClient.put()
@@ -309,6 +296,44 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
+	@Test
+	void aStartNamingAKeyLongerThanTheProcessKeysCanBeIsRejected() {
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(START_PATH).build(errandVariables(NAMESPACE)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(ProcessStartRequest.create().withProcessKey("k".repeat(129)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("processKey", "size must be between 0 and 128"));
+
+		verifyNoInteractions(serviceMock, commandServiceMock);
+	}
+
+	@Test
+	void aStartOfAnErrandWithAnInvalidIdIsRejected() {
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(START_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", "not-a-uuid")))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("startProcess.errandId", "not a valid UUID"));
+
+		verifyNoInteractions(serviceMock, commandServiceMock);
+	}
+
 	private static Stream<Arguments> aSignalWithoutANameArguments() {
 		return Stream.of(
 			Arguments.of("{}"),
@@ -317,10 +342,6 @@ class ErrandProcessResourceFailureTest {
 			Arguments.of("{\"signal\": \"   \"}"));
 	}
 
-	/**
-	 * The name travels all the way to the outbox, where a name that does not fit fails the signal rather than being cut
-	 * to one that would correlate another gate. Refused here, it never gets that far.
-	 */
 	@Test
 	void aSignalLongerThanTheNamesAProcessCanWaitForIsRejected() {
 		final var response = webTestClient.post()
@@ -398,9 +419,8 @@ class ErrandProcessResourceFailureTest {
 	}
 
 	/**
-	 * Every endpoint is enumerated because the constraint is written out once per method: dropping it from one of them
-	 * leaves the others green, and the write paths are the ones a process engine and a handler call. Each is sent a body
-	 * that is valid for it, so the namespace is the only thing to object to.
+	 * Every endpoint is sent an invalid namespace together with a body that is valid for it, so the namespace is the only
+	 * thing to object to.
 	 */
 	@ParameterizedTest
 	@MethodSource("anInvalidNamespaceArguments")
@@ -431,6 +451,7 @@ class ErrandProcessResourceFailureTest {
 			Arguments.of(PUT, PROCESS_PATH, instanceVariables(INVALID_NAMESPACE), validReport(), "reportProcess.namespace"),
 			Arguments.of(POST, PROCESSES_PATH, errandVariables(INVALID_NAMESPACE), validReport(), "registerProcess.namespace"),
 			Arguments.of(POST, SIGNALS_PATH, instanceVariables(INVALID_NAMESPACE), ProcessSignalRequest.create().withSignal("granskning-godkand"), "signalProcess.namespace"),
+			Arguments.of(POST, START_PATH, errandVariables(INVALID_NAMESPACE), ProcessStartRequest.create(), "startProcess.namespace"),
 			Arguments.of(GET, PROCESSES_PATH, errandVariables(INVALID_NAMESPACE), null, "readErrandProcesses.namespace"),
 			Arguments.of(GET, ACTIVITIES_PATH, errandVariables(INVALID_NAMESPACE), null, "readErrandProcessActivities.namespace"));
 	}

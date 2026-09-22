@@ -19,9 +19,8 @@ import static java.util.Optional.ofNullable;
  * What a process reports about itself: the state it is in, what it did and what it waits for. The body of both write
  * paths under {@code /processes}.
  * <p>
- * Kept apart from {@link ErrandProcess}, which is what a process is read as. Three fields belong to the report and to
- * nothing else - the external task, the errand version and the activities - and in a shared model they would show in
- * every read without ever being filled there.
+ * A process is read as {@link ErrandProcess}. Three fields belong to the report only: the external task, the errand
+ * version and the activities.
  */
 @Schema(description = "What a process reports about itself: the state it is in, what it did and what it waits for")
 public class ErrandProcessReport {
@@ -145,7 +144,7 @@ public class ErrandProcessReport {
 	}
 
 	/**
-	 * Takes the enum, which is what keeps a caller in this service from reporting a state that does not exist.
+	 * Sets the process status from the enum, so that a caller in this service can only report a state that exists.
 	 */
 	public ErrandProcessReport withProcessStatus(final ProcessStatus processStatus) {
 		this.processStatus = ofNullable(processStatus).map(Enum::name).orElse(null);

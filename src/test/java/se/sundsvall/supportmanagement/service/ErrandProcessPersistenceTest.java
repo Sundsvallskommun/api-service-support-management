@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -21,19 +22,26 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
+import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -44,6 +52,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.tuple;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessError.create;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
@@ -53,9 +63,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 /**
  * The process resource against the migrated schema, where the two unique keys and the errand cascade are real.
  * <p>
- * What can only be asked here is what the database itself decides: that a report leaves the revision table alone, that
- * the race between a work step and the registration of its own start comes out the same in either order, and that the
- * process shown on an errand is read for a whole page in one query rather than once per errand.
+ * Verifies what the database itself decides: that a report leaves the revision table alone, that the race between a
+ * work step and the registration of its own start comes out the same in either order, and that the process shown on an
+ * errand is read for a whole page in one query.
  */
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("junit")
@@ -89,6 +99,9 @@ class ErrandProcessPersistenceTest {
 	private RevisionRepository revisionRepository;
 
 	@Autowired
+	private MetadataLabelRepository metadataLabelRepository;
+
+	@Autowired
 	private NamespaceConfigService namespaceConfigService;
 
 	@Autowired
@@ -98,8 +111,8 @@ class ErrandProcessPersistenceTest {
 	private EntityManagerFactory entityManagerFactory;
 
 	/**
-	 * Every path here reads the configuration of the namespace, since that is what says whether access control applies.
-	 * With none, the read answers 404 long before the process is reached.
+	 * Creates the configuration of the namespace, which every path here reads to tell whether access control applies.
+	 * Without it, the read answers 404 before the process is reached.
 	 */
 	@BeforeEach
 	void createNamespaceConfig() {
@@ -188,10 +201,6 @@ class ErrandProcessPersistenceTest {
 			});
 	}
 
-	/**
-	 * Kept apart from the retry below because a refusal rolls its transaction back, and this test shares one with the
-	 * next thing it would do.
-	 */
 	@Test
 	@DisplayName("Verification that a process which ran to its end is never started over")
 	void aCompletedProcessLifeIsOver() {
@@ -237,20 +246,33 @@ class ErrandProcessPersistenceTest {
 	// ---------------------------------------------------------------------------------------------------------------
 
 	@Test
-	@DisplayName("Verification that the envelope lists every process of the errand, newest first")
-	void theEnvelopeListsTheProcessesNewestFirst() {
+	@DisplayName("Verification that the overview lists every process of the errand, newest first, and that a live one stands in the way of a start")
+	void theOverviewListsTheProcessesNewestFirst() {
 		final var errandId = createErrand();
 		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "older", report(FAILED).withStarted(now(systemDefault()).minusDays(2)));
 		errandProcessRepository.findByProcessInstanceId("older").ifPresent(entity -> entity.setCreated(now(systemDefault()).minusDays(2)));
 		errandProcessRepository.flush();
 		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandId, "newer", report(RUNNING));
 
-		final var envelope = errandProcessService.readProcesses(NAMESPACE, MUNICIPALITY_ID, errandId);
+		final var overview = errandProcessService.readProcesses(NAMESPACE, MUNICIPALITY_ID, errandId);
 
-		assertThat(envelope.getStartable()).isNull();
-		assertThat(envelope.getProcesses())
+		assertThat(overview.getStartable()).isEqualTo(ProcessStartable.create().withStatus(LIVE_INSTANCE).withProcessKeys(List.of()));
+		assertThat(overview.getProcesses())
 			.extracting(ErrandProcess::getProcessInstanceId)
 			.containsExactly("newer", "older");
+	}
+
+	@Test
+	@DisplayName("Verification that an errand without a process is offered the key its label names, read from the database, whatever the start mode")
+	void anErrandWithoutAProcessIsOfferedTheKeyOfItsLabel() {
+		final var errandId = createErrandWearing(processLabel("MANUAL"));
+		entityManager.flush();
+		entityManager.clear();
+
+		final var overview = errandProcessService.readProcesses(NAMESPACE, MUNICIPALITY_ID, errandId);
+
+		assertThat(overview.getProcesses()).isEmpty();
+		assertThat(overview.getStartable()).isEqualTo(ProcessStartable.create().withStatus(AVAILABLE).withProcessKeys(List.of(PROCESS_KEY)));
 	}
 
 	@Test
@@ -345,11 +367,8 @@ class ErrandProcessPersistenceTest {
 	}
 
 	/**
-	 * The list view is asked the one question a statement count cannot answer for it: whether the processes of the page
-	 * are looked up once or once per errand. Counting statements around the whole read would count the collections of
-	 * every errand as well, which are lazy and have always been read one errand at a time - so the answer would say
-	 * nothing about this lookup. Counting the executions of the process query alone leaves those out, and answers about
-	 * the query that actually reached the database rather than about a method call.
+	 * Counts the executions of the process query and of the signal query alone, leaving out the lazy collections of the
+	 * errands, which are read one errand at a time.
 	 */
 	@Test
 	@DisplayName("Verification that listing errands looks up the processes of the whole page and what they wait for once each, not once per errand")
@@ -373,6 +392,25 @@ class ErrandProcessPersistenceTest {
 		assertThat(queryExecutions(statistics, ErrandProcessSignalEntity.class)).isEqualTo(1);
 	}
 
+	@Test
+	@DisplayName("Verification that listing errands that could be started asks nothing about starting them: one process lookup for the page, and no label or outbox lookup")
+	void listingStartableErrandsCostsNoLookupPerErrand() {
+		final var label = processLabel("MANUAL");
+		final var errandIds = List.of(createErrandWearing(label), createErrandWearing(label), createErrandWearing(label));
+		entityManager.flush();
+		entityManager.clear();
+
+		final var statistics = statistics();
+		statistics.clear();
+
+		final var page = errandService.findErrands(NAMESPACE, MUNICIPALITY_ID, null, PageRequest.of(0, 50));
+
+		assertThat(page.getContent()).extracting(Errand::getId).containsExactlyInAnyOrderElementsOf(errandIds);
+		assertThat(queryExecutions(statistics, ErrandProcessEntity.class)).isEqualTo(1);
+		assertThat(queryExecutions(statistics, MetadataLabelEntity.class)).isZero();
+		assertThat(queryExecutions(statistics, ProcessEventOutboxEntity.class)).isZero();
+	}
+
 	// ---------------------------------------------------------------------------------------------------------------
 	// What the process waits for from a handler
 	// ---------------------------------------------------------------------------------------------------------------
@@ -394,11 +432,6 @@ class ErrandProcessPersistenceTest {
 		assertThat(awaitedBy(errandId)).isEmpty();
 	}
 
-	/**
-	 * The trap this guards against sits in the flush: inserts run before deletions, so a signal deleted and inserted
-	 * anew in one report would meet its own old row in the unique key and fail the report. Kept rows are what avoids it,
-	 * and keeping one is also what shows here - the row keeps its id.
-	 */
 	@Test
 	@DisplayName("Verification that a signal still awaited keeps its row, whatever its label and place become")
 	void aSignalStillAwaitedKeepsItsRow() {
@@ -428,9 +461,8 @@ class ErrandProcessPersistenceTest {
 	}
 
 	/**
-	 * How many times a query against the table of an entity ran, whatever the query looks like - the point is the count,
-	 * and pinning the generated text would break on any rename of the method behind it. Matched on the entity name as a
-	 * word, since one entity name can be the start of another.
+	 * How many times a query against the table of an entity ran, whatever the query looks like. A query is matched on the
+	 * entity name as a whole word.
 	 */
 	private static long queryExecutions(final Statistics statistics, final Class<?> entity) {
 		final var entityName = Pattern.compile("\\b" + entity.getSimpleName() + "\\b");
@@ -467,14 +499,34 @@ class ErrandProcessPersistenceTest {
 	}
 
 	private String createErrand() {
-		return errandsRepository.saveAndFlush(ErrandEntity.create()
+		return errandsRepository.saveAndFlush(errand()).getId();
+	}
+
+	private String createErrandWearing(final MetadataLabelEntity label) {
+		return errandsRepository.saveAndFlush(errand()
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(label.getId()))))).getId();
+	}
+
+	private static ErrandEntity errand() {
+		return ErrandEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
 			.withErrandNumber("PPT-" + UUID.randomUUID())
 			.withTitle("TITLE")
 			.withStatus("STATUS")
 			.withPriority("MEDIUM")
-			.withReporterUserId("joe01doe")).getId();
+			.withReporterUserId("joe01doe");
+	}
+
+	private MetadataLabelEntity processLabel(final String startMode) {
+		return metadataLabelRepository.saveAndFlush(MetadataLabelEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withClassification("CATEGORY")
+			.withResourceName("TILLSYN")
+			.withAttributes(new ArrayList<>(List.of(
+				LabelAttributeEmbeddable.create().withKey("processKey").withValue(PROCESS_KEY),
+				LabelAttributeEmbeddable.create().withKey("processStartMode").withValue(startMode)))));
 	}
 
 	private static ErrandProcessReport report(final ProcessStatus status) {

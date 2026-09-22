@@ -1,4 +1,8 @@
 {
+	"startable": {
+		"status": "LIVE_INSTANCE",
+		"processKeys": []
+	},
 	"processes": [
 		{
 			"id": "ep-it-live",

@@ -1,0 +1,13 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "WAITING",
+	"currentActivityId": "granskning",
+	"currentActivityName": "Granskning",
+	"awaitingSignals": [
+		{
+			"name": "granskning-godkand",
+			"label": "Godkänn granskning"
+		}
+	]
+}

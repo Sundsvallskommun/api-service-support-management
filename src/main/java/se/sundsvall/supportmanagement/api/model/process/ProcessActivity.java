@@ -18,7 +18,7 @@ import static java.util.Optional.ofNullable;
  * One entry in the log of what the process did, and of what kept it from doing anything.
  * <p>
  * The type and the identifier of an activity are free strings that SM stores without interpreting them, so a process
- * engine can log whatever its model calls things without a change here.
+ * engine can log whatever its model calls things.
  */
 @Schema(description = "An entry in the activity log of an errand")
 public class ProcessActivity {
@@ -146,7 +146,7 @@ public class ProcessActivity {
 	}
 
 	/**
-	 * Takes the enum, which is what keeps this service from publishing a severity it does not have.
+	 * Sets the severity from the enum, so only a severity this service has can be published.
 	 */
 	public ProcessActivity withSeverity(final ActivitySeverity severity) {
 		this.severity = ofNullable(severity).map(Enum::name).orElse(null);

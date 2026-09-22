@@ -72,8 +72,7 @@ class ServiceUtilTest {
 	}
 
 	/**
-	 * The header is set by the caller and stored in columns as wide as a uuid, so a longer value would otherwise fail
-	 * every write that records the group.
+	 * Verifies that a request group id is cut to 36 characters, the width of the columns storing it.
 	 */
 	@Test
 	void setRequestGroupIdCutsAValueWiderThanTheColumnsStoringIt() {
@@ -216,8 +215,7 @@ class ServiceUtilTest {
 	}
 
 	/**
-	 * Ad account names are not case sensitive and nothing normalises the value on the way in, so a subscriber stored in a
-	 * different case than they later send must still be recognised as the owner of their own settings.
+	 * Verifies that the type and the value of the identifier are compared without regard to case.
 	 */
 	@Test
 	void isRequestingUserIgnoresCase() {

@@ -29,6 +29,7 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 
 /**
  * Errand Decisions IT tests, including the terms a decision carries, the attachments linked to it and the JSON
@@ -67,8 +68,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 	private JdbcTemplate jdbcTemplate;
 
 	/**
-	 * Several decisions per errand are allowed unless the namespace says otherwise - interim decisions, partial
-	 * decisions and reconsideration are ordinary where one line of business expects exactly one.
+	 * Several decisions per errand are allowed unless the namespace says otherwise, so a second decision is created.
 	 */
 	@Test
 	void test01_createErrandDecision() {
@@ -129,7 +129,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The location names the term that was created, which takes the id of the term rather than of a copy of it.
+	 * The location names the id of the term that was created.
 	 */
 	@Test
 	void test05_createDecisionTerm() {
@@ -192,7 +192,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 
 	/**
 	 * The decision rests on an investigation of the same errand. One belonging to another errand is not reachable, and
-	 * is answered as the 404 it is rather than written as a reference across errands.
+	 * is answered with 404.
 	 */
 	@Test
 	void test10_restingOnAnInvestigationOfAnotherErrandGives404() {
@@ -206,8 +206,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A caseworker cannot stamp their own decision as automatic. That difference has to be answerable afterwards, which
-	 * is why it is checked when the decision comes in rather than trusted.
+	 * A caseworker cannot stamp their own decision as automatic, and is refused with 403.
 	 */
 	@Test
 	void test11_anAdAccountCannotWriteAnAutomaticDecision() {
@@ -330,7 +329,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 
 	/**
 	 * A namespace that expects exactly one decision per errand says so in its configuration, and a second one is then
-	 * the conflict it is rather than a decision nobody can tell apart from the first.
+	 * refused with 409 and not written.
 	 */
 	@Test
 	void test21_aSecondDecisionIsAConflictWhereTheNamespaceAllowsOne() {
@@ -349,7 +348,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The outcomes are the namespace's to register, and one it has not registered is refused rather than written.
+	 * The outcomes are the namespace's to register, and one it has not registered is refused with 400 and not written.
 	 */
 	@Test
 	void test22_anOutcomeTheNamespaceHasNotRegisteredIsRejected() {
@@ -365,7 +364,31 @@ class ErrandDecisionsIT extends AbstractAppTest {
 		assertThat(decisionRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).hasSize(1);
 	}
 
-	/** Read with SQL rather than through JPA: the collections of a loaded entity are lazy, and the test has no session. */
+	/**
+	 * Verifies that in a namespace without a process consumer an automatic decision is taken from a caller that is not an
+	 * ad account.
+	 */
+	@Test
+	void test23_aServiceWritesAnAutomaticDecisionWhereNoProcessRuns() {
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "e-service; type=processEngine")
+			.withServicePath(PATH)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of(PATH + "/" + UUID_PATTERN))
+			.sendRequestAndVerifyResponse();
+
+		assertThat(decisionRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.filteredOn(decision -> "Automatiskt beslut".equals(decision.getTitle()))
+			.singleElement()
+			.satisfies(decision -> {
+				assertThat(decision.getMethod()).isEqualTo(DecisionMethod.AUTOMATIC);
+				assertThat(decision.getCreatedBy()).isEqualTo("e-service");
+			});
+	}
+
+	/** Counts the terms of the decision, read with SQL. */
 	private int terms() {
 		return jdbcTemplate.queryForObject("select count(*) from decision_term where decision_id = ?", Integer.class, DECISION_ID);
 	}

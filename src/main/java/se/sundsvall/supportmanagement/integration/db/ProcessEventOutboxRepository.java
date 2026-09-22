@@ -20,8 +20,8 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	/**
 	 * The rows waiting for one process engine, oldest first.
 	 * <p>
-	 * The page is what keeps a single run from being unbounded, and the age limit leaves rows written by a transaction
-	 * still being committed alone.
+	 * The page bounds how many rows one run takes. Only rows written before {@code createdBefore} are read, which leaves
+	 * rows written by a transaction still being committed alone.
 	 *
 	 * @param  processService the consumer the rows were addressed to when they were written.
 	 * @param  createdBefore  the moment a row has to predate to be picked up.
@@ -31,11 +31,10 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	List<ProcessEventOutboxEntity> findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore(String processService, OffsetDateTime createdBefore, Pageable pageable);
 
 	/**
-	 * The rows of one errand waiting for a process engine, oldest first, which is what a direct run delivers.
+	 * The rows of one errand waiting for a process engine, oldest first, for a direct run to deliver.
 	 * <p>
-	 * Not held to the age a row must reach before the scheduled run takes it, since a direct run starts only once the
-	 * transaction that wrote the row is committed. Held to the age limit instead: a row that has aged out is left to be
-	 * dropped rather than delivered after all.
+	 * A row is read however recently it was written, but not once it is older than {@code createdAfter}: a row that has
+	 * aged out is left to be dropped.
 	 *
 	 * @param  processService the consumer the rows were addressed to when they were written.
 	 * @param  errandId       the errand whose rows to read.
@@ -48,10 +47,9 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	/**
 	 * Rows read again under a write lock, keeping those still undelivered.
 	 * <p>
-	 * The lock is what lets two runs reach for the same row: the second waits for the first to commit, and then finds the
-	 * row delivered. Read by id and in no particular order, which leaves the primary key the only sensible way to the
-	 * rows, so the lock covers them and nothing around them - a publication writing a new row is not held up by a
-	 * delivery in progress. The caller puts the rows in order.
+	 * When two runs reach for the same row, the second waits for the first to commit and then finds the row delivered.
+	 * The rows are read by primary key, so the lock covers them and nothing around them: a publication writing a new row
+	 * is not held up by a delivery in progress. The rows come in no particular order; the caller puts them in order.
 	 *
 	 * @param  ids the rows to lock.
 	 * @return     those of the rows that are still undelivered, locked for the rest of the transaction.
@@ -60,8 +58,8 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	List<ProcessEventOutboxEntity> findByIdInAndDeliveredAtIsNull(Collection<String> ids);
 
 	/**
-	 * Undelivered rows written before a moment, oldest first, which is how the rows that have aged out are found. Read
-	 * without a lock: the rows are locked by id before they are dropped.
+	 * Undelivered rows written before a moment, oldest first: the rows that have aged out. Read without a lock; the caller
+	 * locks the rows by id before it drops them.
 	 *
 	 * @param  createdBefore the moment a row has to predate.
 	 * @param  pageable      the most rows to take.
@@ -70,8 +68,7 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	List<ProcessEventOutboxEntity> findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(OffsetDateTime createdBefore, Pageable pageable);
 
 	/**
-	 * Rows delivered before a moment, which is what the cleanup removes. Undelivered rows never answer, since their
-	 * delivery time is null.
+	 * Rows delivered before a moment, for the cleanup to remove. Undelivered rows are never returned.
 	 *
 	 * @param  deliveredBefore the moment a row has to have been delivered before.
 	 * @param  pageable        the most rows to take.
@@ -80,11 +77,8 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	List<ProcessEventOutboxEntity> findByDeliveredAtBefore(OffsetDateTime deliveredBefore, Pageable pageable);
 
 	/**
-	 * How much has actually reached the process engine for one errand lately, which is what the emergency brake measures.
-	 * <p>
-	 * Only delivered rows count. Counting the undelivered ones would let a delivery outage trip the brake by itself: the
-	 * rows pile up because nothing gets through, the brake reads the pile as a loop, and an outage that only cost time
-	 * turns into permanent event loss.
+	 * How much has reached the process engine for one errand lately, which is what the emergency brake measures. Only
+	 * delivered rows are counted.
 	 *
 	 * @param  errandId     the errand to measure.
 	 * @param  createdAfter the start of the window.
@@ -93,11 +87,16 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	long countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(String errandId, OffsetDateTime createdAfter);
 
 	/**
-	 * The oldest undelivered row.
-	 * <p>
-	 * Health is measured in its age, not in how many rows are waiting: every publication leaves a row behind until the
-	 * next run takes it, so a condition on existence would report unhealthy during normal operation and teach everyone to
-	 * stop looking.
+	 * The starts of one errand still on their way to the process engine: its undelivered rows carrying the permission to
+	 * start a process, whether a start command or an ordinary errand event gave it. Covered by {@code idx_peo_guard}.
+	 *
+	 * @param  errandId the errand whose starts to read.
+	 * @return          the undelivered rows of the errand that carry the permission to start a process.
+	 */
+	List<ProcessEventOutboxEntity> findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(String errandId);
+
+	/**
+	 * The oldest undelivered row, whose age the health check of the relay measures.
 	 *
 	 * @return the oldest undelivered row, or empty when every row has been delivered.
 	 */

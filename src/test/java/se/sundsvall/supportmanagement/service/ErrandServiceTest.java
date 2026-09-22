@@ -357,8 +357,7 @@ class ErrandServiceTest {
 	}
 
 	/**
-	 * The process shown on an errand is the latest one rather than a live one, so an errand whose start failed shows the
-	 * failure instead of looking like an errand that never had a process at all.
+	 * The process shown on an errand is its latest one, live or not, so an errand whose start failed shows the failure.
 	 */
 	@Test
 	void readErrandShowsTheProcessOfTheErrand() {
@@ -379,8 +378,8 @@ class ErrandServiceTest {
 	}
 
 	/**
-	 * The list view asks for the processes of the whole page in one go. A lookup per errand would be invisible in a test
-	 * asserting only the payload, so what is asserted here is the shape of the call rather than what it returned.
+	 * The list view asks for the processes of the whole page in one call, and what is asserted here is the shape of that
+	 * call.
 	 */
 	@Test
 	void findErrandsReadsTheProcessesOfThePageInOneCall() {

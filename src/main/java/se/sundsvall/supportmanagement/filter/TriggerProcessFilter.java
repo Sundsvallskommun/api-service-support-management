@@ -15,9 +15,8 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setTrigger
 /**
  * Carries the caller's answer to whether the write should wake the process of the errand it touches.
  * <p>
- * Held for the request rather than passed through every signature that leads to publication, in the same way the
- * request group id already is. Nothing is echoed back on the response: the value says what the caller wanted, not what
- * happened, and publication is free to disregard it - it is not honoured for ad accounts.
+ * The value of the header is held for the duration of the request and cleared afterwards. Nothing is echoed back on
+ * the response. Publication may disregard the value, and does for ad accounts.
  * <p>
  * A write with no request at all, a scheduled job, leaves the value unset and wakes the process.
  */

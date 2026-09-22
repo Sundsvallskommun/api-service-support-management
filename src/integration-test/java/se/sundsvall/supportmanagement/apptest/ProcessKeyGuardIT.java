@@ -15,11 +15,11 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
 
 /**
- * The guard over the wire: a label change that would leave an errand naming a process it does not belong to.
+ * Verifies the process key guard over the wire: a label change that would leave an errand naming a process it does not
+ * belong to.
  * <p>
- * What this asks that the tests below the resource cannot is that the refusal reaches the caller as a 400 whose detail
- * names what is wrong, and that it is the rows in the database - a live process, one that has run to its end, and none
- * at all - that decide, rather than a stubbed answer about them.
+ * The refusal reaches the caller as a 400 whose detail names what is wrong, and is decided by the process rows in the
+ * database - a live process, one that has run to its end, and none at all.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessKeyGuardIT/", classes = Application.class)
 @Sql({

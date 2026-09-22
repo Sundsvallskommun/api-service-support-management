@@ -21,9 +21,7 @@ public class ErrandAccessService {
 	/**
 	 * Reports what the requesting user may do with sent in errand.
 	 * <p>
-	 * Guarded on the errand itself at limited read, which is what every plain read of an errand asks for, rather than on
-	 * a resource of its own. A resource of its own would have to be granted before the endpoint answered at all, leaving
-	 * every namespace already configured unable to ask what its users may do.
+	 * Guarded on the errand itself at limited read, which is what every plain read of an errand asks for.
 	 */
 	@Transactional(readOnly = true)
 	public ErrandAccess readErrandAccess(final String namespace, final String municipalityId, final String errandId) {

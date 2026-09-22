@@ -51,14 +51,14 @@ public final class ErrandParameterMapper {
 	}
 
 	/**
-	 * Replaces the parameters of the errand with sent in ones, leaving keys the caller may not reach untouched.
+	 * Replaces the parameters of the errand with sent in ones, leaving keys the caller may not change untouched.
 	 * <p>
-	 * The merge deletes every key absent from the request, so without that guard a caller restricted to a few keys would
-	 * silently delete the parameters they are not even allowed to see, simply by patching back the list they were served.
+	 * A changeable key absent from the request is deleted. A key the caller may not change is left as it stands, whether or
+	 * not the request carries it.
 	 *
-	 * @param entity        errand to merge into
-	 * @param parameters    parameters replacing the reachable ones
-	 * @param accessibleKey predicate accepting the keys the caller may reach
+	 * @param entity      errand to merge into
+	 * @param parameters  parameters replacing the changeable ones
+	 * @param writableKey predicate accepting the keys the caller may change
 	 */
 	public static void mergeParameters(final ErrandEntity entity, final List<Parameter> parameters, final Predicate<String> writableKey) {
 		if (entity.getParameters() == null) {
@@ -114,8 +114,8 @@ public final class ErrandParameterMapper {
 	}
 
 	/**
-	 * Sent in key when the values of it differ from how they stand on the errand, and nothing when they do not. The
-	 * endpoint writing a single parameter only ever writes its values, so nothing else is compared.
+	 * Sent in key when the values of it differ from how they stand on the errand, and nothing when they do not. Only the
+	 * values are compared.
 	 *
 	 * @param  entity errand the parameter belongs to
 	 * @param  key    parameter being written

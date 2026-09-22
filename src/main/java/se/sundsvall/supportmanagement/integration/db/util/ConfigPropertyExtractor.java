@@ -48,8 +48,7 @@ public class ConfigPropertyExtractor {
 	 * property matching provided key is found.
 	 * <p>
 	 * The multivalued counterpart to {@link #getNullableValue(NamespaceConfigEntity, String)}, which takes the first row
-	 * and discards the rest. A key that may hold several rows must be read through this method, otherwise all but one of
-	 * them silently stop having an effect.
+	 * and discards the rest. A key that may hold several rows must be read through this method.
 	 *
 	 * @param  nullableNamespaceConfigEntity config entity to find property values in
 	 * @param  key                           value of key to match

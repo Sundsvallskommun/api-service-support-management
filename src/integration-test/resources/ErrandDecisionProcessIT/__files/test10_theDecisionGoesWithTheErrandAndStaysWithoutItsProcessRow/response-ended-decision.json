@@ -1,0 +1,31 @@
+{
+	"id": "de000000-0000-0000-0000-000000000004",
+	"type": "PERMIT",
+	"status": "ACTIVE",
+	"outcome": "APPROVAL",
+	"method": "AUTOMATIC",
+	"decidedBy": "pw-alkt",
+	"decidedAt": "2026-01-02T09:00:00+01:00",
+	"justification": "Motivering",
+	"investigationId": "e1000000-0000-0000-0000-000000000002",
+	"errandProcessId": "ep-it-completed",
+	"terms": [
+		{
+			"id": "df000000-0000-0000-0000-000000000001",
+			"sortOrder": 1,
+			"category": "serveringstid",
+			"text": "Servering får ske mellan 11.00 och 01.00."
+		}
+	],
+	"attachments": [
+		{
+			"id": "ad000000-0000-0000-0000-000000000003",
+			"fileName": "beslut.txt",
+			"mimeType": "text/plain",
+			"fileSize": 6
+		}
+	],
+	"createdBy": "pw-alkt",
+	"created": "2026-01-02T09:00:00+01:00",
+	"version": 0
+}

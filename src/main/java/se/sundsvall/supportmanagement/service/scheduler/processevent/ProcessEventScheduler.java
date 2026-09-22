@@ -28,8 +28,7 @@ public class ProcessEventScheduler {
 	/**
 	 * The scheduled run of the relay, which delivers whatever the direct runs did not.
 	 * <p>
-	 * Health is decided afterwards, on what is still waiting, rather than on whether anything failed in the run. A pw-alkt
-	 * restarting for a minute is no fault as long as the rows go through once it is back.
+	 * Health is decided afterwards, on what is still waiting.
 	 */
 	@Dept44Scheduled(
 		cron = "${scheduler.process-event.cron}",

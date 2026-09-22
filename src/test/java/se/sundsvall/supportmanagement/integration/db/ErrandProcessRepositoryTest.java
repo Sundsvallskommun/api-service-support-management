@@ -17,8 +17,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
 
 /**
- * The errand in the test data has been through one process and is in the middle of another, which is the shape the
- * queries have to cope with: one live instance among several dead ones.
+ * Verifies the queries of {@link ErrandProcessRepository}. The errand in the test data has been through one process and
+ * is in the middle of another: one live instance among several dead ones.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -68,10 +68,6 @@ class ErrandProcessRepositoryTest {
 		assertThat(errandProcessRepository.findByProcessInstanceIdAndErrandId("pi-live-1", "ERRAND_ID-2")).isEmpty();
 	}
 
-	/**
-	 * The history carries the finished instances along with the live one, since a completed process is what ends the
-	 * process life of an errand and a live one is only part of the answer.
-	 */
 	@Test
 	@DisplayName("Verification that the history of an errand comes back newest first, live and finished instances alike")
 	void findByErrandIdOrderByCreatedDesc() {
@@ -80,11 +76,6 @@ class ErrandProcessRepositoryTest {
 			.containsExactly(tuple("ep-live-1", WAITING), tuple("ep-done-1", COMPLETED));
 	}
 
-	/**
-	 * The ordering is the whole contract of this query: the projection on the errand keeps the first row it sees per
-	 * errand and calls it the latest. Reversed, every errand would show its oldest process instead, and nothing else in
-	 * the suite would notice - the errands it is exercised on elsewhere have one instance each.
-	 */
 	@Test
 	@DisplayName("Verification that the instances of several errands come back newest first, so the first row seen per errand is its latest")
 	void findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc() {

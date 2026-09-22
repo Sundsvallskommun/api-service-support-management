@@ -31,15 +31,17 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessOverview;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
-import se.sundsvall.supportmanagement.api.model.process.ErrandProcesses;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartRequest;
 import se.sundsvall.supportmanagement.service.ErrandProcessService;
 import se.sundsvall.supportmanagement.service.ProcessCommandService;
 import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpStatus.CREATED;
@@ -55,8 +57,8 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
 /**
- * The process attached to an errand: what it reports about itself, what a handler reads of it, and the signals a
- * handler steps it on with.
+ * The process attached to an errand: what it reports about itself, what a handler reads of it, and the commands a
+ * handler starts it and steps it on with.
  */
 @RestController
 @Validated
@@ -125,6 +127,41 @@ class ErrandProcessResource {
 		return respond(service.registerProcess(namespace, municipalityId, errandId, report), municipalityId, namespace, errandId);
 	}
 
+	@PostMapping(path = "/processes/start", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
+	@Operation(summary = "Start process", description = """
+		Starts the handling of an errand by hand - the "start handling" button. Offer it when startable.status from GET \
+		.../processes is AVAILABLE, in automatic start mode as well as in manual: in automatic mode it is how a start that \
+		failed is tried again. The body may be left out when startable.processKeys holds one key; when it holds several, \
+		send the key the user chose. Only a person may start a process, and the start is recorded with who sent it. \
+		202 says the start is recorded and on its way, not that the process runs: the process shows in GET .../processes \
+		once the process engine has registered it, normally within seconds. Until then startable still says AVAILABLE - \
+		show the start as on its way rather than as not started. A start pressed while one with the same key is on its \
+		way - sent by hand, or an automatic start not yet delivered - is recorded like any other, starts nothing more \
+		and is answered 202. \
+		400 is answered when no label of the errand names a process it can be started with, when the labels name several \
+		and the request chose none, when the request names a key that is not among them, and when the namespace runs no \
+		processes.""", responses = {
+		@ApiResponse(responseCode = "202", description = "Accepted — the start is recorded and handed on to the process", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403",
+			description = "Forbidden — the caller is not an ad account, or may not reach the errand",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "404",
+			description = "Not found — the errand does not exist in the namespace",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409",
+			description = "Conflict — the errand already has a live process, its process has run to its end, or a start of another process is already on its way",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	})
+	ResponseEntity<Void> startProcess(
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
+		@Valid @RequestBody(required = false) final ProcessStartRequest request) {
+
+		commandService.startProcess(namespace, municipalityId, errandId, ofNullable(request).map(ProcessStartRequest::getProcessKey).orElse(null));
+		return accepted().header(CONTENT_TYPE, ALL_VALUE).build();
+	}
+
 	@PostMapping(path = "/processes/{processInstanceId}/signals", consumes = APPLICATION_JSON_VALUE, produces = ALL_VALUE)
 	@Operation(summary = "Signal process", description = """
 		Steps a process past the gate it waits at, by sending one of the signals listed in awaitingSignals of the process. \
@@ -159,12 +196,13 @@ class ErrandProcessResource {
 		APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE
 	})
 	@Operation(summary = "Read errand processes", description = """
-		Every process the errand has had, most recent first, in an envelope that also has room for whether a new one may \
-		be started. An empty list is not an error.""", responses = {
+		Every process the errand has had, most recent first, together with whether a new one may be started right now \
+		and why not when it cannot be - which is what a start button is lit, dimmed and explained by. An empty list is not \
+		an error.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<ErrandProcesses> readErrandProcesses(
+	ResponseEntity<ErrandProcessOverview> readErrandProcesses(
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId) {
@@ -193,8 +231,8 @@ class ErrandProcessResource {
 	}
 
 	/**
-	 * Answers created for a row this write brought into being and ok for one that was already there, which is the whole
-	 * difference between the two write paths as seen from outside.
+	 * Answers 201 created for a row this write brought into being, with a location header when the row has a process
+	 * instance id, and 200 ok for a row that was already there.
 	 */
 	private static ResponseEntity<ErrandProcess> respond(final ErrandProcessResult result, final String municipalityId, final String namespace, final String errandId) {
 		if (!result.created()) {

@@ -63,10 +63,7 @@ class ValidEnumValueConstraintValidatorTest {
 		verifyNoInteractions(contextMock, violationBuilderMock);
 	}
 
-	/**
-	 * Left to whatever else holds the field, since a field simply left out is not the same as one filled in wrongly - the
-	 * severity of an entry is optional, the state of a process is not, and this validator answers the same to both.
-	 */
+	/** A null value is accepted, and left to whatever other constraint holds the field. */
 	@Test
 	void aMissingValueIsLeftToTheOtherConstraints() {
 		assertThat(validator(ProcessStatus.class).isValid(null, contextMock)).isTrue();
@@ -85,10 +82,7 @@ class ValidEnumValueConstraintValidatorTest {
 		verify(violationBuilderMock).addConstraintViolation();
 	}
 
-	/**
-	 * The names are compared as they are written, so a value in the wrong case is refused rather than quietly accepted -
-	 * the value is stored as it arrives and would not match the column otherwise.
-	 */
+	/** The names are compared as they are written, so a value in the wrong case is refused. */
 	@Test
 	void aValueInTheWrongCaseIsRefused() {
 		when(contextMock.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilderMock);

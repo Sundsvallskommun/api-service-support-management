@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "The process key 'alkt-serveringstillstand' is not one the errand 'ab000000-0000-0000-0000-0000000000b2' can be started with, which are: alkt-ansokan, alkt-tillsyn"
+}
