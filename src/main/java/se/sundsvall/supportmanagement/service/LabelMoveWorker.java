@@ -127,20 +127,15 @@ public class LabelMoveWorker {
 	private int restowErrands(final LabelMoveRun run) {
 		var lastSeenId = "";
 		var processed = 0;
+		var page = fetchAndPersistPage(run, lastSeenId);
 
-		while (true) {
-			final var page = fetchAndPersistPage(run, lastSeenId);
-			if (page.isEmpty()) {
-				break;
-			}
-
+		while (!page.isEmpty()) {
 			processed += page.size();
 			jobService.updateProgress(run.jobId(), processed);
 			lastSeenId = page.get(page.size() - 1).getId();
 
-			if (page.size() < batchSize) {
-				break;
-			}
+			// A page shorter than requested is necessarily the last one - skip the round-trip that would only confirm it.
+			page = page.size() < batchSize ? List.of() : fetchAndPersistPage(run, lastSeenId);
 		}
 
 		return processed;
