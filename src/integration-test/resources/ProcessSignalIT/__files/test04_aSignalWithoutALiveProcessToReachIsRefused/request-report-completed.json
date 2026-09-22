@@ -1,0 +1,10 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "COMPLETED",
+	"awaitingSignals": [
+		{
+			"name": "granskning-godkand"
+		}
+	]
+}

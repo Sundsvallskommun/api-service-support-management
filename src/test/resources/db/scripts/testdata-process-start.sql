@@ -17,13 +17,13 @@ VALUES ('ee000000-0000-0000-0000-0000000000e1', 'processKey', 'alkt-tillsyn'),
        ('ee000000-0000-0000-0000-0000000000e1', 'processStartMode', 'MANUAL'),
        ('ee000000-0000-0000-0000-0000000000e2', 'processKey', 'alkt-ansokan');
 
--- b1: supervision without a process. b2: both labels, so two processes to choose between. b3: an
--- application whose only start failed. b4: an application whose process ran to its end. b5: a
--- supervision for the emergency brake to be tripped on.
+-- b1: supervision without a process, assigned to someone other than the handler starting it. b2: both
+-- labels, so two processes to choose between. b3: an application whose only start failed. b4: an
+-- application whose process ran to its end. b5: a supervision for the emergency brake to be tripped on.
 INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace,
                    priority, reporter_user_id, status, title, type, created, modified, resolution,
                    description, escalation_email, errand_number, business_related, previous_status, channel, touched)
-VALUES ('2281', 'ab000000-0000-0000-0000-0000000000b1', null, null, 'CATEGORY-1', 'PROCESS-NAMESPACE',
+VALUES ('2281', 'ab000000-0000-0000-0000-0000000000b1', null, 'ann01doe', 'CATEGORY-1', 'PROCESS-NAMESPACE',
         'MEDIUM', 'joe01doe', 'STATUS-1', 'Supervision without a process', 'TYPE-1',
         '2026-01-01 10:00:00.000', null, null, null, null, 'PN-26010011', false, null, null,
         '2026-01-01 10:00:00.000'),

@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.sql.Timestamp;
@@ -15,60 +14,48 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
 import se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventRelay;
 import se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventScheduler;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static io.github.resilience4j.circuitbreaker.CircuitBreaker.State.CLOSED;
 import static io.github.resilience4j.circuitbreaker.CircuitBreaker.State.OPEN;
-import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
+import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 
 /**
  * The relay against pw-alkt over the wire, with WireMock standing in for it.
  * <p>
- * Verifies which answers leave a row as it was and which consume it, read back from the database; that what pw-alkt
- * receives is the row as it stands; that the order within an errand survives both the batch limit and a failure; and
- * that the direct run, the scheduled run and a full pool can meet without delivering anything twice or failing the
- * write of an errand.
+ * Verifies which answers leave a row as it was and which consume it; that what pw-alkt receives is the row as it
+ * stands; that the order within an errand survives both the batch limit and a failure; and that the direct run, the
+ * scheduled run and a full pool can meet without delivering anything twice or failing the write of an errand.
  * <p>
- * Rows are written straight into the table, aged by setting when they were written, so that the scheduled run takes
- * them without waiting out the transaction buffer. The rows that come from a write to an errand exercise the direct
- * run, which only a committed publication starts.
+ * Neither whether a row is delivered nor the state of the circuit breaker is shown on its own by any resource, so the
+ * first is read from the database and the second from the registry. Rows are written straight into the table, aged by
+ * setting when they were written, so that the scheduled run takes them without waiting out the transaction buffer. The
+ * rows that come from a write to an errand exercise the direct run, which only a committed publication starts.
+ * <p>
+ * The order pw-alkt receives events in is held by scenarios in the stubs: each event is only answered in the state the
+ * one before it leaves behind.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessEventRelayIT/", classes = Application.class)
 @TestPropertySource(properties = {
@@ -81,6 +68,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 	"/db/scripts/testdata-it.sql",
 	"/db/scripts/testdata-process-event.sql"
 })
+@SqlMergeMode(MERGE)
 class ProcessEventRelayIT extends AbstractAppTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
@@ -88,10 +76,11 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 	private static final String OTHER_ERRAND_ID = "cc236cf1-c00f-4479-8341-ecf5dd90b5b9";
 	private static final String THIRD_ERRAND_ID = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
-	private static final String PROCESS_KEY = "alkt-ansokan";
+	private static final String ERRAND_PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID;
 	private static final String PW_ALKT_PATH = "/api-pw-alkt/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/process/errand-events";
+	private static final String PW_ALKT = "pw-alkt";
 	private static final String RELAY_JOB = "process_event_relay";
-	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+	private static final String RELAY_HEALTH_PATH = "/actuator/health/dept44CompositeScheduler/" + RELAY_JOB;
 
 	@Autowired
 	private ProcessEventScheduler processEventScheduler;
@@ -101,12 +90,6 @@ class ProcessEventRelayIT extends AbstractAppTest {
 
 	@Autowired
 	private ProcessEventOutboxRepository outboxRepository;
-
-	@Autowired
-	private ErrandProcessRepository processRepository;
-
-	@Autowired
-	private ErrandProcessActivityRepository activityRepository;
 
 	@Autowired
 	private Dept44CompositeHealthContributor healthContributor;
@@ -124,10 +107,13 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	@Autowired
 	private Clock clock;
 
+	/**
+	 * The circuit breaker and the health of the relay outlive a test, and some tests leave them open and restricted. The
+	 * scheduled relay never runs on its own in the tests, so its health is registered the way a healthy run leaves it.
+	 */
 	@BeforeEach
-	void setUp() {
-		wiremock.resetAll();
-		circuitBreakerRegistry.circuitBreaker("pw-alkt").reset();
+	void resetTheStateOfTheRelay() {
+		circuitBreakerRegistry.circuitBreaker(PW_ALKT).reset();
 		healthContributor.getOrCreateIndicator(RELAY_JOB).setHealthy();
 	}
 
@@ -136,68 +122,58 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	void test01_theEventIsTheRowAsItStands() {
 		givenRow("row-signal", ERRAND_ID, Duration.ofMinutes(2), "SIGNAL", true, "granskning-godkand");
 		givenRow("row-message", OTHER_ERRAND_ID, Duration.ofMinutes(1), "MESSAGE", false, null);
-		pwAlktAnswers(aResponse().withStatus(202));
+		setupCall();
 
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findAllById(List.of("row-signal", "row-message"))).hasSize(2).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNotNull());
-		assertThat(eventsReceived()).satisfiesExactly(
-			signal -> {
-				assertThat(signal.path("eventId").asString()).isEqualTo("row-signal");
-				assertThat(signal.path("eventType").asString()).isEqualTo("UPDATE");
-				assertThat(signal.path("eventSubType").asString()).isEqualTo("SIGNAL");
-				assertThat(signal.path("errandId").asString()).isEqualTo(ERRAND_ID);
-				assertThat(signal.path("processKey").asString()).isEqualTo(PROCESS_KEY);
-				assertThat(signal.path("startAllowed").booleanValue()).isTrue();
-				assertThat(signal.path("signalName").asString()).isEqualTo("granskning-godkand");
-				assertThat(signal.path("occurredAt").asString()).isNotBlank();
-			},
-			message -> {
-				assertThat(message.path("eventId").asString()).isEqualTo("row-message");
-				assertThat(message.path("eventSubType").asString()).isEqualTo("MESSAGE");
-				assertThat(message.path("startAllowed").booleanValue()).isFalse();
-				assertThat(message.path("signalName").isNull() || message.path("signalName").isMissingNode()).isTrue();
-			});
+		verifyStubs();
 	}
 
 	@Test
 	@DisplayName("Verification that a 422 consumes the row without trying again, fails the live instance and writes an error entry on it")
+	@Sql("/db/scripts/testdata-process-event-live-instance.sql")
 	void test02_aRefusalForGoodFailsTheProcess() {
-		final var instance = processRepository.saveAndFlush(liveInstance());
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(1));
-		pwAlktAnswers(refusalForGood());
+		setupCall();
 
 		processEventScheduler.relay();
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findById("row-1")).get().extracting(ProcessEventOutboxEntity::getDeliveredAt).isNotNull();
-		assertThat(processRepository.findById(instance.getId())).get().satisfies(process -> {
-			assertThat(process.getProcessStatus()).isEqualTo(FAILED);
-			assertThat(process.getActiveMarker()).isNull();
-			assertThat(process.getErrorCode()).isEqualTo("PROCESS_KEY_NOT_DEPLOYED");
-		});
-		assertThat(activityRepository.findByErrandId(ERRAND_ID, Pageable.unpaged())).singleElement().satisfies(entry -> {
-			assertThat(entry.getErrandProcessId()).isEqualTo(instance.getId());
-			assertThat(entry.getActivityType()).isEqualTo("DELIVERY");
-			assertThat(entry.getSeverity()).isEqualTo(ERROR);
-			assertThat(entry.getErrorCode()).isEqualTo("PROCESS_KEY_NOT_DEPLOYED");
-		});
 		wiremock.verify(1, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
+
+		setupCall()
+			.withServicePath(ERRAND_PATH + "/processes")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-processes.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(ERRAND_PATH + "/process-activities")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-activities.json")
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
 	@DisplayName("Verification that a 422 on an errand without a process writes the error entry alone, without an instance")
 	void test03_aRefusalForGoodWithoutAProcess() {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(1));
-		pwAlktAnswers(refusalForGood());
+		setupCall();
 
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findById("row-1")).get().extracting(ProcessEventOutboxEntity::getDeliveredAt).isNotNull();
-		assertThat(activityRepository.findByErrandId(ERRAND_ID, Pageable.unpaged())).singleElement().satisfies(entry -> {
-			assertThat(entry.getErrandProcessId()).isNull();
-			assertThat(entry.getSeverity()).isEqualTo(ERROR);
-		});
+
+		setupCall()
+			.withServicePath(ERRAND_PATH + "/process-activities")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-activities.json")
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -205,63 +181,35 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	void test04_aServerErrorLeavesTheRowForTheNextRun() {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(1));
 		final var before = outboxRepository.findById("row-1").orElseThrow();
-		pwAlktAnswers(aResponse().withStatus(503));
+		setupCall();
 
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findById("row-1")).contains(before);
 		wiremock.verify(1, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
 
-		pwAlktNowAnswers(aResponse().withStatus(202));
-
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findById("row-1")).get().extracting(ProcessEventOutboxEntity::getDeliveredAt).isNotNull();
+		verifyStubs();
 	}
 
+	/**
+	 * pw-alkt is asked twice, since the token retryer every client of the service is given takes a timeout for a reason
+	 * to try again.
+	 */
 	@Test
 	@DisplayName("Verification that a pw-alkt that does not answer in time leaves the row exactly as it was")
 	void test05_aTimeoutLeavesTheRowAsItWas() {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(1));
 		final var before = outboxRepository.findById("row-1").orElseThrow();
-		pwAlktAnswers(aResponse().withStatus(202).withFixedDelay(5000));
+		setupCall();
 
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findById("row-1")).contains(before);
-		// Twice, since the token retryer every client of the service is given takes a timeout for a reason to try again
 		wiremock.verify(2, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
-	}
-
-	@Test
-	@DisplayName("Verification that pw-alkt refusing events keeps the circuit breaker closed, since only calls that never got an answer open it")
-	void test15_refusedEventsDoNotOpenTheCircuitBreaker() {
-		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(3));
-		givenRow("row-2", OTHER_ERRAND_ID, Duration.ofMinutes(2));
-		pwAlktAnswers(aResponse().withStatus(503));
-
-		processEventScheduler.relay();
-		processEventScheduler.relay();
-		processEventScheduler.relay();
-
-		assertThat(circuitBreakerRegistry.circuitBreaker("pw-alkt").getState()).isEqualTo(CLOSED);
-		wiremock.verify(6, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
-	}
-
-	@Test
-	@DisplayName("Verification that a token that cannot be fetched opens the circuit breaker, since pw-alkt is then as far out of reach as when it does not answer")
-	void test16_aTokenThatCannotBeFetchedOpensTheCircuitBreaker() {
-		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(2));
-		givenRow("row-2", OTHER_ERRAND_ID, Duration.ofMinutes(1));
-		wiremock.stubFor(post(urlPathEqualTo("/api-gateway/token")).willReturn(aResponse().withStatus(500)));
-		wiremock.stubFor(post(urlPathEqualTo(PW_ALKT_PATH)).willReturn(aResponse().withStatus(202)));
-
-		processEventScheduler.relay();
-		processEventScheduler.relay();
-
-		assertThat(circuitBreakerRegistry.circuitBreaker("pw-alkt").getState()).isEqualTo(OPEN);
-		assertThat(wiremock.findAll(postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)))).isEmpty();
-		assertThat(outboxRepository.findAllById(List.of("row-1", "row-2"))).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNull());
+		verifyStubs();
 	}
 
 	@Test
@@ -270,43 +218,42 @@ class ProcessEventRelayIT extends AbstractAppTest {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(3));
 		givenRow("row-2", ERRAND_ID, Duration.ofMinutes(2));
 		givenRow("row-3", ERRAND_ID, Duration.ofMinutes(1));
-		pwAlktAnswers(aResponse().withStatus(202));
+		setupCall();
 
 		processEventScheduler.relay();
 
-		assertThat(eventIdsReceived()).containsExactly("row-1", "row-2");
+		wiremock.verify(2, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
 		assertThat(outboxRepository.findById("row-3")).get().extracting(ProcessEventOutboxEntity::getDeliveredAt).isNull();
 
 		processEventScheduler.relay();
 
-		assertThat(eventIdsReceived()).containsExactly("row-1", "row-2", "row-3");
+		wiremock.verify(3, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
+		verifyStubs();
 	}
 
+	/**
+	 * pw-alkt takes the first row, but the transaction it is acknowledged in goes down with the second, so the next run
+	 * gives it both again, the first as the very event it was given before.
+	 */
 	@Test
 	@DisplayName("Verification that a group that fails is rolled back in full, and that pw-alkt is given the very same event again on the next run")
 	void test07_aFailingGroupIsRolledBackInFull() {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(2));
 		givenRow("row-2", ERRAND_ID, Duration.ofMinutes(1));
-		tokenIsIssued();
-		wiremock.stubFor(post(urlPathEqualTo(PW_ALKT_PATH)).atPriority(1)
-			.withRequestBody(matchingJsonPath("$.eventId", equalTo("row-2")))
-			.willReturn(aResponse().withStatus(503)));
-		wiremock.stubFor(post(urlPathEqualTo(PW_ALKT_PATH)).atPriority(5).willReturn(aResponse().withStatus(202)));
+		setupCall();
 
 		processEventScheduler.relay();
 
-		// pw-alkt took the first row, but the transaction it was acknowledged in went down with the second
-		assertThat(eventIdsReceived()).containsExactly("row-1", "row-2");
 		assertThat(outboxRepository.findAllById(List.of("row-1", "row-2"))).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNull());
-
-		pwAlktNowAnswers(aResponse().withStatus(202));
 
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findAllById(List.of("row-1", "row-2"))).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNotNull());
-		final var events = eventsReceived();
-		assertThat(events).extracting(event -> event.path("eventId").asString()).containsExactly("row-1", "row-2", "row-1", "row-2");
-		assertThat(events.get(2)).isEqualTo(events.get(0));
+		final var eventsOfTheFirstRow = wiremock.findAll(postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)).withRequestBody(matchingJsonPath("$.eventId", equalTo("row-1")))).stream()
+			.map(LoggedRequest::getBodyAsString)
+			.toList();
+		assertThat(eventsOfTheFirstRow).hasSize(2).containsOnly(eventsOfTheFirstRow.getFirst());
+		verifyStubs();
 	}
 
 	@Test
@@ -315,51 +262,54 @@ class ProcessEventRelayIT extends AbstractAppTest {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(3));
 		givenRow("row-2", OTHER_ERRAND_ID, Duration.ofMinutes(2));
 		givenRow("row-3", THIRD_ERRAND_ID, Duration.ofMinutes(1));
-		pwAlktAnswers(aResponse().withStatus(202));
+		setupCall();
 
 		processEventScheduler.relay();
 
-		assertThat(eventIdsReceived()).containsExactly("row-1", "row-2");
 		assertThat(outboxRepository.findById("row-3")).get().extracting(ProcessEventOutboxEntity::getDeliveredAt).isNull();
+		verifyStubs();
 	}
 
 	@Test
 	@DisplayName("Verification that a write to an errand reaches pw-alkt through the direct run, with no scheduled run involved")
 	void test09_aDirectRunDeliversOnceTheWriteIsCommitted() {
-		pwAlktAnswers(aResponse().withStatus(202));
-		errandWritesAreLogged();
-
-		assertThat(patchErrand().getStatusCode()).isEqualTo(OK);
+		setupCall()
+			.withServicePath(ERRAND_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest("request.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
 
 		await().atMost(10, SECONDS).untilAsserted(() -> assertThat(outboxRepository.findAll())
 			.singleElement()
 			.satisfies(row -> assertThat(row.getDeliveredAt()).isNotNull()));
-		assertThat(eventsReceived()).singleElement().satisfies(event -> {
-			assertThat(event.path("errandId").asString()).isEqualTo(ERRAND_ID);
-			assertThat(event.path("eventSubType").asString()).isEqualTo("ERRAND");
-		});
-		assertThat(wiremock.findAllUnmatchedRequests()).isEmpty();
+		verifyStubs();
 	}
 
+	/**
+	 * The direct run is dropped rather than queued: once the pool has drained, still nothing has reached pw-alkt.
+	 */
 	@Test
 	@DisplayName("Verification that a full pool drops the direct run without failing the write, and that the scheduled run delivers the row instead")
 	void test10_aFullPoolDropsTheDirectRun() {
-		pwAlktAnswers(aResponse().withStatus(202));
-		errandWritesAreLogged();
 		final var release = new CountDownLatch(1);
 
 		try {
 			await().atMost(10, SECONDS).pollInterval(Duration.ofMillis(10)).until(() -> fillPool(release));
 
-			assertThat(patchErrand().getStatusCode()).isEqualTo(OK);
+			setupCall()
+				.withServicePath(ERRAND_PATH)
+				.withHttpMethod(PATCH)
+				.withRequest("request.json")
+				.withExpectedResponseStatus(OK)
+				.sendRequest();
 		} finally {
 			release.countDown();
 		}
 
 		await().atMost(10, SECONDS).until(() -> processEventExecutor.getActiveCount() == 0 && processEventExecutor.getQueueSize() == 0);
 
-		// Dropped rather than queued: the pool has drained, and still nothing has reached pw-alkt
-		assertThat(wiremock.findAll(postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)))).isEmpty();
+		wiremock.verify(0, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
 		final var row = outboxRepository.findAll().getFirst();
 		assertThat(row.getDeliveredAt()).isNull();
 
@@ -367,44 +317,62 @@ class ProcessEventRelayIT extends AbstractAppTest {
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findById(row.getId())).get().extracting(ProcessEventOutboxEntity::getDeliveredAt).isNotNull();
-		assertThat(wiremock.findAllUnmatchedRequests()).isEmpty();
+		verifyStubs();
 	}
 
+	/**
+	 * The second run waits for the first and finds the row delivered.
+	 */
 	@Test
-	@DisplayName("Verification that a direct run and a scheduled run reaching for the same row deliver it once: the second waits for the first and finds it delivered")
+	@DisplayName("Verification that a direct run and a scheduled run reaching for the same row deliver it once")
 	void test11_twoRunsReachingForTheSameRowDeliverItOnce() {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(1));
-		pwAlktAnswers(aResponse().withStatus(202).withFixedDelay(1500));
+		setupCall();
 
 		final var directRun = CompletableFuture.runAsync(() -> processEventRelay.relayErrand(ERRAND_ID));
-		await().atMost(10, SECONDS).until(() -> !wiremock.findAll(postRequestedFor(urlPathEqualTo(PW_ALKT_PATH))).isEmpty());
+		await().atMost(10, SECONDS).untilAsserted(() -> wiremock.verify(1, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH))));
 
 		processEventScheduler.relay();
 		directRun.join();
 
 		wiremock.verify(1, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
 		assertThat(outboxRepository.findById("row-1")).get().extracting(ProcessEventOutboxEntity::getDeliveredAt).isNotNull();
+		verifyStubs();
 	}
 
 	@Test
 	@DisplayName("Verification that the health indicator stays green right after a publication and turns only once the oldest undelivered row has passed the limit")
 	void test12_theHealthIndicatorGoesByAge() {
 		givenRow("row-1", ERRAND_ID, Duration.ofSeconds(10));
-		pwAlktAnswers(aResponse().withStatus(503));
+		setupCall();
 
 		processEventScheduler.relay();
 
-		assertThat(relayHealth()).isEqualTo("UP");
+		setupCall()
+			.withServicePath(RELAY_HEALTH_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-health-up.json")
+			.sendRequest();
 
 		ageRow("row-1", Duration.ofMinutes(16));
 		processEventScheduler.relay();
 
-		assertThat(relayHealth()).isEqualTo("RESTRICTED");
+		setupCall()
+			.withServicePath(RELAY_HEALTH_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-health-restricted.json")
+			.sendRequest();
 
-		pwAlktNowAnswers(aResponse().withStatus(202));
 		processEventScheduler.relay();
 
-		assertThat(relayHealth()).isEqualTo("UP");
+		setupCall()
+			.withServicePath(RELAY_HEALTH_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-health-up.json")
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -412,12 +380,12 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	void test13_aRowThatHasAgedOutIsDropped() {
 		givenRow("row-aged", ERRAND_ID, Duration.ofDays(31));
 		givenRow("row-fresh", OTHER_ERRAND_ID, Duration.ofMinutes(1));
-		pwAlktAnswers(aResponse().withStatus(202));
+		setupCall();
 
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findById("row-aged")).isEmpty();
-		assertThat(eventIdsReceived()).containsExactly("row-fresh");
+		verifyStubs();
 	}
 
 	@Test
@@ -434,6 +402,40 @@ class ProcessEventRelayIT extends AbstractAppTest {
 		assertThat(outboxRepository.findAll()).extracting(ProcessEventOutboxEntity::getId).containsExactlyInAnyOrder("row-delivered-lately", "row-undelivered");
 	}
 
+	@Test
+	@DisplayName("Verification that pw-alkt refusing events keeps the circuit breaker closed, since only calls that never got an answer open it")
+	void test15_refusedEventsDoNotOpenTheCircuitBreaker() {
+		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(3));
+		givenRow("row-2", OTHER_ERRAND_ID, Duration.ofMinutes(2));
+		setupCall();
+
+		processEventScheduler.relay();
+		processEventScheduler.relay();
+		processEventScheduler.relay();
+
+		wiremock.verify(6, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
+		assertThat(circuitBreakerRegistry.circuitBreaker(PW_ALKT).getState()).isEqualTo(CLOSED);
+		verifyStubs();
+	}
+
+	/**
+	 * pw-alkt is never asked, so any call to it would go unanswered by the stubs.
+	 */
+	@Test
+	@DisplayName("Verification that a token that cannot be fetched opens the circuit breaker, since pw-alkt is then as far out of reach as when it does not answer")
+	void test16_aTokenThatCannotBeFetchedOpensTheCircuitBreaker() {
+		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(2));
+		givenRow("row-2", OTHER_ERRAND_ID, Duration.ofMinutes(1));
+		setupCall();
+
+		processEventScheduler.relay();
+		processEventScheduler.relay();
+
+		assertThat(outboxRepository.findAllById(List.of("row-1", "row-2"))).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNull());
+		assertThat(circuitBreakerRegistry.circuitBreaker(PW_ALKT).getState()).isEqualTo(OPEN);
+		verifyStubs();
+	}
+
 	private void givenRow(final String id, final String errandId, final Duration age) {
 		givenRow(id, errandId, age, "MESSAGE", false, null);
 	}
@@ -442,8 +444,8 @@ class ProcessEventRelayIT extends AbstractAppTest {
 		jdbcTemplate.update("""
 			insert into process_event_outbox(id, municipality_id, namespace, errand_id, process_service, process_key, event_type,
 			                                 event_sub_type, start_allowed, signal_name, executed_by, created)
-			values (?, ?, ?, ?, 'pw-alkt', ?, 'UPDATE', ?, ?, ?, 'joe01doe', ?)""",
-			id, MUNICIPALITY_ID, NAMESPACE, errandId, PROCESS_KEY, eventSubType, startAllowed, signalName, ago(age));
+			values (?, ?, ?, ?, 'pw-alkt', 'alkt-ansokan', 'UPDATE', ?, ?, ?, 'joe01doe', ?)""",
+			id, MUNICIPALITY_ID, NAMESPACE, errandId, eventSubType, startAllowed, signalName, ago(age));
 	}
 
 	private void ageRow(final String id, final Duration age) {
@@ -459,80 +461,6 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	 */
 	private Timestamp ago(final Duration age) {
 		return Timestamp.valueOf(LocalDateTime.now(clock).minus(age));
-	}
-
-	private ErrandProcessEntity liveInstance() {
-		final var instance = ErrandProcessEntity.create()
-			.withErrandId(ERRAND_ID)
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withNamespace(NAMESPACE)
-			.withProcessService("pw-alkt")
-			.withProcessKey(PROCESS_KEY)
-			.withProcessInstanceId("pi-relay-it");
-		instance.applyStatus(RUNNING, clock);
-
-		return instance;
-	}
-
-	private void pwAlktAnswers(final ResponseDefinitionBuilder response) {
-		tokenIsIssued();
-		wiremock.stubFor(post(urlPathEqualTo(PW_ALKT_PATH)).willReturn(response));
-	}
-
-	/**
-	 * Replaces the stubs while keeping the requests received so far, so that a test can count across runs.
-	 */
-	private void pwAlktNowAnswers(final ResponseDefinitionBuilder response) {
-		wiremock.resetMappings();
-		pwAlktAnswers(response);
-	}
-
-	private void tokenIsIssued() {
-		wiremock.stubFor(post(urlPathEqualTo("/api-gateway/token"))
-			.willReturn(aResponse()
-				.withHeader(HttpHeaders.CONTENT_TYPE, APPLICATION_JSON.toString())
-				.withBodyFile("common/responses/api-gateway-token-response.json")));
-	}
-
-	private void errandWritesAreLogged() {
-		wiremock.stubFor(post(urlPathMatching("/api-eventlog/.*")).willReturn(aResponse().withStatus(202)));
-		wiremock.stubFor(get(urlPathMatching("/api-employee/.*")).willReturn(aResponse().withStatus(200)));
-	}
-
-	private static ResponseDefinitionBuilder refusalForGood() {
-		return aResponse()
-			.withStatus(422)
-			.withHeader(HttpHeaders.CONTENT_TYPE, "application/problem+json")
-			.withBody("""
-				{"title": "Unprocessable Entity", "status": 422, "detail": "No process definition is deployed under the key alkt-ansokan"}""");
-	}
-
-	private ResponseEntity<String> patchErrand() {
-		final var headers = new HttpHeaders();
-		headers.setContentType(APPLICATION_JSON);
-
-		return restTemplate.exchange("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID, PATCH, new HttpEntity<>("""
-			{"title": "A change the process is to be told about"}""", headers), String.class);
-	}
-
-	/**
-	 * The events pw-alkt has received, in the order it received them.
-	 */
-	private List<JsonNode> eventsReceived() {
-		return wiremock.findAll(postRequestedFor(urlPathEqualTo(PW_ALKT_PATH))).stream()
-			.sorted(comparing(LoggedRequest::getLoggedDate))
-			.map(request -> OBJECT_MAPPER.readTree(request.getBodyAsString()))
-			.toList();
-	}
-
-	private List<String> eventIdsReceived() {
-		return eventsReceived().stream()
-			.map(event -> event.path("eventId").asString())
-			.toList();
-	}
-
-	private String relayHealth() {
-		return healthContributor.getOrCreateIndicator(RELAY_JOB).health().getStatus().getCode();
 	}
 
 	/**

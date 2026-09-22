@@ -1,0 +1,23 @@
+{
+	"startable": {
+		"status": "AVAILABLE",
+		"processKeys": [
+			"alkt-ansokan"
+		]
+	},
+	"processes": [
+		{
+			"id": "ep-start-failed",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processStatus": "FAILED",
+			"ended": "2026-01-01T10:05:00+01:00",
+			"error": {
+				"code": "START_FAILED",
+				"message": "The process engine did not answer"
+			},
+			"awaitingSignals": [],
+			"created": "2026-01-01T10:05:00+01:00"
+		}
+	]
+}

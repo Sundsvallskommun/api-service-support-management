@@ -1,0 +1,26 @@
+{
+	"startable": {
+		"status": "AVAILABLE",
+		"processKeys": [
+			"alkt-ansokan"
+		]
+	},
+	"processes": [
+		{
+			"id": "ep-relay-it",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processInstanceId": "pi-relay-it",
+			"processStatus": "FAILED",
+			"started": "2026-01-01T10:00:00+01:00",
+			"ended": "${json-unit.any-string}",
+			"error": {
+				"code": "PROCESS_KEY_NOT_DEPLOYED",
+				"message": "pw-alkt refused an event on this errand for good, since it has no process deployed under the key 'alkt-ansokan'. The event is not delivered again, and every later event on the errand is refused the same way until the key is one the process engine knows. Deploy the process under that key, or correct the processKey attribute of the label"
+			},
+			"awaitingSignals": [],
+			"created": "2026-01-01T10:00:00+01:00",
+			"modified": "${json-unit.any-string}"
+		}
+	]
+}

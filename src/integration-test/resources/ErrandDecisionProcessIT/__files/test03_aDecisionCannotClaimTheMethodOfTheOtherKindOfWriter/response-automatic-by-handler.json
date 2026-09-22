@@ -1,0 +1,5 @@
+{
+	"title": "Forbidden",
+	"status": 403,
+	"detail": "A decision with method AUTOMATIC can only be written by 'pw-alkt', the process consumer of namespace 'PROCESS-NAMESPACE' for municipality with id '2281'"
+}

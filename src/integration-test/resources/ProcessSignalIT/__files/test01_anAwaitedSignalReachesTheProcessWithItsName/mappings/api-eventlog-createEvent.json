@@ -1,0 +1,40 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "POST",
+		"urlPath": "/api-eventlog/2281/aa000000-0000-0000-0000-0000000000a1",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"type": "UPDATE",
+					"subType": "SIGNAL",
+					"owner": "SupportManagement",
+					"message": "En signal har skickats till processen i ärendet: Godkänn granskning.",
+					"sourceType": "Errand",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "joe01doe"
+					}
+				},
+				"ignoreExtraElements": true
+			},
+			{
+				"matchesJsonPath": {
+					"expression": "$.historyReference",
+					"absent": true
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createEvent"
+}

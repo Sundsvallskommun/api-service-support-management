@@ -1,0 +1,116 @@
+{
+	"mappings": [
+		{
+			"request": {
+				"headers": {
+					"Authorization": {
+						"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+					}
+				},
+				"method": "POST",
+				"urlPath": "/api-pw-alkt/2281/NAMESPACE-1/process/errand-events",
+				"bodyPatterns": [
+					{
+						"matchesJsonPath": {
+							"expression": "$.eventId",
+							"equalTo": "row-1"
+						}
+					}
+				]
+			},
+			"response": {
+				"headers": {
+					"Content-Type": "*/*"
+				},
+				"status": 202
+			},
+			"scenarioName": "pw-alkt",
+			"requiredScenarioState": "Started",
+			"newScenarioState": "row-1 taken"
+		},
+		{
+			"request": {
+				"headers": {
+					"Authorization": {
+						"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+					}
+				},
+				"method": "POST",
+				"urlPath": "/api-pw-alkt/2281/NAMESPACE-1/process/errand-events",
+				"bodyPatterns": [
+					{
+						"matchesJsonPath": {
+							"expression": "$.eventId",
+							"equalTo": "row-2"
+						}
+					}
+				]
+			},
+			"response": {
+				"headers": {
+					"Content-Type": "*/*"
+				},
+				"status": 503
+			},
+			"scenarioName": "pw-alkt",
+			"requiredScenarioState": "row-1 taken",
+			"newScenarioState": "rolled back"
+		},
+		{
+			"request": {
+				"headers": {
+					"Authorization": {
+						"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+					}
+				},
+				"method": "POST",
+				"urlPath": "/api-pw-alkt/2281/NAMESPACE-1/process/errand-events",
+				"bodyPatterns": [
+					{
+						"matchesJsonPath": {
+							"expression": "$.eventId",
+							"equalTo": "row-1"
+						}
+					}
+				]
+			},
+			"response": {
+				"headers": {
+					"Content-Type": "*/*"
+				},
+				"status": 202
+			},
+			"scenarioName": "pw-alkt",
+			"requiredScenarioState": "rolled back",
+			"newScenarioState": "row-1 taken again"
+		},
+		{
+			"request": {
+				"headers": {
+					"Authorization": {
+						"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+					}
+				},
+				"method": "POST",
+				"urlPath": "/api-pw-alkt/2281/NAMESPACE-1/process/errand-events",
+				"bodyPatterns": [
+					{
+						"matchesJsonPath": {
+							"expression": "$.eventId",
+							"equalTo": "row-2"
+						}
+					}
+				]
+			},
+			"response": {
+				"headers": {
+					"Content-Type": "*/*"
+				},
+				"status": 202
+			},
+			"scenarioName": "pw-alkt",
+			"requiredScenarioState": "row-1 taken again",
+			"newScenarioState": "delivered"
+		}
+	]
+}

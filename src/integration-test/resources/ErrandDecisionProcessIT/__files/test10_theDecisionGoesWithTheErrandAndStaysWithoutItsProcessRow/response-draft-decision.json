@@ -1,0 +1,23 @@
+{
+	"id": "de000000-0000-0000-0000-000000000001",
+	"type": "PERMIT",
+	"status": "DRAFT",
+	"outcome": "APPROVAL",
+	"method": "MANUAL",
+	"decidedBy": "joe01doe",
+	"decidedAt": "2026-01-03T10:00:00+01:00",
+	"justification": "Utkast till motivering",
+	"investigationId": "e1000000-0000-0000-0000-000000000001",
+	"terms": [],
+	"attachments": [
+		{
+			"id": "ad000000-0000-0000-0000-000000000001",
+			"fileName": "utkast.txt",
+			"mimeType": "text/plain",
+			"fileSize": 6
+		}
+	],
+	"createdBy": "joe01doe",
+	"created": "2026-01-03T10:00:00+01:00",
+	"version": 0
+}

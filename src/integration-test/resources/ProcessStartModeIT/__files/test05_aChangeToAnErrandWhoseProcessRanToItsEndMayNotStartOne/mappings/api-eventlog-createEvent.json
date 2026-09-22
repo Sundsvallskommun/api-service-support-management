@@ -1,0 +1,34 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "POST",
+		"urlPath": "/api-eventlog/2281/ac000000-0000-0000-0000-0000000000c2",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"type": "UPDATE",
+					"subType": "ERRAND",
+					"owner": "SupportManagement",
+					"message": "Ärendet har uppdaterats.",
+					"sourceType": "Errand",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "joe01doe"
+					}
+				},
+				"ignoreExtraElements": true
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createEvent"
+}

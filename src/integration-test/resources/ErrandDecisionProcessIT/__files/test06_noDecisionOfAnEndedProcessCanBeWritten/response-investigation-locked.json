@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Investigation with id 'e1000000-0000-0000-0000-000000000002' is what a decision that can no longer be changed rests on, and cannot be removed from errand with id 'aa000000-0000-0000-0000-0000000000a5'"
+}

@@ -1,0 +1,11 @@
+{
+	"type": "https://github.com/Sundsvallskommun/dept44/problems/constraint-violation",
+	"title": "Constraint Violation",
+	"status": 400,
+	"violations": [
+		{
+			"field": "createLabels.labels",
+			"message": "label 'NY_TILLSYN' has a processStartMode but no processKey, and a start mode means nothing without the process it starts"
+		}
+	]
+}
