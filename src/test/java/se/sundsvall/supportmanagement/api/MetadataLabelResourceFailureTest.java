@@ -128,6 +128,14 @@ class MetadataLabelResourceFailureTest {
 					LabelAttribute.create().withKey("k").withValue("v2"))))),
 				tuples(
 					tuple(method + ".labels", "each label must have unique attribute keys"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
+				LabelAttribute.create().withKey("k".repeat(256)).withValue("v"))),
+				tuples(
+					tuple(method + ".labels[0].attributes[0].key", "size must be between 0 and 255"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
+				LabelAttribute.create().withKey("k").withValue("v".repeat(16384)))),
+				tuples(
+					tuple(method + ".labels[0].attributes[0].value", "size must be between 0 and 16383"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME_1"), createLabel("class", "RESOURCE_NAME_1")),
 				tuples(
 					tuple(method + ".labels", "each entry must have unique resourceName compared to its siblings"))),

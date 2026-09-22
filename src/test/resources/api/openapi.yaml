@@ -19482,13 +19482,15 @@ components:
           description: Attribute key
           examples:
           - escalationEmail
-          minLength: 1
+          maxLength: 255
+          minLength: 0
         value:
           type: string
           description: Attribute value
           examples:
           - escalation@example.com
-          minLength: 1
+          maxLength: 16383
+          minLength: 0
       required:
       - key
       - value

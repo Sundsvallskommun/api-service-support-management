@@ -69,6 +69,28 @@ class MetadataLabelResourceTest {
 	}
 
 	@Test
+	void createWithAttributesOfTheLongestSizeAllowed() {
+
+		// Arrange
+		final var labels = List.of(
+			Label.create().withClassification("classification").withResourceName("RESOURCE_1").withAttributes(List.of(
+				LabelAttribute.create().withKey("k".repeat(255)).withValue("v".repeat(16383)))));
+
+		// Act
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(labels)
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		// Assert and verify
+		verify(metadataServiceMock).createLabels(NAMESPACE, MUNICIPALITY_ID, labels);
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
 	void createWithProcessAttributes() {
 
 		// Arrange

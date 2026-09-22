@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.metadata;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 @Schema(
@@ -10,10 +11,13 @@ public class LabelAttribute {
 
 	@Schema(description = "Attribute key", examples = "escalationEmail")
 	@NotBlank
+	@Size(max = 255)
 	private String key;
 
+	// The value is kept in a TEXT column of 65 535 bytes, and a character takes up to four of them
 	@Schema(description = "Attribute value", examples = "escalation@example.com")
 	@NotBlank
+	@Size(max = 16383)
 	private String value;
 
 	public static LabelAttribute create() {
