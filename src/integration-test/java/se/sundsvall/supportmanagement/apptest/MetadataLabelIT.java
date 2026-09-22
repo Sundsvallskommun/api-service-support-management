@@ -354,8 +354,9 @@ class MetadataLabelIT extends AbstractAppTest {
 	void test15_startLabelMoveRefusedWhilePreviousMoveIsPending() {
 		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/ffe5f120-6a3b-4404-ace8-8ea87b559907/move";
 
-		// A move for this label is already RUNNING (seeded above) - a real first request racing a real second one would
-		// leave the same window open only as long as the first take to run, which is not something to depend on here.
+		// A move is already RUNNING for the namespace (seeded above, against this same label but the guard no longer
+		// cares which one) - a real first request racing a real second one would leave the same window open only as
+		// long as the first takes to run, which is not something to depend on here.
 		setupCall()
 			.withServicePath(path)
 			.withHttpMethod(POST)

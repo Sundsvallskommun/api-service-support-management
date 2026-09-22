@@ -4,6 +4,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
@@ -20,6 +21,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static java.time.Duration.ofMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.ACCEPTED;
@@ -146,6 +148,19 @@ class LabelMoveIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(metadataLabelRepository.findById(SUBTYPE_4)).hasValueSatisfying(label -> assertThat(label.getResourcePath()).isEqualTo("CATEGORY-1/TYPE-2/SUBTYPE-4"));
+	}
+
+	@Test
+	@DisplayName("Verification that the DB itself, not just the API's precheck, refuses a second active MOVE_LABEL row for the same namespace - the backstop a check-then-act guard alone cannot provide against two requests racing within the same window")
+	@Sql(statements = RUNNING_MOVE_LABEL_JOB)
+	void test05_dbRejectsSecondActiveMoveLabelJobForSameNamespaceRegardlessOfLabel() {
+		// A different id and a different label than the seeded row - the constraint must still refuse, since by the
+		// time either insert reaches the DB neither request's own precheck has any way left to catch the other.
+		final var secondActiveJob = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+			+ "VALUES ('bbbbbbbb-0000-0000-0000-000000000002', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'PENDING', 0, 0, 0, 'ffe5f120-6a3b-4404-ace8-8ea87b559907', NOW(), NOW())";
+
+		assertThatThrownBy(() -> jdbcTemplate.execute(secondActiveJob))
+			.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	/**

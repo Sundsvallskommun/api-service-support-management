@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.0"
 servers:
-- url: http://localhost:49967
+- url: http://localhost:59544
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -4384,8 +4384,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — path collision at destination, or a move for this\
-            \ label is already in progress"
+          description: "Conflict — path collision at destination, or a job is already\
+            \ running for this namespace"
           content:
             application/problem+json:
               schema:
@@ -16073,9 +16073,9 @@ components:
     Problem:
       type: object
       properties:
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         instance:
           type: string
@@ -16101,10 +16101,10 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
         detail:
           type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
@@ -16552,11 +16552,11 @@ components:
     JsonNode:
       type: object
       properties:
+        container:
+          type: boolean
         number:
           type: boolean
-        valueNode:
-          type: boolean
-        missingNode:
+        floatingPointNumber:
           type: boolean
         nodeType:
           type: string
@@ -16573,6 +16573,10 @@ components:
         string:
           type: boolean
         integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
           type: boolean
         pojo:
           type: boolean
@@ -16594,10 +16598,6 @@ components:
         boolean:
           type: boolean
         binary:
-          type: boolean
-        container:
-          type: boolean
-        floatingPointNumber:
           type: boolean
         empty:
           type: boolean
@@ -20194,6 +20194,8 @@ components:
     PageableObject:
       type: object
       properties:
+        sort:
+          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -20204,8 +20206,6 @@ components:
           format: int32
         unpaged:
           type: boolean
-        sort:
-          $ref: "#/components/schemas/SortObject"
         offset:
           type: integer
           format: int64

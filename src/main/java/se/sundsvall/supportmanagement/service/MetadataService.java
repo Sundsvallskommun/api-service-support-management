@@ -120,7 +120,7 @@ public class MetadataService {
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
-	private static final String MOVE_ALREADY_IN_PROGRESS = "Label '%s' already has a move in progress";
+	private static final String MOVE_ALREADY_IN_PROGRESS = "A job is already running for namespace '%s' in municipality with id '%s'";
 	private static final String COULD_NOT_START = "Label move could not be started: %s";
 	private static final String UNKNOWN_CALLER = "unknown";
 	private static final int RESOURCE_PATH_MAX_LENGTH = 255;
@@ -444,8 +444,11 @@ public class MetadataService {
 	/**
 	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
 	 * <p>
-	 * Refused outright if a move is already under way for this label, since a second run could just as easily be
-	 * reading or writing the same label tree and errands at the same time.
+	 * Refused outright if another job is already under way for the namespace, not just for this label — two moves in
+	 * the same namespace can target overlapping subtrees (one label and one of its own descendants, or a label and the
+	 * destination it is headed into) without either id matching the other, so a check scoped to this label alone would
+	 * let them run at the same time and race on the same errands. Namespace-wide serialization costs nothing here,
+	 * since label moves are rare.
 	 * <p>
 	 * Kept transactional (not read-only, since {@link JobService#create} writes within it) so that the session
 	 * validation opens against stays open for as long as {@link #validateAndFindLabelToMove} needs it — the cycle
@@ -457,8 +460,8 @@ public class MetadataService {
 		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
 		var canonicalLabelId = context.labelToMove().getId();
 
-		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL, canonicalLabelId)) {
-			throw Problem.valueOf(CONFLICT, MOVE_ALREADY_IN_PROGRESS.formatted(canonicalLabelId));
+		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL)) {
+			throw Problem.valueOf(CONFLICT, MOVE_ALREADY_IN_PROGRESS.formatted(namespace, municipalityId));
 		}
 
 		var allMovedIds = collectMovedLabelIds(canonicalLabelId, context.descendants());

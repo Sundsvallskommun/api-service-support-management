@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -33,6 +35,7 @@ public class JobService {
 	private static final int MAX_MESSAGE_LENGTH = 1024;
 	private static final String JOB_NOT_FOUND = "Job with id '%s' not found in namespace '%s' for municipality with id '%s'";
 	private static final String NOT_REPORTED_ON = "Job was not reported on for %s and is taken to have ended with the instance carrying it out";
+	private static final String ACTIVE_JOB_IN_NAMESPACE = "A job is already running for namespace '%s' in municipality with id '%s'";
 
 	/**
 	 * The states a job works in. Held in one place because the guard that keeps two runs of a kind out of the same
@@ -66,14 +69,25 @@ public class JobService {
 	 * Shared, un-annotated so that neither {@code create} overload above reaches its own {@code @Transactional} through
 	 * a plain {@code this} call rather than the proxy — a transaction is already open by the time either gets here,
 	 * started by whichever overload the caller actually invoked from outside.
+	 * <p>
+	 * Flushed rather than merely saved, so that a namespace-scoped DB constraint a caller relies on to close a
+	 * check-then-act race against its own precheck (see {@code V1_60__add_active_label_move_guard.sql}) is violated
+	 * here, inside this method's own transaction, rather than staying unflushed until some later point picks the
+	 * failure up out of context.
 	 */
 	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
-		return jobRepository.save(JobEntity.create()
-			.withNamespace(namespace)
-			.withMunicipalityId(municipalityId)
-			.withType(type)
-			.withTotal(total)
-			.withLabelId(labelId)).getId();
+		try {
+			return jobRepository.saveAndFlush(JobEntity.create()
+				.withNamespace(namespace)
+				.withMunicipalityId(municipalityId)
+				.withType(type)
+				.withTotal(total)
+				.withLabelId(labelId)).getId();
+		} catch (final DataIntegrityViolationException e) {
+			// The only unique constraint this table carries besides its primary key - a second request that raced the
+			// precheck above and lost is answered the same way a sequential one already is.
+			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
+		}
 	}
 
 	@Transactional(readOnly = true)
