@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskRejectedException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
@@ -38,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -99,8 +103,21 @@ class MetadataServiceMoveLabelTest {
 	@Mock
 	private AsyncTaskExecutor labelMoveTaskExecutorMock;
 
+	@Mock
+	private PlatformTransactionManager transactionManagerMock;
+
+	@Mock
+	private TransactionStatus transactionStatusMock;
+
 	@InjectMocks
 	private MetadataService service;
+
+	@BeforeEach
+	void setUpTransactionManager() {
+		// Only startLabelMove goes through readOnlyTransactionTemplate - lenient so moveLabel-only tests, which never
+		// touch it, are not flagged for an unused stub.
+		lenient().when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
+	}
 
 	@Test
 	void moveLabel_labelNotFound_throws404() {

@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -89,9 +90,15 @@ public class EventService {
 	 * Logs a single, aggregated entry for a system-level operation that is not tied to one errand's revision diff, such
 	 * as a label move. Logged under the operation's own id rather than an errand id, since no single errand's revision
 	 * history is what this is about.
+	 * <p>
+	 * {@code startedBy} is taken as a parameter rather than read here through {@link #getExecutingUser()}: this is
+	 * called from the background thread that carries a label move out, where the request-scoped thread-local behind
+	 * {@code getExecutingUser()} was never set, and reading it there would silently record every such event as
+	 * executed by nobody. The caller is expected to have captured it from the request thread that accepted the move.
 	 */
-	public void createLabelMoveEvent(final String municipalityId, final String labelId, final String message) {
-		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), getExecutingUser(), SYSTEM.getValue(), getRequestGroupId());
+	public void createLabelMoveEvent(final String municipalityId, final String labelId, final String startedBy, final String message) {
+		final var executedBy = Identifier.create().withType(Identifier.Type.CUSTOM).withValue(startedBy);
+		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), executedBy, SYSTEM.getValue(), getRequestGroupId());
 		try {
 			eventLogClient.createEvent(municipalityId, labelId, event);
 		} catch (final Exception e) {

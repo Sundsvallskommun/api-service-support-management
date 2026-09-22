@@ -17,7 +17,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.problem.Problem;
@@ -158,6 +160,7 @@ public class MetadataService {
 	private final LabelMoveWorker labelMoveWorker;
 	private final AsyncTaskExecutor labelMoveTaskExecutor;
 	private final AntPathMatcher pathMatcher;
+	private final TransactionTemplate readOnlyTransactionTemplate;
 
 	public MetadataService(
 		final ActionConfigRepository actionConfigRepository,
@@ -180,7 +183,8 @@ public class MetadataService {
 		// -> MetadataService, a cycle back to this very bean. Never actually needed before the async dispatch fires, by
 		// which point every bean in the cycle is already constructed.
 		@Lazy final LabelMoveWorker labelMoveWorker,
-		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor) {
+		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor,
+		final PlatformTransactionManager transactionManager) {
 		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -201,6 +205,8 @@ public class MetadataService {
 		this.labelMoveTaskExecutor = labelMoveTaskExecutor;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
+		this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
+		this.readOnlyTransactionTemplate.setReadOnly(true);
 	}
 
 	// =================================================================
@@ -450,14 +456,19 @@ public class MetadataService {
 	 * let them run at the same time and race on the same errands. Namespace-wide serialization costs nothing here,
 	 * since label moves are rare.
 	 * <p>
-	 * Kept transactional (not read-only, since {@link JobService#create} writes within it) so that the session
-	 * validation opens against stays open for as long as {@link #validateAndFindLabelToMove} needs it — the cycle
-	 * check walks LAZY {@code parent} proxies one hop at a time, and each hop past the first needs the session to
-	 * still be there to load from.
+	 * Deliberately not itself {@code @Transactional}, and validation, job creation and dispatch are kept in three
+	 * separate steps rather than one enclosing transaction — mirrors {@link ErrandPurgeService#startPurge}. Wrapping
+	 * the whole method would flush {@link JobService#create}'s row without committing it before the worker is handed
+	 * to the executor, and the worker's {@link JobService#setRunning} runs in its own {@code REQUIRES_NEW} transaction
+	 * on a different thread that cannot see an uncommitted row — it would find no job, log a warning, and leave the
+	 * job stuck PENDING until the stale-job sweep eventually fails it. Validation still needs a session of its own:
+	 * {@link #validateAndFindLabelToMove}'s cycle check walks LAZY {@code parent} proxies one hop at a time, and each
+	 * hop past the first needs the session to still be there to load from - hence {@link #readOnlyTransactionTemplate}
+	 * rather than a plain call, which would only cover the very first repository call before the session behind it
+	 * closes.
 	 */
-	@Transactional
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
-		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
+		var context = readOnlyTransactionTemplate.execute(status -> validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId()));
 		var canonicalLabelId = context.labelToMove().getId();
 
 		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL)) {
@@ -466,6 +477,8 @@ public class MetadataService {
 
 		var allMovedIds = collectMovedLabelIds(canonicalLabelId, context.descendants());
 		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
+		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
+		// worker dispatched right after is free to look the job up from another thread.
 		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
 		var startedBy = startedBy();
 

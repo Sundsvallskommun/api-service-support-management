@@ -8,6 +8,7 @@ import generated.se.sundsvall.notes.Note;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -392,12 +393,15 @@ class EventServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that the audit event's executing user comes from the startedBy parameter, not the thread-local Identifier - createLabelMoveEvent runs on a worker thread where that thread-local was never set")
 	void createLabelMoveEventLogsAggregatedSystemEvent() {
 		final var municipalityId = "2281";
 		final var labelId = randomUUID().toString();
+		final var startedBy = "joe01doe";
 		final var message = "Label moved under new-parent, 3 errand(s) restowed";
+		Identifier.remove();
 
-		service.createLabelMoveEvent(municipalityId, labelId, message);
+		service.createLabelMoveEvent(municipalityId, labelId, startedBy, message);
 
 		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(labelId), eventCaptor.capture());
 
@@ -408,7 +412,7 @@ class EventServiceTest {
 		assertThat(event.getSubType()).isEqualTo(SYSTEM.getValue());
 		assertThat(event.getHistoryReference()).isNull();
 		assertThat(event.getExecutingUser()).isNotNull()
-			.satisfies(eu -> assertThat(eu.getValue()).isEqualTo("executingUserId"));
+			.satisfies(eu -> assertThat(eu.getValue()).isEqualTo(startedBy));
 	}
 
 	@Test
@@ -418,7 +422,7 @@ class EventServiceTest {
 
 		when(eventLogClientMock.createEvent(any(), any(), any())).thenThrow(new RuntimeException("boom"));
 
-		service.createLabelMoveEvent(municipalityId, labelId, "message");
+		service.createLabelMoveEvent(municipalityId, labelId, "joe01doe", "message");
 
 		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(labelId), any());
 	}
