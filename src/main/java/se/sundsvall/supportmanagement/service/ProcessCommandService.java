@@ -24,7 +24,6 @@ import se.sundsvall.supportmanagement.service.model.ProcessStartOptions;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -52,8 +51,8 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
  * starting the handling by hand, and stepping a process past a gate it waits at.
  * <p>
  * A command changes nothing on the errand, writes no revision and moves no version. It leaves two things behind: an
- * entry in the activity log naming who sent it and when, and an event that carries it to the process. It notifies no
- * one.
+ * entry in the activity log naming who sent it and when, and an event that carries it to the process - but for a start
+ * the process already has on its way, whose event goes no further. It notifies no one.
  * <p>
  * Only an ad account may send one, and anyone else is refused with 403 before anything is written.
  */
@@ -167,11 +166,13 @@ public class ProcessCommandService {
 	 * event of sub type PROCESS that carries the chosen key and the permission to start a process.
 	 * <p>
 	 * The rules are those of {@link #startOptionsOf}, and the start mode of the labels is not read, so the command works
-	 * in automatic mode too. When the labels offer more than one key the request has to name one of them. The chosen key
-	 * travels with the event and is not resolved from the labels again when the event is published.
+	 * in automatic mode too. When the labels offer more than one key the request has to name one of them. A blank key is
+	 * no key named. The chosen key travels with the event and is not resolved from the labels again when the event is
+	 * published.
 	 * <p>
-	 * When a start with the same key is already on its way, nothing is written and the call returns normally. When one
-	 * with another key is on its way, the start is refused with 409.
+	 * When a start with the same key is already on its way - a start by hand or an automatic one not yet delivered - the
+	 * entry and the event are written all the same, but nothing more is handed on to the process. When one with another
+	 * key is on its way, the start is refused with 409 and nothing is written.
 	 * <p>
 	 * The errand is locked before anything else is read, so that concurrent starts of the same errand are judged one after
 	 * the other.
@@ -179,7 +180,8 @@ public class ProcessCommandService {
 	 * @param namespace      the namespace of the errand.
 	 * @param municipalityId the municipality of the errand.
 	 * @param errandId       the errand to start the handling of.
-	 * @param processKey     the process to start, or null to start the one process the labels of the errand point at.
+	 * @param processKey     the process to start, or null or blank to start the one process the labels of the errand point
+	 *                       at.
 	 */
 	@Transactional
 	public void startProcess(final String namespace, final String municipalityId, final String errandId, final String processKey) {
@@ -190,10 +192,7 @@ public class ProcessCommandService {
 
 		final var options = startOptionsOf(runsProcesses, instances, () -> processKeySelector.select(errand));
 		final var chosenKey = chooseProcessKey(namespace, municipalityId, errandId, options, instances, processKey);
-
-		if (isAlreadyOnItsWay(errandId, chosenKey)) {
-			return;
-		}
+		final var alreadyOnItsWay = isAlreadyOnItsWay(errandId, chosenKey);
 
 		activityRepository.save(ErrandProcessActivityEntity.create()
 			.withErrandId(errandId)
@@ -202,6 +201,11 @@ public class ProcessCommandService {
 			.withSeverity(INFO)
 			.withMessage(StringUtils.truncate(START_REQUESTED.formatted(chosenKey, sender), MESSAGE_LENGTH))
 			.withOccurredAt(OffsetDateTime.now(clock).truncatedTo(MILLIS)));
+
+		if (alreadyOnItsWay) {
+			eventService.createProcessCommandEventWithoutPublication(UPDATE, EVENT_LOG_START.formatted(chosenKey), errand, false, EventSubType.PROCESS);
+			return;
+		}
 
 		eventService.createProcessCommandEvent(UPDATE, EVENT_LOG_START.formatted(chosenKey), errand, false, EventSubType.PROCESS, new ProcessCommand(chosenKey, null));
 	}
@@ -286,10 +290,11 @@ public class ProcessCommandService {
 	}
 
 	/**
-	 * The key of the request when it names one of those offered, and the only one offered when it names none.
+	 * The key of the request when it names one of those offered, and the only one offered when it names none - a blank key
+	 * included.
 	 */
 	private static String pick(final String errandId, final List<String> offered, final String requestedKey) {
-		if (isNull(requestedKey)) {
+		if (StringUtils.isBlank(requestedKey)) {
 			if (offered.size() > 1) {
 				throw Problem.valueOf(BAD_REQUEST, KEY_NOT_CHOSEN.formatted(errandId, excerptOf(offered)));
 			}

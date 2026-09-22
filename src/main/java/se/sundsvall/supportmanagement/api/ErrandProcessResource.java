@@ -135,8 +135,9 @@ class ErrandProcessResource {
 		send the key the user chose. Only a person may start a process, and the start is recorded with who sent it. \
 		202 says the start is recorded and on its way, not that the process runs: the process shows in GET .../processes \
 		once the process engine has registered it, normally within seconds. Until then startable still says AVAILABLE - \
-		show the start as on its way rather than as not started. Sending the same start again while it is on its way \
-		starts nothing more and is answered 202. \
+		show the start as on its way rather than as not started. A start pressed while one with the same key is on its \
+		way - sent by hand, or an automatic start not yet delivered - is recorded like any other, starts nothing more \
+		and is answered 202. \
 		400 is answered when no label of the errand names a process it can be started with, when the labels name several \
 		and the request chose none, when the request names a key that is not among them, and when the namespace runs no \
 		processes.""", responses = {

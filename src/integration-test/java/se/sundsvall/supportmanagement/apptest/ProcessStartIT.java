@@ -174,8 +174,8 @@ class ProcessStartIT extends AbstractAppTest {
 	}
 
 	@Test
-	@DisplayName("Verification that two presses with the same key write one start, and are both answered 202")
-	void test02_aDoubleClickWritesOneStart() {
+	@DisplayName("Verification that every press with the same key is recorded and answered 202, while the process is handed one start")
+	void test02_aDoubleClickIsRecordedButStartsOnce() {
 		setupCall()
 			.withServicePath(startPath(SUPERVISION_ERRAND_ID))
 			.withHttpMethod(POST)
@@ -206,7 +206,7 @@ class ProcessStartIT extends AbstractAppTest {
 			assertThat(row.getErrandId()).isEqualTo(SUPERVISION_ERRAND_ID);
 			assertThat(row.getProcessKey()).isEqualTo(SUPERVISION);
 		});
-		wiremock.verify(1, postRequestedFor(urlPathEqualTo("/api-eventlog/" + MUNICIPALITY_ID + "/" + SUPERVISION_ERRAND_ID)));
+		wiremock.verify(3, postRequestedFor(urlPathEqualTo("/api-eventlog/" + MUNICIPALITY_ID + "/" + SUPERVISION_ERRAND_ID)));
 
 		setupCall()
 			.withServicePath(activitiesPath(SUPERVISION_ERRAND_ID))
@@ -474,6 +474,39 @@ class ProcessStartIT extends AbstractAppTest {
 	void test13_anOversizedKeyIsRejected() {
 		setupCall()
 			.withServicePath(startPath(SUPERVISION_ERRAND_ID))
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(outboxRepository.findAll()).isEmpty();
+	}
+
+	@Test
+	@DisplayName("Verification that a blank key is no key named, and starts the one process the labels offer")
+	void test14_aBlankKeyStartsTheOnlyProcessOffered() {
+		setupCall()
+			.withServicePath(startPath(SUPERVISION_ERRAND_ID))
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(ACCEPTED)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		assertThat(outboxRepository.findAll()).singleElement().satisfies(row -> {
+			assertThat(row.getEventSubType()).isEqualTo("PROCESS");
+			assertThat(row.getProcessKey()).isEqualTo(SUPERVISION);
+		});
+	}
+
+	@Test
+	@DisplayName("Verification that a blank key on an errand whose labels point at two processes chooses neither, as no key would")
+	void test15_aBlankKeyOnAnAmbiguousErrandChoosesNothing() {
+		setupCall()
+			.withServicePath(startPath(AMBIGUOUS_ERRAND_ID))
 			.withHttpMethod(POST)
 			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
 			.withRequest(REQUEST_FILE)

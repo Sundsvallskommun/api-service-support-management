@@ -785,7 +785,7 @@ different processes. Once an errand has had a process, a start that failed inclu
 offered. The start mode of the labels does not affect the answer.
 
 A handler starts the process with `POST .../processes/start`, and `{ "processKey": "<key>" }` when more than one key is
-offered — the body may be left out otherwise:
+offered — the body may be left out otherwise, and a blank key counts as none:
 
 | Code  |                                                                       When                                                                       |
 |-------|--------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -799,7 +799,8 @@ offered — the body may be left out otherwise:
   instance, and an errand event with the sub type `PROCESS` carrying the chosen key and `startAllowed`. It changes
   nothing on the errand and **sends no notification**.
 - The command works in both start modes. In `AUTOMATIC` mode it is the way a start that failed is tried again.
-- A start sent again while an earlier one with the same key is still undelivered writes nothing and is answered `202`.
+- A start pressed while one with the same key is still undelivered — sent by hand, or an automatic start — is answered
+  `202` and recorded like any other, with its entry and its event, but hands the process no second start.
 - The process shows in `GET .../processes` once the process engine has registered it; until then `startable` still
   says `AVAILABLE`, and the user interface should show the start as on its way.
 

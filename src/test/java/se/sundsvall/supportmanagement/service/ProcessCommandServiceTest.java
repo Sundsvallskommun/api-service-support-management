@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -49,6 +50,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
@@ -389,7 +391,7 @@ class ProcessCommandServiceTest {
 	void aStartNamingAKeyTheLabelsDoNotOfferIsRejected() {
 		givenLabels(selection(APPLICATION, MANUAL));
 
-		for (final var requested : List.of(SUPERVISION, "Alkt-Ansokan", " alkt-ansokan", "")) {
+		for (final var requested : List.of(SUPERVISION, "Alkt-Ansokan", " alkt-ansokan")) {
 			assertThatExceptionOfType(ThrowableProblem.class)
 				.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, requested))
 				.satisfies(problem -> {
@@ -397,6 +399,38 @@ class ProcessCommandServiceTest {
 					assertThat(problem.getDetail()).contains("is not one the errand");
 				});
 		}
+
+		verifyNothingWritten();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"", " ", "\t"
+	})
+	@DisplayName("Verification that a blank key is no key named, so the one process the labels offer is started")
+	void aBlankKeyStartsTheOnlyProcessOffered(final String blank) {
+		givenLabels(selection(APPLICATION, MANUAL));
+
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, blank);
+
+		verify(eventServiceMock).createProcessCommandEvent(UPDATE, "En start av processen har begärts i ärendet: alkt-ansokan.", errand, false, EventSubType.PROCESS,
+			new ProcessCommand(APPLICATION, null));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"", " "
+	})
+	@DisplayName("Verification that a blank key on an errand whose labels offer several processes chooses none of them")
+	void aBlankKeyOnAnAmbiguousErrandChoosesNothing(final String blank) {
+		givenLabels(ambiguous(APPLICATION, SUPERVISION));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, blank))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains("has to name the one to start");
+			});
 
 		verifyNothingWritten();
 	}
@@ -416,15 +450,31 @@ class ProcessCommandServiceTest {
 		verifyNothingWritten();
 	}
 
-	@Test
-	@DisplayName("Verification that a second press while the first start is on its way is answered as the success it is, without a second row or entry")
-	void aSecondPressWithTheSameKeyWritesNothing() {
-		givenLabels(selection(APPLICATION, MANUAL));
-		when(outboxRepositoryMock.findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(ERRAND_ID)).thenReturn(List.of(waitingStart(APPLICATION)));
+	/**
+	 * The start on its way may be an earlier press or, in automatic mode, an errand event not yet delivered. Either way the
+	 * press is recorded, and the process is handed no second start.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"PROCESS", "ERRAND"
+	})
+	@DisplayName("Verification that a press while a start with the same key is on its way is recorded with its entry and its event, but not published")
+	void aPressWhileAStartWithTheSameKeyIsOnItsWayIsRecordedButNotPublished(final String subTypeOnItsWay) {
+		givenLabels(selection(APPLICATION, AUTOMATIC));
+		when(outboxRepositoryMock.findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(ERRAND_ID))
+			.thenReturn(List.of(waitingStart(APPLICATION).withEventSubType(subTypeOnItsWay)));
 
-		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION);
+		service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
-		verifyNothingWritten();
+		verify(activityRepositoryMock).save(activityCaptor.capture());
+		assertThat(activityCaptor.getValue()).satisfies(entry -> {
+			assertThat(entry.getActivityType()).isEqualTo("START");
+			assertThat(entry.getActivityId()).isEqualTo(APPLICATION);
+			assertThat(entry.getMessage()).isEqualTo("start of process 'alkt-ansokan' requested by joe01doe");
+		});
+		verify(eventServiceMock).createProcessCommandEventWithoutPublication(UPDATE, "En start av processen har begärts i ärendet: alkt-ansokan.", errand, false,
+			EventSubType.PROCESS);
+		verifyNoMoreInteractions(eventServiceMock);
 	}
 
 	@Test

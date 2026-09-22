@@ -472,6 +472,21 @@ class EventServiceTest {
 		assertThat(eventCaptor.getValue().getMetadata()).extracting(Metadata::getKey).doesNotContain("CurrentRevision", "CurrentVersion", "PreviousRevision", "PreviousVersion");
 	}
 
+	@Test
+	@DisplayName("Verification that a command the process already has on its way is logged like any other, and not handed on to the process")
+	void aCommandOnItsWayIsLoggedWithoutBeingPublished() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createProcessCommandEventWithoutPublication(EventType.UPDATE, "message", entity, false, PROCESS);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getType()).isEqualTo(EventType.UPDATE);
+		assertThat(eventCaptor.getValue().getSubType()).isEqualTo("PROCESS");
+		assertThat(eventCaptor.getValue().getMessage()).isEqualTo("message");
+		assertThat(eventCaptor.getValue().getHistoryReference()).isNull();
+		verifyNoInteractions(processEventPublisherMock);
+	}
+
 	/**
 	 * A change to a decision is logged as an update of the errand without a revision, and whether it concludes the
 	 * decision is carried through to the publisher untouched.

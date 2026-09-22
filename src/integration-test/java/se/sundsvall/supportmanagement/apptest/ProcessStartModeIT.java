@@ -294,4 +294,46 @@ class ProcessStartModeIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
+	/**
+	 * The creation has put an automatic start on its way, and a handler presses start before it has been delivered.
+	 */
+	@Test
+	@DisplayName("Verification that a start pressed while an automatic start is on its way is recorded, but hands the process no second start")
+	void test11_aStartPressedWhileAnAutomaticStartIsOnItsWayIsRecorded() {
+		final var errandId = setupCall()
+			.withServicePath(ERRANDS_PATH)
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of(ERRANDS_PATH + "/" + UUID_PATTERN))
+			.sendRequest()
+			.getResponseHeaders()
+			.getLocation()
+			.getPath()
+			.substring(ERRANDS_PATH.length() + 1);
+
+		setupCall()
+			.withServicePath(ERRANDS_PATH + "/" + errandId + "/processes/start")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(ACCEPTED)
+			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
+		assertThat(outboxRepository.findAll()).singleElement().satisfies(row -> {
+			assertThat(row.getErrandId()).isEqualTo(errandId);
+			assertThat(row.getEventType()).isEqualTo("CREATE");
+			assertThat(row.getEventSubType()).isEqualTo("ERRAND");
+			assertThat(row.isStartAllowed()).isTrue();
+		});
+
+		setupCall()
+			.withServicePath(ERRANDS_PATH + "/" + errandId + "/process-activities")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

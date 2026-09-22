@@ -12,9 +12,9 @@ import java.util.Objects;
 public class ProcessStartRequest {
 
 	@Schema(description = """
-		Which process to start. May be omitted when startable.processKeys holds exactly one key, and is required when it \
-		holds several. The value must be one of those keys, exactly as given there: a request cannot name a process that \
-		the labels of the errand do not point at.""", examples = "supervision")
+		Which process to start. May be omitted, or left blank, when startable.processKeys holds exactly one key, and is \
+		required when it holds several. The value must be one of those keys, exactly as given there: a request cannot \
+		name a process that the labels of the errand do not point at.""", examples = "supervision")
 	@Size(max = 128)
 	private String processKey;
 

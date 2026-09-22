@@ -3,9 +3,9 @@
 		{
 			"id": "${json-unit.any-string}",
 			"activityType": "START",
-			"activityId": "alkt-tillsyn",
+			"activityId": "alkt-ansokan",
 			"severity": "INFO",
-			"message": "start of process 'alkt-tillsyn' requested by joe01doe",
+			"message": "start of process 'alkt-ansokan' requested by joe01doe",
 			"occurredAt": "${json-unit.any-string}",
 			"created": "${json-unit.any-string}"
 		}

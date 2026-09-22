@@ -93,6 +93,20 @@ public class EventService {
 	}
 
 	/**
+	 * Writes the event of a command without handing the command on to the process, for a command the process already has
+	 * on its way. Like {@link #createProcessCommandEvent} it makes no revision, and the event points at none.
+	 *
+	 * @param eventType        the type of the event.
+	 * @param message          the text of the event.
+	 * @param errandEntity     the errand the command is aimed at.
+	 * @param sendNotification whether the handler of the errand is to be notified.
+	 * @param subtype          the kind of command.
+	 */
+	public void createProcessCommandEventWithoutPublication(final EventType eventType, final String message, final ErrandEntity errandEntity, final boolean sendNotification, final EventSubType subtype) {
+		writeErrandEvent(eventType, message, errandEntity, null, null, sendNotification, subtype);
+	}
+
+	/**
 	 * Writes the event of a change to one of the decisions of the errand, and tells the process of the errand about it.
 	 * <p>
 	 * A decision is no part of the revision of the errand, so the event points at none. A decision being concluded is what

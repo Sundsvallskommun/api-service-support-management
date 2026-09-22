@@ -88,6 +88,8 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 69 | **En start "på väg" är varje olevererad rad för ärendet med `start_allowed = 1`**, oavsett subtyp                                                                                                                                                                                                                                         | Bara rader med subtypen `PROCESS`                                                                                                                                   | En automatisk start som ännu inte levererats är lika mycket en start på väg; en knapptryckning ovanpå den hade gett pw två startlov för samma ärende — §5.10                                                                                                                                                                                                                                                 |
 | 70 | **`startable.status` hålls till `ProcessStartability` av `withStatus(enum)`, inte av `@ValidEnumValue`**                                                                                                                                                                                                                                  | Annotationen, som beslut 42 anger                                                                                                                                   | Fältet är `READ_ONLY` och valideras aldrig; annotationen hade inte haft någon verkan. Samma mönster som `ErrandProcess.processStatus` i läsmodellen                                                                                                                                                                                                                                                          |
 | 71 | **I ett namespace utan `PROCESS_CONSUMER` godtas `AUTOMATIC` från varje anropare som inte är ett AD-konto, som på main** (2026-09-21). Beslut 56 gäller bara namespace med processkonsument                                                                                                                                               | `403` för `AUTOMATIC` i varje namespace utan processkonsument                                                                                                       | Användarens beslut. Main tillät det, och en tjänst som redan skriver automatiska beslut hade slutat fungera när alkt-sprint driftsattes — §7.5                                                                                                                                                                                                                                                               |
+| 72 | **Varje starttryckning skrivs, också en som möter en start med samma nyckel på väg: aktivitetsposten och händelsen i eventloggen skrivs, bara publiceringen till pw uteblir** (2026-09-22)                                                                                                                                                | Att inte skriva något alls när en start redan är på väg                                                                                                             | Granskningen av PR #754. Med beslut 69 räknas också en automatisk start som ännu inte levererats, så i `AUTOMATIC`-läge hade en handläggares första tryckning inte lämnat något spår av vem som tryckte. Ett dubbelklick ger nu två poster och två händelser, men fortfarande en startrad — §5.10                                                                                                            |
+| 73 | **En tom eller blank `processKey` i startkroppen är ingen nyckel alls, precis som en utelämnad** (2026-09-22)                                                                                                                                                                                                                             | `@NotBlank` på fältet; att låta den falla igenom till "inte bland ärendets nycklar"                                                                                 | Granskningen av PR #754. Samma regel som publiceringen redan har (`resolveProcessKey`), och `@NotBlank` hade avvisat också den utelämnade nyckeln, som kroppen får sakna — §5.10                                                                                                                                                                                                                             |
 
 ---
 
@@ -1425,14 +1427,14 @@ public class ProcessStartable {
 
 public enum ProcessStartability { AVAILABLE, LIVE_INSTANCE, PROCESS_COMPLETED, NO_PROCESS_KEY, NO_PROCESS_ENGINE }
 
-/** Kroppen i POST .../processes/start. Far utelamnas helt nar bara en nyckel ar mojlig. */
+/** Kroppen i POST .../processes/start. Far utelamnas helt, eller nyckeln lamnas tom, nar bara en nyckel ar mojlig. */
 @Schema(description = "A request to start a process for an errand")
 public class ProcessStartRequest {
 
     @Schema(description = """
-        Which process to start. May be omitted when startable.processKeys holds exactly one key, and is
-        required when it holds several. The value must be one of those keys, exactly as given there: a
-        request cannot name a process that the labels of the errand do not point at.""",
+        Which process to start. May be omitted, or left blank, when startable.processKeys holds exactly
+        one key, and is required when it holds several. The value must be one of those keys, exactly as
+        given there: a request cannot name a process that the labels of the errand do not point at.""",
         examples = "supervision")
     @Size(max = 128)
     private String processKey;
@@ -1495,7 +1497,9 @@ erbjuder den nyckel som redan är vald.
    **valda** nyckeln — den löses inte upp ur etiketterna på nytt vid publiceringen, eftersom valet redan är
    gjort.
 3. **Ingen andra rad, om det redan ligger en oskickad startrad med samma nyckel.** Svaret blir `202` ändå,
-   och varken aktivitetspost eller händelse skrivs. En startrad är varje olevererad rad för ärendet med
+   och aktivitetsposten och händelsen i eventloggen skrivs som vid varje tryckning — bara publiceringen till
+   pw uteblir (beslut 72). Annars hade en handläggare som trycker medan en automatisk start väntar inte
+   lämnat något spår efter sig. En startrad är varje olevererad rad för ärendet med
    `start_allowed = 1`, också en automatisk start som ännu inte levererats (beslut 69). Det är
    dubbelklicksskyddet, och det är billigt — `idx_peo_guard` täcker frågan. Ligger den väntande raden på en
    **annan** nyckel är det inget dubbelklick utan ett ändrat val, och svaret är `409` som säger att en start
@@ -2912,7 +2916,7 @@ Testerna: `ProcessSignalIT` kör varvet över tråden — rapport, ärendet, sig
 
 `ProcessKeySelector` med paret nyckel och läge, uträkningen av startlovet i publiceringens steg 6 och kommandonas undantag från triggerfiltret och nödbromsen byggdes i T5. Kvar här är reglerna runt attributet och vägen in för handläggaren.
 
-Byggd på `sm-a11` (2026-09-21). Kontrollerna vid etikettskrivning ligger i `@ValidProcessLabelAttributes` på `POST` och `PUT` av `/metadata/labels`, med en tredje regel om felstavade nycklar (beslut 68). Reglerna för startbarheten finns på ett ställe, `ProcessCommandService.startOptionsOf`, som både `startable` och kommandot läser, och en start med en annan process än den ärendet redan kört erbjuds aldrig (beslut 67). Dubbelklicksskyddet räknar varje olevererad rad med `start_allowed = 1` (beslut 69). Kuvertet heter `ErrandProcessOverview` (beslut 66), och `startable.status` hålls till `ProcessStartability` av byggaren i stället för av `@ValidEnumValue` (beslut 70). Testerna: `ProcessStartIT` kör kommandot och `startable` över tråden mot ett namespace utan triggers, med nödbromsen utlöst och hela vägen till pw-alkt. `ProcessStartModeIT` kör startlovet på ärendehändelser och etikettskrivningens kontroller. `ErrandProcessPersistenceTest` räknar frågorna i listsvaret.
+Byggd på `sm-a11` (2026-09-21). Kontrollerna vid etikettskrivning ligger i `@ValidProcessLabelAttributes` på `POST` och `PUT` av `/metadata/labels`, med en tredje regel om felstavade nycklar (beslut 68). Reglerna för startbarheten finns på ett ställe, `ProcessCommandService.startOptionsOf`, som både `startable` och kommandot läser, och en start med en annan process än den ärendet redan kört erbjuds aldrig (beslut 67). Dubbelklicksskyddet räknar varje olevererad rad med `start_allowed = 1` (beslut 69), och hindrar bara publiceringen: varje tryckning skrivs i aktivitetsloggen och eventloggen (beslut 72). En tom nyckel i startkroppen är ingen nyckel alls (beslut 73). Kuvertet heter `ErrandProcessOverview` (beslut 66), och `startable.status` hålls till `ProcessStartability` av byggaren i stället för av `@ValidEnumValue` (beslut 70). Testerna: `ProcessStartIT` kör kommandot och `startable` över tråden mot ett namespace utan triggers, med nödbromsen utlöst och hela vägen till pw-alkt. `ProcessStartModeIT` kör startlovet på ärendehändelser och etikettskrivningens kontroller. `ErrandProcessPersistenceTest` räknar frågorna i listsvaret.
 
 **Acceptans:**
 - Etikett med `processStartMode: MANUAL` ⇒ `POST /errands` skapar ärendet, publicerar en rad med `start_allowed = 0`, och ingen process startar. Samma etikett med `AUTOMATIC` ⇒ `start_allowed = 1` och processen startar.
