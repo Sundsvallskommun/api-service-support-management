@@ -74,7 +74,10 @@ class MetadataLabelResourceTest {
 		// Arrange
 		final var labels = List.of(
 			Label.create().withClassification("classification").withResourceName("RESOURCE_1").withAttributes(List.of(
-				LabelAttribute.create().withKey("k".repeat(255)).withValue("v".repeat(16383)))));
+				LabelAttribute.create().withKey("k".repeat(255)).withValue("v".repeat(16383))))
+				.withLabels(List.of(
+					Label.create().withClassification("classification").withResourceName("CHILD_1").withAttributes(List.of(
+						LabelAttribute.create().withKey("k".repeat(255)).withValue("v".repeat(16383)))))));
 
 		// Act
 		webTestClient.post()

@@ -41,6 +41,7 @@ public class Label {
 	private Boolean deprecated;
 
 	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))
+	@Valid
 	private List<Label> labels;
 
 	@Schema(
