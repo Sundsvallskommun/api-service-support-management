@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +47,14 @@ class ErrandSearchResource {
 		+ ErrandIndex.ESCALATION_EMAIL + "`, `" + ErrandIndex.BUSINESS_RELATED + "`, `" + ErrandIndex.CREATED + "`, `" + ErrandIndex.MODIFIED + "`, `" + ErrandIndex.TOUCHED + "`, `"
 		+ ErrandIndex.SUSPENDED_FROM + "`, `" + ErrandIndex.SUSPENDED_TO + "`, `" + ErrandIndex.EXTERNAL_TAGS + ".key`, `" + ErrandIndex.EXTERNAL_TAG_VALUE + "`, `" + ErrandIndex.LABELS + "."
 		+ ErrandIndex.METADATA_LABEL_ID + "`, `" + ErrandIndex.ATTACHMENTS + ".fileName`, `" + ErrandIndex.ATTACHMENTS + ".mimeType`.";
+
+	/**
+	 * What a query may be, at most. Long enough for anything a client composes, short enough that a query costs what a
+	 * query costs: what is read out of it is read with regular expressions, over a string the client decides the length
+	 * of.
+	 */
+	static final int QUERY_MAX_LENGTH = 2000;
+	static final String QUERY_TOO_LONG = "query may be at most " + QUERY_MAX_LENGTH + " characters";
 
 	static final String QUERY_DESCRIPTION = """
 		A [Lucene query string](https://opensearch.org/docs/latest/query-dsl/full-text/query-string/), searched in an index \
@@ -98,7 +107,9 @@ class ErrandSearchResource {
 		is searched by everything their roles allow, one they cover at limited read only by what the namespace exposes for a \
 		limited read, and one they reported by its reporter fields. A query naming a field of one of these and not of another is \
 		answered from the errands where it may be read, without a refusal; it is refused only when no errand of the user can \
-		answer it.""";
+		answer it.
+
+		A query is at most 2000 characters.""";
 
 	static final String SORT_DESCRIPTION = "Without a sort the best matches come first, newest first among equals. Sortable properties: " +
 		"created, modified, touched, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +
@@ -125,7 +136,8 @@ class ErrandSearchResource {
 	ResponseEntity<Page<Errand>> searchErrands(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "query", description = QUERY_DESCRIPTION, example = "vattenläcka status:new stakeholders.lastName:berg") @RequestParam(required = false) final String query,
+		@Parameter(name = "query", description = QUERY_DESCRIPTION, example = "vattenläcka status:new stakeholders.lastName:berg") @Size(max = QUERY_MAX_LENGTH,
+			message = QUERY_TOO_LONG) @RequestParam(required = false) final String query,
 		@ParameterObject final Pageable pageable) {
 
 		return ok(searchService.search(namespace, municipalityId, query, pageable));

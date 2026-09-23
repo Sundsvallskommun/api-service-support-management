@@ -111,7 +111,7 @@ public class ErrandIndexModel {
 		final var field = descriptor.field(object ? name.substring(0, name.length() - 1) : name);
 		// A start of names is an object of the index, or a native field mapped as one, which is how the JSON parameters are
 		// held; a name is a field of a value
-		final var holds = field.map(found -> object ? found.isObjectField() || isNative(found) : found.isValueField()).orElse(false);
+		final boolean holds = field.map(found -> object ? found.isObjectField() || isNative(found) : found.isValueField()).orElse(false);
 		if (!holds) {
 			problems.add("'%s' declared on %s is not %s of the index".formatted(name, declaredOn, object ? "an object" : "a field"));
 		}

@@ -80,7 +80,7 @@ public class ErrandSearchAccess {
 
 		for (final var route : routes) {
 			if (answers(query, sort, route.closure())) {
-				clauses.add(new Clause(route.scope(), route.excluded(), route.closure().open(index.textFields())));
+				clauses.add(new Clause(route.scope(), route.excluded(), route.closure().openFields(index.textFields())));
 			}
 		}
 
