@@ -88,13 +88,17 @@ class ErrandSearchResource {
 
 		A search without a field looks in the text of all of the above.
 
-		Errands are searched at full read: an errand the user reaches at limited read only is not found. Where a namespace \
-		enforces access control, what the user may not read they may not search either: the fields of a resource their labels do \
-		not reach (communications, decisions, statements, investigations, measures, parameters, JSON parameters, attachments), \
-		the fields their roles keep from them, and the keys of parameters and JSON parameters their roles do not grant. Such \
-		fields are left out of a search without a field, and a query naming one of them, or sorting on one, is refused with 403, \
-		as is a wildcard in a field name. Errands the user reported are searched along with the rest only while the query keeps \
-		to the reporter fields of the namespace.""";
+		Where a namespace enforces access control, what the user may not read they may not search either: the fields of a \
+		resource their labels do not reach (communications, decisions, statements, investigations, measures, parameters, JSON \
+		parameters, attachments), the fields their roles keep from them, and the keys of parameters and JSON parameters their \
+		roles do not grant. Such fields are left out of a search without a field, and a query naming one of them, or sorting on \
+		one, is refused with 403, as is a wildcard in a field name.
+
+		An errand is searched by what the user may read of it, which differs with how they hold it: an errand their labels cover \
+		is searched by everything their roles allow, one they cover at limited read only by what the namespace exposes for a \
+		limited read, and one they reported by its reporter fields. A query naming a field of one of these and not of another is \
+		answered from the errands where it may be read, without a refusal; it is refused only when no errand of the user can \
+		answer it.""";
 
 	static final String SORT_DESCRIPTION = "Without a sort the best matches come first, newest first among equals. Sortable properties: " +
 		"created, modified, touched, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +

@@ -58,3 +58,50 @@ INSERT INTO communication(internal, viewed, sender, sender_user_id, sent, id, er
                           message_body, target, subject, direction, type, namespace, municipality_id, html_message_body)
 VALUES (0, 0, 'Frida Frontline', null, '2025-01-11 09:00:00.000', 'cc000000-0000-0000-0000-000000000902', 'FL-23020001', null,
         'Ett hemligt meddelande', 'frida@example.com', 'Hemligt ärende', 'INBOUND', 'EMAIL', 'NAMESPACE-2507', '2506', null);
+
+-- -----------------------------------------------------------------------------------------------
+-- A namespace where the labels of a user reach one errand at read and another at limited read, for
+-- the search of an errand held at limited read. Its own namespace, so that the errands the tests of
+-- NAMESPACE-2506 count stay as they are.
+-- -----------------------------------------------------------------------------------------------
+INSERT INTO namespace_config(id, municipality_id, namespace, created, modified)
+VALUES (8, '2506', 'NAMESPACE-2508', '2026-09-22 10:00:00.000', null);
+
+INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
+VALUES (8, 'DISPLAY_NAME', 'Namespace 2508', 'STRING'),
+       (8, 'SHORT_CODE', 'LR', 'STRING'),
+       (8, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
+       (8, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
+       (8, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (8, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (8, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN');
+
+-- What a limited read exposes here: the errand by its number, title and status, and nothing of the
+-- resources hanging off it.
+INSERT INTO namespace_config_access_grant(namespace_config_id, `scope`, `type`, `value`, access_level)
+VALUES (8, 'LIMITED', 'FIELD', 'ID', null),
+       (8, 'LIMITED', 'FIELD', 'ERRAND_NUMBER', null),
+       (8, 'LIMITED', 'FIELD', 'TITLE', null),
+       (8, 'LIMITED', 'FIELD', 'STATUS', null);
+
+INSERT INTO metadata_label (created, modified, municipality_id, namespace, classification, display_name, id, parent_id, resource_name, resource_path, deprecated) VALUES
+    ('2026-09-22 10:00:00.000', NULL, '2506', 'NAMESPACE-2508', 'CLASS', 'TEAM-A-DISPLAY-NAME', 'aa000000-0000-0000-0000-0000000008a1', NULL, 'TEAM-A', 'TEAM-A', false),
+    ('2026-09-22 10:00:00.000', NULL, '2506', 'NAMESPACE-2508', 'CLASS', 'TEAM-B-DISPLAY-NAME', 'bb000000-0000-0000-0000-0000000008b1', NULL, 'TEAM-B', 'TEAM-B', false);
+
+INSERT INTO errand(municipality_id, id, namespace, priority, status, category, type, title, description, reporter_user_id,
+                   created, touched, errand_number, business_related)
+VALUES ('2506', 'ee000000-0000-0000-0000-0000000008a0', 'NAMESPACE-2508', 'HIGH', 'NEW', 'VATTEN', 'LÄCKA',
+        'Vattenläcka i Team A', 'Det rinner vatten i källaren', 'rep08ort',
+        '2026-01-10 08:00:00.000', '2026-01-10 08:00:00.000', 'LR-26010001', false),
+       ('2506', 'ee000000-0000-0000-0000-0000000008b0', 'NAMESPACE-2508', 'HIGH', 'NEW', 'VATTEN', 'LÄCKA',
+        'Vattenläcka i Team B', 'Det rinner vatten på vinden', 'rep08ort',
+        '2026-02-10 08:00:00.000', '2026-02-10 08:00:00.000', 'LR-26020001', false);
+
+INSERT INTO errand_access_labels(errand_id, metadata_label_id)
+VALUES ('ee000000-0000-0000-0000-0000000008a0', 'aa000000-0000-0000-0000-0000000008a1'),
+       ('ee000000-0000-0000-0000-0000000008b0', 'bb000000-0000-0000-0000-0000000008b1');
+
+INSERT INTO communication(internal, viewed, sender, sender_user_id, sent, id, errand_number, external_id,
+                          message_body, target, subject, direction, type, namespace, municipality_id, html_message_body)
+VALUES (0, 0, 'Bo Bergman', null, '2026-02-11 09:00:00.000', 'cc000000-0000-0000-0000-0000000008b1', 'LR-26020001', null,
+        'Vattnet står kvar på vinden', 'bo@example.com', 'Uppföljning från Team B', 'INBOUND', 'EMAIL', 'NAMESPACE-2508', '2506', null);

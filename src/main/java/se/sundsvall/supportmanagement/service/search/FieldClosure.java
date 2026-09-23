@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 
 import static java.util.Objects.isNull;
 
@@ -51,16 +50,16 @@ record FieldClosure(List<Closed> rules) {
 	}
 
 	/**
-	 * The closure of one route: the resources the grant does not reach, and the fields the route may not read.
+	 * The closure of one route: the resources it does not reach, and the fields it may not read.
 	 *
-	 * @param grant    the grant, for the resources it reaches
-	 * @param readable what the route may read, null when nothing restricts it
+	 * @param resources the resources the route reaches on every errand it reaches
+	 * @param readable  what the route may read, null when nothing restricts it
 	 */
-	static FieldClosure of(final NamespaceGrant grant, final Map<ErrandField, Set<String>> readable) {
+	static FieldClosure of(final Set<ProtectedResource> resources, final Map<ErrandField, Set<String>> readable) {
 		final var rules = new ArrayList<Closed>();
 
 		for (final var resource : ProtectedResource.values()) {
-			if (!resource.getSearchFields().isEmpty() && !grant.reaches(resource)) {
+			if (!resource.getSearchFields().isEmpty() && !resources.contains(resource)) {
 				resource.getSearchFields().forEach(name -> rules.add(new Closed(name, null, "Resource '%s'".formatted(resource.getPath()))));
 			}
 		}
