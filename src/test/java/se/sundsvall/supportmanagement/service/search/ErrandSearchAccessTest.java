@@ -14,6 +14,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.access.AccessScope;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant.LabelRoute;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant.ReporterRoute;
@@ -54,6 +55,23 @@ class ErrandSearchAccessTest {
 		return access.plan(query, sort, grant);
 	}
 
+	/** The fields of the one clause a single route search runs with. */
+	private List<String> fieldsOf(final String query, final Sort sort, final NamespaceGrant grant) {
+		final var clauses = plan(query, sort, grant).clauses();
+		assertThat(clauses).hasSize(1);
+		return clauses.getFirst().fields();
+	}
+
+	/** The scopes of the clauses, in the order the plan put them. */
+	private List<AccessScope> scopesOf(final String query, final Sort sort, final NamespaceGrant grant) {
+		return plan(query, sort, grant).clauses().stream().map(ErrandSearchAccess.Clause::scope).toList();
+	}
+
+	/** What each clause leaves out of its scope, in the same order. */
+	private List<AccessScope> exclusionsOf(final String query, final Sort sort, final NamespaceGrant grant) {
+		return plan(query, sort, grant).clauses().stream().map(ErrandSearchAccess.Clause::excluded).toList();
+	}
+
 	@BeforeEach
 	void setUp() {
 		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
@@ -65,7 +83,24 @@ class ErrandSearchAccessTest {
 	}
 
 	private static NamespaceGrant grant(final LabelRoute labels, final ReporterRoute reporter, final Set<ProtectedResource> resources) {
-		return new NamespaceGrant(true, labels, reporter, resources);
+		return new NamespaceGrant(true, withResources(labels, resources), null, withResources(reporter, resources));
+	}
+
+	private static NamespaceGrant grant(final LabelRoute labels, final LabelRoute limited, final ReporterRoute reporter, final Set<ProtectedResource> resources) {
+		return new NamespaceGrant(true, withResources(labels, resources), withResources(limited, resources), withResources(reporter, resources));
+	}
+
+	/** The grant as the routes were built, each with resources of its own. */
+	private static NamespaceGrant grantOf(final LabelRoute labels, final LabelRoute limited, final ReporterRoute reporter) {
+		return new NamespaceGrant(true, labels, limited, reporter);
+	}
+
+	private static LabelRoute withResources(final LabelRoute route, final Set<ProtectedResource> resources) {
+		return route == null ? null : new LabelRoute(route.labels(), route.readable(), resources);
+	}
+
+	private static ReporterRoute withResources(final ReporterRoute route, final Set<ProtectedResource> resources) {
+		return route == null ? null : new ReporterRoute(route.adAccount(), route.readable(), resources);
 	}
 
 	private static Set<ProtectedResource> allBut(final ProtectedResource... closed) {
@@ -82,15 +117,16 @@ class ErrandSearchAccessTest {
 	void everythingIsOpenWithoutAccessControl() {
 		final var plan = plan("communications.subject:x AND \\*.probability:3", Sort.by("created"), NamespaceGrant.UNRESTRICTED);
 
-		assertThat(plan.fields()).isEqualTo(TEXT_FIELDS);
-		assertThat(plan.scope().enforced()).isFalse();
+		assertThat(plan.clauses()).hasSize(1);
+		assertThat(plan.clauses().getFirst().fields()).isEqualTo(TEXT_FIELDS);
+		assertThat(plan.clauses().getFirst().scope().enforced()).isFalse();
 	}
 
 	@Test
 	void resourcesTheLabelsDoNotReachAreClosed() {
-		final var plan = plan("title:vatten", UNSORTED, grant(new LabelRoute(LABELS, null), null, allBut(ProtectedResource.COMMUNICATION, ProtectedResource.DECISION)));
+		final var fields = fieldsOf("title:vatten", UNSORTED, grant(new LabelRoute(LABELS, null, EVERY_RESOURCE), null, allBut(ProtectedResource.COMMUNICATION, ProtectedResource.DECISION)));
 
-		assertThat(plan.fields())
+		assertThat(fields)
 			.doesNotContain("communications.subject", "communications.messageBody", "decisions.title", "decisions.justification")
 			.contains("title", "measures.title", "jsonParametersText");
 	}
@@ -103,7 +139,7 @@ class ErrandSearchAccessTest {
 		"_exists_:communications.subject"
 	})
 	void queryNamingAClosedResourceIsRefused(final String query) {
-		final var e = refused(grant(new LabelRoute(LABELS, null), null, allBut(ProtectedResource.COMMUNICATION)), query, UNSORTED);
+		final var e = refused(grant(new LabelRoute(LABELS, null, EVERY_RESOURCE), null, allBut(ProtectedResource.COMMUNICATION)), query, UNSORTED);
 
 		assertThat(e.getStatus()).isEqualTo(FORBIDDEN);
 		assertThat(e.getDetail()).isEqualTo("Resource 'errand/communication' not searchable by user 'joe01doe'");
@@ -116,7 +152,7 @@ class ErrandSearchAccessTest {
 		"comm?nications.subject:x"
 	})
 	void wildcardFieldNamesAreRefusedWhileSomethingIsClosed(final String query) {
-		final var e = refused(grant(new LabelRoute(LABELS, null), null, allBut(ProtectedResource.COMMUNICATION)), query, UNSORTED);
+		final var e = refused(grant(new LabelRoute(LABELS, null, EVERY_RESOURCE), null, allBut(ProtectedResource.COMMUNICATION)), query, UNSORTED);
 
 		assertThat(e.getStatus()).isEqualTo(FORBIDDEN);
 		assertThat(e.getDetail()).isEqualTo("A wildcard in a field name is not available to user 'joe01doe', who may not search every field of the errand");
@@ -133,7 +169,7 @@ class ErrandSearchAccessTest {
 		"communications\\:literal"
 	})
 	void queriesThatStayWithinWhatIsOpenPass(final String query) {
-		final var grant = grant(new LabelRoute(LABELS, null), null, allBut(ProtectedResource.COMMUNICATION));
+		final var grant = grant(new LabelRoute(LABELS, null, EVERY_RESOURCE), null, allBut(ProtectedResource.COMMUNICATION));
 
 		assertThatCode(() -> plan(query, Sort.by("created"), grant)).doesNotThrowAnyException();
 	}
@@ -147,11 +183,11 @@ class ErrandSearchAccessTest {
 			ErrandField.PARAMETERS, Set.of("granted-key"),
 			ErrandField.JSON_PARAMETERS, Set.of("granted-json"),
 			ErrandField.EXTERNAL_TAGS, Set.of("caseId"));
-		final var grant = grant(new LabelRoute(LABELS, role), null, EVERY_RESOURCE);
+		final var grant = grant(new LabelRoute(LABELS, role, EVERY_RESOURCE), null, EVERY_RESOURCE);
 
 		// Free text keeps to the title and to the resources guarded on their own, which the roles do not govern; the
 		// values of parameters and JSON parameters are shared by every key
-		assertThat(plan("", UNSORTED, grant).fields())
+		assertThat(fieldsOf("", UNSORTED, grant))
 			.contains("title", "communications.subject", "decisions.title", "attachments.fileName")
 			.doesNotContain("description", "stakeholders.lastName", "jsonParametersText", "parameters.values", "externalTags.value", "contactReasonDescription");
 
@@ -171,28 +207,84 @@ class ErrandSearchAccessTest {
 	@Test
 	void reporterAloneIsHeldToTheReporterFields() {
 		final var reporterFields = Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of(), ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
-		final var grant = grant(null, new ReporterRoute("joe01doe", reporterFields), Set.of());
+		final var grant = grantOf(null, null, new ReporterRoute("joe01doe", reporterFields, Set.of()));
 
-		assertThat(plan("title:x", UNSORTED, grant).fields())
+		assertThat(fieldsOf("title:x", UNSORTED, grant))
 			.contains("errandNumber", "title")
 			.doesNotContain("description", "stakeholders.lastName", "jsonParametersText", "communications.subject");
-		assertThat(plan("title:x", UNSORTED, grant).scope()).isEqualTo(grant.scope());
+		assertThat(scopesOf("title:x", UNSORTED, grant)).containsExactly(grant.reporterScope());
 		assertThat(refused(grant, "description:x", UNSORTED).getDetail()).isEqualTo("Field 'description' not searchable by user 'joe01doe'");
 	}
 
 	@Test
-	void ownErrandsAreSearchedOnlyWithinTheReporterFields() {
+	void ownErrandsAreSearchedByWhatAReporterMayRead() {
 		final var reporterFields = Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of(), ErrandField.TITLE, Set.<String>of());
-		final var grant = grant(new LabelRoute(LABELS, null), new ReporterRoute("joe01doe", reporterFields), EVERY_RESOURCE);
+		final var grant = grantOf(new LabelRoute(LABELS, null, EVERY_RESOURCE), null, new ReporterRoute("joe01doe", reporterFields, Set.of()));
 
-		// Within the reporter fields: both routes
-		assertThat(plan("title:x", Sort.by("title"), grant).scope().reporterAdAccount()).isEqualTo("joe01doe");
-		// Fielded terms alone, with groups and ranges, are told apart from free text
-		assertThat(plan("title:(x OR y) AND NOT errandNumber:[a TO b]", UNSORTED, grant).scope().reporterAdAccount()).isEqualTo("joe01doe");
-		// Beyond them, whether by a field, a sort or the free text: the label covered errands alone, and no refusal
-		assertThat(plan("description:x", UNSORTED, grant).scope().reporterAdAccount()).isNull();
-		assertThat(plan("title:x", Sort.by("created"), grant).scope().reporterAdAccount()).isNull();
-		assertThat(plan("vatten", UNSORTED, grant).scope().reporterAdAccount()).isNull();
-		assertThat(plan("vatten", UNSORTED, grant).fields()).isEqualTo(TEXT_FIELDS);
+		// Within the reporter fields: both routes, the label covered errands first
+		assertThat(scopesOf("title:x", Sort.by("title"), grant)).containsExactly(NamespaceGrant.scopeOf(grant.labels()), grant.reporterScope());
+		// Beyond them, whether by a field or a sort: the label covered errands alone, and no refusal
+		assertThat(scopesOf("description:x", UNSORTED, grant)).containsExactly(NamespaceGrant.scopeOf(grant.labels()));
+		assertThat(scopesOf("title:x", Sort.by("created"), grant)).containsExactly(NamespaceGrant.scopeOf(grant.labels()));
+		// A word without a field is looked for in what each route leaves open, so both answer it
+		assertThat(scopesOf("vatten", UNSORTED, grant)).containsExactly(NamespaceGrant.scopeOf(grant.labels()), grant.reporterScope());
+		assertThat(plan("vatten", UNSORTED, grant).clauses().getFirst().fields()).isEqualTo(TEXT_FIELDS);
+		assertThat(plan("vatten", UNSORTED, grant).clauses().getLast().fields()).containsExactly("errandNumber", "title");
+	}
+
+	/**
+	 * Errands the labels cover at limited read are searched by what a limited read exposes: found by their title, and
+	 * simply not searched by a field, or a resource, a limited read does not carry.
+	 */
+	@Test
+	void limitedReadIsSearchedByWhatALimitedReadExposes() {
+		final var limitedFields = Map.of(ErrandField.ID, Set.<String>of(), ErrandField.ERRAND_NUMBER, Set.<String>of(), ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		// The namespace extends its limited read to the communications and to nothing else
+		final var limited = new LabelRoute(LABELS, limitedFields, Set.of(ProtectedResource.COMMUNICATION));
+		final var grant = grantOf(null, limited, null);
+
+		assertThat(scopesOf("title:x", UNSORTED, grant)).containsExactly(NamespaceGrant.scopeOf(limited));
+		assertThat(exclusionsOf("title:x", UNSORTED, grant)).containsOnlyNulls();
+		assertThat(fieldsOf("vatten", UNSORTED, grant)).containsExactly("communications.subject", "communications.messageBody", "errandNumber", "title");
+		assertThat(refused(grant, "description:x", UNSORTED).getDetail()).isEqualTo("Field 'description' not searchable by user 'joe01doe'");
+		assertThat(refused(grant, "decisions.title:x", UNSORTED).getDetail()).isEqualTo("Resource 'errand/decision' not searchable by user 'joe01doe'");
+	}
+
+	/**
+	 * The mixed case: the labels cover one errand at read and another at limited read only. A query the limited fields
+	 * cannot answer is answered from the covered errands alone, without a refusal, and one they can is answered from
+	 * both, each by its own fields.
+	 */
+	@Test
+	void readAndLimitedReadAreSearchedSideBySide() {
+		final var covered = new LabelRoute(Set.of(MetadataLabelEntity.create().withId("covered")), null, EVERY_RESOURCE);
+		final var limitedFields = Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of(), ErrandField.TITLE, Set.<String>of());
+		final var limited = new LabelRoute(Set.of(MetadataLabelEntity.create().withId("covered"), MetadataLabelEntity.create().withId("limited")), limitedFields, Set.of());
+		final var grant = grantOf(covered, limited, null);
+
+		// The body is readable on the covered errands only
+		assertThat(scopesOf("description:hemligt", UNSORTED, grant)).containsExactly(NamespaceGrant.scopeOf(covered));
+		// The title is readable on both, so both answer, each with its own fields
+		final var both = plan("title:vatten", UNSORTED, grant).clauses();
+		assertThat(both).extracting(ErrandSearchAccess.Clause::scope).containsExactly(NamespaceGrant.scopeOf(covered), NamespaceGrant.scopeOf(limited));
+		assertThat(both.getFirst().fields()).isEqualTo(TEXT_FIELDS);
+		assertThat(both.getLast().fields()).containsExactly("errandNumber", "title");
+
+		// The covered errands are held at read, so the limited clause leaves them out rather than searching them by what
+		// a limited read exposes
+		assertThat(both.getFirst().excluded()).isNull();
+		assertThat(both.getLast().excluded()).isEqualTo(NamespaceGrant.scopeOf(covered));
+	}
+
+	/**
+	 * A query no route can answer is refused, worded by the widest route.
+	 */
+	@Test
+	void aQueryNoRouteCanAnswerIsRefused() {
+		final var role = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var limitedFields = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, role, EVERY_RESOURCE), new LabelRoute(LABELS, limitedFields, Set.of()), new ReporterRoute("joe01doe", limitedFields, Set.of()));
+
+		assertThat(refused(grant, "description:x", UNSORTED).getDetail()).isEqualTo("Field 'description' not searchable by user 'joe01doe'");
 	}
 }

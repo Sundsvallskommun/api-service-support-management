@@ -38,6 +38,7 @@ class ErrandSearchIT extends AbstractAppTest {
 	private static final String PATH = "/2281/NAMESPACE-3/errands/search";
 	private static final String ACCESS_CONTROLLED_PATH = "/2506/NAMESPACE-2506/errands/search";
 	private static final String RESOURCE_CONTROLLED_PATH = "/2506/NAMESPACE-2507/errands/search";
+	private static final String MIXED_PATH = "/2506/NAMESPACE-2508/errands/search";
 
 	private static final String LEAK = "NS3-25010001";
 	private static final String INVOICE = "NS3-25020001";
@@ -199,12 +200,21 @@ class ErrandSearchIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Errands are searched at full read: labels reaching them at limited read only find nothing, rather than finding
-	 * errands the user would then see trimmed.
+	 * Labels reaching errands at limited read only search them by what a limited read exposes: the errands are found,
+	 * and a query naming a field beyond those fields is refused rather than answered from them.
 	 */
 	@Test
-	void test17_limitedReadFindsNothing() {
-		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).isEmpty();
+	void test17_limitedReadIsSearchedByWhatALimitedReadExposes() {
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "title:e-service", "lim01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
+
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH, "description:x"))
+			.withHeader(SENT_BY_HEADER, "lim01red; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-field.json")
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -294,6 +304,31 @@ class ErrandSearchIT extends AbstractAppTest {
 			.withExpectedResponseStatus(FORBIDDEN)
 			.withExpectedResponse("response-closed-field.json")
 			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * The mixed case: the labels reach one errand at read and another at limited read. A word is looked for in what each
+	 * of them allows, a query on the body answers from the errand held at read alone, and one naming a resource the
+	 * limited read does not extend to is refused, since no route of this user can answer it.
+	 */
+	@Test
+	void test22_readAndLimitedReadSideBySide() {
+		// Both are found by their title, which a limited read exposes
+		assertThat(searchAs(MIXED_PATH, "title:vattenläcka", "mix01ed")).containsExactlyInAnyOrder("LR-26010001", "LR-26020001");
+		assertThat(searchAs(MIXED_PATH, "", "mix01ed")).containsExactlyInAnyOrder("LR-26010001", "LR-26020001");
+
+		// The body is readable on the errand held at read alone, so only it answers - and without a refusal
+		assertThat(searchAs(MIXED_PATH, "description:källaren", "mix01ed")).containsExactly("LR-26010001");
+		assertThat(searchAs(MIXED_PATH, "description:vinden", "mix01ed")).isEmpty();
+
+		// A word without a field reaches the body of the one and the title of the other
+		assertThat(searchAs(MIXED_PATH, "källaren", "mix01ed")).containsExactly("LR-26010001");
+		assertThat(searchAs(MIXED_PATH, "vinden", "mix01ed")).isEmpty();
+
+		// The communication hangs off the errand held at limited read, which a limited read does not extend to the
+		// communications: the query is not refused, since the user may search the communications of the errands they hold
+		// at read, but it reaches nothing
+		assertThat(searchAs(MIXED_PATH, "communications.subject:uppföljning", "mix01ed")).isEmpty();
 	}
 
 	private List<String> search(final String path, final String query) {

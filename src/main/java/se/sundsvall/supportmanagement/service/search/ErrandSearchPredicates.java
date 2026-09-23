@@ -14,6 +14,7 @@ import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -52,6 +53,38 @@ public class ErrandSearchPredicates {
 			.matching(query)
 			.defaultOperator(BooleanOperator.AND)
 			.toPredicate();
+	}
+
+	/**
+	 * What a search asks the index, once the query has been held to the grant: the errands of one route together with
+	 * the query over the fields that route leaves open, any of the routes answering.
+	 * <p>
+	 * Routes may reach the same errand, since the labels of a level are a subset of those of every level below it. The
+	 * document is returned once whichever clauses matched it, and each clause only matched on fields readable on its own
+	 * errands, so overlapping says nothing the user may not know.
+	 *
+	 * @param clauses what the search runs with, see {@link ErrandSearchAccess.Plan}
+	 */
+	public SearchPredicate clauses(final SearchPredicateFactory f, final List<ErrandSearchAccess.Clause> clauses, final String query, final String namespace, final String municipalityId) {
+		if (clauses.size() == 1) {
+			return clause(f, clauses.getFirst(), query, namespace, municipalityId).toPredicate();
+		}
+
+		final var union = f.or();
+		clauses.forEach(clause -> union.add(clause(f, clause, query, namespace, municipalityId)));
+		return union.toPredicate();
+	}
+
+	private PredicateFinalStep clause(final SearchPredicateFactory f, final ErrandSearchAccess.Clause clause, final String query, final String namespace, final String municipalityId) {
+		final var predicate = f.bool()
+			.filter(access(f, clause.scope(), namespace, municipalityId))
+			.must(query(f, query, clause.fields()));
+
+		if (nonNull(clause.excluded())) {
+			predicate.mustNot(access(f, clause.excluded(), namespace, municipalityId));
+		}
+
+		return predicate;
 	}
 
 	/**

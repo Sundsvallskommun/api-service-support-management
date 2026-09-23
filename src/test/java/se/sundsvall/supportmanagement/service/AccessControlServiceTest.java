@@ -453,10 +453,37 @@ class AccessControlServiceTest {
 		assertThat(grant.reporter().adAccount()).isEqualTo(AD_ACCOUNT);
 		assertThat(grant.reporter().readable()).containsOnlyKeys(ErrandField.TITLE);
 		// Resource access control is off, so the labels reach every errand scoped resource
-		assertThat(grant.resourcesReached()).contains(ProtectedResource.COMMUNICATION, ProtectedResource.DECISION, ProtectedResource.JSON_PARAMETER).doesNotContain(ProtectedResource.ERRAND, ProtectedResource.NAMESPACE_CONFIG);
+		assertThat(grant.labels().resources()).contains(ProtectedResource.COMMUNICATION, ProtectedResource.DECISION, ProtectedResource.JSON_PARAMETER).doesNotContain(ProtectedResource.ERRAND, ProtectedResource.NAMESPACE_CONFIG);
 		// One snapshot for the whole grant
 		verify(accessMapperService, times(1)).getAccessSnapshot(any(), any(), any());
 		assertThat(grant.scope()).usingRecursiveComparison().isEqualTo(accessControlService.accessScope(NAMESPACE, MUNICIPALITY_ID, adUser(), ProtectedResource.ERRAND, R));
+	}
+
+	@Test
+	void namespaceGrantLeavesOutALimitedRouteReachingNothingNew() {
+		final var labels = Set.of(MetadataLabelEntity.create().withId("label-id"));
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(labels));
+
+		// The user holds the same labels at read as at limited read, so a limited route would only widen what may be read
+		// of errands they already hold at read
+		assertThat(accessControlService.namespaceGrant(NAMESPACE, MUNICIPALITY_ID, adUser(), R).limitedLabels()).isNull();
+	}
+
+	@Test
+	void namespaceGrantCarriesTheLabelsReachingErrandsAtLimitedReadOnly() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true)
+			.withLimitedReadAccess(LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(ErrandField.TITLE)))));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(new AccessSnapshot(
+			Map.of(LR, Set.of(LIMITED_READ_LABEL), R, Set.of(READ_LABEL)), Set.of(), Map.of()));
+
+		final var grant = accessControlService.namespaceGrant(NAMESPACE, MUNICIPALITY_ID, adUser(), R);
+
+		assertThat(grant.labels().labels()).containsExactly(READ_LABEL);
+		assertThat(grant.limitedLabels().labels()).containsExactlyInAnyOrder(READ_LABEL, LIMITED_READ_LABEL);
+		assertThat(grant.limitedLabels().readable()).containsOnlyKeys(ErrandField.TITLE);
+		// A write is never carried by a limited read
+		assertThat(accessControlService.namespaceGrant(NAMESPACE, MUNICIPALITY_ID, adUser(), RW).limitedLabels()).isNull();
 	}
 
 	@Test
@@ -468,7 +495,7 @@ class AccessControlServiceTest {
 
 		assertThat(grant.labels()).isNotNull();
 		assertThat(grant.reporter()).isNull();
-		assertThat(grant.resourcesReached()).containsExactly(ProtectedResource.COMMUNICATION);
+		assertThat(grant.labels().resources()).containsExactly(ProtectedResource.COMMUNICATION);
 		assertThat(grant.reaches(ProtectedResource.DECISION)).isFalse();
 	}
 

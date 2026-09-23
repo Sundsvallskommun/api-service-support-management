@@ -283,12 +283,16 @@ Locally, an instance is one command away:
 docker run -p 9200:9200 -e discovery.type=single-node -e DISABLE_SECURITY_PLUGIN=true -e DISABLE_INSTALL_DEMO_CONFIG=true opensearchproject/opensearch:3.6.0
 ```
 
-Access control applies to the query, not only to the answer: errands are searched at full read, and where a namespace
-enforces access control a query naming what the user may not read - a field of a resource their labels do not reach
-(communications, decisions and so on), a field their roles keep from them, or a key of a parameter or JSON parameter
-their roles do not grant - is refused with 403, since a hit or a miss would tell what the field holds. The same goes for
-sorting on such a field, and free text looks only in what is open. Errands the user reported are searched along with the
-rest only while the query keeps to the reporter fields. The rebuild endpoint is held to the namespace configuration grant.
+Access control applies to the query, not only to the answer: a query naming what the user may not read - a field of a
+resource their labels do not reach (communications, decisions and so on), a field their roles keep from them, or a key of
+a parameter or JSON parameter their roles do not grant - is refused with 403, since a hit or a miss would tell what the
+field holds. The same goes for sorting on such a field, and free text looks only in what is open.
+
+An errand is searched by what the user may read of it, and that differs with how they hold it. So a search is a clause
+per route of the grant - errands the labels cover, errands they cover at limited read only, errands the user reported -
+each with its own errands and its own fields, and the clauses are unioned. A query only one route can answer is answered
+from that route rather than refused, and refused only when no route can. The rebuild endpoint is held to the namespace
+configuration grant.
 
 How the pieces hold together, from the API to the index:
 
@@ -298,8 +302,8 @@ How the pieces hold together, from the API to the index:
   those names, and `ErrandField` and `ProtectedResource` bind to them, so a renamed field is a compile error rather than
   an empty search. `ErrandIndexModel` reads the rest from Hibernate Search and checks every declared name against the
   index when the service starts.
-- `NamespaceGrant` (`service/access`) is what a user holds in a namespace: the label route and the reporter route, each
-  with what may be read, and the resources the labels reach. `NamespaceGrantResolver` decides it from the namespace
+- `NamespaceGrant` (`service/access`) is what a user holds in a namespace: the label route, the limited-read route and
+  the reporter route, each with what may be read on it and the resources it reaches. `NamespaceGrantResolver` decides it from the namespace
   configuration and one snapshot of the access mapper; `AccessControlService` fetches those, enforces the decision and
   loads errands; `ErrandAccessSpecifications` renders it for the database.
 - `service/search` renders the same grant for the index: `FieldClosure` says what a route keeps closed,

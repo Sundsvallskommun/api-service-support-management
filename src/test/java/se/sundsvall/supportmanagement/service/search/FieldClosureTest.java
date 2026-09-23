@@ -6,14 +6,13 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FieldClosureTest {
 
-	private static NamespaceGrant reaching(final ProtectedResource... resources) {
-		return new NamespaceGrant(true, null, null, Set.of(resources));
+	private static Set<ProtectedResource> reaching(final ProtectedResource... resources) {
+		return Set.of(resources);
 	}
 
 	@Test

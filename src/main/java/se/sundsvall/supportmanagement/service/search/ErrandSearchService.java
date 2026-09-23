@@ -88,8 +88,7 @@ public class ErrandSearchService {
 			result = Search.session(entityManager).search(ErrandEntity.class)
 				.where(f -> f.bool()
 					.filter(predicates.tenant(f, namespace, municipalityId))
-					.filter(predicates.access(f, plan.scope(), namespace, municipalityId))
-					.must(predicates.query(f, query, plan.fields())))
+					.must(predicates.clauses(f, plan.clauses(), query, namespace, municipalityId)))
 				.sort(f -> toSort(f, pageable.getSort()))
 				.fetch((int) pageable.getOffset(), pageable.getPageSize());
 		} catch (final SearchException e) {

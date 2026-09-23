@@ -48,6 +48,62 @@ public final class NamespaceGrantResolver {
 	private NamespaceGrantResolver() {}
 
 	/**
+	 * The errands the labels of the user reach at limited read, with what a limited read exposes of them.
+	 * <p>
+	 * Only for an operation asking for read or less: nothing is written on the strength of a limited read, and an
+	 * operation asking for write is answered by the labels carrying it. Resolved from the same snapshot as the rest of
+	 * the grant, and null where limited read reaches no more than the level already did - an errand the labels cover at
+	 * the level is held at the level, whatever a limited read would have exposed of it, so a route reaching nothing new
+	 * would only widen what may be read of errands already reached.
+	 */
+	private static NamespaceGrant.LabelRoute limitedLabelRoute(NamespaceConfig config, AccessSnapshot access, Identifier user, Set<String> namespaceRoles, Access.AccessLevelEnum required,
+		Set<MetadataLabelEntity> reachedAtLevel) {
+		if (RW == required) {
+			return null;
+		}
+
+		final var limited = accessScope(config, access, user, ProtectedResource.ERRAND, LR).allowedLabels();
+		if (isNull(limited) || limited.isEmpty() || limited.equals(ofNullable(reachedAtLevel).orElse(Set.of()))) {
+			return null;
+		}
+
+		return new NamespaceGrant.LabelRoute(limited, fieldAccess(config, Coverage.LIMITED, namespaceRoles, false).readable(), labelResources(config, access, user, LR, limited));
+	}
+
+	/**
+	 * The errand scoped resources a route of labels reaches on every errand it reaches.
+	 * <p>
+	 * A resource is guarded on its own, and by labels of its own: reaching an errand says nothing about what hangs off
+	 * it. The resource is reached on every errand of the route exactly when the labels reaching the resource cover
+	 * everything the route covers, which is what including its labels says, since an errand is covered when all of its
+	 * access labels are among them. That is what keeps a limited read from reaching a resource the namespace has not
+	 * extended it to, whatever the labels of the user reach on the errands they hold at read.
+	 */
+	private static Set<ProtectedResource> labelResources(NamespaceConfig config, AccessSnapshot access, Identifier user, Access.AccessLevelEnum required, Set<MetadataLabelEntity> routeLabels) {
+		return errandResources()
+			.filter(resource -> ofNullable(accessScope(config, access, user, resource, required).allowedLabels())
+				.map(allowed -> allowed.containsAll(routeLabels))
+				.orElse(false))
+			.collect(Collectors.toSet());
+	}
+
+	/**
+	 * The errand scoped resources the namespace grants its reporters at the level, on the errands they reported.
+	 */
+	private static Set<ProtectedResource> reporterResources(NamespaceConfig config, AccessSnapshot access, Identifier user, Access.AccessLevelEnum required) {
+		return errandResources()
+			.filter(resource -> nonNull(accessScope(config, access, user, resource, required).reporterAdAccount()))
+			.collect(Collectors.toSet());
+	}
+
+	/** The resources belonging to an errand, the errand itself excluded: it is what the routes reach to begin with. */
+	private static Stream<ProtectedResource> errandResources() {
+		return Stream.of(ProtectedResource.values())
+			.filter(ProtectedResource::isErrandScoped)
+			.filter(resource -> ProtectedResource.ERRAND != resource);
+	}
+
+	/**
 	 * What the user holds in the namespace at the required level, see {@link NamespaceGrant}.
 	 */
 	public static NamespaceGrant namespaceGrant(NamespaceConfig config, AccessSnapshot access, Identifier user, Access.AccessLevelEnum required) {
@@ -60,18 +116,15 @@ public final class NamespaceGrantResolver {
 
 		final var labels = isNull(errand.allowedLabels())
 			? null
-			: new NamespaceGrant.LabelRoute(errand.allowedLabels(), fieldAccess(config, Coverage.FULL, namespaceRoles, false).readable());
+			: new NamespaceGrant.LabelRoute(errand.allowedLabels(), fieldAccess(config, Coverage.FULL, namespaceRoles, false).readable(),
+				labelResources(config, access, user, required, errand.allowedLabels()));
+		final var limitedLabels = limitedLabelRoute(config, access, user, namespaceRoles, required, errand.allowedLabels());
 		final var reporter = isNull(errand.reporterAdAccount())
 			? null
-			: new NamespaceGrant.ReporterRoute(errand.reporterAdAccount(), fieldAccess(config, Coverage.REPORTER_ONLY, namespaceRoles, true).readable());
+			: new NamespaceGrant.ReporterRoute(errand.reporterAdAccount(), fieldAccess(config, Coverage.REPORTER_ONLY, namespaceRoles, true).readable(),
+				reporterResources(config, access, user, required));
 
-		final var resourcesReached = Stream.of(ProtectedResource.values())
-			.filter(ProtectedResource::isErrandScoped)
-			.filter(resource -> ProtectedResource.ERRAND != resource)
-			.filter(resource -> ofNullable(accessScope(config, access, user, resource, required).allowedLabels()).map(reached -> !reached.isEmpty()).orElse(false))
-			.collect(Collectors.toSet());
-
-		return new NamespaceGrant(true, labels, reporter, resourcesReached);
+		return new NamespaceGrant(true, labels, limitedLabels, reporter);
 	}
 
 	/**
