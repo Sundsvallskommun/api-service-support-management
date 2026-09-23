@@ -8,14 +8,12 @@ import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.predicate.dsl.PredicateFinalStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
-import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
+import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
@@ -29,10 +27,10 @@ public class ErrandSearchPredicates {
 	static final String REPORTER_USER_ID_FIELD = ErrandIndex.REPORTER_USER_ID;
 	static final String ACCESS_LABEL_ID_FIELD = ErrandIndex.ACCESS_LABEL_ID;
 
-	private final MetadataLabelRepository metadataLabelRepository;
+	private final MetadataService metadataService;
 
-	public ErrandSearchPredicates(final MetadataLabelRepository metadataLabelRepository) {
-		this.metadataLabelRepository = metadataLabelRepository;
+	public ErrandSearchPredicates(final MetadataService metadataService) {
+		this.metadataService = metadataService;
 	}
 
 	/**
@@ -136,7 +134,7 @@ public class ErrandSearchPredicates {
 			return f.matchNone();
 		}
 
-		final Set<String> disallowedLabelIds = new HashSet<>(labelIdsOf(namespace, municipalityId));
+		final Set<String> disallowedLabelIds = new HashSet<>(metadataService.findLabelIds(namespace, municipalityId));
 		disallowedLabelIds.removeAll(allowedLabelIds);
 
 		if (disallowedLabelIds.isEmpty()) {
@@ -144,11 +142,5 @@ public class ErrandSearchPredicates {
 		}
 
 		return f.not(f.terms().field(ACCESS_LABEL_ID_FIELD).matchingAny(disallowedLabelIds));
-	}
-
-	private Set<String> labelIdsOf(final String namespace, final String municipalityId) {
-		return metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.map(MetadataLabelEntity::getId)
-			.collect(toSet());
 	}
 }

@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +53,7 @@ class ErrandSearchPredicatesTest {
 	private SearchPredicateFactory factoryMock;
 
 	@Mock
-	private MetadataLabelRepository metadataLabelRepositoryMock;
+	private MetadataService metadataServiceMock;
 
 	@Mock
 	private SearchPredicate predicateMock;
@@ -101,7 +101,7 @@ class ErrandSearchPredicatesTest {
 	private QueryStringPredicateOptionsStep queryStringOptionsMock;
 
 	private ErrandSearchPredicates predicates() {
-		return new ErrandSearchPredicates(metadataLabelRepositoryMock);
+		return new ErrandSearchPredicates(metadataServiceMock);
 	}
 
 	@Test
@@ -152,7 +152,7 @@ class ErrandSearchPredicatesTest {
 
 		assertThat(predicates().access(factoryMock, new AccessScope(false, null, null), NAMESPACE, MUNICIPALITY_ID)).isSameAs(predicateMock);
 
-		verifyNoInteractions(metadataLabelRepositoryMock);
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -165,14 +165,14 @@ class ErrandSearchPredicatesTest {
 		assertThat(predicates().access(factoryMock, new AccessScope(true, null, null), NAMESPACE, MUNICIPALITY_ID)).isSameAs(predicateMock);
 
 		verify(orMock, never()).add(any(PredicateFinalStep.class));
-		verifyNoInteractions(metadataLabelRepositoryMock);
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
 	void accessThroughLabelsExcludesTheLabelsTheUserLacks() {
 		final var allowed = label("allowed-1");
 		final var alsoAllowed = label("allowed-2");
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(allowed, alsoAllowed, label("disallowed-1"), label("disallowed-2")));
+		when(metadataServiceMock.findLabelIds(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(allowed.getId(), alsoAllowed.getId(), "disallowed-1", "disallowed-2"));
 		when(factoryMock.or()).thenReturn(orMock);
 		when(orMock.hasClause()).thenReturn(true);
 		when(orMock.toPredicate()).thenReturn(predicateMock);
@@ -192,7 +192,7 @@ class ErrandSearchPredicatesTest {
 	@Test
 	void accessThroughAllLabelsOfTheNamespaceExcludesNothing() {
 		final var allowed = label("allowed-1");
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(allowed));
+		when(metadataServiceMock.findLabelIds(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(allowed.getId()));
 		when(factoryMock.or()).thenReturn(orMock);
 		when(orMock.hasClause()).thenReturn(true);
 		when(orMock.toPredicate()).thenReturn(predicateMock);
@@ -214,13 +214,13 @@ class ErrandSearchPredicatesTest {
 		predicates().access(factoryMock, new AccessScope(true, Set.of(), null), NAMESPACE, MUNICIPALITY_ID);
 
 		verify(orMock).add(matchNoneMock);
-		verifyNoInteractions(metadataLabelRepositoryMock);
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
 	void accessThroughReportingAndLabels() {
 		final var allowed = label("allowed-1");
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(allowed));
+		when(metadataServiceMock.findLabelIds(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(allowed.getId()));
 		when(factoryMock.or()).thenReturn(orMock);
 		when(orMock.hasClause()).thenReturn(true);
 		when(orMock.toPredicate()).thenReturn(predicateMock);

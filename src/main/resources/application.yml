@@ -134,7 +134,7 @@ spring:
   application:
     name: support-management
   cache:
-    cache-names: namespaceConfigCache, accessibleLabelsCache
+    cache-names: namespaceConfigCache, accessibleLabelsCache, namespaceLabelIdsCache
     caffeine:
       # default setting used if no override has been defined
       spec: maximumSize=200, expireAfterWrite=10m
@@ -142,6 +142,10 @@ spring:
       spec-overrides:
         - cache-name: accessibleLabelsCache
           spec: maximumSize=1000, expireAfterWrite=15m
+        # Label ids per namespace, asked for by every errand search. Evicted where labels are written, so this only
+        # bounds how long another instance may miss a label that was just created
+        - cache-name: namespaceLabelIdsCache
+          spec: maximumSize=200, expireAfterWrite=5m
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
   flyway:

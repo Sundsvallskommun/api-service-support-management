@@ -1304,6 +1304,20 @@ class MetadataServiceTest {
 	}
 
 	@Test
+	void findLabelIdsFlattensTheWholeTree() {
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(namespace, municipalityId))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId("root"), MetadataLabelEntity.create().withId("child")));
+
+		assertThat(metadataService.findLabelIds(namespace, municipalityId)).containsExactlyInAnyOrder("root", "child");
+
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
 	void deleteLabels() {
 		// Setup
 		final var namespace = "namespace";
