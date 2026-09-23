@@ -22,8 +22,11 @@ final class QueryStringFields {
 	private static final Pattern FIELD = Pattern.compile("(?<![\\w.\\\\*?-])([\\w.\\\\*?-]++):");
 	// A field with its value: a group in parentheses, a range in brackets or braces, or a single term. Held to the
 	// start of a name like the pattern above, which is what keeps a long word without a colon from being tried from
-	// every position in it
-	private static final Pattern FIELDED_TERM = Pattern.compile("(?<![\\w.\\\\*?-])[\\w.\\\\*?-]++:(?:\\([^)]*+\\)|\\[[^\\]]*+\\]|\\{[^}]*+\\}|\\S++)");
+	// every position in it. What stands between the brackets excludes the opening bracket as well as the closing one,
+	// so that a bracket never closed gives up at the next one instead of at the end of the query: a query of nothing
+	// but unclosed brackets cost the square of its length otherwise. A value holding brackets of its own is left to
+	// the last choice, as it was before, since the first closing bracket ended it there
+	private static final Pattern FIELDED_TERM = Pattern.compile("(?<![\\w.\\\\*?-])[\\w.\\\\*?-]++:(?:\\([^()]*+\\)|\\[[^\\[\\]]*+\\]|\\{[^{}]*+\\}|\\S++)");
 	private static final Pattern OPERATORS = Pattern.compile("\\b(?:AND|OR|NOT|TO)\\b|&&|\\|\\||[+\\-!()]");
 	// The value of _exists_ is a field name too
 	private static final String EXISTS = "_exists_";

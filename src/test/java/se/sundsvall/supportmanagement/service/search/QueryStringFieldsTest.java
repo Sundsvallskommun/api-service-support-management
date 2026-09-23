@@ -1,10 +1,12 @@
 package se.sundsvall.supportmanagement.service.search;
 
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class QueryStringFieldsTest {
 
@@ -59,5 +61,28 @@ class QueryStringFieldsTest {
 		assertThat(QueryStringFields.hasFreeTerms(unclosed)).isTrue();
 		assertThat(QueryStringFields.fieldNames(unterminatedField)).containsExactly("title");
 		assertThat(QueryStringFields.hasFreeTerms(unterminatedField)).isFalse();
+	}
+
+	/**
+	 * A query is held to a length the endpoint accepts, and reading one must cost that length rather than its square.
+	 * Brackets never closed are the shape that cost the square: each of them was followed to the end of the query.
+	 * Every one of them is a field carrying a value of its own, so nothing without a field is left.
+	 */
+	@Test
+	void aQueryOfUnclosedBracketsIsReadInItsLength() {
+		assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
+			assertThat(QueryStringFields.hasFreeTerms("a:( ".repeat(25_000))).isFalse();
+			assertThat(QueryStringFields.hasFreeTerms("a:[ ".repeat(25_000))).isFalse();
+			assertThat(QueryStringFields.hasFreeTerms("a:{ ".repeat(25_000))).isFalse();
+		});
+	}
+
+	/**
+	 * A value carrying brackets of its own ends at the first space, as it ended at the first closing bracket before:
+	 * what is left of it is words, and words without a field are what this answers.
+	 */
+	@Test
+	void aGroupWithinAGroupCountsAsWords() {
+		assertThat(QueryStringFields.hasFreeTerms("title:((a OR b) AND c)")).isTrue();
 	}
 }
