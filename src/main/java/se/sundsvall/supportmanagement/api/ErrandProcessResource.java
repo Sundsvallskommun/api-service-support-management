@@ -98,7 +98,8 @@ class ErrandProcessResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Parameter(name = "processInstanceId", description = "Process instance id", example = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33") @Size(max = 64) @PathVariable final String processInstanceId,
+		@Parameter(name = "processInstanceId", description = "Process instance id", example = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33") @Size(max = 64) @Pattern(regexp = "\\S+",
+			message = "must be an id, without blanks") @PathVariable final String processInstanceId,
 		@Valid @NotNull @RequestBody final ErrandProcessReport report) {
 
 		return respond(service.reportProcess(namespace, municipalityId, errandId, processInstanceId, report), municipalityId, namespace, errandId);
@@ -136,8 +137,9 @@ class ErrandProcessResource {
 		failed is tried again. The body may be left out when startable.processKeys holds one key; when it holds several, \
 		send the key the user chose. Only a person may start a process, and the start is recorded with who sent it. \
 		202 says the start is recorded and on its way, not that the process runs: the process shows in GET .../processes \
-		once the process engine has registered it, normally within seconds. Until then startable still says AVAILABLE - \
-		show the start as on its way rather than as not started. A start pressed while one with the same key is on its \
+		once the process engine has registered it, normally within seconds. Until the start has been delivered, startable \
+		says START_PENDING, and between its delivery and its registration it briefly says AVAILABLE again. A start pressed \
+		while one with the same key is on its \
 		way - sent by hand, or an automatic start not yet delivered - is recorded like any other, starts nothing more \
 		and is answered 202. \
 		400 is answered when no label of the errand names a process it can be started with, when the labels name several \

@@ -737,14 +737,38 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 			.withExpectedResponse("response-locked.json")
 			.sendRequest();
 
-		assertThat(outboxRepository.findAll()).isEmpty();
-
 		setupCall()
 			.withServicePath(decisionPath(ENDED_ERRAND_ID, ENDED_DECISION_ID))
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse("response-ended-decision.json")
 			.sendRequestAndVerifyResponse();
+
+		assertThat(outboxRepository.findAll()).isEmpty();
+	}
+
+	/**
+	 * A decision concluded on an errand whose process still runs is locked as well, so the errand is kept, together with
+	 * its decisions, and no row is written for its process.
+	 */
+	@Test
+	@DisplayName("Verification that an errand with a live process and a concluded decision is not deleted, and its decisions stay")
+	void test13_anErrandWithALiveProcessAndAConcludedDecisionCannotBeDeleted() {
+		setupCall()
+			.withServicePath(errandPath(RUNNING_ERRAND_ID))
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse("response-locked.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(decisionsPath(RUNNING_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(DECISIONS_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(outboxRepository.findAll()).isEmpty();
 	}
 
 	/**

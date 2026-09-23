@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,9 +30,10 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 /**
  * The recovery from a lost race for the unique keys of the process table, with the database raising the violation.
  * <p>
- * The race is staged by letting one read of the process rows of the errand miss the live instance already written, as
- * the read of a concurrent writer would. The write then runs into {@code uq_ep_one_active_per_errand}, and the attempt
- * made after it reads the live instance and refuses the report.
+ * Each race is staged by letting one read miss a row already written, as the read of a concurrent writer would. A
+ * missed process row of the errand runs the write into {@code uq_ep_one_active_per_errand}, and a missed row of the
+ * instance runs it into {@code uq_ep_process_instance_id}. The attempt made after it reads the row and refuses the
+ * report.
  * <p>
  * Runs without a test transaction, since the recovery depends on the failed attempt rolling back a transaction of its
  * own.
@@ -49,6 +51,7 @@ class ErrandProcessCollisionTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
+	private static final String OTHER_ERRAND_ID = "cc236cf1-c00f-4479-8341-ecf5dd90b5b9";
 	private static final String PROCESS_SERVICE = "pw-alkt";
 	private static final String PROCESS_KEY = "alkt-ansokan";
 	private static final String LIVE_INSTANCE_ID = "pi-live";
@@ -85,6 +88,27 @@ class ErrandProcessCollisionTest {
 			});
 
 		assertThat(output.getAll()).contains("Retrying the write for process instance '" + RACING_INSTANCE_ID + "' on errand '" + ERRAND_ID + "' after an integrity violation");
+		assertThat(processRepositorySpy.findByErrandIdOrderByCreatedDesc(ERRAND_ID))
+			.extracting(ErrandProcessEntity::getProcessInstanceId)
+			.containsExactly(LIVE_INSTANCE_ID);
+	}
+
+	@Test
+	@DisplayName("Verification that an instance written for a second errand past a stale read is refused with 409 once the database rejects it")
+	void anInstanceOfAnotherErrandRejectedByTheDatabaseIsRefused(final CapturedOutput output) {
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, LIVE_INSTANCE_ID, report());
+		final var theDatabase = mockingDetails(processRepositorySpy).getMockCreationSettings().getDefaultAnswer();
+		doReturn(Optional.empty()).doAnswer(theDatabase).when(processRepositorySpy).findByProcessInstanceId(LIVE_INSTANCE_ID);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, OTHER_ERRAND_ID, LIVE_INSTANCE_ID, report()))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).contains(LIVE_INSTANCE_ID).doesNotContain(ERRAND_ID);
+			});
+
+		assertThat(output.getAll()).contains("Retrying the write for process instance '" + LIVE_INSTANCE_ID + "' on errand '" + OTHER_ERRAND_ID + "' after an integrity violation");
+		assertThat(processRepositorySpy.findByErrandIdOrderByCreatedDesc(OTHER_ERRAND_ID)).isEmpty();
 		assertThat(processRepositorySpy.findByErrandIdOrderByCreatedDesc(ERRAND_ID))
 			.extracting(ErrandProcessEntity::getProcessInstanceId)
 			.containsExactly(LIVE_INSTANCE_ID);

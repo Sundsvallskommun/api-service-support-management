@@ -278,6 +278,29 @@ class ErrandProcessResourceFailureTest {
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {
+		" ", "a b"
+	})
+	void aReportToAnInstanceIdWithBlanksIsRejected(final String processInstanceId) {
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PROCESS_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "processInstanceId", processInstanceId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(validReport())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("reportProcess.processInstanceId", "must be an id, without blanks"));
+
+		verifyNoInteractions(serviceMock, commandServiceMock);
+	}
+
 	@Test
 	void anInvalidMunicipalityIsRejected() {
 		final var response = webTestClient.get()

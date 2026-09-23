@@ -117,10 +117,10 @@ public class ProcessEventRelay {
 	 * The scheduled run.
 	 * <p>
 	 * Drops what has aged out first. Then takes the oldest rows and delivers them errand by errand, until a batch of rows
-	 * has been tried or none is left. A group delivered counts its rows, and a group that fails counts as one row: it
-	 * stopped at its first row that did not go through. An errand that fails is left for the next run, and the rows
-	 * fetched after it belong to the other errands, so rows that never go through cannot fill the batch. An open circuit
-	 * breaker of pw-alkt ends the run.
+	 * has been tried or none is left. A group counts the rows it tried: every row of a group delivered, and the rows up to
+	 * and including the first that did not go through of a group that fails, at least one. An errand that fails is left
+	 * for the next run, and the rows fetched after it belong to the other errands, so rows that never go through cannot
+	 * fill the batch. An open circuit breaker of pw-alkt ends the run.
 	 */
 	public void relay() {
 		dropAllAgedOut();
@@ -137,14 +137,16 @@ public class ProcessEventRelay {
 				.collect(groupingBy(ProcessEventOutboxEntity::getErrandId, LinkedHashMap::new, mapping(ProcessEventOutboxEntity::getId, toList())));
 
 			for (final var group : groups.entrySet()) {
-				switch (deliverOrLeaveForNextRun(group.getKey(), group.getValue())) {
+				final var outcome = deliverOrLeaveForNextRun(group.getKey(), group.getValue());
+
+				switch (outcome.delivery()) {
 					case CIRCUIT_OPEN -> {
 						LOG.warn("Leaving the rest of the run to the next one, since the circuit breaker of pw-alkt is open");
 						return;
 					}
 					case LEFT_FOR_NEXT_RUN -> {
 						failed.add(group.getKey());
-						tried++;
+						tried += Math.max(1, outcome.tried());
 					}
 					case DELIVERED -> tried += group.getValue().size();
 				}
@@ -165,13 +167,20 @@ public class ProcessEventRelay {
 	 * @param  errandId                   the errand whose rows were just written.
 	 * @throws PwAlktUnavailableException when a row did not reach pw-alkt, which leaves it and the later rows of the
 	 *                                    errand for the scheduled run.
+	 * @throws RuntimeException           when a row could not be made into an event, with the same outcome.
 	 */
 	public void relayErrand(final String errandId) {
 		final var rows = outboxRepository.findByProcessServiceAndErrandIdAndDeliveredAtIsNullAndCreatedAfterOrderByCreatedAscIdAsc(CLIENT_ID, errandId,
 			OffsetDateTime.now(clock).minus(properties.maxAge()), PageRequest.of(0, properties.batchSize()));
 
-		if (!rows.isEmpty()) {
-			deliverGroup(rows.stream().map(ProcessEventOutboxEntity::getId).toList());
+		if (rows.isEmpty()) {
+			return;
+		}
+
+		final var failure = deliverGroup(rows.stream().map(ProcessEventOutboxEntity::getId).toList()).failure();
+
+		if (nonNull(failure)) {
+			throw failure;
 		}
 	}
 
@@ -210,22 +219,30 @@ public class ProcessEventRelay {
 	/**
 	 * Delivers a group for the scheduled run, which leaves a group that fails for the next run and goes on with the rest.
 	 *
-	 * @return how the delivery went.
+	 * @return how the delivery went, and how many rows it tried.
 	 */
-	private Delivery deliverOrLeaveForNextRun(final String errandId, final List<String> rowIds) {
+	private GroupOutcome deliverOrLeaveForNextRun(final String errandId, final List<String> rowIds) {
+		final GroupDelivery delivery;
+
 		try {
-			deliverGroup(rowIds);
-			return Delivery.DELIVERED;
-		} catch (final PwAlktUnavailableException e) {
-			if (e.isCircuitOpen()) {
-				return Delivery.CIRCUIT_OPEN;
-			}
-			LOG.warn("Events for errand {} did not reach pw-alkt, and are left for the next run: {}", sanitizeForLogging(errandId), e.getMessage());
+			delivery = deliverGroup(rowIds);
 		} catch (final Exception e) {
 			LOG.error("Failed to deliver {} events for errand {}, and they are left for the next run", rowIds.size(), sanitizeForLogging(errandId), e);
+			return new GroupOutcome(Delivery.LEFT_FOR_NEXT_RUN, 0);
 		}
 
-		return Delivery.LEFT_FOR_NEXT_RUN;
+		return switch (delivery.failure()) {
+			case null -> new GroupOutcome(Delivery.DELIVERED, delivery.tried());
+			case final PwAlktUnavailableException e when e.isCircuitOpen() -> new GroupOutcome(Delivery.CIRCUIT_OPEN, delivery.tried());
+			case final PwAlktUnavailableException e -> {
+				LOG.warn("Events for errand {} did not reach pw-alkt, and are left for the next run: {}", sanitizeForLogging(errandId), e.getMessage());
+				yield new GroupOutcome(Delivery.LEFT_FOR_NEXT_RUN, delivery.tried());
+			}
+			default -> {
+				LOG.error("Failed to deliver {} events for errand {}, and they are left for the next run", rowIds.size(), sanitizeForLogging(errandId), delivery.failure());
+				yield new GroupOutcome(Delivery.LEFT_FOR_NEXT_RUN, delivery.tried());
+			}
+		};
 	}
 
 	/**
@@ -237,38 +254,36 @@ public class ProcessEventRelay {
 	 * A row pw-alkt refuses for good is acknowledged as well. The refusals are recorded once every call in the group has
 	 * been made, so the lock that recording takes on the errand is not held across calls to pw-alkt.
 	 * <p>
-	 * The first row that does not go through ends the group. The rows before it are acknowledged when the transaction is
-	 * committed, and the failure is handed on once it has been.
+	 * The first row that does not go through, whether pw-alkt could not be reached or the row could not be made into an
+	 * event, ends the group. The rows before it are acknowledged when the transaction is committed, and the failure is
+	 * handed back once it has been. A failure to record a refusal rolls the whole group back, as a failed commit does.
 	 *
-	 * @param  rowIds                     the rows to deliver.
-	 * @throws PwAlktUnavailableException when a row does not go through, which leaves it and the later rows of the group
-	 *                                    as they were.
+	 * @param  rowIds the rows to deliver.
+	 * @return        how many rows were tried, the failing one included, and the failure that ended the group, if any.
 	 */
-	private void deliverGroup(final Collection<String> rowIds) {
-		final var failure = transactionTemplate.execute(_ -> {
+	private GroupDelivery deliverGroup(final Collection<String> rowIds) {
+		return transactionTemplate.execute(_ -> {
 			final var deliveredAt = OffsetDateTime.now(clock).truncatedTo(MILLIS);
 			final var refused = new ArrayList<ProcessEventOutboxEntity>();
-			PwAlktUnavailableException notDelivered = null;
+			RuntimeException failure = null;
+			var tried = 0;
 
 			for (final var row : oldestFirst(outboxRepository.findByIdInAndDeliveredAtIsNull(rowIds))) {
+				tried++;
 				try {
 					if (!pwAlktIntegration.sendErrandEvent(row.getMunicipalityId(), row.getNamespace(), toErrandEvent(row))) {
 						refused.add(row);
 					}
-				} catch (final PwAlktUnavailableException e) {
-					notDelivered = e;
+				} catch (final RuntimeException e) {
+					failure = e;
 					break;
 				}
 				row.setDeliveredAt(deliveredAt);
 			}
 
 			refused.forEach(this::recordRejection);
-			return notDelivered;
+			return new GroupDelivery(tried, failure);
 		});
-
-		if (nonNull(failure)) {
-			throw failure;
-		}
 	}
 
 	private void dropAllAgedOut() {
@@ -326,7 +341,7 @@ public class ProcessEventRelay {
 	 * <p>
 	 * The live process instance of the errand, if it has one, is failed with the error code and message; without one,
 	 * only the history entry is written. The message advises correcting the label only for an errand that has no process
-	 * row, since the key of a process row is what every later event of the errand carries.
+	 * row.
 	 * <p>
 	 * The errand is locked first, which serialises this against the other reports of the process. Nothing is written
 	 * for a deletion or for an errand that no longer exists.
@@ -358,4 +373,14 @@ public class ProcessEventRelay {
 		LEFT_FOR_NEXT_RUN,
 		CIRCUIT_OPEN
 	}
+
+	/**
+	 * What the delivery of a group did: how many rows it tried, and what ended it early, if anything did.
+	 */
+	private record GroupDelivery(int tried, RuntimeException failure) {}
+
+	/**
+	 * How the delivery of a group went for the scheduled run, and how many rows it tried.
+	 */
+	private record GroupOutcome(Delivery delivery, int tried) {}
 }

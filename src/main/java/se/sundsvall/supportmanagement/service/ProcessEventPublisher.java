@@ -330,8 +330,7 @@ public class ProcessEventPublisher {
 
 	/**
 	 * Whether this is the first row written for the errand in the current transaction, which is the one that signals the
-	 * direct run: the direct run takes every undelivered row of the errand, so one signal per errand and transaction is
-	 * enough. Always true when no transaction is synchronised.
+	 * direct run. Always true when no transaction is synchronised.
 	 */
 	private static boolean isFirstRowOfTransaction(final String errandId) {
 		if (!TransactionSynchronizationManager.isSynchronizationActive()) {

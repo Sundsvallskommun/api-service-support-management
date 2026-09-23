@@ -380,14 +380,78 @@ class ErrandProcessServiceTest {
 	 */
 	@Test
 	void aCompletedReportOnACompletedInstanceIsTaken() {
-		final var existing = entity(PROCESS_INSTANCE_ID, COMPLETED).withId("rowId");
+		final var existing = createErrandProcessEntity(COMPLETED, Clock.offset(CLOCK, Duration.ofHours(-1)), process -> process
+			.withId("rowId")
+			.withErrandId(ERRAND_ID)
+			.withProcessService(PROCESS_SERVICE)
+			.withProcessKey(PROCESS_KEY)
+			.withProcessInstanceId(PROCESS_INSTANCE_ID));
 		final var ended = existing.getEnded();
 		givenKnownInstance(existing);
 
 		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED));
 
 		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED.name());
-		assertThat(existing.getEnded()).isEqualTo(ended);
+		assertThat(existing.getEnded()).isEqualTo(ended).isBefore(OffsetDateTime.now(CLOCK));
+		verify(processRepositoryMock).saveAndFlush(existing);
+	}
+
+	/**
+	 * No retry can bring back a completed instance, so a late report on one is answered as it stands even when it was
+	 * read at a version the errand has left behind.
+	 */
+	@Test
+	void aReportOnACompletedInstanceIsAnsweredWhateverVersionItWasReadAt() {
+		final var existing = entity(PROCESS_INSTANCE_ID, COMPLETED).withId("rowId");
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW)).thenReturn(errand(8L));
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RETRYING)
+			.withErrandVersion(7L)
+			.withActivities(List.of(activity("review_phase"))));
+
+		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED.name());
+		verify(processRepositoryMock, never()).saveAndFlush(any());
+		verify(activityRepositoryMock).saveAll(activitiesCaptor.capture());
+		assertThat(activitiesCaptor.getValue()).extracting(ErrandProcessActivityEntity::getActivityId).containsExactly("review_phase");
+	}
+
+	/**
+	 * A failed instance that goes on reporting after another instance of the errand has completed stays failed, since
+	 * the process life of the errand is over.
+	 */
+	@ParameterizedTest
+	@EnumSource(value = ProcessStatus.class, names = "FAILED", mode = EnumSource.Mode.EXCLUDE)
+	@DisplayName("Verification that a report on a failed instance leaves it failed once another instance of the errand has completed")
+	void aReportOnAFailedInstanceLeavesItFailedOnceAnotherHasCompleted(final ProcessStatus status) {
+		final var existing = entity(PROCESS_INSTANCE_ID, FAILED).withId("rowId");
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(entity("completed-instance", COMPLETED), existing));
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(status)
+			.withActivities(List.of(activity("review_phase"))));
+
+		assertThat(result.created()).isFalse();
+		assertThat(result.process().getProcessStatus()).isEqualTo(FAILED.name());
+		assertThat(existing.getProcessStatus()).isEqualTo(FAILED);
+		assertThat(existing.getActiveMarker()).isNull();
+		verify(processRepositoryMock, never()).saveAndFlush(any());
+		verify(activityRepositoryMock).saveAll(activitiesCaptor.capture());
+		assertThat(activitiesCaptor.getValue()).extracting(ErrandProcessActivityEntity::getActivityId).containsExactly("review_phase");
+	}
+
+	/**
+	 * A failed instance may come back to life as long as no instance of the errand has completed.
+	 */
+	@Test
+	void aFailedInstanceComesBackWhileNoOtherHasCompleted() {
+		final var existing = entity(PROCESS_INSTANCE_ID, FAILED).withId("rowId");
+		givenKnownInstance(existing);
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(existing));
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING));
+
+		assertThat(result.process().getProcessStatus()).isEqualTo(RUNNING.name());
 		verify(processRepositoryMock).saveAndFlush(existing);
 	}
 

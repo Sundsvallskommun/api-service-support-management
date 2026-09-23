@@ -203,7 +203,29 @@ class ProcessEventRelayTest {
 		assertThat(first.getDeliveredAt()).isNull();
 		assertThat(second.getDeliveredAt()).isNull();
 		assertThat(third.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
-		verify(transactionManagerMock).rollback(any());
+		verify(transactionManagerMock, never()).rollback(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a group that fails counts every row it tried against the batch, not only the one that failed")
+	void aGroupThatFailsCountsTheRowsItTried() {
+		final var delivered = row("row-1", "errand-a", NOW.minusMinutes(3));
+		final var failing = row("row-2", "errand-a", NOW.minusMinutes(2));
+		final var other = row("row-3", "errand-b", NOW.minusMinutes(1));
+		givenWaiting(delivered, failing, other);
+		givenLocked(List.of("row-1", "row-2"), delivered, failing);
+		givenLocked(List.of("row-3"), other);
+		when(pwAlktIntegrationMock.sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any()))
+			.thenReturn(true)
+			.thenThrow(new PwAlktUnavailableException(false, new IllegalStateException("503")))
+			.thenReturn(true);
+
+		relay.relay();
+
+		assertThat(delivered.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+		assertThat(failing.getDeliveredAt()).isNull();
+		assertThat(other.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+		verify(outboxRepositoryMock, never()).findByProcessServiceAndDeliveredAtIsNullAndCreatedBeforeAndErrandIdNotIn(any(), any(), any(), any());
 	}
 
 	@Test
@@ -339,6 +361,24 @@ class ProcessEventRelayTest {
 		inOrder.verify(transactionManagerMock).commit(any());
 		verify(transactionManagerMock, never()).rollback(any());
 		verifyNoInteractions(errandsRepositoryMock, processRepositoryMock, activityRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a row that cannot be made into an event ends the group like one that does not go through, so the rows before it are not rolled back")
+	void aRowThatCannotBeMadeIntoAnEventEndsTheGroup() {
+		final var first = row("row-1", ERRAND_ID, NOW.minusMinutes(2));
+		final var unreadable = row("row-2", ERRAND_ID, NOW.minusMinutes(1), "NOT-AN-EVENT-TYPE");
+		givenWaitingFor(ERRAND_ID, first, unreadable);
+		givenLocked(List.of("row-1", "row-2"), first, unreadable);
+		givenAccepted();
+
+		assertThatThrownBy(() -> relay.relayErrand(ERRAND_ID)).isInstanceOf(IllegalArgumentException.class);
+
+		assertThat(first.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+		assertThat(unreadable.getDeliveredAt()).isNull();
+		verify(pwAlktIntegrationMock).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), any());
+		verify(transactionManagerMock).commit(any());
+		verify(transactionManagerMock, never()).rollback(any());
 	}
 
 	@Test

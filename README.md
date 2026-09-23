@@ -691,7 +691,9 @@ The answer is read from the errand's **own** labels, through two label attribute
 | `processKey`       | the key of a process            | Which process the errand runs                                                              |
 | `processStartMode` | `AUTOMATIC` (default), `MANUAL` | Whether SupportManagement starts the process itself. Read from the label that gave the key |
 
-The label tree is not walked, so moving or renaming a label leaves the answer alone. Deprecated labels are not read.
+The label tree is not walked, so the answer stays the same as long as the errand wears the same labels. Renaming a
+label leaves it alone, while moving one gives the errands wearing it new ancestors, which the label rules below hold
+like any other change. Deprecated labels are not read.
 
 A label write (`POST` or `PUT` of `/metadata/labels`) is refused with `400` when `processStartMode` is anything but
 exactly `AUTOMATIC` or `MANUAL`, when it stands on a label without `processKey`, when an attribute key is spelled

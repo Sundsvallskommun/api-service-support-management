@@ -132,8 +132,7 @@ public final class ProcessRules {
 	}
 
 	/**
-	 * Whether a process key is longer than a process key may be. The label write refuses such a key, so one can only
-	 * have come in past the API.
+	 * Whether a process key is longer than a process key may be.
 	 *
 	 * @param  processKey the key to measure.
 	 * @return            true when the key does not fit.

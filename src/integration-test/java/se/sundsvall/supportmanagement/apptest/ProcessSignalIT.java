@@ -362,11 +362,6 @@ class ProcessSignalIT extends AbstractAppTest {
 				.sendRequest();
 		}
 
-		assertThat(outboxRepository.findAll()).hasSize(2).allSatisfy(row -> {
-			assertThat(row.getEventSubType()).isEqualTo("SIGNAL");
-			assertThat(row.getSignalName()).isEqualTo("granskning-godkand");
-			assertThat(row.getDeliveredAt()).isNull();
-		});
 		wiremock.verify(2, postRequestedFor(urlPathEqualTo("/api-eventlog/" + MUNICIPALITY_ID + "/" + ERRAND_ID)));
 
 		setupCall()
@@ -383,6 +378,12 @@ class ProcessSignalIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(ERRAND_RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+
+		assertThat(outboxRepository.findAll()).hasSize(2).allSatisfy(row -> {
+			assertThat(row.getEventSubType()).isEqualTo("SIGNAL");
+			assertThat(row.getSignalName()).isEqualTo("granskning-godkand");
+			assertThat(row.getDeliveredAt()).isNull();
+		});
 	}
 
 	/**

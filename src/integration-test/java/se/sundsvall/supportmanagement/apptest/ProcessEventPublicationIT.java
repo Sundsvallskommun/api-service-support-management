@@ -136,13 +136,17 @@ class ProcessEventPublicationIT extends AbstractAppTest {
 			.getPath();
 		final var errandId = location.substring(location.lastIndexOf('/') + 1);
 
-		assertThat(outboxRepository.findAll()).isEmpty();
-
 		setupCall()
 			.withServicePath(location)
 			.withHttpMethod(DELETE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequest();
+
+		setupCall()
+			.withServicePath(location)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequestAndVerifyResponse();
 
 		assertThat(outboxRepository.findAll())
 			.singleElement()
@@ -154,11 +158,5 @@ class ProcessEventPublicationIT extends AbstractAppTest {
 				assertThat(row.getEventSubType()).isEqualTo("ERRAND");
 				assertThat(row.isStartAllowed()).isFalse();
 			});
-
-		setupCall()
-			.withServicePath(location)
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(NOT_FOUND)
-			.sendRequestAndVerifyResponse();
 	}
 }

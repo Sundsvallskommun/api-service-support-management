@@ -207,8 +207,7 @@ public class DecisionValidator {
 	}
 
 	/**
-	 * Rejects with 409 removing an errand a locked decision belongs to, since the removal would take the decision with
-	 * it. The retention purge is not held to this.
+	 * Rejects with 409 removing an errand a locked decision belongs to. The retention purge is not held to this.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId municipality of the errand.

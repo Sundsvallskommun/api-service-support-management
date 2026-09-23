@@ -137,8 +137,9 @@ public class ErrandProcessService {
 	/**
 	 * Takes the report of a work step, creating the row for the instance if this is the first word about it.
 	 * <p>
-	 * An instance that has completed stays completed: a later report saying anything else changes neither its state nor
-	 * what it waits for, and is answered with the instance as it stands. The activities it carries are stored.
+	 * An instance that has completed stays completed, and one that has failed stays failed once another instance of the
+	 * errand has completed: a later report saying anything else changes neither its state nor what it waits for, and is
+	 * answered with the instance as it stands, whatever errand version it carries. The activities it carries are stored.
 	 *
 	 * @param  namespace         the namespace of the errand.
 	 * @param  municipalityId    the municipality of the errand.
@@ -158,9 +159,19 @@ public class ErrandProcessService {
 	}
 
 	private ErrandProcessResult reportInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
-		verifyErrandVersion(lockErrandForWriting(namespace, municipalityId, errandId), report);
-
+		final var errand = lockErrandForWriting(namespace, municipalityId, errandId);
 		final var existing = processRepository.findByProcessInstanceId(processInstanceId).orElse(null);
+
+		if (nonNull(existing) && isSettled(existing, report)) {
+			verifyBelongsToErrand(existing, errandId);
+			verifySameProcessKey(existing, report);
+
+			LOG.info("Report of {} on the {} process instance '{}' of errand '{}' leaves the instance as it is", report.getProcessStatus(), existing.getProcessStatus(), processInstanceId, errandId);
+			storeActivities(existing, errandId, report);
+			return new ErrandProcessResult(toErrandProcess(existing, emptyList()), false);
+		}
+
+		verifyErrandVersion(errand, report);
 
 		if (isNull(existing)) {
 			return createProcess(namespace, municipalityId, errandId, processInstanceId, report);
@@ -168,13 +179,6 @@ public class ErrandProcessService {
 
 		verifyBelongsToErrand(existing, errandId);
 		verifySameProcessKey(existing, report);
-
-		if (COMPLETED == existing.getProcessStatus() && COMPLETED != toProcessStatus(report)) {
-			LOG.info("Report of {} on the completed process instance '{}' of errand '{}' leaves the instance completed", report.getProcessStatus(), processInstanceId, errandId);
-			storeActivities(existing, errandId, report);
-			return new ErrandProcessResult(toErrandProcess(existing, emptyList()), false);
-		}
-
 		verifyNoOtherLiveInstance(processRepository.findByErrandIdOrderByCreatedDesc(errandId), errandId, processInstanceId, report);
 
 		final var displaced = trackOutstandingTask(existing, report);
@@ -444,10 +448,22 @@ public class ErrandProcessService {
 	}
 
 	/**
+	 * Whether a report leaves the instance as it is: a completed instance by anything but COMPLETED, and a failed one by
+	 * anything but FAILED once another instance of the errand has completed.
+	 */
+	private boolean isSettled(final ErrandProcessEntity existing, final ErrandProcessReport report) {
+		final var reported = toProcessStatus(report);
+
+		return switch (existing.getProcessStatus()) {
+			case COMPLETED -> COMPLETED != reported;
+			case FAILED -> FAILED != reported && hasCompletedProcess(processRepository.findByErrandIdOrderByCreatedDesc(existing.getErrandId()));
+			case RUNNING, WAITING, RETRYING -> false;
+		};
+	}
+
+	/**
 	 * Refuses with 409 a report that would leave its row live or completed while another instance of the errand lives. A
-	 * second live instance is what {@code uq_ep_one_active_per_errand} rules out, and a completed one would end the
-	 * process life of the errand under the live one. A report of FAILED - a start that failed among them - is taken while
-	 * another instance lives on.
+	 * report of FAILED is taken while another instance lives on.
 	 */
 	private static void verifyNoOtherLiveInstance(final List<ErrandProcessEntity> instances, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
 		if (FAILED == toProcessStatus(report)) {
