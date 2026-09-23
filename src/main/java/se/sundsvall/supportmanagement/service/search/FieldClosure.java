@@ -57,31 +57,42 @@ record FieldClosure(List<Closed> rules) {
 	 */
 	static FieldClosure of(final Set<ProtectedResource> resources, final Map<ErrandField, Set<String>> readable) {
 		final var rules = new ArrayList<Closed>();
+		closedResources(resources, rules);
+		closedFields(readable, rules);
+		return new FieldClosure(List.copyOf(rules));
+	}
 
+	/** The fields of the resources the route does not reach, whole. */
+	private static void closedResources(final Set<ProtectedResource> resources, final List<Closed> rules) {
 		for (final var resource : ProtectedResource.values()) {
 			if (!resource.getSearchFields().isEmpty() && !resources.contains(resource)) {
 				resource.getSearchFields().forEach(name -> rules.add(new Closed(name, null, "Resource '%s'".formatted(resource.getPath()))));
 			}
 		}
+	}
 
-		// A null map restricts nothing; a field the map does not carry is closed; a keyed field carrying keys keeps those
-		// keys open where the index can tell them apart
-		if (!isNull(readable)) {
-			for (final var field : ErrandField.values()) {
-				final var keys = readable.get(field);
-				final var description = "Field '%s'".formatted(field.getPropertyName());
-				if (isNull(keys)) {
-					field.getSearchFields().forEach(name -> rules.add(new Closed(name, null, description)));
-				} else if (!keys.isEmpty()) {
-					// Keys that are paths keep the granted ones open under the object; anything else the keys share closes
-					field.getSearchFields().forEach(name -> rules.add(field.getIndex().keysArePaths() && name.endsWith(".")
-						? new Closed(name, keys, description)
-						: new Closed(name, null, description + " beyond its keys")));
-				}
-			}
+	/**
+	 * The fields the roles of the user keep from them. A null map restricts nothing; a field the map does not carry is
+	 * closed; a keyed field carrying keys keeps those keys open where the index can tell them apart.
+	 */
+	private static void closedFields(final Map<ErrandField, Set<String>> readable, final List<Closed> rules) {
+		if (isNull(readable)) {
+			return;
 		}
 
-		return new FieldClosure(List.copyOf(rules));
+		for (final var field : ErrandField.values()) {
+			final var keys = readable.get(field);
+			final var description = "Field '%s'".formatted(field.getPropertyName());
+
+			if (isNull(keys)) {
+				field.getSearchFields().forEach(name -> rules.add(new Closed(name, null, description)));
+			} else if (!keys.isEmpty()) {
+				// Keys that are paths keep the granted ones open under the object; anything else the keys share closes
+				field.getSearchFields().forEach(name -> rules.add(field.getIndex().keysArePaths() && name.endsWith(".")
+					? new Closed(name, keys, description)
+					: new Closed(name, null, description + " beyond its keys")));
+			}
+		}
 	}
 
 	boolean isOpen() {
@@ -101,7 +112,7 @@ record FieldClosure(List<Closed> rules) {
 	}
 
 	/** Those of sent in fields that are open. */
-	List<String> open(final List<String> fields) {
+	List<String> openFields(final List<String> fields) {
 		return fields.stream().filter(this::allows).toList();
 	}
 }

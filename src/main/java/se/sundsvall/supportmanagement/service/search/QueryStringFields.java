@@ -13,12 +13,17 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  */
 final class QueryStringFields {
 
-	// What is inside quotes is a phrase, never a field
-	private static final Pattern PHRASE = Pattern.compile("\"(?:[^\"\\\\]|\\\\.)*\"");
-	// A field name is whatever comes right before a colon
-	private static final Pattern FIELD = Pattern.compile("(?<![\\w.\\\\*?-])([\\w.\\\\*?-]+):");
-	// A field with its value: a group in parentheses, a range in brackets or braces, or a single term
-	private static final Pattern FIELDED_TERM = Pattern.compile("[\\w.\\\\*?-]+:(?:\\([^)]*\\)|\\[[^\\]]*\\]|\\{[^}]*\\}|\\S+)");
+	// What is inside quotes is a phrase, never a field. Written as a run of ordinary characters followed by escaped
+	// ones rather than a choice repeated per character, which the engine walks recursively: a query carrying a few
+	// thousand characters after an unclosed quote overflowed the stack that way, and the query comes from the client
+	private static final Pattern PHRASE = Pattern.compile("\"[^\"\\\\]*+(?:\\\\.[^\"\\\\]*+)*+\"");
+	// A field name is whatever comes right before a colon. Nothing of a name is ever given back to find the colon,
+	// since a colon is not part of a name, so the repetitions here and below are possessive
+	private static final Pattern FIELD = Pattern.compile("(?<![\\w.\\\\*?-])([\\w.\\\\*?-]++):");
+	// A field with its value: a group in parentheses, a range in brackets or braces, or a single term. Held to the
+	// start of a name like the pattern above, which is what keeps a long word without a colon from being tried from
+	// every position in it
+	private static final Pattern FIELDED_TERM = Pattern.compile("(?<![\\w.\\\\*?-])[\\w.\\\\*?-]++:(?:\\([^)]*+\\)|\\[[^\\]]*+\\]|\\{[^}]*+\\}|\\S++)");
 	private static final Pattern OPERATORS = Pattern.compile("\\b(?:AND|OR|NOT|TO)\\b|&&|\\|\\||[+\\-!()]");
 	// The value of _exists_ is a field name too
 	private static final String EXISTS = "_exists_";

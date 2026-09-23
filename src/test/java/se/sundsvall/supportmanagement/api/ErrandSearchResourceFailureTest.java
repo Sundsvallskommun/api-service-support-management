@@ -78,6 +78,24 @@ class ErrandSearchResourceFailureTest {
 	}
 
 	@Test
+	void searchErrandsWithTooLongQuery() {
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).queryParam("query", "a".repeat(2001)).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("searchErrands.query", "query may be at most 2000 characters"));
+
+		verifyNoInteractions(searchServiceMock, reindexServiceMock);
+	}
+
+	@Test
 	void reindexErrandsWithInvalidMunicipalityId() {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/reindex").build(Map.of("namespace", NAMESPACE, "municipalityId", INVALID)))

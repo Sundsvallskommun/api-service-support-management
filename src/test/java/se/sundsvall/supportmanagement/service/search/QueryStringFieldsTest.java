@@ -44,4 +44,20 @@ class QueryStringFieldsTest {
 	void fieldedOnly(final String query) {
 		assertThat(QueryStringFields.hasFreeTerms(query)).isFalse();
 	}
+
+	/**
+	 * The query comes from the client, so a long one must cost what its length costs and nothing more. Written as a
+	 * choice repeated per character, the phrase pattern walked the engine into the stack for a few thousand characters
+	 * after an unclosed quote.
+	 */
+	@Test
+	void aLongQueryIsReadWithoutWalkingTheStack() {
+		final var unclosed = "\"" + "a".repeat(100_000);
+		final var unterminatedField = "title:" + "a".repeat(100_000);
+
+		assertThat(QueryStringFields.fieldNames(unclosed)).isEmpty();
+		assertThat(QueryStringFields.hasFreeTerms(unclosed)).isTrue();
+		assertThat(QueryStringFields.fieldNames(unterminatedField)).containsExactly("title");
+		assertThat(QueryStringFields.hasFreeTerms(unterminatedField)).isFalse();
+	}
 }

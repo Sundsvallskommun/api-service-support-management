@@ -21,7 +21,7 @@ class FieldClosureTest {
 
 		assertThat(closure.isOpen()).isTrue();
 		assertThat(closure.refusal("communications.subject")).isEmpty();
-		assertThat(closure.open(List.of("title", "decisions.title"))).containsExactly("title", "decisions.title");
+		assertThat(closure.openFields(List.of("title", "decisions.title"))).containsExactly("title", "decisions.title");
 	}
 
 	@Test
@@ -55,6 +55,6 @@ class FieldClosureTest {
 		assertThat(closure.refusal("parameters.values")).contains("Field 'parameters' beyond its keys");
 		// Resources are not fields of the errand and stay open
 		assertThat(closure.refusal("communications.subject")).isEmpty();
-		assertThat(closure.open(List.of("title", "description", "communications.subject"))).containsExactly("title", "communications.subject");
+		assertThat(closure.openFields(List.of("title", "description", "communications.subject"))).containsExactly("title", "communications.subject");
 	}
 }
