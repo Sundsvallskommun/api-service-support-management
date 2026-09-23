@@ -15,6 +15,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 @Component
 public class LabelMoveWorker {
@@ -35,10 +36,22 @@ public class LabelMoveWorker {
 	 * Re-computes the label set of all errands that reference the moved label, using the already
 	 * re-parented MetadataLabelEntity tree. Access labels (leaves) are kept as-is; the full
 	 * ancestor chain for each leaf is re-derived by walking getParent() on the live entity tree.
+	 *
+	 * @param  movedLabelId the label that was moved.
+	 * @return              the ids of the errands that kept the labels they had: those without access labels to rebuild
+	 *                      from, and those the move would have moved off the process they run.
 	 */
-	public void migrateErrandsForMovedLabel(final String movedLabelId) {
-		errandsRepository.findAllByLabelsMetadataLabelId(movedLabelId)
-			.forEach(this::rebuildLabels);
+	public List<String> migrateErrandsForMovedLabel(final String movedLabelId) {
+		final var kept = errandsRepository.findAllByLabelsMetadataLabelId(movedLabelId).stream()
+			.filter(errand -> !rebuildLabels(errand))
+			.map(ErrandEntity::getId)
+			.toList();
+
+		if (!kept.isEmpty()) {
+			LOG.warn("{} errands referencing the moved label {} kept the labels they had: {}", kept.size(), sanitizeForLogging(movedLabelId), kept);
+		}
+
+		return kept;
 	}
 
 	/**
@@ -47,13 +60,16 @@ public class LabelMoveWorker {
 	 * is.
 	 * <p>
 	 * An errand without access labels is left untouched, with a warning, and keeps the labels it has.
+	 *
+	 * @param  errand the errand to rebuild the labels of.
+	 * @return        true when the rebuilt labels were put on the errand, false when it kept the labels it had.
 	 */
-	void rebuildLabels(final ErrandEntity errand) {
+	boolean rebuildLabels(final ErrandEntity errand) {
 		var accessLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList());
 
 		if (accessLabels.isEmpty()) {
 			LOG.warn("Errand {} references the moved label but has no access labels to rebuild from - left untouched", errand.getId());
-			return;
+			return false;
 		}
 
 		var leafIds = accessLabels.stream()
@@ -61,7 +77,7 @@ public class LabelMoveWorker {
 			.toList();
 
 		var labelEntities = metadataLabelRepository.findAllById(leafIds);
-		errandService.persistLabelUpdate(errand, buildAncestorChain(labelEntities));
+		return errandService.persistLabelUpdate(errand, buildAncestorChain(labelEntities));
 	}
 
 	private static List<ErrandLabelEmbeddable> buildAncestorChain(final List<MetadataLabelEntity> leaves) {

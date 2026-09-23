@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -19,6 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -44,17 +46,39 @@ class LabelMoveWorkerTest {
 	@Test
 	void migrateErrandsForMovedLabel_delegatesToRebuildLabels() {
 		var movedId = "moved-id";
-		var errand = errandWithAccessLabels(movedId);
+		var errand = errandWithAccessLabels(movedId).withId("errand-id");
 
 		when(errandsRepositoryMock.findAllByLabelsMetadataLabelId(movedId)).thenReturn(List.of(errand));
 		when(metadataLabelRepositoryMock.findAllById(List.of(movedId)))
 			.thenReturn(List.of(labelEntity(movedId, null)));
+		when(errandServiceMock.persistLabelUpdate(eq(errand), any())).thenReturn(true);
 
-		worker.migrateErrandsForMovedLabel(movedId);
+		assertThat(worker.migrateErrandsForMovedLabel(movedId)).isEmpty();
 
 		verify(errandsRepositoryMock).findAllByLabelsMetadataLabelId(movedId);
 		verify(metadataLabelRepositoryMock).findAllById(List.of(movedId));
 		verify(errandServiceMock).persistLabelUpdate(eq(errand), any());
+	}
+
+	@Test
+	@DisplayName("Verification that the errands that kept their labels are answered with, whether the move was refused or there was nothing to rebuild from")
+	void migrateErrandsForMovedLabel_answersWithTheErrandsThatKeptTheirLabels() {
+		var movedId = "moved-id";
+		var rebuilt = errandWithAccessLabels(movedId).withId("rebuilt");
+		var refused = errandWithAccessLabels(movedId).withId("refused");
+		var withoutAccessLabels = ErrandEntity.create().withId("without-access-labels").withAccessLabels(List.of());
+
+		when(errandsRepositoryMock.findAllByLabelsMetadataLabelId(movedId)).thenReturn(List.of(rebuilt, refused, withoutAccessLabels));
+		when(metadataLabelRepositoryMock.findAllById(List.of(movedId))).thenReturn(List.of(labelEntity(movedId, null)));
+		when(errandServiceMock.persistLabelUpdate(eq(rebuilt), any())).thenReturn(true);
+		when(errandServiceMock.persistLabelUpdate(eq(refused), any())).thenReturn(false);
+
+		assertThat(worker.migrateErrandsForMovedLabel(movedId)).containsExactly("refused", "without-access-labels");
+
+		verify(errandsRepositoryMock).findAllByLabelsMetadataLabelId(movedId);
+		verify(metadataLabelRepositoryMock, times(2)).findAllById(List.of(movedId));
+		verify(errandServiceMock).persistLabelUpdate(eq(rebuilt), any());
+		verify(errandServiceMock).persistLabelUpdate(eq(refused), any());
 	}
 
 	@Test
@@ -70,13 +94,27 @@ class LabelMoveWorkerTest {
 
 		var errand = errandWithAccessLabels(leafId);
 		when(metadataLabelRepositoryMock.findAllById(List.of(leafId))).thenReturn(List.of(leaf));
+		when(errandServiceMock.persistLabelUpdate(eq(errand), any())).thenReturn(true);
 
-		worker.rebuildLabels(errand);
+		assertThat(worker.rebuildLabels(errand)).isTrue();
 
 		verify(errandServiceMock).persistLabelUpdate(eq(errand), labelsCaptor.capture());
 		assertThat(labelsCaptor.getValue())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(leafId, parentId, grandparentId);
+	}
+
+	@Test
+	@DisplayName("Verification that an errand the move would have moved off its process is answered as having kept its labels")
+	void rebuildLabels_refusedByTheGuard_answersFalse() {
+		var leafId = "leaf";
+		var errand = errandWithAccessLabels(leafId);
+		when(metadataLabelRepositoryMock.findAllById(List.of(leafId))).thenReturn(List.of(labelEntity(leafId, null)));
+		when(errandServiceMock.persistLabelUpdate(eq(errand), any())).thenReturn(false);
+
+		assertThat(worker.rebuildLabels(errand)).isFalse();
+
+		verify(errandServiceMock).persistLabelUpdate(eq(errand), any());
 	}
 
 	@Test
@@ -163,7 +201,7 @@ class LabelMoveWorkerTest {
 			.withAccessLabels(List.of())
 			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")));
 
-		worker.rebuildLabels(errand);
+		assertThat(worker.rebuildLabels(errand)).isFalse();
 
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
@@ -176,7 +214,7 @@ class LabelMoveWorkerTest {
 			.withAccessLabels(null)
 			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")));
 
-		worker.rebuildLabels(errand);
+		assertThat(worker.rebuildLabels(errand)).isFalse();
 
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)

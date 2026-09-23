@@ -261,9 +261,9 @@ public class ErrandService {
 	 * Removes an errand that has passed its retention period, along with everything belonging to it.
 	 * <p>
 	 * Called by the purge. Unlike {@link #deleteErrand(String, String, String, String)} no access check is made, no
-	 * locked decision holds the removal back and no event is written. The process of the errand, if it has one, is told
-	 * that the errand is gone. What is removed is the same in both cases, and is held in
-	 * {@link #removeErrand(ErrandEntity, List)}.
+	 * locked decision holds the removal back and no event is written. In a namespace with a process consumer the process
+	 * consumer is told that the errand is gone, whether the errand had a process or not, and without a process key. What
+	 * is removed is the same in both cases, and is held in {@link #removeErrand(ErrandEntity, List)}.
 	 * <p>
 	 * Runs in a transaction of its own, so that an errand that cannot be removed neither rolls back the errands already
 	 * removed nor stops the run. An errand that is already gone is not an error, and is answered with false.
