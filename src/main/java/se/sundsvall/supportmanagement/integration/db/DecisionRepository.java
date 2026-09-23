@@ -23,6 +23,17 @@ public interface DecisionRepository extends JpaRepository<DecisionEntity, String
 	boolean existsByNamespaceAndMunicipalityIdAndErrandEntityId(String namespace, String municipalityId, String errandId);
 
 	/**
+	 * Whether the errand holds a decision in the given status.
+	 *
+	 * @param  namespace      namespace of the errand.
+	 * @param  municipalityId municipality of the errand.
+	 * @param  errandId       the errand to look in.
+	 * @param  status         the status the decision has to have.
+	 * @return                true when at least one decision of the errand has the status.
+	 */
+	boolean existsByNamespaceAndMunicipalityIdAndErrandEntityIdAndStatus(String namespace, String municipalityId, String errandId, ItemStatus status);
+
+	/**
 	 * Whether a decision of the errand has the attachment linked to it.
 	 *
 	 * @param  namespace      namespace of the errand.

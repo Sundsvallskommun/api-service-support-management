@@ -1,5 +1,5 @@
 {
 	"title": "Bad Request",
 	"status": 400,
-	"detail": "No label of the errand 'aa000000-0000-0000-0000-0000000000a2' carries a process key, so there is no process to start. Give the errand the label of the process to start"
+	"detail": "No label of the errand 'aa000000-0000-0000-0000-0000000000a2' carries a process key it can be started with, so there is no process to start. Give the errand the label of the process to start"
 }

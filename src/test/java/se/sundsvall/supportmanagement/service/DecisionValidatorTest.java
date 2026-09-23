@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.time.Clock;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -19,14 +18,9 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.DecisionOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
-import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
-import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,13 +34,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.MANUAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
-import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SINGLE_DECISION_PER_ERRAND;
 
 @ExtendWith(MockitoExtension.class)
 class DecisionValidatorTest {
@@ -66,9 +60,6 @@ class DecisionValidatorTest {
 	private DecisionOutcomeRepository decisionOutcomeRepositoryMock;
 
 	@Mock
-	private NamespaceConfigRepository namespaceConfigRepositoryMock;
-
-	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
 
 	@Mock
@@ -86,47 +77,14 @@ class DecisionValidatorTest {
 		Identifier.remove();
 	}
 
-	private static NamespaceConfigEntity configWithSingleDecision(final boolean value) {
-		return NamespaceConfigEntity.create()
-			.withValues(List.of(NamespaceConfigValueEmbeddable.create()
-				.withKey(PROPERTY_SINGLE_DECISION_PER_ERRAND)
-				.withType(ValueType.BOOLEAN)
-				.withValue(String.valueOf(value))));
-	}
-
 	/**
 	 * A namespace that has not asked for the restriction is not restricted, and the errand is then not even asked about.
 	 */
 	@Test
-	void cardinalityIsUncheckedWhenTheNamespaceHasNoConfiguration() {
-
-		// Arrange
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
-
-		// Act & Verify
-		assertThatNoException().isThrownBy(() -> validator.validateCardinality(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-		verifyNoInteractions(decisionRepositoryMock);
-	}
-
-	@Test
 	void cardinalityIsUncheckedWhenTheNamespaceHasNotAskedForIt() {
 
 		// Arrange
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(configWithSingleDecision(false)));
-
-		// Act & Verify
-		assertThatNoException().isThrownBy(() -> validator.validateCardinality(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-		verifyNoInteractions(decisionRepositoryMock);
-	}
-
-	/**
-	 * A namespace configuration without the setting reads as unrestricted, and the request does not fail.
-	 */
-	@Test
-	void cardinalityIsUncheckedWhenTheSettingIsAbsentFromTheConfiguration() {
-
-		// Arrange
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(NamespaceConfigEntity.create()));
+		when(namespaceConfigServiceMock.isSingleDecisionPerErrand(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 
 		// Act & Verify
 		assertThatNoException().isThrownBy(() -> validator.validateCardinality(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
@@ -137,7 +95,7 @@ class DecisionValidatorTest {
 	void theFirstDecisionIsAllowedEvenWhenTheNamespaceAllowsOnlyOne() {
 
 		// Arrange
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(configWithSingleDecision(true)));
+		when(namespaceConfigServiceMock.isSingleDecisionPerErrand(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(decisionRepositoryMock.existsByNamespaceAndMunicipalityIdAndErrandEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(false);
 
 		// Act & Verify
@@ -148,7 +106,7 @@ class DecisionValidatorTest {
 	void aSecondDecisionIsAConflictWhenTheNamespaceAllowsOnlyOne() {
 
 		// Arrange
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(configWithSingleDecision(true)));
+		when(namespaceConfigServiceMock.isSingleDecisionPerErrand(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 		when(decisionRepositoryMock.existsByNamespaceAndMunicipalityIdAndErrandEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(true);
 
 		// Act
@@ -558,17 +516,83 @@ class DecisionValidatorTest {
 		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
 	}
 
+	/**
+	 * An errand holding no decision is removable after a single lookup, without the process rows being read.
+	 */
+	@Test
+	void anErrandWithoutDecisionsIsRemovable() {
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+		verify(decisionRepositoryMock).existsByNamespaceAndMunicipalityIdAndErrandEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verifyNoMoreInteractions(decisionRepositoryMock);
+		verifyNoInteractions(processRepositoryMock);
+	}
+
+	@Test
+	void anErrandWithDecisionsButWithoutAProcessIsRemovable() {
+
+		// Arrange
+		givenDecisionHeld();
+		givenProcesses();
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+	}
+
+	@Test
+	void anErrandWhoseDecisionsAreNotYetCompletedIsRemovableWhileTheProcessLives() {
+
+		// Arrange
+		givenDecisionHeld();
+		givenProcesses(RUNNING);
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+		verify(decisionRepositoryMock).existsByNamespaceAndMunicipalityIdAndErrandEntityIdAndStatus(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ItemStatus.COMPLETED);
+	}
+
+	@Test
+	void anErrandHoldingACompletedDecisionOnAnErrandWithAProcessIsNotRemovable() {
+
+		// Arrange
+		givenDecisionHeld();
+		givenProcesses(RUNNING);
+		when(decisionRepositoryMock.existsByNamespaceAndMunicipalityIdAndErrandEntityIdAndStatus(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ItemStatus.COMPLETED)).thenReturn(true);
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+		assertThat(problem.getDetail()).isEqualTo("Errand with id '" + ERRAND_ID + "' holds a decision that can no longer be changed, and cannot be removed");
+	}
+
+	@Test
+	void anErrandHoldingAnyDecisionIsNotRemovableOnceTheProcessHasRunToItsEnd() {
+
+		// Arrange
+		givenDecisionHeld();
+		givenProcesses(COMPLETED);
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+	}
+
+	private void givenDecisionHeld() {
+		when(decisionRepositoryMock.existsByNamespaceAndMunicipalityIdAndErrandEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(true);
+	}
+
 	private void givenInvestigationRestedOn() {
 		when(decisionRepositoryMock.existsByNamespaceAndMunicipalityIdAndErrandEntityIdAndInvestigationEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID)).thenReturn(true);
 	}
 
 	private void givenProcesses(final ProcessStatus... statuses) {
 		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(Stream.of(statuses)
-			.map(status -> {
-				final var instance = ErrandProcessEntity.create().withErrandId(ERRAND_ID);
-				instance.applyStatus(status, Clock.systemUTC());
-				return instance;
-			})
+			.map(status -> createErrandProcessEntity(status, Clock.systemUTC(), process -> process.withErrandId(ERRAND_ID)))
 			.toList());
 	}
 

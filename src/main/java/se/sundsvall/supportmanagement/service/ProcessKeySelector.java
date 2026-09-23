@@ -30,7 +30,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
  * Which process an errand belongs to, according to its own labels.
  * <p>
  * Only the labels the errand actually wears are read - the tree is walked neither up nor down. The answer is read from
- * the attributes of the labels only, so renaming a label or moving it does not change it.
+ * the attributes of the labels only, so renaming a label does not change it, and neither does moving it as long as the
+ * errand wears the same labels.
  * <p>
  * The key is not checked against the processes that are deployed; the process engine answers 422 for a key it does
  * not recognise.
@@ -67,10 +68,20 @@ public class ProcessKeySelector {
 	 *                when they agree on none or on more than one.
 	 */
 	public ProcessKeySelection select(final ErrandEntity errand) {
-		final var labels = ofNullable(errand.getLabels()).orElse(emptyList()).stream()
-			.filter(Objects::nonNull)
-			.toList();
+		return select(ofNullable(errand.getLabels()).orElse(emptyList()));
+	}
 
+	/**
+	 * The same answer, read out of labels an errand wears or would wear.
+	 * <p>
+	 * A label is read where its metadata label is filled in, and looked up by id where it is not, in a single query made
+	 * only when such a label is there. A label the lookup does not find is passed over.
+	 *
+	 * @param  labels the labels to read.
+	 * @return        the one key the labels agree on together with its start mode, or a selection naming every key found
+	 *                when they agree on none or on more than one.
+	 */
+	public ProcessKeySelection select(final Collection<ErrandLabelEmbeddable> labels) {
 		final var loaded = labels.stream()
 			.map(ErrandLabelEmbeddable::getMetadataLabel)
 			.filter(Objects::nonNull)
@@ -90,19 +101,10 @@ public class ProcessKeySelector {
 	}
 
 	/**
-	 * The same answer, read out of labels rather than out of an errand.
-	 * <p>
-	 * For the question asked about labels an errand does not wear yet: whether changing them would move its process key.
-	 * {@link ErrandLabelEmbeddable#getMetadataLabel()} is null on a label that has only just been put together, so the
-	 * caller asking that question looks the labels up itself and hands them here.
-	 *
-	 * @param  labels the labels to read.
-	 * @return        the one key they agree on together with its start mode, or a selection naming every key found when
-	 *                they agree on none or on more than one.
+	 * The answer read out of the metadata labels themselves, deprecated ones passed over.
 	 */
-	public ProcessKeySelection selectFrom(final Collection<MetadataLabelEntity> labels) {
-		final var candidates = ofNullable(labels).orElse(emptyList()).stream()
-			.filter(Objects::nonNull)
+	private ProcessKeySelection selectFrom(final Collection<MetadataLabelEntity> labels) {
+		final var candidates = labels.stream()
 			.filter(label -> !label.isDeprecated())
 			.map(this::toCandidate)
 			.filter(Objects::nonNull)
@@ -141,7 +143,7 @@ public class ProcessKeySelector {
 	 * @return      the keys, each cut to the length worth showing, separated by commas.
 	 */
 	public static String excerptOf(final Collection<String> keys) {
-		return ofNullable(keys).orElse(emptyList()).stream()
+		return keys.stream()
 			.map(ProcessKeySelector::excerptOf)
 			.collect(joining(", "));
 	}
@@ -176,9 +178,6 @@ public class ProcessKeySelector {
 		final var mode = EnumUtils.getEnumIgnoreCase(ProcessStartMode.class, value.trim());
 
 		if (isNull(mode)) {
-			// The label write refuses such a value, so this one came in past the API - straight into the database, or before
-			// the check existed. Someone put it there on purpose, so the answer is the one that cannot start a process nobody
-			// asked for - and the errand is still startable by hand.
 			LOG.warn("Label '{}' carries an unreadable process start mode '{}' and is treated as MANUAL", sanitizeForLogging(label.getId()), sanitizeForLogging(value));
 			return MANUAL;
 		}

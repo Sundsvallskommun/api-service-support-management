@@ -41,8 +41,7 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 public class ErrandProcessActivityEntity {
 
 	/**
-	 * The width of the message column. Used by the annotation below, and by a writer building a message out of values it
-	 * does not control to cut the message to fit.
+	 * The width of the message column.
 	 */
 	public static final int MESSAGE_LENGTH = 2048;
 

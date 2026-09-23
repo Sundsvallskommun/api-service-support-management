@@ -42,7 +42,9 @@ public class LabelMoveWorker {
 	}
 
 	/**
-	 * Rebuilds the labels of the errand as the ancestor chains of its access labels (the leaves), and persists them.
+	 * Rebuilds the labels of the errand as the ancestor chains of its access labels (the leaves), and persists them
+	 * through {@link ErrandService#persistLabelUpdate}, which leaves an errand the change would move off its process as it
+	 * is.
 	 * <p>
 	 * An errand without access labels is left untouched, with a warning, and keeps the labels it has.
 	 */
@@ -59,9 +61,7 @@ public class LabelMoveWorker {
 			.toList();
 
 		var labelEntities = metadataLabelRepository.findAllById(leafIds);
-		var newLabels = buildAncestorChain(labelEntities);
-		errand.setLabels(newLabels);
-		errandService.persistLabelUpdate(errand);
+		errandService.persistLabelUpdate(errand, buildAncestorChain(labelEntities));
 	}
 
 	private static List<ErrandLabelEmbeddable> buildAncestorChain(final List<MetadataLabelEntity> leaves) {

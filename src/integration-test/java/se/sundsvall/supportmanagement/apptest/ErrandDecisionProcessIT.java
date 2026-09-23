@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +13,7 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 
@@ -93,6 +93,9 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	private ProcessEngineProperties processEngineProperties;
 
 	private static String errandPath(final String errandId) {
 		return "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + errandId;
@@ -721,19 +724,33 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
+	 * An errand whose process has ended holds a decision that can no longer be changed, so the errand is kept, together
+	 * with the decision, and no row is written for its process.
+	 */
+	@Test
+	@DisplayName("Verification that an errand holding a decision that can no longer be changed is not deleted, and the decision stays")
+	void test12_anErrandHoldingALockedDecisionCannotBeDeleted() {
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID))
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse("response-locked.json")
+			.sendRequest();
+
+		assertThat(outboxRepository.findAll()).isEmpty();
+
+		setupCall()
+			.withServicePath(decisionPath(ENDED_ERRAND_ID, ENDED_DECISION_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-ended-decision.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
 	 * Trips the emergency brake of the errand by writing as many delivered rows inside its window as it allows.
 	 */
 	private void tripTheBrake(final String errandId) {
-		for (var i = 0; i < 20; i++) {
-			outboxRepository.save(ProcessEventOutboxEntity.create()
-				.withMunicipalityId(MUNICIPALITY_ID)
-				.withNamespace(NAMESPACE)
-				.withErrandId(errandId)
-				.withProcessService(PROCESS_SERVICE)
-				.withProcessKey(PROCESS_KEY)
-				.withEventType("UPDATE")
-				.withEventSubType("ERRAND")
-				.withDeliveredAt(OffsetDateTime.now()));
-		}
+		EmergencyBrake.trip(outboxRepository, processEngineProperties, MUNICIPALITY_ID, NAMESPACE, errandId, PROCESS_KEY);
 	}
 }

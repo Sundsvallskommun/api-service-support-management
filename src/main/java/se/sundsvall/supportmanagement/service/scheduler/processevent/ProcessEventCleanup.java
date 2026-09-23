@@ -6,11 +6,11 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
+import se.sundsvall.supportmanagement.config.ProcessEventCleanupProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
@@ -32,24 +32,15 @@ public class ProcessEventCleanup {
 	private final ProcessEventOutboxRepository outboxRepository;
 	private final ErrandProcessActivityRepository activityRepository;
 	private final ProcessEngineProperties processEngineProperties;
+	private final ProcessEventCleanupProperties properties;
 	private final Clock clock;
 
-	/**
-	 * How many rows one delete removes. Each batch is a transaction of its own.
-	 */
-	@Value("${scheduler.process-cleanup.batch-size:1000}")
-	private int batchSize = 1000;
-
-	/**
-	 * How long an entry of the activity log is kept.
-	 */
-	@Value("${scheduler.process-cleanup.activity-retention:P365D}")
-	private Duration activityRetention = Duration.ofDays(365);
-
-	public ProcessEventCleanup(final ProcessEventOutboxRepository outboxRepository, final ErrandProcessActivityRepository activityRepository, final ProcessEngineProperties processEngineProperties, final Clock clock) {
+	public ProcessEventCleanup(final ProcessEventOutboxRepository outboxRepository, final ErrandProcessActivityRepository activityRepository, final ProcessEngineProperties processEngineProperties,
+		final ProcessEventCleanupProperties properties, final Clock clock) {
 		this.outboxRepository = outboxRepository;
 		this.activityRepository = activityRepository;
 		this.processEngineProperties = processEngineProperties;
+		this.properties = properties;
 		this.clock = clock;
 	}
 
@@ -72,7 +63,7 @@ public class ProcessEventCleanup {
 	 * @return how many entries were removed.
 	 */
 	public int removeExpiredActivities() {
-		final var createdBefore = OffsetDateTime.now(clock).minus(activityRetention);
+		final var createdBefore = OffsetDateTime.now(clock).minus(properties.activityRetention());
 
 		return removeInBatches(page -> activityRepository.findByCreatedBeforeOrderByCreatedAsc(createdBefore, page).stream()
 			.map(ErrandProcessActivityEntity::getId)
@@ -90,7 +81,7 @@ public class ProcessEventCleanup {
 	}
 
 	private int removeInBatches(final Function<Pageable, List<String>> nextBatch, final Consumer<List<String>> remove) {
-		final var page = PageRequest.of(0, batchSize);
+		final var page = PageRequest.of(0, properties.batchSize());
 		var removed = 0;
 		List<String> batch;
 
@@ -98,7 +89,7 @@ public class ProcessEventCleanup {
 			batch = nextBatch.apply(page);
 			remove.accept(batch);
 			removed += batch.size();
-		} while (batch.size() == batchSize);
+		} while (batch.size() == properties.batchSize());
 
 		return removed;
 	}

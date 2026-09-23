@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -38,7 +39,7 @@ class LabelMoveWorkerTest {
 	private LabelMoveWorker worker;
 
 	@Captor
-	private ArgumentCaptor<ErrandEntity> errandCaptor;
+	private ArgumentCaptor<List<ErrandLabelEmbeddable>> labelsCaptor;
 
 	@Test
 	void migrateErrandsForMovedLabel_delegatesToRebuildLabels() {
@@ -48,13 +49,12 @@ class LabelMoveWorkerTest {
 		when(errandsRepositoryMock.findAllByLabelsMetadataLabelId(movedId)).thenReturn(List.of(errand));
 		when(metadataLabelRepositoryMock.findAllById(List.of(movedId)))
 			.thenReturn(List.of(labelEntity(movedId, null)));
-		when(errandServiceMock.persistLabelUpdate(any())).thenReturn(errand);
 
 		worker.migrateErrandsForMovedLabel(movedId);
 
 		verify(errandsRepositoryMock).findAllByLabelsMetadataLabelId(movedId);
 		verify(metadataLabelRepositoryMock).findAllById(List.of(movedId));
-		verify(errandServiceMock).persistLabelUpdate(errand);
+		verify(errandServiceMock).persistLabelUpdate(eq(errand), any());
 	}
 
 	@Test
@@ -70,12 +70,11 @@ class LabelMoveWorkerTest {
 
 		var errand = errandWithAccessLabels(leafId);
 		when(metadataLabelRepositoryMock.findAllById(List.of(leafId))).thenReturn(List.of(leaf));
-		when(errandServiceMock.persistLabelUpdate(any())).thenReturn(errand);
 
 		worker.rebuildLabels(errand);
 
-		verify(errandServiceMock).persistLabelUpdate(errandCaptor.capture());
-		assertThat(errandCaptor.getValue().getLabels())
+		verify(errandServiceMock).persistLabelUpdate(eq(errand), labelsCaptor.capture());
+		assertThat(labelsCaptor.getValue())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(leafId, parentId, grandparentId);
 	}
@@ -88,12 +87,11 @@ class LabelMoveWorkerTest {
 
 		var errand = errandWithAccessLabels(rootId);
 		when(metadataLabelRepositoryMock.findAllById(List.of(rootId))).thenReturn(List.of(root));
-		when(errandServiceMock.persistLabelUpdate(any())).thenReturn(errand);
 
 		worker.rebuildLabels(errand);
 
-		verify(errandServiceMock).persistLabelUpdate(errandCaptor.capture());
-		assertThat(errandCaptor.getValue().getLabels())
+		verify(errandServiceMock).persistLabelUpdate(eq(errand), labelsCaptor.capture());
+		assertThat(labelsCaptor.getValue())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactly(rootId);
 	}
@@ -113,12 +111,11 @@ class LabelMoveWorkerTest {
 		var errand = errandWithAccessLabels(movedLeafId, outsideLeafId);
 		when(metadataLabelRepositoryMock.findAllById(List.of(movedLeafId, outsideLeafId)))
 			.thenReturn(List.of(movedLeaf, outsideLeaf));
-		when(errandServiceMock.persistLabelUpdate(any())).thenReturn(errand);
 
 		worker.rebuildLabels(errand);
 
-		verify(errandServiceMock).persistLabelUpdate(errandCaptor.capture());
-		assertThat(errandCaptor.getValue().getLabels())
+		verify(errandServiceMock).persistLabelUpdate(eq(errand), labelsCaptor.capture());
+		assertThat(labelsCaptor.getValue())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(movedLeafId, newParentId, outsideLeafId);
 	}
@@ -134,12 +131,11 @@ class LabelMoveWorkerTest {
 
 		var errand = errandWithAccessLabels(movedId);
 		when(metadataLabelRepositoryMock.findAllById(List.of(movedId))).thenReturn(List.of(moved));
-		when(errandServiceMock.persistLabelUpdate(any())).thenReturn(errand);
 
 		worker.rebuildLabels(errand);
 
-		verify(errandServiceMock).persistLabelUpdate(errandCaptor.capture());
-		assertThat(errandCaptor.getValue().getLabels())
+		verify(errandServiceMock).persistLabelUpdate(eq(errand), labelsCaptor.capture());
+		assertThat(labelsCaptor.getValue())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(movedId, newParentId);
 	}
@@ -152,12 +148,11 @@ class LabelMoveWorkerTest {
 
 		var errand = errandWithAccessLabels(movedId);
 		when(metadataLabelRepositoryMock.findAllById(List.of(movedId))).thenReturn(List.of(moved));
-		when(errandServiceMock.persistLabelUpdate(any())).thenReturn(errand);
 
 		worker.rebuildLabels(errand);
 
-		verify(errandServiceMock).persistLabelUpdate(errandCaptor.capture());
-		assertThat(errandCaptor.getValue().getLabels())
+		verify(errandServiceMock).persistLabelUpdate(eq(errand), labelsCaptor.capture());
+		assertThat(labelsCaptor.getValue())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactly(movedId);
 	}

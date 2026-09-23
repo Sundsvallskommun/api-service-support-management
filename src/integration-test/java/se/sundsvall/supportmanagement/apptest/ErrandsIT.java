@@ -46,6 +46,7 @@ class ErrandsIT extends AbstractAppTest {
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
+	private static final String REVISIONS_RESPONSE_FILE = "response-revisions.json";
 	private static final String ACCESS_CONTROLLED_ERRAND = "/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8";
 
 	@Autowired
@@ -611,9 +612,14 @@ class ErrandsIT extends AbstractAppTest {
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(BAD_REQUEST)
 			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
+			.sendRequest();
 
-		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id)).hasSize(1);
+		setupCall()
+			.withServicePath(PATH + "/" + id + "/revisions")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(REVISIONS_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -642,9 +648,13 @@ class ErrandsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.sendRequest();
 
-		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, id))
-			.extracting(RevisionEntity::getVersion)
-			.containsExactly(0);
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withServicePath(PATH + "/" + id + "/revisions")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(REVISIONS_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**

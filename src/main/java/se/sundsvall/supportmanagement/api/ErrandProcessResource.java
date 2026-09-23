@@ -87,6 +87,7 @@ class ErrandProcessResource {
 		own process has been registered.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "201", description = "Successful operation", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden — the caller may not reach the errand", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "412",
 			description = "Precondition Failed — the errand has changed since the version the report was read at",
@@ -112,6 +113,7 @@ class ErrandProcessResource {
 		process itself and is the newer word. A start that failed carries no process instance id.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "201", description = "Successful operation", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden — the caller may not reach the errand", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "412",
 			description = "Precondition Failed — the errand has changed since the version the report was read at",
@@ -200,6 +202,7 @@ class ErrandProcessResource {
 		and why not when it cannot be - which is what a start button is lit, dimmed and explained by. An empty list is not \
 		an error.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden — the caller may not reach the errand", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<ErrandProcessOverview> readErrandProcesses(
@@ -216,8 +219,10 @@ class ErrandProcessResource {
 	@Operation(summary = "Read errand process activities", description = """
 		The activity log of the errand. Read per errand rather than per process instance, since the entries explaining \
 		why no process ever started belong to no instance. Narrowing to one instance therefore leaves those entries \
-		out.""", responses = {
+		out. The log can be sorted by id, activityType, activityId, activityName, severity, message, errorCode, \
+		occurredAt and created; sorting by anything else is answered with 400.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden — the caller may not reach the errand", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Page<ProcessActivity>> readErrandProcessActivities(

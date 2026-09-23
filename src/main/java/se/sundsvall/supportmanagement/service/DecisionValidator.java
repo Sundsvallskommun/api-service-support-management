@@ -1,16 +1,15 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.DecisionOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
-import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
-import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.Objects.isNull;
@@ -21,8 +20,9 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.MANUAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SINGLE_DECISION_PER_ERRAND;
-import static se.sundsvall.supportmanagement.service.ErrandProcessService.hasCompletedProcess;
+import static se.sundsvall.supportmanagement.service.ProcessRules.hasCompletedProcess;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 
 /**
  * Upholds the rules a decision carries that the database does not.
@@ -39,9 +39,8 @@ import static se.sundsvall.supportmanagement.service.ErrandProcessService.hasCom
  * <b>When a decision can no longer be changed</b> applies only to errands that have a process. Once the process has run
  * to its end, no decision of the errand is written to any more. Once a decision is completed on such an errand it is
  * locked as it stands. An errand without a process is never locked. The JSON parameters of a decision stand outside
- * both
- * locks. What a locked decision rests on - the attachments it links, the investigation it names - cannot be removed
- * either.
+ * both locks. What a locked decision rests on - the attachments it links, the investigation it names, the errand it
+ * belongs to - cannot be removed either.
  */
 @Component
 public class DecisionValidator {
@@ -55,18 +54,16 @@ public class DecisionValidator {
 	private static final String DECISION_COMPLETED = "Decision with id '%s' is completed, and on an errand with a process a completed decision can no longer be changed";
 	private static final String ATTACHMENT_OF_LOCKED_DECISION = "Attachment with id '%s' belongs to a decision that can no longer be changed, and cannot be removed from errand with id '%s'";
 	private static final String INVESTIGATION_OF_LOCKED_DECISION = "Investigation with id '%s' is what a decision that can no longer be changed rests on, and cannot be removed from errand with id '%s'";
+	private static final String ERRAND_OF_LOCKED_DECISION = "Errand with id '%s' holds a decision that can no longer be changed, and cannot be removed";
 
 	private final DecisionRepository decisionRepository;
 	private final DecisionOutcomeRepository decisionOutcomeRepository;
-	private final NamespaceConfigRepository namespaceConfigRepository;
 	private final NamespaceConfigService namespaceConfigService;
 	private final ErrandProcessRepository processRepository;
 
-	DecisionValidator(final DecisionRepository decisionRepository, final DecisionOutcomeRepository decisionOutcomeRepository, final NamespaceConfigRepository namespaceConfigRepository,
-		final NamespaceConfigService namespaceConfigService, final ErrandProcessRepository processRepository) {
+	DecisionValidator(final DecisionRepository decisionRepository, final DecisionOutcomeRepository decisionOutcomeRepository, final NamespaceConfigService namespaceConfigService, final ErrandProcessRepository processRepository) {
 		this.decisionRepository = decisionRepository;
 		this.decisionOutcomeRepository = decisionOutcomeRepository;
-		this.namespaceConfigRepository = namespaceConfigRepository;
 		this.namespaceConfigService = namespaceConfigService;
 		this.processRepository = processRepository;
 	}
@@ -104,8 +101,7 @@ public class DecisionValidator {
 			return;
 		}
 
-		final var identifier = Identifier.get();
-		final var writtenByPerson = nonNull(identifier) && Identifier.Type.AD_ACCOUNT.equals(identifier.getType());
+		final var writtenByPerson = nonNull(getAdUser());
 
 		if (method == MANUAL) {
 			if (!writtenByPerson) {
@@ -123,7 +119,7 @@ public class DecisionValidator {
 			return;
 		}
 
-		if (writtenByPerson || isNull(identifier) || !consumer.equals(identifier.getValue())) {
+		if (writtenByPerson || !consumer.equals(getCallerIdentity())) {
 			throw Problem.valueOf(FORBIDDEN, AUTOMATIC_REQUIRES_PROCESS_CONSUMER.formatted(consumer, namespace, municipalityId));
 		}
 	}
@@ -155,8 +151,19 @@ public class DecisionValidator {
 	 * @param decision the decision written to, or null when one is being created.
 	 */
 	public void validateChangeable(final String errandId, final DecisionEntity decision) {
-		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
+		validateChangeable(errandId, processRepository.findByErrandIdOrderByCreatedDesc(errandId), decision);
+	}
 
+	/**
+	 * The same, asked of process rows the caller has already read.
+	 *
+	 * @param errandId  the errand the decision belongs to.
+	 * @param instances the process rows of the errand, as
+	 *                  {@link se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository#findByErrandIdOrderByCreatedDesc}
+	 *                  reads them.
+	 * @param decision  the decision written to, or null when one is being created.
+	 */
+	public void validateChangeable(final String errandId, final List<ErrandProcessEntity> instances, final DecisionEntity decision) {
 		if (instances.isEmpty()) {
 			return;
 		}
@@ -200,6 +207,21 @@ public class DecisionValidator {
 	}
 
 	/**
+	 * Rejects with 409 removing an errand a locked decision belongs to, since the removal would take the decision with
+	 * it. The retention purge is not held to this.
+	 *
+	 * @param namespace      namespace of the errand.
+	 * @param municipalityId municipality of the errand.
+	 * @param errandId       the errand about to be removed.
+	 */
+	public void validateErrandRemovable(final String namespace, final String municipalityId, final String errandId) {
+		validateNotRestedOnByLockedDecision(errandId,
+			() -> decisionRepository.existsByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId),
+			() -> decisionRepository.existsByNamespaceAndMunicipalityIdAndErrandEntityIdAndStatus(namespace, municipalityId, errandId, COMPLETED),
+			ERRAND_OF_LOCKED_DECISION.formatted(errandId));
+	}
+
+	/**
 	 * Applies the lock of {@link #validateChangeable} to what the decisions of the errand rest on. What no decision rests
 	 * on is let through without reading the process.
 	 */
@@ -223,8 +245,6 @@ public class DecisionValidator {
 	 * that lacks the setting, reads as unrestricted.
 	 */
 	private boolean singleDecisionPerErrand(final String namespace, final String municipalityId) {
-		return namespaceConfigRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
-			.map(config -> ConfigPropertyExtractor.<Boolean>getNullableValue(config, PROPERTY_SINGLE_DECISION_PER_ERRAND))
-			.orElse(false);
+		return namespaceConfigService.isSingleDecisionPerErrand(namespace, municipalityId);
 	}
 }

@@ -28,6 +28,10 @@ public class AddLabelAction extends AbstractAction {
 	private static final String LABEL = "label";
 	private static final Set<OperationType> VALID_OPERATION_TYPES = Set.of(OperationType.CREATE, OperationType.UPDATE);
 
+	private static final String LEFT_OFF = """
+		The labels a scheduled action was to add were therefore left off the errand. Take the label off the action, or give \
+		the action a condition that keeps it away from the errands it must not relabel.""";
+
 	private final ErrandsRepository errandsRepository;
 	private final ProcessKeyGuard processKeyGuard;
 
@@ -112,7 +116,7 @@ public class AddLabelAction extends AbstractAction {
 		// holding the same list for both sides of the comparison.
 		var current = List.copyOf(errand.getLabels());
 
-		if (processKeyGuard.refusesLabelChange(errand.getId(), current, Stream.concat(current.stream(), newLabels.stream()).toList())) {
+		if (processKeyGuard.refusesLabelChange(errand.getId(), current, Stream.concat(current.stream(), newLabels.stream()).toList(), LEFT_OFF)) {
 			return false;
 		}
 

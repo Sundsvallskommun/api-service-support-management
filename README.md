@@ -626,6 +626,10 @@ Every environment needs `integration.pw-alkt.url` and the OAuth2 client `pw-alkt
 Whether events are getting through is visible in the health indicator `process_event_relay`, which turns unhealthy
 when the oldest undelivered event is older than `scheduler.process-event.unhealthy-after`.
 
+The process life of an errand and the locks on its decisions rest on the process service reporting a process as
+`COMPLETED` when it ends, and on it reconciling instances that vanish from the process engine without a report. Without
+both, a process can stand as `RUNNING` for good: its decisions never lock, and the errand can never be started again.
+
 #### A new process service
 
 The relay delivers only to `pw-alkt`, through one Feign client. A process service of its own is therefore a release of
@@ -655,7 +659,8 @@ The process service in turn has to keep the contract `pw-alkt` keeps:
 - **Report** the state of the instance from every work step with `PUT .../processes/{processInstanceId}`: the status,
   the current activity, the activities performed, `awaitingSignals` for the gate it waits at, and `errandVersion` for
   the version of the errand the step read. A step that changes the errand sends `If-Match` with that version. A `412`
-  means the errand changed since; the step is retried against the errand as it now is.
+  means the errand changed since; the step is retried against the errand as it now is. Report `COMPLETED` from the
+  last step, and reconcile instances that end without a report: the process life and the decision locks rest on it.
 - **Identify itself** in every call with `X-Sent-By: <consumer>; type=processEngine` and `processService` set to the
   consumer name, and send `X-Trigger-Process: false` on its writes, so that they do not wake the process again.
 
@@ -689,8 +694,9 @@ The answer is read from the errand's **own** labels, through two label attribute
 The label tree is not walked, so moving or renaming a label leaves the answer alone. Deprecated labels are not read.
 
 A label write (`POST` or `PUT` of `/metadata/labels`) is refused with `400` when `processStartMode` is anything but
-exactly `AUTOMATIC` or `MANUAL`, when it stands on a label without `processKey`, or when an attribute key is spelled
-like `processKey` or `processStartMode` in any other way (another case, surrounding blanks).
+exactly `AUTOMATIC` or `MANUAL`, when it stands on a label without `processKey`, when an attribute key is spelled
+like `processKey` or `processStartMode` in any other way (another case, surrounding blanks), or when `processKey` is
+longer than 128 characters.
 
 | The labels resolve to |                          Result                          |
 |-----------------------|----------------------------------------------------------|
@@ -708,17 +714,22 @@ neither, and a key exchanged for another leaves the running process with nothing
 the errand just stops moving. Two rules therefore hold whenever labels are written:
 
 1. **An errand's labels may name at most one `processKey`.** This holds for every errand, with or without a process.
-2. **Once an errand has a process — live or completed — a label change may not move it to another.** What the labels
-   resolve to after the change must be what they resolved to before. A change that leaves them naming the process the
-   errand actually runs is always allowed, which is the way back for an errand whose label has lost its key.
+2. **Once an errand has a process — live or completed — or a start of one on its way, a label change may not move it
+   to another.** The keys the labels resolve to after the change must be the keys they resolved to before, so taking
+   every key away is refused as well. A change that leaves them naming the process the errand actually runs, or is
+   being started with, is always allowed, which is the way back for an errand whose label has lost its key.
 
 Only the key is held still: `processStartMode` may be changed freely, even on an errand with a process.
 
-|                      Writer                       |  Rules  |                              When refused                               |
-|---------------------------------------------------|---------|-------------------------------------------------------------------------|
-| `POST /errands` (also handover and e-mail intake) | 1       | `400` — a new errand has no process yet                                 |
-| `PATCH /errands/{errandId}`                       | 1 and 2 | `400`                                                                   |
-| The `ADD_LABEL` action (scheduled)                | 1 and 2 | The labels are not added, and an `ERROR` entry is written on the errand |
+|                      Writer                       |  Rules  |                                   When refused                                    |
+|---------------------------------------------------|---------|-----------------------------------------------------------------------------------|
+| `POST /errands` (also handover and e-mail intake) | 1       | `400` — a new errand has no process yet                                           |
+| `PATCH /errands/{errandId}`                       | 1 and 2 | `400`                                                                             |
+| The `ADD_LABEL` action (scheduled)                | 1 and 2 | The labels are not added, and an `ERROR` entry is written on the errand           |
+| A label moved in the metadata (`LabelMoveWorker`) | 1 and 2 | The errand keeps the labels it had, and an `ERROR` entry is written on the errand |
+
+A scheduled action or a label move that goes through is recorded as a revision and an errand event without a
+notification, and reaches the process like any other change.
 
 The rules are checked against the labels the errand would actually wear, including the ancestors added to them.
 
@@ -730,8 +741,12 @@ is always allowed, as it resolves the errand to a single key.
 
 - Every errand event that matches the triggers becomes a row in an outbox, **in the same transaction** as the change.
   If the row cannot be written, the change is rolled back.
-- A relay delivers the rows: right after the commit, and on the schedule in `scheduler.process-event` for whatever the
-  direct run did not reach.
+- A relay delivers the rows: right after the commit, for the rows of that errand, and on the schedule in
+  `scheduler.process-event` for whatever the direct run did not reach.
+- Rows are delivered per errand, oldest first. The first row that does not go through ends the delivery for its errand:
+  the rows before it are acknowledged, and it and the later rows of the errand are tried again on the next run. The
+  scheduled run then goes on with the rows of other errands, counting an errand that failed as one row against
+  `batch-size`, so an errand that never gets through holds back no other.
 - `422` from the process engine is permanent — the row is consumed, a live instance is marked `FAILED` and an `ERROR`
   entry is written. Anything else is retried until the row passes `scheduler.process-event.max-age`.
 - The process engine sets `X-Trigger-Process: false` on its own writes, so that they do not wake it again. The header is
@@ -744,13 +759,18 @@ is always allowed, as it resolves the errand to a single key.
 - So does a command, a handler's start or signal: it is a person pressing a button rather than something that
   happened to the errand.
 - Every event carries `startAllowed`, which says whether the process engine may start a process for it. It is set for
-  a start command, and otherwise only when the errand has no live and no completed process and the label naming the
-  key of the event has `processStartMode` `AUTOMATIC`.
+  a start command, and otherwise only when the errand has no live and no completed process, no start of another
+  process is on its way, and the label naming the key of the event has `processStartMode` `AUTOMATIC`.
 - A decision concluded by an AD account passes the brake, and nothing else. It is the event a waiting process needs,
   and a person is no loop. A decision the process concludes itself is held to the brake like any other write of the
   process.
-- A scheduled action that changes the errand, such as `ADD_LABEL`, is recorded as a revision and an errand event
-  without a notification, and reaches the process like any other change.
+- The retention purge tells the process of every errand it removes, with a `DELETE` event that writes nothing to the
+  event log and notifies no one.
+- The relay and the nightly cleanup are configured under `scheduler.process-event` and `scheduler.process-cleanup`. The
+  settings of their own, and their defaults, are documented in `ProcessEventRelayProperties` and
+  `ProcessEventCleanupProperties`.
+- The namespace config is cached per pod for ten minutes, and a change to it evicts the cache only in the pod that took
+  it. A changed `processConsumer` or trigger list can therefore take up to ten minutes to hold in every pod.
 
 ### Endpoints
 
@@ -765,7 +785,12 @@ All under `/{municipalityId}/{namespace}/errands/{errandId}`:
 | `POST` | `/processes/{processInstanceId}/signals` | A handler steps the process past the gate it waits at                                |
 | `GET`  | `/process-activities`                    | The activity log of the errand, optionally narrowed to one instance                  |
 
-The errand itself carries the latest process in `errand.process`.
+The errand itself carries its process in `errand.process`: the live one, or the latest when none lives. A namespace
+without a process consumer reads no process at all.
+
+A report on an instance that has already run to its end (`COMPLETED`) that says anything else is answered `200` with
+the instance as it stands: the activities it carries are stored, and nothing else changes. A report that would make an
+instance live or completed while another instance of the errand lives is `409`; a `FAILED` report is taken beside it.
 
 ### Starting a process by hand
 
@@ -777,12 +802,14 @@ explained by:
 | `AVAILABLE`         | A process may be started now, with one of the keys in `processKeys`   |
 | `LIVE_INSTANCE`     | A process is already running for the errand                           |
 | `PROCESS_COMPLETED` | A process has run to its end. A new process means a new errand        |
+| `START_PENDING`     | A start is on its way to the process engine and not yet delivered     |
 | `NO_PROCESS_KEY`    | No label of the errand names a process the errand can be started with |
 | `NO_PROCESS_ENGINE` | The namespace runs no processes                                       |
 
 `processKeys` is empty whenever the status is not `AVAILABLE`, and holds two or more keys when the labels point at
 different processes. Once an errand has had a process, a start that failed included, only the key of that process is
-offered. The start mode of the labels does not affect the answer.
+offered, and a key longer than 128 characters is never offered. The start mode of the labels does not affect the
+answer.
 
 A handler starts the process with `POST .../processes/start`, and `{ "processKey": "<key>" }` when more than one key is
 offered — the body may be left out otherwise, and a blank key counts as none:
@@ -801,8 +828,10 @@ offered — the body may be left out otherwise, and a blank key counts as none:
 - The command works in both start modes. In `AUTOMATIC` mode it is the way a start that failed is tried again.
 - A start pressed while one with the same key is still undelivered — sent by hand, or an automatic start — is answered
   `202` and recorded like any other, with its entry and its event, but hands the process no second start.
-- The process shows in `GET .../processes` once the process engine has registered it; until then `startable` still
-  says `AVAILABLE`, and the user interface should show the start as on its way.
+- The process shows in `GET .../processes` once the process engine has registered it. While the start is undelivered
+  `startable` says `START_PENDING`, and the user interface should show the start as on its way. Between delivery and
+  registration it says `AVAILABLE` again for a moment; a second start in that gap is turned away by the process
+  engine and by the `409` of the registration.
 
 ### Stepping a process by hand
 
@@ -841,9 +870,10 @@ A handler answers with `POST .../processes/{processInstanceId}/signals` and `{ "
 The decision is the ordinary `/decisions` resource of the errand, the same for errands with and without a process. What
 a process adds:
 
-- **Creating, changing and deleting a decision** is logged as an errand event with the sub type `DECISION` and moves
-  the version of the errand, so that a work step holding an older `ETag` gets `412`. Its terms, attachment links and
-  JSON parameters do neither.
+- **Creating, changing and deleting a decision** is logged as an errand event with the sub type `DECISION`, notifies
+  the handler and the subscribers, and moves the version of the errand, so that a work step holding an older `ETag`
+  gets `412`. This holds in every namespace, with or without a process; only the publication to the process needs a
+  process consumer. Its terms, attachment links and JSON parameters do none of it.
 - **Who may claim which method:** `MANUAL` is written by an AD account, and `AUTOMATIC` by a caller that is not one. In
   a namespace with a process consumer, `AUTOMATIC` is written only by that consumer, recognised by the value of
   `X-Sent-By`. Anything else is `403`. The process row that made an automatic
@@ -852,9 +882,10 @@ a process adds:
   - once the process has run to its end (`COMPLETED`), no decision of the errand can be created, changed or deleted;
   - once a decision is `COMPLETED`, it can no longer be changed or deleted, nor can its terms or attachment links;
   - an attachment of the errand linked to a locked decision cannot be deleted, nor can an investigation a locked
-    decision rests on.
+    decision rests on;
+  - the errand itself cannot be deleted with `DELETE /errands/{errandId}` while it holds a locked decision.
 
-  Every one of these is answered with `409`. The JSON parameters of a decision are never locked, since legal force and
+  Every one of these is answered with `409`. The retention purge is held to none of them. The JSON parameters of a decision are never locked, since legal force and
   service of the decision are known only after it is made. An errand without a process is never locked. A decision
   that has to be corrected once it is locked is corrected in a new errand, referred from the first.
 

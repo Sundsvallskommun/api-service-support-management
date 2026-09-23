@@ -53,10 +53,38 @@ class ProcessEventOutboxRepositoryTest {
 	@DisplayName("Verification that the batch limit holds, so one engine being down cannot spend the whole run")
 	void findByProcessServiceHonoursTheBatchLimit() {
 		assertThat(processEventOutboxRepository.findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore("pw-alkt", at("2026-01-01T12:00:00"), PageRequest.of(0, 100)))
-			.hasSize(2);
+			.hasSize(3);
 
 		assertThat(processEventOutboxRepository.findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore("pw-alkt", at("2026-01-01T12:00:00"), PageRequest.of(0, 1)))
 			.hasSize(1);
+	}
+
+	@Test
+	@DisplayName("Verification that a run fetching on past the errands that failed leaves their rows out, and takes the rest")
+	void findByProcessServiceAndDeliveredAtIsNullAndCreatedBeforeAndErrandIdNotIn() {
+		assertThat(processEventOutboxRepository.findByProcessServiceAndDeliveredAtIsNullAndCreatedBeforeAndErrandIdNotIn("pw-alkt", at("2026-01-01T12:00:00"), List.of("ERRAND_ID-1"), PageRequest.of(0, 100)))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactly("peo-start-waiting");
+
+		assertThat(processEventOutboxRepository.findByProcessServiceAndDeliveredAtIsNullAndCreatedBeforeAndErrandIdNotIn("pw-alkt", at("2026-01-01T12:00:00"), List.of("ERRAND_ID-1", "ERRAND_ID-2"), PageRequest.of(0, 100)))
+			.isEmpty();
+	}
+
+	@Test
+	@DisplayName("Verification that a start on its way is an undelivered row that may start a process, and that a delivered one is no longer on its way")
+	void findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull() {
+		assertThat(processEventOutboxRepository.findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull("ERRAND_ID-2"))
+			.extracting(ProcessEventOutboxEntity::getId)
+			.containsExactly("peo-start-waiting");
+
+		assertThat(processEventOutboxRepository.findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull("ERRAND_ID-1")).isEmpty();
+	}
+
+	@Test
+	@DisplayName("Verification that whether a start is on its way is answered for the errand asked about only")
+	void existsByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull() {
+		assertThat(processEventOutboxRepository.existsByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull("ERRAND_ID-2")).isTrue();
+		assertThat(processEventOutboxRepository.existsByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull("ERRAND_ID-1")).isFalse();
 	}
 
 	@Test
@@ -100,7 +128,7 @@ class ProcessEventOutboxRepositoryTest {
 
 		assertThat(processEventOutboxRepository.findByDeliveredAtBefore(at("2026-01-02T00:00:00"), PageRequest.of(0, 100)))
 			.extracting(ProcessEventOutboxEntity::getId)
-			.containsExactlyInAnyOrder("peo-delivered-long-ago", "peo-delivered-in-window");
+			.containsExactlyInAnyOrder("peo-delivered-long-ago", "peo-delivered-in-window", "peo-delivered-late");
 	}
 
 	@Test
@@ -117,6 +145,12 @@ class ProcessEventOutboxRepositoryTest {
 	@DisplayName("Verification that the emergency brake counts what reached the process engine, not what is queued for it")
 	void countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter() {
 		assertThat(processEventOutboxRepository.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter("ERRAND_ID-1", at("2026-01-01T11:50:00"))).isOne();
+	}
+
+	@Test
+	@DisplayName("Verification that the window of the emergency brake is measured on when a row was written, not on when it was delivered")
+	void countMeasuresTheWindowOnTheCreation() {
+		assertThat(processEventOutboxRepository.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter("ERRAND_ID-2", at("2026-01-01T11:00:00"))).isZero();
 	}
 
 	@Test

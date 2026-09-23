@@ -12,10 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties.DirectRun;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties.LoopGuard;
+import se.sundsvall.supportmanagement.config.ProcessEventCleanupProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
@@ -93,11 +93,7 @@ class ProcessEventCleanupTest {
 
 	private ProcessEventCleanup cleanup(final Duration window) {
 		final var properties = new ProcessEngineProperties(new LoopGuard(20, window), new DirectRun(true, 2, 4, 500));
-		final var cleanup = new ProcessEventCleanup(outboxRepositoryMock, activityRepositoryMock, properties, CLOCK);
-		ReflectionTestUtils.setField(cleanup, "batchSize", BATCH_SIZE);
-		ReflectionTestUtils.setField(cleanup, "activityRetention", ACTIVITY_RETENTION);
-
-		return cleanup;
+		return new ProcessEventCleanup(outboxRepositoryMock, activityRepositoryMock, properties, new ProcessEventCleanupProperties(BATCH_SIZE, ACTIVITY_RETENTION), CLOCK);
 	}
 
 	private static ProcessEventOutboxEntity row(final String id) {

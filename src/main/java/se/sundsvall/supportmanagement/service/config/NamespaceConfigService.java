@@ -73,6 +73,7 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
 	})
 	public void create(NamespaceConfig request, String namespace, String municipalityId) {
@@ -216,6 +217,7 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
@@ -230,6 +232,22 @@ public class NamespaceConfigService {
 
 		validateNoDuplicateGrants(replacement);
 		configRepository.save(replacement);
+	}
+
+	/**
+	 * Signals if the namespace allows only one decision per errand. A namespace with no configuration at all, or one that
+	 * lacks the setting, answers false. Cached in its own right.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @return                true if an errand of the namespace may hold only one decision
+	 */
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
+	public boolean isSingleDecisionPerErrand(String namespace, String municipalityId) {
+		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.map(mapper::toNamespaceConfig)
+			.map(NamespaceConfig::isSingleDecisionPerErrand)
+			.orElse(false);
 	}
 
 	/**
@@ -304,6 +322,7 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
 	})
 	public void delete(String namespace, String municipalityId) {

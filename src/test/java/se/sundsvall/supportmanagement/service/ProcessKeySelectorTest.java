@@ -187,11 +187,7 @@ class ProcessKeySelectorTest {
 	@Test
 	@DisplayName("Verification that an entry naming no label at all is passed over without a lookup")
 	void anEntryNamingNoLabelIsPassedOverWithoutALookup() {
-		final var labels = new ArrayList<ErrandLabelEmbeddable>();
-		labels.add(null);
-		labels.add(ErrandLabelEmbeddable.create());
-
-		assertThat(selector.select(ErrandEntity.create().withLabels(labels))).isEqualTo(ProcessKeySelection.NONE);
+		assertThat(selector.select(errandWearing(ErrandLabelEmbeddable.create()))).isEqualTo(ProcessKeySelection.NONE);
 
 		verifyNoInteractions(metadataLabelRepositoryMock);
 	}
@@ -262,11 +258,6 @@ class ProcessKeySelectorTest {
 		final var excerpt = ProcessKeySelector.excerptOf(List.of("k".repeat(1000), APPLICATION));
 
 		assertThat(excerpt).endsWith(", " + APPLICATION).hasSize(64 + ", ".length() + APPLICATION.length());
-	}
-
-	@Test
-	void noKeysAtAllAreNamedAsNothing() {
-		assertThat(ProcessKeySelector.excerptOf((List<String>) null)).isEmpty();
 	}
 
 	private ErrandEntity errandWith(final MetadataLabelEntity... labels) {

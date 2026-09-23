@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -9,17 +10,22 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.PlatformTransactionManager;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
@@ -29,9 +35,13 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.process.ProcessSignal;
 import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties.DirectRun;
+import se.sundsvall.supportmanagement.config.ProcessEngineProperties.LoopGuard;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
+import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
@@ -57,9 +67,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_ENGINE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.START_PENDING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.WARN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
@@ -79,6 +91,7 @@ class ErrandProcessServiceTest {
 	private static final String PROCESS_KEY = "alkt-ansokan";
 	private static final String PROCESS_SERVICE = "pw-alkt";
 	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-14T10:15:30.000Z"), ZoneId.of("UTC"));
+	private static final ProcessEngineProperties PROCESS_ENGINE_PROPERTIES = new ProcessEngineProperties(new LoopGuard(20, Duration.ofMinutes(10)), new DirectRun(false, 2, 4, 500));
 
 	@Mock
 	private ErrandProcessRepository processRepositoryMock;
@@ -88,6 +101,9 @@ class ErrandProcessServiceTest {
 
 	@Mock
 	private ErrandProcessSignalRepository signalRepositoryMock;
+
+	@Mock
+	private ProcessEventOutboxRepository outboxRepositoryMock;
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
@@ -121,8 +137,8 @@ class ErrandProcessServiceTest {
 	 */
 	@BeforeEach
 	void setUp() {
-		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, signalRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock, processKeySelectorMock, transactionManagerMock,
-			CLOCK);
+		service = new ErrandProcessService(processRepositoryMock, activityRepositoryMock, signalRepositoryMock, outboxRepositoryMock, new ProcessActivityLog(activityRepositoryMock, PROCESS_ENGINE_PROPERTIES, CLOCK),
+			accessControlServiceMock, namespaceConfigServiceMock, processKeySelectorMock, transactionManagerMock, CLOCK);
 
 		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue(PROCESS_SERVICE));
 		lenient().when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(PROCESS_SERVICE));
@@ -325,6 +341,69 @@ class ErrandProcessServiceTest {
 			.satisfies(problem -> {
 				assertThat(problem.getStatus().value()).isEqualTo(409);
 				assertThat(problem.getDetail()).contains("took-its-place");
+			});
+
+		verify(processRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	/**
+	 * A completed instance never comes back: a late report saying anything else - a resent RUNNING, or the RETRYING of a
+	 * step whose completion failed after it reported - leaves the row as it is, and its activities are stored.
+	 */
+	@ParameterizedTest
+	@EnumSource(value = ProcessStatus.class, names = "COMPLETED", mode = EnumSource.Mode.EXCLUDE)
+	@DisplayName("Verification that a report on a completed instance leaves it completed and ended when it ended, and answers with it as it stands")
+	void aReportOnACompletedInstanceLeavesItCompleted(final ProcessStatus status) {
+		final var existing = entity(PROCESS_INSTANCE_ID, COMPLETED).withId("rowId");
+		final var ended = existing.getEnded();
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(existing));
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(status)
+			.withExternalTaskId("task-1")
+			.withActivities(List.of(activity("review_phase")))
+			.withAwaitingSignals(List.of(ProcessSignal.create().withName("granskning-godkand"))));
+
+		assertThat(result.created()).isFalse();
+		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED.name());
+		assertThat(result.process().getAwaitingSignals()).isEmpty();
+		assertThat(existing.getProcessStatus()).isEqualTo(COMPLETED);
+		assertThat(existing.getActiveMarker()).isNull();
+		assertThat(existing.getEnded()).isEqualTo(ended);
+		verify(processRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(signalRepositoryMock);
+		verify(activityRepositoryMock).saveAll(activitiesCaptor.capture());
+		assertThat(activitiesCaptor.getValue()).extracting(ErrandProcessActivityEntity::getActivityId).containsExactly("review_phase");
+	}
+
+	/**
+	 * A completed report on a completed instance is the ordinary replay of its last report, and is taken as such.
+	 */
+	@Test
+	void aCompletedReportOnACompletedInstanceIsTaken() {
+		final var existing = entity(PROCESS_INSTANCE_ID, COMPLETED).withId("rowId");
+		final var ended = existing.getEnded();
+		givenKnownInstance(existing);
+
+		final var result = service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED));
+
+		assertThat(result.process().getProcessStatus()).isEqualTo(COMPLETED.name());
+		assertThat(existing.getEnded()).isEqualTo(ended);
+		verify(processRepositoryMock).saveAndFlush(existing);
+	}
+
+	/**
+	 * A completed instance created while another lives would end the process life of the errand under the live one.
+	 */
+	@Test
+	void aCompletedRowIsRefusedWhileAnotherInstanceLives() {
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.empty());
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(entity("still-alive", RUNNING)));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED)))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).contains("still-alive");
 			});
 
 		verify(processRepositoryMock, never()).saveAndFlush(any());
@@ -859,6 +938,19 @@ class ErrandProcessServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that an errand whose start is already on its way is shown as START_PENDING, with no key to start")
+	void readingTheProcessesOfAnErrandWithAStartOnItsWay() {
+		final var errand = ErrandEntity.create().withId(ERRAND_ID);
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, PROCESS, R)).thenReturn(errand);
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of());
+		when(processKeySelectorMock.select(errand)).thenReturn(new ProcessKeySelection(PROCESS_KEY, ProcessStartMode.AUTOMATIC, List.of(PROCESS_KEY)));
+		when(outboxRepositoryMock.existsByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(ERRAND_ID)).thenReturn(true);
+
+		assertThat(service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID).getStartable())
+			.isEqualTo(ProcessStartable.create().withStatus(START_PENDING).withProcessKeys(List.of()));
+	}
+
+	@Test
 	void readingTheProcessesInANamespaceRunningNoProcessSaysSo() {
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, PROCESS, R)).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
@@ -899,6 +991,36 @@ class ErrandProcessServiceTest {
 
 		assertThat(page.getContent()).extracting(ProcessActivity::getProcessInstanceId).containsExactly(PROCESS_INSTANCE_ID);
 		verify(activityRepositoryMock, never()).findByErrandId(anyString(), any());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"id", "activityType", "activityId", "activityName", "severity", "message", "errorCode", "occurredAt", "created"
+	})
+	@DisplayName("Verification that the log can be sorted by every property an entry is read with that the entity carries")
+	void theLogCanBeSortedByTheProperties(final String property) {
+		final var pageable = PageRequest.of(0, 50, Sort.by(property));
+		when(activityRepositoryMock.findByErrandId(ERRAND_ID, pageable)).thenReturn(Page.empty(pageable));
+
+		assertThat(service.readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, pageable)).isEmpty();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"processInstanceId", "errandId", "unknown"
+	})
+	@DisplayName("Verification that sorting the log by anything else is refused with 400 before anything is read")
+	void sortingTheLogByAnythingElseIsRefused(final String property) {
+		final var pageable = PageRequest.of(0, 50, Sort.by(Sort.Order.asc("occurredAt"), Sort.Order.desc(property)));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.readProcessActivities(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, pageable))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).startsWith("The activity log cannot be sorted by '" + property + "'");
+			});
+
+		verifyNoInteractions(accessControlServiceMock, activityRepositoryMock);
 	}
 
 	@Test
@@ -953,8 +1075,30 @@ class ErrandProcessServiceTest {
 	@Test
 	void noErrandsAsksTheDatabaseNothing() {
 		assertThat(service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of())).isEmpty();
-		assertThat(service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, null)).isEmpty();
 		verifyNoInteractions(processRepositoryMock, signalRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a namespace without a process consumer asks nothing about the processes of its errands")
+	void aNamespaceWithoutAProcessConsumerAsksNothing() {
+		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		assertThat(service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1"))).isEmpty();
+		verifyNoInteractions(processRepositoryMock, signalRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an errand shows its live process rather than a newer row that has ended, such as a start that failed beside it")
+	void theLiveProcessIsShownBeforeANewerRowThatHasEnded() {
+		when(processRepositoryMock.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(List.of("errand-1"), MUNICIPALITY_ID, NAMESPACE)).thenReturn(List.of(
+			entity("newest-failed", FAILED).withId("row-newest").withErrandId("errand-1"),
+			entity("live", WAITING).withId("row-live").withErrandId("errand-1"),
+			entity("oldest-failed", FAILED).withId("row-oldest").withErrandId("errand-1")));
+
+		final var processes = service.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1"));
+
+		assertThat(processes.get("errand-1").getProcessInstanceId()).isEqualTo("live");
+		verify(signalRepositoryMock).findByErrandProcessIdInOrderBySortOrderAsc(List.of("row-live"));
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -1001,14 +1145,12 @@ class ErrandProcessServiceTest {
 	}
 
 	private static ErrandProcessEntity entity(final String processInstanceId, final ProcessStatus status) {
-		final var entity = ErrandProcessEntity.create()
+		return createErrandProcessEntity(status, CLOCK, process -> process
 			.withErrandId(ERRAND_ID)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withNamespace(NAMESPACE)
 			.withProcessService(PROCESS_SERVICE)
 			.withProcessKey(PROCESS_KEY)
-			.withProcessInstanceId(processInstanceId);
-		entity.applyStatus(status, CLOCK);
-		return entity;
+			.withProcessInstanceId(processInstanceId));
 	}
 }

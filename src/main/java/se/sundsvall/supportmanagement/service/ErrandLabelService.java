@@ -5,7 +5,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
@@ -67,8 +69,8 @@ public class ErrandLabelService {
 	 * <p>
 	 * An id that names no label of the namespace and municipality is refused with 400 before anything is written, with
 	 * the same answer whether the label does not exist or belongs elsewhere, so the answer says nothing about other
-	 * namespaces. A label without an id is refused with 400 as well, and a label whose version has moved on is answered
-	 * with 412.
+	 * namespaces. Namespace, municipality and id are matched regardless of case, as the database matches them. A label
+	 * without an id is refused with 400 as well, and a label whose version has moved on is answered with 412.
 	 *
 	 * @param namespace      the namespace of the errand.
 	 * @param municipalityId the municipality of the errand.
@@ -86,8 +88,8 @@ public class ErrandLabelService {
 		}
 
 		final var labelsById = metadataLabelRepository.findAllById(requested.stream().map(ErrandLabel::getId).collect(Collectors.toSet())).stream()
-			.filter(label -> namespace.equals(label.getNamespace()) && municipalityId.equals(label.getMunicipalityId()))
-			.collect(Collectors.toMap(MetadataLabelEntity::getId, identity(), (first, _) -> first));
+			.filter(label -> Strings.CI.equals(namespace, label.getNamespace()) && Strings.CI.equals(municipalityId, label.getMunicipalityId()))
+			.collect(Collectors.toMap(MetadataLabelEntity::getId, identity(), (first, _) -> first, () -> new TreeMap<String, MetadataLabelEntity>(String.CASE_INSENSITIVE_ORDER)));
 
 		requested.stream()
 			.filter(label -> !labelsById.containsKey(label.getId()))

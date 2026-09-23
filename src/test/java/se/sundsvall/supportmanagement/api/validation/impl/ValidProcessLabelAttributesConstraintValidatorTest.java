@@ -114,6 +114,19 @@ class ValidProcessLabelAttributesConstraintValidatorTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a process key as long as a process key may be is valid, also with blanks around it")
+	void aProcessKeyOfTheLongestLengthIsValid() {
+		assertValid(List.of(label("TILLSYN", attribute("processKey", " " + "k".repeat(128) + " "))));
+	}
+
+	@Test
+	@DisplayName("Verification that a process key one character longer than a process key may be is invalid")
+	void aProcessKeyTooLongIsInvalid() {
+		assertInvalid(List.of(label("ALKT", attribute("processKey", "alkt-ansokan")).withLabels(List.of(label("TILLSYN", attribute("processKey", "k".repeat(129)))))),
+			"label 'ALKT/TILLSYN' has a processKey of 129 characters, and a process key may hold at most 128");
+	}
+
+	@Test
 	@DisplayName("Verification that a value too long to repeat is cut in the message")
 	void anOversizedValueIsCutInTheMessage() {
 		final var oversized = "M".repeat(200);

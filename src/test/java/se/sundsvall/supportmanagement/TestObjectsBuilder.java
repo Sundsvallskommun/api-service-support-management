@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement;
 
 import generated.se.sundsvall.citizen.CitizenExtended;
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +16,11 @@ import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
 import static java.time.OffsetDateTime.now;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
@@ -168,6 +171,15 @@ public class TestObjectsBuilder {
 		Optional.ofNullable(modifier).ifPresent(m -> m.accept(notification));
 
 		return notification;
+	}
+
+	public static ErrandProcessEntity createErrandProcessEntity(final ProcessStatus status, final Clock clock, final Consumer<ErrandProcessEntity> modifier) {
+		final var process = ErrandProcessEntity.create();
+
+		Optional.ofNullable(modifier).ifPresent(m -> m.accept(process));
+		process.applyStatus(status, clock);
+
+		return process;
 	}
 
 	public static CitizenExtended createCitizenExtended(final String firstName, final String lastName) {

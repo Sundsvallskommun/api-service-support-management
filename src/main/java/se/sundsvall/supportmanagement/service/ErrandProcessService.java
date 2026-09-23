@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.time.Clock;
-import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -15,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessSignalRepository;
+import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
@@ -36,7 +37,6 @@ import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
@@ -53,7 +53,10 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS_ACTIVITY;
-import static se.sundsvall.supportmanagement.service.ProcessCommandService.startOptionsOf;
+import static se.sundsvall.supportmanagement.service.ProcessActivityLog.CONCURRENCY_ACTIVITY_TYPE;
+import static se.sundsvall.supportmanagement.service.ProcessRules.hasCompletedProcess;
+import static se.sundsvall.supportmanagement.service.ProcessRules.requireProcessConsumer;
+import static se.sundsvall.supportmanagement.service.ProcessRules.startableOf;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcess;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessActivityEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toErrandProcessEntity;
@@ -80,12 +83,13 @@ public class ErrandProcessService {
 	private static final String OTHER_LIVE_INSTANCE = "The errand '%s' already has a live process instance '%s' and cannot be given another one";
 	private static final String OTHER_PROCESS_KEY = "The errand '%s' already runs a process other than '%s', and every instance of an errand runs the same process";
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again";
-	static final String NO_PROCESS_CONSUMER = "The namespace '%s' in municipality '%s' has no process consumer configured and runs no process";
 	private static final String WRONG_PROCESS_CONSUMER = "The process service '%s' is not the process consumer of namespace '%s', which is '%s'";
-	private static final String MISSING_IDENTIFIER = "A report must carry the identifier of its sender in the '%s' header, since it is what the activity log and the notification of the errand name as the author";
+	private static final String MISSING_IDENTIFIER = "A report must name its sender in the '%s' header";
 	private static final String ERRAND_CHANGED = "The errand has changed since version %s, which the report says it was read at";
+	private static final String UNSORTABLE_ACTIVITY_PROPERTY = "The activity log cannot be sorted by '%s'. It can be sorted by: %s";
 
-	private static final String CONCURRENCY_ACTIVITY_TYPE = "CONCURRENCY";
+	private static final List<String> SORTABLE_ACTIVITY_PROPERTIES = List.of("id", "activityType", "activityId", "activityName", "severity", "message", "errorCode", "occurredAt", "created");
+
 	private static final String CONCURRENT_TASKS_DETECTED = """
 		concurrent external tasks detected: task '%s' reported RUNNING while task '%s' was still working. Two \
 		branches of the process instance are changing the errand at once - take the parallel gateway out of the \
@@ -98,6 +102,8 @@ public class ErrandProcessService {
 	private final ErrandProcessRepository processRepository;
 	private final ErrandProcessActivityRepository activityRepository;
 	private final ErrandProcessSignalRepository signalRepository;
+	private final ProcessEventOutboxRepository outboxRepository;
+	private final ProcessActivityLog activityLog;
 	private final AccessControlService accessControlService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final ProcessKeySelector processKeySelector;
@@ -108,6 +114,8 @@ public class ErrandProcessService {
 		final ErrandProcessRepository processRepository,
 		final ErrandProcessActivityRepository activityRepository,
 		final ErrandProcessSignalRepository signalRepository,
+		final ProcessEventOutboxRepository outboxRepository,
+		final ProcessActivityLog activityLog,
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
 		final ProcessKeySelector processKeySelector,
@@ -117,6 +125,8 @@ public class ErrandProcessService {
 		this.processRepository = processRepository;
 		this.activityRepository = activityRepository;
 		this.signalRepository = signalRepository;
+		this.outboxRepository = outboxRepository;
+		this.activityLog = activityLog;
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.processKeySelector = processKeySelector;
@@ -126,6 +136,9 @@ public class ErrandProcessService {
 
 	/**
 	 * Takes the report of a work step, creating the row for the instance if this is the first word about it.
+	 * <p>
+	 * An instance that has completed stays completed: a later report saying anything else changes neither its state nor
+	 * what it waits for, and is answered with the instance as it stands. The activities it carries are stored.
 	 *
 	 * @param  namespace         the namespace of the errand.
 	 * @param  municipalityId    the municipality of the errand.
@@ -156,9 +169,12 @@ public class ErrandProcessService {
 		verifyBelongsToErrand(existing, errandId);
 		verifySameProcessKey(existing, report);
 
-		// Asked of a row that already exists as well, because a terminal one reporting itself alive again - an incident
-		// resolved by hand - asks for the place it gave up when it ended, and may find it taken. The unique key would
-		// refuse that too, but only the check can say which instance is standing in the way.
+		if (COMPLETED == existing.getProcessStatus() && COMPLETED != toProcessStatus(report)) {
+			LOG.info("Report of {} on the completed process instance '{}' of errand '{}' leaves the instance completed", report.getProcessStatus(), processInstanceId, errandId);
+			storeActivities(existing, errandId, report);
+			return new ErrandProcessResult(toErrandProcess(existing, emptyList()), false);
+		}
+
 		verifyNoOtherLiveInstance(processRepository.findByErrandIdOrderByCreatedDesc(errandId), errandId, processInstanceId, report);
 
 		final var displaced = trackOutstandingTask(existing, report);
@@ -238,8 +254,9 @@ public class ErrandProcessService {
 	/**
 	 * Every process an errand has had, newest first, together with whether a new one may be started right now.
 	 * <p>
-	 * Whether one may be started is answered by {@link ProcessCommandService#startOptionsOf}, from the process rows read
-	 * for the list. The labels of the errand are read only when no process row stands in the way.
+	 * Whether one may be started is answered by {@link ProcessRules#startableOf}, from the process rows read for the list.
+	 * The labels of the errand are read only when no process row stands in the way, and the outbox only when a start
+	 * would otherwise be available.
 	 *
 	 * @param  namespace      the namespace of the errand.
 	 * @param  municipalityId the municipality of the errand.
@@ -253,7 +270,8 @@ public class ErrandProcessService {
 		final var runsProcesses = namespaceConfigService.getProcessConsumer(namespace, municipalityId).isPresent();
 
 		return ErrandProcessOverview.create()
-			.withStartable(toProcessStartable(startOptionsOf(runsProcesses, instances, () -> processKeySelector.select(errand))))
+			.withStartable(toProcessStartable(startableOf(runsProcesses, instances, () -> processKeySelector.select(errand),
+				() -> outboxRepository.existsByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(errandId))))
 			.withProcesses(toErrandProcesses(instances, signalsOf(instances)));
 	}
 
@@ -263,6 +281,9 @@ public class ErrandProcessService {
 	 * The log of the errand includes the entries that belong to no instance, such as those explaining why no process ever
 	 * started. Narrowing to an instance leaves those entries out, and narrowing to an instance the errand never had
 	 * returns an empty page.
+	 * <p>
+	 * A page may be sorted by the properties an entry is read with, all but {@code processInstanceId}. Sorting by anything
+	 * else is answered with 400.
 	 *
 	 * @param  namespace         the namespace of the errand.
 	 * @param  municipalityId    the municipality of the errand.
@@ -273,6 +294,7 @@ public class ErrandProcessService {
 	 */
 	@Transactional(readOnly = true)
 	public Page<ProcessActivity> readProcessActivities(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final Pageable pageable) {
+		verifySortableActivityProperties(pageable);
 		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, PROCESS_ACTIVITY, R);
 
 		if (isNull(processInstanceId)) {
@@ -288,27 +310,28 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * The latest process of every one of the given errands, which is what the {@code process} field of an errand shows.
-	 * The latest process is returned whether it is live or not, a start that failed and a completed process included.
+	 * The current process of every one of the given errands, which is what the {@code process} field of an errand shows:
+	 * the live process when the errand has one, and otherwise the latest, a start that failed and a completed process
+	 * included.
 	 * <p>
-	 * Reads the processes of all the errands in one query, and the signals of the latest ones in one more; no signals are
-	 * read when none of the errands has a process. Only the newest row per errand is kept, before the signals are read.
+	 * Reads the processes of all the errands in one query, and the signals of the chosen ones in one more; no signals are
+	 * read when none of the errands has a process. Nothing is read for a namespace without a process consumer.
 	 *
 	 * @param  namespace      the namespace of the errands.
 	 * @param  municipalityId the municipality of the errands.
 	 * @param  errandIds      the errands to read the process of.
-	 * @return                the latest process per errand id, holding no entry for an errand that has none.
+	 * @return                the current process per errand id, holding no entry for an errand that has none.
 	 */
 	@Transactional(readOnly = true)
 	public Map<String, ErrandProcess> findLatestProcesses(final String namespace, final String municipalityId, final Collection<String> errandIds) {
-		if (isNull(errandIds) || errandIds.isEmpty()) {
+		if (errandIds.isEmpty() || namespaceConfigService.getProcessConsumer(namespace, municipalityId).isEmpty()) {
 			return emptyMap();
 		}
 
 		final var latestPerErrand = new LinkedHashMap<String, ErrandProcessEntity>();
 
 		processRepository.findByErrandIdInAndMunicipalityIdAndNamespaceOrderByCreatedDesc(errandIds, municipalityId, namespace)
-			.forEach(entity -> latestPerErrand.putIfAbsent(entity.getErrandId(), entity));
+			.forEach(entity -> latestPerErrand.merge(entity.getErrandId(), entity, (chosen, older) -> !chosen.isLive() && older.isLive() ? older : chosen));
 
 		final var signals = signalsOf(latestPerErrand.values());
 		final var processes = new LinkedHashMap<String, ErrandProcess>();
@@ -334,10 +357,11 @@ public class ErrandProcessService {
 	/**
 	 * Runs a write, and recovers from losing a race for one of the unique keys.
 	 * <p>
-	 * The write runs in a transaction of its own. When it violates an integrity constraint, it is logged and run once
-	 * more in a new transaction, which reads before it writes exactly as the first attempt did: a row that appeared
-	 * meanwhile sends the report down the update path, and one that stands in the way is refused with a 409 naming it. A
-	 * violation in the second attempt is raised as it is, not as a conflict.
+	 * The write runs in a transaction of its own. Writes on the same errand are serialised by the lock each attempt takes
+	 * on the errand first, so a race is lost only to a write on another errand naming the same instance. When the write
+	 * violates an integrity constraint, it is logged and run once more in a new transaction, which reads before it
+	 * writes exactly as the first attempt did: an instance that appeared meanwhile on another errand is refused with a
+	 * 409. A violation in the second attempt is raised as it is, not as a conflict.
 	 */
 	private ErrandProcessResult writeWithCollisionRecovery(final String errandId, final String processInstanceId, final Supplier<ErrandProcessResult> attempt) {
 		try {
@@ -368,12 +392,24 @@ public class ErrandProcessService {
 			throw Problem.valueOf(BAD_REQUEST, MISSING_IDENTIFIER.formatted(SENT_BY_HEADER));
 		}
 
-		final var consumer = namespaceConfigService.getProcessConsumer(namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, NO_PROCESS_CONSUMER.formatted(namespace, municipalityId)));
+		final var consumer = requireProcessConsumer(namespaceConfigService.getProcessConsumer(namespace, municipalityId), namespace, municipalityId);
 
 		if (!consumer.equals(report.getProcessService())) {
 			throw Problem.valueOf(BAD_REQUEST, WRONG_PROCESS_CONSUMER.formatted(report.getProcessService(), namespace, consumer));
 		}
+	}
+
+	/**
+	 * Refuses with 400 a page sorted by a property the activity log cannot be sorted by.
+	 */
+	private static void verifySortableActivityProperties(final Pageable pageable) {
+		pageable.getSort().stream()
+			.map(Sort.Order::getProperty)
+			.filter(property -> !SORTABLE_ACTIVITY_PROPERTIES.contains(property))
+			.findFirst()
+			.ifPresent(property -> {
+				throw Problem.valueOf(BAD_REQUEST, UNSORTABLE_ACTIVITY_PROPERTY.formatted(property, String.join(", ", SORTABLE_ACTIVITY_PROPERTIES)));
+			});
 	}
 
 	/**
@@ -408,31 +444,18 @@ public class ErrandProcessService {
 	}
 
 	/**
-	 * Whether the process life of an errand is over.
-	 * <p>
-	 * Once it is, a process is never started for the errand again, and the decisions of the errand can no longer be
-	 * changed. A failed process leaves the life open.
-	 *
-	 * @param  instances the process rows of the errand, as {@link ErrandProcessRepository#findByErrandIdOrderByCreatedDesc}
-	 *                   reads them.
-	 * @return           true when any of them ran to its end.
-	 */
-	public static boolean hasCompletedProcess(final List<ErrandProcessEntity> instances) {
-		return instances.stream().anyMatch(instance -> COMPLETED == instance.getProcessStatus());
-	}
-
-	/**
-	 * Refuses a second live instance with 409, which is the rule {@code uq_ep_one_active_per_errand} holds. Only a report
-	 * that would leave its row live is checked, so a terminal report - a start that failed among them - is taken while
+	 * Refuses with 409 a report that would leave its row live or completed while another instance of the errand lives. A
+	 * second live instance is what {@code uq_ep_one_active_per_errand} rules out, and a completed one would end the
+	 * process life of the errand under the live one. A report of FAILED - a start that failed among them - is taken while
 	 * another instance lives on.
 	 */
 	private static void verifyNoOtherLiveInstance(final List<ErrandProcessEntity> instances, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
-		if (toProcessStatus(report).isTerminal()) {
+		if (FAILED == toProcessStatus(report)) {
 			return;
 		}
 
 		instances.stream()
-			.filter(instance -> nonNull(instance.getActiveMarker()))
+			.filter(ErrandProcessEntity::isLive)
 			.filter(instance -> !Objects.equals(instance.getProcessInstanceId(), processInstanceId))
 			.findFirst()
 			.ifPresent(live -> {
@@ -500,8 +523,7 @@ public class ErrandProcessService {
 	 * <p>
 	 * Every occurrence is logged as a warning, while the entry in the activity log of the errand is written once per
 	 * instance. The entry names both tasks, says what to do about them and carries an error code for an alert to be built
-	 * on. It is written without an activity id, so {@code uq_epa_idempotency}, which counts null as distinct, never
-	 * refuses it.
+	 * on. It is written without an activity id.
 	 */
 	private void logConcurrentTasks(final ErrandProcessEntity process, final String errandId, final String externalTaskId, final String displacedTaskId) {
 		LOG.warn("Concurrent external tasks on process instance '{}' of errand '{}': task '{}' reported RUNNING while task '{}' was still working",
@@ -511,15 +533,14 @@ public class ErrandProcessService {
 			return;
 		}
 
-		activityRepository.save(ErrandProcessActivityEntity.create()
+		activityLog.write(ErrandProcessActivityEntity.create()
 			.withErrandProcessId(process.getId())
 			.withErrandId(errandId)
 			.withExternalTaskId(externalTaskId)
 			.withActivityType(CONCURRENCY_ACTIVITY_TYPE)
 			.withSeverity(WARN)
 			.withMessage(CONCURRENT_TASKS_DETECTED.formatted(externalTaskId, displacedTaskId))
-			.withErrorCode(CONCURRENT_TASKS_ERROR_CODE)
-			.withOccurredAt(OffsetDateTime.now(clock).truncatedTo(MILLIS)));
+			.withErrorCode(CONCURRENT_TASKS_ERROR_CODE));
 	}
 
 	/**
