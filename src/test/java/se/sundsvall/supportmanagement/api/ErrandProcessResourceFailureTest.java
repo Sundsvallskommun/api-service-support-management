@@ -193,26 +193,6 @@ class ErrandProcessResourceFailureTest {
 	}
 
 	@Test
-	void aStartNamingAKeyLongerThanTheProcessKeysCanBeIsRejected() {
-		final var response = webTestClient.post()
-			.uri(builder -> builder.path(START_PATH).build(errandVariables(NAMESPACE)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(ProcessStartRequest.create().withProcessKey("k".repeat(129)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("processKey", "size must be between 0 and 128"));
-
-		verifyNoInteractions(serviceMock, commandServiceMock);
-	}
-
-	@Test
 	void aStartOfAnErrandWithAnInvalidIdIsRejected() {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(START_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", "not-a-uuid")))

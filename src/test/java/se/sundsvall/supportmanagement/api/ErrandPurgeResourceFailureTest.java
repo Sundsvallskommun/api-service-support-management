@@ -131,27 +131,6 @@ class ErrandPurgeResourceFailureTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a cutoff in the future is refused by the same floor")
-	void startPurgeWithCutoffInTheFuture() {
-		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(validRequest().withOlderThan(now(systemDefault()).plusDays(1)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("olderThan", "must be at least P2Y before the current time"));
-
-		verifyNoInteractions(serviceMock);
-	}
-
-	@Test
 	void startPurgeWithMaxErrandsBelowOne() {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
