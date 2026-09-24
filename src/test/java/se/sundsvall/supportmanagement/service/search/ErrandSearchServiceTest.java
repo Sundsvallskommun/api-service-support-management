@@ -44,7 +44,7 @@ class ErrandSearchServiceTest {
 
 	private ErrandSearchService service(final boolean enabled) {
 		return new ErrandSearchService(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, new SearchAvailability(enabled),
-			new SearchProperties(10000, new SearchProperties.Reindex(Duration.ofHours(6))));
+			new SearchProperties(10000, Duration.ofSeconds(10), new SearchProperties.Reindex(Duration.ofHours(6))));
 	}
 
 	@Test

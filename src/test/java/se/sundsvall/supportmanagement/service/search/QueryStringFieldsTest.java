@@ -24,6 +24,31 @@ class QueryStringFieldsTest {
 		assertThat(QueryStringFields.fieldNames("communications\\:literal")).containsExactly("communications");
 	}
 
+	/**
+	 * The parser binds a term to a field whatever whitespace stands between the name and the colon, so a name followed
+	 * by a space is a name here too. Anything else would let a field be searched by putting a space in front of the
+	 * colon, which {@code ErrandSearchIT} holds against a real OpenSearch.
+	 */
+	@Test
+	void aNameIsANameWhateverStandsBetweenItAndTheColon() {
+		assertThat(QueryStringFields.fieldNames("description :x")).containsExactly("description");
+		assertThat(QueryStringFields.fieldNames("description : x")).containsExactly("description");
+		assertThat(QueryStringFields.fieldNames("description\t:x")).containsExactly("description");
+		assertThat(QueryStringFields.fieldNames("description\n:x")).containsExactly("description");
+		assertThat(QueryStringFields.fieldNames("description     :     x")).containsExactly("description");
+		// The parser passes over the ideographic space as well, which Java's own class of whitespace does not hold
+		assertThat(QueryStringFields.fieldNames("description\u3000:x")).containsExactly("description");
+		assertThat(QueryStringFields.fieldNames("_exists_\u3000:\u3000description")).containsExactly("_exists_", "description");
+		assertThat(QueryStringFields.fieldNames("(description : x)")).containsExactly("description");
+		assertThat(QueryStringFields.fieldNames("+description : x")).containsExactly("description");
+		assertThat(QueryStringFields.fieldNames("* : x")).containsExactly("*");
+		assertThat(QueryStringFields.fieldNames("_exists_ : communications.subject")).containsExactly("_exists_", "communications.subject");
+
+		// A word standing on its own is still no name, whatever follows it
+		assertThat(QueryStringFields.fieldNames("vatten läcka status : new")).containsExactly("status");
+		assertThat(QueryStringFields.hasFreeTerms("description : x")).isFalse();
+	}
+
 	@Test
 	void wildcard() {
 		assertThat(QueryStringFields.isWildcard("jsonParameters.*.regNo")).isTrue();

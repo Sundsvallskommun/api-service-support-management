@@ -171,8 +171,8 @@ spring:
             version: opensearch:3.6
             version_check:
               enabled: false
-            protocol: http
-            hosts: localhost:9200
+            # Where the cluster is, and how it is reached, belongs to the environment that has one: the profile of the
+            # deployment names the hosts, and the protocol with them where it is not the plain one assumed here
             analysis:
               configurer: class:se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer
             schema_management:

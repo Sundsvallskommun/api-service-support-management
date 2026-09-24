@@ -17,16 +17,25 @@ final class QueryStringFields {
 	// ones rather than a choice repeated per character, which the engine walks recursively: a query carrying a few
 	// thousand characters after an unclosed quote overflowed the stack that way, and the query comes from the client
 	private static final Pattern PHRASE = Pattern.compile("\"[^\"\\\\]*+(?:\\\\.[^\"\\\\]*+)*+\"");
-	// A field name is whatever comes right before a colon. Nothing of a name is ever given back to find the colon,
-	// since a colon is not part of a name, so the repetitions here and below are possessive
-	private static final Pattern FIELD = Pattern.compile("(?<![\\w.\\\\*?-])([\\w.\\\\*?-]++):");
+	/**
+	 * What the parser passes over between a name and its colon, and therefore what a name may be followed by here. The
+	 * parser reads "description : x" as the field "description" exactly as it reads "description:x", so a pattern
+	 * stopping at the colon alone would let a field be searched by putting a space in front of it. The ideographic
+	 * space is one of the characters it passes over and is not one of Java's, which is why it stands here by name;
+	 * Java's class holds a couple the parser does not pass over, which only refuses a query that named no field.
+	 */
+	private static final String SEPARATOR = "[\\s\\u3000]*+";
+	// A field name is whatever comes before a colon, what the parser passes over included. Nothing of a name is ever
+	// given back to find the colon, since a colon is not part of a name, so the repetitions here and below are possessive
+	private static final Pattern FIELD = Pattern.compile("(?<![\\w.\\\\*?-])([\\w.\\\\*?-]++)" + SEPARATOR + ":");
 	// A field with its value: a group in parentheses, a range in brackets or braces, or a single term. Held to the
 	// start of a name like the pattern above, which is what keeps a long word without a colon from being tried from
 	// every position in it. What stands between the brackets excludes the opening bracket as well as the closing one,
 	// so that a bracket never closed gives up at the next one instead of at the end of the query: a query of nothing
 	// but unclosed brackets cost the square of its length otherwise. A value holding brackets of its own is left to
 	// the last choice, as it was before, since the first closing bracket ended it there
-	private static final Pattern FIELDED_TERM = Pattern.compile("(?<![\\w.\\\\*?-])[\\w.\\\\*?-]++:(?:\\([^()]*+\\)|\\[[^\\[\\]]*+\\]|\\{[^{}]*+\\}|\\S++)");
+	private static final Pattern FIELDED_TERM = Pattern.compile(
+		"(?<![\\w.\\\\*?-])[\\w.\\\\*?-]++" + SEPARATOR + ":" + SEPARATOR + "(?:\\([^()]*+\\)|\\[[^\\[\\]]*+\\]|\\{[^{}]*+\\}|\\S++)");
 	private static final Pattern OPERATORS = Pattern.compile("\\b(?:AND|OR|NOT|TO)\\b|&&|\\|\\||[+\\-!()]");
 	// The value of _exists_ is a field name too
 	private static final String EXISTS = "_exists_";
@@ -47,7 +56,8 @@ final class QueryStringFields {
 		while (matcher.find()) {
 			names.add(unescape(matcher.group(1)));
 			if (EXISTS.equals(matcher.group(1))) {
-				names.add(unescape(unquoted.substring(matcher.end()).split("[\\s()]", 2)[0]));
+				// What follows the colon is a field name, and the whitespace the parser allows between the two is not part of it
+				names.add(unescape(unquoted.substring(matcher.end()).stripLeading().split("[\\s\\u3000()]", 2)[0]));
 			}
 		}
 		return names;
