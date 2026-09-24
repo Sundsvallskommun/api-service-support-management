@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import java.time.OffsetDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +10,11 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventRelay;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static java.util.Objects.isNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpMethod.GET;
@@ -343,6 +343,50 @@ class ProcessSignalIT extends AbstractAppTest {
 	}
 
 	/**
+	 * A signal consumes nothing: pressed twice before the process reports again, it is taken both times and reaches the
+	 * process twice, and the errand goes on showing every signal the latest report named.
+	 */
+	@Test
+	@DisplayName("Verification that the same signal pressed twice before the next report is taken both times, and leaves the awaited signals as they were")
+	void test07_theSameSignalIsTakenTwiceBeforeTheNextReport() {
+		reportAsProcess(REPORT_FILE);
+
+		for (var press = 0; press < 2; press++) {
+			setupCall()
+				.withServicePath(signalsPath(ERRAND_ID, PROCESS_INSTANCE_ID))
+				.withHttpMethod(POST)
+				.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+				.withRequest(REQUEST_FILE)
+				.withExpectedResponseStatus(ACCEPTED)
+				.withExpectedResponseBodyIsNull()
+				.sendRequest();
+		}
+
+		wiremock.verify(2, postRequestedFor(urlPathEqualTo("/api-eventlog/" + MUNICIPALITY_ID + "/" + ERRAND_ID)));
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_ID) + "/process-activities")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-activities.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_ID))
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(null)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(ERRAND_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(outboxRepository.findAll()).hasSize(2).allSatisfy(row -> {
+			assertThat(row.getEventSubType()).isEqualTo("SIGNAL");
+			assertThat(row.getSignalName()).isEqualTo("granskning-godkand");
+			assertThat(row.getDeliveredAt()).isNull();
+		});
+	}
+
+	/**
 	 * Reports on the live instance as pw-alkt does, asking not to be woken by it.
 	 */
 	private void reportAsProcess(final String reportFile) {
@@ -361,21 +405,6 @@ class ProcessSignalIT extends AbstractAppTest {
 	 * limit allows, and verifies that the count the brake asks for reaches that limit.
 	 */
 	private void tripTheBrake() {
-		final var guard = processEngineProperties.loopGuard();
-
-		for (var i = 0; i < guard.maxEventsPerErrand(); i++) {
-			outboxRepository.save(ProcessEventOutboxEntity.create()
-				.withMunicipalityId(MUNICIPALITY_ID)
-				.withNamespace(NAMESPACE)
-				.withErrandId(ERRAND_ID)
-				.withProcessService("pw-alkt")
-				.withProcessKey(PROCESS_KEY)
-				.withEventType("UPDATE")
-				.withEventSubType("ERRAND")
-				.withDeliveredAt(OffsetDateTime.now()));
-		}
-
-		assertThat(outboxRepository.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(ERRAND_ID, OffsetDateTime.now().minus(guard.window())))
-			.isGreaterThanOrEqualTo(guard.maxEventsPerErrand());
+		EmergencyBrake.trip(outboxRepository, processEngineProperties, MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, PROCESS_KEY);
 	}
 }

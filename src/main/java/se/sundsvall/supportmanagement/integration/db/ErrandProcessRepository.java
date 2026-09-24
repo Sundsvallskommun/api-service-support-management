@@ -13,16 +13,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEntity, String> {
 
 	/**
-	 * The live instance of an errand, if it has one.
-	 * <p>
-	 * At most one row can answer, which the unique key {@code uq_ep_one_active_per_errand} guarantees.
-	 *
-	 * @param  errandId the errand to look at.
-	 * @return          the live instance, or empty when the errand has none.
-	 */
-	Optional<ErrandProcessEntity> findByErrandIdAndActiveMarkerIsNotNull(String errandId);
-
-	/**
 	 * Every process row of an errand, live or finished, newest first. Normally exactly one.
 	 * <p>
 	 * One read for every question asked of the process history of an errand: which process it runs, whether a live
@@ -54,8 +44,8 @@ public interface ErrandProcessRepository extends JpaRepository<ErrandProcessEnti
 	/**
 	 * The instances of a whole page of errands, newest first.
 	 * <p>
-	 * The {@code process} projection on the errand is built from this: the caller keeps the first row it sees per errand,
-	 * and the ordering makes that the latest one.
+	 * The {@code process} projection on the errand is built from this: the caller keeps the live row of each errand, and
+	 * otherwise the first row it sees, which the ordering makes the latest one.
 	 * <p>
 	 * Scoped by namespace and municipality, so errand ids of another namespace or municipality find nothing.
 	 *

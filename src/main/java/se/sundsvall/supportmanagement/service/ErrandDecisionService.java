@@ -102,7 +102,8 @@ public class ErrandDecisionService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 		final var method = ofNullable(decision.getMethod()).map(DecisionMethod::valueOf).orElse(null);
 
-		decisionValidator.validateChangeable(errandId, null);
+		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
+		decisionValidator.validateChangeable(errandId, instances, null);
 		decisionValidator.validateCardinality(namespace, municipalityId, errandId);
 		decisionValidator.validateMethod(namespace, municipalityId, method);
 		decisionValidator.validateOutcome(namespace, municipalityId, decision.getOutcome());
@@ -110,7 +111,7 @@ public class ErrandDecisionService {
 		final var investigationEntity = resolveInvestigation(namespace, municipalityId, errandId, decision.getInvestigationId());
 		final var entity = toDecisionEntity(decision, errandEntity, investigationEntity, namespace, municipalityId)
 			.withCreatedBy(getCallerIdentity())
-			.withErrandProcessId(errandProcessIdOf(errandId, method, null));
+			.withErrandProcessId(errandProcessIdOf(instances, method, null));
 
 		entityManager.lock(errandEntity, OPTIMISTIC_FORCE_INCREMENT);
 		final var id = decisionRepository.saveAndFlush(entity).getId();
@@ -141,7 +142,8 @@ public class ErrandDecisionService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.DECISION, RW);
 
 		final var entity = findDecisionOrElseThrow(namespace, municipalityId, errandId, decisionId);
-		decisionValidator.validateChangeable(errandId, entity);
+		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
+		decisionValidator.validateChangeable(errandId, instances, entity);
 		logMissingIfMatch(ifMatch, "PATCH", namespace, municipalityId, errandId, decisionId);
 		validateIfMatch(ifMatch, entity.getVersion());
 
@@ -153,7 +155,7 @@ public class ErrandDecisionService {
 		updateDecisionEntity(entity, decision).setModifiedBy(getCallerIdentity());
 		ofNullable(decision.getInvestigationId())
 			.ifPresent(id -> entity.setInvestigationEntity(resolveInvestigation(namespace, municipalityId, errandId, id)));
-		entity.setErrandProcessId(errandProcessIdOf(errandId, method, entity.getErrandProcessId()));
+		entity.setErrandProcessId(errandProcessIdOf(instances, method, entity.getErrandProcessId()));
 
 		entityManager.lock(errandEntity, OPTIMISTIC_FORCE_INCREMENT);
 		final var result = toDecision(decisionRepository.saveAndFlush(entity));
@@ -313,12 +315,14 @@ public class ErrandDecisionService {
 	 * The process row a decision is made by. An automatic decision is made by the live process of the errand, and keeps
 	 * the row it names when the errand has none live. A manual decision is made by no process.
 	 */
-	private String errandProcessIdOf(final String errandId, final DecisionMethod method, final String current) {
+	private static String errandProcessIdOf(final List<ErrandProcessEntity> instances, final DecisionMethod method, final String current) {
 		if (AUTOMATIC != method) {
 			return null;
 		}
-		return processRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId)
+		return instances.stream()
+			.filter(ErrandProcessEntity::isLive)
 			.map(ErrandProcessEntity::getId)
+			.findFirst()
 			.orElse(current);
 	}
 

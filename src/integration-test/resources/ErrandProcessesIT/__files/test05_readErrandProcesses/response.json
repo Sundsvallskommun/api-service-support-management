@@ -12,9 +12,9 @@
 			"processStatus": "RUNNING",
 			"currentActivityId": "granska-ansokan",
 			"currentActivityName": "Granska ansokan",
-			"started": "${json-unit.any-string}",
+			"started": "2026-01-01T10:00:00+01:00",
 			"awaitingSignals": [],
-			"created": "${json-unit.any-string}"
+			"created": "2026-01-01T10:00:00+01:00"
 		}
 	]
 }

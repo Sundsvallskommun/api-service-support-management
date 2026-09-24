@@ -6,7 +6,8 @@
 -- PROCESS-NAMESPACE would change what every other test of that namespace publishes and resolves.
 -- -----------------------------------------------------------------------------------------------
 
--- Two labels naming different processes, and one naming none at all
+-- Two labels naming different processes, one naming none at all, and a parent naming a third process for a child
+-- that names none itself
 INSERT INTO metadata_label (created, modified, municipality_id, namespace, classification, display_name, id, parent_id,
                             resource_name, resource_path, deprecated)
 VALUES ('2026-01-01 10:00:00.000', NULL, '2281', 'PROCESS-NAMESPACE', 'CATEGORY', 'Ansokan',
@@ -14,11 +15,16 @@ VALUES ('2026-01-01 10:00:00.000', NULL, '2281', 'PROCESS-NAMESPACE', 'CATEGORY'
        ('2026-01-01 10:00:00.000', NULL, '2281', 'PROCESS-NAMESPACE', 'CATEGORY', 'Tillsyn',
         'bb000000-0000-0000-0000-0000000000b2', NULL, 'TILLSYN', 'TILLSYN', false),
        ('2026-01-01 10:00:00.000', NULL, '2281', 'PROCESS-NAMESPACE', 'CATEGORY', 'Bradskande',
-        'bb000000-0000-0000-0000-0000000000b3', NULL, 'BRADSKANDE', 'BRADSKANDE', false);
+        'bb000000-0000-0000-0000-0000000000b3', NULL, 'BRADSKANDE', 'BRADSKANDE', false),
+       ('2026-01-01 10:00:00.000', NULL, '2281', 'PROCESS-NAMESPACE', 'CATEGORY', 'Servering',
+        'bb000000-0000-0000-0000-0000000000b4', NULL, 'SERVERING', 'SERVERING', false),
+       ('2026-01-01 10:00:00.000', NULL, '2281', 'PROCESS-NAMESPACE', 'TYPE', 'Stadigvarande servering',
+        'bb000000-0000-0000-0000-0000000000b5', 'bb000000-0000-0000-0000-0000000000b4', 'STADIGVARANDE', 'SERVERING/STADIGVARANDE', false);
 
 INSERT INTO metadata_label_attribute (metadata_label_id, `key`, `value`)
 VALUES ('bb000000-0000-0000-0000-0000000000b1', 'processKey', 'alkt-ansokan'),
-       ('bb000000-0000-0000-0000-0000000000b2', 'processKey', 'alkt-tillsyn');
+       ('bb000000-0000-0000-0000-0000000000b2', 'processKey', 'alkt-tillsyn'),
+       ('bb000000-0000-0000-0000-0000000000b4', 'processKey', 'alkt-servering');
 
 -- A third errand, whose process has run to its end: its process life is over, and its labels are held just as still
 -- as those of the errand running one. Its instance id differs from the live one, which uq_ep_process_instance_id holds.

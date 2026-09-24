@@ -39,6 +39,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -65,6 +66,23 @@ class NamespaceConfigServiceTest {
 	@BeforeEach
 	void setUp() {
 		configService = new NamespaceConfigService(configRepositoryMock, mapperMock);
+	}
+
+	@Test
+	void isSingleDecisionPerErrandReadsTheSettingOfTheNamespace() {
+		final var entity = NamespaceConfigEntity.create();
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "2281")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create().withSingleDecisionPerErrand(true));
+
+		assertThat(configService.isSingleDecisionPerErrand("namespace", "2281")).isTrue();
+	}
+
+	@Test
+	void isSingleDecisionPerErrandIsFalseForANamespaceWithoutConfiguration() {
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "2281")).thenReturn(Optional.empty());
+
+		assertThat(configService.isSingleDecisionPerErrand("namespace", "2281")).isFalse();
+		verifyNoInteractions(mapperMock);
 	}
 
 	@Test

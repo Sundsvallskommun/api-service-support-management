@@ -45,7 +45,8 @@ public class ProcessEventScheduler {
 	}
 
 	/**
-	 * The nightly cleanup: delivered rows of the outbox, and entries of the activity log past their retention.
+	 * The nightly cleanup: delivered rows of the outbox, and entries of the activity log past their retention. How much
+	 * was removed is logged.
 	 */
 	@Dept44Scheduled(
 		cron = "${scheduler.process-cleanup.cron}",
@@ -53,7 +54,9 @@ public class ProcessEventScheduler {
 		lockAtMostFor = "${scheduler.process-cleanup.shedlock-lock-at-most-for}",
 		maximumExecutionTime = "${scheduler.process-cleanup.maximum-execution-time}")
 	public void cleanUp() {
-		processEventCleanup.removeDelivered();
-		processEventCleanup.removeExpiredActivities();
+		final var delivered = processEventCleanup.removeDelivered();
+		final var activities = processEventCleanup.removeExpiredActivities();
+
+		LOG.info("The process event cleanup removed {} delivered events and {} entries of the activity log", delivered, activities);
 	}
 }

@@ -109,7 +109,6 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
 			.withAccessGrants(toAccessGrants(config));
 
-		// The value column does not take null, so a namespace running no processes gets no rows of its own at all.
 		ofNullable(config.getProcessConsumer())
 			.ifPresent(consumer -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_PROCESS_CONSUMER, consumer, STRING)));
 

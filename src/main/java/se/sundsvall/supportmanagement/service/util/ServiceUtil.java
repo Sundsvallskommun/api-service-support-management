@@ -13,6 +13,7 @@ import org.apache.commons.lang3.Strings;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -23,6 +24,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.UUID.fromString;
 import static org.apache.commons.lang3.Strings.CI;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -72,6 +74,18 @@ public class ServiceUtil {
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
 			.map(Identifier::getValue)
 			.orElse(null);
+	}
+
+	/**
+	 * The ad account the request is made by, for an operation only a person may perform.
+	 *
+	 * @param  reason                                       why the operation needs an ad account, which is what a caller
+	 *                                                      that is not one is told.
+	 * @return                                              the value of the ad account.
+	 * @throws se.sundsvall.dept44.problem.ThrowableProblem 403 when the request is not made by an ad account.
+	 */
+	public static String requireAdUser(final String reason) {
+		return ofNullable(getAdUser()).orElseThrow(() -> Problem.valueOf(FORBIDDEN, reason));
 	}
 
 	/**

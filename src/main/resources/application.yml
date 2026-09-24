@@ -48,22 +48,18 @@ scheduler:
     cron: 0 * * * * *
     shedlock-lock-at-most-for: PT2M
     maximum-execution-time: PT1M
-    # How old a row must be before the scheduled run takes it, so that the run does not reach past a transaction still
-    # being committed. The direct run is not held to it, since it starts once its own transaction is committed
+    # The settings of the relay itself are documented in ProcessEventRelayProperties, which is where the defaults live
     transaction-buffer: PT5S
-    # Last resort for a row that never makes it through
     max-age: P30D
-    # Measured on the age of the oldest undelivered row
     unhealthy-after: PT15M
-    # Ceiling per run, so that a backlog cannot make a single run unbounded
     batch-size: 200
   process-cleanup:
     name: process_event_cleanup
     cron: 0 30 2 * * *
     shedlock-lock-at-most-for: PT10M
     maximum-execution-time: PT5M
+    # Documented in ProcessEventCleanupProperties, which is where the defaults live
     batch-size: 1000
-    # How long an entry of the activity log is kept
     activity-retention: P365D
   job:
     name: maintain_jobs

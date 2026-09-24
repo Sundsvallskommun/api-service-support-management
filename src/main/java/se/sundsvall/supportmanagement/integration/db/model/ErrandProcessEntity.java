@@ -21,6 +21,7 @@ import static java.lang.Boolean.TRUE;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.Objects.nonNull;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 /**
@@ -135,16 +136,33 @@ public class ErrandProcessEntity {
 	 * A status that is alive again, as when an incident is resolved by hand and a FAILED instance resumes, clears the end
 	 * time and gives the marker back. The instance can then find the place taken by another one started meanwhile - the
 	 * unique constraint says so, and the caller has to tell the handler which instance is in the way.
+	 * <p>
+	 * A terminal status reported again keeps the end time it was given the first time.
 	 *
 	 * @param status the state the process is in.
 	 * @param clock  the clock the end time is read from.
 	 */
 	public void applyStatus(final ProcessStatus status, final Clock clock) {
 		final var terminal = status.isTerminal();
+		final var repeated = status == processStatus && nonNull(ended);
 
 		this.processStatus = status;
 		this.activeMarker = terminal ? null : TRUE;
-		this.ended = terminal ? now(clock).truncatedTo(MILLIS) : null;
+
+		if (!terminal) {
+			this.ended = null;
+		} else if (!repeated) {
+			this.ended = now(clock).truncatedTo(MILLIS);
+		}
+	}
+
+	/**
+	 * Whether the instance is alive, which is what its active marker says.
+	 *
+	 * @return true while the status is not terminal.
+	 */
+	public boolean isLive() {
+		return nonNull(activeMarker);
 	}
 
 	public String getId() {

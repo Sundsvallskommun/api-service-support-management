@@ -22,6 +22,9 @@ public class ProcessStartable {
 		LIVE_INSTANCE - a process is already running for this errand. \
 		PROCESS_COMPLETED - a process has already run to its end. An errand has one process life; a new process means a \
 		new errand. \
+		START_PENDING - a start is already on its way to the process engine, and the process shows up among the \
+		processes once the process engine has registered it, normally within seconds. Show that the start is on its way \
+		rather than offering it again. \
 		NO_PROCESS_KEY - no label on the errand carries a processKey attribute the errand can be started with, so there \
 		is nothing to start. Setting the right label is the fix. \
 		NO_PROCESS_ENGINE - this namespace does not run processes at all. \

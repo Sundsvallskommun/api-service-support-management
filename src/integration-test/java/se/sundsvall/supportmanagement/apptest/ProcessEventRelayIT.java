@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -30,6 +29,7 @@ import se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEven
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.moreThanOrExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static io.github.resilience4j.circuitbreaker.CircuitBreaker.State.CLOSED;
@@ -195,8 +195,8 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	}
 
 	/**
-	 * pw-alkt is asked twice, since the token retryer every client of the service is given takes a timeout for a reason
-	 * to try again.
+	 * pw-alkt may be asked more than once, since the token retryer every client of the service is given can take a timeout
+	 * for a reason to try again. How many times is left to the retryer.
 	 */
 	@Test
 	@DisplayName("Verification that a pw-alkt that does not answer in time leaves the row exactly as it was")
@@ -208,7 +208,7 @@ class ProcessEventRelayIT extends AbstractAppTest {
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findById("row-1")).contains(before);
-		wiremock.verify(2, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
+		wiremock.verify(moreThanOrExactly(1), postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)));
 		verifyStubs();
 	}
 
@@ -232,27 +232,26 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	}
 
 	/**
-	 * pw-alkt takes the first row, but the transaction it is acknowledged in goes down with the second, so the next run
-	 * gives it both again, the first as the very event it was given before.
+	 * pw-alkt takes the first row and fails the second. The first is acknowledged all the same, and the next run gives
+	 * pw-alkt the second alone.
 	 */
 	@Test
-	@DisplayName("Verification that a group that fails is rolled back in full, and that pw-alkt is given the very same event again on the next run")
-	void test07_aFailingGroupIsRolledBackInFull() {
+	@DisplayName("Verification that a row that does not go through ends its group: the rows before it are acknowledged, and only it and the later ones are given again on the next run")
+	void test07_aFailingRowEndsTheGroup() {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(2));
 		givenRow("row-2", ERRAND_ID, Duration.ofMinutes(1));
 		setupCall();
 
 		processEventScheduler.relay();
 
-		assertThat(outboxRepository.findAllById(List.of("row-1", "row-2"))).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNull());
+		assertThat(outboxRepository.findById("row-1")).hasValueSatisfying(row -> assertThat(row.getDeliveredAt()).isNotNull());
+		assertThat(outboxRepository.findById("row-2")).hasValueSatisfying(row -> assertThat(row.getDeliveredAt()).isNull());
 
 		processEventScheduler.relay();
 
 		assertThat(outboxRepository.findAllById(List.of("row-1", "row-2"))).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNotNull());
-		final var eventsOfTheFirstRow = wiremock.findAll(postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)).withRequestBody(matchingJsonPath("$.eventId", equalTo("row-1")))).stream()
-			.map(LoggedRequest::getBodyAsString)
-			.toList();
-		assertThat(eventsOfTheFirstRow).hasSize(2).containsOnly(eventsOfTheFirstRow.getFirst());
+		wiremock.verify(1, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)).withRequestBody(matchingJsonPath("$.eventId", equalTo("row-1"))));
+		wiremock.verify(2, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)).withRequestBody(matchingJsonPath("$.eventId", equalTo("row-2"))));
 		verifyStubs();
 	}
 
@@ -433,6 +432,26 @@ class ProcessEventRelayIT extends AbstractAppTest {
 
 		assertThat(outboxRepository.findAllById(List.of("row-1", "row-2"))).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNull());
 		assertThat(circuitBreakerRegistry.circuitBreaker(PW_ALKT).getState()).isEqualTo(OPEN);
+		verifyStubs();
+	}
+
+	/**
+	 * The batch is two rows, and the two oldest belong to an errand whose first row pw-alkt does not take. The run leaves
+	 * that errand after its first row and fetches on, so the row of the other errand is delivered in the same run.
+	 */
+	@Test
+	@DisplayName("Verification that rows that do not go through cannot fill the batch: the run fetches on past their errand and delivers the rows of the others")
+	void test17_aRunFetchesOnPastAnErrandThatFails() {
+		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(3));
+		givenRow("row-2", ERRAND_ID, Duration.ofMinutes(2));
+		givenRow("row-3", OTHER_ERRAND_ID, Duration.ofMinutes(1));
+		setupCall();
+
+		processEventScheduler.relay();
+
+		assertThat(outboxRepository.findAllById(List.of("row-1", "row-2"))).allSatisfy(row -> assertThat(row.getDeliveredAt()).isNull());
+		assertThat(outboxRepository.findById("row-3")).hasValueSatisfying(row -> assertThat(row.getDeliveredAt()).isNotNull());
+		wiremock.verify(0, postRequestedFor(urlPathEqualTo(PW_ALKT_PATH)).withRequestBody(matchingJsonPath("$.eventId", equalTo("row-2"))));
 		verifyStubs();
 	}
 

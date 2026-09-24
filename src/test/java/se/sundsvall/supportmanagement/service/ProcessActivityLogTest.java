@@ -23,12 +23,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
 
 @ExtendWith(MockitoExtension.class)
-class ProcessErrorLogTest {
+class ProcessActivityLogTest {
 
 	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-14T08:00:00.123456Z"), ZoneId.of("UTC"));
 	private static final OffsetDateTime NOW = OffsetDateTime.now(CLOCK).truncatedTo(MILLIS);
@@ -44,11 +46,41 @@ class ProcessErrorLogTest {
 	private ArgumentCaptor<ErrandProcessActivityEntity> entryCaptor;
 
 	@Test
+	@DisplayName("Verification that an entry is written as it is given, stamped with the time it is written and with its message cut to fit its column")
+	void anEntryIsWrittenAsGiven() {
+		activityLog().write(ErrandProcessActivityEntity.create()
+			.withErrandId(ERRAND_ID)
+			.withErrandProcessId("process-1")
+			.withExternalTaskId("task-1")
+			.withActivityType("START")
+			.withActivityId("alkt-tillsyn")
+			.withActivityName("Tillsyn")
+			.withSeverity(INFO)
+			.withErrorCode("CODE")
+			.withMessage("x".repeat(MESSAGE_LENGTH + 1)));
+
+		verify(activityRepositoryMock).save(entryCaptor.capture());
+		assertThat(entryCaptor.getValue()).satisfies(entry -> {
+			assertThat(entry.getErrandId()).isEqualTo(ERRAND_ID);
+			assertThat(entry.getErrandProcessId()).isEqualTo("process-1");
+			assertThat(entry.getExternalTaskId()).isEqualTo("task-1");
+			assertThat(entry.getActivityType()).isEqualTo("START");
+			assertThat(entry.getActivityId()).isEqualTo("alkt-tillsyn");
+			assertThat(entry.getActivityName()).isEqualTo("Tillsyn");
+			assertThat(entry.getSeverity()).isEqualTo(INFO);
+			assertThat(entry.getErrorCode()).isEqualTo("CODE");
+			assertThat(entry.getMessage()).hasSize(MESSAGE_LENGTH);
+			assertThat(entry.getOccurredAt()).isEqualTo(NOW);
+		});
+		verifyNoMoreInteractions(activityRepositoryMock);
+	}
+
+	@Test
 	@DisplayName("Verification that an entry is written when none for the same fault stands on the errand inside the window")
 	void anEntryIsWritten() {
 		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, ERROR_CODE, NOW.minus(WINDOW))).thenReturn(false);
 
-		errorLog().writeOncePerWindow(ERRAND_ID, "process-1", ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
+		activityLog().writeOncePerWindow(ERRAND_ID, "process-1", ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
 
 		verify(activityRepositoryMock).save(entryCaptor.capture());
 		assertThat(entryCaptor.getValue()).satisfies(entry -> {
@@ -67,7 +99,7 @@ class ProcessErrorLogTest {
 	void anEntryWithoutAnInstance() {
 		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, ERROR_CODE, NOW.minus(WINDOW))).thenReturn(false);
 
-		errorLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
+		activityLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
 
 		verify(activityRepositoryMock).save(entryCaptor.capture());
 		assertThat(entryCaptor.getValue().getErrandProcessId()).isNull();
@@ -78,7 +110,7 @@ class ProcessErrorLogTest {
 	void noSecondEntryInsideTheWindow() {
 		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, ERROR_CODE, NOW.minus(WINDOW))).thenReturn(true);
 
-		errorLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
+		activityLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "what is wrong");
 
 		verify(activityRepositoryMock, never()).save(any());
 	}
@@ -88,13 +120,13 @@ class ProcessErrorLogTest {
 	void theMessageIsCutToFit() {
 		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(ERRAND_ID, ERROR_CODE, NOW.minus(WINDOW))).thenReturn(false);
 
-		errorLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "x".repeat(MESSAGE_LENGTH + 10));
+		activityLog().writeOncePerWindow(ERRAND_ID, null, ACTIVITY_TYPE, ERROR_CODE, "x".repeat(MESSAGE_LENGTH + 10));
 
 		verify(activityRepositoryMock).save(entryCaptor.capture());
 		assertThat(entryCaptor.getValue().getMessage()).hasSize(MESSAGE_LENGTH);
 	}
 
-	private ProcessErrorLog errorLog() {
-		return new ProcessErrorLog(activityRepositoryMock, new ProcessEngineProperties(new LoopGuard(20, WINDOW), new DirectRun(true, 2, 4, 500)), CLOCK);
+	private ProcessActivityLog activityLog() {
+		return new ProcessActivityLog(activityRepositoryMock, new ProcessEngineProperties(new LoopGuard(20, WINDOW), new DirectRun(true, 2, 4, 500)), CLOCK);
 	}
 }

@@ -13,6 +13,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -40,6 +41,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 })
 class ProcessEventRollbackTest {
 
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
 	private static final String ORIGINAL_TITLE = "TITLE-1";
 	private static final String NEW_TITLE = "a change that must not survive a failed publication";
@@ -49,6 +52,9 @@ class ProcessEventRollbackTest {
 
 	@Autowired
 	private EventService eventService;
+
+	@Autowired
+	private ErrandService errandService;
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
@@ -75,5 +81,20 @@ class ProcessEventRollbackTest {
 		}));
 
 		assertThat(errandsRepository.findById(ERRAND_ID)).get().extracting(ErrandEntity::getTitle).isEqualTo(ORIGINAL_TITLE);
+	}
+
+	@Test
+	@DisplayName("Verification that a patch of an errand is not committed when the publication of its event fails, even though the service swallows the exception")
+	void aPatchIsNotCommittedWhenThePublicationFails() {
+		when(outboxRepositoryMock.save(any())).thenThrow(new DataIntegrityViolationException("the row could not be written"));
+		final var patch = Errand.create().withTitle(NEW_TITLE);
+
+		assertThatExceptionOfType(UnexpectedRollbackException.class)
+			.isThrownBy(() -> errandService.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch));
+
+		assertThat(errandsRepository.findById(ERRAND_ID)).get().satisfies(errand -> {
+			assertThat(errand.getTitle()).isEqualTo(ORIGINAL_TITLE);
+			assertThat(errand.getVersion()).isZero();
+		});
 	}
 }

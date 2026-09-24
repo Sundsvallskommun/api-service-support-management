@@ -87,6 +87,7 @@ class ErrandProcessResource {
 		own process has been registered.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "201", description = "Successful operation", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden — the caller may not reach the errand", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "412",
 			description = "Precondition Failed — the errand has changed since the version the report was read at",
@@ -97,7 +98,8 @@ class ErrandProcessResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable final String errandId,
-		@Parameter(name = "processInstanceId", description = "Process instance id", example = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33") @Size(max = 64) @PathVariable final String processInstanceId,
+		@Parameter(name = "processInstanceId", description = "Process instance id", example = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33") @Size(max = 64) @Pattern(regexp = "\\S+",
+			message = "must be an id, without blanks") @PathVariable final String processInstanceId,
 		@Valid @NotNull @RequestBody final ErrandProcessReport report) {
 
 		return respond(service.reportProcess(namespace, municipalityId, errandId, processInstanceId, report), municipalityId, namespace, errandId);
@@ -112,6 +114,7 @@ class ErrandProcessResource {
 		process itself and is the newer word. A start that failed carries no process instance id.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "201", description = "Successful operation", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden — the caller may not reach the errand", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "412",
 			description = "Precondition Failed — the errand has changed since the version the report was read at",
@@ -134,8 +137,9 @@ class ErrandProcessResource {
 		failed is tried again. The body may be left out when startable.processKeys holds one key; when it holds several, \
 		send the key the user chose. Only a person may start a process, and the start is recorded with who sent it. \
 		202 says the start is recorded and on its way, not that the process runs: the process shows in GET .../processes \
-		once the process engine has registered it, normally within seconds. Until then startable still says AVAILABLE - \
-		show the start as on its way rather than as not started. A start pressed while one with the same key is on its \
+		once the process engine has registered it, normally within seconds. Until the start has been delivered, startable \
+		says START_PENDING, and between its delivery and its registration it briefly says AVAILABLE again. A start pressed \
+		while one with the same key is on its \
 		way - sent by hand, or an automatic start not yet delivered - is recorded like any other, starts nothing more \
 		and is answered 202. \
 		400 is answered when no label of the errand names a process it can be started with, when the labels name several \
@@ -200,6 +204,7 @@ class ErrandProcessResource {
 		and why not when it cannot be - which is what a start button is lit, dimmed and explained by. An empty list is not \
 		an error.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden — the caller may not reach the errand", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<ErrandProcessOverview> readErrandProcesses(
@@ -216,8 +221,10 @@ class ErrandProcessResource {
 	@Operation(summary = "Read errand process activities", description = """
 		The activity log of the errand. Read per errand rather than per process instance, since the entries explaining \
 		why no process ever started belong to no instance. Narrowing to one instance therefore leaves those entries \
-		out.""", responses = {
+		out. The log can be sorted by id, activityType, activityId, activityName, severity, message, errorCode, \
+		occurredAt and created; sorting by anything else is answered with 400.""", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden — the caller may not reach the errand", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Page<ProcessActivity>> readErrandProcessActivities(

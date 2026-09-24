@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import java.time.OffsetDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +10,6 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventRelay;
 
@@ -165,10 +163,17 @@ class ProcessStartIT extends AbstractAppTest {
 			.withServicePath(processesPath(SUPERVISION_ERRAND_ID))
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
-			.withExpectedResponse(PROCESSES_RESPONSE_FILE)
+			.withExpectedResponse("response-processes-pending.json")
 			.sendRequest();
 
 		processEventRelay.relayErrand(SUPERVISION_ERRAND_ID);
+
+		setupCall()
+			.withServicePath(processesPath(SUPERVISION_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(PROCESSES_RESPONSE_FILE)
+			.sendRequest();
 
 		verifyStubs();
 	}
@@ -522,21 +527,6 @@ class ProcessStartIT extends AbstractAppTest {
 	 * them.
 	 */
 	private void tripTheBrake(final String errandId) {
-		final var guard = processEngineProperties.loopGuard();
-
-		for (var i = 0; i < guard.maxEventsPerErrand(); i++) {
-			outboxRepository.save(ProcessEventOutboxEntity.create()
-				.withMunicipalityId(MUNICIPALITY_ID)
-				.withNamespace(NAMESPACE)
-				.withErrandId(errandId)
-				.withProcessService("pw-alkt")
-				.withProcessKey(SUPERVISION)
-				.withEventType("UPDATE")
-				.withEventSubType("ERRAND")
-				.withDeliveredAt(OffsetDateTime.now()));
-		}
-
-		assertThat(outboxRepository.countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(errandId, OffsetDateTime.now().minus(guard.window())))
-			.isGreaterThanOrEqualTo(guard.maxEventsPerErrand());
+		EmergencyBrake.trip(outboxRepository, processEngineProperties, MUNICIPALITY_ID, NAMESPACE, errandId, SUPERVISION);
 	}
 }

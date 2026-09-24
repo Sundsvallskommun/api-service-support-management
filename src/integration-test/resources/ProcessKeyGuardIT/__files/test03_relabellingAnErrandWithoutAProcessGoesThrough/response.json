@@ -1,7 +1,36 @@
 {
+	"id": "aa000000-0000-0000-0000-0000000000a2",
+	"errandNumber": "PN-26010002",
+	"title": "Errand without a process",
+	"priority": "MEDIUM",
+	"status": "STATUS-1",
+	"businessRelated": false,
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	},
+	"reporterUserId": "joe01doe",
+	"actions": [],
+	"activeNotifications": [],
+	"externalTags": [],
+	"jsonParameters": [],
 	"labels": [
 		{
-			"id": "bb000000-0000-0000-0000-0000000000b2"
+			"id": "bb000000-0000-0000-0000-0000000000b2",
+			"classification": "CATEGORY",
+			"displayName": "Tillsyn",
+			"resourcePath": "TILLSYN",
+			"resourceName": "TILLSYN",
+			"version": 0
 		}
-	]
+	],
+	"measures": [],
+	"parameters": [],
+	"phases": [],
+	"stakeholders": [],
+	"suspension": {},
+	"created": "2026-01-01T10:00:00+01:00",
+	"modified": "${json-unit.any-string}",
+	"touched": "${json-unit.any-string}",
+	"version": 2
 }

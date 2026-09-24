@@ -1,18 +1,20 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import java.util.List;
-import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.service.scheduler.action.ActionScheduler;
 
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 
 /**
  * Verifies the process key guard over the wire: a label change that would leave an errand naming a process it does not
@@ -20,6 +22,9 @@ import static org.springframework.http.HttpStatus.OK;
  * <p>
  * The refusal reaches the caller as a 400 whose detail names what is wrong, and is decided by the process rows in the
  * database - a live process, one that has run to its end, and none at all.
+ * <p>
+ * A label change made by a scheduled action is refused as well, and the refusal is written on the errand, since there is
+ * no caller to answer.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessKeyGuardIT/", classes = Application.class)
 @Sql({
@@ -27,6 +32,7 @@ import static org.springframework.http.HttpStatus.OK;
 	"/db/scripts/testdata-it.sql",
 	"/db/scripts/testdata-process-key-guard.sql"
 })
+@SqlMergeMode(MERGE)
 class ProcessKeyGuardIT extends AbstractAppTest {
 
 	private static final String NAMESPACE = "PROCESS-NAMESPACE";
@@ -37,6 +43,9 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
+
+	@Autowired
+	private ActionScheduler actionScheduler;
 
 	private static String errandPath(final String errandId) {
 		return "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + errandId;
@@ -80,7 +89,7 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 			.withServicePath(errandPath(ERRAND_WITHOUT_PROCESS))
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
-			.withJsonAssertOptions(List.of(Option.IGNORING_EXTRA_FIELDS))
+			.withJsonAssertOptions(null)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
@@ -99,7 +108,7 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS))
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
-			.withJsonAssertOptions(List.of(Option.IGNORING_EXTRA_FIELDS, Option.IGNORING_ARRAY_ORDER))
+			.withJsonAssertOptions(null)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
@@ -113,6 +122,49 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(BAD_REQUEST)
 			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * The label put on names no process itself, but its parent does, and the parent is put on with it.
+	 */
+	@Test
+	@DisplayName("Verification that relabelling an errand which runs a process with a label whose parent names another process is refused")
+	void test06_relabellingThroughAParentNamingAnotherProcessIsRefused() {
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS))
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A scheduled action has no caller to answer, so the refusal is written on the errand instead, and the label is left
+	 * off. The action is due twice, and the second refusal writes no second entry within the window.
+	 */
+	@Test
+	@DisplayName("Verification that a scheduled label naming another process is left off the errand, and that the refusal is written on the errand once per window")
+	@Sql("/db/scripts/testdata-process-key-guard-action.sql")
+	void test07_aScheduledLabelNamingAnotherProcessIsLeftOffOnce() {
+		setupCall();
+
+		actionScheduler.processActions();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS) + "/process-activities")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-activities.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS))
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(null)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-errand.json")
 			.sendRequestAndVerifyResponse();
 	}
 }

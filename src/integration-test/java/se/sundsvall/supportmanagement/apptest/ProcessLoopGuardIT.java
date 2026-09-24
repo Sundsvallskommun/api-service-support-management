@@ -477,7 +477,7 @@ class ProcessLoopGuardIT extends AbstractAppTest {
 	}
 
 	private void issueCommand(final Identifier identity, final String errandId, final EventSubType subType, final ProcessCommand command) {
-		asCaller(identity, errandId, errand -> eventService.createProcessCommandEvent(EventType.UPDATE, "Kommando till processen", errand, false, subType, command));
+		asCaller(identity, errandId, errand -> eventService.createProcessCommandEvent(EventType.UPDATE, "Kommando till processen", errand, subType, command));
 	}
 
 	/**

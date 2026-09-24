@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -40,6 +41,7 @@ public class ErrandProcessReport {
 		when registering one that failed, since a start that never happened has no instance. Taken from the path when \
 		reporting on an instance; sending a different one there is rejected.""", examples = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33")
 	@Size(max = 64)
+	@Pattern(regexp = "\\S+", message = "must be an id, without blanks")
 	private String processInstanceId;
 
 	@Schema(description = """
@@ -82,7 +84,7 @@ public class ErrandProcessReport {
 		through GET /errands/{errandId}/process-activities.""")
 	@Valid
 	@Size(max = 100, message = "may contain at most 100 activities")
-	private List<ProcessActivity> activities;
+	private List<@NotNull ProcessActivity> activities;
 
 	@Schema(description = """
 		What the process waits for from a handler right now: the signals a handler can send to step it past the gate it \

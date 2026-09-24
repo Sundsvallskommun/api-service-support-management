@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import java.lang.reflect.Method;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
@@ -34,7 +36,7 @@ class ErrandProcessEntityTest {
 	private static final Clock FIXED = Clock.fixed(Instant.parse("2026-09-07T10:15:30.123Z"), ZoneId.of("UTC"));
 
 	private static final String[] OWNED_BY_APPLY_STATUS = {
-		"processStatus", "activeMarker", "ended"
+		"processStatus", "activeMarker", "ended", "live"
 	};
 
 	@BeforeAll
@@ -43,7 +45,8 @@ class ErrandProcessEntityTest {
 	}
 
 	/**
-	 * Verifies the bean, leaving out the three properties applyStatus owns, which have no setter.
+	 * Verifies the bean, leaving out the properties applyStatus owns, and the liveness read off one of them, which have no
+	 * setter.
 	 */
 	@Test
 	void testBean() {
@@ -139,6 +142,43 @@ class ErrandProcessEntityTest {
 			assertThat(entity.getActiveMarker()).isNotNull();
 			assertThat(entity.getEnded()).isNull();
 		}
+	}
+
+	@ParameterizedTest
+	@EnumSource(ProcessStatus.class)
+	@DisplayName("Verification that an instance is live exactly when its status is not terminal")
+	void anInstanceIsLiveWhileItsStatusIsNotTerminal(final ProcessStatus status) {
+		final var entity = ErrandProcessEntity.create();
+
+		entity.applyStatus(status, FIXED);
+
+		assertThat(entity.isLive()).isEqualTo(!status.isTerminal());
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = ProcessStatus.class, names = {
+		"COMPLETED", "FAILED"
+	})
+	@DisplayName("Verification that a terminal status reported again keeps the end time it was given the first time")
+	void aTerminalStatusReportedAgainKeepsItsEndTime(final ProcessStatus status) {
+		final var entity = ErrandProcessEntity.create();
+		entity.applyStatus(status, FIXED);
+
+		entity.applyStatus(status, Clock.offset(FIXED, Duration.ofHours(1)));
+
+		assertThat(entity.getEnded()).isEqualTo(OffsetDateTime.now(FIXED).truncatedTo(MILLIS));
+	}
+
+	@Test
+	@DisplayName("Verification that an instance going from one terminal status to another is given the end time of the second")
+	void anotherTerminalStatusIsGivenANewEndTime() {
+		final var later = Clock.offset(FIXED, Duration.ofHours(1));
+		final var entity = ErrandProcessEntity.create();
+		entity.applyStatus(FAILED, FIXED);
+
+		entity.applyStatus(COMPLETED, later);
+
+		assertThat(entity.getEnded()).isEqualTo(OffsetDateTime.now(later).truncatedTo(MILLIS));
 	}
 
 	@Test

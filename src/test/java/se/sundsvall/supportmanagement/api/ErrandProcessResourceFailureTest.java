@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
@@ -32,6 +34,7 @@ import static java.time.ZoneId.systemDefault;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpMethod.GET;
@@ -85,12 +88,46 @@ class ErrandProcessResourceFailureTest {
 			.withProcessStatus(RUNNING);
 	}
 
-	@Test
-	void aReportWithoutTheFieldsIdentifyingTheProcessIsRejected() {
-		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
+	private static Stream<Arguments> invalidReports() {
+		return Stream.of(
+			argumentSet("a report without the fields identifying the process", PUT, ErrandProcessReport.create(), List.of(
+				tuple("processService", "must not be blank"),
+				tuple("processKey", "must not be blank"),
+				tuple("processStatus", "must not be blank"))),
+			argumentSet("a report carrying more than a hundred activities", PUT, validReport().withActivities(IntStream.range(0, 101)
+				.mapToObj(index -> ProcessActivity.create().withActivityType("PHASE").withActivityId("phase-" + index).withOccurredAt(now(systemDefault())))
+				.toList()), List.of(
+					tuple("activities", "may contain at most 100 activities"))),
+			argumentSet("a registration carrying more than a hundred activities", POST, validReport().withProcessInstanceId(PROCESS_INSTANCE_ID).withActivities(IntStream.range(0, 101)
+				.mapToObj(index -> ProcessActivity.create().withActivityType("PHASE").withActivityId("phase-" + index).withOccurredAt(now(systemDefault())))
+				.toList()), List.of(
+					tuple("activities", "may contain at most 100 activities"))),
+			argumentSet("a report with an error message longer than its column", PUT, validReport().withError(ProcessError.create().withCode("INCIDENT").withMessage("x".repeat(2049))), List.of(
+				tuple("error.message", "size must be between 0 and 2048"))),
+			argumentSet("a report with an activity without a moment", PUT, validReport().withActivities(List.of(ProcessActivity.create().withActivityType("PHASE"))), List.of(
+				tuple("activities[0].occurredAt", "must not be null"))),
+			argumentSet("a report with a signal without a name", PUT, validReport().withAwaitingSignals(List.of(ProcessSignal.create().withLabel("Godkänn granskning"))), List.of(
+				tuple("awaitingSignals[0].name", "must not be blank"))),
+			argumentSet("a report with a signal longer than its columns", PUT, validReport().withAwaitingSignals(List.of(ProcessSignal.create().withName("x".repeat(129)).withLabel("y".repeat(256)))), List.of(
+				tuple("awaitingSignals[0].name", "size must be between 0 and 128"),
+				tuple("awaitingSignals[0].label", "size must be between 0 and 255"))),
+			argumentSet("a report waiting for more than fifty signals", PUT, validReport().withAwaitingSignals(IntStream.range(0, 51)
+				.mapToObj(index -> ProcessSignal.create().withName("signal-" + index))
+				.toList()), List.of(
+					tuple("awaitingSignals", "may contain at most 50 signals"))),
+			argumentSet("a registration with a blank process instance id", POST, validReport().withProcessInstanceId(""), List.of(
+				tuple("processInstanceId", "must be an id, without blanks"))),
+			argumentSet("a registration with a process instance id holding a blank", POST, validReport().withProcessInstanceId("8f1c 2b6e"), List.of(
+				tuple("processInstanceId", "must be an id, without blanks"))));
+	}
+
+	@ParameterizedTest
+	@MethodSource("invalidReports")
+	void anInvalidReportIsRejected(final HttpMethod method, final ErrandProcessReport report, final List<Tuple> violations) {
+		final var response = webTestClient.method(method)
+			.uri(builder -> builder.path(PUT == method ? PROCESS_PATH : PROCESSES_PATH).build(instanceVariables()))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(ErrandProcessReport.create())
+			.bodyValue(report)
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -101,165 +138,24 @@ class ErrandProcessResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactlyInAnyOrder(
-				tuple("processService", "must not be blank"),
-				tuple("processKey", "must not be blank"),
-				tuple("processStatus", "must not be blank"));
+			.containsExactlyInAnyOrderElementsOf(violations);
 
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
 
-	@Test
-	void aReportCarryingMoreThanAHundredActivitiesIsRejected() {
-		final var report = validReport()
-			.withActivities(IntStream.range(0, 101)
-				.mapToObj(index -> ProcessActivity.create().withActivityType("PHASE").withActivityId("phase-" + index).withOccurredAt(now(systemDefault())))
-				.toList());
-
-		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(report)
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("activities", "may contain at most 100 activities"));
-
-		verifyNoInteractions(serviceMock, commandServiceMock);
-	}
-
-	@Test
-	void aReportWithAnErrorMessageLongerThanItsColumnIsRejected() {
-		final var report = validReport()
-			.withError(ProcessError.create().withCode("INCIDENT").withMessage("x".repeat(2049)));
-
-		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(report)
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("error.message", "size must be between 0 and 2048"));
-
-		verifyNoInteractions(serviceMock, commandServiceMock);
-	}
-
-	@Test
-	void anActivityWithoutAMomentIsRejected() {
-		final var report = validReport()
-			.withActivities(List.of(ProcessActivity.create().withActivityType("PHASE")));
-
-		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(report)
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("activities[0].occurredAt", "must not be null"));
-
-		verifyNoInteractions(serviceMock, commandServiceMock);
-	}
-
-	@Test
-	void aReportWithASignalWithoutANameIsRejected() {
-		final var report = validReport()
-			.withAwaitingSignals(List.of(ProcessSignal.create().withLabel("Godkänn granskning")));
-
-		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(report)
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("awaitingSignals[0].name", "must not be blank"));
-
-		verifyNoInteractions(serviceMock, commandServiceMock);
-	}
-
-	@Test
-	void aReportWithASignalLongerThanItsColumnsIsRejected() {
-		final var report = validReport()
-			.withAwaitingSignals(List.of(ProcessSignal.create().withName("x".repeat(129)).withLabel("y".repeat(256))));
-
-		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(report)
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactlyInAnyOrder(
-				tuple("awaitingSignals[0].name", "size must be between 0 and 128"),
-				tuple("awaitingSignals[0].label", "size must be between 0 and 255"));
-
-		verifyNoInteractions(serviceMock, commandServiceMock);
-	}
-
-	@Test
-	void aReportWaitingForMoreThanFiftySignalsIsRejected() {
-		final var report = validReport()
-			.withAwaitingSignals(IntStream.range(0, 51)
-				.mapToObj(index -> ProcessSignal.create().withName("signal-" + index))
-				.toList());
-
-		final var response = webTestClient.put()
-			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(report)
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("awaitingSignals", "may contain at most 50 signals"));
-
-		verifyNoInteractions(serviceMock, commandServiceMock);
-	}
-
-	@Test
-	void aReportWithAnEmptySlotAmongItsSignalsIsRejected() {
+	/**
+	 * An empty slot is refused in either list, rather than handed to the service to trip over.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"activities", "awaitingSignals"
+	})
+	void aReportWithAnEmptySlotInAListIsRejected(final String list) {
 		final var response = webTestClient.put()
 			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
 			.contentType(APPLICATION_JSON)
 			.bodyValue("""
-				{"processService": "pw-alkt", "processKey": "alkt-ansokan", "processStatus": "WAITING", "awaitingSignals": [null]}""")
+				{"processService": "pw-alkt", "processKey": "alkt-ansokan", "processStatus": "WAITING", "%s": [null]}""".formatted(list))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -270,7 +166,7 @@ class ErrandProcessResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::message)
 			.containsExactly("must not be null");
-		assertThat(response.getViolations().getFirst().field()).startsWith("awaitingSignals[0]");
+		assertThat(response.getViolations().getFirst().field()).startsWith(list + "[0]");
 
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}
@@ -378,6 +274,29 @@ class ErrandProcessResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("signalProcess.processInstanceId", "size must be between 0 and 64"));
+
+		verifyNoInteractions(serviceMock, commandServiceMock);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		" ", "a b"
+	})
+	void aReportToAnInstanceIdWithBlanksIsRejected(final String processInstanceId) {
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PROCESS_PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "processInstanceId", processInstanceId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(validReport())
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("reportProcess.processInstanceId", "must be an id, without blanks"));
 
 		verifyNoInteractions(serviceMock, commandServiceMock);
 	}

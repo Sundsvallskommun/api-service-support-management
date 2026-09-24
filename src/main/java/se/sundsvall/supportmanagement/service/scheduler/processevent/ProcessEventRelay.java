@@ -1,21 +1,22 @@
 package se.sundsvall.supportmanagement.service.scheduler.processevent;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import se.sundsvall.supportmanagement.config.ProcessEventRelayProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
@@ -23,7 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
 import se.sundsvall.supportmanagement.integration.pwalkt.PwAlktIntegration;
 import se.sundsvall.supportmanagement.integration.pwalkt.PwAlktUnavailableException;
-import se.sundsvall.supportmanagement.service.ProcessErrorLog;
+import se.sundsvall.supportmanagement.service.ProcessActivityLog;
 
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -38,6 +39,7 @@ import static org.springframework.transaction.TransactionDefinition.PROPAGATION_
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.pwalkt.configuration.PwAlktConfiguration.CLIENT_ID;
+import static se.sundsvall.supportmanagement.service.ProcessActivityLog.DELIVERY_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.mapper.ProcessEventMapper.toErrandEvent;
 
 /**
@@ -47,13 +49,14 @@ import static se.sundsvall.supportmanagement.service.mapper.ProcessEventMapper.t
  * of one errand as soon as the transaction that wrote them is committed. A row the direct run does not deliver is
  * delivered by the scheduled run, and when both reach for the same row the one that comes second finds it delivered.
  * <p>
- * Rows are delivered per errand, oldest first, one transaction per group, so an errand whose delivery fails holds back
- * no other errand. A group is delivered in full or not at all: a delivery that does not go through rolls its
- * transaction back, the rows stay exactly as they were, and the next run tries again. There is no retry counter, no
- * backoff and no dead letter.
+ * Rows are delivered per errand, oldest first, one transaction per group. A group is delivered up to the first row that
+ * does not go through: the rows before it are acknowledged, and that row and every later one of the errand stay
+ * exactly as they were for the next run to try again. The scheduled run then leaves the errand for the rest of the run
+ * and goes on with rows of other errands, so an errand whose delivery fails holds back no other errand. There is no
+ * retry counter, no backoff and no dead letter.
  * <p>
- * pw-alkt can be given the same event more than once, since a transaction rolled back after pw-alkt took one row gives
- * it that row again.
+ * pw-alkt can be given the same event more than once, since a transaction that fails to commit after pw-alkt took a row
+ * gives it that row again.
  * <p>
  * Every group gets a transaction of its own with read committed isolation, which keeps the locking read of a group
  * from also locking the gaps new outbox rows are written into.
@@ -61,7 +64,6 @@ import static se.sundsvall.supportmanagement.service.mapper.ProcessEventMapper.t
 @Component
 public class ProcessEventRelay {
 
-	static final String REJECTION_ACTIVITY_TYPE = "DELIVERY";
 	static final String REJECTION_ERROR_CODE = "PROCESS_KEY_NOT_DEPLOYED";
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessEventRelay.class);
@@ -74,46 +76,28 @@ public class ProcessEventRelay {
 		%s refused an event on this errand for good, since it has no process deployed under the key '%s'. The event is \
 		not delivered again, and every later event on the errand is refused the same way until the key is one the \
 		process engine knows. Deploy the process under that key, or correct the processKey attribute of the label""";
+	private static final String REJECTED_FOR_ITS_PROCESS = """
+		%s refused an event on this errand for good, since it has no process deployed under the key '%s'. The event is \
+		not delivered again, and every later event on the errand is refused the same way until the key is one the \
+		process engine knows. The errand runs that process for the whole of its life, so correcting the label does not \
+		help: deploy the process under that key""";
 
 	private final ProcessEventOutboxRepository outboxRepository;
 	private final ErrandsRepository errandsRepository;
 	private final ErrandProcessRepository processRepository;
 	private final PwAlktIntegration pwAlktIntegration;
-	private final ProcessErrorLog errorLog;
+	private final ProcessActivityLog activityLog;
+	private final ProcessEventRelayProperties properties;
 	private final TransactionTemplate transactionTemplate;
 	private final Clock clock;
-
-	/**
-	 * How many rows one run takes at most.
-	 */
-	@Value("${scheduler.process-event.batch-size:200}")
-	private int batchSize = 200;
-
-	/**
-	 * How old a row must be before the scheduled run takes it. Gives transactions still being committed time to finish,
-	 * so that the rows of an errand are delivered in order.
-	 */
-	@Value("${scheduler.process-event.transaction-buffer:PT5S}")
-	private Duration transactionBuffer = Duration.ofSeconds(5);
-
-	/**
-	 * How old an undelivered row may get before it is dropped. See {@link #dropAgedOut(OffsetDateTime, int)}.
-	 */
-	@Value("${scheduler.process-event.max-age:P30D}")
-	private Duration maxAge = Duration.ofDays(30);
-
-	/**
-	 * How old the oldest undelivered row may get before the relay reports itself unhealthy.
-	 */
-	@Value("${scheduler.process-event.unhealthy-after:PT15M}")
-	private Duration unhealthyAfter = Duration.ofMinutes(15);
 
 	public ProcessEventRelay(
 		final ProcessEventOutboxRepository outboxRepository,
 		final ErrandsRepository errandsRepository,
 		final ErrandProcessRepository processRepository,
 		final PwAlktIntegration pwAlktIntegration,
-		final ProcessErrorLog errorLog,
+		final ProcessActivityLog activityLog,
+		final ProcessEventRelayProperties properties,
 		final PlatformTransactionManager transactionManager,
 		final Clock clock) {
 
@@ -121,7 +105,8 @@ public class ProcessEventRelay {
 		this.errandsRepository = errandsRepository;
 		this.processRepository = processRepository;
 		this.pwAlktIntegration = pwAlktIntegration;
-		this.errorLog = errorLog;
+		this.activityLog = activityLog;
+		this.properties = properties;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
 		this.transactionTemplate.setPropagationBehavior(PROPAGATION_REQUIRES_NEW);
 		this.transactionTemplate.setIsolationLevel(ISOLATION_READ_COMMITTED);
@@ -131,19 +116,43 @@ public class ProcessEventRelay {
 	/**
 	 * The scheduled run.
 	 * <p>
-	 * Drops what has aged out first. Then takes the oldest rows, at most a batch of them, and delivers them errand by
-	 * errand. An errand that fails is left for the next run and the others go on. An open circuit breaker of pw-alkt ends
-	 * the run.
+	 * Drops what has aged out first. Then takes the oldest rows and delivers them errand by errand, until a batch of rows
+	 * has been tried or none is left. A group counts the rows it tried: every row of a group delivered, and the rows up to
+	 * and including the first that did not go through of a group that fails, at least one. An errand that fails is left
+	 * for the next run, and the rows fetched after it belong to the other errands, so rows that never go through cannot
+	 * fill the batch. An open circuit breaker of pw-alkt ends the run.
 	 */
 	public void relay() {
 		dropAllAgedOut();
 
-		final var groups = outboxRepository.findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore(CLIENT_ID, OffsetDateTime.now(clock).minus(transactionBuffer), PageRequest.of(0, batchSize, OLDEST_FIRST)).stream()
-			.collect(groupingBy(ProcessEventOutboxEntity::getErrandId, LinkedHashMap::new, mapping(ProcessEventOutboxEntity::getId, toList())));
+		final var createdBefore = OffsetDateTime.now(clock).minus(properties.transactionBuffer());
+		final var failed = new HashSet<String>();
+		var tried = 0;
 
-		for (final var group : groups.entrySet()) {
-			if (!deliverOrLeaveForNextRun(group.getKey(), group.getValue())) {
-				LOG.warn("Leaving the rest of the run to the next one, since the circuit breaker of pw-alkt is open");
+		while (tried < properties.batchSize()) {
+			final var limit = properties.batchSize() - tried;
+			final var rows = oldestUndelivered(createdBefore, failed, limit);
+
+			final var groups = rows.stream()
+				.collect(groupingBy(ProcessEventOutboxEntity::getErrandId, LinkedHashMap::new, mapping(ProcessEventOutboxEntity::getId, toList())));
+
+			for (final var group : groups.entrySet()) {
+				final var outcome = deliverOrLeaveForNextRun(group.getKey(), group.getValue());
+
+				switch (outcome.delivery()) {
+					case CIRCUIT_OPEN -> {
+						LOG.warn("Leaving the rest of the run to the next one, since the circuit breaker of pw-alkt is open");
+						return;
+					}
+					case LEFT_FOR_NEXT_RUN -> {
+						failed.add(group.getKey());
+						tried += Math.max(1, outcome.tried());
+					}
+					case DELIVERED -> tried += group.getValue().size();
+				}
+			}
+
+			if (rows.size() < limit) {
 				return;
 			}
 		}
@@ -156,13 +165,22 @@ public class ProcessEventRelay {
 	 * buffer. Only rows within the age limit are taken; a row that has aged out is left for the scheduled run to drop.
 	 *
 	 * @param  errandId                   the errand whose rows were just written.
-	 * @throws PwAlktUnavailableException when the rows did not reach pw-alkt, which leaves them for the scheduled run.
+	 * @throws PwAlktUnavailableException when a row did not reach pw-alkt, which leaves it and the later rows of the
+	 *                                    errand for the scheduled run.
+	 * @throws RuntimeException           when a row could not be made into an event, with the same outcome.
 	 */
 	public void relayErrand(final String errandId) {
-		final var rows = outboxRepository.findByProcessServiceAndErrandIdAndDeliveredAtIsNullAndCreatedAfterOrderByCreatedAscIdAsc(CLIENT_ID, errandId, OffsetDateTime.now(clock).minus(maxAge), PageRequest.of(0, batchSize));
+		final var rows = outboxRepository.findByProcessServiceAndErrandIdAndDeliveredAtIsNullAndCreatedAfterOrderByCreatedAscIdAsc(CLIENT_ID, errandId,
+			OffsetDateTime.now(clock).minus(properties.maxAge()), PageRequest.of(0, properties.batchSize()));
 
-		if (!rows.isEmpty()) {
-			deliverGroup(rows.stream().map(ProcessEventOutboxEntity::getId).toList());
+		if (rows.isEmpty()) {
+			return;
+		}
+
+		final var failure = deliverGroup(rows.stream().map(ProcessEventOutboxEntity::getId).toList()).failure();
+
+		if (nonNull(failure)) {
+			throw failure;
 		}
 	}
 
@@ -179,32 +197,52 @@ public class ProcessEventRelay {
 			return Optional.of(FOREIGN_ROWS.formatted(CLIENT_ID));
 		}
 
-		final var limit = OffsetDateTime.now(clock).minus(unhealthyAfter);
+		final var limit = OffsetDateTime.now(clock).minus(properties.unhealthyAfter());
 
 		return outboxRepository.findFirstByDeliveredAtIsNullOrderByCreatedAsc()
 			.map(ProcessEventOutboxEntity::getCreated)
 			.filter(created -> created.isBefore(limit))
-			.map(created -> STALE_BACKLOG.formatted(created, unhealthyAfter));
+			.map(created -> STALE_BACKLOG.formatted(created, properties.unhealthyAfter()));
+	}
+
+	/**
+	 * The oldest undelivered rows for pw-alkt, leaving out the errands that failed earlier in the run.
+	 */
+	private List<ProcessEventOutboxEntity> oldestUndelivered(final OffsetDateTime createdBefore, final Set<String> failed, final int limit) {
+		final var page = PageRequest.of(0, limit, OLDEST_FIRST);
+
+		return failed.isEmpty()
+			? outboxRepository.findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore(CLIENT_ID, createdBefore, page)
+			: outboxRepository.findByProcessServiceAndDeliveredAtIsNullAndCreatedBeforeAndErrandIdNotIn(CLIENT_ID, createdBefore, failed, page);
 	}
 
 	/**
 	 * Delivers a group for the scheduled run, which leaves a group that fails for the next run and goes on with the rest.
 	 *
-	 * @return false when the circuit breaker of pw-alkt is open, true otherwise.
+	 * @return how the delivery went, and how many rows it tried.
 	 */
-	private boolean deliverOrLeaveForNextRun(final String errandId, final List<String> rowIds) {
+	private GroupOutcome deliverOrLeaveForNextRun(final String errandId, final List<String> rowIds) {
+		final GroupDelivery delivery;
+
 		try {
-			deliverGroup(rowIds);
-		} catch (final PwAlktUnavailableException e) {
-			if (e.isCircuitOpen()) {
-				return false;
-			}
-			LOG.warn("{} events for errand {} did not reach pw-alkt, and are left for the next run: {}", rowIds.size(), sanitizeForLogging(errandId), e.getMessage());
+			delivery = deliverGroup(rowIds);
 		} catch (final Exception e) {
 			LOG.error("Failed to deliver {} events for errand {}, and they are left for the next run", rowIds.size(), sanitizeForLogging(errandId), e);
+			return new GroupOutcome(Delivery.LEFT_FOR_NEXT_RUN, 0);
 		}
 
-		return true;
+		return switch (delivery.failure()) {
+			case null -> new GroupOutcome(Delivery.DELIVERED, delivery.tried());
+			case final PwAlktUnavailableException e when e.isCircuitOpen() -> new GroupOutcome(Delivery.CIRCUIT_OPEN, delivery.tried());
+			case final PwAlktUnavailableException e -> {
+				LOG.warn("Events for errand {} did not reach pw-alkt, and are left for the next run: {}", sanitizeForLogging(errandId), e.getMessage());
+				yield new GroupOutcome(Delivery.LEFT_FOR_NEXT_RUN, delivery.tried());
+			}
+			default -> {
+				LOG.error("Failed to deliver {} events for errand {}, and they are left for the next run", rowIds.size(), sanitizeForLogging(errandId), delivery.failure());
+				yield new GroupOutcome(Delivery.LEFT_FOR_NEXT_RUN, delivery.tried());
+			}
+		};
 	}
 
 	/**
@@ -215,34 +253,46 @@ public class ProcessEventRelay {
 	 * <p>
 	 * A row pw-alkt refuses for good is acknowledged as well. The refusals are recorded once every call in the group has
 	 * been made, so the lock that recording takes on the errand is not held across calls to pw-alkt.
+	 * <p>
+	 * The first row that does not go through, whether pw-alkt could not be reached or the row could not be made into an
+	 * event, ends the group. The rows before it are acknowledged when the transaction is committed, and the failure is
+	 * handed back once it has been. A failure to record a refusal rolls the whole group back, as a failed commit does.
 	 *
-	 * @param  rowIds                     the rows to deliver.
-	 * @throws PwAlktUnavailableException when a row does not go through, which rolls the transaction back and leaves every
-	 *                                    row of the group as it was.
+	 * @param  rowIds the rows to deliver.
+	 * @return        how many rows were tried, the failing one included, and the failure that ended the group, if any.
 	 */
-	private void deliverGroup(final Collection<String> rowIds) {
-		transactionTemplate.executeWithoutResult(_ -> {
+	private GroupDelivery deliverGroup(final Collection<String> rowIds) {
+		return transactionTemplate.execute(_ -> {
 			final var deliveredAt = OffsetDateTime.now(clock).truncatedTo(MILLIS);
 			final var refused = new ArrayList<ProcessEventOutboxEntity>();
+			RuntimeException failure = null;
+			var tried = 0;
 
 			for (final var row : oldestFirst(outboxRepository.findByIdInAndDeliveredAtIsNull(rowIds))) {
-				if (!pwAlktIntegration.sendErrandEvent(row.getMunicipalityId(), row.getNamespace(), toErrandEvent(row))) {
-					refused.add(row);
+				tried++;
+				try {
+					if (!pwAlktIntegration.sendErrandEvent(row.getMunicipalityId(), row.getNamespace(), toErrandEvent(row))) {
+						refused.add(row);
+					}
+				} catch (final RuntimeException e) {
+					failure = e;
+					break;
 				}
 				row.setDeliveredAt(deliveredAt);
 			}
 
 			refused.forEach(this::recordRejection);
+			return new GroupDelivery(tried, failure);
 		});
 	}
 
 	private void dropAllAgedOut() {
-		final var createdBefore = OffsetDateTime.now(clock).minus(maxAge);
+		final var createdBefore = OffsetDateTime.now(clock).minus(properties.maxAge());
 		int dropped;
 
 		do {
-			dropped = dropAgedOut(createdBefore, batchSize);
-		} while (dropped == batchSize);
+			dropped = dropAgedOut(createdBefore, properties.batchSize());
+		} while (dropped == properties.batchSize());
 	}
 
 	/**
@@ -290,7 +340,8 @@ public class ProcessEventRelay {
 	 * Records a refusal for good in the process history of the errand, at most once per errand and window.
 	 * <p>
 	 * The live process instance of the errand, if it has one, is failed with the error code and message; without one,
-	 * only the history entry is written.
+	 * only the history entry is written. The message advises correcting the label only for an errand that has no process
+	 * row.
 	 * <p>
 	 * The errand is locked first, which serialises this against the other reports of the process. Nothing is written
 	 * for a deletion or for an errand that no longer exists.
@@ -301,8 +352,9 @@ public class ProcessEventRelay {
 			return;
 		}
 
-		final var message = REJECTED.formatted(row.getProcessService(), row.getProcessKey());
-		final var instance = processRepository.findByErrandIdAndActiveMarkerIsNotNull(row.getErrandId()).orElse(null);
+		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(row.getErrandId());
+		final var message = (instances.isEmpty() ? REJECTED : REJECTED_FOR_ITS_PROCESS).formatted(row.getProcessService(), row.getProcessKey());
+		final var instance = instances.stream().filter(ErrandProcessEntity::isLive).findFirst().orElse(null);
 
 		if (nonNull(instance)) {
 			instance.applyStatus(FAILED, clock);
@@ -310,6 +362,25 @@ public class ProcessEventRelay {
 			instance.setErrorMessage(message);
 		}
 
-		errorLog.writeOncePerWindow(row.getErrandId(), ofNullable(instance).map(ErrandProcessEntity::getId).orElse(null), REJECTION_ACTIVITY_TYPE, REJECTION_ERROR_CODE, message);
+		activityLog.writeOncePerWindow(row.getErrandId(), ofNullable(instance).map(ErrandProcessEntity::getId).orElse(null), DELIVERY_ACTIVITY_TYPE, REJECTION_ERROR_CODE, message);
 	}
+
+	/**
+	 * How the delivery of a group went, as the scheduled run needs to know it.
+	 */
+	private enum Delivery {
+		DELIVERED,
+		LEFT_FOR_NEXT_RUN,
+		CIRCUIT_OPEN
+	}
+
+	/**
+	 * What the delivery of a group did: how many rows it tried, and what ended it early, if anything did.
+	 */
+	private record GroupDelivery(int tried, RuntimeException failure) {}
+
+	/**
+	 * How the delivery of a group went for the scheduled run, and how many rows it tried.
+	 */
+	private record GroupOutcome(Delivery delivery, int tried) {}
 }

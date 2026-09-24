@@ -1,0 +1,10 @@
+{
+	"title": "test03_aDeletionWithoutAProcessKeyGivesAnOutboxRow",
+	"priority": "MEDIUM",
+	"status": "STATUS-1",
+	"reporterUserId": "joe01doe",
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	}
+}

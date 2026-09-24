@@ -53,9 +53,6 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		Map.entry(MeasureEntity.class, Set.of("attachments", "jsonParameters", "decisionEntity", "statementEntity")),
 		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)),
 
-		// What the errand holds only once it is read from the database: the metadata of a label it holds by id, and the
-		// status it was loaded with. A snapshot taking them along read the same errand differently just written and just
-		// read, so a patch changing nothing right after a creation or a status change wrote a revision and an event.
 		Map.entry(ErrandLabelEmbeddable.class, Set.of("metadataLabel")),
 		Map.entry(ErrandEntity.class, Set.of("tempPreviousStatus")));
 

@@ -7,8 +7,8 @@
 			"activityId": "granska-ansokan",
 			"activityName": "Granska ansokan",
 			"severity": "INFO",
-			"occurredAt": "${json-unit.any-string}",
-			"created": "${json-unit.any-string}"
+			"occurredAt": "2026-01-01T11:00:00+01:00",
+			"created": "2026-01-01T11:00:00+01:00"
 		}
 	],
 	"pageable": "${json-unit.ignore}",

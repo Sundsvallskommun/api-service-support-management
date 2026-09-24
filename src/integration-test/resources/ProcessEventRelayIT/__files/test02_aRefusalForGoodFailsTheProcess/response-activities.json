@@ -5,7 +5,7 @@
 			"processInstanceId": "pi-relay-it",
 			"activityType": "DELIVERY",
 			"severity": "ERROR",
-			"message": "pw-alkt refused an event on this errand for good, since it has no process deployed under the key 'alkt-ansokan'. The event is not delivered again, and every later event on the errand is refused the same way until the key is one the process engine knows. Deploy the process under that key, or correct the processKey attribute of the label",
+			"message": "pw-alkt refused an event on this errand for good, since it has no process deployed under the key 'alkt-ansokan'. The event is not delivered again, and every later event on the errand is refused the same way until the key is one the process engine knows. The errand runs that process for the whole of its life, so correcting the label does not help: deploy the process under that key",
 			"errorCode": "PROCESS_KEY_NOT_DEPLOYED",
 			"occurredAt": "${json-unit.any-string}",
 			"created": "${json-unit.any-string}"
