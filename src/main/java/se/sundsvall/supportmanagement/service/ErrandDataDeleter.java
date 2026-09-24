@@ -2,7 +2,6 @@ package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
 import java.util.List;
-import org.hibernate.search.mapper.orm.Search;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -14,7 +13,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProje
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
-import se.sundsvall.supportmanagement.service.search.SearchAvailability;
+import se.sundsvall.supportmanagement.service.search.index.SearchIndexing;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -53,7 +52,7 @@ public class ErrandDataDeleter {
 	private final HandoverIdempotencyRepository handoverIdempotencyRepository;
 	private final EntityManager entityManager;
 	private final ChunkedDeleter chunkedDeleter;
-	private final SearchAvailability searchAvailability;
+	private final SearchIndexing searchIndexing;
 
 	public ErrandDataDeleter(
 		final ConversationService conversationService,
@@ -65,7 +64,7 @@ public class ErrandDataDeleter {
 		final HandoverIdempotencyRepository handoverIdempotencyRepository,
 		final EntityManager entityManager,
 		final ChunkedDeleter chunkedDeleter,
-		final SearchAvailability searchAvailability) {
+		final SearchIndexing searchIndexing) {
 
 		this.conversationService = conversationService;
 		this.communicationService = communicationService;
@@ -76,7 +75,7 @@ public class ErrandDataDeleter {
 		this.handoverIdempotencyRepository = handoverIdempotencyRepository;
 		this.entityManager = entityManager;
 		this.chunkedDeleter = chunkedDeleter;
-		this.searchAvailability = searchAvailability;
+		this.searchIndexing = searchIndexing;
 	}
 
 	/**
@@ -107,9 +106,7 @@ public class ErrandDataDeleter {
 		// The errand goes with its data, so its search document is removed rather than rebuilt. Left to itself the index
 		// would rebuild it for every chunk of communications removed, and a rebuild reads every communication that is
 		// left, bodies and all, which is the very pile up the chunking is there to prevent.
-		if (searchAvailability.isEnabled()) {
-			Search.session(entityManager).indexingPlanFilter(context -> context.exclude(CommunicationEntity.class));
-		}
+		searchIndexing.withoutIndexingOf(CommunicationEntity.class);
 
 		conversationService.deleteByErrandId(entity);
 

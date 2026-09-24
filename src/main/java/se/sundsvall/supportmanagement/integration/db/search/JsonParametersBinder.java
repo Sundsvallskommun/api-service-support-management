@@ -32,8 +32,8 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
  */
 public class JsonParametersBinder implements PropertyBinder {
 
-	public static final String FIELD = "jsonParameters";
-	public static final String TEXT_FIELD = "jsonParametersText";
+	public static final String FIELD = ErrandIndex.JSON_PARAMETERS;
+	public static final String TEXT_FIELD = ErrandIndex.JSON_PARAMETERS_TEXT;
 
 	// A dynamic object: the index maps whatever is written under it, guided by the dynamic templates of the mapping file
 	private static final String NATIVE_MAPPING = "{\"type\": \"object\", \"dynamic\": \"true\"}";

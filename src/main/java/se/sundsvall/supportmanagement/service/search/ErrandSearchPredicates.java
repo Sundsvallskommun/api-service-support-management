@@ -8,12 +8,12 @@ import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.predicate.dsl.PredicateFinalStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
-import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.service.AccessControlService.AccessScope;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
+import se.sundsvall.supportmanagement.service.MetadataService;
+import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static java.util.Objects.isNull;
-import static java.util.stream.Collectors.toSet;
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
@@ -22,33 +22,15 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 @Component
 public class ErrandSearchPredicates {
 
-	/**
-	 * Where a query without a field looks. Every text field of the errand and what hangs off it, plus the identifiers a
-	 * user is likely to paste into a search box.
-	 */
-	static final List<String> DEFAULT_FIELDS = List.of(
-		"errandNumber", "title", "description", "contactReasonDescription",
-		"externalTags.value",
-		"stakeholders.externalId", "stakeholders.firstName", "stakeholders.lastName", "stakeholders.organizationName", "stakeholders.address",
-		"stakeholders.city", "stakeholders.careOf", "stakeholders.contactChannels.value", "stakeholders.parameters.values",
-		"parameters.values", "jsonParametersText", "attachments.fileName",
-		"phases.phase.displayName",
-		"measures.title", "measures.description", "measures.goal", "measures.acceptMotivation", "measures.resultText", "measures.jsonParametersText",
-		"decisions.title", "decisions.description", "decisions.legalBasis", "decisions.justification", "decisions.jsonParametersText",
-		"statements.title", "statements.description", "statements.counterpartyName", "statements.question", "statements.responseText", "statements.jsonParametersText",
-		"investigations.title", "investigations.description", "investigations.summary", "investigations.conclusion", "investigations.recommendationMotivation",
-		"investigations.jsonParametersText",
-		"communications.subject", "communications.messageBody");
+	static final String MUNICIPALITY_ID_FIELD = ErrandIndex.MUNICIPALITY_ID;
+	static final String NAMESPACE_FIELD = ErrandIndex.NAMESPACE;
+	static final String REPORTER_USER_ID_FIELD = ErrandIndex.REPORTER_USER_ID;
+	static final String ACCESS_LABEL_ID_FIELD = ErrandIndex.ACCESS_LABEL_ID;
 
-	static final String MUNICIPALITY_ID_FIELD = "municipalityId";
-	static final String NAMESPACE_FIELD = "namespace";
-	static final String REPORTER_USER_ID_FIELD = "reporterUserId";
-	static final String ACCESS_LABEL_ID_FIELD = "accessLabels.metadataLabelId";
+	private final MetadataService metadataService;
 
-	private final MetadataLabelRepository metadataLabelRepository;
-
-	public ErrandSearchPredicates(final MetadataLabelRepository metadataLabelRepository) {
-		this.metadataLabelRepository = metadataLabelRepository;
+	public ErrandSearchPredicates(final MetadataService metadataService) {
+		this.metadataService = metadataService;
 	}
 
 	/**
@@ -58,17 +40,63 @@ public class ErrandSearchPredicates {
 	 *
 	 * @param f      the factory
 	 * @param query  the query string
-	 * @param fields the fields a word without a field is looked for in, see {@link ErrandSearchAccess#searchableFields}
+	 * @param fields the fields a word without a field is looked for in
 	 */
 	public SearchPredicate query(final SearchPredicateFactory f, final String query, final List<String> fields) {
 		if (isBlank(query)) {
 			return f.matchAll().toPredicate();
 		}
+
+		// A route may leave open no field that free text looks in, while leaving a field open that a query can name:
+		// what a role allows may be the status alone, which is searched by name and not by word. A word then has
+		// nowhere to look and matches nothing, which is an empty answer rather than a refusal - the same answer a
+		// grant reaching no errand at all gives - and never an error.
+		if (fields.isEmpty() && QueryStringFields.hasFreeTerms(query)) {
+			return f.matchNone().toPredicate();
+		}
+
+		// What is left names its own fields, which have been held to what the route may read already. The list says
+		// where a word without a field would be looked for, there is no such word, and the predicate must be given a
+		// field all the same: the one every errand of the search is filtered on stands in for it.
 		return f.queryString()
-			.fields(fields.toArray(String[]::new))
+			.fields(fields.isEmpty() ? new String[] {
+				MUNICIPALITY_ID_FIELD
+			} : fields.toArray(String[]::new))
 			.matching(query)
 			.defaultOperator(BooleanOperator.AND)
 			.toPredicate();
+	}
+
+	/**
+	 * What a search asks the index, once the query has been held to the grant: the errands of one route together with
+	 * the query over the fields that route leaves open, any of the routes answering.
+	 * <p>
+	 * Routes may reach the same errand, since the labels of a level are a subset of those of every level below it. The
+	 * document is returned once whichever clauses matched it, and each clause only matched on fields readable on its own
+	 * errands, so overlapping says nothing the user may not know.
+	 *
+	 * @param clauses what the search runs with, see {@link ErrandSearchAccess.Plan}
+	 */
+	public SearchPredicate clauses(final SearchPredicateFactory f, final List<ErrandSearchAccess.Clause> clauses, final String query, final String namespace, final String municipalityId) {
+		if (clauses.size() == 1) {
+			return clause(f, clauses.getFirst(), query, namespace, municipalityId).toPredicate();
+		}
+
+		final var union = f.or();
+		clauses.forEach(clause -> union.add(clause(f, clause, query, namespace, municipalityId)));
+		return union.toPredicate();
+	}
+
+	private PredicateFinalStep clause(final SearchPredicateFactory f, final ErrandSearchAccess.Clause clause, final String query, final String namespace, final String municipalityId) {
+		final var predicate = f.bool()
+			.filter(access(f, clause.scope(), namespace, municipalityId))
+			.must(query(f, query, clause.fields()));
+
+		if (nonNull(clause.excluded())) {
+			predicate.mustNot(access(f, clause.excluded(), namespace, municipalityId));
+		}
+
+		return predicate;
 	}
 
 	/**
@@ -120,7 +148,7 @@ public class ErrandSearchPredicates {
 			return f.matchNone();
 		}
 
-		final Set<String> disallowedLabelIds = new HashSet<>(labelIdsOf(namespace, municipalityId));
+		final Set<String> disallowedLabelIds = new HashSet<>(metadataService.findLabelIds(namespace, municipalityId));
 		disallowedLabelIds.removeAll(allowedLabelIds);
 
 		if (disallowedLabelIds.isEmpty()) {
@@ -128,11 +156,5 @@ public class ErrandSearchPredicates {
 		}
 
 		return f.not(f.terms().field(ACCESS_LABEL_ID_FIELD).matchingAny(disallowedLabelIds));
-	}
-
-	private Set<String> labelIdsOf(final String namespace, final String municipalityId) {
-		return metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.map(MetadataLabelEntity::getId)
-			.collect(toSet());
 	}
 }

@@ -40,6 +40,13 @@ scheduler:
     maximum-execution-time: PT4M
     transaction-buffer: PT10S
     max-age: P30D
+  search-reindex:
+    name: search_reindex
+    enabled: true
+    # Nightly, when the hole a namespace is rebuilt through is least in the way. Does nothing where search is off
+    cron: 0 0 1 * * *
+    shedlock-lock-at-most-for: PT2H
+    maximum-execution-time: PT1H
   attachment-hash:
     name: compute_attachment_hash
     enabled: true
@@ -134,7 +141,7 @@ spring:
   application:
     name: support-management
   cache:
-    cache-names: namespaceConfigCache, accessibleLabelsCache
+    cache-names: namespaceConfigCache, accessibleLabelsCache, namespaceLabelIdsCache
     caffeine:
       # default setting used if no override has been defined
       spec: maximumSize=200, expireAfterWrite=10m
@@ -142,6 +149,10 @@ spring:
       spec-overrides:
         - cache-name: accessibleLabelsCache
           spec: maximumSize=1000, expireAfterWrite=15m
+        # Label ids per namespace, asked for by every errand search. Evicted where labels are written, so this only
+        # bounds how long another instance may miss a label that was just created
+        - cache-name: namespaceLabelIdsCache
+          spec: maximumSize=200, expireAfterWrite=5m
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
   flyway:
@@ -154,6 +165,11 @@ spring:
             database:
               action: none
       hibernate:
+        # Lazy collections of the rows a query returns are loaded a batch at a time instead of one row at a time.
+        # Every read of several errands carries their stakeholders, parameters and communications, which is what a
+        # page of a listing or a search spends its time on: measured on a hundred thousand errands, a page of twenty
+        # went from 39 to 11 ms, one of a hundred from 172 to 23 ms, and a full reindex from 75 to 11 seconds.
+        default_batch_fetch_size: 64
         search:
           # Off unless the environment has an OpenSearch instance. The search endpoint answers 503 while off.
           enabled: false
@@ -162,8 +178,8 @@ spring:
             version: opensearch:3.6
             version_check:
               enabled: false
-            protocol: http
-            hosts: localhost:9200
+            # Where the cluster is, and how it is reached, belongs to the environment that has one: the profile of the
+            # deployment names the hosts, and the protocol with them where it is not the plain one assumed here
             analysis:
               configurer: class:se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer
             schema_management:

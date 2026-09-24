@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.search;
+package se.sundsvall.supportmanagement.service.search.index;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

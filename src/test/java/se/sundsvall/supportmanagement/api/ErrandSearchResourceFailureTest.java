@@ -11,8 +11,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.service.search.ErrandReindexService;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
+import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -73,6 +73,24 @@ class ErrandSearchResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("searchErrands.municipalityId", "not a valid municipality ID"));
+
+		verifyNoInteractions(searchServiceMock, reindexServiceMock);
+	}
+
+	@Test
+	void searchErrandsWithTooLongQuery() {
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PATH).queryParam("query", "a".repeat(2001)).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("searchErrands.query", "query may be at most 2000 characters"));
 
 		verifyNoInteractions(searchServiceMock, reindexServiceMock);
 	}

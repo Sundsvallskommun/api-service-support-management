@@ -19,6 +19,7 @@ import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.search.engine.backend.types.Sortable;
@@ -35,6 +36,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandar
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
@@ -80,7 +82,7 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
  * reachable from it below. Field names are what the search endpoint exposes, so they follow the API model rather than
  * the columns. Keyword fields are lowercased so that a search is case-insensitive whether it targets text or codes.
  */
-@Indexed(index = "errand")
+@Indexed(index = ErrandIndex.NAME)
 public class ErrandEntity {
 
 	@Id
@@ -99,90 +101,90 @@ public class ErrandEntity {
 		uniqueConstraints = @UniqueConstraint(name = "uq_external_tag_errand_id_key", columnNames = {
 			"errand_id", "\"key\""
 		}))
-	@IndexedEmbedded
+	@IndexedEmbedded(name = ErrandIndex.EXTERNAL_TAGS)
 	private List<DbExternalTag> externalTags;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("externalId")
-	@IndexedEmbedded
+	@IndexedEmbedded(name = ErrandIndex.STAKEHOLDERS)
 	private List<StakeholderEntity> stakeholders;
 
 	// Shallow: the errand is reindexed when it is given another contact reason, not when a reason is renamed, since
 	// nothing leads from a contact reason back to the errands using it
 	@ManyToOne
 	@JoinColumn(name = "contact_reason_id", foreignKey = @ForeignKey(name = "fk_errand_contact_reason_id"))
-	@IndexedEmbedded(name = "contactReason", includePaths = "reason")
+	@IndexedEmbedded(name = ErrandIndex.CONTACT_REASON, includePaths = "reason")
 	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
 	private ContactReasonEntity contactReasonEntity;
 
 	@Column(name = "contact_reason_description", length = 4096)
-	@FullTextField(analyzer = TEXT)
+	@FullTextField(name = ErrandIndex.CONTACT_REASON_DESCRIPTION, analyzer = TEXT)
 	private String contactReasonDescription;
 
 	@Column(name = "business_related")
-	@GenericField
+	@GenericField(name = ErrandIndex.BUSINESS_RELATED)
 	private Boolean businessRelated;
 
 	@Column(name = "municipality_id", nullable = false, length = 8)
-	@KeywordField
+	@KeywordField(name = ErrandIndex.MUNICIPALITY_ID)
 	private String municipalityId;
 
 	@Column(name = "namespace", nullable = false, length = 32)
-	@KeywordField
+	@KeywordField(name = ErrandIndex.NAMESPACE)
 	private String namespace;
 
 	@Column(name = "title")
-	@FullTextField(analyzer = TEXT)
-	@KeywordField(name = "title_sort", normalizer = LOWERCASE, sortable = Sortable.YES)
+	@FullTextField(name = ErrandIndex.TITLE, analyzer = TEXT)
+	@KeywordField(name = ErrandIndex.TITLE_SORT, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String title;
 
 	@Column(name = "category")
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.CATEGORY, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String category;
 
 	@Column(name = "type", length = 128)
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.TYPE, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String type;
 
 	@Column(name = "status", length = 64)
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.STATUS, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String status;
 
 	@Column(name = "resolution")
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.RESOLUTION, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String resolution;
 
 	@Column(name = "description", length = LONG32)
-	@FullTextField(analyzer = TEXT)
+	@FullTextField(name = ErrandIndex.DESCRIPTION, analyzer = TEXT)
 	private String description;
 
 	@Column(name = "channel")
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.CHANNEL, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String channel;
 
 	@Column(name = "priority")
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.PRIORITY, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String priority;
 
 	@Column(name = "reporter_user_id")
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.REPORTER_USER_ID, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String reporterUserId;
 
 	@Column(name = "assigned_user_id")
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.ASSIGNED_USER_ID, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String assignedUserId;
 
 	@Column(name = "assigned_group_id")
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.ASSIGNED_GROUP_ID, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String assignedGroupId;
 
 	@Column(name = "escalation_email")
-	@KeywordField(normalizer = LOWERCASE)
+	@KeywordField(name = ErrandIndex.ESCALATION_EMAIL, normalizer = LOWERCASE)
 	private String escalationEmail;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("key")
-	@IndexedEmbedded
+	@IndexedEmbedded(name = ErrandIndex.PARAMETERS)
 	private List<ParameterEntity> parameters;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
@@ -192,7 +194,7 @@ public class ErrandEntity {
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("fileName")
-	@IndexedEmbedded(includePaths = {
+	@IndexedEmbedded(name = ErrandIndex.ATTACHMENTS, includePaths = {
 		"fileName", "mimeType"
 	})
 	private List<AttachmentEntity> attachments;
@@ -204,17 +206,17 @@ public class ErrandEntity {
 	private List<ErrandActionEntity> actions;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true)
-	@IndexedEmbedded
+	@IndexedEmbedded(name = ErrandIndex.PHASES)
 	private List<ErrandPhaseEntity> phases;
 
 	@Column(name = "suspended_to")
 	@TimeZoneStorage(NORMALIZE)
-	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
+	@NonStandardField(name = ErrandIndex.SUSPENDED_TO, valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime suspendedTo;
 
 	@Column(name = "suspended_from")
 	@TimeZoneStorage(NORMALIZE)
-	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
+	@NonStandardField(name = ErrandIndex.SUSPENDED_FROM, valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime suspendedFrom;
 
 	@ElementCollection
@@ -226,7 +228,7 @@ public class ErrandEntity {
 			@Index(name = "idx_metadata_label_id", columnList = "metadata_label_id")
 		},
 		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_labels_errand_id")))
-	@IndexedEmbedded(includePaths = "metadataLabelId")
+	@IndexedEmbedded(name = ErrandIndex.LABELS, includePaths = "metadataLabelId")
 	private List<ErrandLabelEmbeddable> labels;
 
 	@ElementCollection
@@ -238,26 +240,26 @@ public class ErrandEntity {
 			@Index(name = "idx_errand_access_labels_metadata_label_id", columnList = "metadata_label_id")
 		},
 		joinColumns = @JoinColumn(name = "errand_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_errand_access_labels_errand_id")))
-	@IndexedEmbedded(includePaths = "metadataLabelId")
+	@IndexedEmbedded(name = ErrandIndex.ACCESS_LABELS, includePaths = "metadataLabelId")
 	private List<AccessLabelEmbeddable> accessLabels;
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
-	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
+	@NonStandardField(name = ErrandIndex.CREATED, valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime created;
 
 	@Column(name = "modified")
 	@TimeZoneStorage(NORMALIZE)
-	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
+	@NonStandardField(name = ErrandIndex.MODIFIED, valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime modified;
 
 	@Column(name = "touched")
 	@TimeZoneStorage(NORMALIZE)
-	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
+	@NonStandardField(name = ErrandIndex.TOUCHED, valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime touched;
 
 	@Column(name = "errand_number", nullable = false)
-	@KeywordField(normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.ERRAND_NUMBER, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String errandNumber;
 
 	@Version
@@ -268,34 +270,39 @@ public class ErrandEntity {
 	private String tempPreviousStatus;
 
 	@Column(name = "previous_status")
-	@KeywordField(normalizer = LOWERCASE)
+	@KeywordField(name = ErrandIndex.PREVIOUS_STATUS, normalizer = LOWERCASE)
 	private String previousStatus;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true, fetch = EAGER)
 	private List<TimeMeasurementEntity> timeMeasures;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true, fetch = EAGER)
-	@IndexedEmbedded
+	@IndexedEmbedded(name = ErrandIndex.MEASURES)
 	private List<MeasureEntity> measures;
 
-	// The four below exist for the search index only. Decisions, statements and investigations are read and written
-	// through their own resources, and communications are tied to the errand by its number rather than a key, so none of
-	// them is otherwise a collection on the errand. Nothing cascades through them, and they are kept out of equals,
-	// hashCode and toString so that comparing or logging an errand never loads them.
+	/**
+	 * The associations below, which exist for the search index only. Decisions, statements and investigations are read
+	 * and written through their own resources, and communications are tied to the errand by its number rather than a
+	 * key, so none of them is otherwise a collection on the errand. Nothing cascades through them, they are kept out of
+	 * equals, hashCode and toString so that comparing or logging an errand never loads them, and the errand listing
+	 * refuses to filter on them, since they were never reachable there and are guarded on their own resources.
+	 */
+	public static final Set<String> INDEX_ONLY_ASSOCIATIONS = Set.of("decisions", "statements", "investigations", "communications");
+
 	@OneToMany(mappedBy = "errandEntity", fetch = LAZY)
-	@IndexedEmbedded
+	@IndexedEmbedded(name = ErrandIndex.DECISIONS)
 	private List<DecisionEntity> decisions;
 
 	@OneToMany(mappedBy = "errandEntity", fetch = LAZY)
-	@IndexedEmbedded
+	@IndexedEmbedded(name = ErrandIndex.STATEMENTS)
 	private List<StatementEntity> statements;
 
 	@OneToMany(mappedBy = "errandEntity", fetch = LAZY)
-	@IndexedEmbedded
+	@IndexedEmbedded(name = ErrandIndex.INVESTIGATIONS)
 	private List<InvestigationEntity> investigations;
 
 	@OneToMany(mappedBy = "errand", fetch = LAZY)
-	@IndexedEmbedded(includePaths = {
+	@IndexedEmbedded(name = ErrandIndex.COMMUNICATIONS, includePaths = {
 		"subject", "messageBody", "sender", "direction", "type", "sent"
 	})
 	private List<CommunicationEntity> communications;

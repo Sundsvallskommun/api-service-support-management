@@ -42,7 +42,12 @@ class ErrandFiltersTest {
 		"communications.messageBody~'%x%'",
 		"status:'NEW' and decisions.justification~'%x%'",
 		"statements.responseText:'x'",
-		"investigations.summary:'x'"
+		"investigations.summary:'x'",
+		// Named without a field of their own, which tells whether the rows are there at all
+		"communications is not empty",
+		"communications is empty",
+		"size(communications) > 0",
+		"status:'NEW' and size(decisions) > 2"
 	})
 	void filtersReachingAnIndexOnlyAssociationAreRefused(final String filter) {
 		when(requestMock.getParameter(ErrandFilters.FILTER_PARAMETER)).thenReturn(filter);

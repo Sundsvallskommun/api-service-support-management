@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +23,9 @@ import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.service.search.ErrandReindexService;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
+import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -38,6 +40,21 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 @RequestMapping("/{municipalityId}/{namespace}/errands/search")
 @Tag(name = "Errand search", description = "Full text search of errands")
 class ErrandSearchResource {
+
+	private static final String ERRAND_FIELDS = "`" + ErrandIndex.ERRAND_NUMBER + "`, `" + ErrandIndex.TITLE + "`, `" + ErrandIndex.DESCRIPTION + "`, `" + ErrandIndex.CONTACT_REASON_DESCRIPTION
+		+ "`, `" + ErrandIndex.CONTACT_REASON + ".reason`, `" + ErrandIndex.STATUS + "`, `" + ErrandIndex.CATEGORY + "`, `" + ErrandIndex.TYPE + "`, `" + ErrandIndex.RESOLUTION + "`, `"
+		+ ErrandIndex.CHANNEL + "`, `" + ErrandIndex.PRIORITY + "`, `" + ErrandIndex.REPORTER_USER_ID + "`, `" + ErrandIndex.ASSIGNED_USER_ID + "`, `" + ErrandIndex.ASSIGNED_GROUP_ID + "`, `"
+		+ ErrandIndex.ESCALATION_EMAIL + "`, `" + ErrandIndex.BUSINESS_RELATED + "`, `" + ErrandIndex.CREATED + "`, `" + ErrandIndex.MODIFIED + "`, `" + ErrandIndex.TOUCHED + "`, `"
+		+ ErrandIndex.SUSPENDED_FROM + "`, `" + ErrandIndex.SUSPENDED_TO + "`, `" + ErrandIndex.EXTERNAL_TAGS + ".key`, `" + ErrandIndex.EXTERNAL_TAG_VALUE + "`, `" + ErrandIndex.LABELS + "."
+		+ ErrandIndex.METADATA_LABEL_ID + "`, `" + ErrandIndex.ATTACHMENTS + ".fileName`, `" + ErrandIndex.ATTACHMENTS + ".mimeType`.";
+
+	/**
+	 * What a query may be, at most. Long enough for anything a client composes, short enough that a query costs what a
+	 * query costs: what is read out of it is read with regular expressions, over a string the client decides the length
+	 * of.
+	 */
+	static final int QUERY_MAX_LENGTH = 2000;
+	static final String QUERY_TOO_LONG = "query may be at most " + QUERY_MAX_LENGTH + " characters";
 
 	static final String QUERY_DESCRIPTION = """
 		A [Lucene query string](https://opensearch.org/docs/latest/query-dsl/full-text/query-string/), searched in an index \
@@ -62,10 +79,9 @@ class ErrandSearchResource {
 		A bare word is a search term, it is only a field name when followed by a colon. The characters \
 		`+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \\ /` are part of the syntax and are escaped with a backslash when meant literally.
 
-		Fields of the errand: `errandNumber`, `title`, `description`, `contactReasonDescription`, `contactReason.reason`, \
-		`status`, `category`, `type`, `resolution`, `channel`, `priority`, `reporterUserId`, `assignedUserId`, `assignedGroupId`, \
-		`escalationEmail`, `businessRelated`, `created`, `modified`, `touched`, `suspendedFrom`, `suspendedTo`, \
-		`externalTags.key`, `externalTags.value`, `labels.metadataLabelId`, `attachments.fileName`, `attachments.mimeType`.
+		Fields of the errand: \
+		""" + ERRAND_FIELDS + """
+
 		Of its stakeholders: `stakeholders.externalId`, `stakeholders.externalIdType`, `stakeholders.role`, `stakeholders.firstName`, \
 		`stakeholders.lastName`, `stakeholders.organizationName`, `stakeholders.address`, `stakeholders.careOf`, `stakeholders.zipCode`, \
 		`stakeholders.city`, `stakeholders.country`, `stakeholders.contactChannels.type`, `stakeholders.contactChannels.value`, \
@@ -81,10 +97,21 @@ class ErrandSearchResource {
 
 		A search without a field looks in the text of all of the above.
 
-		Errands are searched at full read: an errand the user reaches at limited read only is not found. Where a namespace \
-		enforces access control, the fields of a resource the user may not read (communications, decisions, statements, \
-		investigations, measures, parameters, JSON parameters, attachments) are left out of a search without a field, a query \
-		naming one of them is refused with 403, and so is a wildcard in a field name.""";
+		Where a namespace enforces access control, what the user may not read they may not search either: the fields of a \
+		resource their labels do not reach (communications, decisions, statements, investigations, measures, parameters, JSON \
+		parameters, attachments), the fields their roles keep from them, and the keys of parameters and JSON parameters their \
+		roles do not grant. Such fields are left out of a search without a field, and a query naming one of them, or sorting on \
+		one, is refused with 403, as is a wildcard in a field name.
+
+		An errand is searched by what the user may read of it, which differs with how they hold it: an errand their labels cover \
+		is searched by everything their roles allow, one they cover at limited read only by what the namespace exposes for a \
+		limited read, and one they reported by its reporter fields. A query naming a field of one of these and not of another is \
+		answered from the errands where it may be read, without a refusal; it is refused only when no errand of the user can \
+		answer it.
+
+		A query is at most 2000 characters, and a search that has not answered within ten seconds is given up on: a \
+		wildcard open at both ends, a regular expression or a fuzzy term over many fields can ask for more than the \
+		index can do.""";
 
 	static final String SORT_DESCRIPTION = "Without a sort the best matches come first, newest first among equals. Sortable properties: " +
 		"created, modified, touched, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +
@@ -106,12 +133,14 @@ class ErrandSearchResource {
 		}))),
 		@ApiResponse(responseCode = "403", description = "The query names a resource the user may not read", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
-		@ApiResponse(responseCode = "503", description = "Search not available", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		@ApiResponse(responseCode = "503", description = "Search not available", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "504", description = "The search took too long and was given up on", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Page<Errand>> searchErrands(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "query", description = QUERY_DESCRIPTION, example = "vattenläcka status:new stakeholders.lastName:berg") @RequestParam(required = false) final String query,
+		@Parameter(name = "query", description = QUERY_DESCRIPTION, example = "vattenläcka status:new stakeholders.lastName:berg") @Size(max = QUERY_MAX_LENGTH,
+			message = QUERY_TOO_LONG) @RequestParam(required = false) final String query,
 		@ParameterObject final Pageable pageable) {
 
 		return ok(searchService.search(namespace, municipalityId, query, pageable));

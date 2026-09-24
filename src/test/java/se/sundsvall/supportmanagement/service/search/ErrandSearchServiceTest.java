@@ -11,6 +11,8 @@ import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.config.SearchProperties;
 import se.sundsvall.supportmanagement.service.AccessControlService;
+import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
+import se.sundsvall.supportmanagement.service.search.index.SearchAvailability;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,7 +44,7 @@ class ErrandSearchServiceTest {
 
 	private ErrandSearchService service(final boolean enabled) {
 		return new ErrandSearchService(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, new SearchAvailability(enabled),
-			new SearchProperties(10000, new SearchProperties.Reindex(Duration.ofHours(6))));
+			new SearchProperties(10000, Duration.ofSeconds(10), new SearchProperties.Reindex(Duration.ofHours(6))));
 	}
 
 	@Test
@@ -76,10 +78,11 @@ class ErrandSearchServiceTest {
 
 	@Test
 	void sortablePropertiesMapToIndexFields() {
-		assertThat(ErrandSearchService.SORTABLE_PROPERTIES)
-			.containsEntry("title", "title_sort")
-			.containsEntry("created", "created")
-			.containsEntry("errandNumber", "errandNumber")
-			.hasSize(16);
+		assertThat(ErrandIndexModel.sortableProperties()).containsExactly("assignedGroupId", "assignedUserId", "category", "channel", "created", "errandNumber", "modified", "priority",
+			"reporterUserId", "resolution", "status", "suspendedFrom", "suspendedTo", "title", "touched", "type");
+		assertThat(ErrandIndexModel.sortField("title")).contains("title_sort");
+		assertThat(ErrandIndexModel.sortField("category")).contains("category");
+		assertThat(ErrandIndexModel.sortField("suspendedTo")).contains("suspendedTo");
+		assertThat(ErrandIndexModel.sortField("description")).isEmpty();
 	}
 }

@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.service.AccessControlService.AccessScope;
+import se.sundsvall.supportmanagement.service.MetadataService;
+import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,7 +53,7 @@ class ErrandSearchPredicatesTest {
 	private SearchPredicateFactory factoryMock;
 
 	@Mock
-	private MetadataLabelRepository metadataLabelRepositoryMock;
+	private MetadataService metadataServiceMock;
 
 	@Mock
 	private SearchPredicate predicateMock;
@@ -101,7 +101,7 @@ class ErrandSearchPredicatesTest {
 	private QueryStringPredicateOptionsStep queryStringOptionsMock;
 
 	private ErrandSearchPredicates predicates() {
-		return new ErrandSearchPredicates(metadataLabelRepositoryMock);
+		return new ErrandSearchPredicates(metadataServiceMock);
 	}
 
 	@Test
@@ -109,8 +109,8 @@ class ErrandSearchPredicatesTest {
 		when(factoryMock.matchAll()).thenReturn(matchAllMock);
 		when(matchAllMock.toPredicate()).thenReturn(predicateMock);
 
-		assertThat(predicates().query(factoryMock, " ", ErrandSearchPredicates.DEFAULT_FIELDS)).isSameAs(predicateMock);
-		assertThat(predicates().query(factoryMock, null, ErrandSearchPredicates.DEFAULT_FIELDS)).isSameAs(predicateMock);
+		assertThat(predicates().query(factoryMock, " ", List.of("title"))).isSameAs(predicateMock);
+		assertThat(predicates().query(factoryMock, null, List.of("title"))).isSameAs(predicateMock);
 		verify(factoryMock, never()).queryString();
 	}
 
@@ -127,7 +127,6 @@ class ErrandSearchPredicatesTest {
 		verify(queryStringFieldStepMock).fields("title", "description");
 		verify(queryStringFieldMoreStepMock).matching("vatten status:new");
 		verify(queryStringOptionsMock).defaultOperator(BooleanOperator.AND);
-		assertThat(ErrandSearchPredicates.DEFAULT_FIELDS).contains("title", "description", "stakeholders.lastName", "jsonParametersText", "communications.messageBody", "measures.jsonParametersText");
 	}
 
 	@Test
@@ -153,7 +152,7 @@ class ErrandSearchPredicatesTest {
 
 		assertThat(predicates().access(factoryMock, new AccessScope(false, null, null), NAMESPACE, MUNICIPALITY_ID)).isSameAs(predicateMock);
 
-		verifyNoInteractions(metadataLabelRepositoryMock);
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
@@ -166,14 +165,46 @@ class ErrandSearchPredicatesTest {
 		assertThat(predicates().access(factoryMock, new AccessScope(true, null, null), NAMESPACE, MUNICIPALITY_ID)).isSameAs(predicateMock);
 
 		verify(orMock, never()).add(any(PredicateFinalStep.class));
-		verifyNoInteractions(metadataLabelRepositoryMock);
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	/**
+	 * A route leaving no field open for a word that names none: the word has nowhere to look, so the search finds
+	 * nothing rather than failing on a predicate without a field.
+	 */
+	@Test
+	void aWordWithNoFieldToLookInMatchesNothing() {
+		when(factoryMock.matchNone()).thenReturn(matchNoneMock);
+		when(matchNoneMock.toPredicate()).thenReturn(predicateMock);
+
+		assertThat(predicates().query(factoryMock, "vatten", List.of())).isSameAs(predicateMock);
+
+		verify(factoryMock, never()).queryString();
+	}
+
+	/**
+	 * The same route answering a query that names its fields: those were held to what the route may read, so the query
+	 * runs, with the field every errand is filtered on standing in for the list it has no use for.
+	 */
+	@Test
+	void aQueryNamingItsOwnFieldsRunsWithNoFieldsOfItsOwn() {
+		when(factoryMock.queryString()).thenReturn(queryStringFieldStepMock);
+		when(queryStringFieldStepMock.fields(any(String[].class))).thenReturn(queryStringFieldMoreStepMock);
+		when(queryStringFieldMoreStepMock.matching(anyString())).thenReturn(queryStringOptionsMock);
+		when(queryStringOptionsMock.defaultOperator(BooleanOperator.AND)).thenReturn(queryStringOptionsMock);
+		when(queryStringOptionsMock.toPredicate()).thenReturn(predicateMock);
+
+		assertThat(predicates().query(factoryMock, "status:new", List.of())).isSameAs(predicateMock);
+
+		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.MUNICIPALITY_ID_FIELD);
+		verify(factoryMock, never()).matchNone();
 	}
 
 	@Test
 	void accessThroughLabelsExcludesTheLabelsTheUserLacks() {
 		final var allowed = label("allowed-1");
 		final var alsoAllowed = label("allowed-2");
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(allowed, alsoAllowed, label("disallowed-1"), label("disallowed-2")));
+		when(metadataServiceMock.findLabelIds(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(allowed.getId(), alsoAllowed.getId(), "disallowed-1", "disallowed-2"));
 		when(factoryMock.or()).thenReturn(orMock);
 		when(orMock.hasClause()).thenReturn(true);
 		when(orMock.toPredicate()).thenReturn(predicateMock);
@@ -193,7 +224,7 @@ class ErrandSearchPredicatesTest {
 	@Test
 	void accessThroughAllLabelsOfTheNamespaceExcludesNothing() {
 		final var allowed = label("allowed-1");
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(allowed));
+		when(metadataServiceMock.findLabelIds(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(allowed.getId()));
 		when(factoryMock.or()).thenReturn(orMock);
 		when(orMock.hasClause()).thenReturn(true);
 		when(orMock.toPredicate()).thenReturn(predicateMock);
@@ -215,13 +246,13 @@ class ErrandSearchPredicatesTest {
 		predicates().access(factoryMock, new AccessScope(true, Set.of(), null), NAMESPACE, MUNICIPALITY_ID);
 
 		verify(orMock).add(matchNoneMock);
-		verifyNoInteractions(metadataLabelRepositoryMock);
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@Test
 	void accessThroughReportingAndLabels() {
 		final var allowed = label("allowed-1");
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(allowed));
+		when(metadataServiceMock.findLabelIds(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(allowed.getId()));
 		when(factoryMock.or()).thenReturn(orMock);
 		when(orMock.hasClause()).thenReturn(true);
 		when(orMock.toPredicate()).thenReturn(predicateMock);
