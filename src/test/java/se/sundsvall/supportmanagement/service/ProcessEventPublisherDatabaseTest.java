@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.eventlog.EventType;
-import java.time.Clock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,13 +13,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessActivityRepository;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
-import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -28,18 +23,13 @@ import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOu
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
 
 /**
- * Verifies what publication actually writes, read back from a real row of the outbox.
- * <p>
- * The start permission is worked out once, at publication, and travels with the event. A completed process ends the
- * process life of an errand and a failed start does not.
- * <p>
- * The tests also verify what publication refuses to write: a process key, taken from a label attribute, that is longer
+ * Verifies what publication actually writes, read back from a real row of the outbox: the key of a label that has not
+ * been read from the database yet, and nothing at all for a process key, taken from a label attribute, that is longer
  * than the column it feeds.
+ * <p>
+ * The start permission an event carries is verified over the wire, by ProcessStartModeIT and ProcessLoopGuardIT.
  */
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles({
@@ -53,8 +43,6 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 class ProcessEventPublisherDatabaseTest {
 
 	private static final String ERRAND_ID = "ec677eb3-604c-4935-bff7-f8f0b500c8f4";
-	private static final String MUNICIPALITY_ID = "2281";
-	private static final String NAMESPACE = "NAMESPACE-1";
 	private static final String PROCESS_KEY = "alkt-ansokan";
 	private static final String PROCESS_LABEL_ID = "5940c8c8-d84a-4144-b650-313356ad1333";
 	private static final String ERRAND_WITHOUT_LABELS = "cc236cf1-c00f-4479-8341-ecf5dd90b5b9";
@@ -64,9 +52,6 @@ class ProcessEventPublisherDatabaseTest {
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
-
-	@Autowired
-	private ErrandProcessRepository processRepository;
 
 	@Autowired
 	private ProcessEventOutboxRepository outboxRepository;
@@ -79,47 +64,6 @@ class ProcessEventPublisherDatabaseTest {
 
 	@Autowired
 	private PlatformTransactionManager transactionManager;
-
-	@Autowired
-	private Clock clock;
-
-	@Test
-	@DisplayName("Verification that an errand with no process at all is given the permission, since its label says nothing about the start mode and that reads as automatic")
-	void anErrandWithoutAProcessIsAllowedToStart() {
-		publishAMessageEvent();
-
-		assertThat(outboxRepository.findAll()).singleElement().extracting(ProcessEventOutboxEntity::isStartAllowed).isEqualTo(true);
-	}
-
-	@Test
-	@DisplayName("Verification that a process which has run its course is never started over by an ordinary errand change")
-	void anErrandWithACompletedInstanceIsRefusedTheStart() {
-		givenInstance(COMPLETED);
-
-		publishAMessageEvent();
-
-		assertThat(outboxRepository.findAll()).singleElement().extracting(ProcessEventOutboxEntity::isStartAllowed).isEqualTo(false);
-	}
-
-	@Test
-	@DisplayName("Verification that an errand whose only instance failed may start again, since trying again after a failed start is recovery")
-	void anErrandWhoseOnlyInstanceFailedIsAllowedToStart() {
-		givenInstance(FAILED);
-
-		publishAMessageEvent();
-
-		assertThat(outboxRepository.findAll()).singleElement().extracting(ProcessEventOutboxEntity::isStartAllowed).isEqualTo(true);
-	}
-
-	@Test
-	@DisplayName("Verification that an errand already running a process is refused the start, while the event itself is published all the same")
-	void anErrandWithALiveInstanceIsRefusedTheStart() {
-		givenInstance(WAITING);
-
-		publishAMessageEvent();
-
-		assertThat(outboxRepository.findAll()).singleElement().extracting(ProcessEventOutboxEntity::isStartAllowed).isEqualTo(false);
-	}
 
 	@Test
 	@DisplayName("Verification that a label whose process key cannot fit the column leaves the errand writable, since one mistyped label may not make an errand impossible to write to for ever")
@@ -154,20 +98,6 @@ class ProcessEventPublisherDatabaseTest {
 			assertThat(row.getProcessKey()).isEqualTo(PROCESS_KEY);
 			assertThat(row.isStartAllowed()).isTrue();
 		});
-	}
-
-	private void givenInstance(final ProcessStatus status) {
-		final var instance = ErrandProcessEntity.create()
-			.withErrandId(ERRAND_ID)
-			.withMunicipalityId(MUNICIPALITY_ID)
-			.withNamespace(NAMESPACE)
-			.withProcessService("pw-alkt")
-			.withProcessKey(PROCESS_KEY)
-			.withProcessInstanceId("process-instance-" + status.name().toLowerCase());
-
-		instance.applyStatus(status, clock);
-
-		processRepository.saveAndFlush(instance);
 	}
 
 	/**

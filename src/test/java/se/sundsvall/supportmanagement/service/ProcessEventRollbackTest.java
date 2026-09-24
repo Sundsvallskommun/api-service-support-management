@@ -7,13 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -21,7 +22,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 
 /**
@@ -31,8 +32,10 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
  * Verified by writing to the errand and reading it back afterwards.
  */
 @SpringBootTest(classes = Application.class)
-@ActiveProfiles({
-	"junit", "dbtest"
+@ActiveProfiles("junit")
+// The same overrides as ErrandProcessCollisionTest, so that the two share one application context
+@MockitoSpyBean(types = {
+	ErrandProcessRepository.class, ProcessEventOutboxRepository.class
 })
 @Sql({
 	"/db/scripts/truncate.sql",
@@ -47,8 +50,8 @@ class ProcessEventRollbackTest {
 	private static final String ORIGINAL_TITLE = "TITLE-1";
 	private static final String NEW_TITLE = "a change that must not survive a failed publication";
 
-	@MockitoBean
-	private ProcessEventOutboxRepository outboxRepositoryMock;
+	@Autowired
+	private ProcessEventOutboxRepository outboxRepositorySpy;
 
 	@Autowired
 	private EventService eventService;
@@ -65,7 +68,7 @@ class ProcessEventRollbackTest {
 	@Test
 	@DisplayName("Verification that an errand change is not committed when the publication of its event fails, even though the caller swallows the exception")
 	void anErrandChangeIsNotCommittedWhenThePublicationFails() {
-		when(outboxRepositoryMock.save(any())).thenThrow(new DataIntegrityViolationException("the row could not be written"));
+		doThrow(new DataIntegrityViolationException("the row could not be written")).when(outboxRepositorySpy).save(any());
 		final var transaction = new TransactionTemplate(transactionManager);
 
 		assertThatExceptionOfType(UnexpectedRollbackException.class).isThrownBy(() -> transaction.executeWithoutResult(_ -> {
@@ -86,7 +89,7 @@ class ProcessEventRollbackTest {
 	@Test
 	@DisplayName("Verification that a patch of an errand is not committed when the publication of its event fails, even though the service swallows the exception")
 	void aPatchIsNotCommittedWhenThePublicationFails() {
-		when(outboxRepositoryMock.save(any())).thenThrow(new DataIntegrityViolationException("the row could not be written"));
+		doThrow(new DataIntegrityViolationException("the row could not be written")).when(outboxRepositorySpy).save(any());
 		final var patch = Errand.create().withTitle(NEW_TITLE);
 
 		assertThatExceptionOfType(UnexpectedRollbackException.class)

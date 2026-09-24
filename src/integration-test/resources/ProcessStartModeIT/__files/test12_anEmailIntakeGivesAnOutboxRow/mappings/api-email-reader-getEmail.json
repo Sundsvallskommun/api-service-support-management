@@ -12,7 +12,7 @@
 		"headers": {
 			"Content-Type": "application/json"
 		},
-		"bodyFileName": "test01_anEmailIntakeGivesAnOutboxRow/response/api-email-reader-getEmail-response.json",
+		"bodyFileName": "test12_anEmailIntakeGivesAnOutboxRow/response/api-email-reader-getEmail-response.json",
 		"status": 200
 	},
 	"name": "api-email-reader-getEmail"

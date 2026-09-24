@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_CLASS;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
 /**
@@ -50,7 +51,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 @ActiveProfiles("junit")
 @Sql(scripts = {
 	"/db/scripts/truncate.sql"
-})
+}, executionPhase = BEFORE_TEST_CLASS)
 @Transactional
 class AccessControlSpecificationParityTest {
 
@@ -82,8 +83,9 @@ class AccessControlSpecificationParityTest {
 	static Stream<Arguments> combinations() {
 		final List<Set<MetadataLabelEntity>> grantedLabels = List.of(Set.of(), Set.of(LABEL), Set.of(OTHER_LABEL), Set.of(LABEL, OTHER_LABEL));
 
-		return Stream.of(true, false).flatMap(labelled -> Stream.of(true, false).flatMap(reporter -> grantedLabels.stream().flatMap(labels -> Stream.of(LR, R, RW).flatMap(grantedAt -> Stream.of(true, false).flatMap(reporterAccess -> Stream.of(true, false)
-			.map(resourceAccessControl -> Arguments.of(labelled, reporter, labels, grantedAt, reporterAccess, resourceAccessControl)))))));
+		return Stream.of(true, false).flatMap(labelled -> Stream.of(true, false).flatMap(reporter -> grantedLabels.stream().flatMap(labels -> levelsGranting(labels)
+			.flatMap(grantedAt -> Stream.of(true, false).flatMap(reporterAccess -> Stream.of(true, false)
+				.map(resourceAccessControl -> Arguments.of(labelled, reporter, labels, grantedAt, reporterAccess, resourceAccessControl)))))));
 	}
 
 	@ParameterizedTest(name = "labelled={0} reporter={1} labels={2} grantedAt={3} reporterAccess={4} resourceAccessControl={5}")
@@ -113,8 +115,16 @@ class AccessControlSpecificationParityTest {
 		final List<Set<MetadataLabelEntity>> grantedLabels = List.of(Set.of(), Set.of(LABEL), Set.of(OTHER_LABEL));
 
 		return Stream.of(ProtectedResource.CONVERSATION_MESSAGE, ProtectedResource.NOTE)
-			.flatMap(resource -> Stream.of(true, false).flatMap(labelled -> grantedLabels.stream().flatMap(labels -> Stream.of(LR, R, RW).flatMap(grantedAt -> Stream.of(true, false)
+			.flatMap(resource -> Stream.of(true, false).flatMap(labelled -> grantedLabels.stream().flatMap(labels -> levelsGranting(labels).flatMap(grantedAt -> Stream.of(true, false)
 				.map(resourceAccessControl -> Arguments.of(resource, labelled, labels, grantedAt, resourceAccessControl))))));
+	}
+
+	/**
+	 * The levels sent in labels are granted at. No labels at all are asked about once, since the snapshot they give is
+	 * the same whatever level they are said to be granted at.
+	 */
+	private static Stream<Access.AccessLevelEnum> levelsGranting(final Set<MetadataLabelEntity> labels) {
+		return labels.isEmpty() ? Stream.of(LR) : Stream.of(LR, R, RW);
 	}
 
 	/**
