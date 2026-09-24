@@ -99,8 +99,9 @@ public class EventService {
 	}
 
 	/**
-	 * Tells the process of the errand that the errand is gone, without writing an event or notifying anyone: for a removal
-	 * that is to leave no record of the errand behind, as the retention purge.
+	 * Tells the process consumer of the namespace that the errand is gone, whether the errand had a process or not, without
+	 * writing an event or notifying anyone: for a removal that is to leave no record of the errand behind, as the retention
+	 * purge.
 	 *
 	 * @param errandEntity the errand that has been removed.
 	 */
