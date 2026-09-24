@@ -451,12 +451,23 @@ class EventServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that the removal of an errand is told to its process without an event being written or anyone notified")
+	void aDeletionIsPublishedWithoutAnEvent() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.publishDeletionToProcess(entity);
+
+		verify(processEventPublisherMock).publish(entity, EventType.DELETE, ERRAND, "executingUserId", null, null, false);
+		verifyNoInteractions(eventLogClientMock, notificationServiceMock, notificationDispatchRepositoryMock, eventPublisherMock);
+	}
+
+	@Test
 	@DisplayName("Verification that a command carries the key a handler chose through to publication, where it is never resolved again")
 	void aCommandIsCarriedThroughToThePublisher() {
 		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
 		final var command = new ProcessCommand("alkt-tillsyn", null);
 
-		service.createProcessCommandEvent(EventType.CREATE, "message", entity, false, PROCESS, command);
+		service.createProcessCommandEvent(EventType.CREATE, "message", entity, PROCESS, command);
 
 		verify(processEventPublisherMock).publish(entity, EventType.CREATE, PROCESS, "executingUserId", null, command, false);
 	}
@@ -466,7 +477,7 @@ class EventServiceTest {
 	void aCommandIsLoggedWithoutARevision() {
 		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
 
-		service.createProcessCommandEvent(EventType.UPDATE, "message", entity, false, SIGNAL, new ProcessCommand(null, "granskning-godkand"));
+		service.createProcessCommandEvent(EventType.UPDATE, "message", entity, SIGNAL, new ProcessCommand(null, "granskning-godkand"));
 
 		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
 		assertThat(eventCaptor.getValue().getHistoryReference()).isNull();
@@ -474,11 +485,11 @@ class EventServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a command the process already has on its way is logged like any other, and not handed on to the process")
+	@DisplayName("Verification that a command without anything to hand on - one the process already has on its way - is logged like any other, and not handed on to the process")
 	void aCommandOnItsWayIsLoggedWithoutBeingPublished() {
 		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
 
-		service.createProcessCommandEventWithoutPublication(EventType.UPDATE, "message", entity, false, PROCESS);
+		service.createProcessCommandEvent(EventType.UPDATE, "message", entity, PROCESS, null);
 
 		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
 		assertThat(eventCaptor.getValue().getType()).isEqualTo(EventType.UPDATE);

@@ -43,4 +43,10 @@ VALUES ('peo-waiting', '2281', 'NAMESPACE.1', 'ERRAND_ID-1', 'pw-alkt', 'alkt-an
         'ERRAND', 1, null, 'joe01doe', null, '2026-01-01 10:00:00.000', '2026-01-01 10:00:05.000'),
        -- Addressed to another process engine.
        ('peo-other-consumer', '2281', 'NAMESPACE.1', 'ERRAND_ID-2', 'pw-other', 'other-process', 'UPDATE',
-        'ERRAND', 0, null, 'joe01doe', null, '2026-01-01 11:40:00.000', null);
+        'ERRAND', 0, null, 'joe01doe', null, '2026-01-01 11:40:00.000', null),
+       -- Created long before it was delivered, so a cleanup reading the wrong column takes it too early.
+       ('peo-delivered-late', '2281', 'NAMESPACE.1', 'ERRAND_ID-2', 'pw-alkt', 'alkt-tillsyn', 'UPDATE',
+        'ERRAND', 0, null, 'joe01doe', null, '2025-12-31 08:00:00.000', '2026-01-01 11:30:00.000'),
+       -- A start on its way, too young to be picked up yet.
+       ('peo-start-waiting', '2281', 'NAMESPACE.1', 'ERRAND_ID-2', 'pw-alkt', 'alkt-tillsyn', 'UPDATE',
+        'ERRAND', 1, null, 'joe01doe', null, '2026-01-01 11:59:58.000', null);

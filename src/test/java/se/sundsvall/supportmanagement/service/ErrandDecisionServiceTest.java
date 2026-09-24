@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -54,8 +55,10 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.MANUAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 
 /**
  * The decision itself and its terms - the attachment and JSON parameter side is ErrandDecisionServiceArtefactTest's.
@@ -171,13 +174,17 @@ class ErrandDecisionServiceTest {
 			.withDecidedBy(USER);
 	}
 
+	private static ErrandProcessEntity liveProcess(final String id) {
+		return createErrandProcessEntity(RUNNING, Clock.systemUTC(), process -> process.withId(id));
+	}
+
 	private static DecisionTermEntity term(final String id, final String text) {
 		return DecisionTermEntity.create().withId(id).withText(text);
 	}
 
 	/**
-	 * A manual decision names no process row, and the process rows are not read for it. The request is validated before
-	 * the version of the errand is moved, and the event is written last, once the decision is in the database.
+	 * A manual decision names no process row, and the process rows are read once, for the lock. The request is validated
+	 * before the version of the errand is moved, and the event is written last, once the decision is in the database.
 	 */
 	@Test
 	void createErrandDecision() {
@@ -195,7 +202,7 @@ class ErrandDecisionServiceTest {
 		assertThat(result).isEqualTo(DECISION_ID);
 		final var inOrder = inOrder(accessControlServiceMock, decisionValidatorMock, entityManagerMock, decisionRepositoryMock, eventServiceMock);
 		inOrder.verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
-		inOrder.verify(decisionValidatorMock).validateChangeable(ERRAND_ID, null);
+		inOrder.verify(decisionValidatorMock).validateChangeable(ERRAND_ID, List.of(), null);
 		inOrder.verify(decisionValidatorMock).validateCardinality(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		inOrder.verify(decisionValidatorMock).validateMethod(NAMESPACE, MUNICIPALITY_ID, MANUAL);
 		inOrder.verify(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, "APPROVAL");
@@ -203,7 +210,8 @@ class ErrandDecisionServiceTest {
 		inOrder.verify(decisionRepositoryMock).saveAndFlush(decisionEntityCaptor.capture());
 		inOrder.verify(eventServiceMock).createDecisionEvent(EVENT_LOG_CREATE, errandEntity, false);
 		verifyNoMoreInteractions(accessControlServiceMock, decisionValidatorMock, eventServiceMock);
-		verifyNoInteractions(processRepositoryMock);
+		verify(processRepositoryMock).findByErrandIdOrderByCreatedDesc(ERRAND_ID);
+		verifyNoMoreInteractions(processRepositoryMock);
 
 		final var saved = decisionEntityCaptor.getValue();
 		assertThat(saved.getErrandEntity()).isSameAs(errandEntity);
@@ -275,7 +283,7 @@ class ErrandDecisionServiceTest {
 		// Arrange
 		mockErrand();
 		mockSaveAssigningId();
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(ErrandProcessEntity.create().withId(PROCESS_ROW_ID)));
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(liveProcess(PROCESS_ROW_ID)));
 
 		// Act
 		service.createErrandDecision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, decision().withMethod("AUTOMATIC").withErrandProcessId(OTHER_PROCESS_ROW_ID));
@@ -292,7 +300,6 @@ class ErrandDecisionServiceTest {
 		// Arrange
 		mockErrand();
 		mockSaveAssigningId();
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.empty());
 
 		// Act
 		service.createErrandDecision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, decision().withMethod("AUTOMATIC").withErrandProcessId(OTHER_PROCESS_ROW_ID));
@@ -307,14 +314,14 @@ class ErrandDecisionServiceTest {
 
 		// Arrange
 		mockErrand();
-		doThrow(Problem.valueOf(CONFLICT, "process life over")).when(decisionValidatorMock).validateChangeable(ERRAND_ID, null);
+		doThrow(Problem.valueOf(CONFLICT, "process life over")).when(decisionValidatorMock).validateChangeable(ERRAND_ID, List.of(), null);
 
 		// Act
 		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> service.createErrandDecision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, decision()));
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
-		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, null);
+		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, List.of(), null);
 		verifyNoMoreInteractions(decisionValidatorMock);
 		verifyNoInteractions(decisionRepositoryMock, entityManagerMock, eventServiceMock);
 	}
@@ -490,7 +497,7 @@ class ErrandDecisionServiceTest {
 		assertThat(entity.getModifiedBy()).isEqualTo(USER);
 		assertThat(entity.getInvestigationEntity()).isSameAs(investigationEntity);
 		final var inOrder = inOrder(decisionValidatorMock, entityManagerMock, decisionRepositoryMock, eventServiceMock);
-		inOrder.verify(decisionValidatorMock).validateChangeable(ERRAND_ID, entity);
+		inOrder.verify(decisionValidatorMock).validateChangeable(ERRAND_ID, List.of(), entity);
 		inOrder.verify(decisionValidatorMock).validateMethod(NAMESPACE, MUNICIPALITY_ID, MANUAL);
 		inOrder.verify(decisionValidatorMock).validateOutcome(NAMESPACE, MUNICIPALITY_ID, null);
 		inOrder.verify(entityManagerMock).lock(errandEntity, OPTIMISTIC_FORCE_INCREMENT);
@@ -498,7 +505,9 @@ class ErrandDecisionServiceTest {
 		inOrder.verify(eventServiceMock).createDecisionEvent(EVENT_LOG_UPDATE, errandEntity, false);
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.DECISION, RW);
 		verifyNoMoreInteractions(accessControlServiceMock, decisionValidatorMock, eventServiceMock);
-		verifyNoInteractions(investigationRepositoryMock, processRepositoryMock);
+		verify(processRepositoryMock).findByErrandIdOrderByCreatedDesc(ERRAND_ID);
+		verifyNoMoreInteractions(processRepositoryMock);
+		verifyNoInteractions(investigationRepositoryMock);
 	}
 
 	/**
@@ -529,7 +538,7 @@ class ErrandDecisionServiceTest {
 		// Arrange
 		final var entity = mockDecision().withMethod(AUTOMATIC).withErrandProcessId(OTHER_PROCESS_ROW_ID);
 		when(decisionRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
-		when(processRepositoryMock.findByErrandIdAndActiveMarkerIsNotNull(ERRAND_ID)).thenReturn(Optional.of(ErrandProcessEntity.create().withId(PROCESS_ROW_ID)));
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(liveProcess(PROCESS_ROW_ID)));
 
 		// Act
 		final var result = service.updateErrandDecision(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, DECISION_ID, IF_MATCH, Decision.create().withLegalBasis("8 kap. 12 § alkohollagen"));
@@ -554,7 +563,8 @@ class ErrandDecisionServiceTest {
 		// Verify
 		assertThat(entity.getMethod()).isEqualTo(MANUAL);
 		assertThat(entity.getErrandProcessId()).isNull();
-		verifyNoInteractions(processRepositoryMock);
+		verify(processRepositoryMock).findByErrandIdOrderByCreatedDesc(ERRAND_ID);
+		verifyNoMoreInteractions(processRepositoryMock);
 	}
 
 	/**
@@ -604,7 +614,7 @@ class ErrandDecisionServiceTest {
 
 		// Arrange
 		final var entity = mockDecision().withTitle("old title").withStatus(ItemStatus.COMPLETED);
-		doThrow(Problem.valueOf(CONFLICT, "decision completed")).when(decisionValidatorMock).validateChangeable(ERRAND_ID, entity);
+		doThrow(Problem.valueOf(CONFLICT, "decision completed")).when(decisionValidatorMock).validateChangeable(ERRAND_ID, List.of(), entity);
 
 		// Act
 		final var problem = catchThrowableOfType(ThrowableProblem.class,
@@ -614,7 +624,7 @@ class ErrandDecisionServiceTest {
 		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
 		assertThat(entity.getTitle()).isEqualTo("old title");
 		assertThat(entity.getStatus()).isEqualTo(ItemStatus.COMPLETED);
-		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, entity);
+		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, List.of(), entity);
 		verifyNoMoreInteractions(decisionValidatorMock);
 		verify(decisionRepositoryMock, never()).saveAndFlush(any());
 		verifyNoInteractions(entityManagerMock, eventServiceMock);
@@ -651,7 +661,7 @@ class ErrandDecisionServiceTest {
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED);
 		assertThat(entity.getTitle()).isEqualTo("old title");
-		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, entity);
+		verify(decisionValidatorMock).validateChangeable(ERRAND_ID, List.of(), entity);
 		verifyNoMoreInteractions(decisionValidatorMock);
 		verifyNoInteractions(investigationRepositoryMock, entityManagerMock, eventServiceMock);
 		verify(decisionRepositoryMock, never()).saveAndFlush(any());

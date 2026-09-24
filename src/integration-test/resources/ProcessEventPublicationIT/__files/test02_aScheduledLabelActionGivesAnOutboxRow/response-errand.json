@@ -1,0 +1,68 @@
+{
+	"id": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
+	"errandNumber": "KC-23020002",
+	"lifecycle": "ACTIVE",
+	"title": "TITLE-1",
+	"priority": "LOW",
+	"stakeholders": [
+		{
+			"externalId": "def57969-9b83-4e54-9351-667dc896a19d",
+			"externalIdType": "PRIVATE",
+			"contactChannels": [],
+			"parameters": []
+		}
+	],
+	"externalTags": [
+		{
+			"key": "KEY-3",
+			"value": "VALUE-3"
+		}
+	],
+	"parameters": [],
+	"jsonParameters": [],
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	},
+	"status": "STATUS-1",
+	"reporterUserId": "REPORTER_USER_ID-1",
+	"assignedUserId": "ASSIGNED_USER_ID-1",
+	"assignedGroupId": "ASSIGNED_GROUP_ID-1",
+	"suspension": {},
+	"businessRelated": false,
+	"labels": [
+		{
+			"id": "5940c8c8-d84a-4144-b650-313356ad1333",
+			"classification": "CATEGORY",
+			"displayName": "SOME_CATEGORY_1",
+			"resourcePath": "LABEL-1",
+			"resourceName": "CATEGORY-1",
+			"version": 0
+		}
+	],
+	"activeNotifications": [
+		{
+			"id": "3b0a942d-b618-4b4f-8144-575d66e58170",
+			"created": "2023-12-31T23:59:59.999+01:00",
+			"modified": "2023-12-31T23:59:59.999+01:00",
+			"ownerFullName": "owner_full_name-2",
+			"ownerId": "owner_id-2",
+			"createdBy": "created_by-2",
+			"type": "type-2",
+			"description": "description-2",
+			"content": "content-2",
+			"expires": "2024-12-31T23:59:59.999Z",
+			"globalAcknowledged": false,
+			"acknowledged": true,
+			"errandId": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
+			"errandNumber": "KC-23020002"
+		}
+	],
+	"actions": [],
+	"phases": [],
+	"created": "2022-02-01T12:00:00+01:00",
+	"modified": "${json-unit.any-string}",
+	"touched": "${json-unit.any-string}",
+	"version": 1,
+	"measures": []
+}

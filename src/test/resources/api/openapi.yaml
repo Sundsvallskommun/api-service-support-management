@@ -1464,6 +1464,7 @@ paths:
           type: string
           maxLength: 64
           minLength: 0
+          pattern: \S+
         example: 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
       - name: X-Request-Group-Id
         in: header
@@ -1514,6 +1515,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ErrandProcess"
+        "403":
+          description: Forbidden — the caller may not reach the errand
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
           content:
@@ -6524,6 +6531,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ErrandProcessOverview"
+        "403":
+          description: Forbidden — the caller may not reach the errand
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
           content:
@@ -6626,6 +6639,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ErrandProcess"
+        "403":
+          description: Forbidden — the caller may not reach the errand
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
           content:
@@ -6782,14 +6801,14 @@ paths:
         \ a person may start a process, and the start is recorded with who sent it.\
         \ 202 says the start is recorded and on its way, not that the process runs:\
         \ the process shows in GET .../processes once the process engine has registered\
-        \ it, normally within seconds. Until then startable still says AVAILABLE -\
-        \ show the start as on its way rather than as not started. A start pressed\
-        \ while one with the same key is on its way - sent by hand, or an automatic\
-        \ start not yet delivered - is recorded like any other, starts nothing more\
-        \ and is answered 202. 400 is answered when no label of the errand names a\
-        \ process it can be started with, when the labels name several and the request\
-        \ chose none, when the request names a key that is not among them, and when\
-        \ the namespace runs no processes."
+        \ it, normally within seconds. Until the start has been delivered, startable\
+        \ says START_PENDING, and between its delivery and its registration it briefly\
+        \ says AVAILABLE again. A start pressed while one with the same key is on\
+        \ its way - sent by hand, or an automatic start not yet delivered - is recorded\
+        \ like any other, starts nothing more and is answered 202. 400 is answered\
+        \ when no label of the errand names a process it can be started with, when\
+        \ the labels name several and the request chose none, when the request names\
+        \ a key that is not among them, and when the namespace runs no processes."
       operationId: startProcess
       parameters:
       - name: municipalityId
@@ -13081,7 +13100,9 @@ paths:
       tags:
       - Errands
       summary: Delete errand
-      description: Deletes the errand that matches the provided id
+      description: "Deletes the errand that matches the provided id. An errand with\
+        \ a process cannot be deleted once one of its decisions can no longer be changed\
+        \ - when the process has run to its end, or the decision is completed."
       operationId: deleteErrand
       parameters:
       - name: namespace
@@ -13149,7 +13170,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: Conflict — resource modified concurrently
+          description: "Conflict — resource modified concurrently, or the errand holds\
+            \ a decision that can no longer be changed"
           content:
             application/problem+json:
               schema:
@@ -17008,7 +17030,9 @@ paths:
       description: "The activity log of the errand. Read per errand rather than per\
         \ process instance, since the entries explaining why no process ever started\
         \ belong to no instance. Narrowing to one instance therefore leaves those\
-        \ entries out."
+        \ entries out. The log can be sorted by id, activityType, activityId, activityName,\
+        \ severity, message, errorCode, occurredAt and created; sorting by anything\
+        \ else is answered with 400."
       operationId: readErrandProcessActivities
       parameters:
       - name: municipalityId
@@ -17096,6 +17120,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/PageProcessActivity"
+        "403":
+          description: Forbidden — the caller may not reach the errand
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
           content:
@@ -19700,6 +19730,7 @@ components:
           - 8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33
           maxLength: 64
           minLength: 0
+          pattern: \S+
         processStatus:
           type: string
           description: "The state the process is in: RUNNING, WAITING, RETRYING, COMPLETED\
@@ -24008,16 +24039,19 @@ components:
             \ other value says why one cannot be. LIVE_INSTANCE - a process is already\
             \ running for this errand. PROCESS_COMPLETED - a process has already run\
             \ to its end. An errand has one process life; a new process means a new\
-            \ errand. NO_PROCESS_KEY - no label on the errand carries a processKey\
-            \ attribute the errand can be started with, so there is nothing to start.\
-            \ Setting the right label is the fix. NO_PROCESS_ENGINE - this namespace\
-            \ does not run processes at all. ERRAND_DRAFT - the errand is a draft.\
-            \ A process is started only once the errand has been made active. The\
-            \ answer is the same whether or not the labels start the process on their\
-            \ own: an errand whose process starts by itself is AVAILABLE too, and\
-            \ starting it by hand is how a start that failed is tried again. Treat\
-            \ any value you do not recognise as not startable - values may be added\
-            \ over time."
+            \ errand. START_PENDING - a start is already on its way to the process\
+            \ engine, and the process shows up among the processes once the process\
+            \ engine has registered it, normally within seconds. Show that the start\
+            \ is on its way rather than offering it again. NO_PROCESS_KEY - no label\
+            \ on the errand carries a processKey attribute the errand can be started\
+            \ with, so there is nothing to start. Setting the right label is the fix.\
+            \ NO_PROCESS_ENGINE - this namespace does not run processes at all. ERRAND_DRAFT\
+            \ - the errand is a draft. A process is started only once the errand has\
+            \ been made active. The answer is the same whether or not the labels start\
+            \ the process on their own: an errand whose process starts by itself is\
+            \ AVAILABLE too, and starting it by hand is how a start that failed is\
+            \ tried again. Treat any value you do not recognise as not startable -\
+            \ values may be added over time."
           examples:
           - AVAILABLE
           readOnly: true

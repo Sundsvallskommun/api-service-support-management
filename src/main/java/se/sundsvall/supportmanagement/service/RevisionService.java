@@ -56,12 +56,11 @@ public class RevisionService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RevisionService.class);
 
-	// The last two are no longer written (CircularReferenceExclusionStrategy), but older snapshots still carry them, and
-	// read as they stand those would differ from every snapshot written since.
+	/** The attributes left out when two snapshots are compared or diffed, whether a snapshot carries them or not. */
 	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..modified", "$..touched",
 		"$..labels[*].metadataLabel", "$.tempPreviousStatus");
 
-	// The collections of an errand with no order of their own, each with the field that tells its elements apart.
+	/** The collections of an errand with no order of their own, each with the field its elements are sorted by. */
 	private static final Map<String, String> UNORDERED_COLLECTIONS = Map.of(
 		"labels", "metadataLabelId",
 		"accessLabels", "metadataLabelId",

@@ -114,10 +114,10 @@ class ProcessIntegrationDataModelTest {
 		saveProcess(errandId, COMPLETED);
 		final var live = saveProcess(errandId, WAITING);
 
-		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId))
-			.get()
+		assertThat(errandProcessRepository.findByErrandIdOrderByCreatedDesc(errandId))
+			.filteredOn(ErrandProcessEntity::isLive)
 			.extracting(ErrandProcessEntity::getId)
-			.isEqualTo(live.getId());
+			.containsExactly(live.getId());
 	}
 
 	@Test

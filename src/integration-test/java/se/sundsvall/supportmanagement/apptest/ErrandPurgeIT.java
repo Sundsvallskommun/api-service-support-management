@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
+import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
@@ -129,6 +130,9 @@ class ErrandPurgeIT extends AbstractAppTest {
 
 	@Autowired
 	private JobRepository jobRepository;
+
+	@Autowired
+	private ProcessEventOutboxRepository outboxRepository;
 
 	@Autowired
 	private JobScheduler jobScheduler;
@@ -335,6 +339,36 @@ class ErrandPurgeIT extends AbstractAppTest {
 		final var job = startPurge(PATH);
 
 		assertThat(awaitEndOf(job.getJobId()).getStatus()).isEqualTo(COMPLETED);
+	}
+
+	/**
+	 * In a namespace running a process, the process is told of every errand a run removes, so that no instance is left
+	 * running for an errand that is gone. The deletion carries no process key, since the process consumer finds the
+	 * instance by the errand.
+	 */
+	@Test
+	@DisplayName("Verification that a run in a namespace running a process publishes a deletion for every errand it removes")
+	@Sql("/db/scripts/testdata-it-purge-process.sql")
+	void test10_aPurgeInAProcessNamespaceTellsTheProcess() throws Exception {
+		final var job = startPurge(PATH);
+
+		final var ended = awaitEndOf(job.getJobId());
+
+		assertThat(ended.getStatus()).isEqualTo(COMPLETED);
+		assertThat(ended.getMessage()).isEqualTo("Removed 1 of 1 errands reached, 0 could not be removed");
+		assertThat(outboxRepository.findAll())
+			.singleElement()
+			.satisfies(row -> {
+				assertThat(row.getErrandId()).isEqualTo(FIRST_ERRAND_REACHED);
+				assertThat(row.getNamespace()).isEqualTo(NAMESPACE);
+				assertThat(row.getProcessService()).isEqualTo("pw-alkt");
+				assertThat(row.getProcessKey()).isNull();
+				assertThat(row.getEventType()).isEqualTo("DELETE");
+				assertThat(row.getEventSubType()).isEqualTo("ERRAND");
+				assertThat(row.isStartAllowed()).isFalse();
+				assertThat(row.getDeliveredAt()).isNull();
+			});
+		verifyStubs();
 	}
 
 	/**

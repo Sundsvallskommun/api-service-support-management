@@ -32,6 +32,8 @@ import se.sundsvall.supportmanagement.service.ProcessKeyGuard;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -432,7 +434,7 @@ class AddLabelActionTest {
 		var before = ArgumentCaptor.<Collection<ErrandLabelEmbeddable>>captor();
 		var after = ArgumentCaptor.<Collection<ErrandLabelEmbeddable>>captor();
 
-		verify(processKeyGuard).refusesLabelChange(eq(ERRAND_ID), before.capture(), after.capture());
+		verify(processKeyGuard).refusesLabelChange(eq(ERRAND_ID), before.capture(), after.capture(), contains("left off the errand"));
 		assertThat(before.getValue()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1);
 		assertThat(after.getValue()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1, LABEL_ID_2);
 	}
@@ -448,7 +450,7 @@ class AddLabelActionTest {
 		config.setParameters(new ArrayList<>(List.of(
 			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_2)))));
 
-		when(processKeyGuard.refusesLabelChange(eq(ERRAND_ID), any(), any())).thenReturn(true);
+		when(processKeyGuard.refusesLabelChange(eq(ERRAND_ID), any(), any(), anyString())).thenReturn(true);
 
 		assertThat(addLabelAction.executeAction(errand, config)).isFalse();
 

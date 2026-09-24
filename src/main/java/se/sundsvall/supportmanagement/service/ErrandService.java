@@ -21,6 +21,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -65,6 +66,7 @@ public class ErrandService {
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_ACTIVATE_ERRAND = "Ärendet har aktiverats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after a label was moved, and it keeps the labels it had. Move the label back, or give the errand labels that name the process it runs.";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
@@ -81,6 +83,7 @@ public class ErrandService {
 	private final ErrandPhaseService errandPhaseService;
 	private final ErrandProcessService errandProcessService;
 	private final ProcessKeyGuard processKeyGuard;
+	private final DecisionValidator decisionValidator;
 	private final EntityManager entityManager;
 
 	public ErrandService(
@@ -99,6 +102,7 @@ public class ErrandService {
 		final ErrandPhaseService errandPhaseService,
 		final ErrandProcessService errandProcessService,
 		final ProcessKeyGuard processKeyGuard,
+		final DecisionValidator decisionValidator,
 		final EntityManager entityManager) {
 
 		this.repository = repository;
@@ -116,6 +120,7 @@ public class ErrandService {
 		this.errandPhaseService = errandPhaseService;
 		this.errandProcessService = errandProcessService;
 		this.processKeyGuard = processKeyGuard;
+		this.decisionValidator = decisionValidator;
 		this.entityManager = entityManager;
 	}
 
@@ -135,9 +140,6 @@ public class ErrandService {
 
 		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
 		errandLabelService.settleAccessLabels(errandEntity);
-
-		// Asked of the settled labels rather than of the ones sent in: the ancestors added above are labels the errand
-		// wears, and one of them can be a label that names a process.
 		processKeyGuard.verifyNewLabels(errandEntity.getLabels());
 
 		final var persistedEntity = repository.save(errandEntity);
@@ -200,9 +202,6 @@ public class ErrandService {
 		errandLabelService.validateLabels(namespace, municipalityId, errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 
-		// Held now, since the patch is about to replace them and what the change does to the process key of the errand
-		// can only be seen from both sets. Only for a patch that carries labels, so that one which does not is spared
-		// the read.
 		final var labelsBeforePatch = nonNull(errand.getLabels())
 			? List.copyOf(ofNullable(errandEntityToUpdate.getLabels()).orElse(emptyList()))
 			: null;
@@ -219,18 +218,14 @@ public class ErrandService {
 		// phase is judged by what its status will be and not only by whether the patch happens to name one.
 		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
 
-		// Only when the patch touches them, since leaving them alone leaves who reaches the errand alone.
 		if (nonNull(errand.getLabels())) {
 			errandLabelService.settleAccessLabels(errandEntity);
-
-			// Asked of the settled labels rather than of the ones sent in: the ancestors added above are labels the errand
-			// wears, and one of them can be the label that names the process.
 			processKeyGuard.verifyLabelChange(id, labelsBeforePatch, errandEntity.getLabels());
 		}
 
 		final var entity = repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
-		logUpdateEvent(entity, revisionService.createErrandRevision(entity), activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND);
+		logUpdateEvent(entity, revisionService.createErrandRevision(entity), activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true);
 
 		return toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity)));
 	}
@@ -243,6 +238,7 @@ public class ErrandService {
 			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, entity.getVersion());
+		decisionValidator.validateErrandRemovable(namespace, municipalityId, id);
 
 		// Read before the removal, which takes the revisions with it, since the event written at the end of this method
 		// points at the latest one. The event outlives the revision it names, which is the accepted cost of not keeping a
@@ -274,9 +270,10 @@ public class ErrandService {
 	/**
 	 * Removes an errand that has passed its retention period, along with everything belonging to it.
 	 * <p>
-	 * Called by the purge. Unlike {@link #deleteErrand(String, String, String, String)} no access check is made and no
-	 * event is written. What is removed is the same in both cases, and is held in
-	 * {@link #removeErrand(ErrandEntity, List)}.
+	 * Called by the purge. Unlike {@link #deleteErrand(String, String, String, String)} no access check is made, no
+	 * locked decision holds the removal back and no event is written. In a namespace with a process consumer the process
+	 * consumer is told that the errand is gone, whether the errand had a process or not, and without a process key. What
+	 * is removed is the same in both cases, and is held in {@link #removeErrand(ErrandEntity, List)}.
 	 * <p>
 	 * Runs in a transaction of its own, so that an errand that cannot be removed neither rolls back the errands already
 	 * removed nor stops the run. An errand that is already gone is not an error, and is answered with false.
@@ -298,6 +295,8 @@ public class ErrandService {
 		removeErrand(entity, ofNullable(entity.getAttachments()).orElse(emptyList()).stream()
 			.map(AttachmentEntity::getId)
 			.toList());
+
+		eventService.publishDeletionToProcess(entity);
 
 		return true;
 	}
@@ -325,9 +324,30 @@ public class ErrandService {
 		return repository.count(fullFilter);
 	}
 
-	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
+	/**
+	 * Puts labels rebuilt after a label was moved on an errand, and settles its access labels from them.
+	 * <p>
+	 * A change that would move the errand off the process it runs is refused: the errand keeps the labels it has, and an
+	 * error entry on it says why. A change made is recorded as a revision and an update event, without a notification.
+	 *
+	 * @param  entity the errand to relabel.
+	 * @param  labels the labels it is to wear, ancestors included.
+	 * @return        true when the labels were put on the errand, false when the change was refused.
+	 */
+	boolean persistLabelUpdate(final ErrandEntity entity, final List<ErrandLabelEmbeddable> labels) {
+		final var labelsBefore = List.copyOf(ofNullable(entity.getLabels()).orElse(emptyList()));
+
+		if (processKeyGuard.refusesLabelChange(entity.getId(), labelsBefore, labels, LABELS_KEPT)) {
+			return false;
+		}
+
+		entity.setLabels(labels);
 		errandLabelService.settleAccessLabels(entity);
-		return repository.saveAndFlush(entity);
+
+		final var saved = repository.saveAndFlush(entity);
+		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, false);
+
+		return true;
 	}
 
 	se.sundsvall.dept44.support.Relation expandRelation(final String referredFromAsString) {
@@ -387,13 +407,13 @@ public class ErrandService {
 	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean sendNotification) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
-			eventService.createErrandEvent(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
+			eventService.createErrandEvent(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), sendNotification, ERRAND);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}

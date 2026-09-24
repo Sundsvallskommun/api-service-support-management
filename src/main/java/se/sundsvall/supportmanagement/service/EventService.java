@@ -13,7 +13,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -28,6 +27,7 @@ import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
+import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
@@ -36,10 +36,12 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
 
@@ -79,32 +81,33 @@ public class EventService {
 	 * <p>
 	 * A command is a request aimed straight at the process rather than a change to the errand, so it makes no revision and
 	 * the event points at none. What it carries is what publication cannot work out on its own - the key a handler chose to
-	 * start, or the gate they stepped past.
+	 * start, or the gate they stepped past. No one is notified.
+	 * <p>
+	 * Without a command only the event is written, for a command the process already has on its way.
 	 *
-	 * @param eventType        the type of the event.
-	 * @param message          the text of the event.
-	 * @param errandEntity     the errand the command is aimed at.
-	 * @param sendNotification whether the handler of the errand is to be notified. Says nothing about the process.
-	 * @param subtype          the kind of command.
-	 * @param command          what the command carries.
+	 * @param eventType    the type of the event.
+	 * @param message      the text of the event.
+	 * @param errandEntity the errand the command is aimed at.
+	 * @param subtype      the kind of command.
+	 * @param command      what the command carries, or null when nothing is to be handed on to the process.
 	 */
-	public void createProcessCommandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final boolean sendNotification, final EventSubType subtype, final ProcessCommand command) {
-		writeErrandEvent(eventType, message, errandEntity, null, null, sendNotification, subtype);
-		publishToProcess(errandEntity, eventType, subtype, command, false);
+	public void createProcessCommandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final EventSubType subtype, final ProcessCommand command) {
+		writeErrandEvent(eventType, message, errandEntity, null, null, false, subtype);
+
+		if (nonNull(command)) {
+			publishToProcess(errandEntity, eventType, subtype, command, false);
+		}
 	}
 
 	/**
-	 * Writes the event of a command without handing the command on to the process, for a command the process already has
-	 * on its way. Like {@link #createProcessCommandEvent} it makes no revision, and the event points at none.
+	 * Tells the process consumer of the namespace that the errand is gone, whether the errand had a process or not, without
+	 * writing an event or notifying anyone: for a removal that is to leave no record of the errand behind, as the retention
+	 * purge.
 	 *
-	 * @param eventType        the type of the event.
-	 * @param message          the text of the event.
-	 * @param errandEntity     the errand the command is aimed at.
-	 * @param sendNotification whether the handler of the errand is to be notified.
-	 * @param subtype          the kind of command.
+	 * @param errandEntity the errand that has been removed.
 	 */
-	public void createProcessCommandEventWithoutPublication(final EventType eventType, final String message, final ErrandEntity errandEntity, final boolean sendNotification, final EventSubType subtype) {
-		writeErrandEvent(eventType, message, errandEntity, null, null, sendNotification, subtype);
+	public void publishDeletionToProcess(final ErrandEntity errandEntity) {
+		publishToProcess(errandEntity, DELETE, ERRAND, null, false);
 	}
 
 	/**
@@ -185,7 +188,7 @@ public class EventService {
 	 * notification flag says.
 	 */
 	private void publishToProcess(final ErrandEntity errandEntity, final EventType eventType, final EventSubType subtype, final ProcessCommand command, final boolean concludesDecision) {
-		processEventPublisher.publish(errandEntity, eventType, subtype, executingIdentity(), getRequestGroupId(), command, concludesDecision);
+		processEventPublisher.publish(errandEntity, eventType, subtype, getCallerIdentity(), getRequestGroupId(), command, concludesDecision);
 	}
 
 	private String extractId(final Revision currentRevision) {
@@ -193,7 +196,6 @@ public class EventService {
 	}
 
 	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType) {
-		final var executingUser = getExecutingUser();
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
 			.withEventId(eventId)
 			.withRequestGroupId(requestGroupId)
@@ -203,7 +205,7 @@ public class EventService {
 			.withEventType(eventType.getValue())
 			.withDescription(description)
 			.withSubType(subType)
-			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null)));
+			.withExecutingUserId(getCallerIdentity()));
 	}
 
 	private String extractEventId(final ResponseEntity<Void> response) {
@@ -215,19 +217,9 @@ public class EventService {
 
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
 		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(_ -> {
-			final var notification = toNotification(event, errandEntity, executingIdentity());
+			final var notification = toNotification(event, errandEntity, getCallerIdentity());
 			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
 		});
-	}
-
-	/**
-	 * Who the write was made by, which is what the notification says it came from and what the outbox row is stamped
-	 * with: the value of the identifier of the request whatever its type, or null when there is none.
-	 */
-	private static String executingIdentity() {
-		return ofNullable(getExecutingUser())
-			.map(Identifier::getValue)
-			.orElse(null);
 	}
 
 	private String extractCaseId(final ErrandEntity errand) {

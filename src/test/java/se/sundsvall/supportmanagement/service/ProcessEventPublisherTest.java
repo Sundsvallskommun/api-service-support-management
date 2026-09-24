@@ -64,9 +64,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.dept44.support.Identifier.Type.CUSTOM;
+import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.EXECUTED_BY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
@@ -82,8 +84,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
-import static se.sundsvall.supportmanagement.service.ProcessErrorLog.CONFIG_ACTIVITY_TYPE;
-import static se.sundsvall.supportmanagement.service.ProcessEventPublisher.LOOP_GUARD_ACTIVITY_TYPE;
+import static se.sundsvall.supportmanagement.service.ProcessActivityLog.CONFIG_ACTIVITY_TYPE;
+import static se.sundsvall.supportmanagement.service.ProcessActivityLog.LOOP_GUARD_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearTriggerProcess;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setTriggerProcess;
 
@@ -157,7 +159,7 @@ class ProcessEventPublisherTest {
 
 	@BeforeEach
 	void setUp() {
-		publisher = new ProcessEventPublisher(namespaceConfigServiceMock, outboxRepositoryMock, processRepositoryMock, processKeySelectorMock, new ProcessErrorLog(activityRepositoryMock, properties, clock), properties, clock,
+		publisher = new ProcessEventPublisher(namespaceConfigServiceMock, outboxRepositoryMock, processRepositoryMock, processKeySelectorMock, new ProcessActivityLog(activityRepositoryMock, properties, clock), properties, clock,
 			applicationEventPublisherMock);
 	}
 
@@ -276,6 +278,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the brake measures what has reached the process, so a pile of undelivered rows cannot trip it")
 	void theBrakeCountsDeliveredRowsWithinTheWindow() {
 		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE);
 		givenDeliveredCount(THRESHOLD + 1L);
 
 		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
@@ -288,6 +291,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the maximum is the most that reaches the process: with that many delivered, the next event is dropped")
 	void theBrakeDropsTheEventThatWouldGoPastTheMaximum() {
 		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE);
 		givenDeliveredCount(THRESHOLD);
 
 		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
@@ -312,6 +316,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the entry the brake writes hangs on no process instance, since it fires when there is none")
 	void theBrakeWritesAnErrorEntryWithoutAnInstance() {
 		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE);
 		givenDeliveredCount(THRESHOLD + 1L);
 
 		publisher.publish(errand(), UPDATE, MESSAGE, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
@@ -330,6 +335,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a loop producing event after event leaves one entry per window behind, not one per event")
 	void theBrakeEntryIsWrittenOncePerErrandAndWindow() {
 		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE);
 		givenDeliveredCount(THRESHOLD + 1L);
 		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(eq(ERRAND_ID), eq("EVENT_RATE_EXCEEDED"), any())).thenReturn(true);
 
@@ -360,6 +366,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a decision concluded by the process itself is held back by a tripped brake")
 	void aDecisionConcludedByTheProcessIsHeldBackByTheBrake() {
 		givenNamespaceRunsProcess();
+		givenTriggers(DECISION);
 		givenDeliveredCount(THRESHOLD);
 		asMachine();
 
@@ -374,6 +381,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that an ordinary change to a decision is held back by a tripped brake like any other event")
 	void anOrdinaryDecisionChangeIsHeldBackByTheBrake() {
 		givenNamespaceRunsProcess();
+		givenTriggers(DECISION);
 		givenDeliveredCount(THRESHOLD);
 
 		publisher.publish(errand(), UPDATE, DECISION, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
@@ -432,7 +440,7 @@ class ProcessEventPublisherTest {
 		givenTriggers(MESSAGE);
 		givenNoInstances();
 		final var oversized = "a".repeat(PROCESS_KEY_LENGTH + 1);
-		when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(oversized, AUTOMATIC, List.of(oversized)));
+		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(oversized, AUTOMATIC, List.of(oversized)));
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -453,7 +461,7 @@ class ProcessEventPublisherTest {
 		givenTriggers(MESSAGE);
 		givenNoInstances();
 		final var exact = "a".repeat(PROCESS_KEY_LENGTH);
-		when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(exact, AUTOMATIC, List.of(exact)));
+		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(exact, AUTOMATIC, List.of(exact)));
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -467,7 +475,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
 		givenNoInstances();
-		when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(null, null, List.of("b".repeat(40_000), "c".repeat(40_000))));
+		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(null, null, List.of("b".repeat(40_000), "c".repeat(40_000))));
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -586,7 +594,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
 		givenNoInstances();
-		when(processKeySelectorMock.select(any())).thenReturn(ProcessKeySelection.NONE);
+		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(ProcessKeySelection.NONE);
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -691,6 +699,68 @@ class ProcessEventPublisherTest {
 	}
 
 	@Test
+	@DisplayName("Verification that no start permission is given while a start of another process is on its way, since the errand is then being started with that one")
+	void theStartPermissionIsRefusedWhileAStartOfAnotherProcessIsOnItsWay() {
+		when(outboxRepositoryMock.findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(ERRAND_ID))
+			.thenReturn(List.of(ProcessEventOutboxEntity.create().withProcessKey(SUPERVISION).withStartAllowed(true)));
+
+		assertThat(startAllowedFor(List.of(), APPLICATION, AUTOMATIC)).isFalse();
+	}
+
+	@Test
+	@DisplayName("Verification that a start of the same process on its way leaves the start permission as it is")
+	void theStartPermissionIsGivenWhileAStartOfTheSameProcessIsOnItsWay() {
+		when(outboxRepositoryMock.findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(ERRAND_ID))
+			.thenReturn(List.of(ProcessEventOutboxEntity.create().withProcessKey(APPLICATION).withStartAllowed(true)));
+
+		assertThat(startAllowedFor(List.of(), APPLICATION, AUTOMATIC)).isTrue();
+	}
+
+	@Test
+	@DisplayName("Verification that the outbox is asked about starts on their way only when the other conditions of a start hold")
+	void theOutboxIsNotAskedAboutStartsWhenTheErrandCannotBeStarted() {
+		assertThat(startAllowedFor(List.of(instance(APPLICATION, WAITING)), APPLICATION, AUTOMATIC)).isFalse();
+
+		verify(outboxRepositoryMock, never()).findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(any());
+	}
+
+	@Test
+	@DisplayName("Verification that an event the triggers leave out never reaches the brake: the brake is not asked and writes no entry, however many events have been delivered")
+	void anEventLeftOutByTheTriggersNeverReachesTheBrake() {
+		givenNamespaceRunsProcess();
+		givenTriggers(ERRAND);
+
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+
+		verify(outboxRepositoryMock, never()).countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(any(), any());
+		verify(outboxRepositoryMock, never()).save(any());
+		verifyNoInteractions(activityRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that the rows written for an errand in one transaction signal the direct run once, while each errand of the transaction signals it for itself")
+	void theDirectRunIsSignalledOncePerErrandAndTransaction() {
+		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE);
+		givenLabels(APPLICATION, AUTOMATIC);
+		final var otherErrand = ErrandEntity.create().withId("other-errand").withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID);
+		TransactionSynchronizationManager.initSynchronization();
+
+		try {
+			publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+			publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+			publisher.publish(otherErrand, UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		} finally {
+			TransactionSynchronizationManager.clearSynchronization();
+		}
+
+		verify(outboxRepositoryMock, times(3)).save(any());
+		verify(applicationEventPublisherMock).publishEvent(new ProcessEventWritten(ERRAND_ID));
+		verify(applicationEventPublisherMock).publishEvent(new ProcessEventWritten("other-errand"));
+		verifyNoMoreInteractions(applicationEventPublisherMock);
+	}
+
+	@Test
 	void theRowCarriesWhereItIsHeadedAndWhoWroteIt() {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
@@ -765,7 +835,7 @@ class ProcessEventPublisherTest {
 	void theEventTypesAProcessKnowsAreWrittenAsTheyAre(final EventType eventType) {
 		givenNamespaceRunsProcess();
 		lenient().when(namespaceConfigServiceMock.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(ERRAND));
-		lenient().when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(APPLICATION, AUTOMATIC, List.of(APPLICATION)));
+		lenient().when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(APPLICATION, AUTOMATIC, List.of(APPLICATION)));
 		givenNoInstances();
 
 		publisher.publish(errand(), eventType, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
@@ -825,11 +895,11 @@ class ProcessEventPublisherTest {
 	}
 
 	private void givenLabels(final String processKey, final ProcessStartMode startMode) {
-		when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(processKey, startMode, List.of(processKey)));
+		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(processKey, startMode, List.of(processKey)));
 	}
 
 	private void givenAmbiguousLabels() {
-		when(processKeySelectorMock.select(any())).thenReturn(new ProcessKeySelection(null, null, List.of(APPLICATION, SUPERVISION)));
+		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(null, null, List.of(APPLICATION, SUPERVISION)));
 	}
 
 	private void givenNoInstances() {
@@ -865,13 +935,9 @@ class ProcessEventPublisherTest {
 	}
 
 	private ErrandProcessEntity instance(final String processKey, final ProcessStatus status) {
-		final var instance = ErrandProcessEntity.create()
+		return createErrandProcessEntity(status, clock, process -> process
 			.withId(randomUUID().toString())
 			.withErrandId(ERRAND_ID)
-			.withProcessKey(processKey);
-
-		instance.applyStatus(status, clock);
-
-		return instance;
+			.withProcessKey(processKey));
 	}
 }

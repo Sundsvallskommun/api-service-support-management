@@ -151,12 +151,15 @@ class NamespaceConfigServiceCacheTest {
 	void theProcessConfigurationIsAnsweredFromCache() {
 		when(mock.getProcessConsumer(any(), any())).thenReturn(Optional.of("pw-alkt")).thenThrow(new RuntimeException("Result should be cached!"));
 		when(mock.getProcessTriggers(any(), any())).thenReturn(Set.of(ERRAND)).thenThrow(new RuntimeException("Result should be cached!"));
+		when(mock.isSingleDecisionPerErrand(any(), any())).thenReturn(true).thenThrow(new RuntimeException("Result should be cached!"));
 
 		assertThat(namespaceConfigService.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).hasValue("pw-alkt");
 		assertThat(namespaceConfigService.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).containsExactly(ERRAND);
+		assertThat(namespaceConfigService.isSingleDecisionPerErrand(NAMESPACE, MUNICIPALITY_ID)).isTrue();
 
 		assertThat(namespaceConfigService.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).hasValue("pw-alkt");
 		assertThat(namespaceConfigService.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).containsExactly(ERRAND);
+		assertThat(namespaceConfigService.isSingleDecisionPerErrand(NAMESPACE, MUNICIPALITY_ID)).isTrue();
 	}
 
 	@Test
@@ -192,15 +195,18 @@ class NamespaceConfigServiceCacheTest {
 	private void givenProcessConfigurationChanges() {
 		when(mock.getProcessConsumer(any(), any())).thenReturn(Optional.empty(), Optional.of("pw-alkt"));
 		when(mock.getProcessTriggers(any(), any())).thenReturn(Set.of(), Set.of(ERRAND));
+		when(mock.isSingleDecisionPerErrand(any(), any())).thenReturn(false, true);
 	}
 
 	private void askForTheProcessConfiguration() {
 		assertThat(namespaceConfigService.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).isEmpty();
 		assertThat(namespaceConfigService.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).isEmpty();
+		assertThat(namespaceConfigService.isSingleDecisionPerErrand(NAMESPACE, MUNICIPALITY_ID)).isFalse();
 	}
 
 	private void assertTheChangedProcessConfigurationIsRead() {
 		assertThat(namespaceConfigService.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).hasValue("pw-alkt");
 		assertThat(namespaceConfigService.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).containsExactly(ERRAND);
+		assertThat(namespaceConfigService.isSingleDecisionPerErrand(NAMESPACE, MUNICIPALITY_ID)).isTrue();
 	}
 }

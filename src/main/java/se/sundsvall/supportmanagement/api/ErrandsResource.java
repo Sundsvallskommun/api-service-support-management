@@ -156,13 +156,17 @@ class ErrandsResource {
 	}
 
 	@DeleteMapping(path = "/{errandId}", produces = ALL_VALUE)
-	@Operation(summary = "Delete errand", description = "Deletes the errand that matches the provided id", responses = {
+	@Operation(summary = "Delete errand", description = """
+		Deletes the errand that matches the provided id. An errand with a process cannot be deleted once one of its \
+		decisions can no longer be changed - when the process has run to its end, or the decision is completed.""", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
 		}))),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
-		@ApiResponse(responseCode = "409", description = "Conflict — resource modified concurrently", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409",
+			description = "Conflict — resource modified concurrently, or the errand holds a decision that can no longer be changed",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "412", description = "Precondition Failed — If-Match version mismatch", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})

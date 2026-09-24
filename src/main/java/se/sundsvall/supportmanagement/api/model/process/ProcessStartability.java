@@ -16,6 +16,9 @@ public enum ProcessStartability {
 	/** A process has already run to its end. An errand has one process life; a new process means a new errand. */
 	PROCESS_COMPLETED,
 
+	/** A start of the process is already on its way to the process engine, and the process is yet to be registered. */
+	START_PENDING,
+
 	/** No label of the errand carries a process key, so there is nothing to start. */
 	NO_PROCESS_KEY,
 

@@ -61,7 +61,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
 
 /**
- * The process resource against the migrated schema, where the two unique keys and the errand cascade are real.
+ * The process resource against the schema the entities generate, where the unique keys are real.
  * <p>
  * Verifies what the database itself decides: that a report leaves the revision table alone, that the race between a
  * work step and the registration of its own start comes out the same in either order, and that the process shown on an
@@ -129,8 +129,9 @@ class ErrandProcessPersistenceTest {
 	}
 
 	@AfterEach
-	void clearIdentifier() {
+	void clearIdentifierAndStatistics() {
 		Identifier.remove();
+		entityManagerFactory.unwrap(SessionFactory.class).getStatistics().setStatisticsEnabled(false);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -166,7 +167,7 @@ class ErrandProcessPersistenceTest {
 		assertThat(registration.created()).isTrue();
 		assertThat(report.created()).isFalse();
 		assertThat(report.process().getProcessStatus()).isEqualTo(COMPLETED.name());
-		assertThat(errandProcessRepository.findByErrandIdAndActiveMarkerIsNotNull(errandId)).isEmpty();
+		assertThat(errandProcessRepository.findByErrandIdOrderByCreatedDesc(errandId)).noneMatch(ErrandProcessEntity::isLive);
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------
@@ -349,11 +350,12 @@ class ErrandProcessPersistenceTest {
 		assertThat(processes.values()).hasSize(3).allSatisfy(process -> assertThat(process.getAwaitingSignals())
 			.extracting(ProcessSignal::getName)
 			.containsExactly("granskning-godkand", "granskning-avvisad"));
-		assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);
+		assertThat(queryExecutions(statistics, ErrandProcessEntity.class)).isEqualTo(1);
+		assertThat(queryExecutions(statistics, ErrandProcessSignalEntity.class)).isEqualTo(1);
 	}
 
 	@Test
-	@DisplayName("Verification that a page on which no errand has a process costs the one query it always did")
+	@DisplayName("Verification that a page on which no errand has a process costs one process query, and no signal query")
 	void aPageWithoutProcessesIsReadInOneQuery() {
 		final var errandIds = List.of(createErrand(), createErrand());
 		entityManager.flush();
@@ -363,7 +365,24 @@ class ErrandProcessPersistenceTest {
 		statistics.clear();
 
 		assertThat(errandProcessService.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, errandIds)).isEmpty();
-		assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
+		assertThat(queryExecutions(statistics, ErrandProcessEntity.class)).isEqualTo(1);
+		assertThat(queryExecutions(statistics, ErrandProcessSignalEntity.class)).isZero();
+	}
+
+	@Test
+	@DisplayName("Verification that a page in a namespace without a process consumer asks nothing about processes at all")
+	void aPageOfANamespaceWithoutAProcessConsumerAsksNothingAboutProcesses() {
+		final var errandIds = List.of(createErrand());
+		errandProcessService.reportProcess(NAMESPACE, MUNICIPALITY_ID, errandIds.getFirst(), "instance-1", report(WAITING));
+		entityManager.flush();
+		entityManager.clear();
+
+		final var statistics = statistics();
+		statistics.clear();
+
+		assertThat(errandProcessService.findLatestProcesses("NAMESPACE-WITHOUT-PROCESS", MUNICIPALITY_ID, errandIds)).isEmpty();
+		assertThat(queryExecutions(statistics, ErrandProcessEntity.class)).isZero();
+		assertThat(queryExecutions(statistics, ErrandProcessSignalEntity.class)).isZero();
 	}
 
 	/**

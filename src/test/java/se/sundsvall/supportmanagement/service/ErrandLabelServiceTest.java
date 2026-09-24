@@ -224,6 +224,27 @@ class ErrandLabelServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that the namespace of a label is matched regardless of case, as the database matches it")
+	void validateLabels_namespaceInAnotherCase_noException() {
+		when(metadataLabelRepositoryMock.findAllById(Set.of("id-1"))).thenReturn(List.of(label("id-1", NAMESPACE.toUpperCase(), MUNICIPALITY_ID)));
+
+		assertThatNoException().isThrownBy(() -> service.validateLabels(NAMESPACE, MUNICIPALITY_ID, List.of(new ErrandLabel().withId("id-1"))));
+	}
+
+	@Test
+	@DisplayName("Verification that an id spelled in another case than the label spells it is refused, since the errand would store it as sent")
+	void validateLabels_idInAnotherCase_throws400() {
+		when(metadataLabelRepositoryMock.findAllById(Set.of("ID-1"))).thenReturn(List.of(label("id-1", NAMESPACE, MUNICIPALITY_ID)));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.validateLabels(NAMESPACE, MUNICIPALITY_ID, List.of(new ErrandLabel().withId("ID-1"))))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+				assertThat(problem.getDetail()).isEqualTo("Label with id 'ID-1' does not exist in namespace 'namespace' for municipality 'municipalityId'");
+			});
+	}
+
+	@Test
 	@DisplayName("Verification that a label without an id is refused before anything is looked up, rather than left to fail the insert")
 	void validateLabels_labelWithoutId_throws400() {
 		final var labels = new ArrayList<ErrandLabel>();

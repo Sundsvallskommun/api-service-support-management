@@ -31,6 +31,18 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	List<ProcessEventOutboxEntity> findByProcessServiceAndDeliveredAtIsNullAndCreatedBefore(String processService, OffsetDateTime createdBefore, Pageable pageable);
 
 	/**
+	 * The same rows, leaving out those of some errands: the errands a run has already failed to deliver.
+	 *
+	 * @param  processService the consumer the rows were addressed to when they were written.
+	 * @param  createdBefore  the moment a row has to predate to be picked up.
+	 * @param  errandIds      the errands whose rows to leave out. Must not be empty.
+	 * @param  pageable       the batch limit and ordering for the run.
+	 * @return                the undelivered rows for the consumer of every other errand.
+	 */
+	List<ProcessEventOutboxEntity> findByProcessServiceAndDeliveredAtIsNullAndCreatedBeforeAndErrandIdNotIn(String processService, OffsetDateTime createdBefore, Collection<String> errandIds,
+		Pageable pageable);
+
+	/**
 	 * The rows of one errand waiting for a process engine, oldest first, for a direct run to deliver.
 	 * <p>
 	 * A row is read however recently it was written, but not once it is older than {@code createdAfter}: a row that has
@@ -94,6 +106,14 @@ public interface ProcessEventOutboxRepository extends JpaRepository<ProcessEvent
 	 * @return          the undelivered rows of the errand that carry the permission to start a process.
 	 */
 	List<ProcessEventOutboxEntity> findByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(String errandId);
+
+	/**
+	 * Whether a start of one errand is still on its way to the process engine. Covered by {@code idx_peo_guard}.
+	 *
+	 * @param  errandId the errand to ask about.
+	 * @return          whether an undelivered row of the errand carries the permission to start a process.
+	 */
+	boolean existsByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(String errandId);
 
 	/**
 	 * The oldest undelivered row, whose age the health check of the relay measures.

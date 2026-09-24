@@ -1,0 +1,21 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPathPattern": "/api-messageexchange/2281/draken/conversations/[0-9a-f-]+"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"id": "4c0167ae-18b2-459a-a5b3-52511d5979f9",
+			"municipalityId": "2281",
+			"namespace": "draken",
+			"topic": "The topic",
+			"externalReferences": [],
+			"latestSequenceNumber": 100
+		},
+		"status": 200
+	},
+	"name": "api-messageexchange-getConversation"
+}
