@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManagerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.javacrumbs.shedlock.core.LockConfiguration;
@@ -27,7 +28,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.config.SearchProperties;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
@@ -38,6 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -85,9 +89,12 @@ class ErrandReindexServiceTest {
 	@Mock
 	private RestClient restClientMock;
 
+	@Mock
+	private NamespaceConfigRepository namespaceConfigRepositoryMock;
+
 	private ErrandReindexService service(final boolean enabled) {
 		return new ErrandReindexService(entityManagerFactoryMock, openSearchMock, lockProviderMock, new SearchAvailability(enabled),
-			new SearchProperties(10000, Duration.ofSeconds(10), new SearchProperties.Reindex(LOCK_AT_MOST_FOR)), accessControlServiceMock);
+			new SearchProperties(10000, Duration.ofSeconds(10), new SearchProperties.Reindex(LOCK_AT_MOST_FOR)), accessControlServiceMock, namespaceConfigRepositoryMock);
 	}
 
 	private void purgeAnswers() throws IOException {
@@ -202,6 +209,62 @@ class ErrandReindexServiceTest {
 		verify(massIndexerMock, never()).type(any());
 		verifyNoInteractions(restClientMock);
 		indexing.completeExceptionally(new IllegalStateException("cluster gone"));
+		verify(lockMock).unlock();
+	}
+
+	@Test
+	void theNightlyReindexDoesNothingWhileSearchIsOff() {
+		service(false).reindexEveryNamespace();
+
+		verifyNoInteractions(lockProviderMock, namespaceConfigRepositoryMock, entityManagerFactoryMock, openSearchMock);
+	}
+
+	@Test
+	void theNightlyReindexStandsAsideForOneAlreadyRunning() {
+		when(lockProviderMock.lock(any())).thenReturn(Optional.empty());
+
+		service(true).reindexEveryNamespace();
+
+		verifyNoInteractions(namespaceConfigRepositoryMock, entityManagerFactoryMock, openSearchMock);
+	}
+
+	@Test
+	void theNightlyReindexWritesEveryNamespaceOverAndWaitsForIt() throws Exception {
+		when(lockProviderMock.lock(any())).thenReturn(Optional.of(lockMock));
+		when(namespaceConfigRepositoryMock.findAll()).thenReturn(List.of(
+			NamespaceConfigEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID),
+			NamespaceConfigEntity.create().withNamespace("other").withMunicipalityId("2282")));
+		purgeAnswers();
+		when(massIndexerMock.type(any())).thenReturn(filteringTypeStepMock);
+		when(filteringTypeStepMock.reindexOnly(any())).thenReturn(reindexParameterStepMock);
+		when(reindexParameterStepMock.param(any(), any())).thenReturn(reindexParameterStepMock);
+		when(massIndexerMock.purgeAllOnStart(false)).thenReturn(massIndexerMock);
+
+		try (final MockedStatic<Search> search = mockStatic(Search.class)) {
+			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenReturn(searchMappingMock);
+			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
+			when(searchScopeMock.massIndexer()).thenReturn(massIndexerMock);
+
+			service(true).reindexEveryNamespace();
+		}
+
+		// A namespace is emptied and written again before the next one is taken, so only one is searched with a hole in it
+		verify(restClientMock, times(2)).performRequest(any());
+		verify(massIndexerMock, times(2)).startAndWait();
+		verify(massIndexerMock, never()).start();
+		verify(massIndexerMock, never()).dropAndCreateSchemaOnStart(true);
+		verify(lockMock).unlock();
+	}
+
+	@Test
+	void theNightlyReindexReleasesTheLockWhenANamespaceFails() throws Exception {
+		when(lockProviderMock.lock(any())).thenReturn(Optional.of(lockMock));
+		when(namespaceConfigRepositoryMock.findAll()).thenReturn(List.of(NamespaceConfigEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)));
+		when(openSearchMock.errandWriteIndex()).thenThrow(new IllegalStateException("no search mapping"));
+
+		final var service = service(true);
+		assertThrows(IllegalStateException.class, service::reindexEveryNamespace);
+
 		verify(lockMock).unlock();
 	}
 
