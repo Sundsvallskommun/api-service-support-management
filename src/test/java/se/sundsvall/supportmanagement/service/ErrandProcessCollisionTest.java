@@ -19,6 +19,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
+import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +41,10 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
  */
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("junit")
+// The same overrides as ProcessEventRollbackTest, so that the two share one application context
+@MockitoSpyBean(types = {
+	ErrandProcessRepository.class, ProcessEventOutboxRepository.class
+})
 @ExtendWith(OutputCaptureExtension.class)
 @Sql({
 	"/db/scripts/truncate.sql",
@@ -57,7 +62,7 @@ class ErrandProcessCollisionTest {
 	private static final String LIVE_INSTANCE_ID = "pi-live";
 	private static final String RACING_INSTANCE_ID = "pi-racing";
 
-	@MockitoSpyBean
+	@Autowired
 	private ErrandProcessRepository processRepositorySpy;
 
 	@Autowired

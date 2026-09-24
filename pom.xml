@@ -109,8 +109,17 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<configuration>
-					<argLine>-Xmx2048m</argLine>
+					<forkCount>2</forkCount>
 				</configuration>
+				<executions>
+					<execution>
+						<!-- The argLine of this execution in the parent replaces any set on the plugin, so the heap limit goes here -->
+						<id>integration-test</id>
+						<configuration>
+							<argLine>-Dfile.encoding=${project.encoding} -Xmx2048m ${mockito.agent} ${failsafeArgLine}</argLine>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>

@@ -5,12 +5,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.AccessDefinition;
 import se.sundsvall.supportmanagement.api.model.config.AccessFieldDefinition;
 import se.sundsvall.supportmanagement.api.model.config.AccessResourceDefinition;
@@ -28,15 +23,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.STATUS;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class NamespaceConfigResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/namespace-config";
@@ -55,13 +47,13 @@ class NamespaceConfigResourceTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private NamespaceConfigService serviceMock;
 
-	@MockitoBean
+	@Autowired
 	private ErrandActionService actionServiceMock;
 
-	@MockitoBean
+	@Autowired
 	private ValidationService validationServiceMock;
 
 	@Test
