@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2509/access/ad/sta01usr"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test23_aRoleSeeingOneFieldThatFreeTextDoesNotLookIn/responses/api-accessmapper-sta01usr.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-sta01usr"
+}

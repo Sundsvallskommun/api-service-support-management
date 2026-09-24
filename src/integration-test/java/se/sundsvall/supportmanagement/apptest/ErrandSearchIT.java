@@ -39,6 +39,7 @@ class ErrandSearchIT extends AbstractAppTest {
 	private static final String ACCESS_CONTROLLED_PATH = "/2506/NAMESPACE-2506/errands/search";
 	private static final String RESOURCE_CONTROLLED_PATH = "/2506/NAMESPACE-2507/errands/search";
 	private static final String MIXED_PATH = "/2506/NAMESPACE-2508/errands/search";
+	private static final String STATUS_ONLY_PATH = "/2506/NAMESPACE-2509/errands/search";
 
 	private static final String LEAK = "NS3-25010001";
 	private static final String INVOICE = "NS3-25020001";
@@ -368,18 +369,51 @@ class ErrandSearchIT extends AbstractAppTest {
 		assertThat(searchAs(MIXED_PATH, "communications.subject:uppföljning", "mix01ed")).isEmpty();
 	}
 
+	/**
+	 * A role seeing one field that a search without a field never looks in: the status is searched by name, not by word.
+	 * A word has nowhere to look and finds nothing, a query naming the status is answered, and a query naming a field
+	 * the role does not see is refused - none of the three an error.
+	 */
+	@Test
+	void test23_aRoleSeeingOneFieldThatFreeTextDoesNotLookIn() {
+		// The errands come back with the status alone, the number among the fields the role does not see
+		assertThat(statuses(pageAs(STATUS_ONLY_PATH, "status:new", "sta01usr"))).containsExactly("NEW");
+		assertThat(statuses(pageAs(STATUS_ONLY_PATH, "status:ongoing", "sta01usr"))).containsExactly("ONGOING");
+		assertThat(statuses(pageAs(STATUS_ONLY_PATH, "", "sta01usr"))).containsExactlyInAnyOrder("NEW", "ONGOING");
+
+		// A word has nothing to look in here, so it finds nothing - and does not fail
+		assertThat(statuses(pageAs(STATUS_ONLY_PATH, "vattenläcka", "sta01usr"))).isEmpty();
+
+		setupCall()
+			.withServicePath(withQuery(STATUS_ONLY_PATH, "title:vattenläcka"))
+			.withHeader(SENT_BY_HEADER, "sta01usr; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.sendRequest();
+	}
+
 	private List<String> search(final String path, final String query) {
 		return errandNumbers(page(path, query));
 	}
 
 	private List<String> searchAs(final String path, final String query, final String adAccount) {
-		return errandNumbers(setupCall()
+		return errandNumbers(pageAs(path, query, adAccount));
+	}
+
+	private JsonNode pageAs(final String path, final String query, final String adAccount) {
+		return (setupCall()
 			.withServicePath(withQuery(path, query))
 			.withHeader(SENT_BY_HEADER, adAccount + "; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.sendRequest()
 			.getResponseBody(new TypeReference<JsonNode>() {}));
+	}
+
+	private static List<String> statuses(final JsonNode page) {
+		return page.path("content").valueStream()
+			.map(errand -> errand.path("status").asString())
+			.toList();
 	}
 
 	private JsonNode page(final String path, final String query) {
