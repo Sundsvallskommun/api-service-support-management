@@ -109,7 +109,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
-		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
+		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(toSerializedSnapshot(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isZero();
 		assertThat(response.latest()).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
 	}
@@ -133,7 +133,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
-		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
+		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(toSerializedSnapshot(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
 		assertThat(response.previous()).isNotNull().extracting(Revision::getVersion).isEqualTo(version);
 		assertThat(response.latest()).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
@@ -158,7 +158,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
-		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(errandEntity));
+		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(toSerializedSnapshot(errandEntity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
 		assertThat(response.previous()).isNotNull().extracting(Revision::getVersion).isEqualTo(version);
 		assertThat(response.latest()).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
@@ -183,7 +183,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
-		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
+		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(toSerializedSnapshot(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
 		assertThat(response.previous()).isNotNull().extracting(Revision::getVersion).isEqualTo(version);
 		assertThat(response.latest()).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);

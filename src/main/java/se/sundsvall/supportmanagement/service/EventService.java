@@ -34,7 +34,6 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
@@ -180,7 +179,7 @@ public class EventService {
 	 * Whether an event about the errand is to notify its handler and its subscribers. A draft notifies no one.
 	 */
 	private static boolean notifies(final ErrandEntity errandEntity, final boolean sendNotification) {
-		return sendNotification && DRAFT != errandEntity.getLifecycle();
+		return sendNotification && !errandEntity.isDraft();
 	}
 
 	/**

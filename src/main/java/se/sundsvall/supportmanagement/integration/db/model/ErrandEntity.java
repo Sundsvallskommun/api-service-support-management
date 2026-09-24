@@ -385,6 +385,16 @@ public class ErrandEntity {
 		return this;
 	}
 
+	/**
+	 * Whether the errand is a draft, which SupportManagement keeps its processes, actions, communication, notifications and
+	 * default search away from.
+	 *
+	 * @return true when the life cycle of the errand is DRAFT.
+	 */
+	public boolean isDraft() {
+		return ErrandLifecycle.DRAFT == lifecycle;
+	}
+
 	public String getResolution() {
 		return resolution;
 	}

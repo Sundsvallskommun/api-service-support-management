@@ -31,6 +31,7 @@ import static se.sundsvall.supportmanagement.service.ProcessKeySelector.excerptO
 import static se.sundsvall.supportmanagement.service.ProcessRules.NO_PROCESS_CONSUMER;
 import static se.sundsvall.supportmanagement.service.ProcessRules.requireProcessConsumer;
 import static se.sundsvall.supportmanagement.service.ProcessRules.startOptionsOf;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.draftConflict;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireAdUser;
 
 /**
@@ -52,7 +53,6 @@ public class ProcessCommandService {
 	private static final String SIGNAL_NOT_AWAITED = "The process instance '%s' does not wait for the signal '%s'. Read the errand again to see what it waits for now";
 
 	private static final String START_NOT_BY_AN_AD_ACCOUNT = "Starting the handling of an errand is a decision made by a person, and has to be sent by an ad account";
-	private static final String ERRAND_IS_A_DRAFT = "The errand '%s' is a draft, and a process is started only for an active errand. Make the errand active first";
 	private static final String LIVE_PROCESS_IN_THE_WAY = "The errand '%s' already has a live process, and a process is started only for an errand without one";
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again. A new process means a new errand";
 	private static final String NO_LABEL_NAMES_A_PROCESS = """
@@ -205,7 +205,7 @@ public class ProcessCommandService {
 
 		return switch (options.status()) {
 			case NO_PROCESS_ENGINE -> throw Problem.valueOf(BAD_REQUEST, NO_PROCESS_CONSUMER.formatted(namespace, municipalityId));
-			case ERRAND_DRAFT -> throw Problem.valueOf(CONFLICT, ERRAND_IS_A_DRAFT.formatted(errandId));
+			case ERRAND_DRAFT -> throw draftConflict(errandId);
 			case LIVE_INSTANCE -> throw Problem.valueOf(CONFLICT, LIVE_PROCESS_IN_THE_WAY.formatted(errandId));
 			case PROCESS_COMPLETED -> throw Problem.valueOf(CONFLICT, PROCESS_LIFE_OVER.formatted(errandId));
 			case NO_PROCESS_KEY -> throw Problem.valueOf(BAD_REQUEST, instances.isEmpty()

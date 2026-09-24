@@ -237,7 +237,7 @@ class ProcessCommandServiceTest {
 			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus().value()).isEqualTo(409);
-				assertThat(problem.getDetail()).isEqualTo("The errand 'errandId' is a draft, and a process is started only for an active errand. Make the errand active first");
+				assertThat(problem.getDetail()).isEqualTo("The errand 'errandId' is a draft. Make the errand active first");
 			});
 
 		verifyNothingWritten();

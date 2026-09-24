@@ -452,7 +452,7 @@ class NotificationServiceTest {
 
 		assertThatThrownBy(() -> notificationService.createNotification(municipalityId, namespace, errandId, notification))
 			.isInstanceOf(Problem.class)
-			.hasMessage("Conflict: The errand '%s' is a draft, and no one is notified about a draft. Make the errand active first".formatted(errandId));
+			.hasMessage("Conflict: The errand '%s' is a draft. Make the errand active first".formatted(errandId));
 
 		verifyNoInteractions(notificationRepositoryMock, namespaceConfigRepositoryMock);
 	}

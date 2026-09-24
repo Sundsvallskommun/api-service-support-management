@@ -89,7 +89,8 @@ public class Errand {
 	@Schema(description = """
 		Life cycle of the errand, the same in every namespace and independent of its status. DRAFT - the errand is being \
 		prepared: no process is started or woken for it, no action is created, nothing is communicated about it, no one \
-		is notified about it, and a search leaves it out unless its filter names lifecycle. ACTIVE - the errand is \
+		is notified about it, it is not handed over, and a search leaves it out unless its filter names lifecycle. ACTIVE - \
+		the errand is \
 		handled as any errand is. Left out on create, the errand is ACTIVE. A draft is made active by a patch setting ACTIVE, which \
 		starts a process the labels start on their own, unless the patch asks not to wake the process. An active errand \
 		never becomes a draft again.""", examples = "ACTIVE", allowableValues = {

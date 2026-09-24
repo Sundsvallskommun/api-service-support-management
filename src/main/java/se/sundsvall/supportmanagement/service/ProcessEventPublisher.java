@@ -33,7 +33,6 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.EXECUTED_BY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.service.ProcessActivityLog.CONFIG_ACTIVITY_TYPE;
@@ -219,7 +218,7 @@ public class ProcessEventPublisher {
 	 * passes.
 	 */
 	private boolean isHeldBack(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final boolean concludesDecision) {
-		if (DRAFT == errand.getLifecycle()) {
+		if (errand.isDraft()) {
 			LOG.debug("No process event written for errand {}: the errand is a draft", sanitizeForLogging(errand.getId()));
 			return true;
 		}

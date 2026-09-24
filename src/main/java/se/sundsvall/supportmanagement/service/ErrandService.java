@@ -207,7 +207,7 @@ public class ErrandService {
 			: null;
 
 		// Held now, since the patch is about to overwrite the life cycle it is judged from.
-		final var activates = DRAFT == errandEntityToUpdate.getLifecycle() && ACTIVE.name().equals(errand.getLifecycle());
+		final var activates = errandEntityToUpdate.isDraft() && ACTIVE.name().equals(errand.getLifecycle());
 
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 

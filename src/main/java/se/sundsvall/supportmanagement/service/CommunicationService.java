@@ -53,11 +53,9 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.notEqual;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INSUFFICIENT_STORAGE;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.EMAIL;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.ESERVICE;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
@@ -67,6 +65,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMe
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getStakeholderMatchingRole;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.retrieveUsername;
 
 @Service
@@ -77,7 +76,6 @@ public class CommunicationService {
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
 	private static final boolean ASYNCHRONOUSLY = false;
 	private static final String MESSAGE_ID_TEMPLATE = "<%s@%s>";
-	private static final String ERRAND_IS_A_DRAFT = "The errand '%s' is a draft, and nothing is communicated about a draft. Make the errand active first";
 	private final AccessControlService accessControlService;
 	private final CommunicationRepository communicationRepository;
 	private final CommunicationAttachmentRepository communicationAttachmentRepository;
@@ -229,17 +227,6 @@ public class CommunicationService {
 				saveAttachment(communicationEntity, errandEntity);
 				attachmentSaved = true;
 			}
-		}
-	}
-
-	/**
-	 * Refuses a draft with 409, since nothing is communicated about an errand until it has been made active.
-	 *
-	 * @param errandEntity the errand the communication is about.
-	 */
-	static void requireActive(final ErrandEntity errandEntity) {
-		if (DRAFT == errandEntity.getLifecycle()) {
-			throw Problem.valueOf(CONFLICT, ERRAND_IS_A_DRAFT.formatted(errandEntity.getId()));
 		}
 	}
 

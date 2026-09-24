@@ -1,5 +1,5 @@
 {
 	"title": "Conflict",
 	"status": 409,
-	"detail": "${json-unit.regex}The errand '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' is a draft, and no one is notified about a draft[.] Make the errand active first"
+	"detail": "${json-unit.regex}The errand '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' is a draft[.] Make the errand active first"
 }

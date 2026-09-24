@@ -45,6 +45,7 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 
 @Service
 public class HandoverService {
@@ -135,6 +136,7 @@ public class HandoverService {
 			.withTargetMunicipalityId(request.getTarget().getMunicipalityId()));
 
 		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.ERRAND, RW);
+		requireActive(source);
 
 		final var targetErrand = HandoverMapper.buildTargetErrand(source, request);
 

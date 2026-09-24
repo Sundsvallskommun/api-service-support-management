@@ -16,13 +16,18 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.http.HttpStatus.CONFLICT;
 
 class ServiceUtilTest {
 
@@ -40,6 +45,22 @@ class ServiceUtilTest {
 	private static final String DOCX_FILE_NAME = "document.docx";
 	private static final String PDF_FILE_NAME = "document.pdf";
 	private static final String TXT_FILE_NAME = "document.txt";
+
+	@Test
+	void requireActiveRefusesADraftWith409() {
+		final var draft = ErrandEntity.create().withId("errand-id").withLifecycle(ErrandLifecycle.DRAFT);
+
+		assertThatThrownBy(() -> ServiceUtil.requireActive(draft))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasFieldOrPropertyWithValue("status", CONFLICT)
+			.hasMessage("Conflict: The errand 'errand-id' is a draft. Make the errand active first");
+	}
+
+	@Test
+	void requireActiveLetsAnErrandThatIsNoDraftThrough() {
+		assertThatNoException().isThrownBy(() -> ServiceUtil.requireActive(ErrandEntity.create().withLifecycle(ErrandLifecycle.ACTIVE)));
+		assertThatNoException().isThrownBy(() -> ServiceUtil.requireActive(ErrandEntity.create()));
+	}
 
 	@Test
 	void getRequestGroupIdReturnsSetValue() {

@@ -27,7 +27,6 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 import static org.springframework.util.CollectionUtils.isEmpty;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.toEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.toMap;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.updateEntity;
@@ -119,7 +118,7 @@ public class ErrandActionService {
 	 */
 	@Transactional
 	public void processErrandActions(ErrandEntity errand, OperationType operationType) {
-		if (DRAFT == errand.getLifecycle()) {
+		if (errand.isDraft()) {
 			return;
 		}
 

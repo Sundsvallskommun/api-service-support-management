@@ -451,7 +451,7 @@ class CommunicationServiceTest {
 
 		sends.forEach(send -> assertThatThrownBy(send)
 			.isInstanceOf(ThrowableProblem.class)
-			.hasMessage("Conflict: The errand '%s' is a draft, and nothing is communicated about a draft. Make the errand active first".formatted(ERRAND_ID)));
+			.hasMessage("Conflict: The errand '%s' is a draft. Make the errand active first".formatted(ERRAND_ID)));
 
 		verifyNoInteractions(messagingClientMock, communicationRepositoryMock, errandAttachmentServiceMock, messagingSettingsIntegrationMock);
 	}
@@ -889,7 +889,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
-		verify(errandEntityMock).getLifecycle();
+		verify(errandEntityMock).isDraft();
 		verify(errandEntityMock).getStakeholders();
 		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
 		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
@@ -921,7 +921,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
-		verify(errandEntityMock).getLifecycle();
+		verify(errandEntityMock).isDraft();
 		verify(errandEntityMock).getStakeholders();
 		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
 		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);
@@ -940,7 +940,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
-		verify(errandEntityMock).getLifecycle();
+		verify(errandEntityMock).isDraft();
 		verify(errandEntityMock).getStakeholders();
 		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
 		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);
@@ -962,7 +962,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
-		verify(errandEntityMock).getLifecycle();
+		verify(errandEntityMock).isDraft();
 		verify(errandEntityMock).getStakeholders();
 		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
 		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);
