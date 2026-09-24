@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.config.SearchProperties;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
@@ -48,15 +49,63 @@ public class ErrandReindexService {
 	private final SearchAvailability availability;
 	private final SearchProperties properties;
 	private final AccessControlService accessControlService;
+	private final NamespaceConfigRepository namespaceConfigRepository;
 
 	public ErrandReindexService(final EntityManagerFactory entityManagerFactory, final OpenSearchClient openSearch, final LockProvider lockProvider, final SearchAvailability availability,
-		final SearchProperties properties, final AccessControlService accessControlService) {
+		final SearchProperties properties, final AccessControlService accessControlService, final NamespaceConfigRepository namespaceConfigRepository) {
 		this.entityManagerFactory = entityManagerFactory;
 		this.openSearch = openSearch;
 		this.lockProvider = lockProvider;
 		this.availability = availability;
 		this.properties = properties;
 		this.accessControlService = accessControlService;
+		this.namespaceConfigRepository = namespaceConfigRepository;
+	}
+
+	/**
+	 * Rebuilds every namespace there is, one after the other, and waits for it.
+	 * <p>
+	 * What the index misses it misses quietly: indexing follows a commit without holding the request up, so a write that
+	 * did not reach OpenSearch is a document left as it was, or an errand deleted that is still found. Nothing says which
+	 * errands those are, so the way back to an index that agrees with the database is to write it again, which is what
+	 * this does nightly. A namespace at a time, as the endpoint does it, so that only the namespace being rebuilt is
+	 * searched with a hole in it rather than the whole index at once.
+	 * <p>
+	 * Skipped where the environment has no search index, and where a rebuild is already running: the one under way is
+	 * doing this very work, and two mass indexers on one index only slow each other down.
+	 */
+	public void reindexEveryNamespace() {
+		if (!availability.isEnabled()) {
+			LOG.info("Search is not enabled, skipping the nightly reindex");
+			return;
+		}
+
+		final var lock = lockProvider.lock(new LockConfiguration(Instant.now(), LOCK_NAME, properties.reindex().lockAtMostFor(), Duration.ZERO));
+		if (lock.isEmpty()) {
+			LOG.info("{}, skipping the nightly reindex", REINDEX_RUNNING);
+			return;
+		}
+
+		try {
+			for (final var config : namespaceConfigRepository.findAll()) {
+				reindexAndWait(config.getNamespace(), config.getMunicipalityId());
+			}
+			LOG.info("Nightly reindex finished");
+		} finally {
+			lock.get().unlock();
+		}
+	}
+
+	private void reindexAndWait(final String namespace, final String municipalityId) {
+		LOG.info("Reindex of errands of namespace '{}' for municipality '{}' starting", namespace, municipalityId);
+		purgeNamespace(namespace, municipalityId);
+
+		try {
+			massIndexer(namespace, municipalityId, false).startAndWait();
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Reindex of namespace '%s' for municipality '%s' was interrupted".formatted(namespace, municipalityId), e);
+		}
 	}
 
 	/**

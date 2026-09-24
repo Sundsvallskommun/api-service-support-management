@@ -276,6 +276,11 @@ ends, a regular expression, a fuzzy term over many fields - and one client askin
 cluster away from everyone else. The syntax stays as it is, since searching by a word with anything on either side of it
 is what the endpoint is for.
 
+The index is written over from the database every night at 01:00, a namespace at a time, so that what indexing missed
+does not stay missed - `scheduler.search-reindex`, guarded by the same lock as the rebuild endpoint, so one instance
+does it and a manual rebuild and the nightly one never overlap. Nothing is rebuilt when the service starts: a deploy
+leaves the index as it is and only brings the mapping up to date.
+
 The database is the source of truth and the index is disposable. Indexing follows every commit without holding the
 request up, so an OpenSearch that cannot be reached is logged and never fails a request, and the index schema is created
 after startup rather than during it, so the service starts without OpenSearch. Whatever the index missed is put right by

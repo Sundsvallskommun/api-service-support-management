@@ -40,6 +40,13 @@ scheduler:
     maximum-execution-time: PT4M
     transaction-buffer: PT10S
     max-age: P30D
+  search-reindex:
+    name: search_reindex
+    enabled: true
+    # Nightly, when the hole a namespace is rebuilt through is least in the way. Does nothing where search is off
+    cron: 0 0 1 * * *
+    shedlock-lock-at-most-for: PT2H
+    maximum-execution-time: PT1H
   attachment-hash:
     name: compute_attachment_hash
     enabled: true

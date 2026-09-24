@@ -140,6 +140,9 @@ scheduler:
     cron: "-"
   attachment-hash:
     cron: "-"
+  search-reindex:
+    cron: "-"
+    enabled: false
   job:
     cron: "-"
 
