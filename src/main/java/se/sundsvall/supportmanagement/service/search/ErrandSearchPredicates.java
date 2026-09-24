@@ -46,8 +46,22 @@ public class ErrandSearchPredicates {
 		if (isBlank(query)) {
 			return f.matchAll().toPredicate();
 		}
+
+		// A route may leave open no field that free text looks in, while leaving a field open that a query can name:
+		// what a role allows may be the status alone, which is searched by name and not by word. A word then has
+		// nowhere to look and matches nothing, which is an empty answer rather than a refusal - the same answer a
+		// grant reaching no errand at all gives - and never an error.
+		if (fields.isEmpty() && QueryStringFields.hasFreeTerms(query)) {
+			return f.matchNone().toPredicate();
+		}
+
+		// What is left names its own fields, which have been held to what the route may read already. The list says
+		// where a word without a field would be looked for, there is no such word, and the predicate must be given a
+		// field all the same: the one every errand of the search is filtered on stands in for it.
 		return f.queryString()
-			.fields(fields.toArray(String[]::new))
+			.fields(fields.isEmpty() ? new String[] {
+				MUNICIPALITY_ID_FIELD
+			} : fields.toArray(String[]::new))
 			.matching(query)
 			.defaultOperator(BooleanOperator.AND)
 			.toPredicate();

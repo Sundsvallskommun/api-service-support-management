@@ -105,3 +105,39 @@ INSERT INTO communication(internal, viewed, sender, sender_user_id, sent, id, er
                           message_body, target, subject, direction, type, namespace, municipality_id, html_message_body)
 VALUES (0, 0, 'Bo Bergman', null, '2026-02-11 09:00:00.000', 'cc000000-0000-0000-0000-0000000008b1', 'LR-26020001', null,
         'Vattnet står kvar på vinden', 'bo@example.com', 'Uppföljning från Team B', 'INBOUND', 'EMAIL', 'NAMESPACE-2508', '2506', null);
+
+-- -----------------------------------------------------------------------------------------------
+-- A namespace where a role sees one field that a search without a field never looks in: the status
+-- is a value searched by name, not a word. Nothing is left for a word to look in there, which is an
+-- empty answer, while a query naming the status is answered.
+-- -----------------------------------------------------------------------------------------------
+INSERT INTO namespace_config(id, municipality_id, namespace, created, modified)
+VALUES (9, '2506', 'NAMESPACE-2509', '2026-09-24 10:00:00.000', null);
+
+INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
+VALUES (9, 'DISPLAY_NAME', 'Namespace 2509', 'STRING'),
+       (9, 'SHORT_CODE', 'SO', 'STRING'),
+       (9, 'NOTIFICATION_TTL_IN_DAYS', '40', 'INTEGER'),
+       (9, 'ACCESS_CONTROL', 'true', 'BOOLEAN'),
+       (9, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (9, 'ROLE_BASED_MAPPING', 'true', 'BOOLEAN'),
+       (9, 'RESOURCE_ACCESS_CONTROL', 'true', 'BOOLEAN');
+
+INSERT INTO namespace_config_access_grant(namespace_config_id, `scope`, `type`, `value`, access_level)
+VALUES (9, 'STATUS_ONLY', 'FIELD', 'STATUS', null);
+
+INSERT INTO metadata_label (created, modified, municipality_id, namespace, classification, display_name, id, parent_id, resource_name, resource_path, deprecated) VALUES
+    ('2026-09-24 10:00:00.000', NULL, '2506', 'NAMESPACE-2509', 'CLASS', 'TEAM-S-DISPLAY-NAME', 'ss000000-0000-0000-0000-0000000009s1', NULL, 'TEAM-S', 'TEAM-S', false);
+
+INSERT INTO errand(municipality_id, id, namespace, priority, status, category, type, title, description, reporter_user_id,
+                   created, touched, errand_number, business_related)
+VALUES ('2506', 'ee000000-0000-0000-0000-0000000009s0', 'NAMESPACE-2509', 'HIGH', 'NEW', 'VATTEN', 'LÄCKA',
+        'Vattenläcka i Team S', 'Det rinner vatten i trapphuset', 'rep09ort',
+        '2026-03-10 08:00:00.000', '2026-03-10 08:00:00.000', 'SO-26030001', false),
+       ('2506', 'ee000000-0000-0000-0000-0000000009s2', 'NAMESPACE-2509', 'LOW', 'ONGOING', 'GATA', 'BELYSNING',
+        'Trasig lampa i Team S', 'Lampan vid porten är släckt', 'rep09ort',
+        '2026-03-11 08:00:00.000', '2026-03-11 08:00:00.000', 'SO-26030002', false);
+
+INSERT INTO errand_access_labels(errand_id, metadata_label_id)
+VALUES ('ee000000-0000-0000-0000-0000000009s0', 'ss000000-0000-0000-0000-0000000009s1'),
+       ('ee000000-0000-0000-0000-0000000009s2', 'ss000000-0000-0000-0000-0000000009s1');

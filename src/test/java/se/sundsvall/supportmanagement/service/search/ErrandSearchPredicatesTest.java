@@ -168,6 +168,38 @@ class ErrandSearchPredicatesTest {
 		verifyNoInteractions(metadataServiceMock);
 	}
 
+	/**
+	 * A route leaving no field open for a word that names none: the word has nowhere to look, so the search finds
+	 * nothing rather than failing on a predicate without a field.
+	 */
+	@Test
+	void aWordWithNoFieldToLookInMatchesNothing() {
+		when(factoryMock.matchNone()).thenReturn(matchNoneMock);
+		when(matchNoneMock.toPredicate()).thenReturn(predicateMock);
+
+		assertThat(predicates().query(factoryMock, "vatten", List.of())).isSameAs(predicateMock);
+
+		verify(factoryMock, never()).queryString();
+	}
+
+	/**
+	 * The same route answering a query that names its fields: those were held to what the route may read, so the query
+	 * runs, with the field every errand is filtered on standing in for the list it has no use for.
+	 */
+	@Test
+	void aQueryNamingItsOwnFieldsRunsWithNoFieldsOfItsOwn() {
+		when(factoryMock.queryString()).thenReturn(queryStringFieldStepMock);
+		when(queryStringFieldStepMock.fields(any(String[].class))).thenReturn(queryStringFieldMoreStepMock);
+		when(queryStringFieldMoreStepMock.matching(anyString())).thenReturn(queryStringOptionsMock);
+		when(queryStringOptionsMock.defaultOperator(BooleanOperator.AND)).thenReturn(queryStringOptionsMock);
+		when(queryStringOptionsMock.toPredicate()).thenReturn(predicateMock);
+
+		assertThat(predicates().query(factoryMock, "status:new", List.of())).isSameAs(predicateMock);
+
+		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.MUNICIPALITY_ID_FIELD);
+		verify(factoryMock, never()).matchNone();
+	}
+
 	@Test
 	void accessThroughLabelsExcludesTheLabelsTheUserLacks() {
 		final var allowed = label("allowed-1");
