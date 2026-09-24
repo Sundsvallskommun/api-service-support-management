@@ -1,0 +1,9 @@
+{
+	"startable": {
+		"status": "AVAILABLE",
+		"processKeys": [
+			"alkt-ansokan"
+		]
+	},
+	"processes": []
+}

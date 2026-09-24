@@ -20,6 +20,7 @@ import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterE
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
@@ -431,6 +433,27 @@ class CommunicationServiceTest {
 		assertThatThrownBy(() -> communicationService.streamCommunicationAttachmentData(communicationAttachmentEntityMock, servletResponseMock))
 			.isInstanceOf(Problem.class)
 			.hasMessageContaining("Insufficient Storage: Insufficient storage available to process the request.");
+	}
+
+	@Test
+	void nothingIsCommunicatedAboutADraft() {
+		final var draft = ErrandEntity.create().withId(ERRAND_ID).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withLifecycle(ErrandLifecycle.DRAFT);
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW)).thenReturn(draft);
+
+		final List<ThrowingCallable> sends = List.of(
+			() -> communicationService.sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, EmailRequest.create()),
+			() -> communicationService.sendEmail(draft, EmailRequest.create()),
+			() -> communicationService.sendBulkEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, BulkEmailRequest.create()),
+			() -> communicationService.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, SmsRequest.create()),
+			() -> communicationService.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, WebMessageRequest.create().withDispatch(false)),
+			() -> communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME),
+			() -> communicationService.sendMessageNotification(draft, new MessagingSettings(null, null, null, null, null, null, null)));
+
+		sends.forEach(send -> assertThatThrownBy(send)
+			.isInstanceOf(ThrowableProblem.class)
+			.hasMessage("Conflict: The errand '%s' is a draft, and nothing is communicated about a draft. Make the errand active first".formatted(ERRAND_ID)));
+
+		verifyNoInteractions(messagingClientMock, communicationRepositoryMock, errandAttachmentServiceMock, messagingSettingsIntegrationMock);
 	}
 
 	@Test
@@ -866,6 +889,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
+		verify(errandEntityMock).getLifecycle();
 		verify(errandEntityMock).getStakeholders();
 		verify(messagingSettingsIntegrationMock).getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
 		verify(messagingClientMock).sendEmailBatch(eq(MUNICIPALITY_ID), emailBatchRequestCaptor.capture());
@@ -897,6 +921,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
+		verify(errandEntityMock).getLifecycle();
 		verify(errandEntityMock).getStakeholders();
 		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
 		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);
@@ -915,6 +940,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
+		verify(errandEntityMock).getLifecycle();
 		verify(errandEntityMock).getStakeholders();
 		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
 		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);
@@ -936,6 +962,7 @@ class CommunicationServiceTest {
 		communicationService.sendEmailNotificationToReporter(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, DEPARTMENT_NAME);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.COMMUNICATION, RW);
+		verify(errandEntityMock).getLifecycle();
 		verify(errandEntityMock).getStakeholders();
 		verifyNoMoreInteractions(accessControlServiceMock, errandEntityMock);
 		verifyNoInteractions(messagingSettingsIntegrationMock, messagingClientMock);

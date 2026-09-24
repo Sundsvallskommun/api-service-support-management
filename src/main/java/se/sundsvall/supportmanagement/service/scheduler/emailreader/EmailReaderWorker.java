@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isAutoReply;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isDeliveryStatusReport;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isNoReplyAddress;
@@ -115,7 +116,7 @@ public class EmailReaderWorker {
 	}
 
 	private void sendEmail(final ErrandEntity errand, final EmailRequest emailRequest) {
-		if (emailRequest != null) {
+		if (emailRequest != null && DRAFT != errand.getLifecycle()) {
 			communicationService.sendEmail(errand, emailRequest);
 		}
 	}

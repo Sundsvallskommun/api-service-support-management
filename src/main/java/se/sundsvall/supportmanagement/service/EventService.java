@@ -34,6 +34,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
@@ -134,8 +135,11 @@ public class EventService {
 			LOG.warn("Failed to create event log entry for errand note {}: {}", sanitizeForLogging(logKey), sanitizeForLogging(e.getMessage()));
 		}
 		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
-		createNotification(errandEntity, event);
-		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue());
+
+		if (notifies(errandEntity, true)) {
+			createNotification(errandEntity, event);
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue());
+		}
 	}
 
 	public Page<Event> readEvents(final String namespace, final String municipalityId, final String id, final Pageable pageable) {
@@ -163,10 +167,17 @@ public class EventService {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		}
 
-		if (sendNotification) {
+		if (notifies(errandEntity, sendNotification)) {
 			createNotification(errandEntity, event);
 			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
 		}
+	}
+
+	/**
+	 * Whether an event about the errand is to notify its handler and its subscribers. A draft notifies no one.
+	 */
+	private static boolean notifies(final ErrandEntity errandEntity, final boolean sendNotification) {
+		return sendNotification && DRAFT != errandEntity.getLifecycle();
 	}
 
 	/**

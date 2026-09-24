@@ -5843,8 +5843,9 @@ paths:
       tags:
       - Errands
       summary: Read matching errands
-      description: Query for errands with or without filters. The resource allows
-        the client a wide range of variations on how to filter the result.
+      description: "Query for errands with or without filters. The resource allows\
+        \ the client a wide range of variations on how to filter the result. Drafts\
+        \ are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'."
       operationId: findErrands
       parameters:
       - name: namespace
@@ -6854,9 +6855,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — the errand already has a live process, its process\
-            \ has run to its end, or a start of another process is already on its\
-            \ way"
+          description: "Conflict — the errand is a draft, already has a live process,\
+            \ its process has run to its end, or a start of another process is already\
+            \ on its way"
           content:
             application/problem+json:
               schema:
@@ -9165,6 +9166,13 @@ paths:
       responses:
         "204":
           description: Successful operation
+        "409":
+          description: "Conflict — the errand is a draft, and nothing is communicated\
+            \ about a draft"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9237,6 +9245,13 @@ paths:
       responses:
         "204":
           description: Successful operation
+        "409":
+          description: "Conflict — the errand is a draft, and nothing is communicated\
+            \ about a draft"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9309,6 +9324,13 @@ paths:
       responses:
         "204":
           description: Successful operation
+        "409":
+          description: "Conflict — the errand is a draft, and nothing is communicated\
+            \ about a draft"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9382,6 +9404,13 @@ paths:
       responses:
         "204":
           description: Successful operation
+        "409":
+          description: "Conflict — the errand is a draft, and nothing is communicated\
+            \ about a draft"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9536,6 +9565,13 @@ paths:
               style: simple
               schema:
                 type: string
+        "409":
+          description: "Conflict — the errand is a draft, and nothing is communicated\
+            \ about a draft"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -9734,6 +9770,13 @@ paths:
           description: Successful operation
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict — the errand is a draft, and nothing is communicated\
+            \ about a draft"
           content:
             application/problem+json:
               schema:
@@ -18462,7 +18505,8 @@ paths:
       tags:
       - Errands
       summary: Count errands
-      description: Counts errands based on the provided filters
+      description: "Counts errands based on the provided filters. Drafts are left\
+        \ out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'."
       operationId: countErrands
       parameters:
       - name: namespace
@@ -21149,6 +21193,22 @@ components:
           description: Status for the errand
           examples:
           - NEW_CASE
+        lifecycle:
+          type: string
+          description: "Life cycle of the errand, the same in every namespace and\
+            \ independent of its status. DRAFT - the errand is being prepared: no\
+            \ process is started or woken for it, no action is created, nothing is\
+            \ communicated about it, no one is notified about it, and a search leaves\
+            \ it out unless its filter names lifecycle. ACTIVE - the errand is handled\
+            \ as any errand is. Left out on create, the errand is ACTIVE. A draft\
+            \ is made active by a patch setting ACTIVE, which starts a process the\
+            \ labels start on their own, unless the patch asks not to wake the process.\
+            \ An active errand never becomes a draft again."
+          enum:
+          - DRAFT
+          - ACTIVE
+          examples:
+          - ACTIVE
         resolution:
           type: string
           description: Resolution status for closed errands. Value can be set to anything
@@ -23951,11 +24011,13 @@ components:
             \ errand. NO_PROCESS_KEY - no label on the errand carries a processKey\
             \ attribute the errand can be started with, so there is nothing to start.\
             \ Setting the right label is the fix. NO_PROCESS_ENGINE - this namespace\
-            \ does not run processes at all. The answer is the same whether or not\
-            \ the labels start the process on their own: an errand whose process starts\
-            \ by itself is AVAILABLE too, and starting it by hand is how a start that\
-            \ failed is tried again. Treat any value you do not recognise as not startable\
-            \ - values may be added over time."
+            \ does not run processes at all. ERRAND_DRAFT - the errand is a draft.\
+            \ A process is started only once the errand has been made active. The\
+            \ answer is the same whether or not the labels start the process on their\
+            \ own: an errand whose process starts by itself is AVAILABLE too, and\
+            \ starting it by hand is how a start that failed is tried again. Treat\
+            \ any value you do not recognise as not startable - values may be added\
+            \ over time."
           examples:
           - AVAILABLE
           readOnly: true

@@ -53,9 +53,11 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.notEqual;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INSUFFICIENT_STORAGE;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.EMAIL;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.ESERVICE;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
@@ -75,6 +77,7 @@ public class CommunicationService {
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
 	private static final boolean ASYNCHRONOUSLY = false;
 	private static final String MESSAGE_ID_TEMPLATE = "<%s@%s>";
+	private static final String ERRAND_IS_A_DRAFT = "The errand '%s' is a draft, and nothing is communicated about a draft. Make the errand active first";
 	private final AccessControlService accessControlService;
 	private final CommunicationRepository communicationRepository;
 	private final CommunicationAttachmentRepository communicationAttachmentRepository;
@@ -180,6 +183,8 @@ public class CommunicationService {
 	}
 
 	public void sendEmail(final ErrandEntity errandEntity, final EmailRequest request) {
+		requireActive(errandEntity);
+
 		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
 			if (!headers.containsKey(EmailHeader.MESSAGE_ID)) {
 				headers.put(EmailHeader.MESSAGE_ID, List.of(MESSAGE_ID_TEMPLATE.formatted(UUID.randomUUID(), errandEntity.getNamespace())));
@@ -204,6 +209,7 @@ public class CommunicationService {
 
 	public void sendBulkEmail(final String namespace, final String municipalityId, final String id, final BulkEmailRequest request) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		requireActive(errandEntity);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, id, request.getAttachmentIds());
 		final var batchRequest = toEmailBatchRequest(request, toEmailAttachments(errandAttachments));
 
@@ -226,6 +232,17 @@ public class CommunicationService {
 		}
 	}
 
+	/**
+	 * Refuses a draft with 409, since nothing is communicated about an errand until it has been made active.
+	 *
+	 * @param errandEntity the errand the communication is about.
+	 */
+	static void requireActive(final ErrandEntity errandEntity) {
+		if (DRAFT == errandEntity.getLifecycle()) {
+			throw Problem.valueOf(CONFLICT, ERRAND_IS_A_DRAFT.formatted(errandEntity.getId()));
+		}
+	}
+
 	private static EmailRequest toSingleEmailRequest(final BulkEmailRequest bulk, final String recipient) {
 		return EmailRequest.create()
 			.withSender(bulk.getSender())
@@ -241,6 +258,7 @@ public class CommunicationService {
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		requireActive(entity);
 		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
@@ -253,6 +271,7 @@ public class CommunicationService {
 
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		requireActive(entity);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, entity.getId(), request.getAttachmentIds());
 
 		final var fullName = getFullName(municipalityId);
@@ -351,6 +370,7 @@ public class CommunicationService {
 	public void sendEmailNotificationToReporter(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
 		LOGGER.info("Processing logic to send email notification to stakeholder with reporter role.");
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, RW);
+		requireActive(errandEntity);
 		final var stakeholder = getStakeholderMatchingRole(errandEntity, "REPORTER");
 
 		if (isStakeholderEligibleForEmailNotification(stakeholder)) {
@@ -411,6 +431,8 @@ public class CommunicationService {
 	}
 
 	public void sendMessageNotification(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
+		requireActive(errandEntity);
+
 		final var request = toMessagingMessageRequest(errandEntity, messagingSettings);
 
 		final var partyId = Optional.ofNullable(request.getMessages())

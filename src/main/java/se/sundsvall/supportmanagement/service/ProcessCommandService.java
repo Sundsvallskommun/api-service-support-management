@@ -15,6 +15,7 @@ import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepositor
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
@@ -31,6 +32,7 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.ERRAND_DRAFT;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_ENGINE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_KEY;
@@ -38,6 +40,7 @@ import static se.sundsvall.supportmanagement.api.model.process.ProcessStartabili
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS;
 import static se.sundsvall.supportmanagement.service.ErrandProcessService.NO_PROCESS_CONSUMER;
@@ -68,6 +71,7 @@ public class ProcessCommandService {
 	private static final String SIGNAL_NOT_AWAITED = "The process instance '%s' does not wait for the signal '%s'. Read the errand again to see what it waits for now";
 
 	private static final String START_NOT_BY_AN_AD_ACCOUNT = "Starting the handling of an errand is a decision made by a person, and has to be sent by an ad account";
+	private static final String ERRAND_IS_A_DRAFT = "The errand '%s' is a draft, and a process is started only for an active errand. Make the errand active first";
 	private static final String LIVE_PROCESS_IN_THE_WAY = "The errand '%s' already has a live process, and a process is started only for an errand without one";
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again. A new process means a new errand";
 	private static final String NO_LABEL_NAMES_A_PROCESS = "No label of the errand '%s' carries a process key, so there is no process to start. Give the errand the label of the process to start";
@@ -126,6 +130,7 @@ public class ProcessCommandService {
 	 *
 	 * <pre>
 	 * the namespace has no process consumer        -&gt; NO_PROCESS_ENGINE
+	 * the errand is a draft                        -&gt; ERRAND_DRAFT
 	 * a live instance                              -&gt; LIVE_INSTANCE
 	 * a completed instance                         -&gt; PROCESS_COMPLETED
 	 * no label naming a process the errand can run -&gt; NO_PROCESS_KEY
@@ -136,14 +141,20 @@ public class ProcessCommandService {
 	 * of the labels is not read.
 	 *
 	 * @param  runsProcesses whether the namespace of the errand has a process consumer.
+	 * @param  lifecycle     the life cycle of the errand.
 	 * @param  instances     the process rows of the errand, as
 	 *                       {@link ErrandProcessRepository#findByErrandIdOrderByCreatedDesc} reads them.
 	 * @param  labels        what the labels of the errand say, asked only when no process row stands in the way.
 	 * @return               whether a start is possible, and the keys it may name.
 	 */
-	public static ProcessStartOptions startOptionsOf(final boolean runsProcesses, final List<ErrandProcessEntity> instances, final Supplier<ProcessKeySelection> labels) {
+	public static ProcessStartOptions startOptionsOf(final boolean runsProcesses, final ErrandLifecycle lifecycle, final List<ErrandProcessEntity> instances,
+		final Supplier<ProcessKeySelection> labels) {
 		if (!runsProcesses) {
 			return unavailable(NO_PROCESS_ENGINE);
+		}
+
+		if (DRAFT == lifecycle) {
+			return unavailable(ERRAND_DRAFT);
 		}
 
 		if (instances.stream().anyMatch(instance -> nonNull(instance.getActiveMarker()))) {
@@ -190,7 +201,7 @@ public class ProcessCommandService {
 		final var runsProcesses = namespaceConfigService.getProcessConsumer(namespace, municipalityId).isPresent();
 		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
 
-		final var options = startOptionsOf(runsProcesses, instances, () -> processKeySelector.select(errand));
+		final var options = startOptionsOf(runsProcesses, errand.getLifecycle(), instances, () -> processKeySelector.select(errand));
 		final var chosenKey = chooseProcessKey(namespace, municipalityId, errandId, options, instances, processKey);
 		final var alreadyOnItsWay = isAlreadyOnItsWay(errandId, chosenKey);
 
@@ -265,7 +276,8 @@ public class ProcessCommandService {
 	}
 
 	/**
-	 * The key a start names. Throws 409 for a live instance and for a completed one, and 400 when the namespace runs no
+	 * The key a start names. Throws 409 for a draft, for a live instance and for a completed one, and 400 when the
+	 * namespace runs no
 	 * process, when no key can be started, when the request does not choose among several keys or names one not offered,
 	 * and when the key is longer than the outbox column holds.
 	 */
@@ -274,6 +286,7 @@ public class ProcessCommandService {
 
 		final var processKey = switch (options.status()) {
 			case NO_PROCESS_ENGINE -> throw Problem.valueOf(BAD_REQUEST, NO_PROCESS_CONSUMER.formatted(namespace, municipalityId));
+			case ERRAND_DRAFT -> throw Problem.valueOf(CONFLICT, ERRAND_IS_A_DRAFT.formatted(errandId));
 			case LIVE_INSTANCE -> throw Problem.valueOf(CONFLICT, LIVE_PROCESS_IN_THE_WAY.formatted(errandId));
 			case PROCESS_COMPLETED -> throw Problem.valueOf(CONFLICT, PROCESS_LIFE_OVER.formatted(errandId));
 			case NO_PROCESS_KEY -> throw Problem.valueOf(BAD_REQUEST, instances.isEmpty()

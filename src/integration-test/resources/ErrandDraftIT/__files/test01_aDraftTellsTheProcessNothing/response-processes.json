@@ -1,0 +1,7 @@
+{
+	"startable": {
+		"status": "ERRAND_DRAFT",
+		"processKeys": []
+	},
+	"processes": []
+}

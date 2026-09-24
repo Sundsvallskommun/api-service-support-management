@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import se.sundsvall.dept44.common.validators.annotation.OneOf;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
@@ -84,6 +85,22 @@ public class Errand {
 		OnCreate.class, OnUpdate.class
 	})
 	private String status;
+
+	@Schema(description = """
+		Life cycle of the errand, the same in every namespace and independent of its status. DRAFT - the errand is being \
+		prepared: no process is started or woken for it, no action is created, nothing is communicated about it, no one \
+		is notified about it, and a search leaves it out unless its filter names lifecycle. ACTIVE - the errand is \
+		handled as any errand is. Left out on create, the errand is ACTIVE. A draft is made active by a patch setting ACTIVE, which \
+		starts a process the labels start on their own, unless the patch asks not to wake the process. An active errand \
+		never becomes a draft again.""", examples = "ACTIVE", allowableValues = {
+		"DRAFT", "ACTIVE"
+	})
+	@OneOf(value = {
+		"DRAFT", "ACTIVE"
+	}, nullable = true, groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private String lifecycle;
 
 	@Schema(description = "Resolution status for closed errands. Value can be set to anything", examples = "FIXED")
 	private String resolution;
@@ -331,6 +348,19 @@ public class Errand {
 
 	public Errand withStatus(final String status) {
 		this.status = status;
+		return this;
+	}
+
+	public String getLifecycle() {
+		return lifecycle;
+	}
+
+	public void setLifecycle(final String lifecycle) {
+		this.lifecycle = lifecycle;
+	}
+
+	public Errand withLifecycle(final String lifecycle) {
+		this.lifecycle = lifecycle;
 		return this;
 	}
 
@@ -623,7 +653,7 @@ public class Errand {
 	@Override
 	public int hashCode() {
 		return Objects.hash(activePhaseId, actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters,
-			labels, measures, activeNotifications, modified, process,
+			labels, lifecycle, measures, activeNotifications, modified, process,
 			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched, version);
 	}
 
@@ -639,6 +669,7 @@ public class Errand {
 			&& Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(classification, other.classification) && Objects.equals(contactReason, other.contactReason)
 			&& Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
 			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(jsonParameters, other.jsonParameters) && Objects.equals(labels, other.labels)
+			&& Objects.equals(lifecycle, other.lifecycle)
 			&& Objects.equals(measures, other.measures) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && Objects.equals(phases, other.phases)
 			&& Objects.equals(priority, other.priority) && Objects.equals(process, other.process)
 			&& Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status)
@@ -659,6 +690,7 @@ public class Errand {
 			", jsonParameters=" + jsonParameters +
 			", classification=" + classification +
 			", status='" + status + '\'' +
+			", lifecycle='" + lifecycle + '\'' +
 			", resolution='" + resolution + '\'' +
 			", description='" + description + '\'' +
 			", channel='" + channel + '\'' +

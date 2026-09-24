@@ -37,6 +37,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
@@ -174,6 +175,33 @@ class ProcessEventPublisherTest {
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, processKeySelectorMock, applicationEventPublisherMock);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = EventType.class, names = {
+		"CREATE", "UPDATE", "DELETE"
+	})
+	@DisplayName("Verification that a draft tells the process nothing, whatever the labels say, and nothing is counted or read on its behalf")
+	void aDraftWritesNothing(final EventType eventType) {
+		givenNamespaceRunsProcess();
+
+		publisher.publish(errand().withLifecycle(ErrandLifecycle.DRAFT), eventType, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+
+		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, processKeySelectorMock, applicationEventPublisherMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an active errand is published as any errand is")
+	void anActiveErrandIsPublished() {
+		givenNamespaceRunsProcess();
+		givenTriggers(ERRAND);
+		givenNoInstances();
+		givenLabels(APPLICATION, AUTOMATIC);
+
+		publisher.publish(errand().withLifecycle(ErrandLifecycle.ACTIVE), UPDATE, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+
+		verify(outboxRepositoryMock).save(outboxCaptor.capture());
+		assertThat(outboxCaptor.getValue().isStartAllowed()).isTrue();
 	}
 
 	@Test

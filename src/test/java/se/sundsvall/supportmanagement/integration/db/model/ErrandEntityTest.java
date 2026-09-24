@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
@@ -92,6 +93,7 @@ class ErrandEntityTest {
 			.withReporterUserId(reporterUserId)
 			.withResolution(resolution)
 			.withStatus(status)
+			.withLifecycle(ErrandLifecycle.DRAFT)
 			.withTitle(title)
 			.withType(type)
 			.withParameters(parameters)
@@ -133,6 +135,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getReporterUserId()).isEqualTo(reporterUserId);
 		assertThat(errandEntity.getResolution()).isEqualTo(resolution);
 		assertThat(errandEntity.getStatus()).isEqualTo(status);
+		assertThat(errandEntity.getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
 		assertThat(errandEntity.getTitle()).isEqualTo(title);
 		assertThat(errandEntity.getType()).isEqualTo(type);
 		assertThat(errandEntity.getParameters()).isEqualTo(parameters);

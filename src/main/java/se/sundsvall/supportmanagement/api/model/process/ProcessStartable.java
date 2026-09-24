@@ -25,6 +25,7 @@ public class ProcessStartable {
 		NO_PROCESS_KEY - no label on the errand carries a processKey attribute the errand can be started with, so there \
 		is nothing to start. Setting the right label is the fix. \
 		NO_PROCESS_ENGINE - this namespace does not run processes at all. \
+		ERRAND_DRAFT - the errand is a draft. A process is started only once the errand has been made active. \
 		The answer is the same whether or not the labels start the process on their own: an errand whose process starts \
 		by itself is AVAILABLE too, and starting it by hand is how a start that failed is tried again. \
 		Treat any value you do not recognise as not startable - values may be added over time.""", examples = "AVAILABLE", accessMode = READ_ONLY)

@@ -27,6 +27,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 import static org.springframework.util.CollectionUtils.isEmpty;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.toEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.toMap;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.updateEntity;
@@ -109,8 +110,19 @@ public class ErrandActionService {
 		actionConfigRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 	}
 
+	/**
+	 * Removes the actions of the errand that are fulfilled, and creates the ones the action configs of its namespace call
+	 * for, executing at once those that are due. A draft is left alone: it gets no actions until it has been made active.
+	 *
+	 * @param errand        the errand to act on.
+	 * @param operationType the operation the errand has been through.
+	 */
 	@Transactional
 	public void processErrandActions(ErrandEntity errand, OperationType operationType) {
+		if (DRAFT == errand.getLifecycle()) {
+			return;
+		}
+
 		removeFulfilledActions(errand);
 
 		var actionsToAdd = createActionsToAdd(errand, operationType);

@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.action.Action;
 
@@ -222,6 +223,23 @@ class ErrandActionServiceTest {
 	}
 
 	// processErrandActions tests
+
+	@Test
+	void processErrandActionsLeavesADraftAlone() {
+		final var existing = ErrandActionEntity.create().withActionConfigEntity(createEntity().withId(CONFIG_ID));
+		final var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withLifecycle(ErrandLifecycle.DRAFT)
+			.withActions(new ArrayList<>(List.of(existing)));
+
+		createService().processErrandActions(errand, CREATE);
+
+		assertThat(errand.getActions()).containsExactly(existing);
+		verifyNoInteractions(actionConfigRepositoryMock);
+		verify(actionMock, never()).actionFulfilled(any(), any());
+		verify(actionMock, never()).createAction(any(), any());
+	}
 
 	@Test
 	void processErrandActionsAddsAction() {

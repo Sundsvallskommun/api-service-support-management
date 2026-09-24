@@ -23,9 +23,11 @@ import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.data.domain.Sort.unsorted;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.StringUtils.hasText;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
@@ -38,6 +40,7 @@ public class NotificationService {
 
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'";
 	private static final String NAMESPACE_ENTITY_NOT_FOUND = "Namespace with name:'%s' and municiplaityId '%s' not found!";
+	private static final String ERRAND_IS_A_DRAFT = "The errand '%s' is a draft, and no one is notified about a draft. Make the errand active first";
 	private static final String EMPLOYEE_LOOKUP_FAILED = "Failed to resolve employee {} in municipality {}: {}";
 
 	private final NotificationRepository notificationRepository;
@@ -81,6 +84,11 @@ public class NotificationService {
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.NOTIFICATION, RW);
+
+		if (DRAFT == errandEntity.getLifecycle()) {
+			throw Problem.valueOf(CONFLICT, ERRAND_IS_A_DRAFT.formatted(errandId));
+		}
+
 		return createNotification(errandEntity, notification);
 	}
 

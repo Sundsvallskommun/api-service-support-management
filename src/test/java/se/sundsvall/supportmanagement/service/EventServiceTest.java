@@ -29,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.NotificationDispatchReposit
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
@@ -509,6 +510,40 @@ class EventServiceTest {
 		verify(notificationServiceMock).createNotification(eq("2281"), eq("ALKT"), eq(entity.getId()), any());
 		verify(notificationDispatchRepositoryMock).save(any());
 		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, DECISION, "executingUserId", null, null, concludesDecision);
+	}
+
+	@Test
+	@DisplayName("Verification that an event about a draft is logged but notifies neither its handler nor its subscribers")
+	void anErrandEventOfADraftNotifiesNobody() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId").withLifecycle(ErrandLifecycle.DRAFT);
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+		service.createDecisionEvent("message", entity, true);
+
+		verify(eventLogClientMock, times(2)).createEvent(eq("2281"), eq(entity.getId()), any());
+		verifyNoInteractions(notificationServiceMock, notificationDispatchRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a note event about a draft is logged but notifies neither its handler nor its subscribers")
+	void aNoteEventOfADraftNotifiesNobody() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId").withLifecycle(ErrandLifecycle.DRAFT);
+
+		service.createErrandNoteEvent(EventType.CREATE, "message", "logKey", entity, randomUUID().toString(), null, null);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq("logKey"), any());
+		verifyNoInteractions(notificationServiceMock, notificationDispatchRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an event about an active errand notifies its handler and its subscribers")
+	void anErrandEventOfAnActiveErrandNotifies() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId").withLifecycle(ErrandLifecycle.ACTIVE);
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(notificationServiceMock).createNotification(eq("2281"), eq("ALKT"), eq(entity.getId()), any());
+		verify(notificationDispatchRepositoryMock).save(any());
 	}
 
 	@Test

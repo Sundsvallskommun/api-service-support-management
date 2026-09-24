@@ -54,6 +54,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.ERRAND_DRAFT;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_ENGINE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_KEY;
@@ -61,6 +62,8 @@ import static se.sundsvall.supportmanagement.api.model.process.ProcessStartabili
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
@@ -137,16 +140,16 @@ class ProcessCommandServiceTest {
 	@Test
 	@DisplayName("Verification that an errand without a process whose labels name one may be started with that key, whatever the start mode")
 	void anErrandWithoutAProcessMayBeStartedWithTheKeyOfItsLabels() {
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(), () -> selection(SUPERVISION, MANUAL)))
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(), () -> selection(SUPERVISION, MANUAL)))
 			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(SUPERVISION)));
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(), () -> selection(SUPERVISION, AUTOMATIC)))
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(), () -> selection(SUPERVISION, AUTOMATIC)))
 			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(SUPERVISION)));
 	}
 
 	@Test
 	@DisplayName("Verification that an errand whose labels point in two directions offers both keys, so that a person can choose")
 	void anAmbiguousErrandOffersEveryKey() {
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(), () -> ambiguous(APPLICATION, SUPERVISION)))
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(), () -> ambiguous(APPLICATION, SUPERVISION)))
 			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION, SUPERVISION)));
 	}
 
@@ -157,15 +160,27 @@ class ProcessCommandServiceTest {
 			throw new AssertionError("the labels were read although a process row stood in the way");
 		};
 
-		assertThat(ProcessCommandService.startOptionsOf(false, List.of(instance(WAITING, APPLICATION)), neverAsked).status()).isEqualTo(NO_PROCESS_ENGINE);
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(WAITING, APPLICATION), instance(COMPLETED, APPLICATION)), neverAsked).status()).isEqualTo(LIVE_INSTANCE);
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(FAILED, APPLICATION), instance(COMPLETED, APPLICATION)), neverAsked).status()).isEqualTo(PROCESS_COMPLETED);
+		assertThat(ProcessCommandService.startOptionsOf(false, ACTIVE, List.of(instance(WAITING, APPLICATION)), neverAsked).status()).isEqualTo(NO_PROCESS_ENGINE);
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(instance(WAITING, APPLICATION), instance(COMPLETED, APPLICATION)), neverAsked).status()).isEqualTo(LIVE_INSTANCE);
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(instance(FAILED, APPLICATION), instance(COMPLETED, APPLICATION)), neverAsked).status()).isEqualTo(PROCESS_COMPLETED);
+	}
+
+	@Test
+	@DisplayName("Verification that a draft stands in the way after the namespace and before the process rows, without reading the labels")
+	void aDraftIsAnObstacleOfItsOwn() {
+		final Supplier<ProcessKeySelection> neverAsked = () -> {
+			throw new AssertionError("the labels were read although the errand is a draft");
+		};
+
+		assertThat(ProcessCommandService.startOptionsOf(true, DRAFT, List.of(), neverAsked)).isEqualTo(ProcessStartOptions.unavailable(ERRAND_DRAFT));
+		assertThat(ProcessCommandService.startOptionsOf(true, DRAFT, List.of(instance(WAITING, APPLICATION)), neverAsked).status()).isEqualTo(ERRAND_DRAFT);
+		assertThat(ProcessCommandService.startOptionsOf(false, DRAFT, List.of(), neverAsked).status()).isEqualTo(NO_PROCESS_ENGINE);
 	}
 
 	@Test
 	@DisplayName("Verification that no key is offered alongside an obstacle")
 	void anObstacleNamesNoKey() {
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(COMPLETED, APPLICATION)), () -> selection(APPLICATION, AUTOMATIC)).processKeys()).isEmpty();
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(instance(COMPLETED, APPLICATION)), () -> selection(APPLICATION, AUTOMATIC)).processKeys()).isEmpty();
 		assertThat(ProcessStartOptions.unavailable(LIVE_INSTANCE).processKeys()).isEmpty();
 		assertThat(new ProcessStartOptions(NO_PROCESS_KEY, List.of(APPLICATION)).processKeys()).isEmpty();
 		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> new ProcessStartOptions(AVAILABLE, List.of()));
@@ -174,15 +189,15 @@ class ProcessCommandServiceTest {
 	@Test
 	@DisplayName("Verification that an errand without a single label naming a process has nothing to start")
 	void anErrandWithoutAProcessKeyHasNothingToStart() {
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(), () -> ProcessKeySelection.NONE)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(), () -> ProcessKeySelection.NONE)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
 	}
 
 	@Test
 	@DisplayName("Verification that an errand whose only instance failed offers only the key of the process it has run")
 	void anErrandWithAFailedStartOffersOnlyItsOwnProcess() {
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(FAILED, APPLICATION)), () -> ambiguous(APPLICATION, SUPERVISION)))
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(instance(FAILED, APPLICATION)), () -> ambiguous(APPLICATION, SUPERVISION)))
 			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION)));
-		assertThat(ProcessCommandService.startOptionsOf(true, List.of(instance(FAILED, APPLICATION)), () -> selection(SUPERVISION, AUTOMATIC)))
+		assertThat(ProcessCommandService.startOptionsOf(true, ACTIVE, List.of(instance(FAILED, APPLICATION)), () -> selection(SUPERVISION, AUTOMATIC)))
 			.isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
 	}
 
@@ -285,6 +300,21 @@ class ProcessCommandServiceTest {
 
 		verifyNothingWritten();
 		verifyNoInteractions(processRepositoryMock);
+	}
+
+	@Test
+	void aStartOfADraftIsAConflict() {
+		errand.setLifecycle(DRAFT);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).isEqualTo("The errand 'errandId' is a draft, and a process is started only for an active errand. Make the errand active first");
+			});
+
+		verifyNothingWritten();
+		verifyNoInteractions(processKeySelectorMock);
 	}
 
 	@Test

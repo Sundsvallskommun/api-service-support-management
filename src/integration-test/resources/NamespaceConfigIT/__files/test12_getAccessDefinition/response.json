@@ -21,6 +21,11 @@
 			"keyed": false
 		},
 		{
+			"field": "LIFECYCLE",
+			"property": "lifecycle",
+			"keyed": false
+		},
+		{
 			"field": "RESOLUTION",
 			"property": "resolution",
 			"keyed": false

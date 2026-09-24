@@ -12,6 +12,7 @@
 		{
 			"id": "c9efe03d-deff-4828-a043-541fa78ffdeb",
 			"errandNumber": "AP-23020002",
+			"lifecycle": "ACTIVE",
 			"title": "E-service",
 			"priority": "LOW",
 			"stakeholders": [],

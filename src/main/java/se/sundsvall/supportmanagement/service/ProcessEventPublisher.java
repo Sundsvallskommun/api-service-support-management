@@ -32,6 +32,7 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.EXECUTED_BY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.service.ErrandProcessService.hasCompletedProcess;
@@ -50,6 +51,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  * <pre>
  * 1. process consumer for (municipalityId, namespace)?   no   -&gt; return
  *    event type CREATE, UPDATE or DELETE?                no   -&gt; throw, which takes the errand change down
+ *    errand a draft?                                     yes  -&gt; return
  * 2. X-Trigger-Process: false, from a non ad identity?   yes  -&gt; return                 (loop guard, layer 1)
  *                    commands (PROCESS, SIGNAL) and deletions skip steps 2, 3 and 4
  * 3. delivered events for the errand in the window?      over -&gt; error entry, return    (layer 3)
@@ -162,6 +164,12 @@ public class ProcessEventPublisher {
 		}
 
 		final var processEventType = toProcessEventType(eventType);
+
+		if (DRAFT == errand.getLifecycle()) {
+			LOG.debug("No process event written for errand {}: the errand is a draft", sanitizeForLogging(errand.getId()));
+			return;
+		}
+
 		final var guarded = !eventSubType.isCommand() && DELETE != eventType;
 
 		if (guarded && isOptedOut()) {

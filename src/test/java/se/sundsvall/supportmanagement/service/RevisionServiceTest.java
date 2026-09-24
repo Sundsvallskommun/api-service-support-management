@@ -32,6 +32,7 @@ import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import tools.jackson.databind.ObjectMapper;
@@ -224,6 +225,36 @@ class RevisionServiceTest {
 		assertThat(service.createErrandRevision(entity)).isNull();
 
 		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a snapshot written before errands had a life cycle reads as an active errand, so that it is not taken for a change")
+	void shouldNotCreateErrandRevisionWhenTheLastSnapshotHasNoLifecycleAndTheErrandIsActive() {
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.ACTIVE);
+		final var earlierSnapshot = """
+			{"id":"%s","namespace":"%s","municipalityId":"%s"}""".formatted(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(earlierSnapshot)));
+
+		assertThat(service.createErrandRevision(entity)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a draft made active is a change")
+	void shouldCreateErrandRevisionWhenADraftIsMadeActive() {
+		final var draft = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.DRAFT);
+		final var active = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.ACTIVE);
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(0).withSerializedSnapshot(toSerializedSnapshot(draft))));
+		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withVersion(1));
+
+		assertThat(service.createErrandRevision(active)).isNotNull();
+
+		verify(revisionRepositoryMock).save(any(RevisionEntity.class));
 	}
 
 	@Test

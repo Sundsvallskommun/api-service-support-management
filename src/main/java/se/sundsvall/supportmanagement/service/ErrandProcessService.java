@@ -253,7 +253,7 @@ public class ErrandProcessService {
 		final var runsProcesses = namespaceConfigService.getProcessConsumer(namespace, municipalityId).isPresent();
 
 		return ErrandProcessOverview.create()
-			.withStartable(toProcessStartable(startOptionsOf(runsProcesses, instances, () -> processKeySelector.select(errand))))
+			.withStartable(toProcessStartable(startOptionsOf(runsProcesses, errand.getLifecycle(), instances, () -> processKeySelector.select(errand))))
 			.withProcesses(toErrandProcesses(instances, signalsOf(instances)));
 	}
 

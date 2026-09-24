@@ -90,6 +90,7 @@ class ErrandTest {
 			.withPriority(priority)
 			.withReporterUserId(reporterUserId)
 			.withStatus(status)
+			.withLifecycle("DRAFT")
 			.withTitle(title)
 			.withErrandNumber(errandNumber)
 			.withTouched(touched)
@@ -125,6 +126,7 @@ class ErrandTest {
 		assertThat(bean.getPriority()).isEqualTo(priority);
 		assertThat(bean.getReporterUserId()).isEqualTo(reporterUserId);
 		assertThat(bean.getStatus()).isEqualTo(status);
+		assertThat(bean.getLifecycle()).isEqualTo("DRAFT");
 		assertThat(bean.getTitle()).isEqualTo(title);
 		assertThat(bean.getTouched()).isEqualTo(touched);
 		assertThat(bean.getResolution()).isEqualTo(resolution);

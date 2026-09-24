@@ -50,6 +50,7 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -452,6 +453,69 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	@DisplayName("Verification that a draft made active runs the actions of a creation and is logged as activated")
+	void updateErrandActivatingADraft() {
+		final var entity = buildErrandEntity().withLifecycle(ErrandLifecycle.DRAFT);
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withLifecycle("ACTIVE"));
+
+		assertThat(entity.getLifecycle()).isEqualTo(ErrandLifecycle.ACTIVE);
+		assertThat(response.getLifecycle()).isEqualTo("ACTIVE");
+		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
+		verify(errandPhaseServiceMock).applyPhaseChange(entity, null, entity.getStatus(), NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.CREATE);
+		verify(eventServiceMock).createErrandEvent(UPDATE, "Ärendet har aktiverats.", entity, currentRevisionMock, previousRevisionMock, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that a patch leaving a draft a draft is an ordinary update")
+	void updateErrandKeepingADraft() {
+		final var entity = buildErrandEntity().withLifecycle(ErrandLifecycle.DRAFT);
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withTitle("new title").withLifecycle("DRAFT"));
+
+		assertThat(entity.getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
+		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
+		verify(errandPhaseServiceMock).applyPhaseChange(entity, null, entity.getStatus(), NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that an active errand is never made a draft again, and that nothing is touched when that is asked")
+	void updateErrandRefusesToMakeAnActiveErrandADraft() {
+		final var entity = buildErrandEntity().withLifecycle(ErrandLifecycle.ACTIVE);
+		final var patch = Errand.create().withLifecycle("DRAFT");
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasFieldOrPropertyWithValue("status", BAD_REQUEST)
+			.hasMessage("Bad Request: The errand '%s' is active, and an active errand never becomes a draft again".formatted(entity.getId()));
+
+		assertThat(entity.getLifecycle()).isEqualTo(ErrandLifecycle.ACTIVE);
+		verifyNoInteractions(errandRepositoryMock, errandActionServiceMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@Test
