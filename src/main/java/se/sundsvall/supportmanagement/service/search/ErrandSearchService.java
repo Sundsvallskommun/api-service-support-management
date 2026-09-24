@@ -112,17 +112,18 @@ public class ErrandSearchService {
 	}
 
 	/**
-	 * The sort as JSON rather than through the sort DSL, since the date fields are mapped natively (see
-	 * {@link se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder}) and the DSL knows nothing about
-	 * them. One way for every field keeps it simple.
-	 */
-	/**
-	 * Said up front, before the index is asked, rather than from inside the sort being built.
+	 * That every property the sort names can be sorted on, said up front, before the index is asked, rather than from
+	 * inside the sort being built.
 	 */
 	private static void verifySortable(final Sort sort) {
 		sort.forEach(order -> toIndexField(order.getProperty()));
 	}
 
+	/**
+	 * The sort as JSON rather than through the sort DSL, since the date fields are mapped natively (see
+	 * {@link se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder}) and the DSL knows nothing about
+	 * them. One way for every field keeps it simple.
+	 */
 	private static SortFinalStep toSort(final SearchSortFactory f, final Sort sort) {
 		final var clauses = new ArrayList<JsonObject>();
 
