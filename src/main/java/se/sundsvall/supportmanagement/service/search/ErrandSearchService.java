@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
 import se.sundsvall.supportmanagement.service.search.index.SearchAvailability;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 
@@ -90,9 +91,11 @@ public class ErrandSearchService {
 					.filter(predicates.tenant(f, namespace, municipalityId))
 					.must(predicates.clauses(f, plan.clauses(), query, namespace, municipalityId)))
 				.sort(f -> toSort(f, pageable.getSort()))
+				// A query the index cannot answer within this is given up on, rather than held against everyone else
+				.failAfter(properties.timeout().toMillis(), MILLISECONDS)
 				.fetch((int) pageable.getOffset(), pageable.getPageSize());
 		} catch (final SearchException e) {
-			throw SearchProblems.toProblem(e);
+			throw SearchProblems.toProblem(e, properties.timeout());
 		}
 
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, user);

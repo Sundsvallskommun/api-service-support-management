@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.1"
 servers:
-- url: http://localhost:46125
+- url: http://localhost:43097
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -15741,7 +15741,7 @@ paths:
 
           An errand is searched by what the user may read of it, which differs with how they hold it: an errand their labels cover is searched by everything their roles allow, one they cover at limited read only by what the namespace exposes for a limited read, and one they reported by its reporter fields. A query naming a field of one of these and not of another is answered from the errands where it may be read, without a refusal; it is refused only when no errand of the user can answer it.
 
-          A query is at most 2000 characters.
+          A query is at most 2000 characters, and a search that has not answered within ten seconds is given up on: a wildcard open at both ends, a regular expression or a fuzzy term over many fields can ask for more than the index can do.
         required: false
         schema:
           type: string
@@ -15811,6 +15811,12 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "503":
           description: Search not available
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "504":
+          description: The search took too long and was given up on
           content:
             application/problem+json:
               schema:

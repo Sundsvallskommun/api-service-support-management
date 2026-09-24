@@ -12,12 +12,17 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *                        {@code index.max_result_window}
  *                        setting of the index, beyond which OpenSearch refuses to page, so that the client is told up
  *                        front instead of by a failed query.
+ * @param timeout         how long a single search may run before the cluster gives up on it. A query string may ask
+ *                        for work the index cannot do cheaply - a wildcard open at both ends, a regular expression, a
+ *                        fuzzy term - and one client asking for it must not take the cluster away from everyone else.
  * @param reindex         settings for the mass indexer.
  */
 @ConfigurationProperties(prefix = "search")
 public record SearchProperties(
 
 	@DefaultValue("10000") int maxResultWindow,
+
+	@DefaultValue("PT10S") Duration timeout,
 
 	@DefaultValue Reindex reindex) {
 

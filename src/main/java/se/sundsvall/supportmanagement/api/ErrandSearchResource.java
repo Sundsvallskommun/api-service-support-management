@@ -109,7 +109,9 @@ class ErrandSearchResource {
 		answered from the errands where it may be read, without a refusal; it is refused only when no errand of the user can \
 		answer it.
 
-		A query is at most 2000 characters.""";
+		A query is at most 2000 characters, and a search that has not answered within ten seconds is given up on: a \
+		wildcard open at both ends, a regular expression or a fuzzy term over many fields can ask for more than the \
+		index can do.""";
 
 	static final String SORT_DESCRIPTION = "Without a sort the best matches come first, newest first among equals. Sortable properties: " +
 		"created, modified, touched, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +
@@ -131,7 +133,8 @@ class ErrandSearchResource {
 		}))),
 		@ApiResponse(responseCode = "403", description = "The query names a resource the user may not read", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
-		@ApiResponse(responseCode = "503", description = "Search not available", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		@ApiResponse(responseCode = "503", description = "Search not available", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "504", description = "The search took too long and was given up on", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Page<Errand>> searchErrands(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,

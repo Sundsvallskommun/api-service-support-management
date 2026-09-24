@@ -18,7 +18,11 @@ final class ErrandFilters {
 	static final String FILTER_PARAMETER = "filter";
 	static final String NOT_FILTERABLE = "Filtering on '%s' is not supported";
 
-	private static final Pattern INDEX_ONLY_ASSOCIATION = Pattern.compile("(?<![\\w.])(" + String.join("|", ErrandEntity.INDEX_ONLY_ASSOCIATIONS) + ")\\.");
+	// The association wherever it is named, not only where a field of it follows: spring-filter asks whether a
+	// collection is empty and how large it is without ever naming a field of it, and "communications is not empty"
+	// answers from the very rows a filter may not walk into. What may follow is anything but more of a name, which is
+	// what keeps a property merely starting with the same word, such as decisionsCount, filterable
+	private static final Pattern INDEX_ONLY_ASSOCIATION = Pattern.compile("(?<![\\w.])(" + String.join("|", ErrandEntity.INDEX_ONLY_ASSOCIATIONS) + ")(?!\\w)");
 	// What is quoted is a value, not a path
 	private static final Pattern QUOTED = Pattern.compile("'(?:[^'\\\\]|\\\\.)*'");
 

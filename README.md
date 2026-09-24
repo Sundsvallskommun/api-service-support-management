@@ -270,6 +270,12 @@ spring:
             hosts: my-opensearch:9200
 ```
 
+A query is at most 2000 characters, and a search that has not answered within `search.timeout` (ten seconds by
+default) is given up on with 504. A query string may ask for work the index cannot do cheaply - a wildcard open at both
+ends, a regular expression, a fuzzy term over many fields - and one client asking for it is not allowed to take the
+cluster away from everyone else. The syntax stays as it is, since searching by a word with anything on either side of it
+is what the endpoint is for.
+
 The database is the source of truth and the index is disposable. Indexing follows every commit without holding the
 request up, so an OpenSearch that cannot be reached is logged and never fails a request, and the index schema is created
 after startup rather than during it, so the service starts without OpenSearch. Whatever the index missed is put right by

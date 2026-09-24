@@ -241,6 +241,25 @@ class ErrandSearchIT extends AbstractAppTest {
 			.withExpectedResponseStatus(FORBIDDEN)
 			.withExpectedResponse("response-wildcard.json")
 			.sendRequestAndVerifyResponse();
+
+		// The parser binds a term to a field whatever whitespace stands before the colon, so a space in front of it
+		// reaches the same field and is refused the same way. Held against the real parser here, since a query read
+		// differently from how OpenSearch reads it is a field searched by hit and miss
+		setupCall()
+			.withServicePath(withQuery(RESOURCE_CONTROLLED_PATH, "communications.subject : hemligt"))
+			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-resource.json")
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(withQuery(RESOURCE_CONTROLLED_PATH, "* : hemligt"))
+			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-wildcard.json")
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -286,6 +305,24 @@ class ErrandSearchIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(FORBIDDEN)
 			.withExpectedResponse("response-closed-sort.json")
+			.sendRequestAndVerifyResponse();
+
+		// A space before the colon names the same field to the parser, and so must name it here
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH, "description : x"))
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-field.json")
+			.sendRequestAndVerifyResponse();
+
+		// The value of _exists_ is a field name, with or without the space
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH, "_exists_ : description"))
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-field.json")
 			.sendRequestAndVerifyResponse();
 	}
 

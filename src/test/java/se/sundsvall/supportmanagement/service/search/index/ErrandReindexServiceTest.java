@@ -87,7 +87,7 @@ class ErrandReindexServiceTest {
 
 	private ErrandReindexService service(final boolean enabled) {
 		return new ErrandReindexService(entityManagerFactoryMock, openSearchMock, lockProviderMock, new SearchAvailability(enabled),
-			new SearchProperties(10000, new SearchProperties.Reindex(LOCK_AT_MOST_FOR)), accessControlServiceMock);
+			new SearchProperties(10000, Duration.ofSeconds(10), new SearchProperties.Reindex(LOCK_AT_MOST_FOR)), accessControlServiceMock);
 	}
 
 	private void purgeAnswers() throws IOException {
