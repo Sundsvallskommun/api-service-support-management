@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -33,6 +35,7 @@ public class JobService {
 	private static final int MAX_MESSAGE_LENGTH = 1024;
 	private static final String JOB_NOT_FOUND = "Job with id '%s' not found in namespace '%s' for municipality with id '%s'";
 	private static final String NOT_REPORTED_ON = "Job was not reported on for %s and is taken to have ended with the instance carrying it out";
+	private static final String ACTIVE_JOB_IN_NAMESPACE = "A job is already running for namespace '%s' in municipality with id '%s'";
 
 	/**
 	 * The states a job works in. Held in one place because the guard that keeps two runs of a kind out of the same
@@ -66,14 +69,25 @@ public class JobService {
 	 * Shared, un-annotated so that neither {@code create} overload above reaches its own {@code @Transactional} through
 	 * a plain {@code this} call rather than the proxy — a transaction is already open by the time either gets here,
 	 * started by whichever overload the caller actually invoked from outside.
+	 * <p>
+	 * Flushed rather than merely saved, so that a namespace-scoped DB constraint a caller relies on to close a
+	 * check-then-act race against its own precheck (see {@code V1_60__add_active_label_move_guard.sql}) is violated
+	 * here, inside this method's own transaction, rather than staying unflushed until some later point picks the
+	 * failure up out of context.
 	 */
 	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
-		return jobRepository.save(JobEntity.create()
-			.withNamespace(namespace)
-			.withMunicipalityId(municipalityId)
-			.withType(type)
-			.withTotal(total)
-			.withLabelId(labelId)).getId();
+		try {
+			return jobRepository.saveAndFlush(JobEntity.create()
+				.withNamespace(namespace)
+				.withMunicipalityId(municipalityId)
+				.withType(type)
+				.withTotal(total)
+				.withLabelId(labelId)).getId();
+		} catch (final DataIntegrityViolationException e) {
+			// The only unique constraint this table carries besides its primary key - a second request that raced the
+			// precheck above and lost is answered the same way a sequential one already is.
+			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
+		}
 	}
 
 	@Transactional(readOnly = true)
@@ -202,6 +216,51 @@ public class JobService {
 	 */
 	public boolean hasActiveJob(final String namespace, final String municipalityId, final JobType type, final String labelId) {
 		return jobRepository.existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(namespace, municipalityId, type, labelId, ACTIVE_STATUSES);
+	}
+
+	/**
+	 * Clears the way for a new run of one kind in one namespace, stealing a stale lease rather than leaving the
+	 * namespace blocked for as long as {@code staleAfter} - the active-job row doubles as that lease: {@code modified}
+	 * is its heartbeat, {@code staleAfter} the duration one may go quiet for, and the guard in
+	 * {@code V1_60__add_active_label_move_guard.sql} (or its counterpart for another type) is what makes it exclusive.
+	 * <p>
+	 * Deliberately narrower than {@link #failStaleJobs(Duration)}: that sweep ends every kind of job in every namespace
+	 * that has gone quiet, on its own schedule; this steals the lease for exactly the one namespace and kind a caller is
+	 * about to start a new run against, on demand, so that a caller does not have to wait for the sweep's own cron to
+	 * get there first. A namespace with a genuinely active job is still refused - only one that has gone quiet longer
+	 * than {@code staleAfter} is failed and reclaimed.
+	 * <p>
+	 * Committed by the time this call returns (its own transaction, not the caller's): the row a stale lease is
+	 * reclaimed from must be failed - and that failure durable - before the caller's own {@link #create} can succeed
+	 * against the same unique constraint that refused it a moment ago.
+	 *
+	 * @param  namespace      the namespace to clear a lease in.
+	 * @param  municipalityId the id of the municipality the namespace belongs to.
+	 * @param  type           the kind of job to clear a lease for.
+	 * @param  staleAfter     how long a job may go without being written to before its lease is taken to be abandoned.
+	 * @return                {@code true} if a new run may proceed - no job was active, or a stale one was just failed
+	 *                        and reclaimed; {@code false} if a job is still genuinely active and the caller must wait.
+	 */
+	@Transactional
+	public boolean stealStaleLease(final String namespace, final String municipalityId, final JobType type, final Duration staleAfter) {
+		final var active = jobRepository.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(namespace, municipalityId, type, ACTIVE_STATUSES);
+		if (active.isEmpty()) {
+			return true;
+		}
+
+		final var job = active.get();
+		final var quietSince = now(systemDefault()).minus(staleAfter);
+		final var lastWrite = ofNullable(job.getModified()).orElse(job.getCreated());
+		if (!lastWrite.isBefore(quietSince)) {
+			return false;
+		}
+
+		LOG.warn("Job {} of type {} in namespace {} for municipality {} was last written to at {} and is ended as failed to reclaim its lease for a new run",
+			job.getId(), job.getType(), sanitizeForLogging(job.getNamespace()), sanitizeForLogging(job.getMunicipalityId()), lastWrite);
+		job.setStatus(FAILED);
+		job.setMessage(toStoredMessage(NOT_REPORTED_ON.formatted(staleAfter)));
+		jobRepository.saveAndFlush(job);
+		return true;
 	}
 
 	/**

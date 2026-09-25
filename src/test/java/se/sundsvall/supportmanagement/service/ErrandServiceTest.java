@@ -44,6 +44,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -624,6 +625,29 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, LR);
 		verify(errandRepositoryMock).count(ArgumentMatchers.<Specification<ErrandEntity>>any());
+	}
+
+	@Test
+	@DisplayName("Verification that a migration batch restows each errand's labels from its access labels and settles them through ErrandLabelService")
+	void persistLabelMigrationBatch_rebuildsEachErrandsLabelsFromItsAccessLabels() {
+		var leafId = "leaf-id";
+		var errand = ErrandEntity.create()
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			// A stale chain from before the move - restowing must replace it, not merge into it
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
+			.withAccessLabels(List.of(se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(leafId)));
+
+		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
+
+		service.persistLabelMigrationBatch(List.of(errand));
+
+		assertThat(errand.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly(leafId);
+		verify(errandLabelServiceMock).settleAccessLabels(errand);
+		verify(errandRepositoryMock).saveAndFlush(errand);
+		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@Test

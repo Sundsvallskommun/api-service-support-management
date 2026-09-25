@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.0"
+  version: "16.1"
 servers:
-- url: http://localhost:37929
+- url: http://localhost:59544
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -4384,8 +4384,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — path collision at destination, or a move for this\
-            \ label is already in progress"
+          description: "Conflict — path collision at destination, or a job is already\
+            \ running for this namespace"
           content:
             application/problem+json:
               schema:
@@ -16073,16 +16073,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        detail:
-          type: string
-        title:
-          type: string
         status:
           type: integer
           format: int32
@@ -16101,13 +16101,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        instance:
-          type: string
-          format: uri
         detail:
           type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        instance:
+          type: string
+          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -16552,21 +16552,33 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
         container:
           type: boolean
         number:
           type: boolean
         floatingPointNumber:
+          type: boolean
+        nodeType:
+          type: string
+          enum:
+          - ARRAY
+          - BINARY
+          - BOOLEAN
+          - MISSING
+          - "NULL"
+          - NUMBER
+          - OBJECT
+          - POJO
+          - STRING
+        string:
+          type: boolean
+        integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
+        pojo:
           type: boolean
         short:
           type: boolean
@@ -16587,27 +16599,15 @@ components:
           type: boolean
         binary:
           type: boolean
-        valueNode:
+        empty:
           type: boolean
-        missingNode:
+        array:
           type: boolean
-        nodeType:
-          type: string
-          enum:
-          - ARRAY
-          - BINARY
-          - BOOLEAN
-          - MISSING
-          - "NULL"
-          - NUMBER
-          - OBJECT
-          - POJO
-          - STRING
-        string:
+        "null":
           type: boolean
-        integralNumber:
+        object:
           type: boolean
-        pojo:
+        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -17456,6 +17456,14 @@ components:
           type: string
           format: date-time
           description: When the job was last updated
+        affectedActions:
+          type: array
+          description: "Actions affected by the operation this job carries out - populated\
+            \ only on the response returned when the job is started, not on later\
+            \ reads through GET, since it reflects a dry-run-style computation done\
+            \ once at start time rather than state stored on the job itself"
+          items:
+            $ref: "#/components/schemas/AffectedAction"
     LabelMoveRequest:
       type: object
       description: Request for moving a label to a new parent
@@ -20194,9 +20202,6 @@ components:
     PageableObject:
       type: object
       properties:
-        offset:
-          type: integer
-          format: int64
         paged:
           type: boolean
         pageNumber:
@@ -20209,14 +20214,17 @@ components:
           $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
+        offset:
+          type: integer
+          format: int64
     SortObject:
       type: object
       properties:
-        empty:
-          type: boolean
         sorted:
           type: boolean
         unsorted:
+          type: boolean
+        empty:
           type: boolean
     SubscriberNotification:
       type: object

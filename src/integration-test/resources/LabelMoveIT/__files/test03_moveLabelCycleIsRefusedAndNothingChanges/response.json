@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Moving label '3273e374-855c-4525-b8fc-aeaa710b83c5' under 'ffe5f120-6a3b-4404-ace8-8ea87b559907' would create a cycle"
+}

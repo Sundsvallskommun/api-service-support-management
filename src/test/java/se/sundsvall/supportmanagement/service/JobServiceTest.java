@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
@@ -53,13 +54,13 @@ class JobServiceTest {
 	@Test
 	void create() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
 
 		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100);
 
 		assertThat(result).isEqualTo(JOB_ID);
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
-		verify(jobRepositoryMock).save(captor.capture());
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(captor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(captor.getValue().getType()).isEqualTo(MOVE_LABEL);
@@ -69,13 +70,13 @@ class JobServiceTest {
 	@Test
 	void createWithLabelId() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
 
 		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "label-id");
 
 		assertThat(result).isEqualTo(JOB_ID);
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
-		verify(jobRepositoryMock).save(captor.capture());
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(captor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(captor.getValue().getType()).isEqualTo(MOVE_LABEL);
@@ -87,13 +88,25 @@ class JobServiceTest {
 	@DisplayName("Verification that create without a labelId stores none, since not every kind of job works on one label")
 	void createWithoutLabelIdStoresNoLabelId() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
 
 		jobService.create(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, 100);
 
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
-		verify(jobRepositoryMock).save(captor.capture());
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getLabelId()).isNull();
+	}
+
+	@Test
+	@DisplayName("Verification that a second create racing the caller's own precheck and losing on the DB's active-move-per-namespace constraint is answered the same way a sequential one already is, rather than as a raw persistence failure")
+	void createRacingPrecheckLosesOnDbConstraint_throws409() {
+		when(jobRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("Duplicate entry for key 'uq_job_active_move_label_per_namespace'"));
+
+		assertThatThrownBy(() -> jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "label-id"))
+			.isInstanceOf(ThrowableProblem.class)
+			.satisfies(e -> assertThat(((ThrowableProblem) e).getStatus().value()).isEqualTo(409))
+			.hasMessageContaining(NAMESPACE)
+			.hasMessageContaining(MUNICIPALITY_ID);
 	}
 
 	@Test
@@ -207,6 +220,59 @@ class JobServiceTest {
 		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), eq("label-id"), any())).thenReturn(false);
 
 		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, "label-id")).isFalse();
+	}
+
+	@Test
+	@DisplayName("Verification that a new run is let through outright when no job of that kind is active in the namespace")
+	void stealStaleLease_noActiveJob_returnsTrueWithoutTouchingAnything() {
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.empty());
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		verify(jobRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a run genuinely still being reported on refuses a new one, rather than stealing a lease that is not actually stale")
+	void stealStaleLease_activeJobStillReporting_returnsFalseWithoutFailingIt() {
+		final var active = jobEntity(RUNNING).withModified(now(systemDefault()).minusMinutes(5));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(active));
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isFalse();
+
+		assertThat(active.getStatus()).isEqualTo(RUNNING);
+		verify(jobRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a job which has gone quiet longer than staleAfter is failed and its lease reclaimed for a new run, rather than leaving the namespace blocked until the sweep gets to it")
+	void stealStaleLease_activeJobGoneQuiet_failsItAndReturnsTrue() {
+		final var stale = jobEntity(RUNNING).withModified(now(systemDefault()).minusHours(2));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(stale));
+		when(jobRepositoryMock.saveAndFlush(stale)).thenReturn(stale);
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		assertThat(stale.getStatus()).isEqualTo(FAILED);
+		assertThat(stale.getMessage()).isEqualTo("Job was not reported on for PT30M and is taken to have ended with the instance carrying it out");
+		verify(jobRepositoryMock).saveAndFlush(stale);
+	}
+
+	@Test
+	@DisplayName("Verification that a job never reported on at all is judged by when it was created, since it has no modified of its own")
+	void stealStaleLease_activeJobNeverReportedOn_judgedByCreated() {
+		final var stale = jobEntity(PENDING).withCreated(now(systemDefault()).minusHours(2));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(stale));
+		when(jobRepositoryMock.saveAndFlush(stale)).thenReturn(stale);
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		assertThat(stale.getStatus()).isEqualTo(FAILED);
+		verify(jobRepositoryMock).saveAndFlush(stale);
 	}
 
 	@Test
