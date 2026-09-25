@@ -23,6 +23,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
@@ -109,6 +110,9 @@ class MetadataServiceTest {
 
 	@Mock
 	private PhaseRepository phaseRepositoryMock;
+
+	@Mock
+	private JobProperties jobPropertiesMock;
 
 	@InjectMocks
 	private MetadataService metadataService;

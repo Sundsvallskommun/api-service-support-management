@@ -97,13 +97,33 @@ public class EventService {
 	 * executed by nobody. The caller is expected to have captured it from the request thread that accepted the move.
 	 */
 	public void createLabelMoveEvent(final String municipalityId, final String labelId, final String startedBy, final String message) {
-		final var executedBy = Identifier.create().withType(Identifier.Type.CUSTOM).withValue(startedBy);
+		final var executedBy = toExecutedBy(startedBy);
 		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), executedBy, SYSTEM.getValue(), getRequestGroupId());
 		try {
 			eventLogClient.createEvent(municipalityId, labelId, event);
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for label move {}: {}", sanitizeForLogging(labelId), sanitizeForLogging(e.getMessage()));
 		}
+	}
+
+	/**
+	 * Rebuilds the {@link Identifier} a label move was started by, from the header-value-encoded string
+	 * {@code MetadataService#startedBy()} captured on the request thread - so the original type (e.g. {@code
+	 * AD_ACCOUNT}) survives into the audit event instead of every caller being recorded as a {@code CUSTOM} identifier,
+	 * which {@code EventlogMapper#toExecutingUser} would then map to {@code PARTY_ID} regardless of what it actually
+	 * was. Falls back to a {@code CUSTOM} identifier only for the "no caller" case ({@code startedBy} is the literal
+	 * {@code "unknown"} placeholder, which does not parse as an encoded identifier) - matches what was recorded before
+	 * this was fixed, for that one case only.
+	 */
+	private static Identifier toExecutedBy(final String startedBy) {
+		Identifier parsed = null;
+		try {
+			parsed = Identifier.parse(startedBy);
+		} catch (final Exception e) {
+			// Identifier.parse is documented to fail gracefully (returns null) rather than throw, but a defensive
+			// catch costs nothing and keeps this from ever surfacing as a hard failure of the audit event itself.
+		}
+		return parsed != null ? parsed : Identifier.create().withType(Identifier.Type.CUSTOM).withValue(startedBy);
 	}
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {

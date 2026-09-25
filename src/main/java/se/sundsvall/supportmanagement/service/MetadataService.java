@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,6 +45,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
@@ -161,6 +163,7 @@ public class MetadataService {
 	private final AsyncTaskExecutor labelMoveTaskExecutor;
 	private final AntPathMatcher pathMatcher;
 	private final TransactionTemplate readOnlyTransactionTemplate;
+	private final Duration jobStaleAfter;
 
 	public MetadataService(
 		final ActionConfigRepository actionConfigRepository,
@@ -184,7 +187,8 @@ public class MetadataService {
 		// which point every bean in the cycle is already constructed.
 		@Lazy final LabelMoveWorker labelMoveWorker,
 		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor,
-		final PlatformTransactionManager transactionManager) {
+		final PlatformTransactionManager transactionManager,
+		final JobProperties jobProperties) {
 		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -207,6 +211,7 @@ public class MetadataService {
 		this.pathMatcher.setCaseSensitive(false);
 		this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
 		this.readOnlyTransactionTemplate.setReadOnly(true);
+		this.jobStaleAfter = jobProperties.staleAfter();
 	}
 
 	// =================================================================
@@ -432,29 +437,42 @@ public class MetadataService {
 		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
 		var allMovedIds = collectMovedLabelIds(context.labelToMove().getId(), context.descendants());
 
-		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
+		var affectedErrandIds = errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(allMovedIds);
+		var affectedActions = resolveAffectedActions(namespace, municipalityId, allMovedIds);
 
-		var affectedActions = actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.filter(action -> isAffectedByMove(action, allMovedIds))
+		return LabelMoveDryRunResponse.create()
+			.withAffectedErrandCount(affectedErrandIds.size())
+			.withAffectedActions(affectedActions);
+	}
+
+	/**
+	 * The actions a move of these label ids would affect - shared by the dry-run response and, so an admin who skips
+	 * straight to a real move learns the same thing, the {@link JobResponse} {@link #startLabelMove} returns.
+	 */
+	private List<AffectedAction> resolveAffectedActions(final String namespace, final String municipalityId, final Set<String> movedLabelIds) {
+		return actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
+			.filter(action -> isAffectedByMove(action, movedLabelIds))
 			.map(action -> AffectedAction.create()
 				.withId(action.getId())
 				.withName(action.getName())
 				.withDisplayValue(action.getDisplayValue()))
 			.toList();
-
-		return LabelMoveDryRunResponse.create()
-			.withAffectedErrandCount(affectedErrandCount)
-			.withAffectedActions(affectedActions);
 	}
 
 	/**
 	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
 	 * <p>
-	 * Refused outright if another job is already under way for the namespace, not just for this label — two moves in
+	 * Refused if another job is genuinely still under way for the namespace, not just for this label — two moves in
 	 * the same namespace can target overlapping subtrees (one label and one of its own descendants, or a label and the
 	 * destination it is headed into) without either id matching the other, so a check scoped to this label alone would
 	 * let them run at the same time and race on the same errands. Namespace-wide serialization costs nothing here,
 	 * since label moves are rare.
+	 * <p>
+	 * "Genuinely" matters: {@link JobService#stealStaleLease} is asked rather than {@link JobService#hasActiveJob}, so
+	 * a job whose instance died mid-run does not go on blocking the namespace for as long as
+	 * {@link JobProperties#staleAfter()} allows - only until the next caller tries to start a move, at which point the
+	 * stale lease is reclaimed on the spot. This does not by itself give a crashed run a way to resume the restow it
+	 * left half done; it only shrinks how long the namespace stays blocked because of it.
 	 * <p>
 	 * Deliberately not itself {@code @Transactional}, and validation, job creation and dispatch are kept in three
 	 * separate steps rather than one enclosing transaction — mirrors {@link ErrandPurgeService#startPurge}. Wrapping
@@ -471,19 +489,27 @@ public class MetadataService {
 		var context = readOnlyTransactionTemplate.execute(status -> validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId()));
 		var canonicalLabelId = context.labelToMove().getId();
 
-		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL)) {
+		if (!jobService.stealStaleLease(namespace, municipalityId, MOVE_LABEL, jobStaleAfter)) {
 			throw Problem.valueOf(CONFLICT, MOVE_ALREADY_IN_PROGRESS.formatted(namespace, municipalityId));
 		}
 
 		var allMovedIds = collectMovedLabelIds(canonicalLabelId, context.descendants());
-		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
+		// Resolved once, here - the job's own total and the walk that restows them both read from this exact list
+		// rather than each re-deriving their own (see LabelMoveRun#errandIds for why that matters). Frozen at this
+		// point deliberately: an errand created after this is created against the tree the move already left in
+		// place, so it needs no restowing.
+		var affectedErrandIds = errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(allMovedIds);
+		// Resolved once, here, and attached below to the response this method itself returns - an admin who skips the
+		// dry run and starts the move directly still learns which actions are affected, without waiting on a later
+		// GET .../jobs/{jobId} that stores no such thing.
+		var affectedActions = resolveAffectedActions(namespace, municipalityId, allMovedIds);
 		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
 		// worker dispatched right after is free to look the job up from another thread.
-		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
+		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, affectedErrandIds.size(), canonicalLabelId);
 		var startedBy = startedBy();
 
 		try {
-			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), startedBy)));
+			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), affectedErrandIds, startedBy)));
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
 			jobService.fail(jobId, COULD_NOT_START.formatted(e.getMessage()));
@@ -491,16 +517,21 @@ public class MetadataService {
 			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START.formatted(e.getMessage()));
 		}
 
-		return jobService.get(namespace, municipalityId, jobId);
+		return jobService.get(namespace, municipalityId, jobId).withAffectedActions(affectedActions);
 	}
 
 	/**
 	 * The caller a label move is recorded against. Read here, on the request thread, since the thread carrying out the
 	 * run has no identifier of its own to read.
+	 * <p>
+	 * Carries the whole identifier - type and value, via {@link Identifier#toHeaderValue()} - rather than just the
+	 * value, so that {@link EventService#createLabelMoveEvent} can rebuild the original {@link Identifier} instead of
+	 * defaulting the type to {@code CUSTOM} and misrepresenting an AD user's account name as a party id in the audit
+	 * trail.
 	 */
 	private static String startedBy() {
 		return ofNullable(Identifier.get())
-			.map(Identifier::getValue)
+			.map(Identifier::toHeaderValue)
 			.orElse(UNKNOWN_CALLER);
 	}
 

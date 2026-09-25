@@ -393,7 +393,7 @@ class EventServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that the audit event's executing user comes from the startedBy parameter, not the thread-local Identifier - createLabelMoveEvent runs on a worker thread where that thread-local was never set")
+	@DisplayName("Verification that the audit event's executing user comes from the startedBy parameter, not the thread-local Identifier - createLabelMoveEvent runs on a worker thread where that thread-local was never set. An unparseable startedBy (no caller was ever recorded) falls back to a CUSTOM identifier carrying just that value.")
 	void createLabelMoveEventLogsAggregatedSystemEvent() {
 		final var municipalityId = "2281";
 		final var labelId = randomUUID().toString();
@@ -413,6 +413,25 @@ class EventServiceTest {
 		assertThat(event.getHistoryReference()).isNull();
 		assertThat(event.getExecutingUser()).isNotNull()
 			.satisfies(eu -> assertThat(eu.getValue()).isEqualTo(startedBy));
+	}
+
+	@Test
+	@DisplayName("Verification that a startedBy carrying an encoded identifier (MetadataService#startedBy(), via Identifier#toHeaderValue()) is rebuilt with its original type, rather than being recorded as a CUSTOM/PARTY_ID identifier the way a plain value string would be")
+	void createLabelMoveEventRebuildsOriginalIdentifierType() {
+		final var municipalityId = "2281";
+		final var labelId = randomUUID().toString();
+		final var identifier = Identifier.create().withType(AD_ACCOUNT).withValue("joe01doe");
+		final var startedBy = identifier.toHeaderValue();
+
+		service.createLabelMoveEvent(municipalityId, labelId, startedBy, "message");
+
+		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(labelId), eventCaptor.capture());
+
+		assertThat(eventCaptor.getValue().getExecutingUser())
+			.satisfies(eu -> {
+				assertThat(eu.getValue()).isEqualTo("joe01doe");
+				assertThat(eu.getType()).isEqualTo(AD_USER);
+			});
 	}
 
 	@Test

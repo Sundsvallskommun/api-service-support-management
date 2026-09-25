@@ -5,7 +5,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.jdbc.SqlMergeMode;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
@@ -33,7 +32,6 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
@@ -60,9 +58,6 @@ class MetadataLabelIT extends AbstractAppTest {
 	private static final String MUNICIPALITY_2262 = "2262";
 	private static final String CONTACTCENTER = "CONTACTCENTER";
 	private static final String MUNICIPALITY_2584 = "2584";
-
-	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
-		+ "VALUES ('cccccccc-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, 'ffe5f120-6a3b-4404-ace8-8ea87b559907', NOW(), NOW())";
 
 	@Autowired
 	private JobRepository jobRepository;
@@ -349,14 +344,32 @@ class MetadataLabelIT extends AbstractAppTest {
 
 	@Test
 	@DisplayName("Verification that a second real move on a label already moving is refused, since the two runs would race on the same errands")
-	@Sql(statements = RUNNING_MOVE_LABEL_JOB)
-	@SqlMergeMode(MERGE)
 	void test15_startLabelMoveRefusedWhilePreviousMoveIsPending() {
 		final var path = "/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/metadata/labels/ffe5f120-6a3b-4404-ace8-8ea87b559907/move";
 
-		// A move is already RUNNING for the namespace (seeded above, against this same label but the guard no longer
+		// A move is already RUNNING for the namespace (seeded below, against this same label but the guard no longer
 		// cares which one) - a real first request racing a real second one would leave the same window open only as
 		// long as the first takes to run, which is not something to depend on here.
+		//
+		// Seeded through the repository, not raw SQL's NOW(): stealStaleLease() judges this row by its actual
+		// (Hibernate-normalized) modified/created instant, and a raw-SQL NOW() round-trips through
+		// @TimeZoneStorage(NORMALIZE) off by whatever the JVM's local UTC offset happens to be - enough, under this
+		// run's own offset, to make the row look stale and have its lease stolen instead of blocking the request.
+		//
+		// No id set: JobEntity's id is @UuidGenerator-assigned, and giving it one of our own here would route the save
+		// through merge() instead of persist() - Hibernate then looks for an existing row with that id before writing,
+		// finds none (the table was just truncated), and raises a StaleObjectStateException instead. Nothing
+		// downstream in this test needs the id back.
+		jobRepository.saveAndFlush(JobEntity.create()
+			.withMunicipalityId(MUNICIPALITY_2281)
+			.withNamespace(NAMESPACE)
+			.withType(JobType.MOVE_LABEL)
+			.withStatus(JobStatus.RUNNING)
+			.withProgress(10)
+			.withTotal(100)
+			.withProcessed(10)
+			.withLabelId("ffe5f120-6a3b-4404-ace8-8ea87b559907"));
+
 		setupCall()
 			.withServicePath(path)
 			.withHttpMethod(POST)

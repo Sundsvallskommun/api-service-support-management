@@ -219,6 +219,51 @@ public class JobService {
 	}
 
 	/**
+	 * Clears the way for a new run of one kind in one namespace, stealing a stale lease rather than leaving the
+	 * namespace blocked for as long as {@code staleAfter} - the active-job row doubles as that lease: {@code modified}
+	 * is its heartbeat, {@code staleAfter} the duration one may go quiet for, and the guard in
+	 * {@code V1_60__add_active_label_move_guard.sql} (or its counterpart for another type) is what makes it exclusive.
+	 * <p>
+	 * Deliberately narrower than {@link #failStaleJobs(Duration)}: that sweep ends every kind of job in every namespace
+	 * that has gone quiet, on its own schedule; this steals the lease for exactly the one namespace and kind a caller is
+	 * about to start a new run against, on demand, so that a caller does not have to wait for the sweep's own cron to
+	 * get there first. A namespace with a genuinely active job is still refused - only one that has gone quiet longer
+	 * than {@code staleAfter} is failed and reclaimed.
+	 * <p>
+	 * Committed by the time this call returns (its own transaction, not the caller's): the row a stale lease is
+	 * reclaimed from must be failed - and that failure durable - before the caller's own {@link #create} can succeed
+	 * against the same unique constraint that refused it a moment ago.
+	 *
+	 * @param  namespace      the namespace to clear a lease in.
+	 * @param  municipalityId the id of the municipality the namespace belongs to.
+	 * @param  type           the kind of job to clear a lease for.
+	 * @param  staleAfter     how long a job may go without being written to before its lease is taken to be abandoned.
+	 * @return                {@code true} if a new run may proceed - no job was active, or a stale one was just failed
+	 *                        and reclaimed; {@code false} if a job is still genuinely active and the caller must wait.
+	 */
+	@Transactional
+	public boolean stealStaleLease(final String namespace, final String municipalityId, final JobType type, final Duration staleAfter) {
+		final var active = jobRepository.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(namespace, municipalityId, type, ACTIVE_STATUSES);
+		if (active.isEmpty()) {
+			return true;
+		}
+
+		final var job = active.get();
+		final var quietSince = now(systemDefault()).minus(staleAfter);
+		final var lastWrite = ofNullable(job.getModified()).orElse(job.getCreated());
+		if (!lastWrite.isBefore(quietSince)) {
+			return false;
+		}
+
+		LOG.warn("Job {} of type {} in namespace {} for municipality {} was last written to at {} and is ended as failed to reclaim its lease for a new run",
+			job.getId(), job.getType(), sanitizeForLogging(job.getNamespace()), sanitizeForLogging(job.getMunicipalityId()), lastWrite);
+		job.setStatus(FAILED);
+		job.setMessage(toStoredMessage(NOT_REPORTED_ON.formatted(staleAfter)));
+		jobRepository.saveAndFlush(job);
+		return true;
+	}
+
+	/**
 	 * Ends the jobs that stopped being reported on.
 	 * <p>
 	 * Work writes to its job as it goes, so a job that has not been written to for far longer than it takes to report is

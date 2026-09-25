@@ -31,7 +31,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
 
 /**
  * Label move IT tests.
@@ -136,8 +138,28 @@ class LabelMoveIT extends AbstractAppTest {
 
 	@Test
 	@DisplayName("Verification that a move is refused while another job is already running for the namespace, whichever kind it is")
-	@Sql(statements = RUNNING_MOVE_LABEL_JOB)
 	void test04_moveLabelIsRefusedWhileAnotherJobIsRunning() {
+		// Seeded through the repository, not @Sql's raw NOW() - stealStaleLease() judges this row by its actual
+		// (Hibernate-normalized) modified/created instant, and a raw-SQL NOW() round-trips through
+		// @TimeZoneStorage(NORMALIZE) off by whatever the JVM's local UTC offset happens to be (confirmed directly:
+		// a row inserted with NOW() while the JVM read back "2 hours old" under this run's CEST offset), which is
+		// wrong by more than enough to make this run look stale and get its lease stolen. A row this test creates
+		// through the same repository the app itself writes through carries no such offset.
+		//
+		// No id set: JobEntity's id is @UuidGenerator-assigned, and giving it one of our own here would route the save
+		// through merge() instead of persist() - Hibernate then looks for an existing row with that id before writing,
+		// finds none (the table was just truncated), and raises exactly the StaleObjectStateException that generator
+		// is there to prevent. Nothing downstream in this test needs the id back.
+		jobRepository.saveAndFlush(JobEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withType(MOVE_LABEL)
+			.withStatus(RUNNING)
+			.withProgress(10)
+			.withTotal(100)
+			.withProcessed(10)
+			.withLabelId(SUBTYPE_4));
+
 		setupCall()
 			.withServicePath(PATH + "/" + SUBTYPE_4 + "/move")
 			.withHttpMethod(POST)

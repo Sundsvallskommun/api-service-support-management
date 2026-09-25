@@ -223,6 +223,59 @@ class JobServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a new run is let through outright when no job of that kind is active in the namespace")
+	void stealStaleLease_noActiveJob_returnsTrueWithoutTouchingAnything() {
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.empty());
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		verify(jobRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a run genuinely still being reported on refuses a new one, rather than stealing a lease that is not actually stale")
+	void stealStaleLease_activeJobStillReporting_returnsFalseWithoutFailingIt() {
+		final var active = jobEntity(RUNNING).withModified(now(systemDefault()).minusMinutes(5));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(active));
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isFalse();
+
+		assertThat(active.getStatus()).isEqualTo(RUNNING);
+		verify(jobRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a job which has gone quiet longer than staleAfter is failed and its lease reclaimed for a new run, rather than leaving the namespace blocked until the sweep gets to it")
+	void stealStaleLease_activeJobGoneQuiet_failsItAndReturnsTrue() {
+		final var stale = jobEntity(RUNNING).withModified(now(systemDefault()).minusHours(2));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(stale));
+		when(jobRepositoryMock.saveAndFlush(stale)).thenReturn(stale);
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		assertThat(stale.getStatus()).isEqualTo(FAILED);
+		assertThat(stale.getMessage()).isEqualTo("Job was not reported on for PT30M and is taken to have ended with the instance carrying it out");
+		verify(jobRepositoryMock).saveAndFlush(stale);
+	}
+
+	@Test
+	@DisplayName("Verification that a job never reported on at all is judged by when it was created, since it has no modified of its own")
+	void stealStaleLease_activeJobNeverReportedOn_judgedByCreated() {
+		final var stale = jobEntity(PENDING).withCreated(now(systemDefault()).minusHours(2));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(stale));
+		when(jobRepositoryMock.saveAndFlush(stale)).thenReturn(stale);
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		assertThat(stale.getStatus()).isEqualTo(FAILED);
+		verify(jobRepositoryMock).saveAndFlush(stale);
+	}
+
+	@Test
 	@DisplayName("Verification that completing a job with a summary keeps the summary with it")
 	void completeWithMessage() {
 		final var entity = jobEntity(RUNNING);

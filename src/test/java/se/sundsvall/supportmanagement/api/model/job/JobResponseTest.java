@@ -1,9 +1,11 @@
 package se.sundsvall.supportmanagement.api.model.job;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
 
@@ -55,6 +57,7 @@ class JobResponseTest {
 		final var message = "some message";
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusMinutes(1);
+		final var affectedActions = List.of(AffectedAction.create().withId("action-id"));
 
 		final var bean = JobResponse.create()
 			.withJobId(jobId)
@@ -65,7 +68,8 @@ class JobResponseTest {
 			.withProcessed(processed)
 			.withMessage(message)
 			.withCreated(created)
-			.withModified(modified);
+			.withModified(modified)
+			.withAffectedActions(affectedActions);
 
 		assertThat(bean)
 			.isNotNull()
@@ -80,6 +84,7 @@ class JobResponseTest {
 				assertThat(b.getMessage()).isEqualTo(message);
 				assertThat(b.getCreated()).isEqualTo(created);
 				assertThat(b.getModified()).isEqualTo(modified);
+				assertThat(b.getAffectedActions()).isEqualTo(affectedActions);
 			});
 	}
 
