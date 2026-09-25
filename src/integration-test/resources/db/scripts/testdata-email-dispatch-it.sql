@@ -11,7 +11,8 @@ VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
        (1, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
        (1, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
        (1, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
-       (1, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN');
+       (1, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (1, 'BASE_URL', 'https://draken.test.local', 'STRING');
 
 -- -----------------------------------
 -- Errand
@@ -54,7 +55,3 @@ VALUES ('33333333-0000-0000-0000-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeee
 -- test03: CREATE/ERRAND event
 INSERT INTO notification_dispatch(id, errand_id, municipality_id, namespace, event_id, request_group_id, event_type, sub_type, description, executing_user_id, created)
 VALUES ('33333333-0000-0000-0000-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2281', 'NAMESPACE-1', 'evt-002', 'grp-002', 'CREATE', 'ERRAND', 'Nytt arende', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE));
-
--- test04: UPDATE/RESTRICTED event (should NOT match subscriber's {UPDATE, MESSAGE} filter)
-INSERT INTO notification_dispatch(id, errand_id, municipality_id, namespace, event_id, request_group_id, event_type, sub_type, description, executing_user_id, created)
-VALUES ('33333333-0000-0000-0000-000000000003', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2281', 'NAMESPACE-1', 'evt-003', 'grp-003', 'UPDATE', 'RESTRICTED', 'MAS/MAR-uppdatering', 'mas01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE));

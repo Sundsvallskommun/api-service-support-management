@@ -95,6 +95,25 @@ class ErrandsUpdateResourceFailureTest {
 	}
 
 	@Test
+	void updateErrandWithInvalidSilentHeader() {
+		// Call
+		webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.header("X-Silent", "maybe")
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create().withBusinessRelated(true))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody()
+			.jsonPath("$.title").isEqualTo("Bad Request")
+			.jsonPath("$.status").isEqualTo(400)
+			.jsonPath("$.detail").isEqualTo("Failed to convert 'X-Silent' with value: 'maybe'");
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
 	void updateErrandWithInvalidNamespace() {
 		// Call
 		final var response = webTestClient.patch()

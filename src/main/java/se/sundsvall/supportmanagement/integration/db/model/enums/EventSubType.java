@@ -9,7 +9,6 @@ public enum EventSubType {
 	HANDOVER_OUT,
 	MESSAGE,
 	NOTE,
-	RESTRICTED,
 	SYSTEM,
 	SUSPENSION;
 
