@@ -65,6 +65,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMe
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getStakeholderMatchingRole;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.retrieveUsername;
 
 @Service
@@ -180,6 +181,8 @@ public class CommunicationService {
 	}
 
 	public void sendEmail(final ErrandEntity errandEntity, final EmailRequest request) {
+		requireActive(errandEntity);
+
 		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
 			if (!headers.containsKey(EmailHeader.MESSAGE_ID)) {
 				headers.put(EmailHeader.MESSAGE_ID, List.of(MESSAGE_ID_TEMPLATE.formatted(UUID.randomUUID(), errandEntity.getNamespace())));
@@ -204,6 +207,7 @@ public class CommunicationService {
 
 	public void sendBulkEmail(final String namespace, final String municipalityId, final String id, final BulkEmailRequest request) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		requireActive(errandEntity);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, id, request.getAttachmentIds());
 		final var batchRequest = toEmailBatchRequest(request, toEmailAttachments(errandAttachments));
 
@@ -241,6 +245,7 @@ public class CommunicationService {
 
 	public void sendSms(final String namespace, final String municipalityId, final String id, final SmsRequest request) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		requireActive(entity);
 		messagingClient.sendSms(municipalityId, ASYNCHRONOUSLY, toSmsRequest(entity, request));
 
 		final var communicationEntity = communicationMapper.toCommunicationEntity(namespace, municipalityId, request)
@@ -253,6 +258,7 @@ public class CommunicationService {
 
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
+		requireActive(entity);
 		final var errandAttachments = errandAttachmentService.findByNamespaceAndMunicipalityIdAndErrandIdAndIdIn(namespace, municipalityId, entity.getId(), request.getAttachmentIds());
 
 		final var fullName = getFullName(municipalityId);
@@ -351,6 +357,7 @@ public class CommunicationService {
 	public void sendEmailNotificationToReporter(final String municipalityId, final String namespace, final String errandId, final String departmentName) {
 		LOGGER.info("Processing logic to send email notification to stakeholder with reporter role.");
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.COMMUNICATION, RW);
+		requireActive(errandEntity);
 		final var stakeholder = getStakeholderMatchingRole(errandEntity, "REPORTER");
 
 		if (isStakeholderEligibleForEmailNotification(stakeholder)) {
@@ -411,6 +418,8 @@ public class CommunicationService {
 	}
 
 	public void sendMessageNotification(final ErrandEntity errandEntity, final MessagingSettings messagingSettings) {
+		requireActive(errandEntity);
+
 		final var request = toMessagingMessageRequest(errandEntity, messagingSettings);
 
 		final var partyId = Optional.ofNullable(request.getMessages())

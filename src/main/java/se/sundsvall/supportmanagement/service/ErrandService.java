@@ -43,12 +43,15 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultLifecycle;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -58,8 +61,10 @@ public class ErrandService {
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandService.class);
 
 	private static final String BAD_CONTACT_REASON = "'%s' is not a valid contact reason for namespace '%s' and municipality with id '%s'";
+	private static final String ACTIVE_ERRAND_TO_DRAFT = "The errand '%s' is active, and an active errand never becomes a draft again";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
+	private static final String EVENT_LOG_ACTIVATE_ERRAND = "Ärendet har aktiverats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after a label was moved, and it keeps the labels it had. Move the label back, or give the errand labels that name the process it runs.";
 
@@ -157,7 +162,8 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
-		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
+		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter))
+			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		final var matches = repository.findAll(fullFilter, pageable);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
@@ -191,6 +197,7 @@ public class ErrandService {
 
 		// Everything the patch is held to on its own, before the errand is touched by it.
 		requireMatchingVersion(ifMatch, errandEntityToUpdate.getVersion(), id, namespace, municipalityId);
+		requireLifecycleTransition(errandEntityToUpdate, errand);
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
 		errandLabelService.validateLabels(namespace, municipalityId, errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
@@ -198,6 +205,9 @@ public class ErrandService {
 		final var labelsBeforePatch = nonNull(errand.getLabels())
 			? List.copyOf(ofNullable(errandEntityToUpdate.getLabels()).orElse(emptyList()))
 			: null;
+
+		// Held now, since the patch is about to overwrite the life cycle it is judged from.
+		final var activates = errandEntityToUpdate.isDraft() && ACTIVE.name().equals(errand.getLifecycle());
 
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
@@ -214,8 +224,8 @@ public class ErrandService {
 		}
 
 		final var entity = repository.saveAndFlush(errandEntity);
-		errandActionService.processErrandActions(entity, OperationType.UPDATE);
-		logUpdateEvent(entity, revisionService.createErrandRevision(entity), true);
+		errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
+		logUpdateEvent(entity, revisionService.createErrandRevision(entity), activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true);
 
 		return toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity)));
 	}
@@ -308,7 +318,8 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
-		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
+		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter))
+			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);
 	}
@@ -334,7 +345,7 @@ public class ErrandService {
 		errandLabelService.settleAccessLabels(entity);
 
 		final var saved = repository.saveAndFlush(entity);
-		logUpdateEvent(saved, revisionService.createErrandRevision(saved), false);
+		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, false);
 
 		return true;
 	}
@@ -385,15 +396,24 @@ public class ErrandService {
 	}
 
 	/**
+	 * Refuses a patch that would make an active errand a draft again.
+	 */
+	private static void requireLifecycleTransition(final ErrandEntity entity, final Errand patch) {
+		if (ACTIVE == entity.getLifecycle() && DRAFT.name().equals(patch.getLifecycle())) {
+			throw Problem.valueOf(BAD_REQUEST, ACTIVE_ERRAND_TO_DRAFT.formatted(entity.getId()));
+		}
+	}
+
+	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final boolean sendNotification) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean sendNotification) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), sendNotification, ERRAND);
+			eventService.createErrandEvent(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), sendNotification, ERRAND);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}

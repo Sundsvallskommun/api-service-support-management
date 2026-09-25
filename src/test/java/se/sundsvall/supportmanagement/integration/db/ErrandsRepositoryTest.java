@@ -3,8 +3,10 @@ package se.sundsvall.supportmanagement.integration.db;
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +21,7 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
@@ -27,6 +30,8 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.fail;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultLifecycle;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 /**
  * Errands repository tests.
@@ -137,6 +142,26 @@ class ErrandsRepositoryTest {
 		assertThat(errandEntity.get().getStakeholders().getFirst().getContactChannels())
 			.extracting(ContactChannelEntity::getType, ContactChannelEntity::getValue)
 			.containsExactly(tuple("TYPE-1", "VALUE-1"));
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiter = '|', quoteCharacter = '"', nullValues = "NONE", value = {
+		"NONE                                          | ACTIVE-1",
+		"errandNumber : 'DRAFT-1'                      | ",
+		"lifecycle : 'DRAFT'                           | DRAFT-1",
+		"lifecycle : 'DRAFT' or lifecycle : 'ACTIVE'   | ACTIVE-1,DRAFT-1",
+		"errandNumber : 'DRAFT-1' and lifecycle is not null | DRAFT-1"
+	})
+	void defaultLifecycleLeavesDraftsOutUnlessTheFilterNamesTheLifecycle(final String filterString, final String expectedErrandNumbers) {
+		errandsRepository.save(ErrandEntity.create().withNamespace("DRAFTS").withMunicipalityId(MUNICIPALITY_ID).withStatus("STATUS").withErrandNumber("DRAFT-1").withLifecycle(ErrandLifecycle.DRAFT));
+		errandsRepository.save(ErrandEntity.create().withNamespace("DRAFTS").withMunicipalityId(MUNICIPALITY_ID).withStatus("STATUS").withErrandNumber("ACTIVE-1"));
+
+		final Specification<ErrandEntity> filter = Optional.ofNullable(filterString).<Specification<ErrandEntity>>map(filterSpecificationConverter::convert).orElse(null);
+		final var search = withNamespace("DRAFTS").and(withDefaultLifecycle(filter));
+
+		assertThat(errandsRepository.findAll(Optional.ofNullable(filter).map(search::and).orElse(search)))
+			.extracting(ErrandEntity::getErrandNumber)
+			.containsExactlyInAnyOrderElementsOf(Optional.ofNullable(expectedErrandNumbers).map(numbers -> List.of(numbers.split(","))).orElse(List.of()));
 	}
 
 	@ParameterizedTest

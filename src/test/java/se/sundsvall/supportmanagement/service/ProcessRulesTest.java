@@ -22,12 +22,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.ERRAND_DRAFT;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_ENGINE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_KEY;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_COMPLETED;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.START_PENDING;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
@@ -69,41 +72,41 @@ class ProcessRulesTest {
 	@Test
 	@DisplayName("Verification that an errand without a process whose labels name one may be started with that key, whatever the start mode")
 	void anErrandWithoutAProcessMayBeStartedWithTheKeyOfItsLabels() {
-		assertThat(ProcessRules.startOptionsOf(true, List.of(), () -> selection(SUPERVISION, MANUAL)))
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(), () -> selection(SUPERVISION, MANUAL)))
 			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(SUPERVISION)));
-		assertThat(ProcessRules.startOptionsOf(true, List.of(), () -> selection(SUPERVISION, AUTOMATIC)))
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(), () -> selection(SUPERVISION, AUTOMATIC)))
 			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(SUPERVISION)));
 	}
 
 	@Test
 	@DisplayName("Verification that an errand whose labels point in two directions offers both keys, so that a person can choose")
 	void anAmbiguousErrandOffersEveryKey() {
-		assertThat(ProcessRules.startOptionsOf(true, List.of(), () -> ambiguous(APPLICATION, SUPERVISION)))
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(), () -> ambiguous(APPLICATION, SUPERVISION)))
 			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION, SUPERVISION)));
 	}
 
 	@Test
 	@DisplayName("Verification that the namespace, a live instance and a completed one stand in the way in that order, and that none of them reads the labels")
 	void theObstaclesAreAnsweredWithoutReadingTheLabels() {
-		assertThat(ProcessRules.startOptionsOf(false, List.of(instance(WAITING, APPLICATION)), LABELS_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_ENGINE));
-		assertThat(ProcessRules.startOptionsOf(true, List.of(instance(WAITING, APPLICATION), instance(COMPLETED, APPLICATION)), LABELS_NEVER_ASKED))
+		assertThat(ProcessRules.startOptionsOf(false, ACTIVE, List.of(instance(WAITING, APPLICATION)), LABELS_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_ENGINE));
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(instance(WAITING, APPLICATION), instance(COMPLETED, APPLICATION)), LABELS_NEVER_ASKED))
 			.isEqualTo(ProcessStartOptions.unavailable(LIVE_INSTANCE));
-		assertThat(ProcessRules.startOptionsOf(true, List.of(instance(FAILED, APPLICATION), instance(COMPLETED, APPLICATION)), LABELS_NEVER_ASKED))
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(instance(FAILED, APPLICATION), instance(COMPLETED, APPLICATION)), LABELS_NEVER_ASKED))
 			.isEqualTo(ProcessStartOptions.unavailable(PROCESS_COMPLETED));
 	}
 
 	@Test
 	@DisplayName("Verification that an errand without a single label naming a process has nothing to start")
 	void anErrandWithoutAProcessKeyHasNothingToStart() {
-		assertThat(ProcessRules.startOptionsOf(true, List.of(), () -> ProcessKeySelection.NONE)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(), () -> ProcessKeySelection.NONE)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
 	}
 
 	@Test
 	@DisplayName("Verification that an errand whose only instance failed offers only the key of the process it has run")
 	void anErrandWithAFailedStartOffersOnlyItsOwnProcess() {
-		assertThat(ProcessRules.startOptionsOf(true, List.of(instance(FAILED, APPLICATION)), () -> ambiguous(APPLICATION, SUPERVISION)))
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(instance(FAILED, APPLICATION)), () -> ambiguous(APPLICATION, SUPERVISION)))
 			.isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION)));
-		assertThat(ProcessRules.startOptionsOf(true, List.of(instance(FAILED, APPLICATION)), () -> selection(SUPERVISION, AUTOMATIC)))
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(instance(FAILED, APPLICATION)), () -> selection(SUPERVISION, AUTOMATIC)))
 			.isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
 	}
 
@@ -113,25 +116,34 @@ class ProcessRulesTest {
 		final var oversized = "k".repeat(PROCESS_KEY_LENGTH + 1);
 		final var fitting = "k".repeat(PROCESS_KEY_LENGTH);
 
-		assertThat(ProcessRules.startOptionsOf(true, List.of(), () -> selection(oversized, AUTOMATIC))).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
-		assertThat(ProcessRules.startOptionsOf(true, List.of(), () -> ambiguous(oversized, APPLICATION))).isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION)));
-		assertThat(ProcessRules.startOptionsOf(true, List.of(), () -> selection(fitting, AUTOMATIC))).isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(fitting)));
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(), () -> selection(oversized, AUTOMATIC))).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(), () -> ambiguous(oversized, APPLICATION))).isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION)));
+		assertThat(ProcessRules.startOptionsOf(true, ACTIVE, List.of(), () -> selection(fitting, AUTOMATIC))).isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(fitting)));
 	}
 
 	@Test
 	@DisplayName("Verification that the startable field shows a start on its way as START_PENDING, and names no key then")
 	void aStartOnItsWayIsShownAsPending() {
-		assertThat(ProcessRules.startableOf(true, List.of(), () -> selection(APPLICATION, MANUAL), () -> true)).isEqualTo(ProcessStartOptions.unavailable(START_PENDING));
-		assertThat(ProcessRules.startableOf(true, List.of(), () -> selection(APPLICATION, MANUAL), () -> false)).isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION)));
+		assertThat(ProcessRules.startableOf(true, ACTIVE, List.of(), () -> selection(APPLICATION, MANUAL), () -> true)).isEqualTo(ProcessStartOptions.unavailable(START_PENDING));
+		assertThat(ProcessRules.startableOf(true, ACTIVE, List.of(), () -> selection(APPLICATION, MANUAL), () -> false)).isEqualTo(new ProcessStartOptions(AVAILABLE, List.of(APPLICATION)));
 	}
 
 	@Test
 	@DisplayName("Verification that the outbox is asked about a start on its way only when a start would otherwise be available")
 	void theOutboxIsAskedOnlyWhenAStartIsAvailable() {
-		assertThat(ProcessRules.startableOf(false, List.of(), LABELS_NEVER_ASKED, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_ENGINE));
-		assertThat(ProcessRules.startableOf(true, List.of(instance(WAITING, APPLICATION)), LABELS_NEVER_ASKED, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(LIVE_INSTANCE));
-		assertThat(ProcessRules.startableOf(true, List.of(instance(COMPLETED, APPLICATION)), LABELS_NEVER_ASKED, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(PROCESS_COMPLETED));
-		assertThat(ProcessRules.startableOf(true, List.of(), () -> ProcessKeySelection.NONE, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
+		assertThat(ProcessRules.startableOf(false, ACTIVE, List.of(), LABELS_NEVER_ASKED, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_ENGINE));
+		assertThat(ProcessRules.startableOf(true, ACTIVE, List.of(instance(WAITING, APPLICATION)), LABELS_NEVER_ASKED, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(LIVE_INSTANCE));
+		assertThat(ProcessRules.startableOf(true, ACTIVE, List.of(instance(COMPLETED, APPLICATION)), LABELS_NEVER_ASKED, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(PROCESS_COMPLETED));
+		assertThat(ProcessRules.startableOf(true, ACTIVE, List.of(), () -> ProcessKeySelection.NONE, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_KEY));
+	}
+
+	@Test
+	@DisplayName("Verification that a draft stands in the way after the namespace and before the process rows, without reading the labels or the outbox")
+	void aDraftIsAnObstacleOfItsOwn() {
+		assertThat(ProcessRules.startOptionsOf(true, DRAFT, List.of(), LABELS_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(ERRAND_DRAFT));
+		assertThat(ProcessRules.startOptionsOf(true, DRAFT, List.of(instance(WAITING, APPLICATION)), LABELS_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(ERRAND_DRAFT));
+		assertThat(ProcessRules.startOptionsOf(false, DRAFT, List.of(), LABELS_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(NO_PROCESS_ENGINE));
+		assertThat(ProcessRules.startableOf(true, DRAFT, List.of(), LABELS_NEVER_ASKED, OUTBOX_NEVER_ASKED)).isEqualTo(ProcessStartOptions.unavailable(ERRAND_DRAFT));
 	}
 
 	@Test

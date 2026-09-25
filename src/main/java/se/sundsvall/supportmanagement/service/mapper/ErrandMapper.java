@@ -40,6 +40,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -92,6 +93,7 @@ public final class ErrandMapper {
 			.withResolution(errand.getResolution())
 			.withStakeholders(toStakeholderEntities(errandEntity, errand.getStakeholders()))
 			.withStatus(errand.getStatus())
+			.withLifecycle(ofNullable(errand.getLifecycle()).map(ErrandLifecycle::valueOf).orElse(null))
 			.withTitle(errand.getTitle())
 			.withErrandNumber(errand.getErrandNumber())
 			.withSuspendedFrom(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedFrom).orElse(null))
@@ -138,6 +140,7 @@ public final class ErrandMapper {
 		ofNullable(errand.getExternalTags()).ifPresent(value -> updateExternalTags(entity, value, writableKey.apply(ErrandField.EXTERNAL_TAGS)));
 		ofNullable(errand.getPriority()).ifPresent(value -> entity.setPriority(value.name()));
 		ofNullable(errand.getStatus()).ifPresent(entity::setStatus);
+		ofNullable(errand.getLifecycle()).map(ErrandLifecycle::valueOf).ifPresent(entity::setLifecycle);
 		ofNullable(errand.getTitle()).ifPresent(entity::setTitle);
 		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
 		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
@@ -292,6 +295,7 @@ public final class ErrandMapper {
 		entry(ErrandField.ERRAND_NUMBER, (errand, e, _, _) -> errand.setErrandNumber(e.getErrandNumber())),
 		entry(ErrandField.TITLE, (errand, e, _, _) -> errand.setTitle(e.getTitle())),
 		entry(ErrandField.STATUS, (errand, e, _, _) -> errand.setStatus(e.getStatus())),
+		entry(ErrandField.LIFECYCLE, (errand, e, _, _) -> errand.setLifecycle(ofNullable(e.getLifecycle()).map(ErrandLifecycle::name).orElse(null))),
 		entry(ErrandField.RESOLUTION, (errand, e, _, _) -> errand.setResolution(e.getResolution())),
 		entry(ErrandField.CHANNEL, (errand, e, _, _) -> errand.setChannel(e.getChannel())),
 		entry(ErrandField.CREATED, (errand, e, _, _) -> errand.setCreated(e.getCreated())),
@@ -329,6 +333,7 @@ public final class ErrandMapper {
 		entry(ErrandField.ERRAND_NUMBER, Errand::getErrandNumber),
 		entry(ErrandField.TITLE, Errand::getTitle),
 		entry(ErrandField.STATUS, Errand::getStatus),
+		entry(ErrandField.LIFECYCLE, Errand::getLifecycle),
 		entry(ErrandField.RESOLUTION, Errand::getResolution),
 		entry(ErrandField.CHANNEL, Errand::getChannel),
 		entry(ErrandField.CREATED, Errand::getCreated),

@@ -153,7 +153,7 @@ class ErrandProcessResource {
 			description = "Not found — the errand does not exist in the namespace",
 			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "409",
-			description = "Conflict — the errand already has a live process, its process has run to its end, or a start of another process is already on its way",
+			description = "Conflict — the errand is a draft, already has a live process, its process has run to its end, or a start of another process is already on its way",
 			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Void> startProcess(

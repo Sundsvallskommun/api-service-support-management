@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -51,12 +52,22 @@ class ErrandListenerTest {
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
 		assertThat(entity.getTouched()).isCloseTo(now(), within(1, SECONDS));
 		assertThat(entity.getStakeholders().getFirst().getErrandEntity()).isSameAs(entity);
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "touched", "stakeholders", "timeMeasures", "status", "previousStatus", "assignedUserId");
+		assertThat(entity.getLifecycle()).isEqualTo(ErrandLifecycle.ACTIVE);
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "touched", "stakeholders", "timeMeasures", "status", "lifecycle", "previousStatus", "assignedUserId");
 		assertThat(entity.getTimeMeasures()).isNotEmpty().hasSize(1);
 		assertThat(entity.getTimeMeasures().getFirst()).isNotNull();
 		assertThat(entity.getTimeMeasures().getFirst().getStartTime()).isEqualTo(entity.getCreated());
 		assertThat(entity.getTimeMeasures().getFirst().getStatus()).isEqualTo(status);
 		assertThat(entity.getTimeMeasures().getFirst().getAdministrator()).isEqualTo(loginName);
+	}
+
+	@Test
+	void onCreateKeepsADraft() {
+		final var entity = new ErrandEntity().withStatus("status").withLifecycle(ErrandLifecycle.DRAFT);
+
+		errandListener.onCreate(entity);
+
+		assertThat(entity.getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
 	}
 
 	@Test

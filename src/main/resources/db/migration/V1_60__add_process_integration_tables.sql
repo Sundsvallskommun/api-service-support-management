@@ -82,3 +82,6 @@ create table if not exists errand_process_signal (
     constraint fk_eps_process foreign key (errand_process_id)
         references errand_process (id) on delete cascade
 ) engine=InnoDB;
+
+alter table if exists errand
+    add column if not exists lifecycle varchar(16) default 'ACTIVE' not null;

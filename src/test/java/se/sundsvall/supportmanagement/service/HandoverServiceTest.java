@@ -39,6 +39,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.HandoverIdempotencyEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -56,9 +57,11 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @ExtendWith(MockitoExtension.class)
@@ -383,6 +386,26 @@ class HandoverServiceTest {
 			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest()))
 			.isInstanceOf(RuntimeException.class)
 			.withMessageContaining("relation service down");
+	}
+
+	@Test
+	void handoverOfADraftIsAConflictAndCreatesNothing() {
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, RW)).thenReturn(sourceEntity().withLifecycle(ErrandLifecycle.DRAFT));
+		mockValidations();
+
+		final var request = minimalRequest();
+
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+				assertThat(problem.getDetail()).isEqualTo("The errand '%s' is a draft. Make the errand active first".formatted(ERRAND_ID));
+			});
+
+		verify(errandServiceMock, never()).createErrand(any(), any(), any(), any());
+		verifyNoInteractions(relationClientMock, eventServiceMock, attachmentRepositoryMock);
 	}
 
 	@Test

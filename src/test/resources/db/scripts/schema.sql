@@ -296,6 +296,7 @@
         suspended_to datetime(6),
         touched datetime(6),
         version bigint default 0 not null,
+        lifecycle varchar(16) default 'ACTIVE' not null check ((lifecycle in ('DRAFT','ACTIVE'))),
         namespace varchar(32) not null,
         status varchar(64),
         type varchar(128),

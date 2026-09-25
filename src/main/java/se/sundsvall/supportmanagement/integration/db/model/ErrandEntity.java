@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -19,14 +20,18 @@ import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
 
 import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.EAGER;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static org.hibernate.type.SqlTypes.VARCHAR;
 
 @Entity
 @Table(name = "errand",
@@ -108,6 +113,11 @@ public class ErrandEntity {
 
 	@Column(name = "status", length = 64)
 	private String status;
+
+	@Enumerated(STRING)
+	@JdbcTypeCode(VARCHAR)
+	@Column(name = "lifecycle", length = 16, nullable = false, columnDefinition = "varchar(16) default 'ACTIVE'")
+	private ErrandLifecycle lifecycle;
 
 	@Column(name = "resolution")
 	private String resolution;
@@ -360,6 +370,29 @@ public class ErrandEntity {
 	public ErrandEntity withStatus(final String status) {
 		this.status = status;
 		return this;
+	}
+
+	public ErrandLifecycle getLifecycle() {
+		return lifecycle;
+	}
+
+	public void setLifecycle(final ErrandLifecycle lifecycle) {
+		this.lifecycle = lifecycle;
+	}
+
+	public ErrandEntity withLifecycle(final ErrandLifecycle lifecycle) {
+		this.lifecycle = lifecycle;
+		return this;
+	}
+
+	/**
+	 * Whether the errand is a draft, which SupportManagement keeps its processes, actions, communication, notifications and
+	 * default search away from.
+	 *
+	 * @return true when the life cycle of the errand is DRAFT.
+	 */
+	public boolean isDraft() {
+		return ErrandLifecycle.DRAFT == lifecycle;
 	}
 
 	public String getResolution() {
@@ -744,7 +777,8 @@ public class ErrandEntity {
 		final ErrandEntity that = (ErrandEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(externalTags, that.externalTags) && Objects.equals(stakeholders, that.stakeholders) && Objects.equals(contactReasonEntity, that.contactReasonEntity) && Objects.equals(contactReasonDescription,
 			that.contactReasonDescription) && Objects.equals(businessRelated, that.businessRelated) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(namespace, that.namespace) && Objects.equals(title, that.title) && Objects.equals(
-				category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description) && Objects.equals(channel, that.channel)
+				category, that.category) && Objects.equals(type, that.type) && Objects.equals(status, that.status) && Objects.equals(lifecycle, that.lifecycle) && Objects.equals(resolution, that.resolution) && Objects.equals(description, that.description)
+			&& Objects.equals(channel, that.channel)
 			&& Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail,
 				that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(jsonParameters, that.jsonParameters) && Objects.equals(attachments, that.attachments) && Objects.equals(notifications, that.notifications) && Objects
 					.equals(actions, that.actions) && Objects.equals(phases, that.phases) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(
@@ -756,7 +790,7 @@ public class ErrandEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, resolution, description, channel, priority, reporterUserId,
+		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, lifecycle, resolution, description, channel, priority, reporterUserId,
 			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, actions, phases, suspendedTo, suspendedFrom, labels, accessLabels, created, modified, touched, errandNumber, tempPreviousStatus,
 			previousStatus,
 			timeMeasures, measures);
@@ -778,6 +812,7 @@ public class ErrandEntity {
 			", category='" + category + '\'' +
 			", type='" + type + '\'' +
 			", status='" + status + '\'' +
+			", lifecycle=" + lifecycle +
 			", resolution='" + resolution + '\'' +
 			", description='" + description + '\'' +
 			", channel='" + channel + '\'' +

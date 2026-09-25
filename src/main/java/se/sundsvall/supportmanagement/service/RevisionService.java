@@ -40,6 +40,7 @@ import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
@@ -64,6 +65,8 @@ public class RevisionService {
 		"labels", "metadataLabelId",
 		"accessLabels", "metadataLabelId",
 		"externalTags", "key");
+
+	private static final String LIFECYCLE_ATTRIBUTE = "lifecycle";
 
 	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occurred during comparison";
 
@@ -278,7 +281,8 @@ public class RevisionService {
 
 	/**
 	 * Reads a snapshot the way two of them are compared and diffed: the attributes that say nothing about the errand are
-	 * left out, and the collections without an order of their own are sorted by the field that tells their elements apart.
+	 * left out, the collections without an order of their own are sorted by the field that tells their elements apart,
+	 * and a snapshot without a life cycle reads as an active errand.
 	 */
 	private com.fasterxml.jackson.databind.JsonNode toJsonNode(final String value) {
 		try {
@@ -287,6 +291,10 @@ public class RevisionService {
 
 			final var snapshot = JACKSON2_MAPPER.readTree(document.jsonString());
 			UNORDERED_COLLECTIONS.forEach((name, sortKey) -> sortBy(snapshot.get(name), sortKey));
+
+			if (snapshot instanceof final ObjectNode object && !object.has(LIFECYCLE_ATTRIBUTE)) {
+				object.put(LIFECYCLE_ATTRIBUTE, ACTIVE.name());
+			}
 
 			return snapshot;
 		} catch (final Exception e) {

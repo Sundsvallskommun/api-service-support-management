@@ -14,6 +14,7 @@ public enum ErrandField {
 	ERRAND_NUMBER("errandNumber", false),
 	TITLE("title", false),
 	STATUS("status", false),
+	LIFECYCLE("lifecycle", false),
 	RESOLUTION("resolution", false),
 	CHANNEL("channel", false),
 	CREATED("created", false),

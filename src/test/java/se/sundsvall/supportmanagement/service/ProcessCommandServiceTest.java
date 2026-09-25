@@ -58,6 +58,7 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProc
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
@@ -226,6 +227,21 @@ class ProcessCommandServiceTest {
 
 		verifyNothingWritten();
 		verifyNoInteractions(processRepositoryMock);
+	}
+
+	@Test
+	void aStartOfADraftIsAConflict() {
+		errand.setLifecycle(DRAFT);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).isEqualTo("The errand 'errandId' is a draft. Make the errand active first");
+			});
+
+		verifyNothingWritten();
+		verifyNoInteractions(processKeySelectorMock);
 	}
 
 	@Test

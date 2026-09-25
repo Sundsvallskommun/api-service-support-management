@@ -14,6 +14,7 @@ import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -24,6 +25,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.UUID.fromString;
 import static org.apache.commons.lang3.Strings.CI;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
@@ -37,6 +39,7 @@ public class ServiceUtil {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceUtil.class);
 	private static final String MIME_ERROR_MSG = "Exception when detecting mime type of file with filename '{}'";
 	private static final String HASH_ALGORITHM = "SHA-256";
+	private static final String ERRAND_IS_A_DRAFT = "The errand '%s' is a draft. Make the errand active first";
 	private static final Tika DETECTOR = new Tika();
 	private static final int REQUEST_GROUP_ID_LENGTH = 36;
 	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
@@ -86,6 +89,29 @@ public class ServiceUtil {
 	 */
 	public static String requireAdUser(final String reason) {
 		return ofNullable(getAdUser()).orElseThrow(() -> Problem.valueOf(FORBIDDEN, reason));
+	}
+
+	/**
+	 * Refuses a draft with 409, for what is done only with an active errand: communicating about it, notifying about it,
+	 * starting its process and handing it over.
+	 *
+	 * @param  errand                                       the errand to act on.
+	 * @throws se.sundsvall.dept44.problem.ThrowableProblem 409 when the errand is a draft.
+	 */
+	public static void requireActive(final ErrandEntity errand) {
+		if (errand.isDraft()) {
+			throw draftConflict(errand.getId());
+		}
+	}
+
+	/**
+	 * The 409 a draft is refused with.
+	 *
+	 * @param  errandId the id of the draft.
+	 * @return          the problem to throw.
+	 */
+	public static ThrowableProblem draftConflict(final String errandId) {
+		return Problem.valueOf(CONFLICT, ERRAND_IS_A_DRAFT.formatted(errandId));
 	}
 
 	/**

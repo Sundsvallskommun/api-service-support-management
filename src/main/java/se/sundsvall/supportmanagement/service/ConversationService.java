@@ -44,6 +44,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.t
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessagePage;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageRequest;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMultipartFiles;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 
 @Service
 public class ConversationService {
@@ -85,7 +86,7 @@ public class ConversationService {
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION, RW);
+		requireActive(accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.CONVERSATION, RW));
 		// Create conversation in MessageExchange
 		final var createResponse = messageExchangeClient.createConversation(municipalityId, messageExchangeNamespace, toMessageExchangeConversation(municipalityId, messageExchangeNamespace, conversationRequest));
 
@@ -151,7 +152,7 @@ public class ConversationService {
 	}
 
 	public void createMessage(final String municipalityId, final String namespace, final String errandId, final String conversationId, final MessageRequest messageRequest, final List<MultipartFile> attachments) {
-		accessControlService.verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.CONVERSATION_MESSAGE, RW);
+		requireActive(accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.CONVERSATION_MESSAGE, RW));
 		final var conversationEntity = getConversationEntity(municipalityId, namespace, errandId, conversationId);
 
 		// Fetch referenced errand attachments and convert to MultipartFiles

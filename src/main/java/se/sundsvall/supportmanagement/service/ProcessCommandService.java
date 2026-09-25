@@ -31,6 +31,7 @@ import static se.sundsvall.supportmanagement.service.ProcessKeySelector.excerptO
 import static se.sundsvall.supportmanagement.service.ProcessRules.NO_PROCESS_CONSUMER;
 import static se.sundsvall.supportmanagement.service.ProcessRules.requireProcessConsumer;
 import static se.sundsvall.supportmanagement.service.ProcessRules.startOptionsOf;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.draftConflict;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireAdUser;
 
 /**
@@ -129,7 +130,7 @@ public class ProcessCommandService {
 		final var runsProcesses = namespaceConfigService.getProcessConsumer(namespace, municipalityId).isPresent();
 		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
 
-		final var options = startOptionsOf(runsProcesses, instances, () -> processKeySelector.select(errand));
+		final var options = startOptionsOf(runsProcesses, errand.getLifecycle(), instances, () -> processKeySelector.select(errand));
 		final var chosenKey = chooseProcessKey(namespace, municipalityId, errandId, options, instances, processKey);
 		final var alreadyOnItsWay = isAlreadyOnItsWay(errandId, chosenKey);
 
@@ -195,15 +196,16 @@ public class ProcessCommandService {
 	}
 
 	/**
-	 * The key a start names. Throws 409 for a live instance and for a completed one, and 400 when the namespace runs no
-	 * process, when no key can be started, and when the request does not choose among several keys or names one not
-	 * offered.
+	 * The key a start names. Throws 409 for a draft, for a live instance and for a completed one, and 400 when the
+	 * namespace runs no process, when no key can be started, and when the request does not choose among several keys or
+	 * names one not offered.
 	 */
 	private static String chooseProcessKey(final String namespace, final String municipalityId, final String errandId, final ProcessStartOptions options,
 		final List<ErrandProcessEntity> instances, final String requestedKey) {
 
 		return switch (options.status()) {
 			case NO_PROCESS_ENGINE -> throw Problem.valueOf(BAD_REQUEST, NO_PROCESS_CONSUMER.formatted(namespace, municipalityId));
+			case ERRAND_DRAFT -> throw draftConflict(errandId);
 			case LIVE_INSTANCE -> throw Problem.valueOf(CONFLICT, LIVE_PROCESS_IN_THE_WAY.formatted(errandId));
 			case PROCESS_COMPLETED -> throw Problem.valueOf(CONFLICT, PROCESS_LIFE_OVER.formatted(errandId));
 			case NO_PROCESS_KEY -> throw Problem.valueOf(BAD_REQUEST, instances.isEmpty()

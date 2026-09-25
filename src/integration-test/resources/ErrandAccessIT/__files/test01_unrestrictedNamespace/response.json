@@ -18,6 +18,10 @@
 			"level": "RW"
 		},
 		{
+			"field": "lifecycle",
+			"level": "RW"
+		},
+		{
 			"field": "resolution",
 			"level": "RW"
 		},

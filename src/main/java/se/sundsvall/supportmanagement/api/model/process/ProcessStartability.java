@@ -23,5 +23,8 @@ public enum ProcessStartability {
 	NO_PROCESS_KEY,
 
 	/** The namespace does not run processes at all. */
-	NO_PROCESS_ENGINE
+	NO_PROCESS_ENGINE,
+
+	/** The errand is a draft, and a process is started only once it has been made active. */
+	ERRAND_DRAFT
 }

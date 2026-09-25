@@ -110,13 +110,15 @@ class ErrandsResource {
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Read matching errands", description = "Query for errands with or without filters. The resource allows the client a wide range of variations on how to filter the result.", responses = {
-		@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
-		@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-			Problem.class, ConstraintViolationProblem.class
-		}))),
-		@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	})
+	@Operation(summary = "Read matching errands",
+		description = "Query for errands with or without filters. The resource allows the client a wide range of variations on how to filter the result. Drafts are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'.",
+		responses = {
+			@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+				Problem.class, ConstraintViolationProblem.class
+			}))),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		})
 	ResponseEntity<Page<Errand>> findErrands(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
@@ -181,7 +183,7 @@ class ErrandsResource {
 	}
 
 	@GetMapping(path = "/count", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Count errands", description = "Counts errands based on the provided filters", responses = {
+	@Operation(summary = "Count errands", description = "Counts errands based on the provided filters. Drafts are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'.", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class

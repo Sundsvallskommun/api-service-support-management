@@ -1,6 +1,7 @@
 {
 	"id": "aa000000-0000-0000-0000-0000000000a2",
 	"errandNumber": "PN-26010002",
+	"lifecycle": "ACTIVE",
 	"title": "Errand without a process",
 	"priority": "MEDIUM",
 	"status": "STATUS-1",

@@ -54,6 +54,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  * <pre>
  * 1. process consumer for (municipalityId, namespace)?   no   -&gt; return
  *    event type CREATE, UPDATE or DELETE?                no   -&gt; throw, which takes the errand change down
+ *    errand a draft?                                     yes  -&gt; return
  * 2. X-Trigger-Process: false, from a non ad identity?   yes  -&gt; return                 (loop guard, layer 1)
  *                    commands (PROCESS, SIGNAL) and deletions skip steps 2, 3 and 4
  * 3. event sub type among the process triggers?          no   -&gt; return                 (layer 2)
@@ -166,18 +167,8 @@ public class ProcessEventPublisher {
 		}
 
 		final var processEventType = toProcessEventType(eventType);
-		final var guarded = !eventSubType.isCommand() && DELETE != eventType;
 
-		if (guarded && isOptedOut()) {
-			LOG.debug("No process event written for errand {}: the write asked not to wake the process", sanitizeForLogging(errand.getId()));
-			return;
-		}
-
-		if (guarded && !namespaceConfigService.getProcessTriggers(namespace, municipalityId).contains(eventSubType)) {
-			return;
-		}
-
-		if (guarded && !concludedByPerson(concludesDecision) && isRateExceeded(errand)) {
+		if (isHeldBack(errand, eventType, eventSubType, concludesDecision)) {
 			return;
 		}
 
@@ -218,6 +209,34 @@ public class ProcessEventPublisher {
 		if (isFirstRowOfTransaction(errand.getId())) {
 			applicationEventPublisher.publishEvent(new ProcessEventWritten(errand.getId()));
 		}
+	}
+
+	/**
+	 * Whether the event is kept from the process before its key is looked for: always for a draft, and for an event that
+	 * is neither a command nor a deletion also when the write asked not to wake the process, when its sub type is no
+	 * process trigger of the namespace, and when the emergency brake has tripped - which a decision concluded by a person
+	 * passes.
+	 */
+	private boolean isHeldBack(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final boolean concludesDecision) {
+		if (errand.isDraft()) {
+			LOG.debug("No process event written for errand {}: the errand is a draft", sanitizeForLogging(errand.getId()));
+			return true;
+		}
+
+		if (eventSubType.isCommand() || DELETE == eventType) {
+			return false;
+		}
+
+		if (isOptedOut()) {
+			LOG.debug("No process event written for errand {}: the write asked not to wake the process", sanitizeForLogging(errand.getId()));
+			return true;
+		}
+
+		if (!namespaceConfigService.getProcessTriggers(errand.getNamespace(), errand.getMunicipalityId()).contains(eventSubType)) {
+			return true;
+		}
+
+		return !concludedByPerson(concludesDecision) && isRateExceeded(errand);
 	}
 
 	/**

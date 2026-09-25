@@ -7,6 +7,7 @@
 	],
 	"touched": "${json-unit.any-string}",
 	"errandNumber": "${json-unit.regex}(KC-\\d{8})",
+	"lifecycle": "ACTIVE",
 	"created": "${json-unit.any-string}",
 	"channel": "Web",
 	"contactReasonDescription": "Contact reason description for json params test",

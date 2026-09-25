@@ -43,6 +43,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import tools.jackson.databind.ObjectMapper;
 
@@ -163,6 +164,7 @@ class ErrandMapperTest {
 			.withPriority(Priority.valueOf(PRIORITY))
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatus(STATUS)
+			.withLifecycle("ACTIVE")
 			.withTitle(TITLE)
 			.withTouched(TOUCHED)
 			.withResolution(RESOLUTION)
@@ -219,6 +221,7 @@ class ErrandMapperTest {
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatus(STATUS)
+			.withLifecycle(ErrandLifecycle.ACTIVE)
 			.withTitle(TITLE)
 			.withType(TYPE)
 			.withTouched(TOUCHED)
@@ -913,6 +916,24 @@ class ErrandMapperTest {
 	@Test
 	void testUpdateEntityWithNull() {
 		assertThat(updateEntity(createEntity(), null)).usingRecursiveComparison().isEqualTo(createEntity());
+	}
+
+	@Test
+	void testLifecycleIsMappedToTheEntityAndLeftToTheListenerWhenNotSent() {
+		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand().withLifecycle("DRAFT")).getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
+		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand().withLifecycle(null)).getLifecycle()).isNull();
+	}
+
+	@Test
+	void testLifecycleIsMappedToTheErrand() {
+		assertThat(toErrand(createEntity().withLifecycle(ErrandLifecycle.DRAFT)).getLifecycle()).isEqualTo("DRAFT");
+		assertThat(toErrand(createEntity().withLifecycle(null)).getLifecycle()).isNull();
+	}
+
+	@Test
+	void testUpdateEntitySetsTheLifecycleOnlyWhenThePatchCarriesIt() {
+		assertThat(updateEntity(createEntity().withLifecycle(ErrandLifecycle.DRAFT), Errand.create().withLifecycle("ACTIVE")).getLifecycle()).isEqualTo(ErrandLifecycle.ACTIVE);
+		assertThat(updateEntity(createEntity().withLifecycle(ErrandLifecycle.DRAFT), Errand.create().withTitle(TITLE)).getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
 	}
 
 	@Test

@@ -15,6 +15,7 @@
 	],
 	"touched": "${json-unit.any-string}",
 	"errandNumber": "KC-23020003",
+	"lifecycle": "ACTIVE",
 	"created": "2022-03-01T12:00:00+01:00",
 	"channel": "Updated channel",
 	"contactReasonDescription": "This is an updated contact reason description",
