@@ -60,6 +60,10 @@ class AccessControlChokePointTest {
 		// operation (move-label job), not a user request, so there is no caller to authorize.
 		se.sundsvall.supportmanagement.service.LabelMoveWorker.class,
 
+		// LabelMergeWorker re-computes errand label sets after source labels are merged into a destination. Same
+		// reasoning as LabelMoveWorker: triggered by a system operation (merge-labels job), not a user request.
+		se.sundsvall.supportmanagement.service.LabelMergeWorker.class,
+
 		// MetadataService only reads errands to check whether metadata is referenced. It cannot inject
 		// AccessControlService without creating a circular dependency
 		// (metadataService -> accessControlService -> accessMapperService -> metadataService), which is why the

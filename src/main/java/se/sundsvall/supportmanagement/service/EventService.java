@@ -106,6 +106,22 @@ public class EventService {
 		}
 	}
 
+	/**
+	 * Logs a single, aggregated entry for a label merge, against the destination label's id - mirrors
+	 * {@link #createLabelMoveEvent} for the same reasons: no single errand's revision history is what this is about,
+	 * and {@code startedBy} is taken as a parameter since this too runs from the background thread carrying the merge
+	 * out.
+	 */
+	public void createLabelMergeEvent(final String municipalityId, final String targetLabelId, final String startedBy, final String message) {
+		final var executedBy = Identifier.create().withType(Identifier.Type.CUSTOM).withValue(startedBy);
+		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), executedBy, SYSTEM.getValue(), getRequestGroupId());
+		try {
+			eventLogClient.createEvent(municipalityId, targetLabelId, event);
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for label merge {}: {}", sanitizeForLogging(targetLabelId), sanitizeForLogging(e.getMessage()));
+		}
+	}
+
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {
 		final var requestGroupId = getRequestGroupId();
 		final var caseId = extractCaseId(errandEntity);

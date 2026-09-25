@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.0"
+  version: "16.1"
 servers:
 - url: http://localhost:59544
   description: Generated server url
@@ -4386,6 +4386,98 @@ paths:
         "409":
           description: "Conflict — path collision at destination, or a job is already\
             \ running for this namespace"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/labels/{labelId}/merge:
+    post:
+      tags:
+      - Metadata for labels
+      summary: Merge labels
+      description: "Validates merging one or more source labels into a destination\
+        \ label. When dryRun is true, returns the number of affected errands and actions\
+        \ without making any changes. When dryRun is false, starts the merge as an\
+        \ asynchronous job."
+      operationId: mergeLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: labelId
+        in: path
+        description: Destination label ID
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelMergeRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful dry-run operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelMergeDryRunResponse"
+        "202":
+          description: Merge accepted and started as an asynchronous job
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — a merge job is already running for this namespace
           content:
             application/problem+json:
               schema:
@@ -16558,6 +16650,10 @@ components:
           type: boolean
         floatingPointNumber:
           type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
+          type: boolean
         nodeType:
           type: string
           enum:
@@ -16573,10 +16669,6 @@ components:
         string:
           type: boolean
         integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
           type: boolean
         pojo:
           type: boolean
@@ -17423,6 +17515,7 @@ components:
           description: Job type
           enum:
           - MOVE_LABEL
+          - MERGE_LABELS
           - ERRAND_PURGE
         status:
           type: string
@@ -17474,6 +17567,41 @@ components:
           - true
       required:
       - dryRun
+    LabelMergeDryRunResponse:
+      type: object
+      description: Result of a label merge dry-run — no changes are made
+      properties:
+        affectedErrandCount:
+          type: integer
+          format: int64
+          description: Number of errands that reference one or more of the source
+            labels
+        affectedActions:
+          type: array
+          description: Actions that have hasLabel conditions referencing one or more
+            of the source labels
+          items:
+            $ref: "#/components/schemas/AffectedAction"
+    LabelMergeRequest:
+      type: object
+      description: Request for merging one or more source labels into a destination
+        label
+      properties:
+        sourceLabelIds:
+          type: array
+          description: IDs of the source labels to merge into the destination label
+          items:
+            type: string
+          minItems: 1
+        dryRun:
+          type: boolean
+          description: "When true, return affected counts without making any changes.\
+            \ When false, starts the merge as an asynchronous job."
+          examples:
+          - true
+      required:
+      - dryRun
+      - sourceLabelIds
     ExternalIdType:
       type: object
       description: ExternalIdType model
@@ -20194,8 +20322,6 @@ components:
     PageableObject:
       type: object
       properties:
-        sort:
-          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -20204,6 +20330,8 @@ components:
         pageSize:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
         offset:

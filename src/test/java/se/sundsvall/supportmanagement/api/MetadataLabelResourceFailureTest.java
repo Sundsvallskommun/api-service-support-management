@@ -21,6 +21,7 @@ import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
@@ -350,5 +351,150 @@ class MetadataLabelResourceFailureTest {
 			.expectStatus().isEqualTo(CONFLICT);
 
 		verify(metadataServiceMock).moveLabel(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
+	}
+
+	@ParameterizedTest
+	@MethodSource("mergeLabelsArguments")
+	void mergeLabelsWithInvalidArguments(final String namespace, final String municipalityId, final String labelId, final LabelMergeRequest request, final Tuple... expectedViolations) {
+
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", namespace, "municipalityId", municipalityId, "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(expectedViolations);
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an omitted dryRun is rejected rather than defaulted, since a merge cannot be undone and a caller that has to write the intent out cannot make that mistake silently")
+	void mergeLabelsWithMissingDryRun_returns400() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Map.of("sourceLabelIds", List.of("6e89b919-1f4c-5096-a0ce-1e12c3d413b8")))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("dryRun", "must not be null"));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an empty sourceLabelIds is rejected, since a merge without any source label is meaningless")
+	void mergeLabelsWithEmptySourceLabelIds_returns400() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMergeRequest.create().withSourceLabelIds(List.of()).withDryRun(true))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("sourceLabelIds", "must not be empty"));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	private static Stream<Arguments> mergeLabelsArguments() {
+		final var validId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var validSourceId = "6e89b919-1f4c-5096-a0ce-1e12c3d413b8";
+		final var validRequest = LabelMergeRequest.create().withSourceLabelIds(List.of(validSourceId)).withDryRun(true);
+		return Stream.of(
+			Arguments.of("MY_NAMESPACE", "666", validId, validRequest, tuples(tuple("mergeLabels.municipalityId", "not a valid municipality ID"))),
+			Arguments.of("invalid,namespace", "2281", validId, validRequest, tuples(tuple("mergeLabels.namespace", "can only contain A-Z, a-z, 0-9, - and _"))),
+			Arguments.of("MY_NAMESPACE", "2281", "not-a-uuid", validRequest, tuples(tuple("mergeLabels.labelId", "not a valid UUID"))),
+			Arguments.of("MY_NAMESPACE", "2281", validId,
+				LabelMergeRequest.create().withSourceLabelIds(List.of("not-a-uuid")).withDryRun(true),
+				tuples(tuple("sourceLabelIds[0]", "not a valid UUID"))));
+	}
+
+	@Test
+	void mergeLabels_targetNotFound_returns404() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		when(metadataServiceMock.mergeLabels(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(NOT_FOUND, "Label not found"));
+
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMergeRequest.create().withSourceLabelIds(List.of("6e89b919-1f4c-5096-a0ce-1e12c3d413b8")).withDryRun(true))
+			.exchange()
+			.expectStatus().isNotFound();
+
+		verify(metadataServiceMock).mergeLabels(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
+	}
+
+	@Test
+	void mergeLabels_sourceNotFound_returns400() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		when(metadataServiceMock.mergeLabels(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(BAD_REQUEST, "Source label not found"));
+
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMergeRequest.create().withSourceLabelIds(List.of("6e89b919-1f4c-5096-a0ce-1e12c3d413b8")).withDryRun(true))
+			.exchange()
+			.expectStatus().isBadRequest();
+
+		verify(metadataServiceMock).mergeLabels(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
+	}
+
+	@Test
+	void mergeLabels_targetHasChildren_returns400() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		when(metadataServiceMock.mergeLabels(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(BAD_REQUEST, "Label has children"));
+
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMergeRequest.create().withSourceLabelIds(List.of("6e89b919-1f4c-5096-a0ce-1e12c3d413b8")).withDryRun(true))
+			.exchange()
+			.expectStatus().isBadRequest();
+
+		verify(metadataServiceMock).mergeLabels(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
+	}
+
+	@Test
+	void mergeLabels_activeJob_returns409() {
+		final var labelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		when(metadataServiceMock.startLabelMerge(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any()))
+			.thenThrow(Problem.valueOf(CONFLICT, "A merge job is already running"));
+
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "labelId", labelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelMergeRequest.create().withSourceLabelIds(List.of("6e89b919-1f4c-5096-a0ce-1e12c3d413b8")).withDryRun(false))
+			.exchange()
+			.expectStatus().isEqualTo(CONFLICT);
+
+		verify(metadataServiceMock).startLabelMerge(eq("MY_NAMESPACE"), eq("2281"), eq(labelId), any());
 	}
 }

@@ -13,6 +13,8 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
@@ -173,6 +175,55 @@ class MetadataLabelResourceTest {
 
 		assertThat(result).isEqualTo(jobResponse);
 		verify(metadataServiceMock).startLabelMove(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(labelId), any());
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void mergeLabels() {
+		final var targetLabelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var request = LabelMergeRequest.create().withSourceLabelIds(List.of("6f79a808-0ef3-4985-99b9-b12f23e202a8")).withDryRun(true);
+		final var response = LabelMergeDryRunResponse.create()
+			.withAffectedErrandCount(4L)
+			.withAffectedActions(List.of(AffectedAction.create().withId("action-id").withName("ACTION").withDisplayValue("Display")));
+
+		when(metadataServiceMock.mergeLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(targetLabelId), any())).thenReturn(response);
+
+		final var result = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "labelId", targetLabelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody(LabelMergeDryRunResponse.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(result).isEqualTo(response);
+		verify(metadataServiceMock).mergeLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(targetLabelId), any());
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void mergeLabels_notDryRun_startsJobAndReturnsAccepted() {
+		final var targetLabelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var request = LabelMergeRequest.create().withSourceLabelIds(List.of("6f79a808-0ef3-4985-99b9-b12f23e202a8")).withDryRun(false);
+		final var jobResponse = JobResponse.create().withJobId("job-id").withType(JobType.MERGE_LABELS).withStatus(JobStatus.PENDING).withTotal(4);
+
+		when(metadataServiceMock.startLabelMerge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(targetLabelId), any())).thenReturn(jobResponse);
+
+		final var result = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "labelId", targetLabelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectHeader().valueEquals(LOCATION, "/%s/%s/jobs/job-id".formatted(MUNICIPALITY_ID, NAMESPACE))
+			.expectBody(JobResponse.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(result).isEqualTo(jobResponse);
+		verify(metadataServiceMock).startLabelMerge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(targetLabelId), any());
 		verifyNoMoreInteractions(metadataServiceMock);
 	}
 }

@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -313,6 +315,29 @@ public class ErrandService {
 	private void restowFromAccessLabels(final ErrandEntity errand) {
 		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
 			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
+			.toList();
+
+		errand.setLabels(leafLabels);
+		persistLabelUpdate(errand);
+	}
+
+	/**
+	 * Restows a batch of errands the same way {@link #persistLabelMigrationBatch} does, except that any leaf carrying
+	 * one of the source label ids is substituted for the destination label id before the ancestor chain is re-derived -
+	 * used by the label-merge worker, once the leaf ids referenced no longer point at labels a move alone would resolve
+	 * against (the sources are deleted once every errand has moved off them).
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	void persistLabelMergeBatch(final List<ErrandEntity> batch, final Set<String> sourceLabelIds, final String targetLabelId) {
+		batch.forEach(errand -> restowFromAccessLabelsWithSubstitution(errand, sourceLabelIds, targetLabelId));
+	}
+
+	private void restowFromAccessLabelsWithSubstitution(final ErrandEntity errand, final Set<String> sourceLabelIds, final String targetLabelId) {
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(AccessLabelEmbeddable::getMetadataLabelId)
+			.map(leafId -> sourceLabelIds.contains(leafId) ? targetLabelId : leafId)
+			.distinct()
+			.map(leafId -> ErrandLabelEmbeddable.create().withMetadataLabelId(leafId))
 			.toList();
 
 		errand.setLabels(leafLabels);

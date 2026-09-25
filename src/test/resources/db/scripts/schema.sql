@@ -458,7 +458,7 @@
         label_id varchar(255),
         message text,
         status enum ('COMPLETED','FAILED','PENDING','RUNNING','STOPPED') not null,
-        type enum ('ERRAND_PURGE','MOVE_LABEL') not null,
+        type enum ('ERRAND_PURGE','MERGE_LABELS','MOVE_LABEL') not null,
         primary key (id)
     ) engine=InnoDB;
 

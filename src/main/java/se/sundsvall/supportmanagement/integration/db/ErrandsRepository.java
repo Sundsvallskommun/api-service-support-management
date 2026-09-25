@@ -51,6 +51,11 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	@EntityGraph(attributePaths = "accessLabels")
 	List<ErrandEntity> findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(String metadataLabelId, String id, Pageable pageable);
 
+	// Sibling of the single-id query above, for the label-merge worker walking several source labels at once - same
+	// keyset paging, same reason for it.
+	@EntityGraph(attributePaths = "accessLabels")
+	List<ErrandEntity> findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(Collection<String> metadataLabelIds, String id, Pageable pageable);
+
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
 }

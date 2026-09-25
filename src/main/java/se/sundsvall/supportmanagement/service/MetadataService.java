@@ -33,6 +33,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
@@ -78,6 +80,7 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MERGE_LABELS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurpose;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurposeEntity;
@@ -124,6 +127,8 @@ public class MetadataService {
 	private static final String HAS_LABEL = "hasLabel";
 	private static final String MOVE_ALREADY_IN_PROGRESS = "A job is already running for namespace '%s' in municipality with id '%s'";
 	private static final String COULD_NOT_START = "Label move could not be started: %s";
+	private static final String MERGE_ALREADY_IN_PROGRESS = "A merge job is already running for namespace '%s' in municipality with id '%s'";
+	private static final String COULD_NOT_START_MERGE = "Label merge could not be started: %s";
 	private static final String UNKNOWN_CALLER = "unknown";
 	private static final int RESOURCE_PATH_MAX_LENGTH = 255;
 
@@ -158,6 +163,7 @@ public class MetadataService {
 	private final ContactReasonRepository contactReasonRepository;
 	private final JobService jobService;
 	private final LabelMoveWorker labelMoveWorker;
+	private final LabelMergeWorker labelMergeWorker;
 	private final AsyncTaskExecutor labelMoveTaskExecutor;
 	private final AntPathMatcher pathMatcher;
 	private final TransactionTemplate readOnlyTransactionTemplate;
@@ -183,6 +189,8 @@ public class MetadataService {
 		// -> MetadataService, a cycle back to this very bean. Never actually needed before the async dispatch fires, by
 		// which point every bean in the cycle is already constructed.
 		@Lazy final LabelMoveWorker labelMoveWorker,
+		// Same cycle, same reason: LabelMergeWorker also sits behind ErrandService.
+		@Lazy final LabelMergeWorker labelMergeWorker,
 		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor,
 		final PlatformTransactionManager transactionManager) {
 		this.actionConfigRepository = actionConfigRepository;
@@ -202,6 +210,7 @@ public class MetadataService {
 		this.contactReasonRepository = contactReasonRepository;
 		this.jobService = jobService;
 		this.labelMoveWorker = labelMoveWorker;
+		this.labelMergeWorker = labelMergeWorker;
 		this.labelMoveTaskExecutor = labelMoveTaskExecutor;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
@@ -435,7 +444,7 @@ public class MetadataService {
 		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
 
 		var affectedActions = actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.filter(action -> isAffectedByMove(action, allMovedIds))
+			.filter(action -> referencesAnyLabel(action, allMovedIds))
 			.map(action -> AffectedAction.create()
 				.withId(action.getId())
 				.withName(action.getName())
@@ -618,11 +627,108 @@ public class MetadataService {
 		}
 	}
 
-	private static boolean isAffectedByMove(final ActionConfigEntity action, final Set<String> movedLabelIds) {
+	/**
+	 * Whether an action has a {@code hasLabel} condition naming any of the given label ids - shared by the move and
+	 * merge dry-runs, each of which asks it about the set of label ids their own operation would affect.
+	 */
+	private static boolean referencesAnyLabel(final ActionConfigEntity action, final Set<String> labelIds) {
 		return action.getConditions().stream()
 			.filter(c -> HAS_LABEL.equals(c.getKey()))
 			.flatMap(c -> c.getValues().stream())
-			.anyMatch(movedLabelIds::contains);
+			.anyMatch(labelIds::contains);
+	}
+
+	@Transactional(readOnly = true)
+	public LabelMergeDryRunResponse mergeLabels(final String namespace, final String municipalityId, final String targetLabelId, final LabelMergeRequest request) {
+		var context = validateAndFindLabelsToMerge(namespace, municipalityId, targetLabelId, request.getSourceLabelIds());
+
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(context.sourceIds());
+
+		var affectedActions = actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
+			.filter(action -> referencesAnyLabel(action, context.sourceIds()))
+			.map(action -> AffectedAction.create()
+				.withId(action.getId())
+				.withName(action.getName())
+				.withDisplayValue(action.getDisplayValue()))
+			.toList();
+
+		return LabelMergeDryRunResponse.create()
+			.withAffectedErrandCount(affectedErrandCount)
+			.withAffectedActions(affectedActions);
+	}
+
+	/**
+	 * Starts a label merge as an asynchronous job, reported through {@code GET .../jobs/{jobId}}. Mirrors
+	 * {@link #startLabelMove} - refused outright if another merge is already under way for the namespace (not just for
+	 * these labels, for the same reason the move guard is namespace-wide), and validation, job creation and dispatch are
+	 * kept as three separate steps rather than one enclosing transaction, for the same reasons given there.
+	 */
+	public JobResponse startLabelMerge(final String namespace, final String municipalityId, final String targetLabelId, final LabelMergeRequest request) {
+		var context = readOnlyTransactionTemplate.execute(status -> validateAndFindLabelsToMerge(namespace, municipalityId, targetLabelId, request.getSourceLabelIds()));
+
+		if (jobService.hasActiveJob(namespace, municipalityId, MERGE_LABELS)) {
+			throw Problem.valueOf(CONFLICT, MERGE_ALREADY_IN_PROGRESS.formatted(namespace, municipalityId));
+		}
+
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(context.sourceIds());
+		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
+		// worker dispatched right after is free to look the job up from another thread.
+		var jobId = jobService.create(namespace, municipalityId, MERGE_LABELS, (int) affectedErrandCount, context.targetId());
+		var startedBy = startedBy();
+
+		try {
+			labelMoveTaskExecutor.execute(() -> labelMergeWorker.run(new LabelMergeRun(jobId, namespace, municipalityId, context.targetId(), context.sourceIds(), startedBy)));
+		} catch (final Exception e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			jobService.fail(jobId, COULD_NOT_START_MERGE.formatted(e.getMessage()));
+
+			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START_MERGE.formatted(e.getMessage()));
+		}
+
+		return jobService.get(namespace, municipalityId, jobId);
+	}
+
+	/**
+	 * The destination label together with the source ids being merged into it - read once by
+	 * {@link #validateAndFindLabelsToMerge} and reused by both callers, mirrors {@link LabelMoveContext}.
+	 */
+	private record LabelMergeContext(String targetId, Set<String> sourceIds) {
+	}
+
+	/**
+	 * v1 scope is deliberately narrow: both the destination and every source must be leaf labels (no children). Every
+	 * real consolidation this exists for merges leaf-level categories; broadening to subtrees is not needed yet and
+	 * would have to decide how descendants of several sources fold together, which a leaf-only merge sidesteps
+	 * entirely.
+	 */
+	private LabelMergeContext validateAndFindLabelsToMerge(final String namespace, final String municipalityId, final String targetLabelId, final List<String> requestedSourceIds) {
+		var target = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(targetLabelId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, targetLabelId, namespace, municipalityId)));
+		validateIsLeaf(namespace, municipalityId, target);
+
+		// Compared against the target's canonical id, not the raw path variable, for the same reason validateNoCycle
+		// compares against the canonical id on both sides - a client sending the same id differently cased must not slip
+		// the check.
+		var sourceIds = new HashSet<>(requestedSourceIds);
+		if (sourceIds.contains(target.getId())) {
+			throw Problem.valueOf(BAD_REQUEST, "Label '%s' cannot be merged into itself".formatted(target.getId()));
+		}
+
+		sourceIds.forEach(sourceId -> {
+			var source = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(sourceId, namespace, municipalityId)
+				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, sourceId, namespace, municipalityId)));
+			validateIsLeaf(namespace, municipalityId, source);
+		});
+
+		return new LabelMergeContext(target.getId(), sourceIds);
+	}
+
+	private void validateIsLeaf(final String namespace, final String municipalityId, final MetadataLabelEntity label) {
+		var hasChildren = !metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
+			namespace, municipalityId, label.getResourcePath() + "/").isEmpty();
+		if (hasChildren) {
+			throw Problem.valueOf(BAD_REQUEST, "Label '%s' has children and cannot take part in a merge".formatted(label.getId()));
+		}
 	}
 
 	public boolean hasLabels(final String namespace, final String municipalityId) {
