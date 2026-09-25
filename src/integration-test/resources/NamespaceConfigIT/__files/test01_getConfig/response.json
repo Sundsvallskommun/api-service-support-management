@@ -10,5 +10,6 @@
 	"notifyReporter": false,
 	"roleBasedMapping": false,
 	"resourceAccessControl": false,
-	"singleDecisionPerErrand": false
+	"singleDecisionPerErrand": false,
+	"excludeEventDescriptionsInEmail": false
 }

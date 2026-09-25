@@ -109,7 +109,10 @@ public class HandoverService {
 		final var existing = idempotencyRepository.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(
 			errandId, request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
 		if (existing.isPresent()) {
-			LOG.debug("Handover already performed for errand '{}' to '{}/{}', returning existing result", sanitizeForLogging(errandId), sanitizeForLogging(request.getTarget().getNamespace()), sanitizeForLogging(request.getTarget().getMunicipalityId()));
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Handover already performed for errand '{}' to '{}/{}', returning existing result", sanitizeForLogging(errandId), sanitizeForLogging(request.getTarget().getNamespace()), sanitizeForLogging(request.getTarget()
+					.getMunicipalityId()));
+			}
 			return toHandoverErrand(existing.get());
 		}
 
@@ -123,7 +126,7 @@ public class HandoverService {
 
 		try {
 			namespaceConfigService.get(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId());
-		} catch (final Exception e) {
+		} catch (final Exception _) {
 			throw Problem.valueOf(BAD_REQUEST, "Target namespace '%s' with municipalityId '%s' has no configuration".formatted(request.getTarget().getNamespace(), request.getTarget().getMunicipalityId()));
 		}
 
@@ -308,7 +311,7 @@ public class HandoverService {
 		}
 		final var action = request.getSourceHandling().getAction();
 		if (HandoverSourceAction.CLOSE.equals(action)) {
-			errandService.updateErrand(namespace, municipalityId, errandId, null, Errand.create()
+			errandService.updateErrand(namespace, municipalityId, errandId, null, false, Errand.create()
 				.withStatus(request.getSourceHandling().getStatus())
 				.withResolution(request.getSourceHandling().getResolution()));
 			if (!isBlank(request.getSourceHandling().getClosingComment())) {

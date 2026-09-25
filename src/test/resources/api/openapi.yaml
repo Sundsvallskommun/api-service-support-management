@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.1"
+  version: "16.2"
 servers:
 - url: http://localhost:41931
   description: Generated server url
@@ -11133,6 +11133,15 @@ paths:
         required: false
         schema:
           type: string
+      - name: X-Silent
+        in: header
+        description: "When set to true the update notifies no one: neither the assigned\
+          \ user nor any subscriber, on any channel. The update is still recorded\
+          \ in the event log"
+        required: false
+        schema:
+          type: boolean
+          default: false
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -16482,6 +16491,21 @@ components:
             \ occur. If no value is set it defaults to false."
           examples:
           - true
+        excludeEventDescriptionsInEmail:
+          type: boolean
+          description: "If set to true emails sent to subscribers only name the errands\
+            \ that were updated, without describing what happened to them. If no value\
+            \ is set it defaults to false."
+          examples:
+          - true
+        baseUrl:
+          type: string
+          description: "Base url of the web application handling errands in this\
+            \ namespace. Links to errands are made as <baseUrl>/<municipalityId>/<namespace>/errands/<errandNumber>.\
+            \ Leaving it out means emails carry no links to errands."
+          examples:
+          - https://draken.sundsvall.se
+          pattern: '^https?://\S+$'
         limitedReadAccess:
           $ref: "#/components/schemas/LimitedReadAccess"
           description: "What a user whose labels only grant them limited read for\

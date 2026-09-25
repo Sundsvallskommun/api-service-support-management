@@ -11,7 +11,8 @@
 		"notifyReporter": false,
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
-		"singleDecisionPerErrand": false
+		"singleDecisionPerErrand": false,
+		"excludeEventDescriptionsInEmail": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -24,7 +25,8 @@
 		"notifyReporter": false,
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
-		"singleDecisionPerErrand": false
+		"singleDecisionPerErrand": false,
+		"excludeEventDescriptionsInEmail": false
 	},
 	{
 		"namespace": "NAMESPACE-3",
@@ -38,7 +40,8 @@
 		"notifyReporter": false,
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
-		"singleDecisionPerErrand": false
+		"singleDecisionPerErrand": false,
+		"excludeEventDescriptionsInEmail": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -51,7 +54,8 @@
 		"notifyReporter": false,
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
-		"singleDecisionPerErrand": false
+		"singleDecisionPerErrand": false,
+		"excludeEventDescriptionsInEmail": false
 	},
 	{
 		"namespace": "NAMESPACE-2506",
@@ -100,6 +104,7 @@
 		],
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"excludeEventDescriptionsInEmail": false,
 		"reporterAccess": {
 			"resources": [
 				{
@@ -182,7 +187,8 @@
 		"notifyReporter": false,
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
-		"singleDecisionPerErrand": false
+		"singleDecisionPerErrand": false,
+		"excludeEventDescriptionsInEmail": false
 	},
 	{
 		"namespace": "NAMESPACE-2507",
@@ -195,6 +201,7 @@
 		"notifyReporter": false,
 		"roleBasedMapping": false,
 		"resourceAccessControl": true,
-		"singleDecisionPerErrand": false
+		"singleDecisionPerErrand": false,
+		"excludeEventDescriptionsInEmail": false
 	}
 ]

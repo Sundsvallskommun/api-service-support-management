@@ -40,6 +40,9 @@ scheduler:
     maximum-execution-time: PT4M
     transaction-buffer: PT10S
     max-age: P30D
+    email:
+      sender-address: noreply@sundsvall.se
+      sender-name: Sundsvalls kommun
   attachment-hash:
     name: compute_attachment_hash
     enabled: true

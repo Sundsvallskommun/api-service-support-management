@@ -148,9 +148,12 @@ class ErrandsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId(groups = OnUpdate.class) @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid(groups = OnUpdate.class) @PathVariable("errandId") final String errandId,
 		@Parameter(name = "If-Match", description = "Optional ETag for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
+		@Parameter(name = "X-Silent", description = "When set to true the update notifies no one: neither the assigned user nor any subscriber, on any channel. The update is still recorded in the event log") @RequestHeader(value = "X-Silent",
+			required = false,
+			defaultValue = "false") final boolean silent,
 		@Valid @NotNull @RequestBody final Errand errand) {
 
-		final var updated = service.updateErrand(namespace, municipalityId, errandId, ifMatch, errand);
+		final var updated = service.updateErrand(namespace, municipalityId, errandId, ifMatch, silent, errand);
 		return ok()
 			.header(ETAG, updated.getVersion() != null ? format(updated.getVersion()) : null)
 			.body(updated);

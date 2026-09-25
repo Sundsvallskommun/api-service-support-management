@@ -23,8 +23,10 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
@@ -42,6 +44,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
@@ -60,6 +63,9 @@ class EventServiceTest {
 
 	@Mock
 	private NotificationDispatchRepository notificationDispatchRepositoryMock;
+
+	@Mock
+	private SubscriptionRepository subscriptionRepositoryMock;
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
@@ -149,6 +155,10 @@ class EventServiceTest {
 		verify(notificationServiceMock).createNotification(eq(entity.getMunicipalityId()), eq(entity.getNamespace()), eq(entity.getId()), notificationCaptor.capture());
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification.getCreatedBy()).isEqualTo(executingUserId);
+
+		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getValue().getErrandId()).isEqualTo(errandId);
+		assertThat(dispatchCaptor.getValue().isEmailOnly()).isFalse();
 	}
 
 	@Test
@@ -336,6 +346,84 @@ class EventServiceTest {
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
 		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(errandEntity));
+	}
+
+	@Captor
+	private ArgumentCaptor<NotificationDispatchEntity> dispatchCaptor;
+
+	@Test
+	void createErrandEventCreateWithNamespaceSubscriptionCreatesDispatchEntry() {
+		// Setup — sendNotification=false (as in ErrandService.logCreateEvent) but active namespace subscriptions exist
+		final var municipalityId = "2281";
+		final var namespace = "MY_NAMESPACE";
+		final var eventType = EventType.CREATE;
+		final var message = "Ärende skapat";
+		final var errandId = randomUUID().toString();
+
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withId(errandId);
+
+		when(subscriptionRepositoryMock.existsActiveNamespaceSubscriptionWithEmailChannel(eq(municipalityId), eq(namespace), any())).thenReturn(true);
+
+		// Call — using the overload with sendNotification=false
+		service.createErrandEvent(eventType, message, entity, null, null, false, ERRAND);
+
+		// Verify dispatch entry was created
+		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
+		final var dispatch = dispatchCaptor.getValue();
+		assertThat(dispatch.getErrandId()).isEqualTo(errandId);
+		assertThat(dispatch.getMunicipalityId()).isEqualTo(municipalityId);
+		assertThat(dispatch.getNamespace()).isEqualTo(namespace);
+		assertThat(dispatch.getEventType()).isEqualTo("CREATE");
+		assertThat(dispatch.isEmailOnly()).isTrue();
+
+		// Verify no notification was created (sendNotification=false)
+		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void createErrandEventCreateWithoutNamespaceSubscriptionDoesNotCreateDispatchEntry() {
+		// Setup — sendNotification=false and no active namespace subscriptions
+		final var municipalityId = "2281";
+		final var namespace = "MY_NAMESPACE";
+		final var eventType = EventType.CREATE;
+		final var message = "Ärende skapat";
+		final var errandId = randomUUID().toString();
+
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withId(errandId);
+
+		when(subscriptionRepositoryMock.existsActiveNamespaceSubscriptionWithEmailChannel(eq(municipalityId), eq(namespace), any())).thenReturn(false);
+
+		// Call
+		service.createErrandEvent(eventType, message, entity, null, null, false, ERRAND);
+
+		// Verify no dispatch entry was created
+		verifyNoInteractions(notificationDispatchRepositoryMock);
+		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void createErrandEventUpdateWithoutSendNotificationNotifiesNoOne() {
+		// Setup — how a silent update reaches the service
+		final var municipalityId = "2281";
+		final var errandId = randomUUID().toString();
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace("MY_NAMESPACE")
+			.withId(errandId)
+			.withAssignedUserId("assignedUserId");
+
+		// Call
+		service.createErrandEvent(EventType.UPDATE, "Ärende uppdaterat", entity, null, null, false, ERRAND);
+
+		// Verify the update is logged, but neither the assigned user nor any subscriber is notified
+		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(errandId), any());
+		verifyNoInteractions(notificationServiceMock, notificationDispatchRepositoryMock, subscriptionRepositoryMock);
 	}
 
 	@Test

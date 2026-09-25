@@ -206,6 +206,30 @@ class NamespaceConfigResourceFailureTest {
 	}
 
 	@Test
+	void createWithInvalidBaseUrl() {
+		final var namespaceConfig = NamespaceConfig.create().withDisplayName(DISPLAY_NAME).withShortCode(SHORT_CODE).withBaseUrl("not-a-url");
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(namespaceConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("baseUrl", "must be a valid http or https url"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
 	void readWithInvalidNamespace() {
 		final var response = webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))
