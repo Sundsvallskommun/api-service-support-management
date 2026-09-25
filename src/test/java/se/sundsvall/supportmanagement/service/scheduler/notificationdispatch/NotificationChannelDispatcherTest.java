@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationChannelDispatcherTest {
@@ -82,13 +83,12 @@ class NotificationChannelDispatcherTest {
 
 		// Arrange
 		final var subscriber = subscriberWith(NotificationChannelType.EMAIL, "test@example.com");
-		final var channel = subscriber.getChannels().getFirst();
 
 		// Act
 		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
 
 		// Assert
-		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, channel, subscriber, EVENTS);
+		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
 		verifyNoInteractions(subscriberNotificationServiceMock);
 	}
 
@@ -97,14 +97,81 @@ class NotificationChannelDispatcherTest {
 
 		// Arrange
 		final var subscriber = subscriberWith(NotificationChannelType.EMAIL);
-		final var channel = subscriber.getChannels().getFirst();
 
 		// Act
 		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
 
 		// Assert
-		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, channel, subscriber, EVENTS);
+		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
 		verifyNoInteractions(subscriberNotificationServiceMock);
+	}
+
+	@Test
+	void sendInternalChannelLeavesOutEmailOnlyEvents() {
+
+		// Arrange
+		final var subscriber = subscriberWith(NotificationChannelType.INTERNAL);
+		final var regular = NotificationDispatchEntity.create().withId("regular").withEventType("UPDATE");
+		final var emailOnly = NotificationDispatchEntity.create().withId("email-only").withEventType("CREATE").withEmailOnly(true);
+
+		// Act
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(regular, emailOnly));
+
+		// Assert
+		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(regular));
+		verifyNoInteractions(subscriberEmailServiceMock);
+	}
+
+	@Test
+	void sendInternalChannelWithOnlyEmailOnlyEventsCreatesNothing() {
+
+		// Arrange
+		final var subscriber = subscriberWith(NotificationChannelType.INTERNAL);
+		final var emailOnly = NotificationDispatchEntity.create().withId("email-only").withEventType("CREATE").withEmailOnly(true);
+
+		// Act
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(emailOnly));
+
+		// Assert
+		verifyNoInteractions(subscriberNotificationServiceMock, subscriberEmailServiceMock);
+	}
+
+	@Test
+	void sendEmailChannelKeepsEmailOnlyEvents() {
+
+		// Arrange
+		final var subscriber = subscriberWith(NotificationChannelType.EMAIL, "test@example.com");
+		final var events = List.of(
+			NotificationDispatchEntity.create().withId("regular").withEventType("UPDATE"),
+			NotificationDispatchEntity.create().withId("email-only").withEventType("CREATE").withEmailOnly(true));
+
+		// Act
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, events);
+
+		// Assert
+		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, subscriber, events);
+		verifyNoInteractions(subscriberNotificationServiceMock);
+	}
+
+	@Test
+	void sendDeliversOncePerChannelType() {
+
+		// Arrange — two channels of each type must not notify the subscriber twice
+		final var subscriber = SubscriberEntity.create()
+			.withId("subscriber-id")
+			.withChannels(List.of(
+				NotificationChannelEmbeddable.create().withType(NotificationChannelType.EMAIL).withDestination("first@example.com"),
+				NotificationChannelEmbeddable.create().withType(NotificationChannelType.INTERNAL),
+				NotificationChannelEmbeddable.create().withType(NotificationChannelType.EMAIL).withDestination("second@example.com"),
+				NotificationChannelEmbeddable.create().withType(NotificationChannelType.INTERNAL)));
+
+		// Act
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+
+		// Assert
+		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		verifyNoMoreInteractions(subscriberEmailServiceMock, subscriberNotificationServiceMock);
 	}
 
 	@Test

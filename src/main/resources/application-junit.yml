@@ -131,14 +131,15 @@ scheduler:
     cron: "-"
   notification-dispatch:
     cron: "-"
+    email:
+      sender-address: no-reply@test.local
+      sender-name: Sundsvalls kommun
   messageexchange:
     cron: "-"
     enabled: false
   suspension:
     cron: "-"
   action:
-    cron: "-"
-  email-dispatch:
     cron: "-"
   attachment-hash:
     cron: "-"

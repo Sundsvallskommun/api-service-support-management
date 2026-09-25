@@ -82,17 +82,19 @@ class MessagingSettingsIntegrationTest {
 	void getMessagingsettingsWithoutOptionalValuesSet() {
 		final var emailValue = "email";
 		final var urlValue = "url";
+		final var smsSenderValue = "smsSender";
 
 		when(clientMock.getMessagingsettings(eq(MUNICIPALITY_ID), anyString())).thenReturn(List.of(new MessagingSettings().values(List.of(
 			new MessagingSettingValue().key(KEY_EMAIL).value(emailValue),
-			new MessagingSettingValue().key(KEY_URL).value(urlValue)))));
+			new MessagingSettingValue().key(KEY_URL).value(urlValue),
+			new MessagingSettingValue().key(KEY_SMS_SENDER).value(smsSenderValue)))));
 
 		final var result = integration.getMessagingsettings(MUNICIPALITY_ID, NAMESPACE, DEPARTMENT_NAME);
 
 		assertThat(result.contactInformationEmail()).isEqualTo(emailValue);
 		assertThat(result.contactInformationEmailName()).isEqualTo(emailValue);
 		assertThat(result.contactInformationUrl()).isEqualTo(urlValue);
-		assertThat(result.smsSender()).isNull();
+		assertThat(result.smsSender()).isEqualTo(smsSenderValue);
 		assertThat(result.supportText()).isBlank();
 	}
 
@@ -118,8 +120,8 @@ class MessagingSettingsIntegrationTest {
 		verify(clientMock).getMessagingsettings(eq(MUNICIPALITY_ID), filterCaptor.capture());
 
 		assertThat(e.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
-		assertThat(e.getDetail()).isEqualTo("One or more mandatory settings [%s, %s] are absent for namespace 'my-namespace' and department with name 'my-department' within municipality with id 'my-municipality'"
-			.formatted(KEY_EMAIL, KEY_URL));
+		assertThat(e.getDetail()).isEqualTo("One or more mandatory settings [%s, %s, %s] are absent for namespace 'my-namespace' and department with name 'my-department' within municipality with id 'my-municipality'"
+			.formatted(KEY_EMAIL, KEY_URL, KEY_SMS_SENDER));
 		assertThat(filterCaptor.getValue()).isEqualTo(FILTER_STRING.formatted(NAMESPACE, DEPARTMENT_NAME));
 	}
 
@@ -127,7 +129,10 @@ class MessagingSettingsIntegrationTest {
 		return Stream.of(
 			Arguments.of(List.of(new MessagingSettings().values(emptyList()))),
 			Arguments.of(List.of(new MessagingSettings().values(List.of(
-				new MessagingSettingValue().key(KEY_EMAIL).value("value"))))));
+				new MessagingSettingValue().key(KEY_EMAIL).value("value"))))),
+			Arguments.of(List.of(new MessagingSettings().values(List.of(
+				new MessagingSettingValue().key(KEY_EMAIL).value("value"),
+				new MessagingSettingValue().key(KEY_URL).value("value"))))));
 
 	}
 }

@@ -40,8 +40,9 @@ scheduler:
   notification-dispatch:
     cron: "-"
     transaction-buffer: PT0S
-  email-dispatch:
-    cron: "-"
+    email:
+      sender-address: no-reply@test.local
+      sender-name: Sundsvalls kommun
   attachment-hash:
     cron: "-"
   job:

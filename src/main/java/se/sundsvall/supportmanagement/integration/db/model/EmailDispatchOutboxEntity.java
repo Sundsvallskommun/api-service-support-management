@@ -1,22 +1,37 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
+import static jakarta.persistence.FetchType.LAZY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
-@Table(name = "email_dispatch_outbox")
+@Table(name = "email_dispatch_outbox",
+	indexes = {
+		@Index(name = "idx_email_dispatch_outbox_subscriber_created", columnList = "subscriber_id, created")
+	})
 public class EmailDispatchOutboxEntity {
 
 	@Id
@@ -24,11 +39,11 @@ public class EmailDispatchOutboxEntity {
 	@Column(name = "id", length = 36)
 	private String id;
 
-	@Column(name = "municipality_id", nullable = false, length = 8)
-	private String municipalityId;
-
-	@Column(name = "namespace", nullable = false, length = 32)
-	private String namespace;
+	// The database removes the rows of a subscriber that is deleted, so nothing is left to be sent to them
+	@ManyToOne(fetch = LAZY, optional = false)
+	@JoinColumn(name = "subscriber_id", nullable = false, foreignKey = @ForeignKey(name = "fk_email_dispatch_outbox_subscriber_id"))
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private SubscriberEntity subscriber;
 
 	@Column(name = "errand_id", nullable = false, length = 36)
 	private String errandId;
@@ -36,31 +51,15 @@ public class EmailDispatchOutboxEntity {
 	@Column(name = "errand_number")
 	private String errandNumber;
 
-	@Column(name = "subscriber_id", nullable = false, length = 36)
-	private String subscriberId;
-
-	@Column(name = "recipient_email")
-	private String recipientEmail;
-
-	@Column(name = "identifier_type", length = 16)
-	private String identifierType;
-
-	@Column(name = "identifier_value")
-	private String identifierValue;
-
-	@Column(name = "event_summary", columnDefinition = "text")
-	private String eventSummary;
+	@ElementCollection
+	@CollectionTable(name = "email_dispatch_outbox_event",
+		joinColumns = @JoinColumn(name = "outbox_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_email_dispatch_outbox_event_outbox_id")))
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private List<EmailDispatchOutboxEventEmbeddable> events;
 
 	@Column(name = "created", nullable = false, columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
-
-	@Column(name = "attempts", nullable = false)
-	private int attempts;
-
-	@Column(name = "last_attempted", columnDefinition = "datetime(3)")
-	@TimeZoneStorage(NORMALIZE)
-	private OffsetDateTime lastAttempted;
 
 	public static EmailDispatchOutboxEntity create() {
 		return new EmailDispatchOutboxEntity();
@@ -84,29 +83,16 @@ public class EmailDispatchOutboxEntity {
 		return this;
 	}
 
-	public String getMunicipalityId() {
-		return municipalityId;
+	public SubscriberEntity getSubscriber() {
+		return subscriber;
 	}
 
-	public void setMunicipalityId(final String municipalityId) {
-		this.municipalityId = municipalityId;
+	public void setSubscriber(final SubscriberEntity subscriber) {
+		this.subscriber = subscriber;
 	}
 
-	public EmailDispatchOutboxEntity withMunicipalityId(final String municipalityId) {
-		this.municipalityId = municipalityId;
-		return this;
-	}
-
-	public String getNamespace() {
-		return namespace;
-	}
-
-	public void setNamespace(final String namespace) {
-		this.namespace = namespace;
-	}
-
-	public EmailDispatchOutboxEntity withNamespace(final String namespace) {
-		this.namespace = namespace;
+	public EmailDispatchOutboxEntity withSubscriber(final SubscriberEntity subscriber) {
+		this.subscriber = subscriber;
 		return this;
 	}
 
@@ -136,68 +122,16 @@ public class EmailDispatchOutboxEntity {
 		return this;
 	}
 
-	public String getSubscriberId() {
-		return subscriberId;
+	public List<EmailDispatchOutboxEventEmbeddable> getEvents() {
+		return events;
 	}
 
-	public void setSubscriberId(final String subscriberId) {
-		this.subscriberId = subscriberId;
+	public void setEvents(final List<EmailDispatchOutboxEventEmbeddable> events) {
+		this.events = events;
 	}
 
-	public EmailDispatchOutboxEntity withSubscriberId(final String subscriberId) {
-		this.subscriberId = subscriberId;
-		return this;
-	}
-
-	public String getRecipientEmail() {
-		return recipientEmail;
-	}
-
-	public void setRecipientEmail(final String recipientEmail) {
-		this.recipientEmail = recipientEmail;
-	}
-
-	public EmailDispatchOutboxEntity withRecipientEmail(final String recipientEmail) {
-		this.recipientEmail = recipientEmail;
-		return this;
-	}
-
-	public String getIdentifierType() {
-		return identifierType;
-	}
-
-	public void setIdentifierType(final String identifierType) {
-		this.identifierType = identifierType;
-	}
-
-	public EmailDispatchOutboxEntity withIdentifierType(final String identifierType) {
-		this.identifierType = identifierType;
-		return this;
-	}
-
-	public String getIdentifierValue() {
-		return identifierValue;
-	}
-
-	public void setIdentifierValue(final String identifierValue) {
-		this.identifierValue = identifierValue;
-	}
-
-	public EmailDispatchOutboxEntity withIdentifierValue(final String identifierValue) {
-		this.identifierValue = identifierValue;
-		return this;
-	}
-
-	public String getEventSummary() {
-		return eventSummary;
-	}
-
-	public void setEventSummary(final String eventSummary) {
-		this.eventSummary = eventSummary;
-	}
-
-	public EmailDispatchOutboxEntity withEventSummary(final String eventSummary) {
-		this.eventSummary = eventSummary;
+	public EmailDispatchOutboxEntity withEvents(final List<EmailDispatchOutboxEventEmbeddable> events) {
+		this.events = events;
 		return this;
 	}
 
@@ -214,35 +148,9 @@ public class EmailDispatchOutboxEntity {
 		return this;
 	}
 
-	public int getAttempts() {
-		return attempts;
-	}
-
-	public void setAttempts(final int attempts) {
-		this.attempts = attempts;
-	}
-
-	public EmailDispatchOutboxEntity withAttempts(final int attempts) {
-		this.attempts = attempts;
-		return this;
-	}
-
-	public OffsetDateTime getLastAttempted() {
-		return lastAttempted;
-	}
-
-	public void setLastAttempted(final OffsetDateTime lastAttempted) {
-		this.lastAttempted = lastAttempted;
-	}
-
-	public EmailDispatchOutboxEntity withLastAttempted(final OffsetDateTime lastAttempted) {
-		this.lastAttempted = lastAttempted;
-		return this;
-	}
-
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, municipalityId, namespace, errandId, errandNumber, subscriberId, recipientEmail, identifierType, identifierValue, eventSummary, created, attempts, lastAttempted);
+		return Objects.hash(id, subscriberId(), errandId, errandNumber, events, created);
 	}
 
 	@Override
@@ -254,37 +162,27 @@ public class EmailDispatchOutboxEntity {
 			return false;
 		}
 		final EmailDispatchOutboxEntity other = (EmailDispatchOutboxEntity) obj;
-		return attempts == other.attempts
-			&& Objects.equals(id, other.id)
-			&& Objects.equals(municipalityId, other.municipalityId)
-			&& Objects.equals(namespace, other.namespace)
+		return Objects.equals(id, other.id)
+			&& Objects.equals(subscriberId(), other.subscriberId())
 			&& Objects.equals(errandId, other.errandId)
 			&& Objects.equals(errandNumber, other.errandNumber)
-			&& Objects.equals(subscriberId, other.subscriberId)
-			&& Objects.equals(recipientEmail, other.recipientEmail)
-			&& Objects.equals(identifierType, other.identifierType)
-			&& Objects.equals(identifierValue, other.identifierValue)
-			&& Objects.equals(eventSummary, other.eventSummary)
-			&& Objects.equals(created, other.created)
-			&& Objects.equals(lastAttempted, other.lastAttempted);
+			&& Objects.equals(events, other.events)
+			&& Objects.equals(created, other.created);
 	}
 
 	@Override
 	public String toString() {
 		return "EmailDispatchOutboxEntity{" +
 			"id='" + id + '\'' +
-			", municipalityId='" + municipalityId + '\'' +
-			", namespace='" + namespace + '\'' +
+			", subscriberId='" + subscriberId() + '\'' +
 			", errandId='" + errandId + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
-			", subscriberId='" + subscriberId + '\'' +
-			", recipientEmail='" + recipientEmail + '\'' +
-			", identifierType='" + identifierType + '\'' +
-			", identifierValue='" + identifierValue + '\'' +
-			", eventSummary='" + eventSummary + '\'' +
+			", events=" + events +
 			", created=" + created +
-			", attempts=" + attempts +
-			", lastAttempted=" + lastAttempted +
 			'}';
+	}
+
+	private String subscriberId() {
+		return Optional.ofNullable(subscriber).map(SubscriberEntity::getId).orElse(null);
 	}
 }

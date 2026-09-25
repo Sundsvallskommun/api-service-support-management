@@ -262,20 +262,18 @@ create table decision_term (
 ) engine=InnoDB;
 
 create table email_dispatch_outbox (
-                                       attempts integer not null,
                                        created datetime(3) not null,
-                                       last_attempted datetime(3),
-                                       municipality_id varchar(8) not null,
-                                       identifier_type varchar(16),
-                                       namespace varchar(32) not null,
                                        errand_id varchar(36) not null,
                                        id varchar(36) not null,
-                                       subscriber_id varchar(36) not null,
                                        errand_number varchar(255),
-                                       event_summary text,
-                                       identifier_value varchar(255),
-                                       recipient_email varchar(255),
+                                       subscriber_id varchar(255) not null,
                                        primary key (id)
+) engine=InnoDB;
+
+create table email_dispatch_outbox_event (
+                                             event_id varchar(36),
+                                             outbox_id varchar(36) not null,
+                                             description varchar(255)
 ) engine=InnoDB;
 
 create table email_worker_config (
@@ -644,6 +642,7 @@ create table notification (
 ) engine=InnoDB;
 
 create table notification_dispatch (
+                                       email_only bit(1) not null default 0,
                                        created datetime(3) not null,
                                        municipality_id varchar(8) not null,
                                        namespace varchar(32) not null,
@@ -1049,6 +1048,9 @@ alter table if exists decision_outcome
 
 create index idx_decision_term_decision_id
     on decision_term (decision_id);
+
+create index idx_email_dispatch_outbox_subscriber_created
+    on email_dispatch_outbox (subscriber_id, created);
 
 create index idx_namespace_municipality_id
     on email_worker_config (namespace, municipality_id);
@@ -1519,6 +1521,18 @@ alter table if exists decision_term
     add constraint fk_decision_term_decision_id
     foreign key (decision_id)
     references decision (id)
+    on delete cascade;
+
+alter table if exists email_dispatch_outbox
+    add constraint fk_email_dispatch_outbox_subscriber_id
+    foreign key (subscriber_id)
+    references subscriber (id)
+    on delete cascade;
+
+alter table if exists email_dispatch_outbox_event
+    add constraint fk_email_dispatch_outbox_event_outbox_id
+    foreign key (outbox_id)
+    references email_dispatch_outbox (id)
     on delete cascade;
 
 alter table if exists errand

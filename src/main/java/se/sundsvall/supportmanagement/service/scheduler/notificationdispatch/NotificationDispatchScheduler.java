@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
 
 @Service
 public class NotificationDispatchScheduler {
@@ -15,13 +16,15 @@ public class NotificationDispatchScheduler {
 	private static final Logger LOG = LoggerFactory.getLogger(NotificationDispatchScheduler.class);
 
 	private final NotificationDispatchWorker worker;
+	private final SubscriberEmailService subscriberEmailService;
 	private final Dept44HealthUtility healthUtility;
 
 	@Value("${scheduler.notification-dispatch.name}")
 	private String jobName;
 
-	public NotificationDispatchScheduler(final NotificationDispatchWorker worker, final Dept44HealthUtility healthUtility) {
+	public NotificationDispatchScheduler(final NotificationDispatchWorker worker, final SubscriberEmailService subscriberEmailService, final Dept44HealthUtility healthUtility) {
 		this.worker = worker;
+		this.subscriberEmailService = subscriberEmailService;
 		this.healthUtility = healthUtility;
 	}
 
@@ -43,6 +46,16 @@ public class NotificationDispatchScheduler {
 			} catch (final Exception e) {
 				LOG.error("Error processing notification dispatch for errand: {}", errandId, e);
 				healthUtility.setHealthIndicatorUnhealthy(jobName, "Error processing notification dispatch: " + e.getMessage());
+			}
+		});
+
+		// Emptied last, so what this run enqueued goes out now along with anything left over from failed runs
+		subscriberEmailService.findPendingSubscriberIds().forEach(subscriberId -> {
+			try {
+				subscriberEmailService.sendPending(subscriberId);
+			} catch (final Exception e) {
+				LOG.error("Error sending email dispatch to subscriber: {}", subscriberId, e);
+				healthUtility.setHealthIndicatorUnhealthy(jobName, "Error sending email dispatch: " + e.getMessage());
 			}
 		});
 	}

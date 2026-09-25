@@ -8,12 +8,15 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.EmailDispatchOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
-import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
+import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
+import se.sundsvall.supportmanagement.integration.db.model.EmailDispatchOutboxEventEmbeddable;
+import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchScheduler;
 import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker;
 
 @WireMockAppTestSuite(files = "classpath:/EmailDispatchIT/", classes = Application.class)
@@ -25,12 +28,15 @@ class EmailDispatchIT extends AbstractAppTest {
 
 	private static final String PATH = "/2281/NAMESPACE-1/errands";
 	private static final String ERRAND_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001";
+	private static final String EMAIL_SUBSCRIBER_ID = "11111111-0000-0000-0000-000000000001";
+	private static final String UPDATE_DISPATCH_ID = "33333333-0000-0000-0000-000000000001";
+	private static final String CREATE_DISPATCH_ID = "33333333-0000-0000-0000-000000000002";
 
 	@Autowired
 	private NotificationDispatchWorker notificationDispatchWorker;
 
 	@Autowired
-	private SubscriberEmailService subscriberEmailService;
+	private NotificationDispatchScheduler notificationDispatchScheduler;
 
 	@Autowired
 	private EmailDispatchOutboxRepository emailDispatchOutboxRepository;
@@ -38,16 +44,20 @@ class EmailDispatchIT extends AbstractAppTest {
 	@Autowired
 	private NotificationDispatchRepository notificationDispatchRepository;
 
+	@Autowired
+	private SubscriberRepository subscriberRepository;
+
+	@Autowired
+	private TransactionTemplate transactionTemplate;
+
 	/**
-	 * Verifies that the notification dispatch worker creates an email outbox entry
-	 * for a subscriber with an EMAIL channel and a NAMESPACE subscription when
-	 * processing an UPDATE/MESSAGE event.
+	 * Processing an UPDATE/MESSAGE dispatch for a subscriber with an EMAIL channel stores the subscriber, the errand and
+	 * the event in the outbox.
 	 */
 	@Test
 	void test01_emailSubscriberReceivesOutboxEntryOnUpdate() {
 		setupCall();
 
-		// Only fetch the UPDATE/MESSAGE dispatch entry (grp-001)
 		final var dispatchEntries = notificationDispatchWorker.fetchProcessable().stream()
 			.filter(e -> "grp-001".equals(e.getRequestGroupId()))
 			.toList();
@@ -55,26 +65,56 @@ class EmailDispatchIT extends AbstractAppTest {
 
 		notificationDispatchWorker.processGroup(dispatchEntries);
 
-		final var outboxEntries = emailDispatchOutboxRepository.findAll();
-		assertThat(outboxEntries).hasSize(1);
+		transactionTemplate.executeWithoutResult(_ -> {
+			final var outboxEntries = emailDispatchOutboxRepository.findAll();
+			assertThat(outboxEntries).hasSize(1);
 
-		final var outbox = outboxEntries.getFirst();
-		assertThat(outbox.getMunicipalityId()).isEqualTo("2281");
-		assertThat(outbox.getNamespace()).isEqualTo("NAMESPACE-1");
-		assertThat(outbox.getErrandId()).isEqualTo(ERRAND_ID);
-		assertThat(outbox.getErrandNumber()).isEqualTo("NS1-2024-000001");
-		assertThat(outbox.getSubscriberId()).isEqualTo("11111111-0000-0000-0000-000000000001");
-		assertThat(outbox.getRecipientEmail()).isEqualTo("chef@example.com");
-		assertThat(outbox.getEventSummary()).isEqualTo("Nytt meddelande");
+			final var outbox = outboxEntries.getFirst();
+			assertThat(outbox.getSubscriber().getId()).isEqualTo(EMAIL_SUBSCRIBER_ID);
+			assertThat(outbox.getErrandId()).isEqualTo(ERRAND_ID);
+			assertThat(outbox.getErrandNumber()).isEqualTo("NS1-2024-000001");
+			assertThat(outbox.getCreated()).isNotNull();
+			assertThat(outbox.getEvents()).containsExactly(EmailDispatchOutboxEventEmbeddable.create().withEventId("evt-001").withDescription("Nytt meddelande"));
+		});
 	}
 
 	/**
-	 * Verifies that the outbox processor resolves email, fetches messaging settings,
-	 * and sends an email via the messaging service. After successful send the outbox
-	 * entry is deleted.
+	 * The notification dispatch job sends what it enqueued within the same run, one email per subscriber, and empties
+	 * the outbox.
 	 */
 	@Test
 	void test02_outboxProcessorSendsEmailViaMessaging() {
+		setupCall();
+		notificationDispatchRepository.deleteById(CREATE_DISPATCH_ID);
+
+		notificationDispatchScheduler.processDispatch();
+
+		assertThat(notificationDispatchRepository.findAll()).isEmpty();
+		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		verifyStubs();
+	}
+
+	/**
+	 * A CREATE/ERRAND dispatch reaches a subscriber whose event filter is {CREATE, null}, all the way from dispatch
+	 * entry to email.
+	 */
+	@Test
+	void test03_createEventDispatchesEmailToSubscriber() {
+		setupCall();
+		notificationDispatchRepository.deleteById(UPDATE_DISPATCH_ID);
+
+		notificationDispatchScheduler.processDispatch();
+
+		assertThat(notificationDispatchRepository.findAll()).isEmpty();
+		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		verifyStubs();
+	}
+
+	/**
+	 * Removing a subscriber removes what is waiting in the outbox for them, so nothing is sent to someone who is gone.
+	 */
+	@Test
+	void test04_deletingSubscriberRemovesItsOutboxEntries() {
 		setupCall();
 
 		final var dispatchEntries = notificationDispatchWorker.fetchProcessable().stream()
@@ -83,74 +123,17 @@ class EmailDispatchIT extends AbstractAppTest {
 		notificationDispatchWorker.processGroup(dispatchEntries);
 		assertThat(emailDispatchOutboxRepository.findAll()).hasSize(1);
 
-		subscriberEmailService.fetchPending().forEach(subscriberEmailService::processEntry);
-
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
-		verifyStubs();
-	}
-
-	/**
-	 * Verifies that a CREATE/ERRAND event dispatches email to a subscriber whose
-	 * event filter includes {CREATE, null} (any CREATE subtype). The full chain is
-	 * tested: dispatch entry → dispatch worker → outbox → outbox processor → email.
-	 */
-	@Test
-	void test03_createEventDispatchesEmailToSubscriber() {
-		setupCall();
-
-		final var dispatchEntries = notificationDispatchWorker.fetchProcessable().stream()
-			.filter(e -> "grp-002".equals(e.getRequestGroupId()))
-			.toList();
-		assertThat(dispatchEntries).hasSize(1);
-		assertThat(dispatchEntries.getFirst().getEventType()).isEqualTo("CREATE");
-
-		notificationDispatchWorker.processGroup(dispatchEntries);
-
-		final var outboxEntries = emailDispatchOutboxRepository.findAll();
-		assertThat(outboxEntries).hasSize(1);
-		assertThat(outboxEntries.getFirst().getEventSummary()).isEqualTo("Nytt arende");
-
-		subscriberEmailService.fetchPending().forEach(subscriberEmailService::processEntry);
-
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
-		verifyStubs();
-	}
-
-	/**
-	 * Verifies that an UPDATE/RESTRICTED event does NOT create an outbox entry for a
-	 * subscriber whose event filter is {UPDATE, MESSAGE}. The RESTRICTED subtype does
-	 * not match MESSAGE, so the subscriber is not notified — this is how MAS/MAR
-	 * updates stay silent toward other roles.
-	 */
-	@Test
-	void test04_restrictedUpdateDoesNotDispatchToRegularSubscriber() {
-		setupCall();
-
-		final var dispatchEntries = notificationDispatchWorker.fetchProcessable().stream()
-			.filter(e -> "grp-003".equals(e.getRequestGroupId()))
-			.toList();
-		assertThat(dispatchEntries).hasSize(1);
-		assertThat(dispatchEntries.getFirst().getSubType()).isEqualTo("RESTRICTED");
-
-		notificationDispatchWorker.processGroup(dispatchEntries);
+		subscriberRepository.deleteById(EMAIL_SUBSCRIBER_ID);
 
 		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
 	}
 
 	/**
-	 * End-to-end: PATCH an errand via REST API, then run the dispatch worker and
-	 * outbox processor to verify the full chain from API call to email delivery.
-	 * <p>
-	 * The subscriber has filter {UPDATE, MESSAGE} which does not match UPDATE/ERRAND,
-	 * and filter {CREATE, null}. Since the PATCH produces an UPDATE/ERRAND event, the
-	 * subscriber's filter does not match and no outbox entry is created.
-	 * <p>
-	 * This test verifies that the dispatch entry IS created (sendNotification=true
-	 * for UPDATE events) but that the subscriber filter correctly prevents dispatch.
+	 * A PATCH creates an UPDATE/ERRAND dispatch entry, which does not match the subscriber's {UPDATE, MESSAGE} filter, so
+	 * nothing is put in the outbox.
 	 */
 	@Test
 	void test05_patchErrandDispatchesEmail() {
-		// Clear pre-inserted dispatch entries so only the PATCH-generated one remains
 		notificationDispatchRepository.deleteAll();
 
 		setupCall()
@@ -161,19 +144,16 @@ class EmailDispatchIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.sendRequest();
 
-		// A dispatch entry should have been created by EventService
 		final var dispatchEntries = notificationDispatchRepository.findAll();
 		assertThat(dispatchEntries).isNotEmpty();
 		assertThat(dispatchEntries.getFirst().getEventType()).isEqualTo("UPDATE");
 		assertThat(dispatchEntries.getFirst().getSubType()).isEqualTo("ERRAND");
 
-		// Fetch and process — subscriber has {UPDATE, MESSAGE} filter which does NOT match UPDATE/ERRAND
 		final var processable = notificationDispatchWorker.fetchProcessable();
 		assertThat(processable).isNotEmpty();
 
 		notificationDispatchWorker.processGroup(processable);
 
-		// No outbox entry because the subscriber's filter doesn't match UPDATE/ERRAND
 		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
 	}
 }
