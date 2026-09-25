@@ -47,6 +47,8 @@ class NotificationDispatchEntityTest {
 		final var subType = "ATTACHMENT";
 		final var executingUserId = "joe01doe";
 
+		final var emailOnly = true;
+
 		final var bean = NotificationDispatchEntity.create()
 			.withEventId(eventId)
 			.withRequestGroupId(requestGroupId)
@@ -56,7 +58,8 @@ class NotificationDispatchEntityTest {
 			.withEventType(eventType)
 			.withDescription(description)
 			.withSubType(subType)
-			.withExecutingUserId(executingUserId);
+			.withExecutingUserId(executingUserId)
+			.withEmailOnly(emailOnly);
 
 		assertThat(bean.getEventId()).isEqualTo(eventId);
 		assertThat(bean.getRequestGroupId()).isEqualTo(requestGroupId);
@@ -67,12 +70,13 @@ class NotificationDispatchEntityTest {
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getSubType()).isEqualTo(subType);
 		assertThat(bean.getExecutingUserId()).isEqualTo(executingUserId);
+		assertThat(bean.isEmailOnly()).isEqualTo(emailOnly);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NotificationDispatchEntity.create()).hasAllNullFieldsOrProperties();
-		assertThat(new NotificationDispatchEntity()).hasAllNullFieldsOrProperties();
+		assertThat(NotificationDispatchEntity.create()).hasAllNullFieldsOrPropertiesExcept("emailOnly");
+		assertThat(new NotificationDispatchEntity()).hasAllNullFieldsOrPropertiesExcept("emailOnly");
 	}
 
 	@Test

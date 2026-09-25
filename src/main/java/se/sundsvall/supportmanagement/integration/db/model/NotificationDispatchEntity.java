@@ -53,6 +53,9 @@ public class NotificationDispatchEntity {
 	@Column(name = "executing_user_id")
 	private String executingUserId;
 
+	@Column(name = "email_only", columnDefinition = "bit(1) not null default 0")
+	private boolean emailOnly;
+
 	@Column(name = "created", nullable = false, columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
@@ -196,6 +199,19 @@ public class NotificationDispatchEntity {
 		return this;
 	}
 
+	public boolean isEmailOnly() {
+		return emailOnly;
+	}
+
+	public void setEmailOnly(final boolean emailOnly) {
+		this.emailOnly = emailOnly;
+	}
+
+	public NotificationDispatchEntity withEmailOnly(final boolean emailOnly) {
+		this.emailOnly = emailOnly;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -211,7 +227,7 @@ public class NotificationDispatchEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, eventId, requestGroupId, errandId, municipalityId, namespace, eventType, description, subType, executingUserId, created);
+		return Objects.hash(id, eventId, requestGroupId, errandId, municipalityId, namespace, eventType, description, subType, executingUserId, emailOnly, created);
 	}
 
 	@Override
@@ -233,6 +249,7 @@ public class NotificationDispatchEntity {
 			&& Objects.equals(description, other.description)
 			&& Objects.equals(subType, other.subType)
 			&& Objects.equals(executingUserId, other.executingUserId)
+			&& emailOnly == other.emailOnly
 			&& Objects.equals(created, other.created);
 	}
 
@@ -249,6 +266,7 @@ public class NotificationDispatchEntity {
 			", description='" + description + '\'' +
 			", subType='" + subType + '\'' +
 			", executingUserId='" + executingUserId + '\'' +
+			", emailOnly=" + emailOnly +
 			", created=" + created +
 			'}';
 	}

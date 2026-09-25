@@ -86,10 +86,10 @@ public class EventService {
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), false);
 		} else if (eventType == CREATE && subscriptionRepository.existsActiveNamespaceSubscriptionWithEmailChannel(
 			errandEntity.getMunicipalityId(), errandEntity.getNamespace(), now(systemDefault()))) {
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), true);
 		}
 	}
 
@@ -149,7 +149,7 @@ public class EventService {
 		}
 		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		createNotification(errandEntity, event);
-		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue());
+		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue(), false);
 	}
 
 	public Page<Event> readEvents(final String namespace, final String municipalityId, final String id, final Pageable pageable) {
@@ -167,7 +167,8 @@ public class EventService {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
 
-	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType) {
+	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType,
+		final boolean emailOnly) {
 		final var executingUser = getExecutingUser();
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
 			.withEventId(eventId)
@@ -178,7 +179,8 @@ public class EventService {
 			.withEventType(eventType.getValue())
 			.withDescription(description)
 			.withSubType(subType)
-			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null)));
+			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null))
+			.withEmailOnly(emailOnly));
 	}
 
 	private String extractEventId(final ResponseEntity<Void> response) {

@@ -10,7 +10,6 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.RESTRICTED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.values;
@@ -19,7 +18,7 @@ class EventSubTypeTest {
 
 	@Test
 	void enums() {
-		assertThat(values()).containsExactlyInAnyOrder(ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, RESTRICTED, SYSTEM, SUSPENSION);
+		assertThat(values()).containsExactlyInAnyOrder(ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, SYSTEM, SUSPENSION);
 	}
 
 	@Test
@@ -30,7 +29,6 @@ class EventSubTypeTest {
 		assertThat(MESSAGE.getValue()).isEqualTo("MESSAGE");
 		assertThat(NOTE.getValue()).isEqualTo("NOTE");
 		assertThat(SYSTEM.getValue()).isEqualTo("SYSTEM");
-		assertThat(RESTRICTED.getValue()).isEqualTo("RESTRICTED");
 		assertThat(SUSPENSION.getValue()).isEqualTo("SUSPENSION");
 	}
 }
