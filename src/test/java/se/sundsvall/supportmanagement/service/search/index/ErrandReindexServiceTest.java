@@ -256,6 +256,41 @@ class ErrandReindexServiceTest {
 		verify(lockMock).unlock();
 	}
 
+	/**
+	 * A namespace the index will not take must not leave the namespaces after it unrepaired, so the walk goes on and what
+	 * failed is raised at the end, where the scheduled job reports it.
+	 */
+	@Test
+	void theNightlyReindexCarriesOnPastANamespaceThatFails() throws Exception {
+		when(lockProviderMock.lock(any())).thenReturn(Optional.of(lockMock));
+		when(namespaceConfigRepositoryMock.findAll()).thenReturn(List.of(
+			NamespaceConfigEntity.create().withNamespace("first").withMunicipalityId(MUNICIPALITY_ID),
+			NamespaceConfigEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)));
+		when(openSearchMock.errandWriteIndex()).thenReturn("errand-write");
+		when(openSearchMock.restClient()).thenReturn(restClientMock);
+		// The first namespace is refused by the index, the second is rebuilt
+		when(restClientMock.performRequest(any())).thenThrow(new IOException("cluster said no")).thenReturn(null);
+		when(massIndexerMock.type(any())).thenReturn(filteringTypeStepMock);
+		when(filteringTypeStepMock.reindexOnly(any())).thenReturn(reindexParameterStepMock);
+		when(reindexParameterStepMock.param(any(), any())).thenReturn(reindexParameterStepMock);
+		when(massIndexerMock.purgeAllOnStart(false)).thenReturn(massIndexerMock);
+
+		try (final MockedStatic<Search> search = mockStatic(Search.class)) {
+			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenReturn(searchMappingMock);
+			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
+			when(searchScopeMock.massIndexer()).thenReturn(massIndexerMock);
+
+			final var service = service(true);
+			final var e = assertThrows(IllegalStateException.class, service::reindexEveryNamespace);
+
+			assertThat(e).hasMessageContaining("rebuilt 1 of 2").hasMessageContaining("%s/first".formatted(MUNICIPALITY_ID));
+		}
+
+		// The second namespace was rebuilt all the same
+		verify(massIndexerMock).startAndWait();
+		verify(lockMock).unlock();
+	}
+
 	@Test
 	void theNightlyReindexReleasesTheLockWhenANamespaceFails() throws Exception {
 		when(lockProviderMock.lock(any())).thenReturn(Optional.of(lockMock));
