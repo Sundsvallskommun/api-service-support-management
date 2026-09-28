@@ -24,7 +24,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
@@ -77,7 +76,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
@@ -159,7 +157,7 @@ public class MetadataService {
 	private final ValidationRepository validationRepository;
 	private final ContactReasonRepository contactReasonRepository;
 	private final JobService jobService;
-	private final LabelMoveWorker labelMoveWorker;
+	private final LabelMoveRunner labelMoveRunner;
 	private final AsyncTaskExecutor labelMoveTaskExecutor;
 	private final AntPathMatcher pathMatcher;
 	private final TransactionTemplate readOnlyTransactionTemplate;
@@ -182,10 +180,10 @@ public class MetadataService {
 		final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository,
 		final JobService jobService,
-		// Lazy: LabelMoveWorker sits behind ErrandService -> RevisionService -> AccessControlService -> AccessMapperService
+		// Lazy: LabelMoveRunner sits behind ErrandService -> RevisionService -> AccessControlService -> AccessMapperService
 		// -> MetadataService, a cycle back to this very bean. Never actually needed before the async dispatch fires, by
 		// which point every bean in the cycle is already constructed.
-		@Lazy final LabelMoveWorker labelMoveWorker,
+		@Lazy final LabelMoveRunner labelMoveRunner,
 		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor,
 		final PlatformTransactionManager transactionManager,
 		final JobProperties jobProperties) {
@@ -205,7 +203,7 @@ public class MetadataService {
 		this.validationRepository = validationRepository;
 		this.contactReasonRepository = contactReasonRepository;
 		this.jobService = jobService;
-		this.labelMoveWorker = labelMoveWorker;
+		this.labelMoveRunner = labelMoveRunner;
 		this.labelMoveTaskExecutor = labelMoveTaskExecutor;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
@@ -474,16 +472,13 @@ public class MetadataService {
 	 * stale lease is reclaimed on the spot. This does not by itself give a crashed run a way to resume the restow it
 	 * left half done; it only shrinks how long the namespace stays blocked because of it.
 	 * <p>
-	 * Deliberately not itself {@code @Transactional}, and validation, job creation and dispatch are kept in three
-	 * separate steps rather than one enclosing transaction — mirrors {@link ErrandPurgeService#startPurge}. Wrapping
-	 * the whole method would flush {@link JobService#create}'s row without committing it before the worker is handed
-	 * to the executor, and the worker's {@link JobService#setRunning} runs in its own {@code REQUIRES_NEW} transaction
-	 * on a different thread that cannot see an uncommitted row — it would find no job, log a warning, and leave the
-	 * job stuck PENDING until the stale-job sweep eventually fails it. Validation still needs a session of its own:
-	 * {@link #validateAndFindLabelToMove}'s cycle check walks LAZY {@code parent} proxies one hop at a time, and each
-	 * hop past the first needs the session to still be there to load from - hence {@link #readOnlyTransactionTemplate}
-	 * rather than a plain call, which would only cover the very first repository call before the session behind it
-	 * closes.
+	 * Deliberately not itself {@code @Transactional}: validation runs in a read-only transaction of its own, and job
+	 * creation and dispatch are handed to {@link JobService#launch} - see its own javadoc for why wrapping this whole
+	 * method in one transaction would leave the job it creates stuck PENDING. Validation still needs a session of its
+	 * own regardless: {@link #validateAndFindLabelToMove}'s cycle check walks LAZY {@code parent} proxies one hop at a
+	 * time, and each hop past the first needs the session to still be there to load from - hence
+	 * {@link #readOnlyTransactionTemplate} rather than a plain call, which would only cover the very first repository
+	 * call before the session behind it closes.
 	 */
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
 		var context = readOnlyTransactionTemplate.execute(status -> validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId()));
@@ -503,21 +498,13 @@ public class MetadataService {
 		// dry run and starts the move directly still learns which actions are affected, without waiting on a later
 		// GET .../jobs/{jobId} that stores no such thing.
 		var affectedActions = resolveAffectedActions(namespace, municipalityId, allMovedIds);
-		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
-		// worker dispatched right after is free to look the job up from another thread.
-		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, affectedErrandIds.size(), canonicalLabelId);
 		var startedBy = startedBy();
 
-		try {
-			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), affectedErrandIds, startedBy)));
-		} catch (final Exception e) {
-			// The job is already there and would otherwise sit waiting for a run that never comes.
-			jobService.fail(jobId, COULD_NOT_START.formatted(e.getMessage()));
-
-			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START.formatted(e.getMessage()));
-		}
-
-		return jobService.get(namespace, municipalityId, jobId).withAffectedActions(affectedActions);
+		return jobService.launch(namespace, municipalityId, MOVE_LABEL, affectedErrandIds.size(), canonicalLabelId, labelMoveTaskExecutor,
+			jobId -> new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), affectedErrandIds, startedBy),
+			labelMoveRunner::run,
+			COULD_NOT_START)
+			.withAffectedActions(affectedActions);
 	}
 
 	/**

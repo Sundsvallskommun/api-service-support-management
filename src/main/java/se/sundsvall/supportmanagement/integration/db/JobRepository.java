@@ -23,8 +23,6 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
 	 */
 	Optional<JobEntity> findByIdAndNamespaceAndMunicipalityIdAndType(String id, String namespace, String municipalityId, JobType type);
 
-	boolean existsByNamespaceAndMunicipalityIdAndStatusIn(String namespace, String municipalityId, Collection<JobStatus> statuses);
-
 	boolean existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(String namespace, String municipalityId, JobType type, Collection<JobStatus> statuses);
 
 	/**
@@ -34,8 +32,6 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
 	 * counterpart for another type) holds.
 	 */
 	Optional<JobEntity> findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(String namespace, String municipalityId, JobType type, Collection<JobStatus> statuses);
-
-	boolean existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(String namespace, String municipalityId, JobType type, String labelId, Collection<JobStatus> statuses);
 
 	/**
 	 * Jobs in one of the sent in states that have not been written to since the sent in point in time.

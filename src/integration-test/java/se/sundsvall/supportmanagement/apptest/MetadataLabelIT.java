@@ -368,7 +368,7 @@ class MetadataLabelIT extends AbstractAppTest {
 			.withProgress(10)
 			.withTotal(100)
 			.withProcessed(10)
-			.withLabelId("ffe5f120-6a3b-4404-ace8-8ea87b559907"));
+			.withSubjectId("ffe5f120-6a3b-4404-ace8-8ea87b559907"));
 
 		setupCall()
 			.withServicePath(path)

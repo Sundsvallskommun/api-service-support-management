@@ -73,7 +73,7 @@ class LabelMoveIT extends AbstractAppTest {
 	// References SUBTYPE-3 and SUBTYPE-4 directly - moving SUBTYPE-4 is what restows it
 	private static final String AFFECTED_ERRAND = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, subject_id, created, modified) "
 		+ "VALUES ('bbbbbbbb-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, 'f4d6e210-633b-48a6-ad0a-7be839b28762', NOW(), NOW())";
 
 	@Autowired
@@ -158,7 +158,7 @@ class LabelMoveIT extends AbstractAppTest {
 			.withProgress(10)
 			.withTotal(100)
 			.withProcessed(10)
-			.withLabelId(SUBTYPE_4));
+			.withSubjectId(SUBTYPE_4));
 
 		setupCall()
 			.withServicePath(PATH + "/" + SUBTYPE_4 + "/move")
@@ -178,7 +178,7 @@ class LabelMoveIT extends AbstractAppTest {
 	void test05_dbRejectsSecondActiveMoveLabelJobForSameNamespaceRegardlessOfLabel() {
 		// A different id and a different label than the seeded row - the constraint must still refuse, since by the
 		// time either insert reaches the DB neither request's own precheck has any way left to catch the other.
-		final var secondActiveJob = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+		final var secondActiveJob = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, subject_id, created, modified) "
 			+ "VALUES ('bbbbbbbb-0000-0000-0000-000000000002', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'PENDING', 0, 0, 0, 'ffe5f120-6a3b-4404-ace8-8ea87b559907', NOW(), NOW())";
 
 		assertThatThrownBy(() -> jdbcTemplate.execute(secondActiveJob))

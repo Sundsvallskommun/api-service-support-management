@@ -48,7 +48,7 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	 * its {@code affectedErrandCount} from {@code size()} here, and the job this starts resolves the same list once at
 	 * the outset and carries it through {@code LabelMoveRun}/{@code LabelMergeRun} so the job's own {@code total} and
 	 * the walk that restows them read from the exact same set - see the review discussion on
-	 * {@code LabelMoveWorker#restowErrands} for what went wrong when the walk instead re-derived its own, narrower set
+	 * {@code LabelMoveRunner#restowErrands} for what went wrong when the walk instead re-derived its own, narrower set
 	 * from a single label id.
 	 */
 	@Query("select distinct e.id from ErrandEntity e join e.labels l where l.metadataLabelId in :labelIds")

@@ -4,12 +4,16 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
@@ -20,6 +24,7 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -57,12 +62,13 @@ public class JobService {
 	}
 
 	/**
-	 * Creates a job that works on one label, so that a caller wanting to know whether that label already has a run under
-	 * way has something to ask {@link #hasActiveJob(String, String, JobType, String)} about.
+	 * Creates a job that works on one subject - a label to move, a label to merge into another, or whatever else a
+	 * future kind of job may center on - so the job row carries a pointer to what it is about even though nothing
+	 * queries by it today.
 	 */
 	@Transactional
-	public String create(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
-		return createJob(namespace, municipalityId, type, total, labelId);
+	public String create(final String namespace, final String municipalityId, final JobType type, final int total, final String subjectId) {
+		return createJob(namespace, municipalityId, type, total, subjectId);
 	}
 
 	/**
@@ -75,14 +81,14 @@ public class JobService {
 	 * here, inside this method's own transaction, rather than staying unflushed until some later point picks the
 	 * failure up out of context.
 	 */
-	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
+	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String subjectId) {
 		try {
 			return jobRepository.saveAndFlush(JobEntity.create()
 				.withNamespace(namespace)
 				.withMunicipalityId(municipalityId)
 				.withType(type)
 				.withTotal(total)
-				.withLabelId(labelId)).getId();
+				.withSubjectId(subjectId)).getId();
 		} catch (final DataIntegrityViolationException e) {
 			// The only unique constraint this table carries besides its primary key - a second request that raced the
 			// precheck above and lost is answered the same way a sequential one already is.
@@ -93,6 +99,57 @@ public class JobService {
 	@Transactional(readOnly = true)
 	public JobResponse get(final String namespace, final String municipalityId, final String jobId) {
 		return toJobResponse(findOrThrow(namespace, municipalityId, jobId));
+	}
+
+	/**
+	 * Creates a job and dispatches a run against it, in one place - so the transaction boundary the dispatch depends on
+	 * lives here once instead of being reproduced, and possibly gotten subtly wrong, by every caller that starts a job
+	 * of its own. That is exactly what went wrong the last time this was written out twice: one copy was correctly not
+	 * {@code @Transactional} and the other was, and the second one dispatched a run that could not see the job it was
+	 * meant to update.
+	 * <p>
+	 * Deliberately not itself {@code @Transactional}: wrapping this method would hold job creation and the rest of it in
+	 * one transaction, so the row {@link #createJob} flushes would not actually be committed before the run is handed to
+	 * {@code executor} - the run's own {@link #setRunning}, executing on a different thread in its own
+	 * {@code REQUIRES_NEW} transaction, would find no job to update.
+	 *
+	 * @param  namespace            namespace the job belongs to.
+	 * @param  municipalityId       id of the municipality the job belongs to.
+	 * @param  type                 the kind of job to create.
+	 * @param  total                what the job's progress is measured against.
+	 * @param  subjectId            id of whatever single thing the job centers on, or {@code null} if it does not
+	 *                              center on one.
+	 * @param  executor             the executor to dispatch the run on.
+	 * @param  toRun                builds the run once the job's id is known - the run itself always needs it, and
+	 *                              needs it first.
+	 * @param  runner               carries the run to its end - a {@link JobRunner}'s own {@code run}.
+	 * @param  couldNotStartMessage format string with one {@code %s} for the failure reason, used both to fail the job
+	 *                              and, wrapped in a {@link Problem}, to answer the caller.
+	 * @return                      the job the run reports against.
+	 */
+	public <R> JobResponse launch(
+		final String namespace,
+		final String municipalityId,
+		final JobType type,
+		final int total,
+		final String subjectId,
+		final AsyncTaskExecutor executor,
+		final Function<String, R> toRun,
+		final Consumer<R> runner,
+		final String couldNotStartMessage) {
+
+		final var jobId = createJob(namespace, municipalityId, type, total, subjectId);
+
+		try {
+			executor.execute(() -> runner.accept(toRun.apply(jobId)));
+		} catch (final Exception e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			fail(jobId, couldNotStartMessage.formatted(e.getMessage()));
+
+			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, couldNotStartMessage.formatted(e.getMessage()));
+		}
+
+		return get(namespace, municipalityId, jobId);
 	}
 
 	@Transactional(propagation = REQUIRES_NEW)
@@ -198,24 +255,12 @@ public class JobService {
 			.orElse(null);
 	}
 
-	public boolean hasActiveJob(final String namespace, final String municipalityId) {
-		return jobRepository.existsByNamespaceAndMunicipalityIdAndStatusIn(namespace, municipalityId, ACTIVE_STATUSES);
-	}
-
 	/**
 	 * Whether a job of one kind is already under way, for work that only rules out another run of its own kind rather
 	 * than every other job in the namespace.
 	 */
 	public boolean hasActiveJob(final String namespace, final String municipalityId, final JobType type) {
 		return jobRepository.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(namespace, municipalityId, type, ACTIVE_STATUSES);
-	}
-
-	/**
-	 * Whether a job of one kind is already under way for one label, for work that must not start a second run against a
-	 * label a first run has not finished with yet.
-	 */
-	public boolean hasActiveJob(final String namespace, final String municipalityId, final JobType type, final String labelId) {
-		return jobRepository.existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(namespace, municipalityId, type, labelId, ACTIVE_STATUSES);
 	}
 
 	/**

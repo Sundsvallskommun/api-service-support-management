@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
@@ -18,7 +17,6 @@ import se.sundsvall.supportmanagement.service.purge.PurgeSettings;
 import static java.lang.Boolean.TRUE;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
 
@@ -74,9 +72,10 @@ public class ErrandPurgeService {
 		// started by nobody - and who asked for an irreversible bulk removal is the one thing an audit comes looking for.
 		final var startedBy = startedBy();
 
-		// Two runs walking the same namespace would do each other's work twice over. The check is not a lock: two
-		// requests arriving at the same moment can both pass it, which costs duplicated work rather than lost or
-		// wrongly removed errands, since an errand already gone is not removed twice.
+		// Two runs walking the same namespace would do each other's work twice over. This precheck alone is not a lock -
+		// two requests arriving at the same moment could both pass it - but JobService.create's insert is guarded at the
+		// DB level too (see V1_60__add_active_job_guard.sql), so the second of the two is refused there instead of
+		// starting a duplicate run.
 		if (jobService.hasActiveJob(namespace, municipalityId, ERRAND_PURGE)) {
 			throw Problem.valueOf(CONFLICT, ALREADY_RUNNING.formatted(namespace, municipalityId));
 		}
@@ -93,18 +92,11 @@ public class ErrandPurgeService {
 
 		final var settings = new PurgeSettings(request.getOlderThan(), TRUE.equals(request.getDryRun()), request.getMaxErrands());
 		final var total = worker.countErrandsToPurge(namespace, municipalityId, settings.olderThan());
-		final var jobId = jobService.create(namespace, municipalityId, ERRAND_PURGE, total);
 
-		try {
-			taskExecutor.execute(() -> worker.run(new PurgeRun(jobId, namespace, municipalityId, startedBy, settings)));
-		} catch (final Exception e) {
-			// The job is already there and would otherwise sit waiting for a run that never comes.
-			jobService.fail(jobId, COULD_NOT_START.formatted(e.getMessage()));
-
-			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START.formatted(e.getMessage()));
-		}
-
-		return jobService.get(namespace, municipalityId, jobId);
+		return jobService.launch(namespace, municipalityId, ERRAND_PURGE, total, null, taskExecutor,
+			jobId -> new PurgeRun(jobId, namespace, municipalityId, startedBy, settings),
+			worker::run,
+			COULD_NOT_START);
 	}
 
 	/**
