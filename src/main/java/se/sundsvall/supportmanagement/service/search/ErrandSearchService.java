@@ -98,8 +98,14 @@ public class ErrandSearchService {
 			throw SearchProblems.toProblem(e, properties.timeout());
 		}
 
+		// The index says which errands to read; the database says whether they are still reached. An index write lost while
+		// OpenSearch was away would otherwise answer for labels the errand no longer carries, so what the database refuses
+		// is dropped here rather than returned trimmed
+		final var reached = accessControlService.errandReach(namespace, municipalityId, user);
+		final var hits = result.hits().stream().filter(reached).toList();
+
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, user);
-		return new PageImpl<>(toErrandsWithAccessControl(result.hits(), fieldResolver), pageable, result.total().hitCount());
+		return new PageImpl<>(toErrandsWithAccessControl(hits, fieldResolver), pageable, result.total().hitCount());
 	}
 
 	/**

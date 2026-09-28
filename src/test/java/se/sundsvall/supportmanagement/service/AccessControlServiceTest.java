@@ -160,6 +160,62 @@ class AccessControlServiceTest {
 		Identifier.remove();
 	}
 
+	/**
+	 * What a search holds its hits to, since the index answers from a copy of the access labels written after the commit
+	 * rather than within it.
+	 */
+	@Test
+	void errandReachReachesEverythingWhileTheNamespaceDoesNotEnforce() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create());
+
+		assertThat(accessControlService.errandReach(NAMESPACE, MUNICIPALITY_ID, adUser()).test(limitedErrand())).isTrue();
+		verifyNoInteractions(accessMapperService);
+	}
+
+	@Test
+	void errandReachFollowsTheLabelsOfTheUser() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(MetadataLabelEntity.create().withId("label-id-1"))));
+
+		// The errand carries label-id-1 and nothing else, so the labels cover it
+		assertThat(accessControlService.errandReach(NAMESPACE, MUNICIPALITY_ID, adUser()).test(limitedErrand())).isTrue();
+	}
+
+	@Test
+	void errandReachRefusesAnErrandTheLabelsDoNotCover() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(Set.of(MetadataLabelEntity.create().withId("another-label"))));
+
+		assertThat(accessControlService.errandReach(NAMESPACE, MUNICIPALITY_ID, adUser()).test(limitedErrand())).isFalse();
+	}
+
+	/**
+	 * An errand the labels reach at limited read alone is reached, since a search answers with those too. Asking the
+	 * database for full read here would drop every errand the limited read route exists to return.
+	 */
+	@Test
+	void errandReachReachesWhatTheLabelsCoverAtLimitedReadAlone() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create().withAccessControl(true));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(limitedReadSnapshot());
+
+		assertThat(accessControlService.errandReach(NAMESPACE, MUNICIPALITY_ID, adUser()).test(limitedErrand())).isTrue();
+	}
+
+	/**
+	 * The errand the user reported, which the namespace lets its reporters read whatever the labels say.
+	 */
+	@Test
+	void errandReachFollowsReportingWhereTheNamespaceGrantsIt() {
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(configWithReporterAccess(
+			List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.R)), null));
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(AccessSnapshot.empty());
+
+		final var reach = accessControlService.errandReach(NAMESPACE, MUNICIPALITY_ID, adUser());
+
+		assertThat(reach.test(limitedErrand().withReporterUserId(AD_ACCOUNT))).isTrue();
+		assertThat(reach.test(limitedErrand().withReporterUserId("someone01"))).isFalse();
+	}
+
 	@Test
 	void roleBasedFieldResolverResolvesFieldsForReporter() {
 		final var errand = limitedErrand().withReporterUserId(AD_ACCOUNT);
