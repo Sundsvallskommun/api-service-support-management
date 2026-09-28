@@ -19,7 +19,7 @@ class QueryScannerTest {
 	@ParameterizedTest
 	@NullAndEmptySource
 	@ValueSource(strings = {
-		" ", "　"
+		" ", "\u3000"
 	})
 	void nothingIsNamedByNothing(final String query) {
 		final var scan = QueryScanner.scan(query);
@@ -59,7 +59,7 @@ class QueryScannerTest {
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"description:x", "description :x", "description : x", "description\t:x", "description\n:x", "description　:x", "description     :     x"
+		"description:x", "description :x", "description : x", "description\t:x", "description\n:x", "description\u3000:x", "description     :     x"
 	})
 	void aNameIsANameWhateverStandsBetweenItAndTheColon(final String query) {
 		assertThat(QueryScanner.scan(query).fieldNames()).containsExactly("description");

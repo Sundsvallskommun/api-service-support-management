@@ -19,8 +19,15 @@ import java.util.List;
  */
 final class QueryScanner {
 
-	/** What the parser passes over between tokens. The ideographic space is one of them and is not one of Java's. */
-	private static final String WHITESPACE = " \t\n\r　";
+	/**
+	 * The ideographic space, which the parser passes over and Java's own class of whitespace does not hold. Written as
+	 * the escape it is: the character itself cannot be seen in a source file, and what cannot be seen is what a tool
+	 * normalising whitespace quietly takes away - here that would open the gap it is here to close.
+	 */
+	private static final char IDEOGRAPHIC_SPACE = '\u3000';
+
+	/** What the parser passes over between tokens. */
+	private static final String WHITESPACE = " \t\n\r" + IDEOGRAPHIC_SPACE;
 
 	/** Characters a field name is made of besides letters and digits, escapes aside. */
 	private static final String NAME_PUNCTUATION = "_.-*?@";
@@ -258,27 +265,26 @@ final class QueryScanner {
 		var depth = 0;
 		while (position < query.length()) {
 			final var character = query.charAt(position);
+
 			if (character == '\\') {
 				position += escapeLength(position);
-				continue;
-			}
-			if (character == '"') {
+			} else if (character == '"') {
 				readPhrase();
-				continue;
-			}
-			if (character == opening) {
-				depth++;
-			} else if (character == closing) {
-				depth--;
-				if (depth == 0) {
-					position++;
-					return new Span(start, position);
+			} else {
+				if (character == opening) {
+					depth++;
+				} else if (character == closing) {
+					depth--;
+					if (depth == 0) {
+						position++;
+						return new Span(start, position);
+					}
+				} else if (character == ':') {
+					// A colon inside a group is a reference of its own, which the walk over the group body reads
+					unaccountedColons++;
 				}
-			} else if (character == ':') {
-				// A colon inside a group is a reference of its own, which the walk over the group body reads
-				unaccountedColons++;
+				position++;
 			}
-			position++;
 		}
 		return new Span(start, position);
 	}
