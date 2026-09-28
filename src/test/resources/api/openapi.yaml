@@ -17363,7 +17363,7 @@ components:
           - formData1
           maxLength: 255
           minLength: 1
-          pattern: "[A-Za-z0-9._-]+"
+          pattern: "[A-Za-z0-9_-]+"
         value:
           $ref: "#/components/schemas/JsonNode"
           description: JSON structure value
