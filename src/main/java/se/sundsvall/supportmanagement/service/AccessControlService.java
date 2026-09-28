@@ -122,6 +122,41 @@ public class AccessControlService {
 	}
 
 	/**
+	 * Whether the user reaches an errand at all, asked of errands already in hand.
+	 * <p>
+	 * At all means at limited read or better: a search answers with the errands the labels cover at the level, those they
+	 * cover at limited read alone, and those the user reported, so the question the database is asked here has to be the
+	 * widest of them. Asking for full read would drop every errand the limited read route exists to return.
+	 * <p>
+	 * A search is filtered by the index's copy of the access labels, and that copy is written after the commit rather than
+	 * within it: a write that did not reach OpenSearch leaves an errand answering for labels it no longer carries until the
+	 * next rebuild. The errands a search found are read from the database anyway, so they are held to the database's own
+	 * answer before they are returned, and what the index got wrong is dropped rather than shown.
+	 * <p>
+	 * The same function the specification behind every listing is held to by {@code AccessControlSpecificationParityTest},
+	 * rather than a second opinion about the same rule, and resolved from one configuration and one snapshot for the whole
+	 * page.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  user           user
+	 * @return                whether sent in errand is reached by the user at read
+	 */
+	public Predicate<ErrandEntity> errandReach(String namespace, String municipalityId, Identifier user) {
+		final var config = namespaceConfigService.get(namespace, municipalityId);
+
+		// Nothing restricts anyone while the namespace has not opted in, so the access mapper is never asked for it
+		if (!config.isAccessControl()) {
+			return _ -> true;
+		}
+
+		final var access = accessMapperService.getAccessSnapshot(municipalityId, namespace, user);
+		final var adAccount = adAccountOf(user);
+
+		return errandEntity -> NamespaceGrantResolver.reaches(config, access, errandEntity, adAccount, ProtectedResource.ERRAND, Access.AccessLevelEnum.LR);
+	}
+
+	/**
 	 * Reports what the user may do with one errand, so that a client can render only the controls their next request
 	 * would actually be allowed to make.
 	 * <p>
