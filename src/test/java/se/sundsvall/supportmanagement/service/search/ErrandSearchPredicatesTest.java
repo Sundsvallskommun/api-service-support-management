@@ -169,17 +169,21 @@ class ErrandSearchPredicatesTest {
 	}
 
 	/**
-	 * A route leaving no field open for a word that names none: the word has nowhere to look, so the search finds
-	 * nothing rather than failing on a predicate without a field.
+	 * A route leaving no field open for a word that names none: the word is looked for in the field every errand is
+	 * filtered on, where it matches nothing, so the fielded terms and the operators around it still compose.
 	 */
 	@Test
-	void aWordWithNoFieldToLookInMatchesNothing() {
-		when(factoryMock.matchNone()).thenReturn(matchNoneMock);
-		when(matchNoneMock.toPredicate()).thenReturn(predicateMock);
+	void aWordWithNoFieldToLookInSearchesTheFieldEveryErrandCarries() {
+		when(factoryMock.queryString()).thenReturn(queryStringFieldStepMock);
+		when(queryStringFieldStepMock.fields(any(String[].class))).thenReturn(queryStringFieldMoreStepMock);
+		when(queryStringFieldMoreStepMock.matching(anyString())).thenReturn(queryStringOptionsMock);
+		when(queryStringOptionsMock.defaultOperator(BooleanOperator.AND)).thenReturn(queryStringOptionsMock);
+		when(queryStringOptionsMock.toPredicate()).thenReturn(predicateMock);
 
 		assertThat(predicates().query(factoryMock, "vatten", List.of())).isSameAs(predicateMock);
 
-		verify(factoryMock, never()).queryString();
+		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.MUNICIPALITY_ID_FIELD);
+		verify(factoryMock, never()).matchNone();
 	}
 
 	/**
