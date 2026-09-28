@@ -23,9 +23,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -75,7 +73,7 @@ class ErrandPurgeServiceTest {
 		assertThat(response.getJobId()).isEqualTo(JOB_ID);
 		assertThat(response.getStatus()).isEqualTo(RUNNING);
 		verify(workerMock).countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN);
-		verify(jobServiceMock).launch(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), eq(TOTAL), isNull(), any(), any(), any(), eq(COULD_NOT_START));
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), any(), any(), eq(COULD_NOT_START));
 	}
 
 	@Test
@@ -90,7 +88,7 @@ class ErrandPurgeServiceTest {
 
 		final var toRunCaptor = ArgumentCaptor.forClass(Function.class);
 		final var runnerCaptor = ArgumentCaptor.forClass(Consumer.class);
-		verify(jobServiceMock).launch(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), eq(TOTAL), isNull(), any(), toRunCaptor.capture(), runnerCaptor.capture(), eq(COULD_NOT_START));
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), toRunCaptor.capture(), runnerCaptor.capture(), eq(COULD_NOT_START));
 
 		final var run = (PurgeRun) toRunCaptor.getValue().apply(JOB_ID);
 		assertThat(run.jobId()).isEqualTo(JOB_ID);
@@ -118,7 +116,7 @@ class ErrandPurgeServiceTest {
 		service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(false, null));
 
 		final var toRunCaptor = ArgumentCaptor.forClass(Function.class);
-		verify(jobServiceMock).launch(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), eq(TOTAL), isNull(), any(), toRunCaptor.capture(), any(), eq(COULD_NOT_START));
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), toRunCaptor.capture(), any(), eq(COULD_NOT_START));
 
 		// The request is over and its thread carries no identifier any more. What the run is recorded as was already
 		// settled when the request built this function - applying it here, after the identifier is gone, is what proves
@@ -139,7 +137,7 @@ class ErrandPurgeServiceTest {
 		service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(true, null));
 
 		final var toRunCaptor = ArgumentCaptor.forClass(Function.class);
-		verify(jobServiceMock).launch(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), eq(TOTAL), isNull(), any(), toRunCaptor.capture(), any(), eq(COULD_NOT_START));
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), toRunCaptor.capture(), any(), eq(COULD_NOT_START));
 
 		final var run = (PurgeRun) toRunCaptor.getValue().apply(JOB_ID);
 		assertThat(run.startedBy()).isEqualTo("unknown");
@@ -156,7 +154,7 @@ class ErrandPurgeServiceTest {
 			.hasFieldOrPropertyWithValue("status", CONFLICT)
 			.hasMessageContaining("A purge is already running for namespace 'namespace' in municipality with id '2281'");
 
-		verify(jobServiceMock, never()).launch(any(), any(), any(), anyInt(), any(), any(), any(), any(), any());
+		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
 		verifyNoInteractions(workerMock);
 	}
 
@@ -171,7 +169,7 @@ class ErrandPurgeServiceTest {
 			.hasFieldOrPropertyWithValue("status", CONFLICT)
 			.hasMessageContaining("Errands in namespace 'namespace' for municipality with id '2281' are under access control and cannot be purged");
 
-		verify(jobServiceMock, never()).launch(any(), any(), any(), anyInt(), any(), any(), any(), any(), any());
+		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
 		verifyNoInteractions(workerMock);
 	}
 
@@ -192,7 +190,7 @@ class ErrandPurgeServiceTest {
 	 */
 	private void acceptsRuns() {
 		when(workerMock.countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).thenReturn(TOTAL);
-		when(jobServiceMock.launch(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), eq(TOTAL), isNull(), any(), any(), any(), eq(COULD_NOT_START)))
+		when(jobServiceMock.launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), any(), any(), eq(COULD_NOT_START)))
 			.thenReturn(JobResponse.create()
 				.withJobId(JOB_ID)
 				.withStatus(RUNNING));

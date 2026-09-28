@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
@@ -53,6 +55,14 @@ class JobServiceTest {
 
 	@InjectMocks
 	private JobService jobService;
+
+	@BeforeEach
+	void wireSelf() {
+		// JobService self-invokes through this field (see its own javadoc) rather than through 'this', so a Mockito
+		// @InjectMocks constructor - which cannot resolve a mock of the very class under construction - would otherwise
+		// leave it null.
+		ReflectionTestUtils.setField(jobService, "self", jobService);
+	}
 
 	@Test
 	void create() {
@@ -121,7 +131,7 @@ class JobServiceTest {
 		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(created);
 		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
 
-		final var response = jobService.launch(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id", executor,
+		final var response = jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
 			jobId -> jobId, dispatched::add, "Could not be started: %s");
 
 		assertThat(response.getJobId()).isEqualTo(JOB_ID);
@@ -146,7 +156,7 @@ class JobServiceTest {
 		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(created);
 		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
 
-		assertThatThrownBy(() -> jobService.launch(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id", executor,
+		assertThatThrownBy(() -> jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
 			jobId -> jobId, jobId -> {}, "Could not be started: %s"))
 			.isInstanceOf(ThrowableProblem.class)
 			.satisfies(e -> assertThat(((ThrowableProblem) e).getStatus().value()).isEqualTo(500))

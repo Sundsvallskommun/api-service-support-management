@@ -93,7 +93,7 @@ public class ErrandPurgeService {
 		final var settings = new PurgeSettings(request.getOlderThan(), TRUE.equals(request.getDryRun()), request.getMaxErrands());
 		final var total = worker.countErrandsToPurge(namespace, municipalityId, settings.olderThan());
 
-		return jobService.launch(namespace, municipalityId, ERRAND_PURGE, total, null, taskExecutor,
+		return jobService.launch(new JobSpec(namespace, municipalityId, ERRAND_PURGE, total, null), taskExecutor,
 			jobId -> new PurgeRun(jobId, namespace, municipalityId, startedBy, settings),
 			worker::run,
 			COULD_NOT_START);

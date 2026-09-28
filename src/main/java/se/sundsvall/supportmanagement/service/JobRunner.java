@@ -62,7 +62,7 @@ public abstract class JobRunner<R> {
 	 * Carries the run to its end. Expected to leave the job in a terminal state of its own on success, typically by
 	 * calling {@link JobService#complete}.
 	 */
-	protected abstract void work(R run) throws Exception;
+	protected abstract void work(R run);
 
 	/**
 	 * Logs whatever detail belongs on an aborted run and returns the message {@link JobService#fail} is given for it.

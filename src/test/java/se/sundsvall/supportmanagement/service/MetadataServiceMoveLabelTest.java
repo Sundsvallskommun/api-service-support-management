@@ -42,7 +42,6 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -456,7 +455,7 @@ class MetadataServiceMoveLabelTest {
 		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER)).thenReturn(true);
 		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(List.of("errand-1", "errand-2", "errand-3"));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(actionWithLabel));
-		when(jobServiceMock.launch(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), eq(3), eq(LABEL_ID), eq(labelMoveTaskExecutorMock), any(), any(), eq(COULD_NOT_START)))
+		when(jobServiceMock.launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3, LABEL_ID)), eq(labelMoveTaskExecutorMock), any(), any(), eq(COULD_NOT_START)))
 			.thenReturn(jobResponse);
 
 		var result = service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false));
@@ -469,7 +468,7 @@ class MetadataServiceMoveLabelTest {
 		verify(jobServiceMock).stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER);
 		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
-		verify(jobServiceMock).launch(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), eq(3), eq(LABEL_ID), eq(labelMoveTaskExecutorMock), any(), any(), eq(COULD_NOT_START));
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3, LABEL_ID)), eq(labelMoveTaskExecutorMock), any(), any(), eq(COULD_NOT_START));
 	}
 
 	@Test
@@ -487,7 +486,7 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(List.of());
 		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(List.of());
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
-		when(jobServiceMock.launch(any(), any(), any(), anyInt(), any(), any(), any(), any(), any())).thenReturn(JobResponse.create().withJobId("job-id"));
+		when(jobServiceMock.launch(any(), any(), any(), any(), any())).thenReturn(JobResponse.create().withJobId("job-id"));
 		var identifier = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe");
 		Identifier.set(identifier);
 
@@ -495,7 +494,7 @@ class MetadataServiceMoveLabelTest {
 
 		var toRunCaptor = ArgumentCaptor.forClass(Function.class);
 		var runnerCaptor = ArgumentCaptor.forClass(Consumer.class);
-		verify(jobServiceMock).launch(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), eq(0), eq(LABEL_ID), eq(labelMoveTaskExecutorMock), toRunCaptor.capture(), runnerCaptor.capture(), eq(COULD_NOT_START));
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 0, LABEL_ID)), eq(labelMoveTaskExecutorMock), toRunCaptor.capture(), runnerCaptor.capture(), eq(COULD_NOT_START));
 
 		var run = (LabelMoveRun) toRunCaptor.getValue().apply("job-id");
 		assertThat(run.jobId()).isEqualTo("job-id");

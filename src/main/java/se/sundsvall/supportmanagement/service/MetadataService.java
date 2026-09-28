@@ -500,7 +500,7 @@ public class MetadataService {
 		var affectedActions = resolveAffectedActions(namespace, municipalityId, allMovedIds);
 		var startedBy = startedBy();
 
-		return jobService.launch(namespace, municipalityId, MOVE_LABEL, affectedErrandIds.size(), canonicalLabelId, labelMoveTaskExecutor,
+		return jobService.launch(new JobSpec(namespace, municipalityId, MOVE_LABEL, affectedErrandIds.size(), canonicalLabelId), labelMoveTaskExecutor,
 			jobId -> new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), affectedErrandIds, startedBy),
 			labelMoveRunner::run,
 			COULD_NOT_START)

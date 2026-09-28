@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -52,8 +53,19 @@ public class JobService {
 
 	private final JobRepository jobRepository;
 
-	JobService(final JobRepository jobRepository) {
+	/**
+	 * This same bean, reached through its own Spring proxy rather than through {@code this}. {@link #launch} calls
+	 * {@link #fail} and {@link #get} through here so that their {@code @Transactional} requirements - {@code
+	 * REQUIRES_NEW} and {@code readOnly} respectively - actually take effect: a plain {@code this} call bypasses the
+	 * proxy those requirements live on, silently running with whatever transaction happens to be ambient (often none)
+	 * instead. {@code @Lazy} because the proxy this needs is this very bean's own, not yet constructed while its own
+	 * constructor runs.
+	 */
+	private final JobService self;
+
+	JobService(final JobRepository jobRepository, @Lazy final JobService self) {
 		this.jobRepository = jobRepository;
+		this.self = self;
 	}
 
 	@Transactional
@@ -113,12 +125,7 @@ public class JobService {
 	 * {@code executor} - the run's own {@link #setRunning}, executing on a different thread in its own
 	 * {@code REQUIRES_NEW} transaction, would find no job to update.
 	 *
-	 * @param  namespace            namespace the job belongs to.
-	 * @param  municipalityId       id of the municipality the job belongs to.
-	 * @param  type                 the kind of job to create.
-	 * @param  total                what the job's progress is measured against.
-	 * @param  subjectId            id of whatever single thing the job centers on, or {@code null} if it does not
-	 *                              center on one.
+	 * @param  spec                 the job to create - namespace, kind, and everything else {@link #create} needs.
 	 * @param  executor             the executor to dispatch the run on.
 	 * @param  toRun                builds the run once the job's id is known - the run itself always needs it, and
 	 *                              needs it first.
@@ -128,28 +135,24 @@ public class JobService {
 	 * @return                      the job the run reports against.
 	 */
 	public <R> JobResponse launch(
-		final String namespace,
-		final String municipalityId,
-		final JobType type,
-		final int total,
-		final String subjectId,
+		final JobSpec spec,
 		final AsyncTaskExecutor executor,
 		final Function<String, R> toRun,
 		final Consumer<R> runner,
 		final String couldNotStartMessage) {
 
-		final var jobId = createJob(namespace, municipalityId, type, total, subjectId);
+		final var jobId = createJob(spec.namespace(), spec.municipalityId(), spec.type(), spec.total(), spec.subjectId());
 
 		try {
 			executor.execute(() -> runner.accept(toRun.apply(jobId)));
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
-			fail(jobId, couldNotStartMessage.formatted(e.getMessage()));
+			self.fail(jobId, couldNotStartMessage.formatted(e.getMessage()));
 
 			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, couldNotStartMessage.formatted(e.getMessage()));
 		}
 
-		return get(namespace, municipalityId, jobId);
+		return self.get(spec.namespace(), spec.municipalityId(), jobId);
 	}
 
 	@Transactional(propagation = REQUIRES_NEW)
