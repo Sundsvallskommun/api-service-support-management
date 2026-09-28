@@ -579,8 +579,9 @@ class HandoverServiceTest {
 		final var target = targetEntity();
 		when(attachmentSequenceNumberGeneratorMock.nextSequenceNumber(target)).thenReturn(1, 2);
 
+		final var copiedBlobMock = mock(Blob.class);
 		final var lobHelperMock = mock(LobHelper.class);
-		when(lobHelperMock.createBlob(any(InputStream.class), eq(10L))).thenReturn(mock(Blob.class));
+		when(lobHelperMock.createBlob(any(InputStream.class), eq(10L))).thenReturn(copiedBlobMock);
 
 		try (final MockedStatic<Hibernate> hibernateStatic = mockStatic(Hibernate.class)) {
 			hibernateStatic.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
