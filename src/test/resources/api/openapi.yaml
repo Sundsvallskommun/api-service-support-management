@@ -6769,7 +6769,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "409":
           description: "Conflict — the process does not wait for the signal right\
-            \ now, or has ended. Read the errand again rather than retrying"
+            \ now, or has completed. Read the errand again rather than retrying"
           content:
             application/problem+json:
               schema:
@@ -20010,7 +20010,9 @@ components:
             \ a handler can send to step it past the gate it stands at, through POST\
             \ .../processes/{processInstanceId}/signals. Empty when the process waits\
             \ for no person, which is the normal case for a gate the process passes\
-            \ by itself, and always empty for a process that has ended."
+            \ by itself, and always empty for a process that has completed. A process\
+            \ that has FAILED keeps the signals it last reported, since an incident\
+            \ leaves it listening in the process engine."
           items:
             $ref: "#/components/schemas/ProcessSignal"
         created:

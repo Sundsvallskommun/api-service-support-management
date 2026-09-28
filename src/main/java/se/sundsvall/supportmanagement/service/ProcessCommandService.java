@@ -49,7 +49,7 @@ public class ProcessCommandService {
 
 	private static final String NOT_AN_AD_ACCOUNT = "A signal steps a process on behalf of a person, and has to be sent by an ad account";
 	private static final String NO_SUCH_INSTANCE = "The errand '%s' has no process instance '%s'";
-	private static final String PROCESS_ENDED = "The process instance '%s' has ended and waits for no signal";
+	private static final String PROCESS_ENDED = "The process instance '%s' has completed and waits for no signal";
 	private static final String SIGNAL_NOT_AWAITED = "The process instance '%s' does not wait for the signal '%s'. Read the errand again to see what it waits for now";
 
 	private static final String START_NOT_BY_AN_AD_ACCOUNT = "Starting the handling of an errand is a decision made by a person, and has to be sent by an ad account";
@@ -150,7 +150,8 @@ public class ProcessCommandService {
 	 * The signal is a request and forces nothing: the gate decides what it means where the process stands.
 	 * <p>
 	 * Only a signal the process waits for right now is taken, matched exactly as the process named it. Anything else is
-	 * refused with 409 and writes nothing.
+	 * refused with 409 and writes nothing, as is every signal to a process that has completed. A process that has failed
+	 * still takes the signals it last reported.
 	 * <p>
 	 * Taking a signal consumes nothing. Until the process reports where it went, the same signal is taken again - a double
 	 * click writes two entries and two events.
@@ -173,7 +174,7 @@ public class ProcessCommandService {
 		final var process = processRepository.findByProcessInstanceIdAndErrandId(processInstanceId, errandId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NO_SUCH_INSTANCE.formatted(errandId, processInstanceId)));
 
-		if (process.getProcessStatus().isTerminal()) {
+		if (!process.getProcessStatus().takesSignals()) {
 			throw Problem.valueOf(CONFLICT, PROCESS_ENDED.formatted(processInstanceId));
 		}
 

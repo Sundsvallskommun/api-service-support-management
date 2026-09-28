@@ -49,6 +49,35 @@ class ProcessStatusTest {
 			.containsExactlyInAnyOrder((Object[]) values());
 	}
 
+	private static Stream<Arguments> signalTaking() {
+		return Stream.of(
+			arguments(RUNNING, true),
+			arguments(WAITING, true),
+			arguments(RETRYING, true),
+			arguments(COMPLETED, false),
+			arguments(FAILED, true));
+	}
+
+	@ParameterizedTest
+	@MethodSource("signalTaking")
+	void takesSignals(final ProcessStatus status, final boolean expected) {
+		assertThat(status.takesSignals()).isEqualTo(expected);
+	}
+
+	@Test
+	@DisplayName("Verification that every value of the enum is covered by the table of which states take signals")
+	void everyValueIsAccountedForInTheSignalTable() {
+		assertThat(signalTaking().map(arguments -> arguments.get()[0]))
+			.containsExactlyInAnyOrder((Object[]) values());
+	}
+
+	@Test
+	@DisplayName("Verification that a failed process, terminal as it is, still takes signals, since an incident leaves it listening")
+	void failedIsTerminalButTakesSignals() {
+		assertThat(FAILED.isTerminal()).isTrue();
+		assertThat(FAILED.takesSignals()).isTrue();
+	}
+
 	@Test
 	@DisplayName("Verification that a process which is merely waiting is not read as one that has run its course")
 	void waitingIsNotTerminal() {

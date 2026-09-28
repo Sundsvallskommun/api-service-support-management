@@ -239,10 +239,10 @@ class ProcessSignalIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An ended process waits for no one, whatever its report says.
+	 * A completed process waits for no one, whatever its report says.
 	 */
 	@Test
-	@DisplayName("Verification that a signal to an errand without that live process instance is not found, and one to an ended process is a conflict")
+	@DisplayName("Verification that a signal to an errand without that live process instance is not found, and one to a completed process is a conflict")
 	void test04_aSignalWithoutALiveProcessToReachIsRefused() {
 		reportAsProcess(REPORT_FILE);
 
@@ -383,6 +383,39 @@ class ProcessSignalIT extends AbstractAppTest {
 			assertThat(row.getEventSubType()).isEqualTo("SIGNAL");
 			assertThat(row.getSignalName()).isEqualTo("granskning-godkand");
 			assertThat(row.getDeliveredAt()).isNull();
+		});
+	}
+
+	/**
+	 * An incident leaves the instance listening in the process engine, so the signals of its report stay on offer and a
+	 * handler can still cancel it.
+	 */
+	@Test
+	@DisplayName("Verification that a process reported FAILED on an incident shows the signals it reported, and takes them")
+	void test08_aFailedProcessTakesTheSignalsItLastReported() {
+		reportAsProcess(REPORT_FILE);
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_ID))
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(null)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(ERRAND_RESPONSE_FILE)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(signalsPath(ERRAND_ID, PROCESS_INSTANCE_ID))
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(ACCEPTED)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		assertThat(outboxRepository.findAll()).singleElement().satisfies(row -> {
+			assertThat(row.getEventSubType()).isEqualTo("SIGNAL");
+			assertThat(row.getSignalName()).isEqualTo("process_cancelled");
+			assertThat(row.getExecutedBy()).isEqualTo(HANDLER);
 		});
 	}
 

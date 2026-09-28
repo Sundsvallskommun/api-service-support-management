@@ -599,29 +599,31 @@ class ProcessCommandServiceTest {
 		verifyNoInteractions(signalRepositoryMock);
 	}
 
-	@ParameterizedTest
-	@EnumSource(value = ProcessStatus.class, names = {
-		"COMPLETED", "FAILED"
-	})
-	void aSignalToAProcessThatHasEndedIsAConflict(final ProcessStatus status) {
-		givenInstance(status);
+	@Test
+	@DisplayName("Verification that a signal to a completed process is a conflict, whatever rows it left behind")
+	void aSignalToAProcessThatHasCompletedIsAConflict() {
+		givenInstance(COMPLETED, awaited(SIGNAL_NAME, SIGNAL_LABEL));
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.signalProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, SIGNAL_NAME))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus().value()).isEqualTo(409);
-				assertThat(problem.getDetail()).contains("has ended");
+				assertThat(problem.getDetail()).contains("has completed");
 			});
 
 		verifyNothingWritten();
 		verifyNoInteractions(signalRepositoryMock);
 	}
 
+	/**
+	 * FAILED is among them: an incident leaves the instance listening in the process engine, and a cancellation is how a
+	 * handler gets it off the incident.
+	 */
 	@ParameterizedTest
 	@EnumSource(value = ProcessStatus.class, names = {
-		"RUNNING", "WAITING", "RETRYING"
+		"RUNNING", "WAITING", "RETRYING", "FAILED"
 	})
-	void aLiveProcessTakesTheSignalsItWaitsFor(final ProcessStatus status) {
+	void aProcessThatHasNotCompletedTakesTheSignalsItWaitsFor(final ProcessStatus status) {
 		givenInstance(status, awaited(SIGNAL_NAME, SIGNAL_LABEL));
 
 		service.signalProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, SIGNAL_NAME);

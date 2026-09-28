@@ -7,8 +7,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
@@ -18,7 +16,6 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.model.ProcessStartOptions;
 
 import static java.time.OffsetDateTime.now;
@@ -87,17 +84,23 @@ class ErrandProcessMapperTest {
 		assertThat(process.getModified()).isEqualTo(modified);
 	}
 
-	@ParameterizedTest
-	@EnumSource(value = ProcessStatus.class, names = {
-		"COMPLETED", "FAILED"
-	})
-	void aProcessThatHasEndedWaitsForNoOneWhateverRowsItLeftBehind(final ProcessStatus status) {
+	@Test
+	void aProcessThatHasCompletedWaitsForNoOneWhateverRowsItLeftBehind() {
 		final var entity = ErrandProcessEntity.create().withId("id");
-		entity.applyStatus(status, CLOCK);
+		entity.applyStatus(COMPLETED, CLOCK);
 
 		assertThat(toErrandProcess(entity, List.of(ErrandProcessSignalEntity.create().withName("granskning-godkand"))).getAwaitingSignals())
 			.isNotNull()
 			.isEmpty();
+	}
+
+	@Test
+	void aProcessThatHasFailedKeepsTheSignalsItLastReported() {
+		final var entity = ErrandProcessEntity.create().withId("id");
+		entity.applyStatus(FAILED, CLOCK);
+
+		assertThat(toErrandProcess(entity, List.of(ErrandProcessSignalEntity.create().withName("process_cancelled").withLabel("Avbryt"))).getAwaitingSignals())
+			.containsExactly(ProcessSignal.create().withName("process_cancelled").withLabel("Avbryt"));
 	}
 
 	@Test

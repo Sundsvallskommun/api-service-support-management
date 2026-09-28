@@ -1,0 +1,17 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "FAILED",
+	"currentActivityId": "granskning",
+	"currentActivityName": "Granskning",
+	"error": {
+		"code": "INCIDENT",
+		"message": "The work step gave up"
+	},
+	"awaitingSignals": [
+		{
+			"name": "process_cancelled",
+			"label": "Avbryt ärendet"
+		}
+	]
+}
