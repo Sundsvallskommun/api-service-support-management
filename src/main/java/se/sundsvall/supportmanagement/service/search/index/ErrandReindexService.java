@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import net.javacrumbs.shedlock.core.LockConfiguration;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.core.SimpleLock;
@@ -87,10 +88,28 @@ public class ErrandReindexService {
 		}
 
 		try {
-			for (final var config : namespaceConfigRepository.findAll()) {
-				reindexAndWait(config.getNamespace(), config.getMunicipalityId());
+			final var namespaces = namespaceConfigRepository.findAll();
+			final var failed = new ArrayList<String>();
+
+			for (final var config : namespaces) {
+				try {
+					reindexAndWait(config.getNamespace(), config.getMunicipalityId());
+				} catch (final RuntimeException e) {
+					// One namespace the index will not take - a document it rejects, a cluster that went away mid rebuild -
+					// must not leave every namespace after it unrepaired, night after night. It is written down and the walk
+					// goes on, and what failed is raised at the end so the scheduled job reports it
+					failed.add("%s/%s".formatted(config.getMunicipalityId(), config.getNamespace()));
+					LOG.error("Reindex of errands of namespace '{}' for municipality '{}' failed, going on with the rest",
+						config.getNamespace(), config.getMunicipalityId(), e);
+				}
 			}
-			LOG.info("Nightly reindex finished");
+
+			if (!failed.isEmpty()) {
+				throw new IllegalStateException("Nightly reindex rebuilt %d of %d namespaces, these failed: %s"
+					.formatted(namespaces.size() - failed.size(), namespaces.size(), String.join(", ", failed)));
+			}
+
+			LOG.info("Nightly reindex finished, {} namespaces rebuilt", namespaces.size());
 		} finally {
 			lock.get().unlock();
 		}
