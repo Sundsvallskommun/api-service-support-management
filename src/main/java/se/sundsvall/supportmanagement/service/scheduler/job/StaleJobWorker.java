@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
-import se.sundsvall.supportmanagement.service.JobService;
+import se.sundsvall.supportmanagement.service.job.JobService;
 
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
@@ -22,7 +22,7 @@ import static java.util.stream.Collectors.joining;
  * record that the errands it walked were removed on purpose.
  */
 @Component
-public class JobWorker {
+public class StaleJobWorker {
 
 	/**
 	 * How many jobs the account of a sweep names one by one. The rest are counted, since what is read here is a line in
@@ -38,7 +38,7 @@ public class JobWorker {
 	private final JobService jobService;
 	private final JobProperties properties;
 
-	public JobWorker(final JobService jobService, final JobProperties properties) {
+	public StaleJobWorker(final JobService jobService, final JobProperties properties) {
 		this.jobService = jobService;
 		this.properties = properties;
 	}
@@ -61,7 +61,7 @@ public class JobWorker {
 	private static String accountOf(final List<JobEntity> abandoned) {
 		final var named = abandoned.stream()
 			.limit(MAX_JOBS_NAMED)
-			.map(JobWorker::accountOf)
+			.map(StaleJobWorker::accountOf)
 			.collect(joining("; "));
 
 		final var unnamed = abandoned.size() - Math.min(abandoned.size(), MAX_JOBS_NAMED);

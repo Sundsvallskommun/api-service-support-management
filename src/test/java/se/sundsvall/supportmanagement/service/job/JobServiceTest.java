@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -65,13 +65,16 @@ class JobServiceTest {
 	}
 
 	@Test
-	void create() {
+	void launch_createsJob() {
 		final var entity = JobEntity.create().withId(JOB_ID);
+		final AsyncTaskExecutor executor = Runnable::run;
 		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
 
-		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100);
+		final var response = jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, null), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s");
 
-		assertThat(result).isEqualTo(JOB_ID);
+		assertThat(response.getJobId()).isEqualTo(JOB_ID);
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
 		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
@@ -81,13 +84,16 @@ class JobServiceTest {
 	}
 
 	@Test
-	void createWithSubjectId() {
+	void launch_createsJobWithSubjectId() {
 		final var entity = JobEntity.create().withId(JOB_ID);
+		final AsyncTaskExecutor executor = Runnable::run;
 		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
 
-		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id");
+		final var response = jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s");
 
-		assertThat(result).isEqualTo(JOB_ID);
+		assertThat(response.getJobId()).isEqualTo(JOB_ID);
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
 		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
@@ -98,12 +104,15 @@ class JobServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that create without a subjectId stores none, since not every kind of job centers on one subject")
-	void createWithoutSubjectIdStoresNoSubjectId() {
+	@DisplayName("Verification that launch without a subjectId stores none, since not every kind of job centers on one subject")
+	void launch_withoutSubjectIdStoresNoSubjectId() {
 		final var entity = JobEntity.create().withId(JOB_ID);
+		final AsyncTaskExecutor executor = Runnable::run;
 		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
 
-		jobService.create(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, 100);
+		jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, 100, null), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s");
 
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
 		verify(jobRepositoryMock).saveAndFlush(captor.capture());
@@ -111,11 +120,13 @@ class JobServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a second create racing the caller's own precheck and losing on the DB's active-job-per-type-per-namespace constraint is answered the same way a sequential one already is, rather than as a raw persistence failure")
-	void createRacingPrecheckLosesOnDbConstraint_throws409() {
+	@DisplayName("Verification that a launch racing the caller's own precheck and losing on the DB's active-job-per-type-per-namespace constraint is answered the same way a sequential one already is, rather than as a raw persistence failure")
+	void launch_racingPrecheckLosesOnDbConstraint_throws409() {
+		final AsyncTaskExecutor executor = Runnable::run;
 		when(jobRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("Duplicate entry for key 'uq_job_active_per_type_per_namespace'"));
 
-		assertThatThrownBy(() -> jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"))
+		assertThatThrownBy(() -> jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s"))
 			.isInstanceOf(ThrowableProblem.class)
 			.satisfies(e -> assertThat(((ThrowableProblem) e).getStatus().value()).isEqualTo(409))
 			.hasMessageContaining(NAMESPACE)

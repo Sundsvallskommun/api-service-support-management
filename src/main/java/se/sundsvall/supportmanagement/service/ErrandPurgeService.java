@@ -10,9 +10,11 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
-import se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker;
-import se.sundsvall.supportmanagement.service.purge.PurgeRun;
-import se.sundsvall.supportmanagement.service.purge.PurgeSettings;
+import se.sundsvall.supportmanagement.service.job.ErrandPurgeRunner;
+import se.sundsvall.supportmanagement.service.job.JobService;
+import se.sundsvall.supportmanagement.service.job.JobSpec;
+import se.sundsvall.supportmanagement.service.job.PurgeRun;
+import se.sundsvall.supportmanagement.service.job.PurgeSettings;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Optional.ofNullable;
@@ -38,18 +40,18 @@ public class ErrandPurgeService {
 	private static final String COULD_NOT_START = "Purge could not be started: %s";
 	private static final String UNKNOWN_CALLER = "unknown";
 
-	private final ErrandPurgeWorker worker;
+	private final ErrandPurgeRunner runner;
 	private final JobService jobService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final AsyncTaskExecutor taskExecutor;
 
 	public ErrandPurgeService(
-		final ErrandPurgeWorker worker,
+		final ErrandPurgeRunner runner,
 		final JobService jobService,
 		final NamespaceConfigService namespaceConfigService,
 		@Qualifier("errandPurgeTaskExecutor") final AsyncTaskExecutor taskExecutor) {
 
-		this.worker = worker;
+		this.runner = runner;
 		this.jobService = jobService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.taskExecutor = taskExecutor;
@@ -73,9 +75,9 @@ public class ErrandPurgeService {
 		final var startedBy = startedBy();
 
 		// Two runs walking the same namespace would do each other's work twice over. This precheck alone is not a lock -
-		// two requests arriving at the same moment could both pass it - but JobService.create's insert is guarded at the
-		// DB level too (see V1_60__add_active_job_guard.sql), so the second of the two is refused there instead of
-		// starting a duplicate run.
+		// two requests arriving at the same moment could both pass it - but JobService.launch's insert (via createJob) is
+		// guarded at the DB level too (see V1_60__add_active_job_guard.sql), so the second of the two is refused there
+		// instead of starting a duplicate run.
 		if (jobService.hasActiveJob(namespace, municipalityId, ERRAND_PURGE)) {
 			throw Problem.valueOf(CONFLICT, ALREADY_RUNNING.formatted(namespace, municipalityId));
 		}
@@ -91,11 +93,11 @@ public class ErrandPurgeService {
 		}
 
 		final var settings = new PurgeSettings(request.getOlderThan(), TRUE.equals(request.getDryRun()), request.getMaxErrands());
-		final var total = worker.countErrandsToPurge(namespace, municipalityId, settings.olderThan());
+		final var total = runner.countErrandsToPurge(namespace, municipalityId, settings.olderThan());
 
 		return jobService.launch(new JobSpec(namespace, municipalityId, ERRAND_PURGE, total, null), taskExecutor,
 			jobId -> new PurgeRun(jobId, namespace, municipalityId, startedBy, settings),
-			worker::run,
+			runner::run,
 			COULD_NOT_START);
 	}
 
@@ -121,10 +123,14 @@ public class ErrandPurgeService {
 	/**
 	 * The caller a run is recorded against. Read here, on the request thread, since the thread carrying out the run has
 	 * no identifier of its own to read.
+	 * <p>
+	 * Carries the whole identifier - type and value, via {@link Identifier#toHeaderValue()} - rather than just the
+	 * value, for the same reason {@code MetadataService}'s own {@code startedBy()} does: it is what lets a reader tell
+	 * an AD user's account name apart from a party id instead of defaulting every kind to look the same.
 	 */
 	private static String startedBy() {
 		return ofNullable(Identifier.get())
-			.map(Identifier::getValue)
+			.map(Identifier::toHeaderValue)
 			.orElse(UNKNOWN_CALLER);
 	}
 }

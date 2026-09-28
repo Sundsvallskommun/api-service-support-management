@@ -1,14 +1,18 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
@@ -111,8 +115,8 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 	/**
 	 * Restows every errand in {@link LabelMoveRun#errandIds()} - the frozen set resolved once when the move was
 	 * accepted, which is also what the job's own {@code total} was set from. Read a page at a time for I/O efficiency,
-	 * but persisted one errand at a time, each in a transaction of its own - mirrors {@link
-	 * se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker#walk}, and for the same reason: progress is
+	 * but persisted one errand at a time, each in a transaction of its own - mirrors {@link ErrandPurgeRunner#walk},
+	 * and for the same reason: progress is
 	 * reported not only at the page boundary but also from inside a page whenever {@code progressIntervalNanos} has
 	 * elapsed, so a page that is merely slow keeps saying so instead of going quiet long enough for
 	 * {@link JobProperties#staleAfter()} to take the job for abandoned mid-flight.

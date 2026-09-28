@@ -65,6 +65,10 @@ import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.service.job.JobService;
+import se.sundsvall.supportmanagement.service.job.JobSpec;
+import se.sundsvall.supportmanagement.service.job.LabelMoveRun;
+import se.sundsvall.supportmanagement.service.job.LabelMoveRunner;
 import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
 
 import static java.util.Collections.emptyList;

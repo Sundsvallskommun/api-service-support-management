@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -68,29 +68,14 @@ public class JobService {
 		this.self = self;
 	}
 
-	@Transactional
-	public String create(final String namespace, final String municipalityId, final JobType type, final int total) {
-		return createJob(namespace, municipalityId, type, total, null);
-	}
-
 	/**
-	 * Creates a job that works on one subject - a label to move, a label to merge into another, or whatever else a
-	 * future kind of job may center on - so the job row carries a pointer to what it is about even though nothing
-	 * queries by it today.
-	 */
-	@Transactional
-	public String create(final String namespace, final String municipalityId, final JobType type, final int total, final String subjectId) {
-		return createJob(namespace, municipalityId, type, total, subjectId);
-	}
-
-	/**
-	 * Shared, un-annotated so that neither {@code create} overload above reaches its own {@code @Transactional} through
-	 * a plain {@code this} call rather than the proxy — a transaction is already open by the time either gets here,
-	 * started by whichever overload the caller actually invoked from outside.
+	 * Creates a job's row. The only caller is {@link #launch}, which is deliberately not itself {@code @Transactional}
+	 * (see its own javadoc for why) - so this needs none of its own either: {@code saveAndFlush} on the repository
+	 * carries a transaction of its own regardless of what, if anything, is open in the caller.
 	 * <p>
 	 * Flushed rather than merely saved, so that a namespace-scoped DB constraint a caller relies on to close a
-	 * check-then-act race against its own precheck (see {@code V1_60__add_active_label_move_guard.sql}) is violated
-	 * here, inside this method's own transaction, rather than staying unflushed until some later point picks the
+	 * check-then-act race against its own precheck (see {@code V1_60__add_active_job_guard.sql}) is violated
+	 * here, inside this call's own transaction, rather than staying unflushed until some later point picks the
 	 * failure up out of context.
 	 */
 	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String subjectId) {
@@ -125,7 +110,7 @@ public class JobService {
 	 * {@code executor} - the run's own {@link #setRunning}, executing on a different thread in its own
 	 * {@code REQUIRES_NEW} transaction, would find no job to update.
 	 *
-	 * @param  spec                 the job to create - namespace, kind, and everything else {@link #create} needs.
+	 * @param  spec                 the job to create - namespace, kind, and everything else {@link #createJob} needs.
 	 * @param  executor             the executor to dispatch the run on.
 	 * @param  toRun                builds the run once the job's id is known - the run itself always needs it, and
 	 *                              needs it first.
@@ -270,7 +255,7 @@ public class JobService {
 	 * Clears the way for a new run of one kind in one namespace, stealing a stale lease rather than leaving the
 	 * namespace blocked for as long as {@code staleAfter} - the active-job row doubles as that lease: {@code modified}
 	 * is its heartbeat, {@code staleAfter} the duration one may go quiet for, and the guard in
-	 * {@code V1_60__add_active_label_move_guard.sql} (or its counterpart for another type) is what makes it exclusive.
+	 * {@code V1_60__add_active_job_guard.sql} (or its counterpart for another type) is what makes it exclusive.
 	 * <p>
 	 * Deliberately narrower than {@link #failStaleJobs(Duration)}: that sweep ends every kind of job in every namespace
 	 * that has gone quiet, on its own schedule; this steals the lease for exactly the one namespace and kind a caller is
@@ -279,8 +264,8 @@ public class JobService {
 	 * than {@code staleAfter} is failed and reclaimed.
 	 * <p>
 	 * Committed by the time this call returns (its own transaction, not the caller's): the row a stale lease is
-	 * reclaimed from must be failed - and that failure durable - before the caller's own {@link #create} can succeed
-	 * against the same unique constraint that refused it a moment ago.
+	 * reclaimed from must be failed - and that failure durable - before the caller's own {@link #launch} (via
+	 * {@link #createJob}) can succeed against the same unique constraint that refused it a moment ago.
 	 *
 	 * @param  namespace      the namespace to clear a lease in.
 	 * @param  municipalityId the id of the municipality the namespace belongs to.

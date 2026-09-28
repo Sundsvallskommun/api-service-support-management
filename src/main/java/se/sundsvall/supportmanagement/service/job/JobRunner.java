@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 /**
  * The envelope a job-service run is carried out inside, once dispatched by {@link JobService#launch}: mark the job

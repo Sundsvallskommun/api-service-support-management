@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.time.Duration;
 import java.util.List;
@@ -16,6 +16,8 @@ import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -147,7 +149,7 @@ class LabelMoveRunnerTest {
 	}
 
 	@Test
-	@DisplayName("Verification that progress is reported from inside a page, not only at its boundary, once the progress interval has elapsed - mirrors ErrandPurgeWorker's own heartbeat, and is what keeps a page that is merely slow from being taken for abandoned mid-flight")
+	@DisplayName("Verification that progress is reported from inside a page, not only at its boundary, once the progress interval has elapsed - mirrors ErrandPurgeRunner's own heartbeat, and is what keeps a page that is merely slow from being taken for abandoned mid-flight")
 	void run_progressIntervalElapsed_reportsFromInsideAPage() {
 		var movedId = "moved";
 		var moved = labelEntity(movedId, null, "ROOT");

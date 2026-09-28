@@ -1,6 +1,7 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.util.List;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 /**
  * A label move on its way to the thread that carries it out.

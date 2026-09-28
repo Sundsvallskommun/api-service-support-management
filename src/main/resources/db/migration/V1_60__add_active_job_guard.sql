@@ -1,9 +1,9 @@
 -- ============================================================================
 -- Enforce "one active job of a kind per namespace" at the DB level to close the
 -- TOCTOU race between a caller's own precheck (JobService.hasActiveJob /
--- stealStaleLease) and JobService.create's insert - two requests arriving
--- within milliseconds of each other can both pass the precheck before either
--- commits.
+-- stealStaleLease) and JobService.launch's insert (via createJob) - two
+-- requests arriving within milliseconds of each other can both pass the
+-- precheck before either commits.
 --
 -- Generalized across every job type rather than hardcoded to one, since the
 -- guard MOVE_LABEL needed is exactly the guard any future kind of job needs

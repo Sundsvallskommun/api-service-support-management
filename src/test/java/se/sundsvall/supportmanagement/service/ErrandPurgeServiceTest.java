@@ -16,8 +16,10 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
-import se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker;
-import se.sundsvall.supportmanagement.service.purge.PurgeRun;
+import se.sundsvall.supportmanagement.service.job.ErrandPurgeRunner;
+import se.sundsvall.supportmanagement.service.job.JobService;
+import se.sundsvall.supportmanagement.service.job.JobSpec;
+import se.sundsvall.supportmanagement.service.job.PurgeRun;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,7 +52,7 @@ class ErrandPurgeServiceTest {
 	};
 
 	@Mock
-	private ErrandPurgeWorker workerMock;
+	private ErrandPurgeRunner runnerMock;
 
 	@Mock
 	private JobService jobServiceMock;
@@ -72,17 +74,18 @@ class ErrandPurgeServiceTest {
 
 		assertThat(response.getJobId()).isEqualTo(JOB_ID);
 		assertThat(response.getStatus()).isEqualTo(RUNNING);
-		verify(workerMock).countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN);
+		verify(runnerMock).countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN);
 		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), any(), any(), eq(COULD_NOT_START));
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	@DisplayName("Verification that the run built for the launch carries the job it reports against and the settings it was started with, and that the runner argument reaches the actual worker")
-	void startPurgeHandsTheRunToTheWorker() {
+	@DisplayName("Verification that the run built for the launch carries the job it reports against and the settings it was started with, and that the runner argument reaches the actual ErrandPurgeRunner")
+	void startPurgeHandsTheRunToTheRunner() {
 		final var service = service(NEVER_RUNS);
 		acceptsRuns();
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		final var identifier = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe");
+		Identifier.set(identifier);
 
 		service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(false, 500));
 
@@ -94,15 +97,16 @@ class ErrandPurgeServiceTest {
 		assertThat(run.jobId()).isEqualTo(JOB_ID);
 		assertThat(run.namespace()).isEqualTo(NAMESPACE);
 		assertThat(run.municipalityId()).isEqualTo(MUNICIPALITY_ID);
-		assertThat(run.startedBy()).isEqualTo("joe01doe");
+		// The whole identifier (type and value), not just the value - see startedBy()'s own doc comment for why.
+		assertThat(run.startedBy()).isEqualTo(identifier.toHeaderValue());
 		assertThat(run.settings().olderThan()).isEqualTo(OLDER_THAN);
 		assertThat(run.settings().dryRun()).isFalse();
 		assertThat(run.settings().maxErrands()).isEqualTo(500);
 
-		// The captured runner argument is worker::run bound to the very mock under test - invoking it here is what
+		// The captured runner argument is runnerMock::run bound to the very mock under test - invoking it here is what
 		// proves that binding, since jobServiceMock.launch is stubbed and never calls it on its own.
 		((Consumer<PurgeRun>) runnerCaptor.getValue()).accept(run);
-		verify(workerMock).run(run);
+		verify(runnerMock).run(run);
 	}
 
 	@Test
@@ -111,7 +115,8 @@ class ErrandPurgeServiceTest {
 	void startPurgeReadsTheCallerBeforeHandingTheRunOver() {
 		final var service = service(NEVER_RUNS);
 		acceptsRuns();
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		final var identifier = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe");
+		Identifier.set(identifier);
 
 		service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(false, null));
 
@@ -124,7 +129,7 @@ class ErrandPurgeServiceTest {
 		Identifier.remove();
 		final var run = (PurgeRun) toRunCaptor.getValue().apply(JOB_ID);
 
-		assertThat(run.startedBy()).isEqualTo("joe01doe");
+		assertThat(run.startedBy()).isEqualTo(identifier.toHeaderValue());
 	}
 
 	@Test
@@ -155,7 +160,7 @@ class ErrandPurgeServiceTest {
 			.hasMessageContaining("A purge is already running for namespace 'namespace' in municipality with id '2281'");
 
 		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
-		verifyNoInteractions(workerMock);
+		verifyNoInteractions(runnerMock);
 	}
 
 	@Test
@@ -170,7 +175,7 @@ class ErrandPurgeServiceTest {
 			.hasMessageContaining("Errands in namespace 'namespace' for municipality with id '2281' are under access control and cannot be purged");
 
 		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
-		verifyNoInteractions(workerMock);
+		verifyNoInteractions(runnerMock);
 	}
 
 	@Test
@@ -189,7 +194,7 @@ class ErrandPurgeServiceTest {
 	 * What the job side answers for a run that gets as far as being accepted.
 	 */
 	private void acceptsRuns() {
-		when(workerMock.countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).thenReturn(TOTAL);
+		when(runnerMock.countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).thenReturn(TOTAL);
 		when(jobServiceMock.launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), any(), any(), eq(COULD_NOT_START)))
 			.thenReturn(JobResponse.create()
 				.withJobId(JOB_ID)
@@ -197,7 +202,7 @@ class ErrandPurgeServiceTest {
 	}
 
 	private ErrandPurgeService service(final AsyncTaskExecutor taskExecutor) {
-		return new ErrandPurgeService(workerMock, jobServiceMock, namespaceConfigServiceMock, taskExecutor);
+		return new ErrandPurgeService(runnerMock, jobServiceMock, namespaceConfigServiceMock, taskExecutor);
 	}
 
 	private static ErrandPurgeRequest request(final boolean dryRun, final Integer maxErrands) {

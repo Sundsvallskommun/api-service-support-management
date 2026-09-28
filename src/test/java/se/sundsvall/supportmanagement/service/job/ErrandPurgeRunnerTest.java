@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.purge;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -17,7 +17,6 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
-import se.sundsvall.supportmanagement.service.JobService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.Collections.emptyList;
@@ -41,7 +40,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * behind it belongs to a test with a database rather than to this one.
  */
 @ExtendWith(MockitoExtension.class)
-class ErrandPurgeWorkerTest {
+class ErrandPurgeRunnerTest {
 
 	private static final String JOB_ID = randomUUID().toString();
 	private static final String NAMESPACE = "namespace";
@@ -68,18 +67,18 @@ class ErrandPurgeWorkerTest {
 	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
 
-	private ErrandPurgeWorker worker;
+	private ErrandPurgeRunner runner;
 
-	private ErrandPurgeWorker worker() {
-		return worker(PROGRESS_INTERVAL);
+	private ErrandPurgeRunner runner() {
+		return runner(PROGRESS_INTERVAL);
 	}
 
-	private ErrandPurgeWorker worker(final Duration progressInterval) {
-		if (worker == null) {
-			worker = new ErrandPurgeWorker(errandsRepositoryMock, errandServiceMock, jobServiceMock, namespaceConfigServiceMock,
+	private ErrandPurgeRunner runner(final Duration progressInterval) {
+		if (runner == null) {
+			runner = new ErrandPurgeRunner(errandsRepositoryMock, errandServiceMock, jobServiceMock, namespaceConfigServiceMock,
 				new ErrandPurgeProperties(Period.ofYears(2), BATCH_SIZE, 2, progressInterval));
 		}
-		return worker;
+		return runner;
 	}
 
 	@Test
@@ -87,7 +86,7 @@ class ErrandPurgeWorkerTest {
 	void countErrandsToPurge() {
 		when(errandsRepositoryMock.count(anySpecification())).thenReturn(4711L);
 
-		assertThat(worker().countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).isEqualTo(4711);
+		assertThat(runner().countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).isEqualTo(4711);
 	}
 
 	@Test
@@ -95,7 +94,7 @@ class ErrandPurgeWorkerTest {
 	void runWithNothingToPurge() {
 		batches(emptyList());
 
-		worker().run(run(false, null));
+		runner().run(run(false, null));
 
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(jobServiceMock).complete(JOB_ID, "Removed 0 of 0 errands reached, 0 could not be removed");
@@ -111,7 +110,7 @@ class ErrandPurgeWorkerTest {
 		when(errandServiceMock.purgeErrand(NAMESPACE, MUNICIPALITY_ID, "b")).thenThrow(new RuntimeException("Constraint violation"));
 		when(errandServiceMock.purgeErrand(NAMESPACE, MUNICIPALITY_ID, "c")).thenReturn(true);
 
-		worker().run(run(false, null));
+		runner().run(run(false, null));
 
 		verify(jobServiceMock).updateProgress(JOB_ID, 2);
 		verify(jobServiceMock).updateProgress(JOB_ID, 3);
@@ -127,7 +126,7 @@ class ErrandPurgeWorkerTest {
 
 		// Nothing may elapse before a report is due, so every errand comes due and the first is reported on well before
 		// the batch holding it has ended.
-		worker(Duration.ZERO).run(run(false, null));
+		runner(Duration.ZERO).run(run(false, null));
 
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		// Once as the last errand of the batch comes due and once as the batch ends. The two coincide only because the
@@ -142,7 +141,7 @@ class ErrandPurgeWorkerTest {
 		batches(ids("a", "b"), emptyList());
 		stillRunning();
 
-		worker().run(run(true, null));
+		runner().run(run(true, null));
 
 		verify(jobServiceMock).complete(JOB_ID, "Dry run over 2 errands, none of which were removed");
 		verifyNoInteractions(errandServiceMock);
@@ -155,7 +154,7 @@ class ErrandPurgeWorkerTest {
 		stillRunning();
 		when(errandServiceMock.purgeErrand(NAMESPACE, MUNICIPALITY_ID, "a")).thenReturn(false);
 
-		worker().run(run(false, null));
+		runner().run(run(false, null));
 
 		verify(jobServiceMock).complete(JOB_ID, "Removed 0 of 1 errands reached, 0 could not be removed");
 	}
@@ -167,7 +166,7 @@ class ErrandPurgeWorkerTest {
 		stillRunning();
 		when(errandServiceMock.purgeErrand(any(), any(), any())).thenReturn(true);
 
-		worker().run(run(false, 2));
+		runner().run(run(false, 2));
 
 		verify(errandsRepositoryMock).findBy(anySpecification(), any());
 		verify(jobServiceMock).complete(JOB_ID, "Removed 2 of 2 errands reached, 0 could not be removed");
@@ -180,7 +179,7 @@ class ErrandPurgeWorkerTest {
 		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(STOPPED));
 		when(errandServiceMock.purgeErrand(any(), any(), any())).thenReturn(true);
 
-		worker().run(run(false, null));
+		runner().run(run(false, null));
 
 		verify(errandsRepositoryMock).findBy(anySpecification(), any());
 		verify(jobServiceMock).updateProgress(JOB_ID, 2);
@@ -193,7 +192,7 @@ class ErrandPurgeWorkerTest {
 	void runWhenReadingErrandsFails() {
 		doThrow(new RuntimeException("Database is unreachable")).when(errandsRepositoryMock).findBy(anySpecification(), any());
 
-		worker().run(run(false, null));
+		runner().run(run(false, null));
 
 		verify(jobServiceMock).fail(JOB_ID, "Purge aborted: Database is unreachable");
 	}
@@ -201,12 +200,12 @@ class ErrandPurgeWorkerTest {
 	@Test
 	@DisplayName("Verification that a run leaving the job as running is ended, so that nothing is left reading as under way for as long as the row lives")
 	void runThatLeavesTheJobRunning() {
-		final var purgeWorker = worker();
+		final var purgeRunner = runner();
 		final var purgeRun = run(false, null);
 		doThrow(new StackOverflowError()).when(errandsRepositoryMock).findBy(anySpecification(), any());
 
 		// Only the run itself is left inside the lambda, so the assertion cannot be met by anything else throwing.
-		assertThatThrownBy(() -> purgeWorker.run(purgeRun)).isInstanceOf(StackOverflowError.class);
+		assertThatThrownBy(() -> purgeRunner.run(purgeRun)).isInstanceOf(StackOverflowError.class);
 
 		verify(jobServiceMock).fail(JOB_ID, "Purge ended without reaching a result of its own");
 	}
@@ -219,7 +218,7 @@ class ErrandPurgeWorkerTest {
 		when(errandServiceMock.purgeErrand(any(), any(), any())).thenReturn(true);
 		when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
-		worker().run(run(false, null));
+		runner().run(run(false, null));
 
 		verify(errandsRepositoryMock).findBy(anySpecification(), any());
 		verify(jobServiceMock).fail(JOB_ID, "Purge ended after removing 2 errands: access control was switched on for the namespace while it was running");

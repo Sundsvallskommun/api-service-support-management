@@ -295,18 +295,22 @@ public class ErrandService {
 	/**
 	 * Restows a batch of errands - each one's label set rebuilt from its access labels (leaves) outward - in a
 	 * transaction of its own, separate from whatever transaction (if any) the caller is running in. Used by the
-	 * label-move worker, which calls this once per page rather than once per errand, and must not join or be joined by
-	 * the caller's transaction: the worker is not itself transactional, and the interactive PATCH path that also calls
+	 * label-move runner, which calls this once per page rather than once per errand, and must not join or be joined by
+	 * the caller's transaction: the runner is not itself transactional, and the interactive PATCH path that also calls
 	 * {@link #persistLabelUpdate} must keep its label write inside its own single transaction rather than being pulled
 	 * into a separate one.
 	 * <p>
 	 * The rebuild is driven entirely by {@code resourcePath} lookups ({@link ErrandLabelService#settleAccessLabels}),
-	 * never by walking an entity's own lazy associations - the errands handed in were read by the worker in a
+	 * never by walking an entity's own lazy associations - the errands handed in were read by the runner in a
 	 * transaction that has already closed by the time this one opens, so nothing on them beyond an eagerly-fetched
 	 * collection is safe to touch.
+	 * <p>
+	 * Public rather than package-private: {@code LabelMoveRunner}, its only caller, lives in
+	 * {@code se.sundsvall.supportmanagement.service.job} - a different package from this one - the same reason
+	 * {@link #purgeErrand} is public for {@code ErrandPurgeRunner}.
 	 */
 	@Transactional(propagation = REQUIRES_NEW)
-	void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
+	public void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
 		batch.forEach(this::restowFromAccessLabels);
 	}
 

@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
-import se.sundsvall.supportmanagement.service.JobService;
+import se.sundsvall.supportmanagement.service.job.JobService;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +22,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
 
 @ExtendWith(MockitoExtension.class)
-class JobWorkerTest {
+class StaleJobWorkerTest {
 
 	private static final Duration STALE_AFTER = Duration.ofDays(3);
 	private static final OffsetDateTime LAST_WRITTEN_TO = OffsetDateTime.parse("2026-08-25T04:12:11+02:00");
@@ -90,8 +90,8 @@ class JobWorkerTest {
 		verifyNoMoreInteractions(jobServiceMock);
 	}
 
-	private JobWorker worker() {
-		return new JobWorker(jobServiceMock, new JobProperties(STALE_AFTER));
+	private StaleJobWorker worker() {
+		return new StaleJobWorker(jobServiceMock, new JobProperties(STALE_AFTER));
 	}
 
 	private static JobEntity abandonedJob(final String id) {

@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.purge;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -12,8 +12,6 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
-import se.sundsvall.supportmanagement.service.JobRunner;
-import se.sundsvall.supportmanagement.service.JobService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.Objects.isNull;
@@ -45,9 +43,9 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
  * this instance.
  */
 @Service
-public class ErrandPurgeWorker extends JobRunner<PurgeRun> {
+public class ErrandPurgeRunner extends JobRunner<PurgeRun> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ErrandPurgeWorker.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandPurgeRunner.class);
 
 	private static final String ID_ATTRIBUTE = "id";
 
@@ -64,7 +62,7 @@ public class ErrandPurgeWorker extends JobRunner<PurgeRun> {
 	private final int batchSize;
 	private final long progressIntervalNanos;
 
-	public ErrandPurgeWorker(
+	public ErrandPurgeRunner(
 		final ErrandsRepository errandsRepository,
 		final ErrandService errandService,
 		final JobService jobService,
