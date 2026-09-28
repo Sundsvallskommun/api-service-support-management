@@ -206,6 +206,15 @@ class ErrandSearchIT extends AbstractAppTest {
 			.withExpectedResponseStatus(ACCEPTED)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
+
+		// The whole index belongs to no namespace, so it is rebuilt from outside of one - and it empties the search of
+		// every namespace, so it asks that the caller may administer each one that enforces access control. This test data
+		// holds several that do, and this caller administers none of them
+		setupCall()
+			.withServicePath("/search/reindex")
+			.withHttpMethod(POST)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.sendRequest();
 	}
 
 	/**

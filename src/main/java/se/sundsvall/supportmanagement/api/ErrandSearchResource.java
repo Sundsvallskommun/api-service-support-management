@@ -163,10 +163,9 @@ class ErrandSearchResource {
 		})
 	ResponseEntity<Void> reindexErrands(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
-		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Parameter(name = "full", description = "Rebuild the whole index across every namespace, recreating its schema") @RequestParam(defaultValue = "false") final boolean full) {
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
-		reindexService.reindex(namespace, municipalityId, full);
+		reindexService.reindex(namespace, municipalityId);
 		return accepted().build();
 	}
 }

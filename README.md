@@ -284,8 +284,9 @@ leaves the index as it is and only brings the mapping up to date.
 The database is the source of truth and the index is disposable. Indexing follows every commit without holding the
 request up, so an OpenSearch that cannot be reached is logged and never fails a request, and the index schema is created
 after startup rather than during it, so the service starts without OpenSearch. Whatever the index missed is put right by
-`POST /{municipalityId}/{namespace}/errands/search/reindex`, which rebuilds the namespace from the database in the
-background, or with `full=true` recreates the whole index, which a changed mapping calls for. Errands created before
+`POST /{municipalityId}/{namespace}/errands/search/reindex`, which rebuilds that namespace from the database in the
+background. The whole index is rebuilt by `POST /search/reindex`, which belongs to no namespace because it empties the
+search of all of them, and which asks that the caller may administer every namespace that enforces access control. Errands created before
 search was introduced are indexed the same way. `/actuator/health` reports the cluster under `openSearch`.
 
 Locally, an instance is one command away:
