@@ -2,8 +2,10 @@ package se.sundsvall.supportmanagement.service.search.index;
 
 import com.google.gson.JsonElement;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.hibernate.search.engine.backend.metamodel.IndexDescriptor;
 import org.hibernate.search.engine.backend.metamodel.IndexFieldDescriptor;
@@ -31,6 +33,12 @@ import static java.util.stream.Collectors.joining;
 public class ErrandIndexModel {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandIndexModel.class);
+
+	/**
+	 * Fields the index holds that belong to no field of an errand: the two the search is filtered by, and what access
+	 * control counts its own labels with.
+	 */
+	private static final Set<String> NOT_OF_AN_ERRAND = Set.of(ErrandIndex.MUNICIPALITY_ID, ErrandIndex.NAMESPACE, ErrandIndex.ACCESS_LABEL_ID, ErrandIndex.ACCESS_LABEL_COUNT);
 
 	private final List<String> textFields;
 
@@ -100,10 +108,52 @@ public class ErrandIndexModel {
 			resource.getSearchFields().forEach(name -> verifyExists(descriptor, name, "resource " + resource, problems));
 		}
 		ErrandIndex.IDENTIFIER_FIELDS.forEach(name -> verifyExists(descriptor, name, "identifier fields", problems));
+		verifyEverythingIsBound(descriptor, problems);
 
 		if (!problems.isEmpty()) {
 			throw new IllegalStateException("The errand index does not hold what is declared on it: " + problems.stream().collect(joining("; ")));
 		}
+	}
+
+	/**
+	 * That every field of the index belongs to a field of the errand or to a resource, and can therefore be granted.
+	 * <p>
+	 * A search may name only what a route grants, so a field bound to nothing is a field nobody can search - which is
+	 * safe, and quietly wrong if the field was meant to be searchable. Said at startup rather than found later: the one
+	 * thing neither the compiler nor the access rules can notice is a field that was indexed and then left out of both.
+	 * The tenancy of the index and the bookkeeping of access control are named here as what they are, fields of the index
+	 * that belong to no field of an errand.
+	 */
+	private static void verifyEverythingIsBound(final IndexDescriptor descriptor, final List<String> problems) {
+		final var bound = new HashSet<String>();
+		for (final var field : ErrandField.values()) {
+			bound.addAll(field.getSearchFields());
+			bound.addAll(field.getIndex().sorts().values());
+		}
+		for (final var resource : ProtectedResource.values()) {
+			bound.addAll(resource.getSearchFields());
+		}
+		bound.addAll(ErrandIndex.IDENTIFIER_FIELDS);
+		bound.addAll(NOT_OF_AN_ERRAND);
+
+		descriptor.staticFields().stream()
+			.filter(IndexFieldDescriptor::isValueField)
+			.map(IndexFieldDescriptor::absolutePath)
+			// What the index keeps for itself, named as the index names such things
+			.filter(name -> !name.startsWith("_"))
+			.filter(name -> bound.stream().noneMatch(binding -> covers(binding, name)))
+			.forEach(name -> problems.add("'%s' is held by the index and bound to no field or resource, so nothing can grant it".formatted(name)));
+	}
+
+	/**
+	 * Whether a binding covers sent in name: a name ending in a dot stands for the object and everything under it, which
+	 * is how {@code SearchableFields} reads a binding when it decides what may be searched.
+	 */
+	private static boolean covers(final String binding, final String name) {
+		if (!binding.endsWith(".")) {
+			return name.equals(binding);
+		}
+		return name.equals(binding.substring(0, binding.length() - 1)) || name.startsWith(binding);
 	}
 
 	private static void verifyExists(final IndexDescriptor descriptor, final String name, final String declaredOn, final List<String> problems) {

@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -85,6 +86,39 @@ class ErrandIndexModelTest {
 		final var model = new ErrandIndexModel(descriptorMock);
 
 		assertThat(model.textFields()).containsExactly("errandNumber", "externalTags.value", "measures.description", "stakeholders.externalId", "title");
+	}
+
+	/**
+	 * A field the index holds that no field of an errand and no resource names is one nothing can grant, so nothing can
+	 * search it. Safe, and quietly wrong where the field was meant to be searchable, which is why it is said at startup.
+	 */
+	@Test
+	void aFieldTheIndexHoldsAndNothingBindsKeepsTheServiceFromStarting() {
+		final var unbound = valueField("previousStatus", null, true, String.class);
+		when(descriptorMock.staticFields()).thenReturn(List.of(unbound));
+		when(descriptorMock.field(anyString())).thenAnswer(invocation -> Optional.of(anyOther(invocation.getArgument(0))));
+
+		assertThatThrownBy(() -> new ErrandIndexModel(descriptorMock))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("'previousStatus' is held by the index and bound to no field or resource, so nothing can grant it");
+	}
+
+	/**
+	 * What the index keeps for itself, the two fields the search is filtered by, and what access control counts its labels
+	 * with: fields of the index that belong to no field of an errand, and are named as such rather than bound.
+	 */
+	@Test
+	void theIndexOwnFieldsAndTheBookkeepingOfAccessControlAreAccepted() {
+		final var id = valueField("_id", null, true, String.class);
+		final var entityType = valueField("_entity_type", null, true, String.class);
+		final var municipality = valueField("municipalityId", null, true, String.class);
+		final var namespace = valueField("namespace", null, true, String.class);
+		final var labelId = valueField("accessLabels.metadataLabelId", null, true, String.class);
+		final var count = valueField("accessLabelCount", null, true, Integer.class);
+		when(descriptorMock.staticFields()).thenReturn(List.of(id, entityType, municipality, namespace, labelId, count));
+		when(descriptorMock.field(anyString())).thenAnswer(invocation -> Optional.of(anyOther(invocation.getArgument(0))));
+
+		assertThatCode(() -> new ErrandIndexModel(descriptorMock)).doesNotThrowAnyException();
 	}
 
 	@Test

@@ -273,8 +273,9 @@ public class ErrandEntity {
 	@Transient
 	private String tempPreviousStatus;
 
+	// Not indexed: no field of the API model carries it, so nothing may read it, and a field nobody may read is one
+	// nobody may search either
 	@Column(name = "previous_status")
-	@KeywordField(name = ErrandIndex.PREVIOUS_STATUS, normalizer = LOWERCASE)
 	private String previousStatus;
 
 	@OneToMany(mappedBy = "errandEntity", cascade = ALL, orphanRemoval = true, fetch = EAGER)
