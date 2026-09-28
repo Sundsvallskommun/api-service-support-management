@@ -159,26 +159,39 @@ public class JobService {
 		}, () -> LOG.warn("updateProgress called with unknown jobId '{}'", jobId));
 	}
 
+	/**
+	 * A job that has already reached a state it cannot leave keeps it, same as {@link #stop} - a completion arriving
+	 * late, after something else already stopped or failed this job (a caller's own {@link #stop}, or a lease
+	 * {@code stealStaleLease}/{@code failStaleJobs} reclaimed out from under a run that was only slow), must not
+	 * rewrite that outcome. The run behind it is expected to notice the same way and stop itself; this is what keeps
+	 * the noticing from mattering were it to lose that race.
+	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	public void complete(final String jobId) {
 		jobRepository.findById(jobId).ifPresentOrElse(job -> {
-			job.setStatus(COMPLETED);
-			job.setProgress(100);
-			jobRepository.save(job);
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				job.setStatus(COMPLETED);
+				job.setProgress(100);
+				jobRepository.save(job);
+			}
 		}, () -> LOG.warn("complete called with unknown jobId '{}'", jobId));
 	}
 
 	/**
 	 * Ends a job that reached its end with something worth saying about the outcome, such as how much of what it walked
 	 * it actually removed.
+	 * <p>
+	 * Guarded the same way the other overload is - see its own javadoc for why.
 	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	public void complete(final String jobId, final String message) {
 		jobRepository.findById(jobId).ifPresentOrElse(job -> {
-			job.setStatus(COMPLETED);
-			job.setProgress(100);
-			job.setMessage(toStoredMessage(message));
-			jobRepository.save(job);
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				job.setStatus(COMPLETED);
+				job.setProgress(100);
+				job.setMessage(toStoredMessage(message));
+				jobRepository.save(job);
+			}
 		}, () -> LOG.warn("complete called with unknown jobId '{}'", jobId));
 	}
 
@@ -218,12 +231,19 @@ public class JobService {
 		return jobRepository.findById(jobId).map(JobEntity::getStatus);
 	}
 
+	/**
+	 * Guarded the same way {@link #complete(String)} is, and for the same reason: a run's own failure, caught late,
+	 * must not overwrite an outcome something else already reached first - a caller's own {@link #stop}, or a lease
+	 * reclaimed out from under this run by {@code stealStaleLease}/{@code failStaleJobs}.
+	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	public void fail(final String jobId, final String message) {
 		jobRepository.findById(jobId).ifPresentOrElse(job -> {
-			job.setStatus(FAILED);
-			job.setMessage(toStoredMessage(message));
-			jobRepository.save(job);
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				job.setStatus(FAILED);
+				job.setMessage(toStoredMessage(message));
+				jobRepository.save(job);
+			}
 		}, () -> LOG.warn("fail called with unknown jobId '{}'", jobId));
 	}
 

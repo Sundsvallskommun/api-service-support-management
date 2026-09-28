@@ -31,6 +31,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
 
 @ExtendWith(MockitoExtension.class)
 class LabelMoveRunnerTest {
@@ -81,6 +83,7 @@ class LabelMoveRunnerTest {
 		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
 		when(metadataLabelRepositoryMock.findById(newParentId)).thenReturn(Optional.of(newParent));
 		when(errandsRepositoryMock.findAllById(List.of("errand-1"))).thenReturn(List.of(errand));
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
 
 		runner().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, newParentId, List.of("errand-1"), STARTED_BY));
 
@@ -96,6 +99,8 @@ class LabelMoveRunnerTest {
 		// over the chunk exactly as read.
 		verify(errandServiceMock).persistLabelMigrationBatch(List.of(errand));
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
+		// Once from the one page's own stop check, once more from move()'s own check before completing.
+		verify(jobServiceMock, times(2)).statusOf(JOB_ID);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -106,6 +111,7 @@ class LabelMoveRunnerTest {
 		var moved = labelEntity(movedId, labelEntity("old-parent", null, "ROOT"), "ROOT/MOVED");
 
 		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
 
 		runner().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, List.of(), STARTED_BY));
 
@@ -113,10 +119,43 @@ class LabelMoveRunnerTest {
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).findById(movedId);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
+		// No page for an empty errand-id list to check from inside, so the one call is move()'s own, made regardless.
+		verify(jobServiceMock).statusOf(JOB_ID);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 		verify(errandsRepositoryMock, never()).findAllById(any());
 		verify(errandServiceMock, never()).persistLabelMigrationBatch(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a run stops restowing once the job is no longer running, rather than carrying on to restow pages - and complete or audit a job - a second run's reclaimed lease may already have taken over")
+	void run_jobNoLongerRunning_stopsWithoutRestowingFurtherPagesOrCompletingOrAuditing() {
+		var movedId = "moved";
+		var moved = labelEntity(movedId, null, "ROOT");
+		var errand1 = errandWithAccessLabels(movedId).withId("errand-1");
+		var pagedRunner = new LabelMoveRunner(errandsRepositoryMock, metadataLabelRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
+			new LabelMoveProperties(1, 2, PROGRESS_INTERVAL));
+
+		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
+		when(errandsRepositoryMock.findAllById(List.of("errand-1"))).thenReturn(List.of(errand1));
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(STOPPED));
+
+		pagedRunner.run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, List.of("errand-1", "errand-2"), STARTED_BY));
+
+		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).findById(movedId);
+		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
+		// The first page is restowed and reported before the job is ever asked about - only the second page, which
+		// would restow errands a second run's own reclaimed lease may already be walking, is skipped.
+		verify(errandsRepositoryMock).findAllById(List.of("errand-1"));
+		verify(errandServiceMock).persistLabelMigrationBatch(List.of(errand1));
+		verify(jobServiceMock).updateProgress(JOB_ID, 1);
+		// Once from restowErrands' own page check, which is what stops it from ever reading a second page, and once
+		// more from move()'s own check afterward, which is what skips the audit event and complete() below.
+		verify(jobServiceMock, times(2)).statusOf(JOB_ID);
+		verifyNoInteractions(eventServiceMock);
+		verify(jobServiceMock, never()).complete(any(), any());
+		verify(jobServiceMock, never()).fail(any(), any());
 	}
 
 	@Test
@@ -132,6 +171,7 @@ class LabelMoveRunnerTest {
 		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
 		when(errandsRepositoryMock.findAllById(List.of("errand-1"))).thenReturn(List.of(errand1));
 		when(errandsRepositoryMock.findAllById(List.of("errand-2"))).thenReturn(List.of(errand2));
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
 
 		pagedRunner.run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, List.of("errand-1", "errand-2"), STARTED_BY));
 
@@ -144,6 +184,8 @@ class LabelMoveRunnerTest {
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).findById(movedId);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
+		// Once from each of the two pages' own stop check, once more from move()'s own check before completing.
+		verify(jobServiceMock, times(3)).statusOf(JOB_ID);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -161,6 +203,7 @@ class LabelMoveRunnerTest {
 
 		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
 		when(errandsRepositoryMock.findAllById(List.of("errand-1", "errand-2"))).thenReturn(List.of(errand1, errand2));
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
 
 		heartbeatRunner.run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, List.of("errand-1", "errand-2"), STARTED_BY));
 
@@ -172,6 +215,9 @@ class LabelMoveRunnerTest {
 		verify(errandServiceMock).persistLabelMigrationBatch(List.of(errand2));
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
+		// Both ids land in one page here (batchSize covers both), so the stop check fires once from that page, once more
+		// from move()'s own check before completing.
+		verify(jobServiceMock, times(2)).statusOf(JOB_ID);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -192,6 +238,7 @@ class LabelMoveRunnerTest {
 		doThrow(new ObjectOptimisticLockingFailureException(ErrandEntity.class, "errand-1"))
 			.doNothing()
 			.when(errandServiceMock).persistLabelMigrationBatch(any());
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
 
 		runner().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, List.of("errand-1"), STARTED_BY));
 
@@ -201,6 +248,7 @@ class LabelMoveRunnerTest {
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
+		verify(jobServiceMock, times(2)).statusOf(JOB_ID);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}

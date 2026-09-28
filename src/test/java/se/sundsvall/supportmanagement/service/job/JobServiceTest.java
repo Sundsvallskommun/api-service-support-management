@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -242,6 +244,21 @@ class JobServiceTest {
 		assertThat(captor.getValue().getProgress()).isEqualTo(100);
 	}
 
+	@ParameterizedTest
+	@EnumSource(value = JobStatus.class, names = {
+		"COMPLETED", "FAILED", "STOPPED"
+	})
+	@DisplayName("Verification that completing a job which has already ended keeps the outcome it reached, rather than having it rewritten by a run that only finishes - or notices it should stop - late")
+	void completeDoesNotOverwriteAJobThatHasAlreadyEnded(final JobStatus alreadyEnded) {
+		final var entity = jobEntity(alreadyEnded);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.complete(JOB_ID);
+
+		assertThat(entity.getStatus()).isEqualTo(alreadyEnded);
+		verify(jobRepositoryMock, never()).save(any());
+	}
+
 	@Test
 	void fail() {
 		final var entity = jobEntity(RUNNING);
@@ -253,6 +270,21 @@ class JobServiceTest {
 		verify(jobRepositoryMock).save(captor.capture());
 		assertThat(captor.getValue().getStatus()).isEqualTo(FAILED);
 		assertThat(captor.getValue().getMessage()).isEqualTo("something went wrong");
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = JobStatus.class, names = {
+		"COMPLETED", "FAILED", "STOPPED"
+	})
+	@DisplayName("Verification that failing a job which has already ended keeps the outcome it reached, rather than having a late failure rewrite it")
+	void failDoesNotOverwriteAJobThatHasAlreadyEnded(final JobStatus alreadyEnded) {
+		final var entity = jobEntity(alreadyEnded);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.fail(JOB_ID, "something went wrong");
+
+		assertThat(entity.getStatus()).isEqualTo(alreadyEnded);
+		verify(jobRepositoryMock, never()).save(any());
 	}
 
 	@Test
@@ -335,6 +367,21 @@ class JobServiceTest {
 		assertThat(entity.getProgress()).isEqualTo(100);
 		assertThat(entity.getMessage()).isEqualTo("Removed 248 of 250 errands reached, 2 could not be removed");
 		verify(jobRepositoryMock).save(entity);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = JobStatus.class, names = {
+		"COMPLETED", "FAILED", "STOPPED"
+	})
+	@DisplayName("Verification that completing a job with a summary does not overwrite an outcome the job already reached")
+	void completeWithMessageDoesNotOverwriteAJobThatHasAlreadyEnded(final JobStatus alreadyEnded) {
+		final var entity = jobEntity(alreadyEnded);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.complete(JOB_ID, "Removed 248 of 250 errands reached, 2 could not be removed");
+
+		assertThat(entity.getStatus()).isEqualTo(alreadyEnded);
+		verify(jobRepositoryMock, never()).save(any());
 	}
 
 	@Test

@@ -15,6 +15,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
 
 /**
  * Carries out label moves accepted by {@link MetadataService#startLabelMove}.
@@ -107,6 +108,14 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 
 		final var restowed = restowErrands(run);
 
+		// Checked once more here, in addition to restowErrands' own per-page check, since a stop landing on the very
+		// last page would otherwise fall through to the audit event and complete() below - both of which must not fire
+		// for a run whose lease has since been reclaimed and handed to a second one.
+		if (isStopped(run)) {
+			LOG.info("Label move {} stopped after restowing {} errand(s)", run.jobId(), restowed);
+			return;
+		}
+
 		eventService.createLabelMoveEvent(run.municipalityId(), run.labelId(), run.startedBy(), AUDIT_MESSAGE.formatted(run.labelId(), run.newParentId(), run.startedBy(), restowed));
 
 		jobService.complete(run.jobId(), SUMMARY.formatted(run.labelId(), run.newParentId(), restowed));
@@ -123,6 +132,12 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 	 * <p>
 	 * A plain paged walk over a fixed id list, not keyset paging: the set cannot change shape mid-walk the way a
 	 * label-id-scoped query's result could, since it was already resolved before this runs.
+	 * <p>
+	 * Also checked at the page boundary, again mirroring {@link ErrandPurgeRunner#walk}: a run merely slow enough for
+	 * {@link JobProperties#staleAfter()} to have elapsed has its lease reclaimed by {@code stealStaleLease} (or ended
+	 * outright by {@code failStaleJobs}) without anyone telling this thread to stop. Left unchecked, it would carry on
+	 * restowing pages nobody is waiting on any more while a second run - the one the reclaimed lease was handed to -
+	 * restows the very same errands.
 	 */
 	private int restowErrands(final LabelMoveRun run) {
 		var ids = run.errandIds();
@@ -144,9 +159,24 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 
 			jobService.updateProgress(run.jobId(), processed);
 			lastReport = System.nanoTime();
+
+			if (isStopped(run)) {
+				LOG.info("Label move {} stopped after restowing {} errand(s)", run.jobId(), processed);
+				return processed;
+			}
 		}
 
 		return processed;
+	}
+
+	/**
+	 * Whether the job has left the state a run works in. A job that is gone counts as stopped too: there is nothing left
+	 * to report against, so there is no reason to keep restowing errands on its behalf.
+	 */
+	private boolean isStopped(final LabelMoveRun run) {
+		return !jobService.statusOf(run.jobId())
+			.filter(RUNNING::equals)
+			.isPresent();
 	}
 
 	/**
