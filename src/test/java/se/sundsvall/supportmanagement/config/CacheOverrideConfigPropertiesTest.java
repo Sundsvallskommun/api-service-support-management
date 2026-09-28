@@ -18,14 +18,9 @@ class CacheOverrideConfigPropertiesTest {
 	@Test
 	void testPropertyValues() {
 		assertThat(properties).isNotNull();
-		assertThat(properties.getSpecOverrides()).hasSize(2).satisfiesExactly(
-			accessibleLabels -> {
-				assertThat(accessibleLabels.getCacheName()).isEqualTo("accessibleLabelsCache");
-				assertThat(accessibleLabels.getSpec()).isEqualTo("maximumSize=1000, expireAfterWrite=15m");
-			},
-			namespaceLabelIds -> {
-				assertThat(namespaceLabelIds.getCacheName()).isEqualTo("namespaceLabelIdsCache");
-				assertThat(namespaceLabelIds.getSpec()).isEqualTo("maximumSize=200, expireAfterWrite=5m");
-			});
+		assertThat(properties.getSpecOverrides()).hasSize(1).satisfiesExactly(cacheSetting -> {
+			assertThat(cacheSetting.getCacheName()).isEqualTo("accessibleLabelsCache");
+			assertThat(cacheSetting.getSpec()).isEqualTo("maximumSize=1000, expireAfterWrite=15m");
+		});
 	}
 }

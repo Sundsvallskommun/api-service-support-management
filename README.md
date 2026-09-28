@@ -305,11 +305,15 @@ each with its own errands and its own fields, and the clauses are unioned. A que
 from that route rather than refused, and refused only when no route can. The rebuild endpoint is held to the namespace
 configuration grant.
 
-The index cannot ask whether every label of an errand lies within a set, so the filter asks the opposite: that the errand
-carries none of the labels the user does not hold. That needs the label ids of the namespace, which a search asks for
-once per route, so they are cached per namespace (`namespaceLabelIdsCache`, five minutes, evicted wherever labels are
-written). A label created while another instance still holds a stale entry is one the filter does not exclude until the
-entry expires; a label that no longer exists lingering in the entry only keeps errands hidden.
+The label rule is "every access label of the errand is among those the user holds". An index cannot ask whether all
+values of a field lie within a set, but it can ask how many of them do, so the number to reach is written beside them -
+`accessLabelCount`, as many as the errand carries - and the filter asks for at least that many, which is the same
+question. It needs nothing but the labels of the user: no list of the namespace's labels, nothing cached that could be
+stale, and a label nobody has heard of yet keeps an errand out rather than letting it through.
+
+An errand carrying no access labels is reached by everyone holding a label, as in the database, and is asked for
+separately, since a count of none satisfies no covering query whatever it is counted against. A user holding no labels
+reaches nothing at all, that errand included, which is the database's answer too.
 
 How the pieces hold together, from the API to the index:
 

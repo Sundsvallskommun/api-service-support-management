@@ -141,3 +141,15 @@ VALUES ('2506', 'ee000000-0000-0000-0000-0000000009s0', 'NAMESPACE-2509', 'HIGH'
 INSERT INTO errand_access_labels(errand_id, metadata_label_id)
 VALUES ('ee000000-0000-0000-0000-0000000009s0', 'ss000000-0000-0000-0000-0000000009s1'),
        ('ee000000-0000-0000-0000-0000000009s2', 'ss000000-0000-0000-0000-0000000009s1');
+
+-- -----------------------------------------------------------------------------------------------
+-- An errand of the access controlled namespace carrying no access labels at all. The database
+-- reaches it for everyone holding a label, since it carries nothing that is not allowed, and the
+-- index must answer the same: a count of none satisfies no covering query, so it is asked for on
+-- its own. A user holding no labels reaches it no more than they reach anything else.
+-- -----------------------------------------------------------------------------------------------
+INSERT INTO errand(municipality_id, id, namespace, priority, status, category, type, title, description, reporter_user_id,
+                   created, touched, errand_number, business_related)
+VALUES ('2506', 'ee000000-0000-0000-0000-00000000nolb', 'NAMESPACE-2506', 'LOW', 'NEW', 'GATA', 'BELYSNING',
+        'Ärende utan åtkomstetiketter', 'Ingen etikett styr detta ärende', 'rep05ort',
+        '2026-05-10 08:00:00.000', '2026-05-10 08:00:00.000', 'AP-26050001', false);

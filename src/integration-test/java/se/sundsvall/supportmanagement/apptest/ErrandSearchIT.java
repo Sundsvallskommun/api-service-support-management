@@ -145,15 +145,19 @@ class ErrandSearchIT extends AbstractAppTest {
 	 */
 	@Test
 	void test10_accessThroughAllLabelsAtFullRead() {
-		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "all01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "all01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003", "AP-26050001");
 	}
 
 	/**
 	 * A label reaching one errand of three. The other two carry labels the user does not hold.
 	 */
+	/**
+	 * A label reaching one errand of three, and beside them an errand carrying no access labels at all, which carries
+	 * nothing that is not allowed and is therefore reached as well - the same answer the database gives.
+	 */
 	@Test
 	void test11_accessThroughOneLabel() {
-		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "one01lbl")).containsExactly("AP-23020002");
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "one01lbl")).containsExactlyInAnyOrder("AP-23020002", "AP-26050001");
 	}
 
 	/**
@@ -164,6 +168,10 @@ class ErrandSearchIT extends AbstractAppTest {
 		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "rob01rep")).containsExactly("AP-23020003");
 	}
 
+	/**
+	 * A user the access mapper grants no label reaches nothing, the errand carrying no access labels included: the
+	 * specification behind the listing reaches no errand at all for them, and the search says the same.
+	 */
 	@Test
 	void test13_noAccess() {
 		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "nob01ody")).isEmpty();
@@ -206,7 +214,8 @@ class ErrandSearchIT extends AbstractAppTest {
 	 */
 	@Test
 	void test17_limitedReadIsSearchedByWhatALimitedReadExposes() {
-		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
+		// The errand carrying no access labels is reached here too, since it carries nothing a limited read is kept from
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003", "AP-26050001");
 		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "title:e-service", "lim01red")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
 
 		setupCall()
@@ -301,7 +310,7 @@ class ErrandSearchIT extends AbstractAppTest {
 	 */
 	@Test
 	void test20_roleKeepsFieldsAndKeysFromTheSearch() {
-		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "smo02key")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003");
+		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "", "smo02key")).containsExactlyInAnyOrder("AP-23020001", "AP-23020002", "AP-23020003", "AP-26050001");
 		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "jsonParameters.granted-json.visible:true", "smo02key")).containsExactly("AP-23020003");
 		assertThat(searchAs(ACCESS_CONTROLLED_PATH, "survive", "smo02key")).isEmpty();
 
