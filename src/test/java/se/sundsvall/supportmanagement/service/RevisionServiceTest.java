@@ -243,6 +243,42 @@ class RevisionServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a snapshot written before attachments had a sequence number and a received date is not taken for a change")
+	void shouldNotCreateErrandRevisionWhenTheLastSnapshotHasAttachmentsWithoutSequenceNumberAndReceived() {
+		final var created = OffsetDateTime.parse("2024-03-01T10:15:30+01:00");
+		final var earlier = errandWithAttachment(AttachmentEntity.create().withId("attachment-1").withFileName("a.txt").withCreated(created));
+		final var current = errandWithAttachment(AttachmentEntity.create().withId("attachment-1").withFileName("a.txt").withCreated(created).withReceived(created).withSequenceNumber(1));
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(toSerializedSnapshot(earlier))));
+
+		assertThat(service.createErrandRevision(current)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a received date moved away from the creation date is a change")
+	void shouldCreateErrandRevisionWhenTheReceivedDateOfAnAttachmentIsChanged() {
+		final var created = OffsetDateTime.parse("2024-03-01T10:15:30+01:00");
+		final var earlier = errandWithAttachment(AttachmentEntity.create().withId("attachment-1").withFileName("a.txt").withCreated(created));
+		final var current = errandWithAttachment(AttachmentEntity.create().withId("attachment-1").withFileName("a.txt").withCreated(created).withReceived(created.minusDays(2)).withSequenceNumber(1));
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(toSerializedSnapshot(earlier))));
+		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withVersion(4));
+
+		assertThat(service.createErrandRevision(current)).isNotNull();
+
+		verify(revisionRepositoryMock).save(any(RevisionEntity.class));
+	}
+
+	private static ErrandEntity errandWithAttachment(final AttachmentEntity attachment) {
+		return ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.ACTIVE)
+			.withAttachments(List.of(attachment));
+	}
+
+	@Test
 	@DisplayName("Verification that a draft made active is a change")
 	void shouldCreateErrandRevisionWhenADraftIsMadeActive() {
 		final var draft = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.DRAFT);

@@ -10,8 +10,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
+import java.time.OffsetDateTime;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -75,9 +80,14 @@ class ErrandAttachmentsResource {
 		@NotNull @RequestPart("errandAttachment") final MultipartFile errandAttachment,
 		@Parameter(name = "channel", description = "Channel the attachment was received via", example = "WEB_UI") @OneOf(value = {
 			"EMAIL", "ESERVICE", "WEB_UI", "MY_PAGES"
-		}, nullable = true) @RequestPart(name = "channel", required = false) final String channel) {
+		}, nullable = true) @RequestPart(name = "channel", required = false) final String channel,
+		@Parameter(name = "received", description = "When the attachment came in. Set to the time of upload when omitted", example = "2023-01-01T00:00:00Z") @PastOrPresent(groups = OnCreate.class) @DateTimeFormat(iso = ISO.DATE_TIME) @RequestParam(
+			name = "received",
+			required = false) final OffsetDateTime received) {
 
-		final var attachmentId = errandAttachmentService.createErrandAttachment(namespace, municipalityId, errandId, errandAttachment, channel);
+		final var attachmentId = errandAttachmentService.createErrandAttachment(namespace, municipalityId, errandId, errandAttachment, ErrandAttachment.create()
+			.withChannel(channel)
+			.withReceived(received));
 
 		return created(fromPath("/{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}")
 			.buildAndExpand(municipalityId, namespace, errandId, attachmentId).toUri())
@@ -123,7 +133,7 @@ class ErrandAttachmentsResource {
 
 	@PatchMapping(path = "/{attachmentId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Update errand attachment",
-		description = "Updates what the attachment is for, named by the id of an attachment purpose of the namespace. The only place the purpose is written - it belongs to the attachment rather than to any link to it",
+		description = "Updates what the attachment is for, named by the id of an attachment purpose of the namespace, and when the attachment came in. The only place the purpose is written - it belongs to the attachment rather than to any link to it",
 		responses = {
 			@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {

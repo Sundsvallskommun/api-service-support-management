@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
+import se.sundsvall.supportmanagement.integration.db.model.SequenceNumberProjection;
 
 @CircuitBreaker(name = "attachmentRepository")
 public interface AttachmentRepository extends JpaRepository<AttachmentEntity, String> {
@@ -28,6 +29,14 @@ public interface AttachmentRepository extends JpaRepository<AttachmentEntity, St
 	List<AttachmentDataIdProjection> findByIdIn(List<String> ids);
 
 	boolean existsByPurposeId(String purposeId);
+
+	/**
+	 * Find the highest sequence number among the attachments of the errand.
+	 *
+	 * @param  errandId id of the errand.
+	 * @return          the highest sequence number, or empty if the errand has no attachments.
+	 */
+	Optional<SequenceNumberProjection> findTopByErrandEntityIdOrderBySequenceNumberDesc(String errandId);
 
 	List<AttachmentEntity> findByNamespaceAndMunicipalityIdAndErrandEntityIdAndIdIn(final String namespace, final String municipalityId, final String errandId, final List<String> ids);
 

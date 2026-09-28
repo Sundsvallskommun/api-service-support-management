@@ -22,7 +22,8 @@
 			"id": "ad000000-0000-0000-0000-000000000003",
 			"fileName": "beslut.txt",
 			"mimeType": "text/plain",
-			"fileSize": 6
+			"fileSize": 6,
+			"sequenceNumber": 1
 		}
 	],
 	"createdBy": "pw-alkt",

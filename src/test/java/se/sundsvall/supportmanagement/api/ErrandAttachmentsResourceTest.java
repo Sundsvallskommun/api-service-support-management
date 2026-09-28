@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,6 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.ALL;
@@ -58,7 +58,7 @@ class ErrandAttachmentsResourceTest {
 		final var attachmentId = "attachmentId";
 
 		// Mock
-		when(errandAttachmentServiceMock.createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(MultipartFile.class), nullable(String.class))).thenReturn(attachmentId);
+		when(errandAttachmentServiceMock.createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(MultipartFile.class), eq(ErrandAttachment.create()))).thenReturn(attachmentId);
 
 		// Call
 		webTestClient.post().uri(builder -> builder.path(PATH)
@@ -74,10 +74,37 @@ class ErrandAttachmentsResourceTest {
 
 		// Verification
 		final ArgumentCaptor<MultipartFile> fileArgumentCaptor = ArgumentCaptor.forClass(MultipartFile.class);
-		verify(errandAttachmentServiceMock).createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), fileArgumentCaptor.capture(), nullable(String.class));
+		verify(errandAttachmentServiceMock).createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), fileArgumentCaptor.capture(), eq(ErrandAttachment.create()));
 		final var multipartFile = fileArgumentCaptor.getValue();
 		assertThat(multipartFile.getOriginalFilename()).isEqualTo(fileName);
 		assertThat(multipartFile.getContentType()).isEqualTo(TEXT_PLAIN_VALUE);
+	}
+
+	@Test
+	void createErrandAttachmentWithChannelAndReceived() {
+
+		// Parameter values
+		final var received = OffsetDateTime.parse("2024-03-01T10:15:30+01:00");
+		final var multipartBodyBuilder = new MultipartBodyBuilder();
+		multipartBodyBuilder.part("errandAttachment", "test").filename("test.txt").contentType(TEXT_PLAIN);
+		multipartBodyBuilder.part("channel", "EMAIL");
+		multipartBodyBuilder.part("received", received.toString());
+		final var attachmentId = "attachmentId";
+
+		// Mock
+		when(errandAttachmentServiceMock.createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(MultipartFile.class), eq(ErrandAttachment.create().withChannel("EMAIL").withReceived(received)))).thenReturn(attachmentId);
+
+		// Call
+		webTestClient.post().uri(builder -> builder.path(PATH)
+			.build(Map.of("municipalityId", MUNICIPALITY_ID, "namespace", NAMESPACE, "errandId", ERRAND_ID)))
+			.contentType(MULTIPART_FORM_DATA)
+			.body(BodyInserters.fromMultipartData(multipartBodyBuilder.build()))
+			.exchange()
+			.expectStatus().isCreated()
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/attachments/" + attachmentId);
+
+		// Verification
+		verify(errandAttachmentServiceMock).createErrandAttachment(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(MultipartFile.class), eq(ErrandAttachment.create().withChannel("EMAIL").withReceived(received)));
 	}
 
 	@Test
@@ -130,11 +157,12 @@ class ErrandAttachmentsResourceTest {
 		// Parameter values
 		final var attachmentId = randomUUID().toString();
 		final var purposeId = randomUUID().toString();
-		final var body = UpdateErrandAttachmentRequest.create().withPurpose(ErrandAttachmentPurpose.create().withId(purposeId));
+		final var received = OffsetDateTime.parse("2024-03-01T09:15:30Z");
+		final var body = UpdateErrandAttachmentRequest.create().withPurpose(ErrandAttachmentPurpose.create().withId(purposeId)).withReceived(received);
 		final var purpose = ErrandAttachmentPurpose.create().withId(purposeId).withName("RESPONSE").withDisplayName("Inkommen handling");
 
 		when(errandAttachmentServiceMock.updateErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId, body))
-			.thenReturn(ErrandAttachment.create().withId(attachmentId).withPurpose(purpose));
+			.thenReturn(ErrandAttachment.create().withId(attachmentId).withPurpose(purpose).withReceived(received));
 
 		// Call
 		final var response = webTestClient.patch().uri(builder -> builder.path(PATH.concat("/{attachmentId}"))
@@ -150,6 +178,7 @@ class ErrandAttachmentsResourceTest {
 
 		// Verification
 		assertThat(response.getPurpose()).isEqualTo(purpose);
+		assertThat(response.getReceived()).isEqualTo(received);
 		verify(errandAttachmentServiceMock).updateErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, attachmentId, body);
 	}
 

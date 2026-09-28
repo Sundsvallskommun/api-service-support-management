@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.1"
+  version: "16.2"
 servers:
 - url: http://localhost:37929
   description: Generated server url
@@ -10014,6 +10014,14 @@ paths:
         schema:
           type: string
         example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: received
+        in: query
+        description: When the attachment came in. Set to the time of upload when omitted
+        required: false
+        schema:
+          type: string
+          format: date-time
+        example: 2023-01-01T00:00:00Z
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -16107,8 +16115,9 @@ paths:
       - Errand attachments
       summary: Update errand attachment
       description: "Updates what the attachment is for, named by the id of an attachment\
-        \ purpose of the namespace. The only place the purpose is written - it belongs\
-        \ to the attachment rather than to any link to it"
+        \ purpose of the namespace, and when the attachment came in. The only place\
+        \ the purpose is written - it belongs to the attachment rather than to any\
+        \ link to it"
       operationId: updateErrandAttachment
       parameters:
       - name: namespace
@@ -21448,12 +21457,35 @@ components:
           - MY_PAGES
           examples:
           - EMAIL
+        sequenceNumber:
+          type: integer
+          format: int32
+          description: "The number of the attachment within the errand, counted from\
+            \ 1 in the order the attachments were added. A number is never reused\
+            \ within the errand. Left out for an attachment that has not been given\
+            \ a number yet"
+          examples:
+          - 1
+          readOnly: true
+        received:
+          type: string
+          format: date-time
+          description: When the attachment came in. The same as created unless given
+          examples:
+          - 2023-01-01T00:00:00Z
         created:
           type: string
           format: date-time
           description: The attachment created date
           examples:
           - 2023-01-01T00:00:00Z
+        modified:
+          type: string
+          format: date-time
+          description: The attachment modified date
+          examples:
+          - 2023-01-01T00:00:00Z
+          readOnly: true
         hash:
           type: string
           description: SHA-256 hash (hex encoded) of the attachment's raw content
@@ -23588,6 +23620,12 @@ components:
           $ref: "#/components/schemas/ErrandAttachmentPurpose"
           description: "What the attachment is for, named by the id of an attachment\
             \ purpose of the namespace. Left as it is when omitted"
+        received:
+          type: string
+          format: date-time
+          description: When the attachment came in. Left as it is when omitted
+          examples:
+          - 2023-01-01T00:00:00Z
     PageSubscriberNotification:
       type: object
       properties:
