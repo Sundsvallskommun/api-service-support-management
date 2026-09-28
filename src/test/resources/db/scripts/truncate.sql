@@ -15,6 +15,7 @@ TRUNCATE table `type`;
 TRUNCATE table validation;
 TRUNCATE table revision;
 TRUNCATE table attachment_data;
+TRUNCATE table attachment_sequence;
 TRUNCATE table errand_number_sequence;
 TRUNCATE table metadata_label_attribute;
 TRUNCATE table metadata_label;

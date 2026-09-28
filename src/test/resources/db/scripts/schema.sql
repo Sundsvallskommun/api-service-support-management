@@ -48,9 +48,11 @@
     create table attachment (
         attachment_data_id integer not null,
         file_size integer,
+        sequence_number integer,
         created datetime(6),
         modified datetime(6),
         municipality_id varchar(8),
+        received datetime(6),
         namespace varchar(32),
         hash varchar(64),
         attachment_purpose_id varchar(255),
@@ -79,6 +81,12 @@
         id varchar(255) not null,
         name varchar(255) not null,
         primary key (id)
+    ) engine=InnoDB;
+
+    create table attachment_sequence (
+        last_sequence_number integer not null,
+        errand_id varchar(255) not null,
+        primary key (errand_id)
     ) engine=InnoDB;
 
     create table category (
@@ -1025,6 +1033,9 @@
     alter table if exists attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
+    alter table if exists attachment 
+       add constraint uq_attachment_errand_id_sequence_number unique (errand_id, sequence_number);
+
     create index idx_attachment_purpose_namespace_municipality_id 
        on attachment_purpose (namespace, municipality_id);
 
@@ -1244,7 +1255,7 @@
     alter table if exists handover_idempotency 
        add constraint uq_handover_source_target unique (source_errand_id, target_namespace, target_municipality_id);
 
-    create index idx_investigation_errand_id
+    create index idx_investigation_errand_id 
        on investigation (errand_id);
 
     create index idx_investigation_ns_status 
@@ -1517,6 +1528,12 @@
        add constraint fk_attachment_attachment_purpose_id 
        foreign key (attachment_purpose_id) 
        references attachment_purpose (id);
+
+    alter table if exists attachment_sequence 
+       add constraint fk_attachment_sequence_errand_id 
+       foreign key (errand_id) 
+       references errand (id) 
+       on delete cascade;
 
     alter table if exists communication_attachment 
        add constraint fk_communication_attachment_attachment_data 

@@ -15,7 +15,8 @@
 			"id": "ad000000-0000-0000-0000-000000000001",
 			"fileName": "utkast.txt",
 			"mimeType": "text/plain",
-			"fileSize": 6
+			"fileSize": 6,
+			"sequenceNumber": 1
 		}
 	],
 	"createdBy": "joe01doe",

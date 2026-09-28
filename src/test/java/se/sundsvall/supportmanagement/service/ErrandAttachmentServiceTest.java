@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.attachment.UpdateErrandAttachmentRequest;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
@@ -35,6 +37,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
@@ -50,7 +53,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -78,6 +80,9 @@ class ErrandAttachmentServiceTest {
 	private static final String PURPOSE_ID = "f6000000-0000-0000-0000-000000000002";
 	private static final String FILE_NAME = "fileName";
 	private static final String MIME_TYPE = "mimeType";
+	private static final OffsetDateTime RECEIVED = OffsetDateTime.parse("2024-03-01T09:15:30Z");
+	private static final int SEQUENCE_NUMBER = 4;
+	private static final ErrandAttachment METADATA = ErrandAttachment.create().withChannel("EMAIL").withReceived(RECEIVED);
 	private static final String EVENT_LOG_ADD_ATTACHMENT = "En bilaga har lagts till i ärendet.";
 	private static final String EVENT_LOG_REMOVE_ATTACHMENT = "En bilaga har tagits bort från ärendet.";
 	private static final String EVENT_LOG_UPDATE_ATTACHMENT = "En bilaga i ärendet har uppdaterats.";
@@ -136,6 +141,9 @@ class ErrandAttachmentServiceTest {
 	@Mock
 	private DecisionValidator decisionValidatorMock;
 
+	@Mock
+	private AttachmentSequenceNumberGenerator attachmentSequenceNumberGeneratorMock;
+
 	@InjectMocks
 	private ErrandAttachmentService service;
 
@@ -143,6 +151,7 @@ class ErrandAttachmentServiceTest {
 	void createErrandAttachment() throws SQLException {
 		// Mock
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandMock);
+		when(attachmentSequenceNumberGeneratorMock.nextSequenceNumber(errandMock)).thenReturn(SEQUENCE_NUMBER);
 		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 		when(attachmentRepositoryMock.saveAndFlush(any())).thenReturn(attachmentMock);
 		when(attachmentMock.getId()).thenReturn(ATTACHMENT_ID);
@@ -152,16 +161,18 @@ class ErrandAttachmentServiceTest {
 
 		// Call
 		try (final MockedStatic<ErrandAttachmentMapper> mapper = Mockito.mockStatic(ErrandAttachmentMapper.class)) {
-			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(MultipartFile.class), nullable(String.class))).thenReturn(attachmentMock);
+			mapper.when(() -> ErrandAttachmentMapper.toAttachmentEntity(any(), any(MultipartFile.class), same(METADATA))).thenReturn(attachmentMock);
 
-			final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, multipartFileMock, null);
+			final var result = service.createErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, multipartFileMock, METADATA);
 
 			// Assertions and verifications
 			assertThat(result).isNotNull().isEqualTo(ATTACHMENT_ID);
 
-			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock), nullable(String.class)));
+			mapper.verify(() -> ErrandAttachmentMapper.toAttachmentEntity(same(errandMock), same(multipartFileMock), same(METADATA)));
 			verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ATTACHMENT, RW);
-			verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
+			final var inOrder = inOrder(attachmentMock, attachmentRepositoryMock);
+			inOrder.verify(attachmentMock).setSequenceNumber(SEQUENCE_NUMBER);
+			inOrder.verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
 			verify(entityManagerMock).refresh(attachmentMock);
 			verify(attachmentMock).setHash("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
 			verify(revisionServiceMock).createErrandRevision(errandMock);
@@ -341,6 +352,7 @@ class ErrandAttachmentServiceTest {
 	void createAttachment() throws SQLException {
 
 		// Mock
+		when(attachmentSequenceNumberGeneratorMock.nextSequenceNumber(errandMock)).thenReturn(SEQUENCE_NUMBER);
 		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
 		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
@@ -350,7 +362,9 @@ class ErrandAttachmentServiceTest {
 		service.createErrandAttachment(attachmentMock, errandMock);
 
 		// Assertions and verifications
-		verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
+		final var inOrder = inOrder(attachmentMock, attachmentRepositoryMock);
+		inOrder.verify(attachmentMock).setSequenceNumber(SEQUENCE_NUMBER);
+		inOrder.verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
 		verify(entityManagerMock).refresh(attachmentMock);
 		verify(attachmentMock).setHash("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
 		verify(revisionServiceMock).createErrandRevision(errandMock);
@@ -459,6 +473,26 @@ class ErrandAttachmentServiceTest {
 		inOrder.verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 	}
 
+	@Test
+	void updateErrandAttachmentReceived() {
+		// Arrange
+		final var purpose = AttachmentPurposeEntity.create().withId(PURPOSE_ID).withName("SUPPORTING");
+		final var entity = AttachmentEntity.create().withId(ATTACHMENT_ID).withPurpose(purpose).withReceived(RECEIVED.minusDays(1));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ATTACHMENT, RW)).thenReturn(errandMock);
+		when(errandMock.getAttachments()).thenReturn(List.of(entity));
+
+		// Act
+		final var result = service.updateErrandAttachment(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ATTACHMENT_ID, UpdateErrandAttachmentRequest.create().withReceived(RECEIVED));
+
+		// Assert
+		assertThat(result.getReceived()).isEqualTo(RECEIVED);
+		assertThat(entity.getReceived()).isEqualTo(RECEIVED);
+		assertThat(entity.getPurpose()).isSameAs(purpose);
+		verify(attachmentRepositoryMock).flush();
+		verify(revisionServiceMock).createErrandRevision(errandMock);
+		verifyNoInteractions(attachmentPurposeRepositoryMock);
+	}
+
 	/**
 	 * A body without a purpose leaves the stored one standing, and an errand that did not change gets no revision and no
 	 * event.
@@ -467,7 +501,7 @@ class ErrandAttachmentServiceTest {
 	void updateErrandAttachmentWithoutPurposeLeavesItAlone() {
 		// Arrange
 		final var purpose = AttachmentPurposeEntity.create().withId(PURPOSE_ID).withName("SUPPORTING");
-		final var entity = AttachmentEntity.create().withId(ATTACHMENT_ID).withPurpose(purpose);
+		final var entity = AttachmentEntity.create().withId(ATTACHMENT_ID).withPurpose(purpose).withReceived(RECEIVED);
 		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ATTACHMENT, RW)).thenReturn(errandMock);
 		when(errandMock.getAttachments()).thenReturn(List.of(entity));
 
@@ -477,6 +511,7 @@ class ErrandAttachmentServiceTest {
 		// Assert
 		assertThat(result.getPurpose().getName()).isEqualTo("SUPPORTING");
 		assertThat(entity.getPurpose()).isSameAs(purpose);
+		assertThat(entity.getReceived()).isEqualTo(RECEIVED);
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 		verifyNoInteractions(attachmentPurposeRepositoryMock, eventServiceMock);
 	}

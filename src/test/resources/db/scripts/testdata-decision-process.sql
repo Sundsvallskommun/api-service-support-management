@@ -39,15 +39,19 @@ VALUES ('120', 'utkast'),
        ('123', 'underlag');
 
 -- One attachment for each decision below, and on the ended errand one more that is linked to nothing
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, sequence_number)
 VALUES ('ad000000-0000-0000-0000-000000000001', '120', 'utkast.txt', 'text/plain',
-        'aa000000-0000-0000-0000-0000000000a1', 'PROCESS-NAMESPACE', '2281', 6),
+        'aa000000-0000-0000-0000-0000000000a1', 'PROCESS-NAMESPACE', '2281', 6, 1),
        ('ad000000-0000-0000-0000-000000000002', '121', 'beslut.txt', 'text/plain',
-        'aa000000-0000-0000-0000-0000000000a1', 'PROCESS-NAMESPACE', '2281', 6),
+        'aa000000-0000-0000-0000-0000000000a1', 'PROCESS-NAMESPACE', '2281', 6, 2),
        ('ad000000-0000-0000-0000-000000000003', '122', 'beslut.txt', 'text/plain',
-        'aa000000-0000-0000-0000-0000000000a5', 'PROCESS-NAMESPACE', '2281', 6),
+        'aa000000-0000-0000-0000-0000000000a5', 'PROCESS-NAMESPACE', '2281', 6, 1),
        ('ad000000-0000-0000-0000-000000000004', '123', 'underlag.txt', 'text/plain',
-        'aa000000-0000-0000-0000-0000000000a5', 'PROCESS-NAMESPACE', '2281', 8);
+        'aa000000-0000-0000-0000-0000000000a5', 'PROCESS-NAMESPACE', '2281', 8, 2);
+
+INSERT INTO attachment_sequence(errand_id, last_sequence_number)
+VALUES ('aa000000-0000-0000-0000-0000000000a1', 2),
+       ('aa000000-0000-0000-0000-0000000000a5', 2);
 
 -- The investigations the draft decision and the decision of the ended errand rest on
 INSERT INTO investigation(id, errand_id, municipality_id, namespace, type, status, title, created_by, created, version)

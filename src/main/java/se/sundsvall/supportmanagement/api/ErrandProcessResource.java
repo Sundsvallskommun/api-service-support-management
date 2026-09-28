@@ -182,7 +182,7 @@ class ErrandProcessResource {
 			description = "Not found — the errand does not exist, or has no such process instance",
 			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "409",
-			description = "Conflict — the process does not wait for the signal right now, or has ended. Read the errand again rather than retrying",
+			description = "Conflict — the process does not wait for the signal right now, or has completed. Read the errand again rather than retrying",
 			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Void> signalProcess(

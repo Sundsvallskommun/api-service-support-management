@@ -59,11 +59,14 @@ VALUES (101, 'attachment added to the errand'),
        (102, 'attachment that arrived with a communication');
 
 INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size,
-                       channel)
+                       channel, sequence_number)
 VALUES ('aaaa2222-0000-0000-0000-000000000001', 101, 'purged.txt', 'text/plain',
-        'aaaa1111-0000-0000-0000-000000000001', 'PURGE-NAMESPACE', '2281', 24, null),
+        'aaaa1111-0000-0000-0000-000000000001', 'PURGE-NAMESPACE', '2281', 24, null, 1),
        ('aaaa2222-0000-0000-0000-000000000002', 102, 'purged-communication.txt', 'text/plain',
-        'aaaa1111-0000-0000-0000-000000000001', 'PURGE-NAMESPACE', '2281', 44, 'EMAIL');
+        'aaaa1111-0000-0000-0000-000000000001', 'PURGE-NAMESPACE', '2281', 44, 'EMAIL', 2);
+
+INSERT INTO attachment_sequence(errand_id, last_sequence_number)
+VALUES ('aaaa1111-0000-0000-0000-000000000001', 2);
 
 INSERT INTO stakeholder(id, external_id, external_id_type, errand_id, first_name, last_name, role)
 VALUES (9001, 'USER_ID', 'EMPLOYEE', 'aaaa1111-0000-0000-0000-000000000001', 'FIRST_NAME-1', 'LAST_NAME-1', 'ROLE-1');

@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpo
 import se.sundsvall.supportmanagement.api.model.attachment.UpdateErrandAttachmentRequest;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
+import static java.time.OffsetDateTime.now;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -410,6 +411,60 @@ class ErrandAttachmentsResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("deleteErrandAttachment.attachmentId", "not a valid UUID"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void createErrandAttachmentWithReceivedInTheFuture() {
+
+		// Parameters
+		final var multipartBodyBuilder = new MultipartBodyBuilder();
+		multipartBodyBuilder.part("errandAttachment", "file-content").filename("test.txt").contentType(TEXT_PLAIN);
+		multipartBodyBuilder.part("received", now().plusDays(1).toString());
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(MULTIPART_FORM_DATA)
+			.body(BodyInserters.fromMultipartData(multipartBodyBuilder.build()))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(tuple("createErrandAttachment.received", "must be a date in the past or in the present"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void updateErrandAttachmentWithReceivedInTheFuture() {
+
+		// Parameters
+		final var body = UpdateErrandAttachmentRequest.create().withReceived(now().plusDays(1));
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(tuple("received", "must be a date in the past or in the present"));
 
 		// Verification
 		verifyNoInteractions(errandAttachmentServiceMock);

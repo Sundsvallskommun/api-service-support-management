@@ -268,21 +268,28 @@ VALUES ('1',
 -- -----------------------------------
 -- Attachment
 -- -----------------------------------
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, sequence_number)
 VALUES ('25d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', '1', 'Test_image.jpg', 'image/jpeg',
-        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'NAMESPACE-1', '2281', 5068),
+        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'NAMESPACE-1', '2281', 5068, 1),
        ('c697642d-4d8d-4b07-8816-025a2734b09a', '2', 'Test.txt', 'text/plain',
-        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE-1', '2281', 274),
+        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE-1', '2281', 274, 1),
        ('c8d88089-5136-4a1a-aa10-5f435cb6e69f', '3', 'Test2.txt', 'text/plain',
-        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE-1', '2281', 274),
+        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE-1', '2281', 274, 2),
        ('99fa4dd0-9308-4d45-bb8e-4bb881a9a536', '4', 'Test3.txt', 'text/plain',
-        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'NAMESPACE-1', '2281', 274),
+        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'NAMESPACE-1', '2281', 274, 1),
        ('95ea267a-28ec-4636-922c-a717d79bd029', '5', 'birthday-card.txt', 'text/plain',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281', 13),
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281', 13, 1),
        ('1c49e30d-50d9-468f-89f3-3e3b87ea93e2', '6', 'data.txt', 'text/plain',
-        'b481b191-dd37-47ca-b417-ed3a56ba724c', 'NAMESPACE-1', '2281', 4),
+        'b481b191-dd37-47ca-b417-ed3a56ba724c', 'NAMESPACE-1', '2281', 4, 1),
        ('b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3', '7', 'Test_image.jpg', 'image/jpeg',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE-1', '2281', 5068);
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE-1', '2281', 5068, 2);
+
+INSERT INTO attachment_sequence(errand_id, last_sequence_number)
+VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', 1),
+       ('cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 2),
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 1),
+       ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 2),
+       ('b481b191-dd37-47ca-b417-ed3a56ba724c', 1);
 
 -- -----------------------------------
 -- Revision
@@ -725,9 +732,9 @@ VALUES ('d1000000-0000-0000-0000-000000000001', 'SUPPORTS', 'Tillstyrker', 1, tr
 INSERT INTO attachment_data(id, file)
 VALUES ('100', '68656a');
 
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id, sequence_number)
 VALUES ('a5000000-0000-0000-0000-000000000001', '100', 'yttrande.txt', 'text/plain',
-        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000001');
+        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000001', 1);
 
 -- -----------------------------------
 -- Statement (remiss)
@@ -797,9 +804,12 @@ VALUES ('f9000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-0000000
 INSERT INTO attachment_data(id, file)
 VALUES ('110', '68656a');
 
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id, sequence_number)
 VALUES ('a5000000-0000-0000-0000-000000000002', '110', 'protokoll.txt', 'text/plain',
-        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000005');
+        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000005', 2);
+
+INSERT INTO attachment_sequence(errand_id, last_sequence_number)
+VALUES ('a0000000-0000-0000-0000-000000000001', 2);
 
 INSERT INTO measure(id, errand_id, municipality_id, namespace, status, type, title, created_by, created, version)
 VALUES ('ee000000-0000-0000-0000-000000000200', 'a0000000-0000-0000-0000-000000000001', '2281', 'NAMESPACE-ARTEFACT', 'ACTIVE', 'MEASURE-1',

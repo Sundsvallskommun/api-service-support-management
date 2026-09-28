@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
@@ -85,6 +86,7 @@ public class ErrandService {
 	private final ProcessKeyGuard processKeyGuard;
 	private final DecisionValidator decisionValidator;
 	private final EntityManager entityManager;
+	private final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -103,7 +105,8 @@ public class ErrandService {
 		final ErrandProcessService errandProcessService,
 		final ProcessKeyGuard processKeyGuard,
 		final DecisionValidator decisionValidator,
-		final EntityManager entityManager) {
+		final EntityManager entityManager,
+		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -122,6 +125,7 @@ public class ErrandService {
 		this.processKeyGuard = processKeyGuard;
 		this.decisionValidator = decisionValidator;
 		this.entityManager = entityManager;
+		this.attachmentSequenceNumberGenerator = attachmentSequenceNumberGenerator;
 	}
 
 	@Transactional
@@ -143,6 +147,7 @@ public class ErrandService {
 		processKeyGuard.verifyNewLabels(errandEntity.getLabels());
 
 		final var persistedEntity = repository.save(errandEntity);
+		attachmentSequenceNumberGenerator.startSequence(persistedEntity);
 		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 

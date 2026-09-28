@@ -15,15 +15,19 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.util.LinkedMultiValueMap;
+import tools.jackson.core.type.TypeReference;
 
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 
@@ -117,5 +121,46 @@ class ErrandAttachmentsIT extends AbstractAppTest {
 		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, entityId)).hasSize(2)
 			.extracting(RevisionEntity::getVersion)
 			.containsExactlyInAnyOrder(0, 1);
+	}
+
+	/**
+	 * The number of a removed attachment is not given again, even when it was the highest in the errand, and a given
+	 * received date is kept rather than replaced by the time of upload.
+	 */
+	@Test
+	void test05_sequenceNumberIsNotReusedAndReceivedIsKept() throws Exception {
+		final var entityId = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+		final var received = OffsetDateTime.parse("2024-03-01T09:15:30Z");
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "seq05num; type=adAccount")
+			.withServicePath(PATH + entityId + "/attachments/99fa4dd0-9308-4d45-bb8e-4bb881a9a536")
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequest();
+
+		final var fields = new LinkedMultiValueMap<String, Object>();
+		fields.add("channel", "EMAIL");
+		fields.add("received", received.toString());
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "seq05num; type=adAccount")
+			.withServicePath(PATH + entityId + "/attachments")
+			.withHttpMethod(POST)
+			.withContentType(MULTIPART_FORM_DATA)
+			.withRequest(fields)
+			.withRequestFile("errandAttachment", "test.txt")
+			.withExpectedResponseStatus(CREATED)
+			.sendRequest();
+
+		final var attachments = setupCall()
+			.withServicePath(PATH + entityId + "/attachments")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse()
+			.andReturnBody(new TypeReference<List<ErrandAttachment>>() {});
+
+		assertThat(attachments).singleElement().satisfies(attachment -> assertThat(attachment.getReceived()).isAtSameInstantAs(received));
 	}
 }

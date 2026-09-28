@@ -85,3 +85,43 @@ create table if not exists errand_process_signal (
 
 alter table if exists errand
     add column if not exists lifecycle varchar(16) default 'ACTIVE' not null;
+
+alter table if exists attachment
+    add column if not exists sequence_number integer;
+
+alter table if exists attachment
+    add column if not exists received datetime(6);
+
+create table if not exists attachment_sequence (
+    errand_id            varchar(255) not null,
+    last_sequence_number integer      not null,
+    primary key (errand_id),
+    constraint fk_attachment_sequence_errand_id foreign key (errand_id)
+        references errand (id) on delete cascade
+) engine=InnoDB;
+
+update attachment
+set received = created
+where received is null;
+
+update attachment a
+    join (select attachment.id,
+                 greatest(coalesce(max(attachment.sequence_number) over (partition by attachment.errand_id), 0),
+                          coalesce(attachment_sequence.last_sequence_number, 0))
+                     + row_number() over (partition by attachment.errand_id, attachment.sequence_number is null
+                                          order by attachment.created, attachment.id) as sequence_number
+          from attachment
+                   left join attachment_sequence on attachment_sequence.errand_id = attachment.errand_id) numbered
+    on numbered.id = a.id
+set a.sequence_number = numbered.sequence_number
+where a.sequence_number is null;
+
+create unique index if not exists uq_attachment_errand_id_sequence_number
+    on attachment (errand_id, sequence_number);
+
+insert into attachment_sequence (errand_id, last_sequence_number)
+select errand.id, coalesce(max(attachment.sequence_number), 0)
+from errand
+         left join attachment on attachment.errand_id = errand.id
+group by errand.id
+on duplicate key update last_sequence_number = greatest(last_sequence_number, values(last_sequence_number));

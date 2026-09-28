@@ -60,7 +60,9 @@ public class ErrandProcess {
 	@Schema(description = """
 		What the process waits for from a handler right now: the signals a handler can send to step it past the gate it \
 		stands at, through POST .../processes/{processInstanceId}/signals. Empty when the process waits for no person, \
-		which is the normal case for a gate the process passes by itself, and always empty for a process that has ended.""")
+		which is the normal case for a gate the process passes by itself, and always empty for a process that has completed. \
+		A process that has FAILED keeps the signals it last reported, since an incident leaves it listening in the process \
+		engine.""")
 	private List<ProcessSignal> awaitingSignals;
 
 	@Schema(description = "When the process was first registered on the errand", examples = "2026-09-14T08:55:11.121+02:00")

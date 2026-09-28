@@ -35,4 +35,15 @@ public enum ProcessStatus {
 	public boolean isTerminal() {
 		return terminal;
 	}
+
+	/**
+	 * Whether a process in this state can take the signals it last reported. Every state but COMPLETED can: a FAILED
+	 * instance may stand on an incident in the process engine, still listening, and a signal (such as a cancellation) is
+	 * how a handler moves it on.
+	 *
+	 * @return whether the process can take a signal.
+	 */
+	public boolean takesSignals() {
+		return this != COMPLETED;
+	}
 }

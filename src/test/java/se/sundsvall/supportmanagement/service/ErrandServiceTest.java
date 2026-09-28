@@ -53,6 +53,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.AccessControlService.ErrandKeyAccess;
@@ -164,6 +165,9 @@ class ErrandServiceTest {
 	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
 
+	@Mock
+	private AttachmentSequenceNumberGenerator attachmentSequenceNumberGeneratorMock;
+
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
 
@@ -177,7 +181,8 @@ class ErrandServiceTest {
 	void createErrand() {
 		final var errand = buildErrand();
 
-		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
+		final var persisted = ErrandEntity.create().withId(ERRAND_ID);
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(persisted);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
@@ -189,7 +194,9 @@ class ErrandServiceTest {
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
-		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		final var inOrder = inOrder(errandRepositoryMock, attachmentSequenceNumberGeneratorMock);
+		inOrder.verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		inOrder.verify(attachmentSequenceNumberGeneratorMock).startSequence(persisted);
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));

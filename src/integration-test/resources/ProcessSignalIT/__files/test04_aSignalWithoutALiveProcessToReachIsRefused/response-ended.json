@@ -1,5 +1,5 @@
 {
 	"title": "Conflict",
 	"status": 409,
-	"detail": "The process instance 'pi-it-live' has ended and waits for no signal"
+	"detail": "The process instance 'pi-it-live' has completed and waits for no signal"
 }

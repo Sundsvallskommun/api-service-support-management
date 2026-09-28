@@ -80,10 +80,10 @@ public final class ErrandProcessMapper {
 	}
 
 	/**
-	 * What an instance waits for, which is nothing once it has ended, whatever rows it left behind.
+	 * What an instance waits for, which is nothing once it has completed, whatever rows it left behind.
 	 */
 	private static List<ProcessSignal> toProcessSignals(final ErrandProcessEntity entity, final List<ErrandProcessSignalEntity> signals) {
-		if (entity.getProcessStatus().isTerminal()) {
+		if (!entity.getProcessStatus().takesSignals()) {
 			return emptyList();
 		}
 

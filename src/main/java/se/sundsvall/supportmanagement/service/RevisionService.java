@@ -57,8 +57,8 @@ public class RevisionService {
 	private static final Logger LOG = LoggerFactory.getLogger(RevisionService.class);
 
 	/** The attributes left out when two snapshots are compared or diffed, whether a snapshot carries them or not. */
-	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..modified", "$..touched",
-		"$..labels[*].metadataLabel", "$.tempPreviousStatus");
+	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..attachments[*].sequenceNumber", "$..modified",
+		"$..touched", "$..labels[*].metadataLabel", "$.tempPreviousStatus");
 
 	/** The collections of an errand with no order of their own, each with the field its elements are sorted by. */
 	private static final Map<String, String> UNORDERED_COLLECTIONS = Map.of(
@@ -67,6 +67,9 @@ public class RevisionService {
 		"externalTags", "key");
 
 	private static final String LIFECYCLE_ATTRIBUTE = "lifecycle";
+	private static final String ATTACHMENTS_ATTRIBUTE = "attachments";
+	private static final String RECEIVED_ATTRIBUTE = "received";
+	private static final String CREATED_ATTRIBUTE = "created";
 
 	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occurred during comparison";
 
@@ -282,7 +285,8 @@ public class RevisionService {
 	/**
 	 * Reads a snapshot the way two of them are compared and diffed: the attributes that say nothing about the errand are
 	 * left out, the collections without an order of their own are sorted by the field that tells their elements apart,
-	 * and a snapshot without a life cycle reads as an active errand.
+	 * a snapshot without a life cycle reads as an active errand, and an attachment without a received date reads as
+	 * received when it was created.
 	 */
 	private com.fasterxml.jackson.databind.JsonNode toJsonNode(final String value) {
 		try {
@@ -295,10 +299,24 @@ public class RevisionService {
 			if (snapshot instanceof final ObjectNode object && !object.has(LIFECYCLE_ATTRIBUTE)) {
 				object.put(LIFECYCLE_ATTRIBUTE, ACTIVE.name());
 			}
+			snapshot.findValues(ATTACHMENTS_ATTRIBUTE).forEach(RevisionService::receivedWhenCreated);
 
 			return snapshot;
 		} catch (final Exception e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+	}
+
+	/**
+	 * Gives each attachment in the list that has no received date the date it was created.
+	 */
+	private static void receivedWhenCreated(final com.fasterxml.jackson.databind.JsonNode attachments) {
+		if (attachments instanceof final ArrayNode list) {
+			list.forEach(attachment -> {
+				if (attachment instanceof final ObjectNode object && !object.has(RECEIVED_ATTRIBUTE) && object.has(CREATED_ATTRIBUTE)) {
+					object.set(RECEIVED_ATTRIBUTE, object.get(CREATED_ATTRIBUTE).deepCopy());
+				}
+			});
 		}
 	}
 
