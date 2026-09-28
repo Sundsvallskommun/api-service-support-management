@@ -24,8 +24,12 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
  * kept from. Trimming those from the answer is not enough, since a query naming a field tells by hit or miss what the
  * field holds. So the user is held to the same grant for the query as for reading, see {@link NamespaceGrant}: the
  * fields they may not read are left out of what a free text search looks in, and a query naming one of them, or
- * sorting on one, is refused. {@link FieldClosure} says what is closed on a route, {@link QueryStringFields} what a
- * query names; this puts the two together.
+ * sorting on one, is refused. {@link QueryScanner} says what a query names, {@link SearchableFields} what a route may
+ * search; this puts the two together.
+ * <p>
+ * Both of those fail closed, which is the lesson of the shapes this got wrong before. A name the scanner cannot place
+ * is refused rather than passed on, and a query holding a colon the scanner could not read at all is refused whole:
+ * reading a query differently from the index that answers it is how a field gets searched without being granted.
  * <p>
  * A grant reaches errands by several routes, and what may be read differs between them: an errand the labels cover at
  * read is searched by everything the roles of the user allow, one they cover at limited read only by what a limited
@@ -40,6 +44,7 @@ public class ErrandSearchAccess {
 	static final String NOT_SEARCHABLE = "%s not searchable by user '%s'";
 	static final String NOT_SORTABLE = "%s not sortable by user '%s'";
 	static final String WILDCARD_NOT_SEARCHABLE = "A wildcard in a field name is not available to user '%s', who may not search every field of the errand";
+	static final String NOT_READ = "The query holds a field reference that could not be read, which user '%s' may not have searched unchecked";
 
 	/**
 	 * One part of a search: the errands it reaches and the fields a word without a field is looked for in there.
@@ -57,7 +62,7 @@ public class ErrandSearchAccess {
 	public record Plan(List<Clause> clauses) {}
 
 	/** A route of the grant, before the query has been held to it. */
-	private record Route(AccessScope scope, AccessScope excluded, FieldClosure closure) {}
+	private record Route(AccessScope scope, AccessScope excluded, SearchableFields fields) {}
 
 	private final ErrandIndexModel index;
 
@@ -75,19 +80,21 @@ public class ErrandSearchAccess {
 			return new Plan(List.of(new Clause(grant.scope(), null, index.textFields())));
 		}
 
+		// Read once, whatever the grant turns out to reach: what the query names does not depend on who is asking
+		final var scan = QueryScanner.scan(query);
 		final var routes = routesOf(grant);
 		final var clauses = new ArrayList<Clause>();
 
 		for (final var route : routes) {
-			if (answers(query, sort, route.closure())) {
-				clauses.add(new Clause(route.scope(), route.excluded(), route.closure().openFields(index.textFields())));
+			if (refusal(scan, sort, route.fields()).isEmpty()) {
+				clauses.add(new Clause(route.scope(), route.excluded(), route.fields().openFields(index.textFields())));
 			}
 		}
 
 		if (clauses.isEmpty()) {
 			// The widest route comes first, so its refusal is the one naming what the user would most expect to search
 			throw routes.stream()
-				.map(route -> refusal(query, sort, route.closure()))
+				.map(route -> refusal(scan, sort, route.fields()))
 				.flatMap(Optional::stream)
 				.findFirst()
 				.orElseGet(() -> Problem.valueOf(FORBIDDEN, NOT_SEARCHABLE.formatted("The errands of this namespace are", getCallerIdentity())));
@@ -105,45 +112,43 @@ public class ErrandSearchAccess {
 		final var covered = nonNull(grant.labels()) && grant.labels().reachesAnything() ? NamespaceGrant.scopeOf(grant.labels()) : null;
 
 		if (nonNull(covered)) {
-			routes.add(new Route(covered, null, FieldClosure.of(grant.labels().resources(), grant.labels().readable())));
+			routes.add(new Route(covered, null, SearchableFields.of(grant.labels().resources(), grant.labels().readable())));
 		}
 		if (nonNull(grant.limitedLabels()) && grant.limitedLabels().reachesAnything()) {
 			// The labels of a level are a subset of those below it, so the limited route reaches the covered errands as
 			// well - and those are held at the level, not at limited read. Leaving them out is what keeps a limited read
 			// from widening what may be searched of an errand the user holds in full.
-			routes.add(new Route(NamespaceGrant.scopeOf(grant.limitedLabels()), covered, FieldClosure.of(grant.limitedLabels().resources(), grant.limitedLabels().readable())));
+			routes.add(new Route(NamespaceGrant.scopeOf(grant.limitedLabels()), covered,
+				SearchableFields.of(grant.limitedLabels().resources(), grant.limitedLabels().readable())));
 		}
 		if (nonNull(grant.reporter())) {
-			routes.add(new Route(grant.reporterScope(), null, FieldClosure.of(grant.reporter().resources(), grant.reporter().readable())));
+			routes.add(new Route(grant.reporterScope(), null, SearchableFields.of(grant.reporter().resources(), grant.reporter().readable())));
 		}
 
 		// A grant reaching nothing at all still answers, with a search that finds nothing rather than a refusal
-		return routes.isEmpty() ? List.of(new Route(grant.scope(), null, FieldClosure.of(Set.of(), null))) : routes;
+		return routes.isEmpty() ? List.of(new Route(grant.scope(), null, SearchableFields.of(Set.of(), null))) : routes;
 	}
 
 	/**
-	 * Whether a route can answer the query and the sort. A word without a field is looked for in every field the route
-	 * leaves open, so such a query is answered by every route; a query naming a field, or a sort on one, is answered
-	 * only where that field is open.
+	 * Why the query or the sort would be refused on a route, empty when it would not.
 	 */
-	private static boolean answers(final String query, final Sort sort, final FieldClosure closure) {
-		return refusal(query, sort, closure).isEmpty();
-	}
-
-	/**
-	 * Why the query or the sort would be refused under sent in closure, empty when it would not.
-	 */
-	private static Optional<RuntimeException> refusal(final String query, final Sort sort, final FieldClosure closure) {
-		if (closure.isOpen()) {
+	private static Optional<RuntimeException> refusal(final QueryScanner.Scan scan, final Sort sort, final SearchableFields fields) {
+		if (fields.unrestricted()) {
+			// Nothing is held back here, so nothing the query names can be held back either
 			return Optional.empty();
 		}
 
-		// A sort names a property of the errand, which is held to what the property's fields are held to
+		if (!scan.isFullyRead()) {
+			return Optional.of(Problem.valueOf(FORBIDDEN, NOT_READ.formatted(getCallerIdentity())));
+		}
+
+		// A sort names a property, which belongs to a field of the errand: ordering by it says as much about that field as
+		// searching it does. Every field offering the property is asked, which is what holds a sort on 'category' to the
+		// classification it belongs to rather than to a field named after it
 		for (final var order : sort) {
 			final var refused = Stream.of(ErrandField.values())
-				.filter(field -> field.getPropertyName().equals(order.getProperty()))
-				.flatMap(field -> field.getSearchFields().stream())
-				.map(closure::refusal)
+				.filter(field -> field.getSortField(order.getProperty()).isPresent())
+				.map(fields::sortRefusal)
 				.flatMap(Optional::stream)
 				.findFirst();
 			if (refused.isPresent()) {
@@ -151,12 +156,12 @@ public class ErrandSearchAccess {
 			}
 		}
 
-		for (final var field : QueryStringFields.fieldNames(query)) {
-			// A wildcard may stand for any field, closed ones included
-			if (QueryStringFields.isWildcard(field)) {
+		for (final var reference : scan.fields()) {
+			// A wildcard stands for names nobody enumerated, so it belongs to a route that is held to nothing
+			if (QueryScanner.isWildcard(reference.name())) {
 				return Optional.of(Problem.valueOf(FORBIDDEN, WILDCARD_NOT_SEARCHABLE.formatted(getCallerIdentity())));
 			}
-			final var refused = closure.refusal(field);
+			final var refused = fields.refusal(reference.name());
 			if (refused.isPresent()) {
 				return Optional.of(Problem.valueOf(FORBIDDEN, NOT_SEARCHABLE.formatted(refused.get(), getCallerIdentity())));
 			}

@@ -261,6 +261,27 @@ class ErrandSearchIT extends AbstractAppTest {
 			.withExpectedResponseStatus(FORBIDDEN)
 			.withExpectedResponse("response-wildcard.json")
 			.sendRequestAndVerifyResponse();
+
+		// The shapes that name the very same field to the parser while reading as something else, or as nothing at all:
+		// a name opened by a minus, a name spelled with a unicode escape, a fielded term hidden behind an escaped quote,
+		// and the object asked about by name. Each of them reached the communications before the query was read the way
+		// the index reads it
+		for (final var query : List.of(
+			"-communications.subject:hemligt",
+			"\\u0063ommunications.subject:hemligt",
+			"x\\\" communications.subject:hemligt \"y\"",
+			"_exists_:communications",
+			"_exists_:(communications.subject)",
+			"_exists_:\"communications.subject\"")) {
+
+			setupCall()
+				.withServicePath(withQuery(RESOURCE_CONTROLLED_PATH, query))
+				.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(FORBIDDEN)
+				.withExpectedResponse("response-closed-resource.json")
+				.sendRequestAndVerifyResponse();
+		}
 	}
 
 	/**
@@ -324,6 +345,25 @@ class ErrandSearchIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(FORBIDDEN)
 			.withExpectedResponse("response-closed-field.json")
+			.sendRequestAndVerifyResponse();
+
+		// Access control's own bookkeeping is bound to no field of the errand, so nothing opens it
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH, "accessLabels.metadataLabelId:aa000000-0000-0000-0000-000000000001"))
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-unknown-field.json")
+			.sendRequestAndVerifyResponse();
+
+		// The property ordered by belongs to the classification, which this role does not see, so the order says something
+		// it may not be told - by paging through it, and by halving the interval, the values themselves
+		setupCall()
+			.withServicePath(withQuery(ACCESS_CONTROLLED_PATH + "?sort=category,asc", ""))
+			.withHeader(SENT_BY_HEADER, "smo02key; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.withExpectedResponse("response-closed-sort-property.json")
 			.sendRequestAndVerifyResponse();
 	}
 
