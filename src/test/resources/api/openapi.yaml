@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.1"
 servers:
-- url: http://localhost:43097
+- url: http://localhost:33719
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -16846,7 +16846,7 @@ components:
           - formData1
           maxLength: 255
           minLength: 1
-          pattern: "[A-Za-z0-9._-]+"
+          pattern: "[A-Za-z0-9_-]+"
         value:
           $ref: "#/components/schemas/JsonNode"
           description: JSON structure value

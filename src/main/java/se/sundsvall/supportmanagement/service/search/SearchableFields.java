@@ -142,8 +142,8 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 	}
 
 	/**
-	 * A keyed field whose keys are paths of their own: the name stays within a granted key when the key, or the key and
-	 * a dot, begins what follows the object.
+	 * A keyed field whose keys are paths of their own: what follows the object begins with the key, and a key holds no
+	 * dots (see {@code JSON_PARAMETER_KEY_REGEXP}), so the key is the first segment of that path, whole.
 	 */
 	private Optional<String> keyRefusal(final ErrandField field, final String name, final Set<String> keys) {
 		final var prefix = field.getSearchFields().stream()
@@ -155,10 +155,8 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 			return Optional.of(FIELD_BEYOND_KEYS.formatted(field.getPropertyName()));
 		}
 
-		final var path = name.substring(prefix.get().length());
-		return keys.stream().anyMatch(key -> path.equals(key) || path.startsWith(key + "."))
-			? Optional.empty()
-			: Optional.of(KEY_OF_FIELD.formatted(path.split("\\.", 2)[0], field.getPropertyName()));
+		final var key = name.substring(prefix.get().length()).split("\\.", 2)[0];
+		return keys.contains(key) ? Optional.empty() : Optional.of(KEY_OF_FIELD.formatted(key, field.getPropertyName()));
 	}
 
 	/**
