@@ -42,7 +42,6 @@ public final class ErrandIndex {
 	public static final String CONTACT_REASON = "contactReason";
 	public static final String CONTACT_REASON_DESCRIPTION = "contactReasonDescription";
 	public static final String ESCALATION_EMAIL = "escalationEmail";
-	public static final String PREVIOUS_STATUS = "previousStatus";
 
 	// Objects on the errand
 	public static final String LABELS = "labels";
