@@ -148,23 +148,54 @@ public class ErrandReindexService {
 	 *                                                        when a rebuild is already running, 503 when the environment
 	 *                                                        has no search index
 	 */
-	public void reindex(final String namespace, final String municipalityId, final boolean full) {
+	public void reindex(final String namespace, final String municipalityId) {
 		availability.verifyEnabled();
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
 
 		final var lock = lockProvider.lock(new LockConfiguration(Instant.now(), LOCK_NAME, properties.reindex().lockAtMostFor(), Duration.ZERO))
 			.orElseThrow(() -> Problem.valueOf(CONFLICT, REINDEX_RUNNING));
 
-		final var description = full ? "the whole errand index" : "errands of namespace '%s' for municipality '%s'".formatted(namespace, municipalityId);
+		final var description = "errands of namespace '%s' for municipality '%s'".formatted(namespace, municipalityId);
 		LOG.info("Reindex of {} starting", description);
 
 		try {
-			if (!full) {
-				purgeNamespace(namespace, municipalityId);
-			}
-			massIndexer(namespace, municipalityId, full)
+			purgeNamespace(namespace, municipalityId);
+			massIndexer(namespace, municipalityId, false)
 				.start()
 				.whenComplete((_, throwable) -> finish(lock, description, throwable));
+		} catch (final RuntimeException e) {
+			lock.unlock();
+			throw e;
+		}
+	}
+
+	/**
+	 * Drops the whole index and builds it again from the database, which is what a changed mapping calls for.
+	 * <p>
+	 * An operation on no namespace in particular: the index holds every namespace of every municipality, and every one of
+	 * them searches nothing until the rebuild is over. So it is not guarded as the namespace in a path would be - there is
+	 * no such namespace - but by every namespace that enforces access control at all: the caller administers all of them,
+	 * or they administer none of this. A cluster where no namespace enforces anything leaves it open, as everything else
+	 * is open there.
+	 *
+	 * @throws org.springframework.web.ErrorResponseException 403 where a namespace that enforces access control is not
+	 *                                                        the caller's to administer, 409 when a rebuild is already
+	 *                                                        running, 503 where the environment has no search index
+	 */
+	public void reindexEverything() {
+		availability.verifyEnabled();
+		namespaceConfigRepository.findAll()
+			.forEach(config -> accessControlService.verifyNamespaceAuthorization(config.getNamespace(), config.getMunicipalityId(), ProtectedResource.NAMESPACE_CONFIG, RW));
+
+		final var lock = lockProvider.lock(new LockConfiguration(Instant.now(), LOCK_NAME, properties.reindex().lockAtMostFor(), Duration.ZERO))
+			.orElseThrow(() -> Problem.valueOf(CONFLICT, REINDEX_RUNNING));
+
+		LOG.info("Reindex of the whole errand index starting");
+
+		try {
+			massIndexer(null, null, true)
+				.start()
+				.whenComplete((_, throwable) -> finish(lock, "the whole errand index", throwable));
 		} catch (final RuntimeException e) {
 			lock.unlock();
 			throw e;

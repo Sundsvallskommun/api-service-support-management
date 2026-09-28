@@ -95,18 +95,21 @@ class ErrandSearchResourceTest {
 			.expectStatus().isAccepted()
 			.expectBody().isEmpty();
 
-		verify(reindexServiceMock).reindex(NAMESPACE, MUNICIPALITY_ID, false);
+		verify(reindexServiceMock).reindex(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(searchServiceMock);
 	}
 
+	/**
+	 * The whole index belongs to no namespace, so it is asked for outside of one.
+	 */
 	@Test
-	void reindexErrandsFully() {
+	void reindexEverything() {
 		webTestClient.post()
-			.uri(builder -> builder.path(PATH + "/reindex").queryParam("full", true).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.uri("/search/reindex")
 			.exchange()
 			.expectStatus().isAccepted()
 			.expectBody().isEmpty();
 
-		verify(reindexServiceMock).reindex(NAMESPACE, MUNICIPALITY_ID, true);
+		verify(reindexServiceMock).reindexEverything();
 	}
 }

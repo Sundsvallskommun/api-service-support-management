@@ -38,6 +38,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -105,7 +106,7 @@ class ErrandReindexServiceTest {
 
 	@Test
 	void reindexWhenDisabled() {
-		final var e = assertThrows(ThrowableProblem.class, () -> service(false).reindex(NAMESPACE, MUNICIPALITY_ID, false));
+		final var e = assertThrows(ThrowableProblem.class, () -> service(false).reindex(NAMESPACE, MUNICIPALITY_ID));
 
 		assertThat(e.getStatus()).isEqualTo(SERVICE_UNAVAILABLE);
 		verifyNoInteractions(lockProviderMock, accessControlServiceMock);
@@ -115,9 +116,31 @@ class ErrandReindexServiceTest {
 	void reindexWhenNotAuthorized() {
 		doThrow(Problem.valueOf(FORBIDDEN, "no")).when(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW);
 
-		final var e = assertThrows(ThrowableProblem.class, () -> service(true).reindex(NAMESPACE, MUNICIPALITY_ID, true));
+		final var service = service(true);
+		final var e = assertThrows(ThrowableProblem.class, () -> service.reindex(NAMESPACE, MUNICIPALITY_ID));
 
 		assertThat(e.getStatus()).isEqualTo(FORBIDDEN);
+		verifyNoInteractions(lockProviderMock);
+	}
+
+	/**
+	 * The whole index is every namespace at once, so it asks that the caller may administer every namespace that enforces
+	 * access control. One that is not theirs refuses the rebuild of all of them.
+	 */
+	@Test
+	void reindexingEverythingAsksEveryNamespaceThatEnforcesAnything() {
+		when(namespaceConfigRepositoryMock.findAll()).thenReturn(List.of(
+			NamespaceConfigEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID),
+			NamespaceConfigEntity.create().withNamespace("other").withMunicipalityId("2282")));
+		doNothing().when(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW);
+		doThrow(Problem.valueOf(FORBIDDEN, "no")).when(accessControlServiceMock)
+			.verifyNamespaceAuthorization("other", "2282", ProtectedResource.NAMESPACE_CONFIG, RW);
+
+		final var service = service(true);
+		final var e = assertThrows(ThrowableProblem.class, service::reindexEverything);
+
+		assertThat(e.getStatus()).isEqualTo(FORBIDDEN);
+		verify(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.NAMESPACE_CONFIG, RW);
 		verifyNoInteractions(lockProviderMock);
 	}
 
@@ -125,7 +148,7 @@ class ErrandReindexServiceTest {
 	void reindexWhileAnotherIsRunning() {
 		when(lockProviderMock.lock(any())).thenReturn(Optional.empty());
 
-		final var e = assertThrows(ThrowableProblem.class, () -> service(true).reindex(NAMESPACE, MUNICIPALITY_ID, false));
+		final var e = assertThrows(ThrowableProblem.class, () -> service(true).reindex(NAMESPACE, MUNICIPALITY_ID));
 
 		assertThat(e.getStatus()).isEqualTo(CONFLICT);
 		assertThat(e.getDetail()).isEqualTo(ErrandReindexService.REINDEX_RUNNING);
@@ -154,7 +177,7 @@ class ErrandReindexServiceTest {
 			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
 			when(searchScopeMock.massIndexer()).thenReturn(massIndexerMock);
 
-			service(true).reindex(NAMESPACE, MUNICIPALITY_ID, false);
+			service(true).reindex(NAMESPACE, MUNICIPALITY_ID);
 		}
 
 		// The documents of the namespace, and of that namespace alone, are removed before the rebuild
@@ -183,7 +206,7 @@ class ErrandReindexServiceTest {
 			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenReturn(searchMappingMock);
 
 			final var service = service(true);
-			assertThrows(UncheckedIOException.class, () -> service.reindex(NAMESPACE, MUNICIPALITY_ID, false));
+			assertThrows(UncheckedIOException.class, () -> service.reindex(NAMESPACE, MUNICIPALITY_ID));
 		}
 
 		verify(lockMock).unlock();
@@ -202,7 +225,7 @@ class ErrandReindexServiceTest {
 			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
 			when(searchScopeMock.massIndexer()).thenReturn(massIndexerMock);
 
-			service(true).reindex(NAMESPACE, MUNICIPALITY_ID, true);
+			service(true).reindexEverything();
 		}
 
 		verify(massIndexerMock, never()).purgeAllOnStart(false);
@@ -309,7 +332,7 @@ class ErrandReindexServiceTest {
 		when(openSearchMock.errandWriteIndex()).thenThrow(new IllegalStateException("no search mapping"));
 
 		final var service = service(true);
-		assertThrows(IllegalStateException.class, () -> service.reindex(NAMESPACE, MUNICIPALITY_ID, false));
+		assertThrows(IllegalStateException.class, () -> service.reindex(NAMESPACE, MUNICIPALITY_ID));
 
 		verify(lockMock).unlock();
 	}

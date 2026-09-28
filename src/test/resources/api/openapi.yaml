@@ -70,6 +70,8 @@ tags:
     \ listens for (an errand or all events in a namespace). Subscriptions support\
     \ create, list and delete — to change what is being listened to, delete and create\
     \ a new one."
+- name: Errand search index
+  description: The search index across every namespace
 - name: Errand Measures
   description: Errand measure operations
 - name: Errand notes
@@ -8637,14 +8639,6 @@ paths:
         schema:
           type: string
         example: 2281
-      - name: full
-        in: query
-        description: "Rebuild the whole index across every namespace, recreating its\
-          \ schema"
-        required: false
-        schema:
-          type: boolean
-          default: false
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -8862,6 +8856,56 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /search/reindex:
+    post:
+      tags:
+      - Errand search index
+      summary: Rebuild the whole search index
+      description: "Drops the whole search index and builds it again from the database,\
+        \ returning at once while the rebuild goes on in the background. This is what\
+        \ a changed index mapping calls for. Every namespace of every municipality\
+        \ searches nothing until it is over, so it asks that the caller may administer\
+        \ every namespace that enforces access control. Only one rebuild runs at a\
+        \ time, across this and the rebuild of a single namespace."
+      operationId: reindexEverything
+      parameters:
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "202":
+          description: Rebuild started
+        "403":
+          description: A namespace that enforces access control is not the caller's
+            to administer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: A rebuild is already running
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: Search not available
           content:
             application/problem+json:
               schema:
@@ -16816,6 +16860,10 @@ components:
         type:
           type: string
           format: uri
+        title:
+          type: string
+        detail:
+          type: string
         status:
           type: integer
           format: int32
