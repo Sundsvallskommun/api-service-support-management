@@ -13,8 +13,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.Sort;
@@ -133,15 +131,6 @@ public class MetadataService {
 	private static final String MEASURE_TYPE_WITHOUT_GROUP = "A measure type must belong to at least one group";
 	private static final String ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' already exists in namespace '%s' for municipalityId '%s'";
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
-	/**
-	 * Holds the label ids of a namespace, which the errand search asks for on every request to say which labels an
-	 * errand may not carry. Evicted wherever labels are created or removed, and short lived on top of that: a pod that
-	 * did not handle the write keeps its entry until it expires, and an id missing from a stale entry is one the search
-	 * does not exclude. A label that no longer exists lingering in the entry is the harmless direction, since it only
-	 * keeps errands hidden.
-	 */
-	public static final String LABEL_IDS_CACHE_NAME = "namespaceLabelIdsCache";
-
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
 	private static final String ACTIVE_JOB_IN_NAMESPACE = "A job is already running for namespace '%s' in municipality with id '%s'";
@@ -402,13 +391,11 @@ public class MetadataService {
 	// Label operations
 	// =================================================================
 
-	@CacheEvict(value = LABEL_IDS_CACHE_NAME, key = "{#namespace, #municipalityId}")
 	public void createLabels(final String namespace, final String municipalityId, final List<Label> labels) {
 		metadataLabelRepository.saveAll(toMetadataLabelEntityList(namespace, municipalityId, labels));
 	}
 
 	@Transactional
-	@CacheEvict(value = LABEL_IDS_CACHE_NAME, key = "{#namespace, #municipalityId}")
 	public void updateLabels(final String namespace, final String municipalityId, final List<Label> labels) {
 		// Fetch all existing labels and verify existence
 		final var allExisting = metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId);
@@ -453,19 +440,6 @@ public class MetadataService {
 			.flatMap(label -> Stream.concat(
 				Stream.ofNullable(label.getId()),
 				collectLabelIds(label.getLabels()).stream()))
-			.collect(Collectors.toSet());
-	}
-
-	/**
-	 * The ids of every label of the namespace, the whole tree flattened.
-	 * <p>
-	 * Cached because the errand search asks for it once per access route on every request, purely to work out the
-	 * complement of what the user reaches, while labels themselves change rarely. See {@link #LABEL_IDS_CACHE_NAME}.
-	 */
-	@Cacheable(value = LABEL_IDS_CACHE_NAME, key = "{#namespace, #municipalityId}")
-	public Set<String> findLabelIds(final String namespace, final String municipalityId) {
-		return metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.map(MetadataLabelEntity::getId)
 			.collect(Collectors.toSet());
 	}
 
@@ -768,7 +742,6 @@ public class MetadataService {
 		return metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId);
 	}
 
-	@CacheEvict(value = LABEL_IDS_CACHE_NAME, key = "{#namespace, #municipalityId}")
 	public void deleteLabels(final String namespace, final String municipalityId) {
 		if (!metadataLabelRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(NOT_FOUND, "Labels are not present in namespace '%s' for municipalityId '%s'".formatted(namespace, municipalityId));

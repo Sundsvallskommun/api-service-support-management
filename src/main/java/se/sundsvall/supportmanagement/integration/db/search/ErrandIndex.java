@@ -64,6 +64,12 @@ public final class ErrandIndex {
 	// Fields within objects that the search names on its own
 	public static final String METADATA_LABEL_ID = "metadataLabelId";
 	public static final String ACCESS_LABEL_ID = ACCESS_LABELS + "." + METADATA_LABEL_ID;
+	/**
+	 * How many access labels an errand carries, which is what lets the index ask that every one of them is among the
+	 * labels a user holds. Written by {@link AccessLabelCountBinder}, and bound to no field of the errand, so a search may
+	 * no more name it than it may name the labels themselves.
+	 */
+	public static final String ACCESS_LABEL_COUNT = "accessLabelCount";
 	public static final String EXTERNAL_TAG_VALUE = EXTERNAL_TAGS + ".value";
 	public static final String STAKEHOLDER_EXTERNAL_ID = STAKEHOLDERS + ".externalId";
 

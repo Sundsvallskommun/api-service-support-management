@@ -1,15 +1,16 @@
 package se.sundsvall.supportmanagement.service.search;
 
-import java.util.HashSet;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import java.util.List;
 import java.util.Set;
+import org.hibernate.search.backend.elasticsearch.ElasticsearchExtension;
 import org.hibernate.search.engine.search.common.BooleanOperator;
 import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.predicate.dsl.PredicateFinalStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
-import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static java.util.Objects.isNull;
@@ -26,12 +27,6 @@ public class ErrandSearchPredicates {
 	static final String NAMESPACE_FIELD = ErrandIndex.NAMESPACE;
 	static final String REPORTER_USER_ID_FIELD = ErrandIndex.REPORTER_USER_ID;
 	static final String ACCESS_LABEL_ID_FIELD = ErrandIndex.ACCESS_LABEL_ID;
-
-	private final MetadataService metadataService;
-
-	public ErrandSearchPredicates(final MetadataService metadataService) {
-		this.metadataService = metadataService;
-	}
 
 	/**
 	 * What the client asked for. A blank query matches everything, so that a client can page through a namespace sorted
@@ -109,15 +104,16 @@ public class ErrandSearchPredicates {
 	 * {@link se.sundsvall.supportmanagement.service.util.SpecificationBuilder#isReportedBy} put together, said in
 	 * terms the index can answer.
 	 * <p>
-	 * The labels rule is "no access label outside the allowed set". An index cannot ask whether all values of a field lie
-	 * within a set, but it can ask whether any value lies within the complement of it, and the complement is known since
-	 * the labels of a namespace are: every label of the namespace that is not allowed is disallowed, and an errand
-	 * carrying any of them is out. An errand without access labels carries nothing disallowed and is reached by everyone,
-	 * as in the database.
+	 * The labels rule is "every access label of the errand is among those allowed". An index cannot ask whether all values
+	 * of a field lie within a set, but it can ask how many of them do, and the number to reach is written beside them by
+	 * {@link se.sundsvall.supportmanagement.integration.db.search.AccessLabelCountBinder}: as many as the errand carries.
+	 * Asked this way the filter needs nothing but the labels the user holds - no list of the namespace's labels, and
+	 * nothing cached that could be out of date - and a label nobody has heard of yet keeps an errand out rather than
+	 * letting it through, which is the direction a filter should fail in.
 	 * <p>
-	 * One difference remains: an errand carrying the id of a label that no longer exists in the metadata is hidden by the
-	 * database, since that id is not in the allowed set, but reached here, since it is not in the disallowed set either.
-	 * Labels are not removed while errands carry them, so this is not expected to matter.
+	 * An errand carrying no access labels is reached by everyone holding any label, as in the database, and is asked for
+	 * separately: a count of none satisfies no covering query, whatever it is counted against. A user holding no labels
+	 * reaches nothing at all, unlabelled errands included, which is the database's answer too.
 	 */
 	public SearchPredicate access(final SearchPredicateFactory f, final AccessScope scope, final String namespace, final String municipalityId) {
 		if (!scope.enforced()) {
@@ -127,7 +123,7 @@ public class ErrandSearchPredicates {
 		final var routes = f.or();
 
 		if (!isNull(scope.allowedLabels())) {
-			routes.add(withinAllowedLabels(f, scope.allowedLabelIds(), namespace, municipalityId));
+			routes.add(withinAllowedLabels(f, scope.allowedLabelIds()));
 		}
 
 		if (!isNull(scope.reporterAdAccount())) {
@@ -137,18 +133,49 @@ public class ErrandSearchPredicates {
 		return routes.hasClause() ? routes.toPredicate() : f.matchNone().toPredicate();
 	}
 
-	private PredicateFinalStep withinAllowedLabels(final SearchPredicateFactory f, final Set<String> allowedLabelIds, final String namespace, final String municipalityId) {
+	/**
+	 * Every access label of the errand among those allowed, counted against how many it carries, or no access labels at
+	 * all. Written as the index takes it, since the query DSL knows no covering query.
+	 */
+	private PredicateFinalStep withinAllowedLabels(final SearchPredicateFactory f, final Set<String> allowedLabelIds) {
 		if (allowedLabelIds.isEmpty()) {
+			// The specification reaches no errand at all for a user holding no labels, unlabelled errands included
 			return f.matchNone();
 		}
 
-		final Set<String> disallowedLabelIds = new HashSet<>(metadataService.findLabelIds(namespace, municipalityId));
-		disallowedLabelIds.removeAll(allowedLabelIds);
-
-		if (disallowedLabelIds.isEmpty()) {
-			return f.matchAll();
-		}
-
-		return f.not(f.terms().field(ACCESS_LABEL_ID_FIELD).matchingAny(disallowedLabelIds));
+		return f.or(
+			f.extension(ElasticsearchExtension.get()).fromJson(everyLabelAllowed(allowedLabelIds)),
+			f.extension(ElasticsearchExtension.get()).fromJson(noLabelsAtAll()));
 	}
+
+	/**
+	 * At least as many of the errand's access labels among those allowed as the errand carries, which is every one of
+	 * them.
+	 */
+	static JsonObject everyLabelAllowed(final Set<String> allowedLabelIds) {
+		final var terms = new JsonArray();
+		allowedLabelIds.stream().sorted().forEach(terms::add);
+
+		final var covering = new JsonObject();
+		covering.add("terms", terms);
+		covering.addProperty("minimum_should_match_field", ErrandIndex.ACCESS_LABEL_COUNT);
+
+		final var byField = new JsonObject();
+		byField.add(ACCESS_LABEL_ID_FIELD, covering);
+
+		final var query = new JsonObject();
+		query.add("terms_set", byField);
+		return query;
+	}
+
+	/** An errand carrying no access labels, which a covering query answers for no set of labels. */
+	static JsonObject noLabelsAtAll() {
+		final var count = new JsonObject();
+		count.addProperty(ErrandIndex.ACCESS_LABEL_COUNT, 0);
+
+		final var query = new JsonObject();
+		query.add("term", count);
+		return query;
+	}
+
 }

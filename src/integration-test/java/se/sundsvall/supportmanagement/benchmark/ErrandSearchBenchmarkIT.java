@@ -26,7 +26,6 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.service.AccessMapperService;
-import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.access.AccessSnapshot;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
 
@@ -137,17 +136,10 @@ class ErrandSearchBenchmarkIT {
 		run("one label held (1 of %d, %d excluded)".formatted(LABELS, LABELS - 1), snapshot(labels.subList(0, 1), List.of()));
 		run("one at read, half at limited read (two clauses)", snapshot(labels.subList(0, 1), labels.subList(0, LABELS / 2)));
 
-		// The same as the one label profile, with the label id cache thrown away before every call
-		run("one label held, label cache cold", snapshot(labels.subList(0, 1), List.of()), true);
-
 		report.forEach(System.out::println);
 	}
 
 	private void run(final String profile, final AccessSnapshot snapshot) {
-		run(profile, snapshot, false);
-	}
-
-	private void run(final String profile, final AccessSnapshot snapshot, final boolean coldCache) {
 		when(accessMapperServiceMock.getAccessSnapshot(anyString(), anyString(), any())).thenReturn(snapshot == null ? AccessSnapshot.empty() : snapshot);
 		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("ben01mrk"));
 
@@ -159,17 +151,17 @@ class ErrandSearchBenchmarkIT {
 
 		final var newestFirst = Sort.by(Sort.Direction.DESC, "created");
 
-		measure("no hits at all (index only)", ABSENT, Sort.unsorted(), 20, coldCache);
-		measure("(blank, newest first)", "", newestFirst, 1, coldCache);
-		measure("(blank, newest first)", "", newestFirst, 20, coldCache);
-		measure("(blank, newest first)", "", newestFirst, 100, coldCache);
-		measure("free text, rare word", RARE, Sort.unsorted(), 20, coldCache);
-		measure("free text, common word", COMMON, Sort.unsorted(), 20, coldCache);
-		measure("status:ONGOING", "status:ONGOING", Sort.unsorted(), 20, coldCache);
-		measure("title:%s".formatted(RARE), "title:" + RARE, Sort.unsorted(), 20, coldCache);
+		measure("no hits at all (index only)", ABSENT, Sort.unsorted(), 20);
+		measure("(blank, newest first)", "", newestFirst, 1);
+		measure("(blank, newest first)", "", newestFirst, 20);
+		measure("(blank, newest first)", "", newestFirst, 100);
+		measure("free text, rare word", RARE, Sort.unsorted(), 20);
+		measure("free text, common word", COMMON, Sort.unsorted(), 20);
+		measure("status:ONGOING", "status:ONGOING", Sort.unsorted(), 20);
+		measure("title:%s".formatted(RARE), "title:" + RARE, Sort.unsorted(), 20);
 	}
 
-	private void measure(final String label, final String query, final Sort sort, final int size, final boolean coldCache) {
+	private void measure(final String label, final String query, final Sort sort, final int size) {
 		final var pageable = PageRequest.of(0, size, sort);
 		long hits = 0;
 
@@ -179,9 +171,6 @@ class ErrandSearchBenchmarkIT {
 
 		final var timings = new ArrayList<Long>(RUNS);
 		for (var i = 0; i < RUNS; i++) {
-			if (coldCache) {
-				cacheManager.getCache(MetadataService.LABEL_IDS_CACHE_NAME).clear();
-			}
 			final var started = System.nanoTime();
 			searchService.search(NAMESPACE, MUNICIPALITY_ID, query, pageable);
 			timings.add((System.nanoTime() - started) / 1_000_000);
