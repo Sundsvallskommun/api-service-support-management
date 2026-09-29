@@ -99,9 +99,11 @@ class ErrandSearchResource {
 
 		Where a namespace enforces access control, what the user may not read they may not search either: the fields of a \
 		resource their labels do not reach (communications, decisions, statements, investigations, measures, parameters, JSON \
-		parameters, attachments), the fields their roles keep from them, and the keys of parameters and JSON parameters their \
-		roles do not grant. Such fields are left out of a search without a field, and a query naming one of them, or sorting on \
-		one, is refused with 403, as is a wildcard in a field name.
+		parameters, attachments), the fields of the errand itself their roles keep from them, and the keys of parameters and \
+		JSON parameters their roles do not grant. A resource is reached whole or not at all: roles restrict the fields of the \
+		errand, not the fields of what hangs off it, so a role keeping the description of an errand from a user leaves the \
+		body of its communications searchable to them. Such fields are left out of a search without a field, and a query \
+		naming one of them, or sorting on one, is refused with 403, as is a wildcard in a field name.
 
 		An errand is searched by what the user may read of it, which differs with how they hold it: an errand their labels cover \
 		is searched by everything their roles allow, one they cover at limited read only by what the namespace exposes for a \
@@ -149,8 +151,8 @@ class ErrandSearchResource {
 	@PostMapping(path = "/reindex", produces = ALL_VALUE)
 	@Operation(summary = "Rebuild the search index",
 		description = "Rebuilds the search index of the namespace from the database and returns at once, the rebuild goes on in the background. " +
-			"Needed after an outage of the search cluster, and for errands created before search was introduced. With full=true the whole index, across every namespace, is dropped and " +
-			"rebuilt from scratch, which is what a changed index mapping calls for. Only one rebuild runs at a time.",
+			"Needed after an outage of the search cluster, and for errands created before search was introduced. A changed index mapping calls for the whole index instead, " +
+			"across every namespace, which POST /search/reindex drops and rebuilds. Only one rebuild runs at a time.",
 		responses = {
 			@ApiResponse(responseCode = "202", description = "Rebuild started", useReturnTypeSchema = true),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
