@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -18,9 +19,11 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -184,6 +187,7 @@ public class ErrandService {
 		final var entity = errand.getLabels() != null
 			? persistLabelUpdate(errandEntity)
 			: repository.saveAndFlush(errandEntity);
+
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
@@ -290,6 +294,60 @@ public class ErrandService {
 		return repository.count(fullFilter);
 	}
 
+	/**
+	 * Restows a batch of errands - each one's label set rebuilt from its access labels (leaves) outward - in a
+	 * transaction of its own, separate from whatever transaction (if any) the caller is running in. Used by the
+	 * label-move worker, which calls this once per page rather than once per errand, and must not join or be joined by
+	 * the caller's transaction: the worker is not itself transactional, and the interactive PATCH path that also calls
+	 * {@link #persistLabelUpdate} must keep its label write inside its own single transaction rather than being pulled
+	 * into a separate one.
+	 * <p>
+	 * The rebuild is driven entirely by {@code resourcePath} lookups ({@link ErrandLabelService#settleAccessLabels}),
+	 * never by walking an entity's own lazy associations - the errands handed in were read by the worker in a
+	 * transaction that has already closed by the time this one opens, so nothing on them beyond an eagerly-fetched
+	 * collection is safe to touch.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
+		batch.forEach(this::restowFromAccessLabels);
+	}
+
+	private void restowFromAccessLabels(final ErrandEntity errand) {
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
+			.toList();
+
+		errand.setLabels(leafLabels);
+		persistLabelUpdate(errand);
+	}
+
+	/**
+	 * Restows a batch of errands the same way {@link #persistLabelMigrationBatch} does, except that any leaf carrying
+	 * one of the source label ids is substituted for the destination label id before the ancestor chain is re-derived -
+	 * used by the label-merge worker, once the leaf ids referenced no longer point at labels a move alone would resolve
+	 * against (the sources are deleted once every errand has moved off them).
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	void persistLabelMergeBatch(final List<ErrandEntity> batch, final Set<String> sourceLabelIds, final String targetLabelId) {
+		batch.forEach(errand -> restowFromAccessLabelsWithSubstitution(errand, sourceLabelIds, targetLabelId));
+	}
+
+	private void restowFromAccessLabelsWithSubstitution(final ErrandEntity errand, final Set<String> sourceLabelIds, final String targetLabelId) {
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(AccessLabelEmbeddable::getMetadataLabelId)
+			.map(leafId -> sourceLabelIds.contains(leafId) ? targetLabelId : leafId)
+			.distinct()
+			.map(leafId -> ErrandLabelEmbeddable.create().withMetadataLabelId(leafId))
+			.toList();
+
+		errand.setLabels(leafLabels);
+		persistLabelUpdate(errand);
+	}
+
+	/**
+	 * Settles access labels from whatever label set the entity carries, then persists it - shared by every caller that
+	 * writes a label change, so that none of them has to remember to settle access labels before saving.
+	 */
 	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
 		errandLabelService.settleAccessLabels(entity);
 		return repository.saveAndFlush(entity);

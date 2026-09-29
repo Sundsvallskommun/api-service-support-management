@@ -6,6 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -39,6 +41,20 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	long countDistinctByLabelsMetadataLabelIdIn(Collection<String> metadataLabelIds);
 
 	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);
+
+	// accessLabels is lazy by default; the label-move worker reads it on an already-detached entity (the page fetch and
+	// the persist that follows it are each their own transaction), so it must come back populated with the page itself.
+	//
+	// Keyset paging (id > lastSeenId), not offset: an errand created, purged, or (un)labelled while the worker walks
+	// the set shifts what an offset-based page would return, and an errand landing on the boundary would be skipped.
+	// A UUID id sorts after "" so "" is the lower bound the first page is read with.
+	@EntityGraph(attributePaths = "accessLabels")
+	List<ErrandEntity> findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(String metadataLabelId, String id, Pageable pageable);
+
+	// Sibling of the single-id query above, for the label-merge worker walking several source labels at once - same
+	// keyset paging, same reason for it.
+	@EntityGraph(attributePaths = "accessLabels")
+	List<ErrandEntity> findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(Collection<String> metadataLabelIds, String id, Pageable pageable);
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
