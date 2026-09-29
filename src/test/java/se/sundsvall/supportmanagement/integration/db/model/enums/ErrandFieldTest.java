@@ -112,4 +112,29 @@ class ErrandFieldTest {
 			.as("properties of the errand that no ErrandField names")
 			.containsExactlyInAnyOrderElementsOf(UNRESTRICTABLE);
 	}
+
+	@Test
+	void searchFieldsFollowThePropertyUnlessSaidOtherwise() {
+		assertThat(ErrandField.TITLE.getSearchFields()).containsExactly("title");
+		assertThat(ErrandField.CLASSIFICATION.getSearchFields()).containsExactly("category", "type");
+		assertThat(ErrandField.SUSPENSION.getSearchFields()).containsExactly("suspendedFrom", "suspendedTo");
+		assertThat(ErrandField.STAKEHOLDERS.getSearchFields()).containsExactly("stakeholders.");
+		assertThat(ErrandField.JSON_PARAMETERS.getSearchFields()).containsExactly("jsonParameters.", "jsonParametersText");
+		assertThat(ErrandField.ID.getSearchFields()).isEmpty();
+		assertThat(ErrandField.VERSION.getSearchFields()).isEmpty();
+		assertThat(ErrandField.ACTIONS.getSearchFields()).isEmpty();
+		assertThat(ErrandField.ACTIVE_NOTIFICATIONS.getSearchFields()).isEmpty();
+	}
+
+	@Test
+	void sortsFollowTheBinding() {
+		assertThat(ErrandField.TITLE.getSortField("title")).contains("title_sort");
+		assertThat(ErrandField.TITLE.getSortableProperties()).containsExactly("title");
+		assertThat(ErrandField.CLASSIFICATION.getSortField("category")).contains("category");
+		assertThat(ErrandField.CLASSIFICATION.getSortField("classification")).isEmpty();
+		assertThat(ErrandField.CLASSIFICATION.getSortableProperties()).containsExactlyInAnyOrder("category", "type");
+		assertThat(ErrandField.DESCRIPTION.getSortField("description")).isEmpty();
+		assertThat(ErrandField.JSON_PARAMETERS.getIndex().keysArePaths()).isTrue();
+		assertThat(ErrandField.PARAMETERS.getIndex().keysArePaths()).isFalse();
+	}
 }

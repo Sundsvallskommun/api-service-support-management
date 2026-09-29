@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.search;
+package se.sundsvall.supportmanagement.service.search.index;
 
 import jakarta.persistence.EntityManagerFactory;
 import java.time.Duration;

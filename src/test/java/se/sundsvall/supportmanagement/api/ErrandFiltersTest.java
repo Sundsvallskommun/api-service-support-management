@@ -42,7 +42,17 @@ class ErrandFiltersTest {
 		"communications.messageBody~'%x%'",
 		"status:'NEW' and decisions.justification~'%x%'",
 		"statements.responseText:'x'",
-		"investigations.summary:'x'"
+		"investigations.summary:'x'",
+		// Named without a field of their own, which tells whether the rows are there at all
+		"communications is not empty",
+		"communications is empty",
+		"size(communications) > 0",
+		"status:'NEW' and size(decisions) > 2",
+		// Reached through the reference a child carries back to the errand, which is a path like any other to spring-filter
+		"stakeholders.errandEntity.communications.messageBody~'%secret%'",
+		"parameters.errandEntity.decisions.justification~'%x%'",
+		"attachments.errandEntity.statements.responseText:'x'",
+		"stakeholders.errandEntity.communications is not empty"
 	})
 	void filtersReachingAnIndexOnlyAssociationAreRefused(final String filter) {
 		when(requestMock.getParameter(ErrandFilters.FILTER_PARAMETER)).thenReturn(filter);

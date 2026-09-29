@@ -18,6 +18,7 @@ import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
@@ -42,7 +43,7 @@ public class ErrandPhaseEntity {
 	// Shallow: nothing leads from a phase back to the errands in it, so a renamed phase is picked up by a reindex
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "phase_id", nullable = false, foreignKey = @ForeignKey(name = "fk_errand_phase_phase_id"))
-	@IndexedEmbedded(name = "phase", includePaths = {
+	@IndexedEmbedded(name = ErrandIndex.PHASE, includePaths = {
 		"name", "displayName"
 	})
 	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)

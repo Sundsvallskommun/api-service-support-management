@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.1"
 servers:
-- url: http://localhost:41931
+- url: http://localhost:34079
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -68,6 +68,8 @@ tags:
     \ listens for (an errand or all events in a namespace). Subscriptions support\
     \ create, list and delete — to change what is being listened to, delete and create\
     \ a new one."
+- name: Errand search index
+  description: The search index across every namespace
 - name: Errand Measures
   description: Errand measure operations
 - name: Errand notes
@@ -8314,9 +8316,9 @@ paths:
       description: "Rebuilds the search index of the namespace from the database and\
         \ returns at once, the rebuild goes on in the background. Needed after an\
         \ outage of the search cluster, and for errands created before search was\
-        \ introduced. With full=true the whole index, across every namespace, is dropped\
-        \ and rebuilt from scratch, which is what a changed index mapping calls for.\
-        \ Only one rebuild runs at a time."
+        \ introduced. A changed index mapping calls for the whole index instead, across\
+        \ every namespace, which POST /search/reindex drops and rebuilds. Only one\
+        \ rebuild runs at a time."
       operationId: reindexErrands
       parameters:
       - name: namespace
@@ -8334,14 +8336,6 @@ paths:
         schema:
           type: string
         example: 2281
-      - name: full
-        in: query
-        description: "Rebuild the whole index across every namespace, recreating its\
-          \ schema"
-        required: false
-        schema:
-          type: boolean
-          default: false
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\
@@ -8559,6 +8553,56 @@ paths:
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /search/reindex:
+    post:
+      tags:
+      - Errand search index
+      summary: Rebuild the whole search index
+      description: "Drops the whole search index and builds it again from the database,\
+        \ returning at once while the rebuild goes on in the background. This is what\
+        \ a changed index mapping calls for. Every namespace of every municipality\
+        \ searches nothing until it is over, so it asks that the caller may administer\
+        \ every namespace that enforces access control. Only one rebuild runs at a\
+        \ time, across this and the rebuild of a single namespace."
+      operationId: reindexEverything
+      parameters:
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "202":
+          description: Rebuild started
+        "403":
+          description: A namespace that enforces access control is not the caller's
+            to administer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: A rebuild is already running
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: Search not available
           content:
             application/problem+json:
               schema:
@@ -15737,10 +15781,16 @@ paths:
 
           A search without a field looks in the text of all of the above.
 
-          Errands are searched at full read: an errand the user reaches at limited read only is not found. Where a namespace enforces access control, the fields of a resource the user may not read (communications, decisions, statements, investigations, measures, parameters, JSON parameters, attachments) are left out of a search without a field, a query naming one of them is refused with 403, and so is a wildcard in a field name.
+          Where a namespace enforces access control, what the user may not read they may not search either: the fields of a resource their labels do not reach (communications, decisions, statements, investigations, measures, parameters, JSON parameters, attachments), the fields of the errand itself their roles keep from them, and the keys of parameters and JSON parameters their roles do not grant. A resource is reached whole or not at all: roles restrict the fields of the errand, not the fields of what hangs off it, so a role keeping the description of an errand from a user leaves the body of its communications searchable to them. Such fields are left out of a search without a field, and a query naming one of them, or sorting on one, is refused with 403, as is a wildcard in a field name.
+
+          An errand is searched by what the user may read of it, which differs with how they hold it: an errand their labels cover is searched by everything their roles allow, one they cover at limited read only by what the namespace exposes for a limited read, and one they reported by its reporter fields. A query naming a field of one of these and not of another is answered from the errands where it may be read, without a refusal; it is refused only when no errand of the user can answer it.
+
+          A query is at most 2000 characters, and a search that has not answered within ten seconds is given up on: a wildcard open at both ends, a regular expression or a fuzzy term over many fields can ask for more than the index can do.
         required: false
         schema:
           type: string
+          maxLength: 2000
+          minLength: 0
         example: vattenläcka status:new stakeholders.lastName:berg
       - name: page
         in: query
@@ -15805,6 +15855,12 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "503":
           description: Search not available
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "504":
+          description: The search took too long and was given up on
           content:
             application/problem+json:
               schema:
@@ -16291,9 +16347,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -16834,7 +16890,7 @@ components:
           - formData1
           maxLength: 255
           minLength: 1
-          pattern: "[A-Za-z0-9._-]+"
+          pattern: "[A-Za-z0-9_-]+"
         value:
           $ref: "#/components/schemas/JsonNode"
           description: JSON structure value

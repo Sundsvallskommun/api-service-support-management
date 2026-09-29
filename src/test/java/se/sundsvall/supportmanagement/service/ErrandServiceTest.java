@@ -48,7 +48,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
-import se.sundsvall.supportmanagement.service.AccessControlService.ErrandKeyAccess;
+import se.sundsvall.supportmanagement.service.access.ErrandKeyAccess;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
