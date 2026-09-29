@@ -33,7 +33,9 @@ import static java.util.Objects.isNull;
  * @param limitedLabels the labels reaching errands at limited read, with what a limited read exposes. Null when the
  *                      labels grant nothing at limited read, or when the level asked for is above read, since
  *                      nothing is written on the strength of a limited read
- * @param reporter      the reporter route, null when the namespace grants reporters nothing at the level
+ * @param reporter      the reporter route, null when the namespace grants reporters nothing. Resolved at limited read
+ *                      for a level at or below read, as the limited route is, since an errand a reporter reaches
+ *                      at limited read is an errand they reach
  */
 public record NamespaceGrant(boolean enforced, LabelRoute labels, LabelRoute limitedLabels, ReporterRoute reporter) {
 

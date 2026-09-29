@@ -104,6 +104,26 @@ public final class NamespaceGrantResolver {
 	}
 
 	/**
+	 * The errands the user reported, with what a reporter may read of them.
+	 * <p>
+	 * Reached at the lowest level that reaches them, as the labels are: a namespace may grant its reporters their own
+	 * errands at limited read alone, and the listing of the same errands asks for limited read, so resolving this route at
+	 * read left those errands listed but never found. What may be read of them is the reporter projection either way,
+	 * which is what the mapper gives an errand the labels of the user do not cover - the level decides which errands the
+	 * route reaches and which of their resources it extends to, not what is exposed of the errand itself. An operation
+	 * asking for write is answered at the level it asked for, since nothing is written on the strength of a limited read.
+	 */
+	private static NamespaceGrant.ReporterRoute reporterRoute(NamespaceConfig config, AccessSnapshot access, Identifier user, Set<String> namespaceRoles, Access.AccessLevelEnum required) {
+		final var level = RW == required ? required : LR;
+		final var adAccount = accessScope(config, access, user, ProtectedResource.ERRAND, level).reporterAdAccount();
+
+		return isNull(adAccount)
+			? null
+			: new NamespaceGrant.ReporterRoute(adAccount, fieldAccess(config, Coverage.REPORTER_ONLY, namespaceRoles, true).readable(),
+				reporterResources(config, access, user, level));
+	}
+
+	/**
 	 * What the user holds in the namespace at the required level, see {@link NamespaceGrant}.
 	 */
 	public static NamespaceGrant namespaceGrant(NamespaceConfig config, AccessSnapshot access, Identifier user, Access.AccessLevelEnum required) {
@@ -119,10 +139,7 @@ public final class NamespaceGrantResolver {
 			: new NamespaceGrant.LabelRoute(errand.allowedLabels(), fieldAccess(config, Coverage.FULL, namespaceRoles, false).readable(),
 				labelResources(config, access, user, required, errand.allowedLabels()));
 		final var limitedLabels = limitedLabelRoute(config, access, user, namespaceRoles, required, errand.allowedLabels());
-		final var reporter = isNull(errand.reporterAdAccount())
-			? null
-			: new NamespaceGrant.ReporterRoute(errand.reporterAdAccount(), fieldAccess(config, Coverage.REPORTER_ONLY, namespaceRoles, true).readable(),
-				reporterResources(config, access, user, required));
+		final var reporter = reporterRoute(config, access, user, namespaceRoles, required);
 
 		return new NamespaceGrant(true, labels, limitedLabels, reporter);
 	}
