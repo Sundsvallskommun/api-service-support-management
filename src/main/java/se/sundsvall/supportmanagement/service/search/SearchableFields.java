@@ -155,6 +155,12 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 			return Optional.of(FIELD_BEYOND_KEYS.formatted(field.getPropertyName()));
 		}
 
+		if (name.length() <= prefix.get().length()) {
+			// The object itself rather than a key under it, which asks about every key at once and so about keys the route
+			// was not granted
+			return Optional.of(FIELD_BEYOND_KEYS.formatted(field.getPropertyName()));
+		}
+
 		final var key = name.substring(prefix.get().length()).split("\\.", 2)[0];
 		return keys.contains(key) ? Optional.empty() : Optional.of(KEY_OF_FIELD.formatted(key, field.getPropertyName()));
 	}

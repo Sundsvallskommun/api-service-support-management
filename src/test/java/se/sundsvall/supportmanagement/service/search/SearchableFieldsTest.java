@@ -76,6 +76,19 @@ class SearchableFieldsTest {
 		assertThat(fields.refusal("jsonParametersText")).contains("Field 'jsonParameters' beyond its keys");
 	}
 
+	/**
+	 * The object of a keyed field, named without a key under it, asks about every key at once - including the keys the
+	 * route was not granted. It used to ask for a substring longer than the name and answer the client with a 500.
+	 */
+	@Test
+	void theObjectOfAKeyedFieldAsksAboutEveryKeyAndIsRefused() {
+		final var fields = SearchableFields.of(EVERY_RESOURCE, Map.of(ErrandField.JSON_PARAMETERS, Set.of("granted")));
+
+		assertThat(fields.refusal("jsonParameters")).contains("Field 'jsonParameters' beyond its keys");
+		assertThat(fields.refusal("jsonParameters.raw")).contains("Field 'jsonParameters' beyond its keys");
+		assertThat(fields.allows("jsonParameters.granted.x")).isTrue();
+	}
+
 	@Test
 	void aKeyedFieldWhoseKeysShareAnIndexFieldOpensNoneOfItByKey() {
 		final var fields = SearchableFields.of(EVERY_RESOURCE, Map.of(ErrandField.PARAMETERS, Set.of("granted")));

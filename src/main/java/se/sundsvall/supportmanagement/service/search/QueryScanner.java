@@ -214,6 +214,10 @@ final class QueryScanner {
 			} else if (WHITESPACE.indexOf(character) >= 0 || character == ')') {
 				break;
 			} else {
+				if (character == ':') {
+					// A colon within a bare value: the parser may read a field out of what follows it, and this does not
+					unaccountedColons++;
+				}
 				position++;
 			}
 		}
@@ -260,6 +264,13 @@ final class QueryScanner {
 		readBalanced(opening, opening == '[' ? ']' : '}');
 	}
 
+	/**
+	 * A group, a range or a bracketed value, whole.
+	 * <p>
+	 * A colon inside a range belongs to the value it stands in - a timestamp carries three of them - while a colon inside
+	 * a group may name a field of its own, which nothing here reads. And a region that never closes is one this did not
+	 * read to its end, so what follows it was never looked at: both are reported rather than passed over.
+	 */
 	private Span readBalanced(final char opening, final char closing) {
 		final var start = position;
 		var depth = 0;
@@ -279,13 +290,16 @@ final class QueryScanner {
 						position++;
 						return new Span(start, position);
 					}
-				} else if (character == ':') {
-					// A colon inside a group is a reference of its own, which the walk over the group body reads
+				} else if (character == ':' && opening == '(') {
+					// A colon inside a group may name a field, and the body of a group is not walked for references
 					unaccountedColons++;
 				}
 				position++;
 			}
 		}
+
+		// Never closed, so what stands after it was never read
+		unaccountedColons++;
 		return new Span(start, position);
 	}
 

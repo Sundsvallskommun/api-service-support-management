@@ -170,6 +170,34 @@ class QueryScannerTest {
 		assertThat(QueryScanner.scan(query).isFullyRead()).isFalse();
 	}
 
+	/**
+	 * A colon within a range belongs to the value it stands in: a timestamp carries three of them, and the endpoint
+	 * documents ranges, so counting them as references this could not read refused a legal query.
+	 */
+	@Test
+	void theColonsOfATimestampBelongToTheRangeTheyStandIn() {
+		final var scan = QueryScanner.scan("created:[2025-01-01T00:00:00Z TO 2025-12-31T23:59:59Z]");
+
+		assertThat(scan.fieldNames()).containsExactly("created");
+		assertThat(scan.isFullyRead()).isTrue();
+	}
+
+	/**
+	 * The shapes where this reads less than the parser does: a colon inside a bare value, which the parser may read a
+	 * field out of, and a bracket that never closes, after which nothing was read at all. Neither may pass for
+	 * understood.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"title:a:communications.subject:secret",
+		"errandNumber:x:decisions.justification:avslag",
+		"created:[2025-01-01 TO 2025-12-31} status:new",
+		"title:(a OR b status:new"
+	})
+	void aQueryThisReadsLessOfThanTheParserIsReported(final String query) {
+		assertThat(QueryScanner.scan(query).isFullyRead()).isFalse();
+	}
+
 	@ParameterizedTest
 	@ValueSource(strings = {
 		"title:x", "vatten", "_exists_:title", "title:\"a:b\"", "title:/a:b/", "created:[2025-01-01 TO 2025-12-31]"
