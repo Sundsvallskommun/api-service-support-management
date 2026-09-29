@@ -17,6 +17,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +35,8 @@ class OpenSearchHealthIndicatorTest {
 	@Mock
 	private HttpEntity entityMock;
 
+	private final SearchAvailability availability = new SearchAvailability(true);
+
 	private void clusterAnswers(final String body) throws IOException {
 		when(openSearchMock.restClient()).thenReturn(restClientMock);
 		when(restClientMock.performRequest(any())).thenReturn(responseMock);
@@ -45,7 +48,7 @@ class OpenSearchHealthIndicatorTest {
 	void up() throws IOException {
 		clusterAnswers("{\"cluster_name\":\"support\",\"status\":\"yellow\"}");
 
-		final var health = new OpenSearchHealthIndicator(openSearchMock).health();
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability).health();
 
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
 		assertThat(health.getDetails()).containsEntry(OpenSearchHealthIndicator.CLUSTER_NAME, "support").containsEntry(OpenSearchHealthIndicator.CLUSTER_STATUS, "yellow");
@@ -60,17 +63,32 @@ class OpenSearchHealthIndicatorTest {
 	void downWhenTheClusterIsRed() throws IOException {
 		clusterAnswers("{\"cluster_name\":\"support\",\"status\":\"red\"}");
 
-		final var health = new OpenSearchHealthIndicator(openSearchMock).health();
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability).health();
 
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
 		assertThat(health.getDetails()).containsEntry(OpenSearchHealthIndicator.CLUSTER_STATUS, "red");
+	}
+
+	/**
+	 * Search given up on is reported here rather than nowhere: the cluster may be answering perfectly well and searching
+	 * it still refused, so a green health would say the opposite of what the endpoints do.
+	 */
+	@Test
+	void downWhenSearchHasBeenGivenUpOn() {
+		availability.giveUp("the index does not hold 'title'");
+
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability).health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		assertThat(health.getDetails()).containsEntry(OpenSearchHealthIndicator.SEARCH, "the index does not hold 'title'");
+		verifyNoInteractions(openSearchMock);
 	}
 
 	@Test
 	void downWhenTheClusterCannotBeReached() {
 		when(openSearchMock.restClient()).thenThrow(new IllegalStateException("Connection refused"));
 
-		final var health = new OpenSearchHealthIndicator(openSearchMock).health();
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability).health();
 
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
 		assertThat(health.getDetails()).containsEntry("error", "java.lang.IllegalStateException: Connection refused");
