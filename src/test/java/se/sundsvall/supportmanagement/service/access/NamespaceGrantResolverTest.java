@@ -155,6 +155,35 @@ class NamespaceGrantResolverTest {
 	}
 
 	/**
+	 * A namespace granting its reporters no more than a limited read of their own errands still reaches them: the listing
+	 * of the same errands asks for limited read and returns them, so a route resolved at read alone left them listed but
+	 * never found by a search. What a reporter reads of them is unchanged, since it is the reporter projection whatever
+	 * level reached the errand.
+	 */
+	@Test
+	void reportersAreReachedAtLimitedReadToo() {
+		final var config = enforcing().withReporterAccess(ReporterAccess.create()
+			.withResources(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.LR))));
+
+		final var grant = NamespaceGrantResolver.namespaceGrant(config, snapshot(Set.of()), adUser(), R);
+
+		assertThat(grant.reporter().adAccount()).isEqualTo(AD_ACCOUNT);
+		assertThat(grant.scope().reporterAdAccount()).isEqualTo(AD_ACCOUNT);
+	}
+
+	/**
+	 * Nothing is written on the strength of a limited read, so an operation asking for write is answered at the level it
+	 * asked for.
+	 */
+	@Test
+	void aLimitedReadReporterWritesNothing() {
+		final var config = enforcing().withReporterAccess(ReporterAccess.create()
+			.withResources(List.of(ResourceAccess.create().withResource(ProtectedResource.ERRAND).withLevel(AccessLevel.LR))));
+
+		assertThat(NamespaceGrantResolver.namespaceGrant(config, snapshot(Set.of()), adUser(), RW).reporter()).isNull();
+	}
+
+	/**
 	 * Labels are resolved for ad accounts alone, and reporterUserId holds one, so no other kind of caller can be the
 	 * reporter of an errand.
 	 */
