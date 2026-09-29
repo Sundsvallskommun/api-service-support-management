@@ -12,10 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -62,7 +62,7 @@ class ErrandIndexModelTest {
 
 	@Test
 	void withoutAnIndexNothingIsSearched() {
-		assertThat(new ErrandIndexModel(null).textFields()).isEmpty();
+		assertThat(new ErrandIndexModel((IndexDescriptor) null, null).textFields()).isEmpty();
 	}
 
 	@Test
@@ -83,7 +83,7 @@ class ErrandIndexModelTest {
 			default -> anyOther(invocation.getArgument(0));
 		}));
 
-		final var model = new ErrandIndexModel(descriptorMock);
+		final var model = new ErrandIndexModel(descriptorMock, availability());
 
 		assertThat(model.textFields()).containsExactly("errandNumber", "externalTags.value", "measures.description", "stakeholders.externalId", "title");
 	}
@@ -93,14 +93,18 @@ class ErrandIndexModelTest {
 	 * search it. Safe, and quietly wrong where the field was meant to be searchable, which is why it is said at startup.
 	 */
 	@Test
-	void aFieldTheIndexHoldsAndNothingBindsKeepsTheServiceFromStarting() {
+	void aFieldTheIndexHoldsAndNothingBindsSwitchesSearchOff() {
 		final var unbound = valueField("previousStatus", null, true, String.class);
 		when(descriptorMock.staticFields()).thenReturn(List.of(unbound));
 		when(descriptorMock.field(anyString())).thenAnswer(invocation -> Optional.of(anyOther(invocation.getArgument(0))));
+		final var availability = availability();
 
-		assertThatThrownBy(() -> new ErrandIndexModel(descriptorMock))
-			.isInstanceOf(IllegalStateException.class)
-			.hasMessageContaining("'previousStatus' is held by the index and bound to no field or resource, so nothing can grant it");
+		final var model = new ErrandIndexModel(descriptorMock, availability);
+
+		assertThat(model.textFields()).isEmpty();
+		assertThat(availability.unusable()).hasValueSatisfying(reason -> assertThat(reason)
+			.contains("'previousStatus' is held by the index and bound to no field or resource, so nothing can grant it"));
+		assertThatThrownBy(availability::verifyEnabled).isInstanceOf(ThrowableProblem.class);
 	}
 
 	/**
@@ -115,18 +119,29 @@ class ErrandIndexModelTest {
 		final var namespace = valueField("namespace", null, true, String.class);
 		final var labelId = valueField("accessLabels.metadataLabelId", null, true, String.class);
 		final var count = valueField("accessLabelCount", null, true, Integer.class);
-		when(descriptorMock.staticFields()).thenReturn(List.of(id, entityType, municipality, namespace, labelId, count));
+		final var noOpenField = valueField("noOpenField", null, true, String.class);
+		when(descriptorMock.staticFields()).thenReturn(List.of(id, entityType, municipality, namespace, labelId, count, noOpenField));
 		when(descriptorMock.field(anyString())).thenAnswer(invocation -> Optional.of(anyOther(invocation.getArgument(0))));
 
-		assertThatCode(() -> new ErrandIndexModel(descriptorMock)).doesNotThrowAnyException();
+		final var availability = availability();
+
+		new ErrandIndexModel(descriptorMock, availability);
+
+		assertThat(availability.unusable()).isEmpty();
 	}
 
 	@Test
-	void aNameTheIndexDoesNotHoldKeepsTheServiceFromStarting() {
+	void aNameTheIndexDoesNotHoldSwitchesSearchOff() {
 		when(descriptorMock.field(anyString())).thenAnswer(invocation -> "title".equals(invocation.getArgument(0)) ? Optional.empty() : Optional.of(anyOther(invocation.getArgument(0))));
+		final var availability = availability();
 
-		assertThatThrownBy(() -> new ErrandIndexModel(descriptorMock))
-			.isInstanceOf(IllegalStateException.class)
-			.hasMessage("The errand index does not hold what is declared on it: 'title' declared on field TITLE is not a field of the index");
+		new ErrandIndexModel(descriptorMock, availability);
+
+		assertThat(availability.unusable()).contains("The errand index does not hold what is declared on it: 'title' declared on field TITLE is not a field of the index");
+	}
+
+	/** Search switched on, and nothing given up on yet. */
+	private static SearchAvailability availability() {
+		return new SearchAvailability(true);
 	}
 }

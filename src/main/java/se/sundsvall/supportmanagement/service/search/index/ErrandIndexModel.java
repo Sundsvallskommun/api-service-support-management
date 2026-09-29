@@ -26,8 +26,10 @@ import static java.util.stream.Collectors.joining;
  * The fields a word without a field is looked for in are every field analyzed as text, plus the identifiers of
  * {@link ErrandIndex#IDENTIFIER_FIELDS}; the field an ordering sorts on comes from the binding of the
  * {@link ErrandField} the ordering names. And since the bindings of the fields and resources name index fields, they
- * are checked against the index here, once, when the service starts: a name the index does not know, or a sort on a
- * field that cannot be sorted on, keeps the service from starting rather than turning up as an empty search.
+ * are checked against the index here, once, when the service starts: a name the index does not know, a sort on a field
+ * that cannot be sorted on, or a field of the index nothing binds switches search off on this instance rather than
+ * turning up as an empty search. The service starts either way - nothing else it does depends on the index - and the
+ * endpoints answer 503 while the health reports what was found.
  */
 @Component
 public class ErrandIndexModel {
@@ -45,19 +47,36 @@ public class ErrandIndexModel {
 
 	@Autowired
 	public ErrandIndexModel(final OpenSearchClient openSearch, final SearchAvailability availability) {
-		this(availability.isEnabled() ? openSearch.errandIndex() : null);
+		this(availability.isEnabled() ? openSearch.errandIndex() : null, availability);
 	}
 
 	/**
-	 * @param descriptor the index, null where the environment has none
+	 * An index that does not hold what the bindings name is a defect of this service, not of the cluster, and the
+	 * bindings are what access control is rendered from - so search is given up on rather than run against an index it
+	 * misreads. Said as loudly as a log allows and answered with 503, rather than by keeping the service from starting:
+	 * everything else it does is beside the point of the search index, and none of it should wait for this to be put
+	 * right.
+	 *
+	 * @param descriptor   the index, null where the environment has none
+	 * @param availability what search is given up on through, null where nothing is to be told
 	 */
-	ErrandIndexModel(final IndexDescriptor descriptor) {
+	ErrandIndexModel(final IndexDescriptor descriptor, final SearchAvailability availability) {
 		if (descriptor == null) {
 			textFields = List.of();
 			return;
 		}
 
-		validate(descriptor);
+		try {
+			validate(descriptor);
+		} catch (final IllegalStateException e) {
+			LOG.error("Search is switched off on this instance: {}", e.getMessage(), e);
+			if (availability != null) {
+				availability.giveUp(e.getMessage());
+			}
+			textFields = List.of();
+			return;
+		}
+
 		textFields = Stream.concat(
 			descriptor.staticFields().stream()
 				.filter(IndexFieldDescriptor::isValueField)
