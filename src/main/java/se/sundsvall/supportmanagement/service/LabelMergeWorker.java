@@ -1,15 +1,13 @@
 package se.sundsvall.supportmanagement.service;
 
-import java.util.List;
+import java.util.Set;
+import java.util.function.IntConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
@@ -40,7 +38,7 @@ public class LabelMergeWorker {
 	private final ErrandService errandService;
 	private final JobService jobService;
 	private final EventService eventService;
-	private final int batchSize;
+	private final RestowPager restowPager;
 
 	LabelMergeWorker(
 		final ErrandsRepository errandsRepository,
@@ -54,7 +52,7 @@ public class LabelMergeWorker {
 		this.errandService = errandService;
 		this.jobService = jobService;
 		this.eventService = eventService;
-		this.batchSize = properties.batchSize();
+		this.restowPager = new RestowPager(LOG, properties.batchSize(), MAX_BATCH_ATTEMPTS);
 	}
 
 	/**
@@ -90,76 +88,59 @@ public class LabelMergeWorker {
 	}
 
 	private void merge(final LabelMergeRun run) {
-		if (!metadataLabelRepository.existsById(run.targetLabelId())) {
-			throw new IllegalStateException(LABEL_GONE.formatted(run.targetLabelId()));
-		}
-		run.sourceLabelIds().forEach(sourceId -> {
-			if (!metadataLabelRepository.existsById(sourceId)) {
-				throw new IllegalStateException(LABEL_GONE.formatted(sourceId));
-			}
-		});
-
-		final var restowed = restowErrands(run);
-
-		// Only reached once every errand that referenced a source label has been restowed onto the destination - no
-		// source label is referenced by an errand any more by the time this deletes them.
-		metadataLabelRepository.deleteAllById(run.sourceLabelIds());
-		metadataLabelRepository.flush();
-
-		eventService.createLabelMergeEvent(run.municipalityId(), run.targetLabelId(), run.startedBy(),
-			AUDIT_MESSAGE.formatted(run.sourceLabelIds(), run.targetLabelId(), run.startedBy(), restowed));
+		final var restowed = mergeAndRestow(run.jobId(), run.municipalityId(), run.targetLabelId(), run.sourceLabelIds(), run.startedBy(),
+			processed -> jobService.updateProgress(run.jobId(), processed));
 
 		jobService.complete(run.jobId(), SUMMARY.formatted(run.sourceLabelIds(), run.targetLabelId(), restowed));
 	}
 
 	/**
-	 * Restows every errand that references any of the source labels - directly, or through a descendant, since an
-	 * errand's stored label set already carries the full ancestor chain. Read a page at a time and persisted a page at
-	 * a time, each in a transaction of its own, exactly as {@link LabelMoveWorker#restowErrands} does and for the same
-	 * reasons.
+	 * Restows every errand referencing any of {@code sourceLabelIds} onto {@code targetLabelId}, then deletes the now
+	 * unreferenced source labels, reporting cumulative progress through {@code progressReporter} as it goes.
+	 * <p>
+	 * Extracted out of {@link #merge(LabelMergeRun)} so that {@code LabelTreeRestructureWorker} can carry out one MERGE
+	 * step of a larger restructure directly, on its own worker thread, reporting progress against its own composite job
+	 * instead of a per-merge job - mirrors {@link LabelMoveWorker#moveAndRestow}, including taking {@code jobId}
+	 * separately from that caller's own job, purely for log correlation in {@link RestowPager}.
+	 *
+	 * @return number of errands restowed.
 	 */
-	private int restowErrands(final LabelMergeRun run) {
-		var lastSeenId = "";
-		var processed = 0;
-		var page = fetchAndPersistPage(run, lastSeenId);
-
-		while (!page.isEmpty()) {
-			processed += page.size();
-			jobService.updateProgress(run.jobId(), processed);
-			lastSeenId = page.get(page.size() - 1).getId();
-
-			// A page shorter than requested is necessarily the last one - skip the round-trip that would only confirm it.
-			page = page.size() < batchSize ? List.of() : fetchAndPersistPage(run, lastSeenId);
+	int mergeAndRestow(final String jobId, final String municipalityId, final String targetLabelId, final Set<String> sourceLabelIds, final String startedBy,
+		final IntConsumer progressReporter) {
+		if (!metadataLabelRepository.existsById(targetLabelId)) {
+			throw new IllegalStateException(LABEL_GONE.formatted(targetLabelId));
 		}
+		sourceLabelIds.forEach(sourceId -> {
+			if (!metadataLabelRepository.existsById(sourceId)) {
+				throw new IllegalStateException(LABEL_GONE.formatted(sourceId));
+			}
+		});
 
-		return processed;
+		final var restowed = restowErrands(jobId, targetLabelId, sourceLabelIds, progressReporter);
+
+		// Only reached once every errand that referenced a source label has been restowed onto the destination - no
+		// source label is referenced by an errand any more by the time this deletes them.
+		metadataLabelRepository.deleteAllById(sourceLabelIds);
+		metadataLabelRepository.flush();
+
+		eventService.createLabelMergeEvent(municipalityId, targetLabelId, startedBy,
+			AUDIT_MESSAGE.formatted(sourceLabelIds, targetLabelId, startedBy, restowed));
+
+		return restowed;
 	}
 
 	/**
-	 * Reads one page and hands it to {@link ErrandService#persistLabelMergeBatch}, retrying against a fresh read when a
-	 * concurrent edit loses the optimistic-lock race - mirrors {@link LabelMoveWorker#fetchAndPersistPage}.
+	 * Restows every errand that references any of the source labels - directly, or through a descendant, since an
+	 * errand's stored label set already carries the full ancestor chain. Delegates the actual paged walk to
+	 * {@link RestowPager}, shared with {@link LabelMoveWorker}: a page at a time, read and persisted each in a
+	 * transaction of its own.
 	 */
-	private List<ErrandEntity> fetchAndPersistPage(final LabelMergeRun run, final String lastSeenId) {
-		final var pageable = PageRequest.ofSize(batchSize);
-		var attempt = 0;
-
-		while (true) {
-			attempt++;
-			final var page = errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(run.sourceLabelIds(), lastSeenId, pageable);
-			if (page.isEmpty()) {
-				return page;
-			}
-
-			try {
-				errandService.persistLabelMergeBatch(page, run.sourceLabelIds(), run.targetLabelId());
-				return page;
-			} catch (final ObjectOptimisticLockingFailureException e) {
-				if (attempt == MAX_BATCH_ATTEMPTS) {
-					throw e;
-				}
-				LOG.warn("Label merge {} retrying a page after a concurrent edit lost the optimistic-lock race (attempt {}/{})",
-					run.jobId(), attempt, MAX_BATCH_ATTEMPTS);
-			}
-		}
+	private int restowErrands(final String jobId, final String targetLabelId, final Set<String> sourceLabelIds, final IntConsumer progressReporter) {
+		return restowPager.restow(
+			(lastSeenId, pageable) -> errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceLabelIds, lastSeenId, pageable),
+			page -> errandService.persistLabelMergeBatch(page, sourceLabelIds, targetLabelId),
+			attempt -> "Label merge %s retrying a page for target %s after a concurrent edit lost the optimistic-lock race (attempt %d/%d)"
+				.formatted(jobId, sanitizeForLogging(targetLabelId), attempt, MAX_BATCH_ATTEMPTS),
+			progressReporter);
 	}
 }

@@ -64,6 +64,12 @@ class AccessControlChokePointTest {
 		// reasoning as LabelMoveWorker: triggered by a system operation (merge-labels job), not a user request.
 		se.sundsvall.supportmanagement.service.LabelMergeWorker.class,
 
+		// LabelTreeRestructureWorker only checks whether a label being deleted is still referenced by an errand (the
+		// same guard MetadataService applies to its own delete path below), and delegates the actual restow of any
+		// affected errand to LabelMoveWorker/LabelMergeWorker. Same reasoning as those two: triggered by a system
+		// operation (restructure-label-tree job), not a user request.
+		se.sundsvall.supportmanagement.service.LabelTreeRestructureWorker.class,
+
 		// MetadataService only reads errands to check whether metadata is referenced. It cannot inject
 		// AccessControlService without creating a circular dependency
 		// (metadataService -> accessControlService -> accessMapperService -> metadataService), which is why the

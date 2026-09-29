@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.1"
+  version: "16.2"
 servers:
-- url: http://localhost:59544
+- url: http://localhost:63139
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -4478,6 +4478,92 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "409":
           description: Conflict — a merge job is already running for this namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/labels/restructure:
+    post:
+      tags:
+      - Metadata for labels
+      summary: Restructure label tree
+      description: "Validates an ordered sequence of add/rename/delete/move/merge\
+        \ steps. When dryRun is true, returns per-step affected counts without making\
+        \ any changes. When dryRun is false, starts the restructure as a single asynchronous\
+        \ job."
+      operationId: restructureLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelRestructureRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful dry-run operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelRestructureDryRunResponse"
+        "202":
+          description: Restructure accepted and started as an asynchronous job
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict — path collision at a step's destination, or a job\
+            \ is already running for this namespace"
           content:
             application/problem+json:
               schema:
@@ -16650,10 +16736,6 @@ components:
           type: boolean
         floatingPointNumber:
           type: boolean
-        valueNode:
-          type: boolean
-        missingNode:
-          type: boolean
         nodeType:
           type: string
           enum:
@@ -16669,6 +16751,10 @@ components:
         string:
           type: boolean
         integralNumber:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
           type: boolean
         pojo:
           type: boolean
@@ -17517,6 +17603,7 @@ components:
           - MOVE_LABEL
           - MERGE_LABELS
           - ERRAND_PURGE
+          - RESTRUCTURE_LABEL_TREE
         status:
           type: string
           description: Job status
@@ -17602,6 +17689,134 @@ components:
       required:
       - dryRun
       - sourceLabelIds
+    LabelRestructureDryRunResponse:
+      type: object
+      description: Result of a label-tree restructure dry-run — no changes are made
+      properties:
+        totalAffectedErrandCount:
+          type: integer
+          format: int64
+          description: "Sum of affectedErrandCount across all steps. An errand touched\
+            \ by more than one step is counted once per step that touches it, not\
+            \ deduplicated across steps"
+        steps:
+          type: array
+          description: "Per-step results, in the same order as the request's steps"
+          items:
+            $ref: "#/components/schemas/LabelRestructureStepResult"
+    LabelRestructureStepResult:
+      type: object
+      description: Dry-run result for one step of a label-tree restructure
+      properties:
+        index:
+          type: integer
+          format: int32
+          description: Index of the step in the request's steps list
+          examples:
+          - 0
+        type:
+          type: string
+          description: The step's type
+          enum:
+          - ADD
+          - RENAME
+          - DELETE
+          - MOVE
+          - MERGE
+        path:
+          type: array
+          description: "The step's path, as submitted"
+          items:
+            type: string
+        affectedErrandCount:
+          type: integer
+          format: int64
+          description: "Number of errands that reference the label or, for MOVE/MERGE,\
+            \ any of its descendants/sources. Always 0 for ADD/RENAME, and for a step\
+            \ whose path was only created by an earlier step in the same request"
+        affectedActions:
+          type: array
+          description: Actions that have hasLabel conditions referencing a label this
+            step affects
+          items:
+            $ref: "#/components/schemas/AffectedAction"
+    LabelRestructureRequest:
+      type: object
+      description: Request for restructuring the label tree as one ordered sequence
+        of add/rename/delete/move/merge steps
+      properties:
+        steps:
+          type: array
+          description: "Steps to apply, in order. A later step may reference a label\
+            \ an earlier step in this same request added or moved"
+          items:
+            $ref: "#/components/schemas/LabelRestructureStep"
+          minItems: 1
+        dryRun:
+          type: boolean
+          description: "When true, return affected counts for every step without making\
+            \ any changes. When false, starts the restructure as an asynchronous job."
+          examples:
+          - true
+      required:
+      - dryRun
+      - steps
+    LabelRestructureStep:
+      type: object
+      description: One step of a label-tree restructure
+      properties:
+        type:
+          type: string
+          description: The kind of change this step makes
+          enum:
+          - ADD
+          - RENAME
+          - DELETE
+          - MOVE
+          - MERGE
+        path:
+          type: array
+          description: "Path (resourceName segments from the root) of the label this\
+            \ step acts on. The label added, renamed or deleted for ADD/RENAME/DELETE;\
+            \ the label moved for MOVE; the merge destination for MERGE"
+          items:
+            type: string
+            minLength: 1
+            pattern: "[A-Z0-9_]+"
+          minItems: 1
+        destinationParentPath:
+          type: array
+          description: "MOVE only: path of the new parent, or null/absent to move\
+            \ to root"
+          items:
+            type: string
+            minLength: 1
+            pattern: "[A-Z0-9_]+"
+        sourcePaths:
+          type: array
+          description: "MERGE only: paths of the source labels merged into path"
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 1
+        displayName:
+          type: string
+          description: "ADD: display name of the new label. RENAME: the new display\
+            \ name. MOVE: an optional new display name to set at the same time"
+        classification:
+          type: string
+          description: "ADD only: classification of the new label"
+          examples:
+          - SUBTYPE
+        newResourceName:
+          type: string
+          description: "MOVE only: an optional new resourceName to set at the same\
+            \ time (used for a combined move+rename)"
+          pattern: "[A-Z0-9_]+"
+      required:
+      - path
+      - type
     ExternalIdType:
       type: object
       description: ExternalIdType model
@@ -20322,6 +20537,8 @@ components:
     PageableObject:
       type: object
       properties:
+        sort:
+          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -20330,8 +20547,6 @@ components:
         pageSize:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
         offset:

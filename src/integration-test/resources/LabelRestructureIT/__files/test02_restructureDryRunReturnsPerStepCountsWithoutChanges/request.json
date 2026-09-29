@@ -1,0 +1,56 @@
+{
+	"dryRun": true,
+	"steps": [
+		{
+			"type": "ADD",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_TYPE",
+				"NEW_SUBTYPE"
+			],
+			"displayName": "New subtype",
+			"classification": "SUBTYPE"
+		},
+		{
+			"type": "MOVE",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_TYPE",
+				"TEST_SUBTYPE_OLD"
+			],
+			"destinationParentPath": [
+				"TEST_CATEGORY",
+				"TEST_TYPE",
+				"NEW_SUBTYPE"
+			]
+		},
+		{
+			"type": "RENAME",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_RENAME_ME"
+			],
+			"displayName": "Renamed"
+		},
+		{
+			"type": "DELETE",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_SUBTYPE_DELETE"
+			]
+		},
+		{
+			"type": "MERGE",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_MERGE_TARGET"
+			],
+			"sourcePaths": [
+				[
+					"TEST_CATEGORY",
+					"TEST_MERGE_SOURCE"
+				]
+			]
+		}
+	]
+}

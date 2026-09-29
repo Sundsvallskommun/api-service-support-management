@@ -255,7 +255,7 @@ class MetadataServiceMergeLabelsTest {
 			.thenReturn(Optional.of(source));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
 			.thenReturn(List.of());
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS)).thenReturn(true);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.startLabelMerge(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(SOURCE_ID)).withDryRun(false)))
@@ -265,7 +265,7 @@ class MetadataServiceMergeLabelsTest {
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock, never()).countDistinctByLabelsMetadataLabelIdIn(any());
 	}
 
@@ -306,7 +306,7 @@ class MetadataServiceMergeLabelsTest {
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
 		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 4, TARGET_ID);
 		verify(labelMoveTaskExecutorMock).execute(any());
@@ -327,7 +327,7 @@ class MetadataServiceMergeLabelsTest {
 			.thenReturn(Optional.of(source));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
 			.thenReturn(List.of());
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS)).thenReturn(false);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(0L);
 		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID)).thenReturn("job-id");
 		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(JobResponse.create().withJobId("job-id"));
@@ -355,7 +355,7 @@ class MetadataServiceMergeLabelsTest {
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
 		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID);
 		verify(labelMoveTaskExecutorMock).execute(any());
@@ -376,7 +376,7 @@ class MetadataServiceMergeLabelsTest {
 			.thenReturn(Optional.of(source));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
 			.thenReturn(List.of());
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS)).thenReturn(false);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(0L);
 		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID)).thenReturn("job-id");
 		doThrow(new TaskRejectedException("No thread available")).when(labelMoveTaskExecutorMock).execute(any());
@@ -390,7 +390,7 @@ class MetadataServiceMergeLabelsTest {
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
 		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID);
 		verify(jobServiceMock).fail("job-id", "Label merge could not be started: No thread available");

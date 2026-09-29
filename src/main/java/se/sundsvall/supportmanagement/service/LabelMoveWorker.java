@@ -1,15 +1,12 @@
 package se.sundsvall.supportmanagement.service;
 
-import java.util.List;
+import java.util.function.IntConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
@@ -39,7 +36,7 @@ public class LabelMoveWorker {
 	private final ErrandService errandService;
 	private final JobService jobService;
 	private final EventService eventService;
-	private final int batchSize;
+	private final RestowPager restowPager;
 
 	LabelMoveWorker(
 		final ErrandsRepository errandsRepository,
@@ -53,7 +50,7 @@ public class LabelMoveWorker {
 		this.errandService = errandService;
 		this.jobService = jobService;
 		this.eventService = eventService;
-		this.batchSize = properties.batchSize();
+		this.restowPager = new RestowPager(LOG, properties.batchSize(), MAX_BATCH_ATTEMPTS);
 	}
 
 	/**
@@ -88,13 +85,44 @@ public class LabelMoveWorker {
 	}
 
 	private void move(final LabelMoveRun run) {
-		final var labelToMove = metadataLabelRepository.findById(run.labelId())
-			.orElseThrow(() -> new IllegalStateException(LABEL_GONE.formatted(run.labelId())));
-		final var newParent = run.newParentId() != null
-			? metadataLabelRepository.findById(run.newParentId()).orElseThrow(() -> new IllegalStateException(NEW_PARENT_GONE.formatted(run.newParentId())))
+		final var restowed = moveAndRestow(run.jobId(), run.municipalityId(), run.labelId(), run.newParentId(), null, null, run.startedBy(),
+			processed -> jobService.updateProgress(run.jobId(), processed));
+
+		jobService.complete(run.jobId(), SUMMARY.formatted(run.labelId(), run.newParentId(), restowed));
+	}
+
+	/**
+	 * Reparents {@code labelId} under {@code newParentId}, optionally also setting a new {@code resourceName} and/or
+	 * {@code displayName} at the same time (a combined move+rename, as a label-tree restructure's MOVE step allows), and
+	 * restows every affected errand, reporting cumulative progress through {@code progressReporter} as it goes.
+	 * <p>
+	 * Extracted out of {@link #move(LabelMoveRun)} so that {@code LabelTreeRestructureWorker} can carry out one MOVE
+	 * step of a larger restructure directly - on its own worker thread, not dispatched through the executor again -
+	 * reporting progress against its own composite job instead of a per-move job, and without this method itself
+	 * touching {@link JobService#complete}/{@code fail}, which only the caller that owns the job's lifecycle may do.
+	 * {@code jobId} is taken separately from that caller's own job rather than read off a {@link LabelMoveRun} - purely
+	 * for log correlation in {@link #fetchAndPersistPage}, so a restructure's MOVE step logs against the restructure's
+	 * own job rather than a move job that, called this way, never exists.
+	 *
+	 * @param  newResourceName optional new resourceName to set in the same update, or {@code null} to keep it.
+	 * @param  newDisplayName  optional new displayName to set in the same update, or {@code null} to keep it.
+	 * @return                 number of errands restowed.
+	 */
+	int moveAndRestow(final String jobId, final String municipalityId, final String labelId, final String newParentId, final String newResourceName, final String newDisplayName,
+		final String startedBy, final IntConsumer progressReporter) {
+		final var labelToMove = metadataLabelRepository.findById(labelId)
+			.orElseThrow(() -> new IllegalStateException(LABEL_GONE.formatted(labelId)));
+		final var newParent = newParentId != null
+			? metadataLabelRepository.findById(newParentId).orElseThrow(() -> new IllegalStateException(NEW_PARENT_GONE.formatted(newParentId)))
 			: null;
 
 		labelToMove.setParent(newParent);
+		if (newResourceName != null) {
+			labelToMove.setResourceName(newResourceName);
+		}
+		if (newDisplayName != null) {
+			labelToMove.setDisplayName(newDisplayName);
+		}
 		metadataLabelRepository.saveAndFlush(labelToMove);
 		// The @PreUpdate cascade on labelToMove (onUpdate -> updateChildrenPathsRecursively) recomputes resourcePath for
 		// the moved node and, recursively, for every descendant reachable through its metadataLabels collection, all
@@ -103,73 +131,31 @@ public class LabelMoveWorker {
 		// cascade above already moved every descendant off it), and refreshing whatever it did find by walking a lazy
 		// getParent() chain would run on entities already detached from that query's own, separate transaction.
 
-		final var restowed = restowErrands(run);
+		final var restowed = restowErrands(jobId, labelId, progressReporter);
 
-		eventService.createLabelMoveEvent(run.municipalityId(), run.labelId(), run.startedBy(), AUDIT_MESSAGE.formatted(run.labelId(), run.newParentId(), run.startedBy(), restowed));
+		eventService.createLabelMoveEvent(municipalityId, labelId, startedBy, AUDIT_MESSAGE.formatted(labelId, newParentId, startedBy, restowed));
 
-		jobService.complete(run.jobId(), SUMMARY.formatted(run.labelId(), run.newParentId(), restowed));
+		return restowed;
 	}
 
 	/**
 	 * Restows every errand that references the moved label - directly, or through a descendant, since an errand's
 	 * stored label set already carries the full ancestor chain and so already contains the moved label's id either way.
 	 * <p>
-	 * Read a page at a time and persisted a page at a time, each in a transaction of its own - the persist, including the
-	 * label rebuild itself, is {@link ErrandService#persistLabelMigrationBatch}'s job, since the page fetched here is
-	 * detached by the time that transaction opens and nothing on it beyond an eagerly-fetched collection is safe to
-	 * touch outside the session that read it.
-	 * <p>
-	 * Paged by keyset (id > lastSeenId), not offset: an errand created, purged, or relabelled while this walk is under
-	 * way would otherwise shift where a later page starts, and an errand landing on that boundary would be skipped and
-	 * keep its stale ancestor chain. A page shorter than the requested size ends the walk, since keyset paging has no
-	 * separate "has next" signal to ask for.
+	 * Delegates the actual paged walk to {@link RestowPager}, shared with {@link LabelMergeWorker}: read a page at a
+	 * time and persisted a page at a time, each in a transaction of its own - the persist, including the label rebuild
+	 * itself, is {@link ErrandService#persistLabelMigrationBatch}'s job, since the page fetched here is detached by the
+	 * time that transaction opens and nothing on it beyond an eagerly-fetched collection is safe to touch outside the
+	 * session that read it. Paged by keyset (id > lastSeenId), not offset: an errand created, purged, or relabelled
+	 * while this walk is under way would otherwise shift where a later page starts, and an errand landing on that
+	 * boundary would be skipped and keep its stale ancestor chain.
 	 */
-	private int restowErrands(final LabelMoveRun run) {
-		var lastSeenId = "";
-		var processed = 0;
-		var page = fetchAndPersistPage(run, lastSeenId);
-
-		while (!page.isEmpty()) {
-			processed += page.size();
-			jobService.updateProgress(run.jobId(), processed);
-			lastSeenId = page.get(page.size() - 1).getId();
-
-			// A page shorter than requested is necessarily the last one - skip the round-trip that would only confirm it.
-			page = page.size() < batchSize ? List.of() : fetchAndPersistPage(run, lastSeenId);
-		}
-
-		return processed;
-	}
-
-	/**
-	 * Reads one page and hands it to {@link ErrandService#persistLabelMigrationBatch}, retrying against a fresh read
-	 * when a concurrent edit - a user PATCHing one of these errands between the read and the merge, which {@code
-	 * ErrandEntity}'s {@code @Version} turns into a lock conflict rather than a silently lost update - loses the
-	 * optimistic-lock race. A stale, already-detached page would just fail the same way again, so each attempt re-reads
-	 * rather than retrying the same instances; an errand a concurrent edit has since unlabelled naturally drops out of
-	 * the requery instead of being retried at all.
-	 */
-	private List<ErrandEntity> fetchAndPersistPage(final LabelMoveRun run, final String lastSeenId) {
-		final var pageable = PageRequest.ofSize(batchSize);
-		var attempt = 0;
-
-		while (true) {
-			attempt++;
-			final var page = errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(run.labelId(), lastSeenId, pageable);
-			if (page.isEmpty()) {
-				return page;
-			}
-
-			try {
-				errandService.persistLabelMigrationBatch(page);
-				return page;
-			} catch (final ObjectOptimisticLockingFailureException e) {
-				if (attempt == MAX_BATCH_ATTEMPTS) {
-					throw e;
-				}
-				LOG.warn("Label move {} retrying a page after a concurrent edit lost the optimistic-lock race (attempt {}/{})",
-					run.jobId(), attempt, MAX_BATCH_ATTEMPTS);
-			}
-		}
+	private int restowErrands(final String jobId, final String labelId, final IntConsumer progressReporter) {
+		return restowPager.restow(
+			(lastSeenId, pageable) -> errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(labelId, lastSeenId, pageable),
+			errandService::persistLabelMigrationBatch,
+			attempt -> "Label move %s retrying a page for label %s after a concurrent edit lost the optimistic-lock race (attempt %d/%d)"
+				.formatted(jobId, sanitizeForLogging(labelId), attempt, MAX_BATCH_ATTEMPTS),
+			progressReporter);
 	}
 }
