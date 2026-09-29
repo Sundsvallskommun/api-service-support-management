@@ -24,6 +24,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 public class ErrandSearchPredicates {
 
 	static final String MUNICIPALITY_ID_FIELD = ErrandIndex.MUNICIPALITY_ID;
+	static final String NO_OPEN_FIELD = ErrandIndex.NO_OPEN_FIELD;
 	static final String NAMESPACE_FIELD = ErrandIndex.NAMESPACE;
 	static final String REPORTER_USER_ID_FIELD = ErrandIndex.REPORTER_USER_ID;
 	static final String ACCESS_LABEL_ID_FIELD = ErrandIndex.ACCESS_LABEL_ID;
@@ -43,13 +44,14 @@ public class ErrandSearchPredicates {
 		}
 
 		// A route may leave open no field that a word without one is looked for in: what a role allows may be the status
-		// alone, which is searched by name and not by word. The field every errand of the search is filtered on stands in
-		// for the list then, so that a word matches nothing by itself while the fielded terms, the disjunctions and the
-		// negations of the query still compose - answering "status:new OR vatten" with the new errands rather than with
-		// nothing, which is what refusing the whole clause did.
+		// alone, which is searched by name and not by word. A field no errand carries stands in for the list then, so that
+		// a word matches nothing by itself while the fielded terms, the disjunctions and the negations of the query still
+		// compose - answering "status:new OR vatten" with the new errands rather than with nothing, which is what refusing
+		// the whole clause did. Stood in for by the field the errands are filtered on until searching for the municipality
+		// id itself answered with every errand the route reaches.
 		return f.queryString()
 			.fields(fields.isEmpty() ? new String[] {
-				MUNICIPALITY_ID_FIELD
+				NO_OPEN_FIELD
 			} : fields.toArray(String[]::new))
 			.matching(query)
 			.defaultOperator(BooleanOperator.AND)

@@ -57,6 +57,11 @@ class ErrandSearchIT extends AbstractAppTest {
 	void test01_freeText() {
 		// Stemmed: "vattenläckan" in the communication and "Vattenläcka" in the title share a stem
 		assertThat(search(PATH, "vattenläcka")).containsExactly(LEAK);
+
+		// The municipality and the namespace the errands are filtered by are no words of them: a search for one of them
+		// looks where every other word looks, and finds the errands carrying it in something searchable, which is none
+		assertThat(search(PATH, "2281")).isEmpty();
+		assertThat(search(PATH, "NAMESPACE-3")).isEmpty();
 	}
 
 	@Test
@@ -441,6 +446,13 @@ class ErrandSearchIT extends AbstractAppTest {
 
 		// A word has nothing to look in here, so it finds nothing - and does not fail
 		assertThat(statuses(pageAs(STATUS_ONLY_PATH, "vattenläcka", "sta01usr"))).isEmpty();
+
+		// Nothing is a word here, the municipality id of the errands included: what stands in for the fields of this route
+		// is a field no errand carries, not one they all do
+		assertThat(statuses(pageAs(STATUS_ONLY_PATH, "2506", "sta01usr"))).isEmpty();
+
+		// And a word beside a fielded term is still only a word, so the term answers on its own
+		assertThat(statuses(pageAs(STATUS_ONLY_PATH, "status:new OR 2506", "sta01usr"))).containsExactly("NEW");
 
 		setupCall()
 			.withServicePath(withQuery(STATUS_ONLY_PATH, "title:vattenläcka"))

@@ -165,11 +165,11 @@ class ErrandSearchPredicatesTest {
 	}
 
 	/**
-	 * A route leaving no field open for a word that names none: the word is looked for in the field every errand is
-	 * filtered on, where it matches nothing, so the fielded terms and the operators around it still compose.
+	 * A route leaving no field open for a word that names none: the word is looked for in a field no errand carries,
+	 * where it matches nothing whatever it is, so the fielded terms and the operators around it still compose.
 	 */
 	@Test
-	void aWordWithNoFieldToLookInSearchesTheFieldEveryErrandCarries() {
+	void aWordWithNoFieldToLookInSearchesAFieldNoErrandCarries() {
 		when(factoryMock.queryString()).thenReturn(queryStringFieldStepMock);
 		when(queryStringFieldStepMock.fields(any(String[].class))).thenReturn(queryStringFieldMoreStepMock);
 		when(queryStringFieldMoreStepMock.matching(anyString())).thenReturn(queryStringOptionsMock);
@@ -178,13 +178,13 @@ class ErrandSearchPredicatesTest {
 
 		assertThat(predicates().query(factoryMock, "vatten", List.of())).isSameAs(predicateMock);
 
-		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.MUNICIPALITY_ID_FIELD);
+		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.NO_OPEN_FIELD);
 		verify(factoryMock, never()).matchNone();
 	}
 
 	/**
 	 * The same route answering a query that names its fields: those were held to what the route may read, so the query
-	 * runs, with the field every errand is filtered on standing in for the list it has no use for.
+	 * runs, with the field no errand carries standing in for the list it has no use for.
 	 */
 	@Test
 	void aQueryNamingItsOwnFieldsRunsWithNoFieldsOfItsOwn() {
@@ -196,7 +196,7 @@ class ErrandSearchPredicatesTest {
 
 		assertThat(predicates().query(factoryMock, "status:new", List.of())).isSameAs(predicateMock);
 
-		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.MUNICIPALITY_ID_FIELD);
+		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.NO_OPEN_FIELD);
 		verify(factoryMock, never()).matchNone();
 	}
 

@@ -41,6 +41,7 @@ import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListen
 import se.sundsvall.supportmanagement.integration.db.search.AccessLabelCountBinder;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
+import se.sundsvall.supportmanagement.integration.db.search.NoOpenFieldBinder;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
 import static jakarta.persistence.CascadeType.ALL;
@@ -87,6 +88,7 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
  */
 @Indexed(index = ErrandIndex.NAME)
 @TypeBinding(binder = @TypeBinderRef(type = AccessLabelCountBinder.class))
+@TypeBinding(binder = @TypeBinderRef(type = NoOpenFieldBinder.class))
 public class ErrandEntity {
 
 	@Id
