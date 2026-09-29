@@ -279,7 +279,9 @@ is what the endpoint is for.
 The index is written over from the database every night at 01:00, a namespace at a time, so that what indexing missed
 does not stay missed - `scheduler.search-reindex`, guarded by the same lock as the rebuild endpoint, so one instance
 does it and a manual rebuild and the nightly one never overlap. Nothing is rebuilt when the service starts: a deploy
-leaves the index as it is and only brings the mapping up to date.
+leaves the index as it is and only brings the mapping up to date. A deploy that changes what is written into the index -
+a field added to it, a binder changed - therefore needs `POST /search/reindex` once, or the errands indexed before it
+answer by the old mapping until the nightly rebuild reaches them.
 
 The database is the source of truth and the index is disposable. Indexing follows every commit without holding the
 request up, so an OpenSearch that cannot be reached is logged and never fails a request, and the index schema is created
@@ -296,9 +298,11 @@ docker run -p 9200:9200 -e discovery.type=single-node -e DISABLE_SECURITY_PLUGIN
 ```
 
 Access control applies to the query, not only to the answer: a query naming what the user may not read - a field of a
-resource their labels do not reach (communications, decisions and so on), a field their roles keep from them, or a key of
-a parameter or JSON parameter their roles do not grant - is refused with 403, since a hit or a miss would tell what the
-field holds. The same goes for sorting on such a field, and free text looks only in what is open.
+resource their labels do not reach (communications, decisions and so on), a field of the errand their roles keep from
+them, or a key of a parameter or JSON parameter their roles do not grant - is refused with 403, since a hit or a miss
+would tell what the field holds. The same goes for sorting on such a field, and free text looks only in what is open.
+A resource is reached whole or not at all: roles restrict the fields of the errand, not the fields of what hangs off it,
+so a role keeping the description of an errand from a user leaves the body of its communications searchable to them.
 
 An errand is searched by what the user may read of it, and that differs with how they hold it. So a search is a clause
 per route of the grant - errands the labels cover, errands they cover at limited read only, errands the user reported -
@@ -323,7 +327,9 @@ How the pieces hold together, from the API to the index:
 - `ErrandIndex` (`integration/db/search`) names the fields of the index. The entity mapping declares its fields under
   those names, and `ErrandField` and `ProtectedResource` bind to them, so a renamed field is a compile error rather than
   an empty search. `ErrandIndexModel` reads the rest from Hibernate Search and checks every declared name against the
-  index when the service starts.
+  index when the service starts. A name that does not hold switches search off on that instance - 503 from the
+  endpoints, `openSearch` DOWN with the reason - rather than keeping the service from starting, since the bindings are
+  what access control is rendered from and nothing else the service does depends on them.
 - `NamespaceGrant` (`service/access`) is what a user holds in a namespace: the label route, the limited-read route and
   the reporter route, each with what may be read on it and the resources it reaches. `NamespaceGrantResolver` decides it from the namespace
   configuration and one snapshot of the access mapper; `AccessControlService` fetches those, enforces the decision and
