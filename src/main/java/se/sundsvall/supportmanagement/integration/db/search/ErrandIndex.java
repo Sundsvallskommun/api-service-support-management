@@ -69,6 +69,14 @@ public final class ErrandIndex {
 	 * no more name it than it may name the labels themselves.
 	 */
 	public static final String ACCESS_LABEL_COUNT = "accessLabelCount";
+
+	/**
+	 * The field a search looks in when the route answering it leaves no field of the errand open - a role seeing the
+	 * status alone, say, which is searched by name and not by word. Declared by {@link NoOpenFieldBinder} and written on
+	 * no errand ever, so a word without a field finds nothing here while the fielded terms, the disjunctions and the
+	 * negations of the query still compose.
+	 */
+	public static final String NO_OPEN_FIELD = "noOpenField";
 	public static final String EXTERNAL_TAG_VALUE = EXTERNAL_TAGS + ".value";
 	public static final String STAKEHOLDER_EXTERNAL_ID = STAKEHOLDERS + ".externalId";
 
