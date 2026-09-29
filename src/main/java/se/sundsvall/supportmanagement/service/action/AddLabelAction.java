@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.service.ErrandLabelService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
@@ -27,10 +28,12 @@ public class AddLabelAction extends AbstractAction {
 	private static final Set<OperationType> VALID_OPERATION_TYPES = Set.of(OperationType.CREATE, OperationType.UPDATE);
 
 	private final ErrandsRepository errandsRepository;
+	private final ErrandLabelService errandLabelService;
 
-	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository, final Clock clock) {
+	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository, final ErrandLabelService errandLabelService, final Clock clock) {
 		super(metadataService, clock);
 		this.errandsRepository = errandsRepository;
+		this.errandLabelService = errandLabelService;
 	}
 
 	@Override
@@ -99,6 +102,12 @@ public class AddLabelAction extends AbstractAction {
 			.toList();
 
 		errand.getLabels().addAll(newLabels);
+
+		// Access labels must be settled from the full label set whenever it changes, not only on the update path
+		// (ErrandService#persistLabelUpdate) - otherwise a label an action adds here is invisible to accessLabels-driven
+		// reads (and to the label-move restow, which rebuilds an errand's labels from its accessLabels alone) even
+		// though it is present in labels.
+		errandLabelService.settleAccessLabels(errand);
 
 		errandsRepository.save(errand);
 	}

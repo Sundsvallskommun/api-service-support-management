@@ -295,10 +295,10 @@ public class ErrandService {
 	/**
 	 * Restows a batch of errands - each one's label set rebuilt from its access labels (leaves) outward - in a
 	 * transaction of its own, separate from whatever transaction (if any) the caller is running in. Used by the
-	 * label-move runner, which calls this once per page rather than once per errand, and must not join or be joined by
-	 * the caller's transaction: the runner is not itself transactional, and the interactive PATCH path that also calls
-	 * {@link #persistLabelUpdate} must keep its label write inside its own single transaction rather than being pulled
-	 * into a separate one.
+	 * label-move runner, which calls this once per errand rather than once per page - each errand's own optimistic-lock
+	 * retry needs a transaction boundary of its own - and must not join or be joined by the caller's transaction: the
+	 * runner is not itself transactional, and the interactive PATCH path that also calls {@link #persistLabelUpdate}
+	 * must keep its label write inside its own single transaction rather than being pulled into a separate one.
 	 * <p>
 	 * The rebuild is driven entirely by {@code resourcePath} lookups ({@link ErrandLabelService#settleAccessLabels}),
 	 * never by walking an entity's own lazy associations - the errands handed in were read by the runner in a
@@ -319,8 +319,16 @@ public class ErrandService {
 			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
 			.toList();
 
+		// Held from before the write, so they can be put back afterward - a restow must leave no trace on either, but
+		// persistLabelUpdate's saveAndFlush runs through the same @PreUpdate as any other save and stamps both with
+		// now() regardless of what actually changed.
+		final var modified = errand.getModified();
+		final var touched = errand.getTouched();
+
 		errand.setLabels(leafLabels);
 		persistLabelUpdate(errand);
+
+		repository.restoreModifiedAndTouched(errand.getId(), modified, touched);
 	}
 
 	/**

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
@@ -21,9 +20,15 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * Carries out label moves accepted by {@link MetadataService#startLabelMove}.
  * <p>
  * A move re-parents one label, refreshes {@code resourcePath} for its whole subtree, and then walks every errand that
- * references the moved label (or any of its descendants — captured for free since an errand's stored label set already
- * carries the full ancestor chain) restowing its label set page by page. Never throws: whatever goes wrong ends the job
- * as failed, since the thread this runs on has nobody to report to.
+ * references the moved label or any of its descendants - {@link MetadataService#startLabelMove} collects the moved
+ * label together with its whole descendant set and resolves the affected errand ids from that combined set before
+ * this ever runs, rather than this runner discovering descendants on its own - restowing its label set page by page.
+ * Never throws: whatever goes wrong ends the job as failed, since the thread this runs on has nobody to report to.
+ * <p>
+ * A run interrupted after the re-parent committed but before every errand was restowed is resumed simply by starting
+ * the same move again: {@link MetadataService#revalidateAndReparent} treats a label already at {@code newParentId} as
+ * a no-op re-parent rather than an error, and restowing is idempotent per errand, so a second run over the same
+ * (frozen) errand-id set costs some repeated work but never gets anything wrong.
  */
 @Component
 public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
@@ -32,15 +37,13 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 
 	private static final String ABORTED_MESSAGE = "Label move aborted: %s";
 	private static final String ENDED_WITHOUT_RESULT = "Label move ended without reaching a result of its own";
-	private static final String SUMMARY = "Label %s moved under %s, %d errand(s) restowed";
-	private static final String AUDIT_MESSAGE = "Label %s moved under %s by %s, %d errand(s) restowed";
-	private static final String LABEL_GONE = "Label %s no longer exists";
-	private static final String NEW_PARENT_GONE = "New parent %s no longer exists";
+	private static final String SUMMARY = "Label %s moved under %s, %d of %d errand(s) restowed";
+	private static final String AUDIT_MESSAGE = "Label %s moved under %s by %s, %d of %d errand(s) restowed";
 	private static final int MAX_BATCH_ATTEMPTS = 3;
 
 	private final ErrandsRepository errandsRepository;
-	private final MetadataLabelRepository metadataLabelRepository;
 	private final ErrandService errandService;
+	private final MetadataService metadataService;
 	private final JobService jobService;
 	private final EventService eventService;
 	private final int batchSize;
@@ -48,15 +51,15 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 
 	LabelMoveRunner(
 		final ErrandsRepository errandsRepository,
-		final MetadataLabelRepository metadataLabelRepository,
 		final ErrandService errandService,
+		final MetadataService metadataService,
 		final JobService jobService,
 		final EventService eventService,
 		final LabelMoveProperties properties) {
 		super(jobService);
 		this.errandsRepository = errandsRepository;
-		this.metadataLabelRepository = metadataLabelRepository;
 		this.errandService = errandService;
+		this.metadataService = metadataService;
 		this.jobService = jobService;
 		this.eventService = eventService;
 		this.batchSize = properties.batchSize();
@@ -91,34 +94,33 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 	}
 
 	private void move(final LabelMoveRun run) {
-		final var labelToMove = metadataLabelRepository.findById(run.labelId())
-			.orElseThrow(() -> new IllegalStateException(LABEL_GONE.formatted(run.labelId())));
-		final var newParent = run.newParentId() != null
-			? metadataLabelRepository.findById(run.newParentId()).orElseThrow(() -> new IllegalStateException(NEW_PARENT_GONE.formatted(run.newParentId())))
-			: null;
+		// Re-validated and re-parented together, inside its own transaction, immediately before this write rather than
+		// trusting the validation the request thread ran when the move was accepted - see the method's own doc for why,
+		// and for why a label already at newParentId (a resumed run) is not rejected here as a no-op.
+		metadataService.revalidateAndReparent(run.namespace(), run.municipalityId(), run.labelId(), run.newParentId());
 
-		labelToMove.setParent(newParent);
-		metadataLabelRepository.saveAndFlush(labelToMove);
-		// The @PreUpdate cascade on labelToMove (onUpdate -> updateChildrenPathsRecursively) recomputes resourcePath for
-		// the moved node and, recursively, for every descendant reachable through its metadataLabels collection, all
-		// within this single saveAndFlush's own session - the whole subtree is already correct and persisted by the
-		// time this call returns. A second pass re-querying by the old resourcePath prefix would find nothing (the
-		// cascade above already moved every descendant off it), and refreshing whatever it did find by walking a lazy
-		// getParent() chain would run on entities already detached from that query's own, separate transaction.
-
-		final var restowed = restowErrands(run);
+		final var result = restowErrands(run);
+		final var total = run.errandIds().size();
 
 		// Checked once more here, in addition to restowErrands' own per-page check, since a stop landing on the very
 		// last page would otherwise fall through to the audit event and complete() below - both of which must not fire
 		// for a run whose lease has since been reclaimed and handed to a second one.
 		if (isStopped(run)) {
-			LOG.info("Label move {} stopped after restowing {} errand(s)", run.jobId(), restowed);
+			LOG.info("Label move {} stopped after restowing {} of {} errand(s) ({} failed)", run.jobId(), result.succeeded(), total, result.failed());
 			return;
 		}
 
-		eventService.createLabelMoveEvent(run.municipalityId(), run.labelId(), run.startedBy(), AUDIT_MESSAGE.formatted(run.labelId(), run.newParentId(), run.startedBy(), restowed));
+		if (result.failed() > 0) {
+			// Not a job failure: the errands that could not be restowed are simply left out of this run's own count.
+			// Starting the same move again restows every affected errand, including these, since restowing is idempotent
+			// per errand - see the class-level doc for the resume story this is part of.
+			LOG.warn("Label move {} left {} of {} errand(s) unrestowed after repeated optimistic-lock conflicts - starting the same move again will retry them",
+				run.jobId(), result.failed(), total);
+		}
 
-		jobService.complete(run.jobId(), SUMMARY.formatted(run.labelId(), run.newParentId(), restowed));
+		eventService.createLabelMoveEvent(run.municipalityId(), run.labelId(), run.startedBy(), AUDIT_MESSAGE.formatted(run.labelId(), run.newParentId(), run.startedBy(), result.succeeded(), total));
+
+		jobService.complete(run.jobId(), SUMMARY.formatted(run.labelId(), run.newParentId(), result.succeeded(), total));
 	}
 
 	/**
@@ -139,16 +141,19 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 	 * restowing pages nobody is waiting on any more while a second run - the one the reclaimed lease was handed to -
 	 * restows the very same errands.
 	 */
-	private int restowErrands(final LabelMoveRun run) {
+	private RestowResult restowErrands(final LabelMoveRun run) {
 		var ids = run.errandIds();
 		var processed = 0;
+		var failed = 0;
 		var lastReport = System.nanoTime();
 
 		for (var start = 0; start < ids.size(); start += batchSize) {
 			var pageIds = ids.subList(start, Math.min(start + batchSize, ids.size()));
 
 			for (var errand : errandsRepository.findAllById(pageIds)) {
-				persistWithRetry(run, errand);
+				if (!persistWithRetry(run, errand)) {
+					failed++;
+				}
 				processed++;
 
 				if (System.nanoTime() - lastReport >= progressIntervalNanos) {
@@ -161,12 +166,20 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 			lastReport = System.nanoTime();
 
 			if (isStopped(run)) {
-				LOG.info("Label move {} stopped after restowing {} errand(s)", run.jobId(), processed);
-				return processed;
+				LOG.info("Label move {} stopped after restowing {} errand(s) ({} failed)", run.jobId(), processed, failed);
+				return new RestowResult(processed - failed, failed);
 			}
 		}
 
-		return processed;
+		return new RestowResult(processed - failed, failed);
+	}
+
+	/**
+	 * How a restow walk ended: how many errands were successfully restowed, and how many were left as they were after
+	 * exhausting their retries against a concurrent edit - see {@link #persistWithRetry} for why the latter does not
+	 * fail the run outright.
+	 */
+	private record RestowResult(int succeeded, int failed) {
 	}
 
 	/**
@@ -186,8 +199,16 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 	 * the same way again, so each retry re-reads rather than reusing it. An errand that has disappeared by the time of
 	 * a retry (purged, most likely) needs no restow at all - it is simply left out rather than treated as a failure of
 	 * this one errand.
+	 * <p>
+	 * An errand that keeps losing the race past {@link #MAX_BATCH_ATTEMPTS} is logged and left as it was, rather than
+	 * thrown - one stubborn errand must not fail the whole run and strand every other errand in the same job at
+	 * whatever state it had already reached. It is picked up by a later resume of the same move, restowing being
+	 * idempotent per errand.
+	 *
+	 * @return {@code true} if the errand ended up restowed (including one that had already disappeared by the time of
+	 *         a retry), {@code false} if it kept losing the optimistic-lock race until the retries ran out.
 	 */
-	private void persistWithRetry(final LabelMoveRun run, final ErrandEntity firstRead) {
+	private boolean persistWithRetry(final LabelMoveRun run, final ErrandEntity firstRead) {
 		var errand = firstRead;
 		var attempt = 0;
 
@@ -195,15 +216,18 @@ public class LabelMoveRunner extends JobRunner<LabelMoveRun> {
 			attempt++;
 			try {
 				errandService.persistLabelMigrationBatch(List.of(errand));
-				return;
+				return true;
 			} catch (final ObjectOptimisticLockingFailureException e) {
 				if (attempt == MAX_BATCH_ATTEMPTS) {
-					throw e;
+					LOG.error("Label move {} could not restow errand {} after {} attempts and left it for a later run: {}",
+						run.jobId(), sanitizeForLogging(errand.getId()), MAX_BATCH_ATTEMPTS, e.getMessage());
+					return false;
 				}
 				LOG.warn("Label move {} retrying errand {} after a concurrent edit lost the optimistic-lock race (attempt {}/{})",
 					run.jobId(), sanitizeForLogging(errand.getId()), attempt, MAX_BATCH_ATTEMPTS);
 				errand = errandsRepository.findAllById(List.of(errand.getId())).stream().findFirst().orElse(null);
 			}
 		}
+		return true;
 	}
 }

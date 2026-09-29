@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -64,5 +65,15 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	List<ErrandEntity> findAllById(Iterable<String> ids);
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
+
+	/**
+	 * Puts {@code modified} and {@code touched} back to what they were before a label-move restow - a direct write
+	 * rather than another {@code save}, since going through the entity again would only have {@code @PreUpdate} stamp
+	 * both with {@code now()} a second time. A restow is driven by a label-tree change, not anything the errand's own
+	 * occupant did, and must not reset the purge clock ({@code touched}) or reorder "recently modified" listings.
+	 */
+	@Modifying
+	@Query("update ErrandEntity e set e.modified = :modified, e.touched = :touched where e.id = :id")
+	void restoreModifiedAndTouched(@Param("id") String id, @Param("modified") OffsetDateTime modified, @Param("touched") OffsetDateTime touched);
 
 }

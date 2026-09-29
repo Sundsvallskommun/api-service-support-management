@@ -160,8 +160,8 @@ class JobServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a run which cannot be given a thread ends the job it was given, rather than leaving it waiting for work that never comes")
-	void launch_dispatchRejected_failsJobAndRethrowsAsProblem() {
+	@DisplayName("Verification that a run which cannot be given a thread ends the job it was given and rethrows the rejection itself, rather than either leaving the job waiting for work that never comes or masking the rejection behind a generic 500 - ExceptionHandlerConfig routes on this exact exception type to answer 503 with a Retry-After header")
+	void launch_dispatchRejected_failsJobAndRethrowsTaskRejectedException() {
 		final var created = JobEntity.create().withId(JOB_ID);
 		final AsyncTaskExecutor executor = _ -> {
 			throw new TaskRejectedException("No thread available");
@@ -171,9 +171,8 @@ class JobServiceTest {
 
 		assertThatThrownBy(() -> jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
 			jobId -> jobId, jobId -> {}, "Could not be started: %s"))
-			.isInstanceOf(ThrowableProblem.class)
-			.satisfies(e -> assertThat(((ThrowableProblem) e).getStatus().value()).isEqualTo(500))
-			.hasMessageContaining("Could not be started: No thread available");
+			.isInstanceOf(TaskRejectedException.class)
+			.hasMessageContaining("No thread available");
 
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
 		verify(jobRepositoryMock).save(captor.capture());
@@ -216,6 +215,18 @@ class JobServiceTest {
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
 		verify(jobRepositoryMock).save(captor.capture());
 		assertThat(captor.getValue().getStatus()).isEqualTo(RUNNING);
+	}
+
+	@Test
+	@DisplayName("Verification that a job already stopped - by a caller's own stop() landing while the run was still PENDING, before the executor thread ever reached setRunning - is not woken back into RUNNING")
+	void setRunning_jobAlreadyStopped_isLeftAlone() {
+		final var entity = jobEntity(STOPPED);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.setRunning(JOB_ID);
+
+		assertThat(entity.getStatus()).isEqualTo(STOPPED);
+		verify(jobRepositoryMock, never()).save(any());
 	}
 
 	@Test

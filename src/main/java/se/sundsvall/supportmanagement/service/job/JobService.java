@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -130,6 +131,15 @@ public class JobService {
 
 		try {
 			executor.execute(() -> runner.accept(toRun.apply(jobId)));
+		} catch (final TaskRejectedException e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			self.fail(jobId, couldNotStartMessage.formatted(e.getMessage()));
+
+			// Left unwrapped, rather than turned into a Problem the way every other failure below is: a pool that has no
+			// thread free right now is answered as 503 with a Retry-After header by ExceptionHandlerConfig, which routes
+			// on this exact exception type - a caller told to try again shortly is a clearer answer than the generic 500
+			// a ThrowableProblem carrying INTERNAL_SERVER_ERROR would give the very same condition.
+			throw e;
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
 			self.fail(jobId, couldNotStartMessage.formatted(e.getMessage()));
@@ -140,11 +150,19 @@ public class JobService {
 		return self.get(spec.namespace(), spec.municipalityId(), jobId);
 	}
 
+	/**
+	 * Guarded the same way {@link #complete(String)} and {@link #fail} are, and for the same reason: a job {@link #stop}
+	 * reached while it was still {@code PENDING} - between {@link #launch} creating the row and the executor thread
+	 * actually picking the run up - must stay stopped rather than being woken back into {@code RUNNING} once this call
+	 * finally lands.
+	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	public void setRunning(final String jobId) {
 		jobRepository.findById(jobId).ifPresentOrElse(job -> {
-			job.setStatus(RUNNING);
-			jobRepository.save(job);
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				job.setStatus(RUNNING);
+				jobRepository.save(job);
+			}
 		}, () -> LOG.warn("setRunning called with unknown jobId '{}'", jobId));
 	}
 

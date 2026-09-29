@@ -539,13 +539,22 @@ public class MetadataService {
 	}
 
 	/**
-	 * The moved label plus the descendants that move with it — read once by {@link #validateAndFindLabelToMove} and
-	 * reused by both callers, so that neither {@link #moveLabel} nor {@link #startLabelMove} re-reads the descendant
-	 * tree that validation already fetched.
+	 * The moved label, the parent it is headed to (or {@code null} for the root), and the descendants that move with
+	 * it — read once by {@link #validateAndFindLabelToMove} and reused by every caller, so that none of
+	 * {@link #moveLabel}, {@link #startLabelMove} or {@link #revalidateAndReparent} re-reads what validation already
+	 * fetched.
 	 */
-	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {
+	private record LabelMoveContext(MetadataLabelEntity labelToMove, MetadataLabelEntity newParent, List<MetadataLabelEntity> descendants) {
 	}
 
+	/**
+	 * Validated as far as a fresh request can be told from a retry of one already under way: a move to the label's
+	 * <em>current</em> parent is not rejected as a no-op the way it once was. It is exactly what an interrupted run's
+	 * own resume looks like once the re-parent committed but the restow it started did not finish — the re-parent
+	 * {@link #revalidateAndReparent} performs is then a no-op in substance, and the caller goes straight on to restow
+	 * every affected errand again, which is safe since {@link ErrandService#persistLabelMigrationBatch} is idempotent
+	 * per errand. Every other validation below - cycle, path collision, path length - still applies regardless.
+	 */
 	private LabelMoveContext validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
 		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, labelId, namespace, municipalityId)));
@@ -556,7 +565,6 @@ public class MetadataService {
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, newParentId, namespace, municipalityId)));
 		}
 
-		validateNotNoOp(labelToMove, newParentId);
 		validateNoCycle(labelToMove.getId(), newParent);
 
 		var newPath = newParent != null
@@ -571,14 +579,30 @@ public class MetadataService {
 		validateNoDescendantPathCollision(namespace, municipalityId, labelToMove, newPath, descendants);
 		validateResourcePathLength(labelToMove, newPath, descendants);
 
-		return new LabelMoveContext(labelToMove, descendants);
+		return new LabelMoveContext(labelToMove, newParent, descendants);
 	}
 
-	private static void validateNotNoOp(final MetadataLabelEntity labelToMove, final String newParentId) {
-		var currentParentId = labelToMove.getParent() != null ? labelToMove.getParent().getId() : null;
-		if (Objects.equals(currentParentId, newParentId)) {
-			throw Problem.valueOf(BAD_REQUEST, "Label '%s' is already under the specified parent — move would be a no-op".formatted(labelToMove.getId()));
-		}
+	/**
+	 * Re-validates and re-parents the label, inside the worker's own transaction, immediately before the write - not
+	 * the validation the request thread ran when the move was accepted. A concurrent {@code PUT .../labels} (a
+	 * wholesale replace of the tree) landing between that validation and this point could otherwise turn a cycle, a
+	 * path collision, or an oversized path into an {@code IllegalStateException} or a unique-constraint violation
+	 * partway through the write, instead of the same clear, typed {@link Problem} a fresh request would have been
+	 * refused with up front.
+	 * <p>
+	 * Called by {@link se.sundsvall.supportmanagement.service.job.LabelMoveRunner}, a different package from this one
+	 * - the same reason {@link #startLabelMove} is public.
+	 */
+	@Transactional
+	public void revalidateAndReparent(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, newParentId);
+
+		context.labelToMove().setParent(context.newParent());
+		metadataLabelRepository.saveAndFlush(context.labelToMove());
+		// The @PreUpdate cascade on labelToMove (onUpdate -> updateChildrenPathsRecursively) recomputes resourcePath for
+		// the moved node and, recursively, for every descendant reachable through its metadataLabels collection, all
+		// within this single saveAndFlush's own session - the whole subtree is already correct and persisted by the
+		// time this call returns.
 	}
 
 	/**
