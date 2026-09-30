@@ -653,7 +653,6 @@
     ) engine=InnoDB;
 
     create table notification_dispatch (
-        email_only bit(1) not null default 0,
         created datetime(3) not null,
         municipality_id varchar(8) not null,
         namespace varchar(32) not null,

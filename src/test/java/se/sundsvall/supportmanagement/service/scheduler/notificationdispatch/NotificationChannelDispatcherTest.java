@@ -107,53 +107,6 @@ class NotificationChannelDispatcherTest {
 	}
 
 	@Test
-	void sendInternalChannelLeavesOutEmailOnlyEvents() {
-
-		// Arrange
-		final var subscriber = subscriberWith(NotificationChannelType.INTERNAL);
-		final var regular = NotificationDispatchEntity.create().withId("regular").withEventType("UPDATE");
-		final var emailOnly = NotificationDispatchEntity.create().withId("email-only").withEventType("CREATE").withEmailOnly(true);
-
-		// Act
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(regular, emailOnly));
-
-		// Assert
-		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(regular));
-		verifyNoInteractions(subscriberEmailServiceMock);
-	}
-
-	@Test
-	void sendInternalChannelWithOnlyEmailOnlyEventsCreatesNothing() {
-
-		// Arrange
-		final var subscriber = subscriberWith(NotificationChannelType.INTERNAL);
-		final var emailOnly = NotificationDispatchEntity.create().withId("email-only").withEventType("CREATE").withEmailOnly(true);
-
-		// Act
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(emailOnly));
-
-		// Assert
-		verifyNoInteractions(subscriberNotificationServiceMock, subscriberEmailServiceMock);
-	}
-
-	@Test
-	void sendEmailChannelKeepsEmailOnlyEvents() {
-
-		// Arrange
-		final var subscriber = subscriberWith(NotificationChannelType.EMAIL, "test@example.com");
-		final var events = List.of(
-			NotificationDispatchEntity.create().withId("regular").withEventType("UPDATE"),
-			NotificationDispatchEntity.create().withId("email-only").withEventType("CREATE").withEmailOnly(true));
-
-		// Act
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, events);
-
-		// Assert
-		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, subscriber, events);
-		verifyNoInteractions(subscriberNotificationServiceMock);
-	}
-
-	@Test
 	void sendDeliversOncePerChannelType() {
 
 		// Arrange — two channels of each type must not notify the subscriber twice
