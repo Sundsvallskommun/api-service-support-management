@@ -128,6 +128,7 @@ class ErrandsResource {
 		final HttpServletRequest request) {
 
 		ErrandFilters.verifyFilterable(request);
+		ErrandFilters.verifySortable(pageable);
 		return ok(service.findErrands(namespace, municipalityId, filter, pageable));
 	}
 
