@@ -553,6 +553,38 @@ class ErrandsCreateResourceFailureTest {
 		verifyNoInteractions(errandServiceMock);
 	}
 
+	/**
+	 * A value longer than its 3000 character column is refused with 400, on the errand as on its stakeholders.
+	 */
+	@Test
+	void createErrandWithTooLongParameterValue() {
+		final var tooLong = "x".repeat(3001);
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null)
+				.withParameters(List.of(Parameter.create().withKey("key").withValues(List.of(tooLong))))
+				.withStakeholders(List.of(Stakeholder.create().withParameters(List.of(Parameter.create().withKey("key").withValues(List.of(tooLong)))))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].values[0]", "size must be between 0 and 3000"),
+				tuple("stakeholders[0].parameters[0].values[0]", "size must be between 0 and 3000"));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
 	@Test
 	void createErrandWithInvalidStakeholderRole() {
 		// Call

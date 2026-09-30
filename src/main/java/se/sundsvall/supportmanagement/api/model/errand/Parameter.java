@@ -1,7 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
@@ -12,12 +12,15 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 @Schema(description = "Parameter model")
 public class Parameter {
 
-	@Schema(description = "Parameter key", maxLength = 255)
-	@NotBlank
+	@Schema(description = "Parameter key", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
+	@NotBlank(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
 	@Size(max = 255, groups = {
 		Default.class, OnCreate.class, OnUpdate.class
 	})
@@ -35,9 +38,11 @@ public class Parameter {
 	})
 	private String group;
 
-	@Schema(description = "Parameter values. Each value can have a maximum length of 3000 characters")
-	@Valid
-	private List<@Size(max = 3000) String> values;
+	@ArraySchema(schema = @Schema(maxLength = 3000),
+		arraySchema = @Schema(description = "Parameter values. Each value can have a maximum length of 3000 characters"))
+	private List<@Size(max = 3000, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) String> values;
 
 	@Schema(description = "Optimistic locking version of the parameter", accessMode = READ_ONLY)
 	@Null(groups = {

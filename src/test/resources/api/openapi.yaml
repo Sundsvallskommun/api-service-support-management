@@ -21887,7 +21887,6 @@ components:
           items:
             type: string
             maxLength: 3000
-            minLength: 0
         version:
           type: integer
           format: int64
