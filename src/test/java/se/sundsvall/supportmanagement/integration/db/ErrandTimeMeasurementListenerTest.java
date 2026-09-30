@@ -4,10 +4,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,8 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code ErrandListener#onUpdate} lifecycle callback adds to the unidirectional {@code @OneToMany @JoinColumn}
  * collection is inserted with its errand_id set.
  */
-@SpringBootTest
-@ActiveProfiles("junit")
+@ApplicationTest
 @Sql(scripts = {
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"

@@ -9,13 +9,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -38,8 +37,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
  *
  * @see <a href="file:src/test/resources/db/testdata.sql">src/test/resources/db/testdata.sql</a> for data setup.
  */
-@SpringBootTest // Needs to be a SpringBootTest as turkraft components are used in test
-@ActiveProfiles("junit")
+@ApplicationTest // Needs the application, as turkraft components are used in test
 @Sql(scripts = {
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"

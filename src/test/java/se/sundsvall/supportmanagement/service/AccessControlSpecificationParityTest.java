@@ -10,12 +10,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -47,8 +46,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
  * Every combination is put to both, the reported level is held against each of the three required levels, and the two
  * are required to agree.
  */
-@SpringBootTest
-@ActiveProfiles("junit")
+@ApplicationTest
 @Sql(scripts = {
 	"/db/scripts/truncate.sql"
 }, executionPhase = BEFORE_TEST_CLASS)
