@@ -34,6 +34,8 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 class ErrandSearchAccessTest {
 
 	private static final Set<MetadataLabelEntity> LABELS = Set.of(MetadataLabelEntity.create().withId("label"));
+	/** The labels of a limited read, which are a superset of those of a read */
+	private static final Set<MetadataLabelEntity> WIDER_LABELS = Set.of(MetadataLabelEntity.create().withId("label"), MetadataLabelEntity.create().withId("other"));
 	private static final Sort UNSORTED = Sort.unsorted();
 	private static final Set<ProtectedResource> EVERY_RESOURCE = Set.of(ProtectedResource.COMMUNICATION, ProtectedResource.DECISION, ProtectedResource.STATEMENT,
 		ProtectedResource.INVESTIGATION, ProtectedResource.MEASURE, ProtectedResource.PARAMETER, ProtectedResource.JSON_PARAMETER, ProtectedResource.ATTACHMENT);
@@ -111,6 +113,71 @@ class ErrandSearchAccessTest {
 
 	private ThrowableProblem refused(final NamespaceGrant grant, final String query, final Sort sort) {
 		return assertThrows(ThrowableProblem.class, () -> access.plan(query, sort, grant));
+	}
+
+	private ThrowableProblem refusedGroup(final NamespaceGrant grant, final String query, final ErrandField groupBy) {
+		return assertThrows(ThrowableProblem.class, () -> access.plan(query, UNSORTED, groupBy, grant));
+	}
+
+	// ==================================================================================
+	// The column a count groups by
+	// ==================================================================================
+
+	@Test
+	void groupingByAColumnEveryRouteMayReadPasses() {
+		final var readable = Map.of(ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, readable, EVERY_RESOURCE), null, null);
+
+		assertThat(access.plan("title:x", UNSORTED, ErrandField.STATUS, grant).clauses()).hasSize(1);
+	}
+
+	@Test
+	void groupingIsNotHeldAgainstAnUnrestrictedGrant() {
+		assertThat(access.plan("", UNSORTED, ErrandField.STATUS, NamespaceGrant.UNRESTRICTED).clauses()).hasSize(1);
+	}
+
+	/**
+	 * Grouping reads the column of every errand counted, so a route that may not read it may not be counted by it.
+	 */
+	@Test
+	void groupingByAColumnTheRolesKeepFromTheUserIsRefused() {
+		final var readable = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, readable, EVERY_RESOURCE), null, null);
+
+		assertThat(refusedGroup(grant, "title:x", ErrandField.STATUS).getDetail())
+			.isEqualTo("Field 'status' not groupable by user 'joe01doe'");
+	}
+
+	/**
+	 * One route answering the query while another may not read the column is refused whole: buckets adding up to less
+	 * than the count printed beside them are a difference nothing on the endpoint could explain.
+	 */
+	@Test
+	void groupingIsRefusedWhenOneAnsweringRouteMayNotReadTheColumn() {
+		final var full = Map.of(ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var limited = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, full, EVERY_RESOURCE), new LabelRoute(WIDER_LABELS, limited, EVERY_RESOURCE), null);
+
+		// Both routes answer a query on the title
+		assertThat(access.plan("title:x", UNSORTED, null, grant).clauses()).hasSize(2);
+
+		assertThat(refusedGroup(grant, "title:x", ErrandField.STATUS).getDetail())
+			.isEqualTo("Field 'status' not groupable by user 'joe01doe'");
+	}
+
+	/**
+	 * A route already left out of the plan is not asked: it contributes no errand, so it can hide nothing.
+	 */
+	@Test
+	void aRouteThatCannotAnswerTheQueryDoesNotRefuseTheGroup() {
+		final var full = Map.of(ErrandField.DESCRIPTION, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var limited = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, full, EVERY_RESOURCE), new LabelRoute(WIDER_LABELS, limited, EVERY_RESOURCE), null);
+
+		// Only the full route can answer a query on the description, and it may read the status
+		final var plan = access.plan("description:x", UNSORTED, ErrandField.STATUS, grant);
+
+		assertThat(plan.clauses()).hasSize(1);
 	}
 
 	@Test

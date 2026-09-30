@@ -109,11 +109,11 @@ class SearchableFieldsTest {
 	void aSortIsHeldToTheFieldTheOrderedPropertyBelongsTo() {
 		final var fields = SearchableFields.of(EVERY_RESOURCE, Map.of(ErrandField.TITLE, Set.of()));
 
-		assertThat(fields.sortRefusal(ErrandField.TITLE)).isEmpty();
-		assertThat(fields.sortRefusal(ErrandField.CREATED)).contains("Field 'created'");
+		assertThat(fields.wholeFieldRefusal(ErrandField.TITLE)).isEmpty();
+		assertThat(fields.wholeFieldRefusal(ErrandField.CREATED)).contains("Field 'created'");
 		// The properties category and type belong to the classification, which is what a sort on them says something about
-		assertThat(fields.sortRefusal(ErrandField.CLASSIFICATION)).contains("Field 'classification'");
-		assertThat(SearchableFields.of(EVERY_RESOURCE, null).sortRefusal(ErrandField.CREATED)).isEmpty();
+		assertThat(fields.wholeFieldRefusal(ErrandField.CLASSIFICATION)).contains("Field 'classification'");
+		assertThat(SearchableFields.of(EVERY_RESOURCE, null).wholeFieldRefusal(ErrandField.CREATED)).isEmpty();
 	}
 
 	@Test

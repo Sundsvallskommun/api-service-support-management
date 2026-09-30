@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.1"
+  version: "17.0"
 servers:
-- url: http://localhost:39627
+- url: http://localhost:35391
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -15869,13 +15869,145 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/search/count:
+    get:
+      tags:
+      - Errand search
+      summary: Count matching errands
+      description: "Counts the errands a query matches, without answering with the\
+        \ errands themselves. The query is the one the search takes, read and refused\
+        \ by the same rules. Optionally divides the count over one column of the errand\
+        \ with groupBy, which accepts: status, resolution, channel, priority, category,\
+        \ type, reporterUserId, assignedUserId, assignedGroupId. Labels, parameters\
+        \ and JSON parameters cannot be grouped by, since an errand may carry several\
+        \ of each and the buckets would add up to more than the count. The values\
+        \ come back in the casing the metadata of the namespace gives them, and a\
+        \ column holding more values than are answered with says so with truncated.\
+        \ The count is what the index answers, and unlike the search it is not held\
+        \ against the database afterwards, so while the index is behind it the number\
+        \ can be off by an errand or two. A rebuild puts the two back in step. Sorting\
+        \ and paging have no meaning here and are ignored."
+      operationId: countErrands
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: query
+        in: query
+        description: |-
+          A [Lucene query string](https://opensearch.org/docs/latest/query-dsl/full-text/query-string/), searched in an index of the errands and everything attached to them. Blank matches every errand. Words are required unless the query says otherwise, and matching ignores case; text fields are also stemmed for Swedish.
+
+          | Syntax | Meaning |
+          |---|---|
+          | `vatten läcka` | both words, in any of the text fields |
+          | `vatten OR läcka`, `vatten AND NOT läcka`, `-läcka` | boolean operators, upper case |
+          | `"vatten läcka"`, `"vatten läcka"~2` | exact phrase, phrase allowing 2 words in between |
+          | `status:new`, `stakeholders.lastName:berg` | a value in a specific field |
+          | `title:(vatten OR gas)` | several terms against one field |
+          | `jsonParameters.vehicle.regNo:abc123`, `jsonParameters.vehicle.regNo.raw:abc123` | a JSON parameter by key and path, as words or as the exact value |
+          | `berg*`, `b?rg`, `*ander*` | wildcards in a value |
+          | `jsonParameters.\*.regNo:abc123`, `\*.probability:3` | a wildcard in a field name, escaped, standing for any part of the path |
+          | `bergh~1` | fuzzy, at most one edit away |
+          | `created:[2025-01-01 TO 2025-12-31]`, `created:>=2025-06-01`, `created:{* TO now-7d}` | ranges, with date math |
+          | `_exists_:assignedUserId` | the field has a value |
+          | `title:vatten^3 description:vatten` | boost a clause |
+
+          A bare word is a search term, it is only a field name when followed by a colon. The characters `+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /` are part of the syntax and are escaped with a backslash when meant literally.
+
+          Fields of the errand: `errandNumber`, `title`, `description`, `contactReasonDescription`, `contactReason.reason`, `status`, `category`, `type`, `resolution`, `channel`, `priority`, `reporterUserId`, `assignedUserId`, `assignedGroupId`, `escalationEmail`, `businessRelated`, `created`, `modified`, `touched`, `suspendedFrom`, `suspendedTo`, `externalTags.key`, `externalTags.value`, `labels.metadataLabelId`, `attachments.fileName`, `attachments.mimeType`.
+          Of its stakeholders: `stakeholders.externalId`, `stakeholders.externalIdType`, `stakeholders.role`, `stakeholders.firstName`, `stakeholders.lastName`, `stakeholders.organizationName`, `stakeholders.address`, `stakeholders.careOf`, `stakeholders.zipCode`, `stakeholders.city`, `stakeholders.country`, `stakeholders.contactChannels.type`, `stakeholders.contactChannels.value`, `stakeholders.parameters.key`, `stakeholders.parameters.values`.
+          Of its parameters: `parameters.key`, `parameters.displayName`, `parameters.parameterGroup`, `parameters.values`, `jsonParameters.<key>.<path>` for every scalar in a JSON parameter (`.raw` appended for the exact value).
+          Of its phases: `phases.phase.name`, `phases.phase.displayName`, `phases.started`, `phases.ended`.
+          Of its measures, decisions, statements and investigations, under `measures.`, `decisions.`, `statements.` and `investigations.`: `type`, `status`, `title`, `description`, `dueAt`, `completedAt`, `createdBy`, `modifiedBy`, `created`, their own properties by the names of the API model, and `jsonParameters.<key>.<path>`.
+          Of its communications: `communications.subject`, `communications.messageBody`, `communications.sender`, `communications.direction`, `communications.type`, `communications.sent`.
+
+          A search without a field looks in the text of all of the above.
+
+          Where a namespace enforces access control, what the user may not read they may not search either: the fields of a resource their labels do not reach (communications, decisions, statements, investigations, measures, parameters, JSON parameters, attachments), the fields of the errand itself their roles keep from them, and the keys of parameters and JSON parameters their roles do not grant. A resource is reached whole or not at all: roles restrict the fields of the errand, not the fields of what hangs off it, so a role keeping the description of an errand from a user leaves the body of its communications searchable to them. Such fields are left out of a search without a field, and a query naming one of them, or sorting on one, is refused with 403, as is a wildcard in a field name.
+
+          An errand is searched by what the user may read of it, which differs with how they hold it: an errand their labels cover is searched by everything their roles allow, one they cover at limited read only by what the namespace exposes for a limited read, and one they reported by its reporter fields. A query naming a field of one of these and not of another is answered from the errands where it may be read, without a refusal; it is refused only when no errand of the user can answer it.
+
+          A query is at most 2000 characters, and a search that has not answered within ten seconds is given up on: a wildcard open at both ends, a regular expression or a fuzzy term over many fields can ask for more than the index can do.
+        required: false
+        schema:
+          type: string
+          maxLength: 2000
+          minLength: 0
+        example: vattenläcka status:new stakeholders.lastName:berg
+      - name: groupBy
+        in: query
+        description: A column to divide the count over
+        required: false
+        schema:
+          type: string
+        example: status
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchCountResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: The query or the column names something the user may not read
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "503":
+          description: Search not available
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "504":
+          description: The count took too long and was given up on
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/errands/count:
     get:
       tags:
       - Errands
       summary: Count errands
       description: Counts errands based on the provided filters
-      operationId: countErrands
+      operationId: countErrands_1
       parameters:
       - name: namespace
         in: path
@@ -16838,6 +16970,8 @@ components:
           type: boolean
         number:
           type: boolean
+        pojo:
+          type: boolean
         floatingPointNumber:
           type: boolean
         short:
@@ -16878,8 +17012,6 @@ components:
         string:
           type: boolean
         integralNumber:
-          type: boolean
-        pojo:
           type: boolean
         embeddedValue:
           type: boolean
@@ -20469,8 +20601,6 @@ components:
         offset:
           type: integer
           format: int64
-        sort:
-          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -20479,6 +20609,8 @@ components:
         pageSize:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
     SortObject:
@@ -21472,6 +21604,51 @@ components:
           - RW
           examples:
           - R
+    CountBucket:
+      type: object
+      description: "One value of the column grouped by, and how many errands carry\
+        \ it"
+      properties:
+        value:
+          type: string
+          description: The value
+          example: NEW
+        count:
+          type: integer
+          format: int64
+          description: How many of the matching errands carry it
+          example: 91
+    CountGroup:
+      type: object
+      description: How a count divides over one column of the errand
+      properties:
+        property:
+          type: string
+          description: The property grouped by
+          example: status
+        truncated:
+          type: boolean
+          description: True when the column holds more distinct values than the buckets
+            returned
+          example: false
+        buckets:
+          type: array
+          description: "The values and their counts, the largest first"
+          items:
+            $ref: "#/components/schemas/CountBucket"
+    SearchCountResponse:
+      type: object
+      description: "How many errands a search matches, and optionally how that number\
+        \ divides over one column"
+      properties:
+        count:
+          type: integer
+          format: int64
+          description: Number of matching errands
+          example: 137
+        group:
+          $ref: "#/components/schemas/CountGroup"
+          description: "The breakdown, absent unless a grouping was asked for"
     CountResponse:
       type: object
       properties:

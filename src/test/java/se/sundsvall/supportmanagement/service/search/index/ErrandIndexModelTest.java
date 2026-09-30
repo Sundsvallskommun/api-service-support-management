@@ -33,9 +33,14 @@ class ErrandIndexModelTest {
 	private IndexDescriptor descriptorMock;
 
 	private static IndexFieldDescriptor valueField(final String path, final String analyzer, final boolean sortable, final Class<?> dslClass) {
+		return valueField(path, analyzer, sortable, sortable, dslClass);
+	}
+
+	private static IndexFieldDescriptor valueField(final String path, final String analyzer, final boolean sortable, final boolean aggregable, final Class<?> dslClass) {
 		final var type = mock(IndexValueFieldTypeDescriptor.class);
 		lenient().when(type.analyzerName()).thenReturn(Optional.ofNullable(analyzer));
 		lenient().when(type.sortable()).thenReturn(sortable);
+		lenient().when(type.aggregable()).thenReturn(aggregable);
 		lenient().doReturn(dslClass).when(type).dslArgumentClass();
 		final var field = mock(IndexValueFieldDescriptor.class);
 		lenient().when(field.isValueField()).thenReturn(true);
@@ -128,6 +133,32 @@ class ErrandIndexModelTest {
 		new ErrandIndexModel(descriptorMock, availability);
 
 		assertThat(availability.unusable()).isEmpty();
+	}
+
+	/**
+	 * A column a count groups by has to be aggregable, and the annotation granting that sits a long way from the binding
+	 * naming it, so the two are held together when the service starts.
+	 */
+	@Test
+	void aGroupOnAFieldTheIndexCannotAggregateSwitchesSearchOff() {
+		final var status = valueField("status", null, true, false, String.class);
+		when(descriptorMock.field(anyString())).thenAnswer(invocation -> Optional.of("status".equals(invocation.getArgument(0)) ? status : anyOther(invocation.getArgument(0))));
+		final var availability = availability();
+
+		new ErrandIndexModel(descriptorMock, availability);
+
+		assertThat(availability.unusable()).hasValueSatisfying(reason -> assertThat(reason)
+			.contains("'status' declared as a group on field STATUS cannot be aggregated"));
+	}
+
+	@Test
+	void theGroupablePropertiesAreTheSingleValuedColumns() {
+		assertThat(ErrandIndexModel.groupableProperties()).containsExactly(
+			"assignedGroupId", "assignedUserId", "category", "channel", "priority", "reporterUserId", "resolution", "status", "type");
+		assertThat(ErrandIndexModel.groupField("status")).contains("status");
+		assertThat(ErrandIndexModel.groupField("category")).contains("category");
+		assertThat(ErrandIndexModel.groupField("title")).isEmpty();
+		assertThat(ErrandIndexModel.groupField("labels")).isEmpty();
 	}
 
 	@Test

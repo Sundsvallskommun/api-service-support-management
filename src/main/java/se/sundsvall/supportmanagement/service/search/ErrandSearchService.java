@@ -3,7 +3,9 @@ package se.sundsvall.supportmanagement.service.search;
 import com.google.gson.JsonObject;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
+import java.util.Map;
 import org.hibernate.search.backend.elasticsearch.ElasticsearchExtension;
+import org.hibernate.search.engine.search.aggregation.AggregationKey;
 import org.hibernate.search.engine.search.query.SearchResult;
 import org.hibernate.search.engine.search.sort.dsl.SearchSortFactory;
 import org.hibernate.search.engine.search.sort.dsl.SortFinalStep;
@@ -19,8 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.SearchCountResponse;
 import se.sundsvall.supportmanagement.config.SearchProperties;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
@@ -28,6 +32,7 @@ import se.sundsvall.supportmanagement.service.search.index.SearchAvailability;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 
@@ -41,6 +46,7 @@ public class ErrandSearchService {
 	private static final String SCORE = "_score";
 
 	static final String UNSUPPORTED_SORT = "Sorting on '%s' is not supported by search. Sortable properties are: %s";
+	static final String UNSUPPORTED_GROUP = "Grouping on '%s' is not supported by search. Groupable properties are: %s";
 	static final String BEYOND_RESULT_WINDOW = "Page %d of size %d reaches beyond the %d results a search can page through. Narrow the search instead";
 
 	private final EntityManager entityManager;
@@ -49,9 +55,11 @@ public class ErrandSearchService {
 	private final ErrandSearchPredicates predicates;
 	private final SearchAvailability availability;
 	private final SearchProperties properties;
+	private final CountGroupMapper countGroups;
 
 	public ErrandSearchService(final EntityManager entityManager, final AccessControlService accessControlService, final ErrandSearchAccess searchAccess,
-		final ErrandSearchPredicates predicates, final SearchAvailability availability, final SearchProperties properties) {
+		final ErrandSearchPredicates predicates, final SearchAvailability availability, final SearchProperties properties, final CountGroupMapper countGroups) {
+		this.countGroups = countGroups;
 		this.entityManager = entityManager;
 		this.accessControlService = accessControlService;
 		this.searchAccess = searchAccess;
@@ -106,6 +114,62 @@ public class ErrandSearchService {
 
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, user);
 		return new PageImpl<>(toErrandsWithAccessControl(hits, fieldResolver), pageable, result.total().hitCount());
+	}
+
+	/**
+	 * Counts the errands of a namespace a query matches, optionally divided over one column of the errand.
+	 * <p>
+	 * The same query, the same grant and the same routes as {@link #search}, with no errands loaded and no page mapped,
+	 * which is what makes it cheap. The count is what the index answers, and unlike the search it is not held against the
+	 * database afterwards: a count cannot check errands it never loads. So while the index is behind the database the
+	 * number can be off by the errands whose labels changed in between - a number, never the content of anything - and
+	 * the nightly rebuild settles it.
+	 *
+	 * @param  groupBy                                        the property to divide the count over, null or blank for
+	 *                                                        none
+	 * @throws org.springframework.web.ErrorResponseException 400 when the property cannot be grouped by, 403 when the
+	 *                                                        query or the column is beyond what the user may read
+	 */
+	@Transactional(readOnly = true)
+	public SearchCountResponse count(final String namespace, final String municipalityId, final String query, final String groupBy) {
+		availability.verifyEnabled();
+
+		final var grouped = isBlank(groupBy) ? null : verifyGroupable(groupBy);
+		final var user = Identifier.get();
+		final var grant = accessControlService.namespaceGrant(namespace, municipalityId, user, R);
+		final var plan = searchAccess.plan(query, Sort.unsorted(), grouped, grant);
+
+		final var search = Search.session(entityManager).search(ErrandEntity.class)
+			.where(f -> f.bool()
+				.filter(predicates.tenant(f, namespace, municipalityId))
+				.must(predicates.clauses(f, plan.clauses(), query, namespace, municipalityId)));
+
+		try {
+			if (grouped == null) {
+				// Nothing is fetched at all here: the index answers with a number and the database is never asked
+				return SearchCountResponse.of(search.failAfter(properties.timeout().toMillis(), MILLISECONDS).fetchTotalHitCount());
+			}
+
+			// One more bucket than is answered with, which is what tells a truncated breakdown from a whole one
+			final var key = AggregationKey.<Map<String, Long>>of("group");
+			final var result = search
+				.aggregation(key, f -> f.terms()
+					.field(ErrandIndexModel.groupField(groupBy).orElseThrow(), String.class)
+					.orderByCountDescending()
+					.maxTermCount(properties.maxGroupBuckets() + 1))
+				.failAfter(properties.timeout().toMillis(), MILLISECONDS)
+				.fetch(0);
+
+			return new SearchCountResponse(result.total().hitCount(), countGroups.toGroup(groupBy, result.aggregation(key), namespace, municipalityId, properties.maxGroupBuckets()));
+		} catch (final SearchException e) {
+			throw SearchProblems.toProblem(e, properties.timeout());
+		}
+	}
+
+	/** The field of the errand a groupable property belongs to, which is what the grant is asked about. */
+	private static ErrandField verifyGroupable(final String property) {
+		return ErrandIndexModel.groupedField(property)
+			.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, UNSUPPORTED_GROUP.formatted(property, ErrandIndexModel.groupableProperties())));
 	}
 
 	/**

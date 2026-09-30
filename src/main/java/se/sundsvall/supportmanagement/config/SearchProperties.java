@@ -15,6 +15,9 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param timeout         how long a single search may run before the cluster gives up on it. A query string may ask
  *                        for work the index cannot do cheaply - a wildcard open at both ends, a regular expression, a
  *                        fuzzy term - and one client asking for it must not take the cluster away from everyone else.
+ * @param maxGroupBuckets how many values a grouped count answers with at most. A column such as the assigned user has
+ *                        no bounded set of values, and a client asking for a breakdown of it is better served with the
+ *                        largest buckets and a word that there were more than with every value the index holds.
  * @param reindex         settings for the mass indexer.
  */
 @ConfigurationProperties(prefix = "search")
@@ -23,6 +26,8 @@ public record SearchProperties(
 	@DefaultValue("10000") int maxResultWindow,
 
 	@DefaultValue("PT10S") Duration timeout,
+
+	@DefaultValue("100") int maxGroupBuckets,
 
 	@DefaultValue Reindex reindex) {
 
