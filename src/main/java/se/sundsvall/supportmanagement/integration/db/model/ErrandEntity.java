@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.search.engine.backend.types.Aggregable;
 import org.hibernate.search.engine.backend.types.Sortable;
 import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.PropertyBinderRef;
@@ -147,19 +148,19 @@ public class ErrandEntity {
 	private String title;
 
 	@Column(name = "category")
-	@KeywordField(name = ErrandIndex.CATEGORY, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.CATEGORY, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String category;
 
 	@Column(name = "type", length = 128)
-	@KeywordField(name = ErrandIndex.TYPE, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.TYPE, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String type;
 
 	@Column(name = "status", length = 64)
-	@KeywordField(name = ErrandIndex.STATUS, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.STATUS, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String status;
 
 	@Column(name = "resolution")
-	@KeywordField(name = ErrandIndex.RESOLUTION, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.RESOLUTION, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String resolution;
 
 	@Column(name = "description", length = LONG32)
@@ -167,23 +168,23 @@ public class ErrandEntity {
 	private String description;
 
 	@Column(name = "channel")
-	@KeywordField(name = ErrandIndex.CHANNEL, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.CHANNEL, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String channel;
 
 	@Column(name = "priority")
-	@KeywordField(name = ErrandIndex.PRIORITY, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.PRIORITY, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String priority;
 
 	@Column(name = "reporter_user_id")
-	@KeywordField(name = ErrandIndex.REPORTER_USER_ID, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.REPORTER_USER_ID, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String reporterUserId;
 
 	@Column(name = "assigned_user_id")
-	@KeywordField(name = ErrandIndex.ASSIGNED_USER_ID, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.ASSIGNED_USER_ID, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String assignedUserId;
 
 	@Column(name = "assigned_group_id")
-	@KeywordField(name = ErrandIndex.ASSIGNED_GROUP_ID, normalizer = LOWERCASE, sortable = Sortable.YES)
+	@KeywordField(name = ErrandIndex.ASSIGNED_GROUP_ID, normalizer = LOWERCASE, sortable = Sortable.YES, aggregable = Aggregable.YES)
 	private String assignedGroupId;
 
 	@Column(name = "escalation_email")

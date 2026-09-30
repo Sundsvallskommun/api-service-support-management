@@ -23,6 +23,7 @@ import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.SearchCountResponse;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
 import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
@@ -115,6 +116,9 @@ class ErrandSearchResource {
 		wildcard open at both ends, a regular expression or a fuzzy term over many fields can ask for more than the \
 		index can do.""";
 
+	static final String GROUPABLE_DESCRIPTION = "status, resolution, channel, priority, category, type, reporterUserId, assignedUserId, assignedGroupId. " +
+		"Labels, parameters and JSON parameters cannot be grouped by, since an errand may carry several of each and the buckets would add up to more than the count.";
+
 	static final String SORT_DESCRIPTION = "Without a sort the best matches come first, newest first among equals. Sortable properties: " +
 		"created, modified, touched, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +
 		"reporterUserId, assignedUserId, assignedGroupId.";
@@ -150,6 +154,39 @@ class ErrandSearchResource {
 		@ParameterObject final Pageable pageable) {
 
 		return ok(searchService.search(namespace, municipalityId, query, pageable));
+	}
+
+	@GetMapping(path = "/count", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Count matching errands",
+		description = "Counts the errands a query matches, without answering with the errands themselves. The query is the one the search takes, read and refused by the same rules."
+			+ " Optionally divides the count over one column of the errand with groupBy, which accepts: " + GROUPABLE_DESCRIPTION
+			+ " The values come back in the casing the metadata of the namespace gives them, and a column holding more values than are answered with says so with truncated."
+			+ " The count is what the index answers, and unlike the search it is not held against the database afterwards, so while the index is behind it the number can be off by an errand or two. A rebuild puts the two back in step."
+			+ " Sorting and paging have no meaning here and are ignored.",
+		responses = {
+			@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+				Problem.class, ConstraintViolationProblem.class
+			}))),
+			@ApiResponse(responseCode = "403",
+				description = "The query or the column names something the user may not read",
+				content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+					schema = @Schema(implementation = Problem.class))),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+			@ApiResponse(responseCode = "503", description = "Search not available", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+			@ApiResponse(responseCode = "504",
+				description = "The count took too long and was given up on",
+				content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+					schema = @Schema(implementation = Problem.class)))
+		})
+	ResponseEntity<SearchCountResponse> countErrands(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "query", description = QUERY_DESCRIPTION, example = "vattenläcka status:new stakeholders.lastName:berg") @Size(max = QUERY_MAX_LENGTH,
+			message = QUERY_TOO_LONG) @RequestParam(required = false) final String query,
+		@Parameter(name = "groupBy", description = "A column to divide the count over", example = "status") @RequestParam(required = false) final String groupBy) {
+
+		return ok(searchService.count(namespace, municipalityId, query, groupBy));
 	}
 
 	@PostMapping(path = "/reindex", produces = ALL_VALUE)

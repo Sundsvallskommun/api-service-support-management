@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.service.access.AccessScope;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
@@ -43,6 +44,7 @@ public class ErrandSearchAccess {
 
 	static final String NOT_SEARCHABLE = "%s not searchable by user '%s'";
 	static final String NOT_SORTABLE = "%s not sortable by user '%s'";
+	static final String NOT_GROUPABLE = "%s not groupable by user '%s'";
 	static final String WILDCARD_NOT_SEARCHABLE = "A wildcard in a field name is not available to user '%s', who may not search every field of the errand";
 	static final String NOT_READ = "The query holds a field reference that could not be read, which user '%s' may not have searched unchecked";
 
@@ -76,6 +78,18 @@ public class ErrandSearchAccess {
 	 * @throws org.springframework.web.ErrorResponseException 403 when no route of the grant can answer the query
 	 */
 	public Plan plan(final String query, final Sort sort, final NamespaceGrant grant) {
+		return plan(query, sort, null, grant);
+	}
+
+	/**
+	 * Holds the query, the sort and the column a count groups by to the grant, and settles what the search runs with.
+	 *
+	 * @param  groupBy                                        the field of the errand a count groups by, null when it
+	 *                                                        counts without grouping
+	 * @throws org.springframework.web.ErrorResponseException 403 when no route of the grant can answer the query, or
+	 *                                                        when a route that can may not read the group column
+	 */
+	public Plan plan(final String query, final Sort sort, final ErrandField groupBy, final NamespaceGrant grant) {
 		if (!grant.enforced()) {
 			return new Plan(List.of(new Clause(grant.scope(), null, index.textFields())));
 		}
@@ -84,9 +98,11 @@ public class ErrandSearchAccess {
 		final var scan = QueryScanner.scan(query);
 		final var routes = routesOf(grant);
 		final var clauses = new ArrayList<Clause>();
+		final var answering = new ArrayList<Route>();
 
 		for (final var route : routes) {
 			if (refusal(scan, sort, route.fields()).isEmpty()) {
+				answering.add(route);
 				clauses.add(new Clause(route.scope(), route.excluded(), route.fields().openFields(index.textFields())));
 			}
 		}
@@ -100,7 +116,31 @@ public class ErrandSearchAccess {
 				.orElseGet(() -> Problem.valueOf(FORBIDDEN, NOT_SEARCHABLE.formatted("The errands of this namespace are", getCallerIdentity())));
 		}
 
+		verifyGroupable(groupBy, answering);
 		return new Plan(List.copyOf(clauses));
+	}
+
+	/**
+	 * Holds the group column to every route that answers the query.
+	 * <p>
+	 * Grouping a count by a column reads that column of every errand counted, so a route that may not read it may not be
+	 * counted by it. A route already left out of the plan is not asked: it contributes no errand, so it can hide nothing.
+	 * <p>
+	 * Refused whole rather than counted over the routes that may, because the alternative answers with buckets adding up
+	 * to less than the count printed beside them, and nothing on the endpoint could explain the difference.
+	 */
+	private static void verifyGroupable(final ErrandField groupBy, final List<Route> answering) {
+		if (isNull(groupBy)) {
+			return;
+		}
+
+		final var refused = answering.stream()
+			.map(route -> route.fields().wholeFieldRefusal(groupBy))
+			.flatMap(Optional::stream)
+			.findFirst();
+		if (refused.isPresent()) {
+			throw Problem.valueOf(FORBIDDEN, NOT_GROUPABLE.formatted(refused.get(), getCallerIdentity()));
+		}
 	}
 
 	/**
@@ -148,7 +188,7 @@ public class ErrandSearchAccess {
 		for (final var order : sort) {
 			final var refused = Stream.of(ErrandField.values())
 				.filter(field -> field.getSortField(order.getProperty()).isPresent())
-				.map(fields::sortRefusal)
+				.map(fields::wholeFieldRefusal)
 				.flatMap(Optional::stream)
 				.findFirst();
 			if (refused.isPresent()) {
