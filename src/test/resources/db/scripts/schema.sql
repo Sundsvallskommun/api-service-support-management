@@ -260,6 +260,22 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table decision_parameter (
+        decision_id varchar(255) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        parameter_group varchar(255),
+        parameters_key varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table decision_parameter_values (
+        value_order integer default 0 not null check ((value_order>=0)),
+        value varchar(3000),
+        decision_parameter_id varchar(255) not null,
+        primary key (value_order, decision_parameter_id)
+    ) engine=InnoDB;
+
     create table decision_term (
         sort_order integer,
         category varchar(128),
@@ -1108,6 +1124,9 @@
     alter table if exists decision_outcome 
        add constraint uq_decision_outcome_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
+    create index idx_decision_parameter_decision_id 
+       on decision_parameter (decision_id);
+
     create index idx_decision_term_decision_id 
        on decision_term (decision_id);
 
@@ -1613,6 +1632,18 @@
        add constraint fk_decision_json_parameter_decision_id 
        foreign key (decision_id) 
        references decision (id) 
+       on delete cascade;
+
+    alter table if exists decision_parameter 
+       add constraint fk_decision_parameter_decision_id 
+       foreign key (decision_id) 
+       references decision (id) 
+       on delete cascade;
+
+    alter table if exists decision_parameter_values 
+       add constraint fk_decision_parameter_values_decision_parameter_id 
+       foreign key (decision_parameter_id) 
+       references decision_parameter (id) 
        on delete cascade;
 
     alter table if exists decision_term 

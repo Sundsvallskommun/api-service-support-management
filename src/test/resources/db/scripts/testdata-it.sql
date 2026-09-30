@@ -780,6 +780,15 @@ INSERT INTO decision_term(id, decision_id, sort_order, category, text)
 VALUES ('f5000000-0000-0000-0000-000000000001', 'f4000000-0000-0000-0000-000000000001', 1, 'serveringstid', 'Servering får ske mellan 11.00 och 01.00.'),
        ('f5000000-0000-0000-0000-000000000002', 'f4000000-0000-0000-0000-000000000001', 2, 'brandskydd', 'Högst 120 gäster får vistas i lokalen samtidigt.');
 
+INSERT INTO decision_parameter(id, decision_id, parameters_key, display_name, parameter_group)
+VALUES ('f7000000-0000-0000-0000-000000000001', 'f4000000-0000-0000-0000-000000000001', 'servingArea', 'Serveringsyta', 'lokal'),
+       ('f7000000-0000-0000-0000-000000000002', 'f4000000-0000-0000-0000-000000000001', 'maxGuests', null, null);
+
+INSERT INTO decision_parameter_values(decision_parameter_id, value_order, value)
+VALUES ('f7000000-0000-0000-0000-000000000001', 0, 'inomhus'),
+       ('f7000000-0000-0000-0000-000000000001', 1, 'uteservering'),
+       ('f7000000-0000-0000-0000-000000000002', 0, '120');
+
 -- -----------------------------------
 -- Attachment links
 -- -----------------------------------

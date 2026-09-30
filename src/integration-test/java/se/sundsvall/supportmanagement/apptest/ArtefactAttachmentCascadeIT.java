@@ -141,7 +141,7 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Case 5 - the errand is removed. Everything goes: all four artefacts with their sections and terms, their links and
+	 * Case 5 - the errand is removed. Everything goes: all four artefacts with their sections, terms and parameters, their links and
 	 * the attachments.
 	 */
 	@Test
@@ -149,6 +149,7 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 
 		assertThat(artefactCounts()).allSatisfy((table, count) -> assertThat(count).as(table).isOne());
 		assertThat(linkCounts()).allSatisfy((table, count) -> assertThat(count).as(table).isOne());
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter_values", Integer.class)).isEqualTo(3);
 
 		setupCall()
 			.withServicePath(ERRAND_PATH)
@@ -161,6 +162,10 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 			.as("the sections went with the investigation").isZero();
 		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_term where decision_id = ?", Integer.class, DECISION_ID))
 			.as("the terms went with the decision").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter where decision_id = ?", Integer.class, DECISION_ID))
+			.as("the parameters went with the decision").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter_values", Integer.class))
+			.as("and so did their values").isZero();
 		assertThat(linkCounts()).as("the links went").allSatisfy((table, count) -> assertThat(count).as(table).isZero());
 		assertThat(attachments()).as("the attachments went").isZero();
 	}

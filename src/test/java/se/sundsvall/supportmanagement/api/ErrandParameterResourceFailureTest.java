@@ -65,6 +65,33 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
+	void updateErrandParametersWithTooLongFields() {
+		final var tooLong = "x".repeat(256);
+		final var requestBody = List.of(Parameter.create().withKey(tooLong).withDisplayName(tooLong).withGroup(tooLong));
+
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("updateErrandParameters.errandParameters[0].key", "size must be between 0 and 255"),
+				tuple("updateErrandParameters.errandParameters[0].displayName", "size must be between 0 and 255"),
+				tuple("updateErrandParameters.errandParameters[0].group", "size must be between 0 and 255"));
+
+		verifyNoInteractions(errandParameterServiceMock);
+	}
+
+	@Test
 	void updateErrandParametersInvalidMunicipalityId() {
 
 		final var requestBody = List.of(Parameter.create().withKey("key").withValues(List.of("value")));

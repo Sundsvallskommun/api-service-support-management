@@ -518,6 +518,41 @@ class ErrandsCreateResourceFailureTest {
 		verifyNoInteractions(errandServiceMock);
 	}
 
+	/**
+	 * Key, display name and group longer than their 255 character columns are refused with 400, on the errand as on its
+	 * stakeholders.
+	 */
+	@Test
+	void createErrandWithTooLongParameterFields() {
+		final var tooLong = "x".repeat(256);
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null)
+				.withParameters(List.of(Parameter.create().withKey(tooLong).withDisplayName(tooLong).withGroup(tooLong)))
+				.withStakeholders(List.of(Stakeholder.create().withParameters(List.of(Parameter.create().withKey(tooLong))))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].key", "size must be between 0 and 255"),
+				tuple("parameters[0].displayName", "size must be between 0 and 255"),
+				tuple("parameters[0].group", "size must be between 0 and 255"),
+				tuple("stakeholders[0].parameters[0].key", "size must be between 0 and 255"));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
 	@Test
 	void createErrandWithInvalidStakeholderRole() {
 		// Call

@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.Default;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
@@ -15,14 +16,23 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Parameter model")
 public class Parameter {
 
-	@Schema(description = "Parameter key")
+	@Schema(description = "Parameter key", maxLength = 255)
 	@NotBlank
+	@Size(max = 255, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
 	private String key;
 
-	@Schema(description = "Parameter display name")
+	@Schema(description = "Parameter display name", maxLength = 255)
+	@Size(max = 255, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
 	private String displayName;
 
-	@Schema(description = "Parameter group name")
+	@Schema(description = "Parameter group name", maxLength = 255)
+	@Size(max = 255, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
 	private String group;
 
 	@Schema(description = "Parameter values. Each value can have a maximum length of 3000 characters")

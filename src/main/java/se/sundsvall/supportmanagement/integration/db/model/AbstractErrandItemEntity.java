@@ -123,6 +123,14 @@ public abstract class AbstractErrandItemEntity<T extends AbstractErrandItemEntit
 
 	@PreUpdate
 	void onUpdate() {
+		markModified();
+	}
+
+	/**
+	 * Marks the item as modified now. This makes it dirty, so the next flush updates its row and moves its version even
+	 * when the change lies in rows of its own, such as those of a collection it holds.
+	 */
+	public void markModified() {
 		modified = now(systemDefault()).truncatedTo(MILLIS);
 	}
 

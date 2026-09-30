@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
@@ -378,6 +379,38 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("updateErrand.errand.channel", "size must be between 0 and 255"));
+	}
+
+	/**
+	 * Key, display name and group longer than their 255 character columns are refused with 400.
+	 */
+	@Test
+	void updateErrandWithTooLongParameterFields() {
+		final var tooLong = "x".repeat(256);
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create()
+				.withParameters(List.of(Parameter.create().withKey(tooLong).withDisplayName(tooLong).withGroup(tooLong))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].key", "size must be between 0 and 255"),
+				tuple("parameters[0].displayName", "size must be between 0 and 255"),
+				tuple("parameters[0].group", "size must be between 0 and 255"));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
 	}
 
 	@Test

@@ -10,6 +10,7 @@
 	"justification": "Sökanden bedöms lämplig efter samlad prövning av vandel och ekonomi",
 	"terms": [],
 	"attachments": [],
+	"parameters": [],
 	"createdBy": "joe01doe",
 	"created": "${json-unit.any-string}",
 	"version": 0
