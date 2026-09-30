@@ -196,6 +196,34 @@ class ErrandReindexServiceTest {
 		verify(lockMock).unlock();
 	}
 
+	/**
+	 * The namespace is indexed lowercased, as the database compares it, and this term goes to OpenSearch without passing
+	 * the query DSL: purging one casing while the documents carry another left them behind for the rebuild to duplicate.
+	 */
+	@Test
+	void reindexNamespacePurgesWhateverCasingItWasAskedFor() throws IOException {
+		when(lockProviderMock.lock(any())).thenReturn(Optional.of(lockMock));
+		purgeAnswers();
+		when(massIndexerMock.type(ErrandEntity.class)).thenReturn(filteringTypeStepMock);
+		when(filteringTypeStepMock.reindexOnly("e.namespace = :namespace and e.municipalityId = :municipalityId")).thenReturn(reindexParameterStepMock);
+		when(reindexParameterStepMock.param("namespace", "My_Namespace")).thenReturn(reindexParameterStepMock);
+		when(reindexParameterStepMock.param("municipalityId", MUNICIPALITY_ID)).thenReturn(reindexParameterStepMock);
+		when(massIndexerMock.purgeAllOnStart(false)).thenReturn(massIndexerMock);
+		when(massIndexerMock.start()).thenAnswer(_ -> new CompletableFuture<Void>());
+
+		try (final MockedStatic<Search> search = mockStatic(Search.class)) {
+			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenReturn(searchMappingMock);
+			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
+			when(searchScopeMock.massIndexer()).thenReturn(massIndexerMock);
+
+			service(true).reindex("My_Namespace", MUNICIPALITY_ID);
+		}
+
+		final var request = ArgumentCaptor.forClass(Request.class);
+		verify(restClientMock).performRequest(request.capture());
+		assertThat(EntityUtils.toString(request.getValue().getEntity())).contains("\"namespace\": \"my_namespace\"");
+	}
+
 	@Test
 	void reindexNamespaceReleasesTheLockWhenThePurgeFails() throws IOException {
 		when(lockProviderMock.lock(any())).thenReturn(Optional.of(lockMock));

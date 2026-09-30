@@ -276,6 +276,11 @@ ends, a regular expression, a fuzzy term over many fields - and one client askin
 cluster away from everyone else. The syntax stays as it is, since searching by a word with anything on either side of it
 is what the endpoint is for.
 
+One index holds every municipality and namespace, and a search is filtered on the same two fields the database filters
+on. The namespace is indexed lowercased, because the database compares it under a case insensitive collation: matching it
+case sensitively answered nothing for a namespace whose errands the listing found by another casing, and left the
+documents of one casing behind when a rebuild purged another.
+
 The index is written over from the database every night at 01:00, a namespace at a time, so that what indexing missed
 does not stay missed - `scheduler.search-reindex`, guarded by the same lock as the rebuild endpoint, so one instance
 does it and a manual rebuild and the nightly one never overlap. Nothing is rebuilt when the service starts: a deploy
