@@ -17,7 +17,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
-import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
@@ -27,9 +26,6 @@ import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
-import static generated.se.sundsvall.eventlog.EventType.CREATE;
-import static java.time.OffsetDateTime.now;
-import static java.time.ZoneId.systemDefault;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -42,6 +38,7 @@ import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.t
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.shouldNotify;
 
 @Service
 public class EventService {
@@ -52,16 +49,14 @@ public class EventService {
 	private final NotificationService notificationService;
 	private final ApplicationEventPublisher eventPublisher;
 	private final NotificationDispatchRepository notificationDispatchRepository;
-	private final SubscriptionRepository subscriptionRepository;
 	private final AccessControlService accessControlService;
 
 	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository,
-		final SubscriptionRepository subscriptionRepository, final AccessControlService accessControlService) {
+		final AccessControlService accessControlService) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
 		this.eventPublisher = eventPublisher;
 		this.notificationDispatchRepository = notificationDispatchRepository;
-		this.subscriptionRepository = subscriptionRepository;
 		this.accessControlService = accessControlService;
 	}
 
@@ -82,10 +77,12 @@ public class EventService {
 
 		if (sendNotification) {
 			createNotification(errandEntity, event);
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), false);
-		} else if (eventType == CREATE && subscriptionRepository.existsActiveNamespaceSubscriptionWithEmailChannel(
-			errandEntity.getMunicipalityId(), errandEntity.getNamespace(), now(systemDefault()))) {
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), true);
+		}
+
+		// Which subscribers hear of the event is up to their subscriptions. A request that asked to notify no one reaches none
+		// of them, on any channel
+		if (shouldNotify()) {
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
 		}
 	}
 
@@ -106,7 +103,9 @@ public class EventService {
 		}
 		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		createNotification(errandEntity, event);
-		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue(), false);
+		if (shouldNotify()) {
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue());
+		}
 	}
 
 	public Page<Event> readEvents(final String namespace, final String municipalityId, final String id, final Pageable pageable) {
@@ -124,8 +123,7 @@ public class EventService {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
 
-	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType,
-		final boolean emailOnly) {
+	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType) {
 		final var executingUser = getExecutingUser();
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
 			.withEventId(eventId)
@@ -136,8 +134,7 @@ public class EventService {
 			.withEventType(eventType.getValue())
 			.withDescription(description)
 			.withSubType(subType)
-			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null))
-			.withEmailOnly(emailOnly));
+			.withExecutingUserId(Optional.ofNullable(executingUser).map(u -> u.getValue()).orElse(null)));
 	}
 
 	private String extractEventId(final ResponseEntity<Void> response) {

@@ -11177,15 +11177,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: X-Silent
-        in: header
-        description: "When set to true the update notifies no one: neither the assigned\
-          \ user nor any subscriber, on any channel. The update is still recorded\
-          \ in the event log"
-        required: false
-        schema:
-          type: boolean
-          default: false
       - name: X-Request-Group-Id
         in: header
         description: "Optional UUID that groups related events and notifications for\

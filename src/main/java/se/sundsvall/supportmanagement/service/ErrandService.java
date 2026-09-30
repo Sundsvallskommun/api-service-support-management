@@ -160,7 +160,7 @@ public class ErrandService {
 	}
 
 	@Transactional
-	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final String ifMatch, final boolean silent, final Errand errand) {
+	public Errand updateErrand(final String namespace, final String municipalityId, final String id, final String ifMatch, final Errand errand) {
 		final var errandEntityToUpdate = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
 		// Verified and resolved before the errand is touched, so that patching it does not flush mid transaction, and so
@@ -189,7 +189,7 @@ public class ErrandService {
 
 		final var entity = repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
-		logUpdateEvent(entity, revisionService.createErrandRevision(entity), !silent);
+		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
 		return toErrandWithAccessControl(entity, keyAccess.readable());
 	}
@@ -341,13 +341,13 @@ public class ErrandService {
 	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final boolean sendNotification) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), sendNotification, ERRAND);
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}

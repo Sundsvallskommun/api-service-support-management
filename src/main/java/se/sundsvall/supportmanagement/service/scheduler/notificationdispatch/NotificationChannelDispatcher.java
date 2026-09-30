@@ -36,19 +36,10 @@ public class NotificationChannelDispatcher {
 			.distinct()
 			.forEach(type -> {
 				switch (type) {
-					case INTERNAL -> createInternalNotification(errandId, errandNumber, subscriber, events);
+					case INTERNAL -> subscriberNotificationService.create(errandId, errandNumber, subscriber, events);
 					case EMAIL -> subscriberEmailService.enqueue(errandId, errandNumber, subscriber, events);
 					case SMS -> LOG.warn("Channel type: {} is not yet implemented, skipping delivery for errand: {} subscriber: {}", type, errandId, subscriber.getId());
 				}
 			});
-	}
-
-	private void createInternalNotification(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final List<NotificationDispatchEntity> events) {
-		final var internalEvents = events.stream()
-			.filter(event -> !event.isEmailOnly())
-			.toList();
-		if (!internalEvents.isEmpty()) {
-			subscriberNotificationService.create(errandId, errandNumber, subscriber, internalEvents);
-		}
 	}
 }
