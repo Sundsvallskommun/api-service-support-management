@@ -24,7 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 /**
  * External id type Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataExternalIdTypeIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataExternalIdTypeIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

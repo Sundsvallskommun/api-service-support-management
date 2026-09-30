@@ -17,7 +17,7 @@ import se.sundsvall.supportmanagement.Application;
 import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
 
-@WireMockAppTestSuite(files = "classpath:/SubscriberNotificationIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/SubscriberNotificationIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

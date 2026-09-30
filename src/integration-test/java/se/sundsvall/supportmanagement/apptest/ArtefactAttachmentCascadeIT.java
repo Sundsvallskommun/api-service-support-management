@@ -33,7 +33,7 @@ import se.sundsvall.supportmanagement.Application;
  * Every removal case verifies <b>both</b> halves of its requirement - that the right row went, and that the right row
  * stayed. The rows are counted with SQL, in the database.
  */
-@WireMockAppTestSuite(files = "classpath:/ArtefactAttachmentCascadeIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ArtefactAttachmentCascadeIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

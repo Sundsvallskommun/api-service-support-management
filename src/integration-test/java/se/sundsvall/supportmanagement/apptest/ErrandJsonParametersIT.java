@@ -23,7 +23,7 @@ import se.sundsvall.supportmanagement.Application;
 /**
  * ErrandJsonParameters IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandJsonParametersIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ErrandJsonParametersIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

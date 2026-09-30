@@ -34,7 +34,7 @@ import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 /**
  * ErrandAttachments IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandAttachmentsIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ErrandAttachmentsIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

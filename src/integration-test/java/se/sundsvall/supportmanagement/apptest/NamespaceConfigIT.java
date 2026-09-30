@@ -28,7 +28,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 
-@WireMockAppTestSuite(files = "classpath:/NamespaceConfigIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/NamespaceConfigIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

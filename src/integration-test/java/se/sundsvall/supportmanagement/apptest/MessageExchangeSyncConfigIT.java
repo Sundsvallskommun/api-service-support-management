@@ -23,7 +23,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-@WireMockAppTestSuite(files = "classpath:/MessageExchangeSyncConfigIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MessageExchangeSyncConfigIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

@@ -52,7 +52,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * the cutoff the tests use and three are not, among them the one lying exactly on it. The errands of every other
  * namespace in the shared test data - several of them older still - are to be left where they are.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandPurgeIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ErrandPurgeIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

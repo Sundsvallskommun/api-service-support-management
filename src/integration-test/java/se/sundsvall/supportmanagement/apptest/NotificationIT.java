@@ -18,7 +18,7 @@ import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 
-@WireMockAppTestSuite(files = "classpath:/NotificationIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/NotificationIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

@@ -28,7 +28,7 @@ import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository
 /**
  * AttachmentPurpose Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataAttachmentPurposeIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataAttachmentPurposeIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

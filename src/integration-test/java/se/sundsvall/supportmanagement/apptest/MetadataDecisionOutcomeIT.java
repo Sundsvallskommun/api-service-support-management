@@ -29,7 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.DecisionOutcomeRepository;
 /**
  * DecisionOutcome Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataDecisionOutcomeIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataDecisionOutcomeIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

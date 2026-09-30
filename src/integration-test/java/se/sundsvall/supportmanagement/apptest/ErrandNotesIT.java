@@ -23,7 +23,7 @@ import se.sundsvall.supportmanagement.Application;
 /**
  * ErrandNotes IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandNotesIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ErrandNotesIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

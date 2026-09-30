@@ -37,7 +37,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
  * Errand Decisions IT tests, including the terms a decision carries, the attachments linked to it, the JSON parameters
  * it owns and the parameters it carries.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandDecisionsIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ErrandDecisionsIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

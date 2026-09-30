@@ -26,7 +26,7 @@ import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE
  * A label change made by a scheduled action is refused as well, and the refusal is written on the errand, since there is
  * no caller to answer.
  */
-@WireMockAppTestSuite(files = "classpath:/ProcessKeyGuardIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ProcessKeyGuardIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

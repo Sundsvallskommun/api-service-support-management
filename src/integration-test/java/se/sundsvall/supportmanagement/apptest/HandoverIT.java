@@ -30,7 +30,7 @@ import se.sundsvall.supportmanagement.integration.db.HandoverIdempotencyReposito
 /**
  * Handover IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/HandoverIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/HandoverIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

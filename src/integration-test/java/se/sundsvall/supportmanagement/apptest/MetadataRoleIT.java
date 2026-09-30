@@ -25,7 +25,7 @@ import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 /**
  * Role Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataRoleIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataRoleIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

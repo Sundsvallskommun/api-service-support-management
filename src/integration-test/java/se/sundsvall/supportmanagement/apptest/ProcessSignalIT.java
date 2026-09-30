@@ -39,7 +39,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.TRIGGER_PR
  * The namespace of testdata-it.sql names no process triggers at all, so every signal published here is published
  * without one. The direct run is off, so rows stay undelivered until a test delivers them.
  */
-@WireMockAppTestSuite(files = "classpath:/ProcessSignalIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ProcessSignalIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",
