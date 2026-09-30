@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Locale;
 import net.javacrumbs.shedlock.core.LockConfiguration;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.core.SimpleLock;
@@ -225,7 +226,10 @@ public class ErrandReindexService {
 		final var request = new Request("POST", "/" + openSearch.errandWriteIndex() + "/_delete_by_query");
 		request.addParameter("conflicts", "proceed");
 		request.addParameter("refresh", "true");
-		request.setJsonEntity(PURGE_QUERY.formatted(municipalityId, namespace));
+		// The namespace is indexed lowercased, and this term goes to OpenSearch without passing the query DSL, so it is
+		// lowercased here: purging 'My_Namespace' otherwise left the documents of 'MY_NAMESPACE' behind for the rebuild to
+		// duplicate
+		request.setJsonEntity(PURGE_QUERY.formatted(municipalityId, namespace.toLowerCase(Locale.ROOT)));
 
 		try {
 			openSearch.restClient().performRequest(request);

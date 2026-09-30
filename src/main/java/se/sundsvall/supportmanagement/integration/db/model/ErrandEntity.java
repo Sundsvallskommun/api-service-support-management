@@ -136,7 +136,9 @@ public class ErrandEntity {
 	private String municipalityId;
 
 	@Column(name = "namespace", nullable = false, length = 32)
-	@KeywordField(name = ErrandIndex.NAMESPACE)
+	// Lowercased because the database compares it under a case insensitive collation: an index matching it case
+	// sensitively answered nothing for a namespace the listing of the same errands found by another casing
+	@KeywordField(name = ErrandIndex.NAMESPACE, normalizer = LOWERCASE)
 	private String namespace;
 
 	@Column(name = "title")
