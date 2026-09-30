@@ -115,7 +115,7 @@ class AccessControlChokePointTest {
 		return scanner.findCandidateComponents(getClass().getPackageName()).stream()
 			.map(BeanDefinition::getBeanClassName)
 			.filter(Objects::nonNull)
-			.map(throwingFunction(Class::forName))
+			.<Class<?>>map(throwingFunction(Class::forName))
 			.filter(type -> injects(type, dependency));
 	}
 

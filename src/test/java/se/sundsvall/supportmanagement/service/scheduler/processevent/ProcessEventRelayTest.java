@@ -172,8 +172,8 @@ class ProcessEventRelayTest {
 		final var firstBatch = List.of(agedRow("row-1"), agedRow("row-2"), agedRow("row-3"));
 		final var secondBatch = List.of(agedRow("row-4"), agedRow("row-5"), agedRow("row-6"));
 		final var lastBatch = List.of(agedRow("row-7"));
-		when(outboxRepositoryMock.findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(NOW.minus(MAX_AGE), PageRequest.of(0, BATCH_SIZE))).thenReturn(firstBatch, secondBatch, lastBatch);
-		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(any())).thenReturn(firstBatch, secondBatch, lastBatch);
+		when(outboxRepositoryMock.findByDeliveredAtIsNullAndCreatedBeforeOrderByCreatedAscIdAsc(NOW.minus(MAX_AGE), PageRequest.of(0, BATCH_SIZE))).thenReturn(firstBatch).thenReturn(secondBatch).thenReturn(lastBatch);
+		when(outboxRepositoryMock.findByIdInAndDeliveredAtIsNull(any())).thenReturn(firstBatch).thenReturn(secondBatch).thenReturn(lastBatch);
 		givenWaiting();
 
 		relay.relay();

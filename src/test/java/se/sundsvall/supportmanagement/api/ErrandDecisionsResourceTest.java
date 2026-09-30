@@ -16,7 +16,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
-import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandDecisionService;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -55,9 +54,6 @@ class ErrandDecisionsResourceTest {
 
 	@Autowired
 	private ErrandDecisionService serviceMock;
-
-	@Autowired
-	private JsonSchemaClient jsonSchemaClientMock;
 
 	private static Decision validDecision() {
 		return Decision.create()

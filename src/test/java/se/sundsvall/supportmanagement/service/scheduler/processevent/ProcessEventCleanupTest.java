@@ -45,7 +45,7 @@ class ProcessEventCleanupTest {
 	void deliveredRowsAreRemovedBatchByBatch() {
 		final var first = List.of(row("row-1"), row("row-2"));
 		final var last = List.of(row("row-3"));
-		when(outboxRepositoryMock.findByDeliveredAtBefore(NOW.minus(Duration.ofDays(1)), PageRequest.of(0, BATCH_SIZE))).thenReturn(first, last);
+		when(outboxRepositoryMock.findByDeliveredAtBefore(NOW.minus(Duration.ofDays(1)), PageRequest.of(0, BATCH_SIZE))).thenReturn(first).thenReturn(last);
 
 		assertThat(cleanup(Duration.ofMinutes(10)).removeDelivered()).isEqualTo(3);
 
@@ -69,7 +69,7 @@ class ProcessEventCleanupTest {
 	void expiredActivitiesAreRemovedBatchByBatch() {
 		final var first = List.of(activity("entry-1"), activity("entry-2"));
 		final var last = List.of(activity("entry-3"));
-		when(activityRepositoryMock.findByCreatedBeforeOrderByCreatedAsc(NOW.minus(ACTIVITY_RETENTION), PageRequest.of(0, BATCH_SIZE))).thenReturn(first, last);
+		when(activityRepositoryMock.findByCreatedBeforeOrderByCreatedAsc(NOW.minus(ACTIVITY_RETENTION), PageRequest.of(0, BATCH_SIZE))).thenReturn(first).thenReturn(last);
 
 		assertThat(cleanup(Duration.ofMinutes(10)).removeExpiredActivities()).isEqualTo(3);
 

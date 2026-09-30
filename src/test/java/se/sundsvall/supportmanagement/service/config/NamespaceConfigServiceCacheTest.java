@@ -193,8 +193,8 @@ class NamespaceConfigServiceCacheTest {
 	}
 
 	private void givenProcessConfigurationChanges() {
-		when(mock.getProcessConsumer(any(), any())).thenReturn(Optional.empty(), Optional.of("pw-alkt"));
-		when(mock.getProcessTriggers(any(), any())).thenReturn(Set.of(), Set.of(ERRAND));
+		when(mock.getProcessConsumer(any(), any())).thenReturn(Optional.empty()).thenReturn(Optional.of("pw-alkt"));
+		when(mock.getProcessTriggers(any(), any())).thenReturn(Set.of()).thenReturn(Set.of(ERRAND));
 		when(mock.isSingleDecisionPerErrand(any(), any())).thenReturn(false, true);
 	}
 

@@ -6,9 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
-import se.sundsvall.supportmanagement.service.ErrandParameterService;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static java.util.UUID.randomUUID;
@@ -34,12 +32,6 @@ class ErrandJsonParameterResourceTest {
 
 	@Autowired
 	private ErrandJsonParameterService errandJsonParameterServiceMock;
-
-	@Autowired
-	private ErrandParameterService errandParameterServiceMock;
-
-	@Autowired
-	private JsonSchemaClient jsonSchemaClientMock;
 
 	@Test
 	void readJsonParameters() {

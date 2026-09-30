@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
-import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 import static java.util.UUID.randomUUID;
@@ -33,9 +32,6 @@ class ErrandParameterResourceTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@Autowired
-	private ErrandJsonParameterService errandJsonParameterServiceMock;
 
 	@Autowired
 	private ErrandParameterService errandParameterServiceMock;
