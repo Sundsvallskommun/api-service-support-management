@@ -12,7 +12,6 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandInvestigationService;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -51,9 +50,6 @@ class ErrandInvestigationsResourceTest {
 
 	@Autowired
 	private ErrandInvestigationService serviceMock;
-
-	@Autowired
-	private JsonSchemaClient jsonSchemaClientMock;
 
 	@Test
 	void createErrandInvestigation() {

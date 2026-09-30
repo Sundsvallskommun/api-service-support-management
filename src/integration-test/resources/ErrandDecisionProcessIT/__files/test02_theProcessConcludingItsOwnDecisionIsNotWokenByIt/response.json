@@ -11,6 +11,7 @@
 	"errandProcessId": "ep-it-live",
 	"terms": [],
 	"attachments": [],
+	"parameters": [],
 	"createdBy": "pw-alkt",
 	"created": "${json-unit.any-string}",
 	"version": 0

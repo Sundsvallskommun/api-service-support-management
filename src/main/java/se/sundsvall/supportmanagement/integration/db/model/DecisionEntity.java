@@ -136,6 +136,10 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@OrderBy("key")
 	private List<DecisionJsonParameterEntity> jsonParameters;
 
+	/** The parameters of the decision: unstructured metadata as keys with lists of values, held in no particular order. */
+	@OneToMany(mappedBy = "decisionEntity", cascade = ALL, orphanRemoval = true)
+	private List<DecisionParameterEntity> parameters;
+
 	public static DecisionEntity create() {
 		return new DecisionEntity();
 	}
@@ -345,6 +349,19 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 
 	public DecisionEntity withJsonParameters(final List<DecisionJsonParameterEntity> jsonParameters) {
 		this.jsonParameters = jsonParameters;
+		return this;
+	}
+
+	public List<DecisionParameterEntity> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<DecisionParameterEntity> parameters) {
+		this.parameters = parameters;
+	}
+
+	public DecisionEntity withParameters(final List<DecisionParameterEntity> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 

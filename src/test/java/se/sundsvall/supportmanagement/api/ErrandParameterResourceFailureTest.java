@@ -9,7 +9,6 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
-import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 import static java.util.UUID.randomUUID;
@@ -32,9 +31,6 @@ class ErrandParameterResourceFailureTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@Autowired
-	private ErrandJsonParameterService errandJsonParameterServiceMock;
 
 	@Autowired
 	private ErrandParameterService errandParameterServiceMock;
@@ -60,6 +56,33 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("updateErrandParameters.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		verifyNoInteractions(errandParameterServiceMock);
+	}
+
+	@Test
+	void updateErrandParametersWithTooLongFields() {
+		final var tooLong = "x".repeat(256);
+		final var requestBody = List.of(Parameter.create().withKey(tooLong).withDisplayName(tooLong).withGroup(tooLong));
+
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("updateErrandParameters.errandParameters[0].key", "size must be between 0 and 255"),
+				tuple("updateErrandParameters.errandParameters[0].displayName", "size must be between 0 and 255"),
+				tuple("updateErrandParameters.errandParameters[0].group", "size must be between 0 and 255"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}

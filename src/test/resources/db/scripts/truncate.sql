@@ -71,6 +71,8 @@ TRUNCATE table investigation;
 TRUNCATE table investigation_section;
 TRUNCATE table decision;
 TRUNCATE table decision_term;
+TRUNCATE table decision_parameter;
+TRUNCATE table decision_parameter_values;
 TRUNCATE table statement_attachment;
 TRUNCATE table investigation_attachment;
 TRUNCATE table decision_attachment;

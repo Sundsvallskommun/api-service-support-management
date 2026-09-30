@@ -43,6 +43,23 @@
 			}
 		}
 	],
+	"parameters": [
+		{
+			"key": "maxGuests",
+			"values": [
+				"120"
+			]
+		},
+		{
+			"key": "servingArea",
+			"displayName": "Serveringsyta",
+			"group": "lokal",
+			"values": [
+				"inomhus",
+				"uteservering"
+			]
+		}
+	],
 	"createdBy": "joe01doe",
 	"created": "2024-01-10T12:00:00+01:00",
 	"version": 0

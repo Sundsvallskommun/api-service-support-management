@@ -11,7 +11,6 @@ import org.springframework.web.reactive.function.BodyInserters;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
-import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 import se.sundsvall.supportmanagement.service.ErrandStatementService;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -48,9 +47,6 @@ class ErrandStatementsResourceTest {
 
 	@Autowired
 	private ErrandStatementService serviceMock;
-
-	@Autowired
-	private JsonSchemaClient jsonSchemaClientMock;
 
 	@Test
 	void createErrandStatement() {

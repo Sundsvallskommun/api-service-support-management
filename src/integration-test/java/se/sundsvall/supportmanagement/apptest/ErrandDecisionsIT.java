@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.apptest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpHeaders.ETAG;
+import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -32,8 +34,8 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 
 /**
- * Errand Decisions IT tests, including the terms a decision carries, the attachments linked to it and the JSON
- * parameters it owns.
+ * Errand Decisions IT tests, including the terms a decision carries, the attachments linked to it, the JSON parameters
+ * it owns and the parameters it carries.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandDecisionsIT/", classes = Application.class)
 @Sql({
@@ -87,6 +89,14 @@ class ErrandDecisionsIT extends AbstractAppTest {
 			.filteredOn(decision -> "PARTIAL_APPROVAL".equals(decision.getOutcome()))
 			.singleElement()
 			.satisfies(decision -> assertThat(decision.getCreatedBy()).isEqualTo("joe01doe"));
+		assertThat(jdbcTemplate.queryForList("""
+			select concat_ws('|', p.parameters_key, p.display_name, p.parameter_group, v.value) from decision_parameter p
+			join decision d on d.id = p.decision_id
+			join decision_parameter_values v on v.decision_parameter_id = p.id
+			where d.title = 'Interimistiskt beslut'
+			order by p.parameters_key, v.value_order""", String.class))
+			.as("the values sent for the same key are held under one parameter")
+			.containsExactly("area|lokal|north", "zone|Zon|A", "zone|Zon|B");
 	}
 
 	@Test
@@ -126,6 +136,7 @@ class ErrandDecisionsIT extends AbstractAppTest {
 				assertThat(decision.getJustification()).isEqualTo("Tillstånd ges för del av lokalen.");
 				assertThat(decision.getVersion()).isEqualTo(1L);
 			});
+		assertThat(parameterValues()).as("the sent parameters replaced the stored ones").containsExactly("servingArea=inomhus");
 	}
 
 	/**
@@ -235,6 +246,9 @@ class ErrandDecisionsIT extends AbstractAppTest {
 		assertThat(decisionRepository.existsById(DECISION_ID)).isFalse();
 		assertThat(terms()).as("the terms went with the decision").isZero();
 		assertThat(parametersWithKey("decisionForm")).as("and so did its parameter").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter where decision_id = ?", Integer.class, DECISION_ID))
+			.as("and its parameters").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter_values", Integer.class)).as("with their values").isZero();
 		assertThat(attachmentLinks()).as("the link went").isZero();
 		assertThat(attachments(LINKED_ATTACHMENT_ID)).as("the attachment stayed on the errand").isOne();
 		assertThat(jdbcTemplate.queryForObject("select decision_id from measure where id = ?", String.class, MEASURE_ID))
@@ -386,6 +400,124 @@ class ErrandDecisionsIT extends AbstractAppTest {
 				assertThat(decision.getMethod()).isEqualTo(DecisionMethod.AUTOMATIC);
 				assertThat(decision.getCreatedBy()).isEqualTo("e-service");
 			});
+	}
+
+	/**
+	 * A change to the parameters alone moves the version of the decision once, and the ETag it answers with is the version
+	 * it was stored with. The caller already stands as the last to modify it, so nothing but the parameters changes.
+	 */
+	@Test
+	void test24_updatingOnlyTheParametersMovesTheVersion() {
+		jdbcTemplate.update("update decision set modified_by = 'joe01doe' where id = ?", DECISION_ID);
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
+			.withServicePath(DECISION_PATH)
+			.withHttpMethod(PATCH)
+			.withHeader(IF_MATCH, "\"0\"")
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(ETAG, List.of("1"))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select version from decision where id = ?", Long.class, DECISION_ID)).isOne();
+		assertThat(parameterValues()).containsExactly("zone=A", "zone=B");
+	}
+
+	/**
+	 * Parameters that come out the same as the stored ones, in another order and with the values of a key split, leave the
+	 * decision as it stands.
+	 */
+	@Test
+	void test25_sameParametersLeaveTheDecisionAsItStands() {
+		jdbcTemplate.update("update decision set modified_by = 'joe01doe' where id = ?", DECISION_ID);
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
+			.withServicePath(DECISION_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(ETAG, List.of("0"))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForList("select id from decision_parameter where decision_id = ? order by id", String.class, DECISION_ID))
+			.as("the stored parameters were not written again")
+			.containsExactly("f7000000-0000-0000-0000-000000000001", "f7000000-0000-0000-0000-000000000002");
+	}
+
+	@Test
+	void test26_anEmptyListRemovesTheParameters() {
+		setupCall()
+			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
+			.withServicePath(DECISION_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter where decision_id = ?", Integer.class, DECISION_ID)).isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter_values", Integer.class)).as("the values went with them").isZero();
+	}
+
+	@Test
+	void test27_aParameterWithoutKeyIsRejected() {
+		setupCall()
+			.withServicePath(DECISION_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(parameterValues()).containsExactly("maxGuests=120", "servingArea=inomhus", "servingArea=uteservering");
+	}
+
+	/**
+	 * Keys the database orders differently from the service, one with a letter outside a-z and two that differ only in
+	 * case, are sent again in another order and with a padded key. The decision is left as it stands, and answers with its
+	 * parameters in the order of their keys.
+	 */
+	@Test
+	void test28_theSameParametersInAnotherOrderLeaveTheDecisionAsItStands() {
+		jdbcTemplate.update("update decision set modified_by = 'joe01doe' where id = ?", DECISION_ID);
+		jdbcTemplate.update("delete from decision_parameter where decision_id = ?", DECISION_ID);
+		jdbcTemplate.update("""
+			insert into decision_parameter(id, decision_id, parameters_key)
+			values ('f7000000-0000-0000-0000-000000000011', ?, 'zon'),
+			       ('f7000000-0000-0000-0000-000000000012', ?, 'ärende'),
+			       ('f7000000-0000-0000-0000-000000000013', ?, 'Zon')""", DECISION_ID, DECISION_ID, DECISION_ID);
+		jdbcTemplate.update("""
+			insert into decision_parameter_values(decision_parameter_id, value_order, value)
+			values ('f7000000-0000-0000-0000-000000000011', 0, 'a'),
+			       ('f7000000-0000-0000-0000-000000000012', 0, 'b'),
+			       ('f7000000-0000-0000-0000-000000000013', 0, 'c')""");
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
+			.withServicePath(DECISION_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(ETAG, List.of("0"))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForList("select id from decision_parameter where decision_id = ? order by id", String.class, DECISION_ID))
+			.as("the stored parameters were not written again")
+			.containsExactly("f7000000-0000-0000-0000-000000000011", "f7000000-0000-0000-0000-000000000012", "f7000000-0000-0000-0000-000000000013");
+	}
+
+	/** The parameter values of the decision as key=value, in the order of the keys and then of the values. */
+	private List<String> parameterValues() {
+		return jdbcTemplate.queryForList("""
+			select concat(p.parameters_key, '=', v.value) from decision_parameter p
+			join decision_parameter_values v on v.decision_parameter_id = p.id
+			where p.decision_id = ?
+			order by p.parameters_key, v.value_order""", String.class, DECISION_ID);
 	}
 
 	/** Counts the terms of the decision, read with SQL. */

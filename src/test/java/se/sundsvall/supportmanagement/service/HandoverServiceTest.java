@@ -570,7 +570,7 @@ class HandoverServiceTest {
 	@Test
 	void handoverWithIncludeAttachmentsNumbersCopiesInSourceOrder() throws Exception {
 		final var blobMock = mock(Blob.class);
-		when(blobMock.getBinaryStream()).thenAnswer(inv -> mock(InputStream.class));
+		when(blobMock.getBinaryStream()).thenAnswer(_ -> mock(InputStream.class));
 		when(blobMock.length()).thenReturn(10L);
 
 		final var addedLast = AttachmentEntity.create().withFileName("a.pdf").withSequenceNumber(5).withAttachmentData(AttachmentDataEntity.create().withFile(blobMock));

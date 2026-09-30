@@ -125,3 +125,28 @@ from errand
          left join attachment on attachment.errand_id = errand.id
 group by errand.id
 on duplicate key update last_sequence_number = greatest(last_sequence_number, values(last_sequence_number));
+
+create table if not exists decision_parameter (
+    id              varchar(255) not null,
+    decision_id     varchar(255) not null,
+    parameters_key  varchar(255) not null,
+    display_name    varchar(255),
+    parameter_group varchar(255),
+    primary key (id),
+    constraint fk_decision_parameter_decision_id
+        foreign key (decision_id) references decision (id)
+        on delete cascade
+) engine=InnoDB;
+
+create index if not exists idx_decision_parameter_decision_id
+    on decision_parameter (decision_id);
+
+create table if not exists decision_parameter_values (
+    decision_parameter_id varchar(255)  not null,
+    value_order           integer       default 0 not null,
+    value                 varchar(3000),
+    primary key (decision_parameter_id, value_order),
+    constraint fk_decision_parameter_values_decision_parameter_id
+        foreign key (decision_parameter_id) references decision_parameter (id)
+        on delete cascade
+) engine=InnoDB;
