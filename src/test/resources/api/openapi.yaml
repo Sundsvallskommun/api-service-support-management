@@ -16241,7 +16241,11 @@ paths:
         \ by how well they match. Without a sort the best matches come first, newest\
         \ first among equals. Sortable properties: created, modified, touched, suspendedFrom,\
         \ suspendedTo, errandNumber, title, status, category, type, priority, resolution,\
-        \ channel, reporterUserId, assignedUserId, assignedGroupId."
+        \ channel, reporterUserId, assignedUserId, assignedGroupId. The total counts\
+        \ what the index answered, and the database has the last word on every hit,\
+        \ so a page may hold fewer errands than the total implies while an errand\
+        \ is indexed as something it no longer is. A rebuild of the index puts the\
+        \ two back in step."
       operationId: searchErrands
       parameters:
       - name: namespace
@@ -16860,9 +16864,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -21201,6 +21205,8 @@ components:
         offset:
           type: integer
           format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
         paged:
           type: boolean
         pageNumber:
@@ -21209,8 +21215,6 @@ components:
         pageSize:
           type: integer
           format: int32
-        sort:
-          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
     SortObject:
