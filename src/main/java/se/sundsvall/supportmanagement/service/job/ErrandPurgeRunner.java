@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.purge;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -12,7 +12,6 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
-import se.sundsvall.supportmanagement.service.JobService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.Objects.isNull;
@@ -44,9 +43,9 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
  * this instance.
  */
 @Service
-public class ErrandPurgeWorker {
+public class ErrandPurgeRunner extends JobRunner<PurgeRun> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ErrandPurgeWorker.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandPurgeRunner.class);
 
 	private static final String ID_ATTRIBUTE = "id";
 
@@ -63,13 +62,14 @@ public class ErrandPurgeWorker {
 	private final int batchSize;
 	private final long progressIntervalNanos;
 
-	public ErrandPurgeWorker(
+	public ErrandPurgeRunner(
 		final ErrandsRepository errandsRepository,
 		final ErrandService errandService,
 		final JobService jobService,
 		final NamespaceConfigService namespaceConfigService,
 		final ErrandPurgeProperties properties) {
 
+		super(jobService);
 		this.errandsRepository = errandsRepository;
 		this.errandService = errandService;
 		this.jobService = jobService;
@@ -90,44 +90,39 @@ public class ErrandPurgeWorker {
 		return (int) Math.min(Integer.MAX_VALUE, errandsRepository.count(reachedBy(namespace, municipalityId, cutoff)));
 	}
 
-	/**
-	 * Runs a purge to its end. Never throws: whatever goes wrong ends the job as failed, since the thread this runs on
-	 * has nobody to report to.
-	 *
-	 * @param run the run to carry out.
-	 */
-	public void run(final PurgeRun run) {
+	@Override
+	protected String jobId(final PurgeRun run) {
+		return run.jobId();
+	}
+
+	@Override
+	protected void work(final PurgeRun run) {
 		LOG.info("Purge {} started for namespace {} in municipality {} by {}, removing errands untouched since {}{}",
 			run.jobId(), sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), sanitizeForLogging(run.startedBy()),
 			run.settings().olderThan(), run.settings().dryRun() ? " (dry run, nothing is removed)" : "");
 
 		final var counters = new Counters();
-		var ended = false;
-
-		try {
-			jobService.setRunning(run.jobId());
-			ended = walk(run, counters);
-		} catch (final Exception e) {
-			LOG.error("Purge {} aborted for namespace {} in municipality {}", run.jobId(), sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), e);
-			jobService.fail(run.jobId(), ABORTED_MESSAGE.formatted(e.getMessage()));
-			ended = true;
-		} finally {
-			// A thread taken down by something that is not an exception - an Error - would otherwise leave the job reading
-			// as running for as long as the row lives.
-			if (!ended) {
-				jobService.fail(run.jobId(), ENDED_WITHOUT_RESULT);
-			}
-		}
+		walk(run, counters);
 
 		LOG.info("Purge {} ended - processed {}, deleted {}, failed {}", run.jobId(), counters.processed, counters.deleted, counters.failed);
 	}
 
+	@Override
+	protected String reportAborted(final PurgeRun run, final Exception e) {
+		LOG.error("Purge {} aborted for namespace {} in municipality {}", run.jobId(), sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), e);
+		return ABORTED_MESSAGE.formatted(e.getMessage());
+	}
+
+	@Override
+	protected String endedWithoutResultMessage() {
+		return ENDED_WITHOUT_RESULT;
+	}
+
 	/**
-	 * Walks the namespace to the end of the work, and says whether it left the job in a state of its own. A walk that
-	 * ends because the job was stopped leaves it as stopped, which is a state of its own even though this run did not
-	 * write it.
+	 * Walks the namespace to the end of the work. A walk that ends because the job was stopped leaves it as stopped,
+	 * which is a state of its own even though this run did not write it.
 	 */
-	private boolean walk(final PurgeRun run, final Counters counters) {
+	private void walk(final PurgeRun run, final Counters counters) {
 		String cursor = null;
 		var lastReport = System.nanoTime();
 
@@ -135,14 +130,14 @@ public class ErrandPurgeWorker {
 			final var budget = remainingBudget(run, counters);
 			if (budget <= 0) {
 				jobService.complete(run.jobId(), summaryOf(run, counters));
-				return true;
+				return;
 			}
 
 			final var ids = nextBatch(run, cursor, (int) Math.min(batchSize, budget));
 
 			if (ids.isEmpty()) {
 				jobService.complete(run.jobId(), summaryOf(run, counters));
-				return true;
+				return;
 			}
 
 			for (final var id : ids) {
@@ -168,7 +163,7 @@ public class ErrandPurgeWorker {
 			// from wherever the request happens to land.
 			if (isStopped(run)) {
 				LOG.info("Purge {} stopped after {} errands", run.jobId(), counters.processed);
-				return true;
+				return;
 			}
 
 			// Asked again for every batch rather than only when the run was accepted. A run lasts hours, and a namespace
@@ -178,7 +173,7 @@ public class ErrandPurgeWorker {
 				LOG.warn("Purge {} of namespace {} in municipality {} ended after {} errands: access control was switched on while it was running",
 					run.jobId(), sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), counters.processed);
 				jobService.fail(run.jobId(), ACCESS_CONTROL_SWITCHED_ON.formatted(counters.deleted));
-				return true;
+				return;
 			}
 		}
 	}

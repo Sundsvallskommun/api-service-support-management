@@ -21,6 +21,7 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
@@ -184,6 +185,7 @@ public class ErrandService {
 		final var entity = errand.getLabels() != null
 			? persistLabelUpdate(errandEntity)
 			: repository.saveAndFlush(errandEntity);
+
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
@@ -290,6 +292,49 @@ public class ErrandService {
 		return repository.count(fullFilter);
 	}
 
+	/**
+	 * Restows a batch of errands - each one's label set rebuilt from its access labels (leaves) outward - in a
+	 * transaction of its own, separate from whatever transaction (if any) the caller is running in. Used by the
+	 * label-move runner, which calls this once per errand rather than once per page - each errand's own optimistic-lock
+	 * retry needs a transaction boundary of its own - and must not join or be joined by the caller's transaction: the
+	 * runner is not itself transactional, and the interactive PATCH path that also calls {@link #persistLabelUpdate}
+	 * must keep its label write inside its own single transaction rather than being pulled into a separate one.
+	 * <p>
+	 * The rebuild is driven entirely by {@code resourcePath} lookups ({@link ErrandLabelService#settleAccessLabels}),
+	 * never by walking an entity's own lazy associations - the errands handed in were read by the runner in a
+	 * transaction that has already closed by the time this one opens, so nothing on them beyond an eagerly-fetched
+	 * collection is safe to touch.
+	 * <p>
+	 * Public rather than package-private: {@code LabelMoveRunner}, its only caller, lives in
+	 * {@code se.sundsvall.supportmanagement.service.job} - a different package from this one - the same reason
+	 * {@link #purgeErrand} is public for {@code ErrandPurgeRunner}.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	public void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
+		batch.forEach(this::restowFromAccessLabels);
+	}
+
+	private void restowFromAccessLabels(final ErrandEntity errand) {
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
+			.toList();
+
+		// Held from before the write, so they can be put back afterward - a restow must leave no trace on either, but
+		// persistLabelUpdate's saveAndFlush runs through the same @PreUpdate as any other save and stamps both with
+		// now() regardless of what actually changed.
+		final var modified = errand.getModified();
+		final var touched = errand.getTouched();
+
+		errand.setLabels(leafLabels);
+		persistLabelUpdate(errand);
+
+		repository.restoreModifiedAndTouched(errand.getId(), modified, touched);
+	}
+
+	/**
+	 * Settles access labels from whatever label set the entity carries, then persists it - shared by every caller that
+	 * writes a label change, so that none of them has to remember to settle access labels before saving.
+	 */
 	ErrandEntity persistLabelUpdate(final ErrandEntity entity) {
 		errandLabelService.settleAccessLabels(entity);
 		return repository.saveAndFlush(entity);

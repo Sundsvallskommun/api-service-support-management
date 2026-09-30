@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -12,12 +13,14 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -31,6 +34,7 @@ import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
@@ -80,6 +84,46 @@ public class EventService {
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {
 		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true, subtype);
+	}
+
+	/**
+	 * Logs a single, aggregated entry for a system-level operation that is not tied to one errand's revision diff, such
+	 * as a label move. Logged under the operation's own id rather than an errand id, since no single errand's revision
+	 * history is what this is about.
+	 * <p>
+	 * {@code startedBy} is taken as a parameter rather than read here through {@link #getExecutingUser()}: this is
+	 * called from the background thread that carries a label move out, where the request-scoped thread-local behind
+	 * {@code getExecutingUser()} was never set, and reading it there would silently record every such event as
+	 * executed by nobody. The caller is expected to have captured it from the request thread that accepted the move.
+	 */
+	public void createLabelMoveEvent(final String municipalityId, final String labelId, final String startedBy, final String message) {
+		final var executedBy = toExecutedBy(startedBy);
+		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), executedBy, SYSTEM.getValue(), getRequestGroupId());
+		try {
+			eventLogClient.createEvent(municipalityId, labelId, event);
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for label move {}: {}", sanitizeForLogging(labelId), sanitizeForLogging(e.getMessage()));
+		}
+	}
+
+	/**
+	 * Rebuilds the {@link Identifier} a label move was started by, from the header-value-encoded string
+	 * {@code MetadataService#startedBy()} captured on the request thread - so the original type (e.g. {@code
+	 * AD_ACCOUNT}) survives into the audit event instead of every caller being recorded as a {@code CUSTOM} identifier,
+	 * which {@code EventlogMapper#toExecutingUser} would then map to {@code PARTY_ID} regardless of what it actually
+	 * was. Falls back to a {@code CUSTOM} identifier only for the "no caller" case ({@code startedBy} is the literal
+	 * {@code "unknown"} placeholder, which does not parse as an encoded identifier) - matches what was recorded before
+	 * this was fixed, for that one case only.
+	 */
+	private static Identifier toExecutedBy(final String startedBy) {
+		Identifier parsed = null;
+		try {
+			parsed = Identifier.parse(startedBy);
+		} catch (final Exception e) {
+			// Identifier.parse is documented to fail gracefully (returns null) rather than throw, but a defensive
+			// catch costs nothing and keeps this from ever surfacing as a hard failure of the audit event itself.
+		}
+		return parsed != null ? parsed : Identifier.create().withType(Identifier.Type.CUSTOM).withValue(startedBy);
 	}
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {

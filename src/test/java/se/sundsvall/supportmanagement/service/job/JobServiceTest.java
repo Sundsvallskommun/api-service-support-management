@@ -1,16 +1,24 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.TaskRejectedException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
@@ -50,16 +58,27 @@ class JobServiceTest {
 	@InjectMocks
 	private JobService jobService;
 
+	@BeforeEach
+	void wireSelf() {
+		// JobService self-invokes through this field (see its own javadoc) rather than through 'this', so a Mockito
+		// @InjectMocks constructor - which cannot resolve a mock of the very class under construction - would otherwise
+		// leave it null.
+		ReflectionTestUtils.setField(jobService, "self", jobService);
+	}
+
 	@Test
-	void create() {
+	void launch_createsJob() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		final AsyncTaskExecutor executor = Runnable::run;
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
 
-		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100);
+		final var response = jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, null), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s");
 
-		assertThat(result).isEqualTo(JOB_ID);
+		assertThat(response.getJobId()).isEqualTo(JOB_ID);
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
-		verify(jobRepositoryMock).save(captor.capture());
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(captor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(captor.getValue().getType()).isEqualTo(MOVE_LABEL);
@@ -67,33 +86,98 @@ class JobServiceTest {
 	}
 
 	@Test
-	void createWithLabelId() {
+	void launch_createsJobWithSubjectId() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		final AsyncTaskExecutor executor = Runnable::run;
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
 
-		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "label-id");
+		final var response = jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s");
 
-		assertThat(result).isEqualTo(JOB_ID);
+		assertThat(response.getJobId()).isEqualTo(JOB_ID);
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
-		verify(jobRepositoryMock).save(captor.capture());
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(captor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(captor.getValue().getType()).isEqualTo(MOVE_LABEL);
 		assertThat(captor.getValue().getTotal()).isEqualTo(100);
-		assertThat(captor.getValue().getLabelId()).isEqualTo("label-id");
+		assertThat(captor.getValue().getSubjectId()).isEqualTo("subject-id");
 	}
 
 	@Test
-	@DisplayName("Verification that create without a labelId stores none, since not every kind of job works on one label")
-	void createWithoutLabelIdStoresNoLabelId() {
+	@DisplayName("Verification that launch without a subjectId stores none, since not every kind of job centers on one subject")
+	void launch_withoutSubjectIdStoresNoSubjectId() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		final AsyncTaskExecutor executor = Runnable::run;
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
 
-		jobService.create(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, 100);
+		jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, 100, null), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s");
+
+		final var captor = ArgumentCaptor.forClass(JobEntity.class);
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
+		assertThat(captor.getValue().getSubjectId()).isNull();
+	}
+
+	@Test
+	@DisplayName("Verification that a launch racing the caller's own precheck and losing on the DB's active-job-per-type-per-namespace constraint is answered the same way a sequential one already is, rather than as a raw persistence failure")
+	void launch_racingPrecheckLosesOnDbConstraint_throws409() {
+		final AsyncTaskExecutor executor = Runnable::run;
+		when(jobRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("Duplicate entry for key 'uq_job_active_per_type_per_namespace'"));
+
+		assertThatThrownBy(() -> jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s"))
+			.isInstanceOf(ThrowableProblem.class)
+			.satisfies(e -> assertThat(((ThrowableProblem) e).getStatus().value()).isEqualTo(409))
+			.hasMessageContaining(NAMESPACE)
+			.hasMessageContaining(MUNICIPALITY_ID);
+	}
+
+	@Test
+	@DisplayName("Verification that launch creates the job, dispatches a run built from its id, and returns the job it reports against")
+	void launch_happyPath_createsJobDispatchesRunAndReturnsIt() {
+		final var created = JobEntity.create().withId(JOB_ID);
+		final var dispatched = new ArrayList<String>();
+		final AsyncTaskExecutor executor = Runnable::run;
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(created);
+		when(jobRepositoryMock.findByIdAndNamespaceAndMunicipalityId(JOB_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
+
+		final var response = jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
+			jobId -> jobId, dispatched::add, "Could not be started: %s");
+
+		assertThat(response.getJobId()).isEqualTo(JOB_ID);
+		// The run handed to the dispatched consumer is built from the very id the job was just created with.
+		assertThat(dispatched).containsExactly(JOB_ID);
+		final var captor = ArgumentCaptor.forClass(JobEntity.class);
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
+		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
+		assertThat(captor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
+		assertThat(captor.getValue().getType()).isEqualTo(MOVE_LABEL);
+		assertThat(captor.getValue().getTotal()).isEqualTo(100);
+		assertThat(captor.getValue().getSubjectId()).isEqualTo("subject-id");
+	}
+
+	@Test
+	@DisplayName("Verification that a run which cannot be given a thread ends the job it was given and rethrows the rejection itself, rather than either leaving the job waiting for work that never comes or masking the rejection behind a generic 500 - ExceptionHandlerConfig routes on this exact exception type to answer 503 with a Retry-After header")
+	void launch_dispatchRejected_failsJobAndRethrowsTaskRejectedException() {
+		final var created = JobEntity.create().withId(JOB_ID);
+		final AsyncTaskExecutor executor = _ -> {
+			throw new TaskRejectedException("No thread available");
+		};
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(created);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(jobEntity(PENDING)));
+
+		assertThatThrownBy(() -> jobService.launch(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "subject-id"), executor,
+			jobId -> jobId, jobId -> {}, "Could not be started: %s"))
+			.isInstanceOf(TaskRejectedException.class)
+			.hasMessageContaining("No thread available");
 
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
 		verify(jobRepositoryMock).save(captor.capture());
-		assertThat(captor.getValue().getLabelId()).isNull();
+		assertThat(captor.getValue().getStatus()).isEqualTo(FAILED);
+		assertThat(captor.getValue().getMessage()).isEqualTo("Could not be started: No thread available");
 	}
 
 	@Test
@@ -134,6 +218,18 @@ class JobServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a job already stopped - by a caller's own stop() landing while the run was still PENDING, before the executor thread ever reached setRunning - is not woken back into RUNNING")
+	void setRunning_jobAlreadyStopped_isLeftAlone() {
+		final var entity = jobEntity(STOPPED);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.setRunning(JOB_ID);
+
+		assertThat(entity.getStatus()).isEqualTo(STOPPED);
+		verify(jobRepositoryMock, never()).save(any());
+	}
+
+	@Test
 	void updateProgress() {
 		final var entity = jobEntity(RUNNING);
 		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
@@ -159,6 +255,21 @@ class JobServiceTest {
 		assertThat(captor.getValue().getProgress()).isEqualTo(100);
 	}
 
+	@ParameterizedTest
+	@EnumSource(value = JobStatus.class, names = {
+		"COMPLETED", "FAILED", "STOPPED"
+	})
+	@DisplayName("Verification that completing a job which has already ended keeps the outcome it reached, rather than having it rewritten by a run that only finishes - or notices it should stop - late")
+	void completeDoesNotOverwriteAJobThatHasAlreadyEnded(final JobStatus alreadyEnded) {
+		final var entity = jobEntity(alreadyEnded);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.complete(JOB_ID);
+
+		assertThat(entity.getStatus()).isEqualTo(alreadyEnded);
+		verify(jobRepositoryMock, never()).save(any());
+	}
+
 	@Test
 	void fail() {
 		final var entity = jobEntity(RUNNING);
@@ -172,18 +283,19 @@ class JobServiceTest {
 		assertThat(captor.getValue().getMessage()).isEqualTo("something went wrong");
 	}
 
-	@Test
-	void hasActiveJobReturnsTrueWhenPendingJobExists() {
-		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(true);
+	@ParameterizedTest
+	@EnumSource(value = JobStatus.class, names = {
+		"COMPLETED", "FAILED", "STOPPED"
+	})
+	@DisplayName("Verification that failing a job which has already ended keeps the outcome it reached, rather than having a late failure rewrite it")
+	void failDoesNotOverwriteAJobThatHasAlreadyEnded(final JobStatus alreadyEnded) {
+		final var entity = jobEntity(alreadyEnded);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
 
-		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).isTrue();
-	}
+		jobService.fail(JOB_ID, "something went wrong");
 
-	@Test
-	void hasActiveJobReturnsFalseWhenNoActiveJob() {
-		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(false);
-
-		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).isFalse();
+		assertThat(entity.getStatus()).isEqualTo(alreadyEnded);
+		verify(jobRepositoryMock, never()).save(any());
 	}
 
 	@Test
@@ -195,18 +307,63 @@ class JobServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a label already worked on by a job of one kind is found, so that a second run against the same label is not started under it")
-	void hasActiveJobOfTypeAndLabel() {
-		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), eq("label-id"), any())).thenReturn(true);
+	void hasActiveJobOfTypeReturnsFalseWhenNoneActive() {
+		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), any())).thenReturn(false);
 
-		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, "label-id")).isTrue();
+		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE)).isFalse();
 	}
 
 	@Test
-	void hasActiveJobOfTypeAndLabelReturnsFalseWhenNoneActive() {
-		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndLabelIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), eq("label-id"), any())).thenReturn(false);
+	@DisplayName("Verification that a new run is let through outright when no job of that kind is active in the namespace")
+	void stealStaleLease_noActiveJob_returnsTrueWithoutTouchingAnything() {
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.empty());
 
-		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, "label-id")).isFalse();
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		verify(jobRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a run genuinely still being reported on refuses a new one, rather than stealing a lease that is not actually stale")
+	void stealStaleLease_activeJobStillReporting_returnsFalseWithoutFailingIt() {
+		final var active = jobEntity(RUNNING).withModified(now(systemDefault()).minusMinutes(5));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(active));
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isFalse();
+
+		assertThat(active.getStatus()).isEqualTo(RUNNING);
+		verify(jobRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a job which has gone quiet longer than staleAfter is failed and its lease reclaimed for a new run, rather than leaving the namespace blocked until the sweep gets to it")
+	void stealStaleLease_activeJobGoneQuiet_failsItAndReturnsTrue() {
+		final var stale = jobEntity(RUNNING).withModified(now(systemDefault()).minusHours(2));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(stale));
+		when(jobRepositoryMock.saveAndFlush(stale)).thenReturn(stale);
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		assertThat(stale.getStatus()).isEqualTo(FAILED);
+		assertThat(stale.getMessage()).isEqualTo("Job was not reported on for PT30M and is taken to have ended with the instance carrying it out");
+		verify(jobRepositoryMock).saveAndFlush(stale);
+	}
+
+	@Test
+	@DisplayName("Verification that a job never reported on at all is judged by when it was created, since it has no modified of its own")
+	void stealStaleLease_activeJobNeverReportedOn_judgedByCreated() {
+		final var stale = jobEntity(PENDING).withCreated(now(systemDefault()).minusHours(2));
+		when(jobRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(MOVE_LABEL), any()))
+			.thenReturn(Optional.of(stale));
+		when(jobRepositoryMock.saveAndFlush(stale)).thenReturn(stale);
+
+		assertThat(jobService.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, Duration.ofMinutes(30))).isTrue();
+
+		assertThat(stale.getStatus()).isEqualTo(FAILED);
+		verify(jobRepositoryMock).saveAndFlush(stale);
 	}
 
 	@Test
@@ -221,6 +378,21 @@ class JobServiceTest {
 		assertThat(entity.getProgress()).isEqualTo(100);
 		assertThat(entity.getMessage()).isEqualTo("Removed 248 of 250 errands reached, 2 could not be removed");
 		verify(jobRepositoryMock).save(entity);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = JobStatus.class, names = {
+		"COMPLETED", "FAILED", "STOPPED"
+	})
+	@DisplayName("Verification that completing a job with a summary does not overwrite an outcome the job already reached")
+	void completeWithMessageDoesNotOverwriteAJobThatHasAlreadyEnded(final JobStatus alreadyEnded) {
+		final var entity = jobEntity(alreadyEnded);
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.complete(JOB_ID, "Removed 248 of 250 errands reached, 2 could not be removed");
+
+		assertThat(entity.getStatus()).isEqualTo(alreadyEnded);
+		verify(jobRepositoryMock, never()).save(any());
 	}
 
 	@Test

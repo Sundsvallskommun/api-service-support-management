@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.purge;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.time.OffsetDateTime;
 
