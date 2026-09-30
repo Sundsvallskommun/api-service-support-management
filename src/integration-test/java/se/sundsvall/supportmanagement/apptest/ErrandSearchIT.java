@@ -462,6 +462,16 @@ class ErrandSearchIT extends AbstractAppTest {
 			.sendRequest();
 	}
 
+	/**
+	 * The database compares the namespace under a case insensitive collation, so the index does too: the listing and the
+	 * search of the same errands may not disagree on which namespace was asked for.
+	 */
+	@Test
+	void test24_theNamespaceIsMatchedWhateverItsCasing() {
+		assertThat(search("/2281/namespace-3/errands/search", "vattenläcka")).containsExactly(LEAK);
+		assertThat(search("/2281/NaMeSpAcE-3/errands/search", "vattenläcka")).containsExactly(LEAK);
+	}
+
 	private List<String> search(final String path, final String query) {
 		return errandNumbers(page(path, query));
 	}
