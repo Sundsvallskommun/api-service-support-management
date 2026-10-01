@@ -181,6 +181,10 @@ public class ErrandService {
 		errandLabelService.validateVersions(errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 
+		// Read before the errand is touched, so that failing to read them cannot roll back an update whose actions and event
+		// have already gone out.
+		final var classificationDisplayNames = labelClassificationService.getClassificationDisplayNames(namespace, municipalityId);
+
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
@@ -196,7 +200,7 @@ public class ErrandService {
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
-		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable()), labelClassificationService.getClassificationDisplayNames(namespace, municipalityId));
+		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable()), classificationDisplayNames);
 	}
 
 	@Transactional
