@@ -270,6 +270,33 @@ spring:
             hosts: my-opensearch:9200
 ```
 
+`GET /{municipalityId}/{namespace}/errands/search/count` answers the same query with a number instead of the errands,
+and with `groupBy` divides that number over one column: `status`, `resolution`, `channel`, `priority`, `category`,
+`type`, `reporterUserId`, `assignedUserId` or `assignedGroupId`. One column at a time, and only the single valued ones -
+labels, parameters and JSON parameters would put an errand in several buckets and make the buckets add up to more than
+the count beside them. Every one of these columns is indexed lowercased, so the casing has to be
+recovered: `status`, `category` and `type` come back as the metadata of the namespace names them, and a value the
+metadata no longer knows is answered with as the index holds it; `priority` is an enum of this API rather than namespace
+metadata, so its casing comes from the enum. `resolution`, `channel` and the three identifier columns have no catalogue
+behind them and are answered lowercased - recovering what was written would mean indexing them a second time without the
+normalizer, which is only worth doing if a client needs the exact value.
+The buckets always add up to the count they are answered beside. The index counts only the errands that carry a value in
+the column, so the rest are counted back in under a bucket whose value is `null` - every groupable column holds at most
+one value, which is what makes that subtraction exact. And a column dividing the search over more than
+`search.max-group-buckets` (a hundred) values is refused with 400 rather than answered with the largest buckets: a
+breakdown adding up to less than the number printed beside it, with nothing saying by how much, is worse than no
+breakdown.
+
+The count is cheap where the search is not: nothing is fetched and no page is mapped, which is what the search spends
+its time on. It is held to the grant exactly as the search is, and the column it groups by is held to every route
+answering the query - grouping reads that column of every errand counted, so a route that may not read it makes the
+whole request 403 rather than answering with buckets that add up to less than the count.
+
+What the count does not do is ask the database afterwards. The search does, because an index write lost while OpenSearch
+was away could otherwise answer for labels an errand no longer carries, but a count never loads the errands it counts.
+So while the index is behind the database the number can be off by an errand or two - a number, never the content of
+anything - and the nightly rebuild settles it. The endpoint says so.
+
 A query is at most 2000 characters, and a search that has not answered within `search.timeout` (ten seconds by
 default) is given up on with 504. A query string may ask for work the index cannot do cheaply - a wildcard open at both
 ends, a regular expression, a fuzzy term over many fields - and one client asking for it is not allowed to take the

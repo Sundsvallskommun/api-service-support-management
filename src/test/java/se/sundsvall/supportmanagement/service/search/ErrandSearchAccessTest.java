@@ -34,6 +34,8 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 class ErrandSearchAccessTest {
 
 	private static final Set<MetadataLabelEntity> LABELS = Set.of(MetadataLabelEntity.create().withId("label"));
+	/** The labels of a limited read, which are a superset of those of a read */
+	private static final Set<MetadataLabelEntity> WIDER_LABELS = Set.of(MetadataLabelEntity.create().withId("label"), MetadataLabelEntity.create().withId("other"));
 	private static final Sort UNSORTED = Sort.unsorted();
 	private static final Set<ProtectedResource> EVERY_RESOURCE = Set.of(ProtectedResource.COMMUNICATION, ProtectedResource.DECISION, ProtectedResource.STATEMENT,
 		ProtectedResource.INVESTIGATION, ProtectedResource.MEASURE, ProtectedResource.PARAMETER, ProtectedResource.JSON_PARAMETER, ProtectedResource.ATTACHMENT);
@@ -111,6 +113,115 @@ class ErrandSearchAccessTest {
 
 	private ThrowableProblem refused(final NamespaceGrant grant, final String query, final Sort sort) {
 		return assertThrows(ThrowableProblem.class, () -> access.plan(query, sort, grant));
+	}
+
+	// ==================================================================================
+	// What each route leaves out, so that no route searches an errand by fields the
+	// mapper then leaves out of the answer
+	// ==================================================================================
+
+	/**
+	 * The reporter fields are what the mapper gives an errand neither label set covers, so the reporter route may reach
+	 * only those. Reaching a covered errand as well let a search match on a field the mapper left out of the answer, and
+	 * the hit alone then says what that field holds.
+	 */
+	@Test
+	void theReporterRouteLeavesOutTheErrandsTheLabelsCover() {
+		final var restrictedByRole = Map.of(ErrandField.STATUS, Set.<String>of());
+		final var reporterFields = Map.of(ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, restrictedByRole, EVERY_RESOURCE), null,
+			new ReporterRoute("joe01doe", reporterFields, EVERY_RESOURCE));
+
+		assertThat(exclusionsOf("status:new", UNSORTED, grant))
+			.containsExactly(null, NamespaceGrant.scopeOf(grant.labels()));
+	}
+
+	/**
+	 * With a limited route beside it, the reporter route leaves out the wider of the two: the labels of a limited read
+	 * include those of a read, so leaving the limited errands out leaves the covered ones out as well.
+	 */
+	@Test
+	void theReporterRouteLeavesOutTheLimitedErrandsToo() {
+		final var fields = Map.of(ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, fields, EVERY_RESOURCE), new LabelRoute(WIDER_LABELS, fields, EVERY_RESOURCE),
+			new ReporterRoute("joe01doe", fields, EVERY_RESOURCE));
+
+		assertThat(exclusionsOf("status:new", UNSORTED, grant))
+			.containsExactly(null, NamespaceGrant.scopeOf(grant.labels()), NamespaceGrant.scopeOf(grant.limitedLabels()));
+	}
+
+	/** With no labels at all there is nothing for the reporter route to leave out. */
+	@Test
+	void aReporterHoldingNoLabelsLeavesNothingOut() {
+		final var fields = Map.of(ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(null, null, new ReporterRoute("joe01doe", fields, EVERY_RESOURCE));
+
+		assertThat(exclusionsOf("status:new", UNSORTED, grant)).containsExactly((AccessScope) null);
+	}
+
+	private ThrowableProblem refusedGroup(final NamespaceGrant grant, final String query, final ErrandField groupBy) {
+		return assertThrows(ThrowableProblem.class, () -> access.plan(query, UNSORTED, groupBy, grant));
+	}
+
+	// ==================================================================================
+	// The column a count groups by
+	// ==================================================================================
+
+	@Test
+	void groupingByAColumnEveryRouteMayReadPasses() {
+		final var readable = Map.of(ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, readable, EVERY_RESOURCE), null, null);
+
+		assertThat(access.plan("title:x", UNSORTED, ErrandField.STATUS, grant).clauses()).hasSize(1);
+	}
+
+	@Test
+	void groupingIsNotHeldAgainstAnUnrestrictedGrant() {
+		assertThat(access.plan("", UNSORTED, ErrandField.STATUS, NamespaceGrant.UNRESTRICTED).clauses()).hasSize(1);
+	}
+
+	/**
+	 * Grouping reads the column of every errand counted, so a route that may not read it may not be counted by it.
+	 */
+	@Test
+	void groupingByAColumnTheRolesKeepFromTheUserIsRefused() {
+		final var readable = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, readable, EVERY_RESOURCE), null, null);
+
+		assertThat(refusedGroup(grant, "title:x", ErrandField.STATUS).getDetail())
+			.isEqualTo("Field 'status' not groupable by user 'joe01doe'");
+	}
+
+	/**
+	 * One route answering the query while another may not read the column is refused whole: buckets adding up to less
+	 * than the count printed beside them are a difference nothing on the endpoint could explain.
+	 */
+	@Test
+	void groupingIsRefusedWhenOneAnsweringRouteMayNotReadTheColumn() {
+		final var full = Map.of(ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var limited = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, full, EVERY_RESOURCE), new LabelRoute(WIDER_LABELS, limited, EVERY_RESOURCE), null);
+
+		// Both routes answer a query on the title
+		assertThat(access.plan("title:x", UNSORTED, null, grant).clauses()).hasSize(2);
+
+		assertThat(refusedGroup(grant, "title:x", ErrandField.STATUS).getDetail())
+			.isEqualTo("Field 'status' not groupable by user 'joe01doe'");
+	}
+
+	/**
+	 * A route already left out of the plan is not asked: it contributes no errand, so it can hide nothing.
+	 */
+	@Test
+	void aRouteThatCannotAnswerTheQueryDoesNotRefuseTheGroup() {
+		final var full = Map.of(ErrandField.DESCRIPTION, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var limited = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, full, EVERY_RESOURCE), new LabelRoute(WIDER_LABELS, limited, EVERY_RESOURCE), null);
+
+		// Only the full route can answer a query on the description, and it may read the status
+		final var plan = access.plan("description:x", UNSORTED, ErrandField.STATUS, grant);
+
+		assertThat(plan.clauses()).hasSize(1);
 	}
 
 	@Test

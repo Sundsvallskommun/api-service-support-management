@@ -472,6 +472,133 @@ class ErrandSearchIT extends AbstractAppTest {
 		assertThat(search("/2281/NaMeSpAcE-3/errands/search", "vattenläcka")).containsExactly(LEAK);
 	}
 
+	/**
+	 * The count answers the number the search answers with, without the errands: same query, same grant, same routes.
+	 */
+	@Test
+	void test25_theCountIsTheSearchWithoutTheErrands() {
+		assertThat(count(PATH, "")).isEqualTo(3);
+		assertThat(count(PATH, "vattenläcka")).isEqualTo(1);
+		assertThat(count(PATH, "status:new")).isEqualTo(2);
+		assertThat(count(PATH, "status:new AND priority:high")).isEqualTo(1);
+		assertThat(count(PATH, "ingentingalls")).isZero();
+
+		// The same query, answered by the search, reports the same total
+		assertThat(page(PATH, "status:new").path("totalElements").asInt()).isEqualTo(2);
+
+		// And a namespace counts its own errands only, whatever the casing it is asked for by
+		assertThat(count("/2281/namespace-3/errands/search", "vattenläcka")).isEqualTo(1);
+	}
+
+	/**
+	 * The breakdown: the largest bucket first, and the values in the casing the metadata of the namespace gives them
+	 * rather than the lowercased form the index holds.
+	 */
+	@Test
+	void test26_theCountDividesOverOneColumn() {
+		final var byStatus = group(PATH, "", "status");
+
+		assertThat(byStatus.path("property").asString()).isEqualTo("status");
+		assertThat(bucketsOf(byStatus)).containsExactly("NEW=2", "ONGOING=1");
+
+		// The buckets add up to the count they are answered beside, which is the whole point of refusing a partial one
+		assertThat(sumOf(byStatus)).isEqualTo(count(PATH, ""));
+
+		// A column none of the errands carries is one bucket counting all of them, rather than no buckets at all
+		assertThat(bucketsOf(group(PATH, "", "resolution"))).containsExactly("null=3");
+		assertThat(sumOf(group(PATH, "", "resolution"))).isEqualTo(3);
+
+		// The query narrows the breakdown as it narrows the count
+		assertThat(bucketsOf(group(PATH, "status:new", "status"))).containsExactly("NEW=2");
+
+		// A column with no catalogue behind it answers with what the index holds
+		assertThat(bucketsOf(group(PATH, "", "assignedUserId"))).containsExactly("han01dle=2", "han02dle=1");
+		assertThat(bucketsOf(group(PATH, "", "priority"))).hasSize(3);
+	}
+
+	/** A property nobody groups by is a bad request, and says what may be grouped by. */
+	@Test
+	void test27_aColumnNobodyGroupsByIsRefused() {
+		setupCall()
+			.withServicePath(PATH + "/count?groupBy=description")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(PATH + "/count?groupBy=labels")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.sendRequest();
+	}
+
+	/**
+	 * A count is held to the grant as a search is, and the column it groups by to what the route may read: the role
+	 * seeing the status alone counts by status and is refused the category.
+	 */
+	@Test
+	void test28_aCountIsGroupedWithinWhatTheUserMayRead() {
+		// The errands this role reaches, counted and divided by the one column it may read
+		assertThat(countAs(STATUS_ONLY_PATH, "", "sta01usr")).isEqualTo(2);
+		assertThat(bucketsOf(groupAs(STATUS_ONLY_PATH, "", "status", "sta01usr"))).containsExactlyInAnyOrder("NEW=1", "ONGOING=1");
+
+		setupCall()
+			.withServicePath(STATUS_ONLY_PATH + "/count?groupBy=category")
+			.withHeader(SENT_BY_HEADER, "sta01usr; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.sendRequest();
+
+		// The labels of the access controlled namespace reach three errands and the unlabelled one
+		assertThat(countAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).isEqualTo(4);
+	}
+
+	private long count(final String path, final String query) {
+		return countBody(path, query, null, null).path("count").asLong();
+	}
+
+	private long countAs(final String path, final String query, final String adAccount) {
+		return countBody(path, query, null, adAccount).path("count").asLong();
+	}
+
+	private JsonNode group(final String path, final String query, final String groupBy) {
+		return countBody(path, query, groupBy, null).path("group");
+	}
+
+	private JsonNode groupAs(final String path, final String query, final String groupBy, final String adAccount) {
+		return countBody(path, query, groupBy, adAccount).path("group");
+	}
+
+	private JsonNode countBody(final String path, final String query, final String groupBy, final String adAccount) {
+		final var servicePath = withQuery(path + "/count", query) + (groupBy == null ? "" : "&groupBy=" + groupBy);
+		final var call = setupCall()
+			.withServicePath(servicePath)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK);
+
+		if (adAccount != null) {
+			call.withHeader(SENT_BY_HEADER, adAccount + "; type=adAccount");
+		}
+		return call.sendRequest().getResponseBody(new TypeReference<JsonNode>() {});
+	}
+
+	private static long sumOf(final JsonNode group) {
+		return group.path("buckets").valueStream().mapToLong(bucket -> bucket.path("count").asLong()).sum();
+	}
+
+	/** The buckets as 'value=count', in the order they were answered with. */
+	private static List<String> bucketsOf(final JsonNode group) {
+		return group.path("buckets").valueStream()
+			.map(bucket -> valueOf(bucket) + "=" + bucket.path("count").asLong())
+			.toList();
+	}
+
+	/** The value of a bucket, with the one counting the errands that hold none written as null whichever way it came. */
+	private static String valueOf(final JsonNode bucket) {
+		final var value = bucket.path("value");
+		return value.isNull() || value.isMissingNode() ? "null" : value.asString();
+	}
+
 	private List<String> search(final String path, final String query) {
 		return errandNumbers(page(path, query));
 	}

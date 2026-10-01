@@ -18,20 +18,22 @@ public enum ErrandField {
 	ID("id", false, null, IndexBinding.none()),
 	ERRAND_NUMBER("errandNumber", false, null, IndexBinding.of(ErrandIndex.ERRAND_NUMBER).sortedBy(ErrandIndex.ERRAND_NUMBER)),
 	TITLE("title", false, null, IndexBinding.of(ErrandIndex.TITLE).sortedBy(ErrandIndex.TITLE_SORT)),
-	STATUS("status", false, null, IndexBinding.of(ErrandIndex.STATUS).sortedBy(ErrandIndex.STATUS)),
-	RESOLUTION("resolution", false, null, IndexBinding.of(ErrandIndex.RESOLUTION).sortedBy(ErrandIndex.RESOLUTION)),
-	CHANNEL("channel", false, null, IndexBinding.of(ErrandIndex.CHANNEL).sortedBy(ErrandIndex.CHANNEL)),
+	STATUS("status", false, null, IndexBinding.of(ErrandIndex.STATUS).sortedBy(ErrandIndex.STATUS).groupedBy(ErrandIndex.STATUS)),
+	RESOLUTION("resolution", false, null, IndexBinding.of(ErrandIndex.RESOLUTION).sortedBy(ErrandIndex.RESOLUTION).groupedBy(ErrandIndex.RESOLUTION)),
+	CHANNEL("channel", false, null, IndexBinding.of(ErrandIndex.CHANNEL).sortedBy(ErrandIndex.CHANNEL).groupedBy(ErrandIndex.CHANNEL)),
 	CREATED("created", false, null, IndexBinding.of(ErrandIndex.CREATED).sortedBy(ErrandIndex.CREATED)),
 	MODIFIED("modified", false, null, IndexBinding.of(ErrandIndex.MODIFIED).sortedBy(ErrandIndex.MODIFIED)),
 	TOUCHED("touched", false, null, IndexBinding.of(ErrandIndex.TOUCHED).sortedBy(ErrandIndex.TOUCHED)),
-	PRIORITY("priority", false, null, IndexBinding.of(ErrandIndex.PRIORITY).sortedBy(ErrandIndex.PRIORITY)),
+	PRIORITY("priority", false, null, IndexBinding.of(ErrandIndex.PRIORITY).sortedBy(ErrandIndex.PRIORITY).groupedBy(ErrandIndex.PRIORITY)),
 	DESCRIPTION("description", false, null, IndexBinding.of(ErrandIndex.DESCRIPTION)),
 	CLASSIFICATION("classification", false, null, IndexBinding.of(ErrandIndex.CATEGORY, ErrandIndex.TYPE)
 		.sortedBy("category", ErrandIndex.CATEGORY)
-		.sortedBy("type", ErrandIndex.TYPE)),
-	REPORTER_USER_ID("reporterUserId", false, null, IndexBinding.of(ErrandIndex.REPORTER_USER_ID).sortedBy(ErrandIndex.REPORTER_USER_ID)),
-	ASSIGNED_USER_ID("assignedUserId", false, null, IndexBinding.of(ErrandIndex.ASSIGNED_USER_ID).sortedBy(ErrandIndex.ASSIGNED_USER_ID)),
-	ASSIGNED_GROUP_ID("assignedGroupId", false, null, IndexBinding.of(ErrandIndex.ASSIGNED_GROUP_ID).sortedBy(ErrandIndex.ASSIGNED_GROUP_ID)),
+		.sortedBy("type", ErrandIndex.TYPE)
+		.groupedBy("category", ErrandIndex.CATEGORY)
+		.groupedBy("type", ErrandIndex.TYPE)),
+	REPORTER_USER_ID("reporterUserId", false, null, IndexBinding.of(ErrandIndex.REPORTER_USER_ID).sortedBy(ErrandIndex.REPORTER_USER_ID).groupedBy(ErrandIndex.REPORTER_USER_ID)),
+	ASSIGNED_USER_ID("assignedUserId", false, null, IndexBinding.of(ErrandIndex.ASSIGNED_USER_ID).sortedBy(ErrandIndex.ASSIGNED_USER_ID).groupedBy(ErrandIndex.ASSIGNED_USER_ID)),
+	ASSIGNED_GROUP_ID("assignedGroupId", false, null, IndexBinding.of(ErrandIndex.ASSIGNED_GROUP_ID).sortedBy(ErrandIndex.ASSIGNED_GROUP_ID).groupedBy(ErrandIndex.ASSIGNED_GROUP_ID)),
 	BUSINESS_RELATED("businessRelated", false, null, IndexBinding.of(ErrandIndex.BUSINESS_RELATED)),
 	SUSPENSION("suspension", false, null, IndexBinding.of(ErrandIndex.SUSPENDED_FROM, ErrandIndex.SUSPENDED_TO)
 		.sortedBy("suspendedFrom", ErrandIndex.SUSPENDED_FROM)
@@ -106,6 +108,22 @@ public enum ErrandField {
 	/** The properties an ordering may name for this field. */
 	public List<String> getSortableProperties() {
 		return index.sorts().keySet().stream()
+			.map(key -> IndexBinding.OWN_PROPERTY.equals(key) ? propertyName : key)
+			.toList();
+	}
+
+	/**
+	 * The index field a count grouping by sent in property groups by, empty when the property is not one of this field or
+	 * cannot be grouped by.
+	 */
+	public Optional<String> getGroupField(final String property) {
+		final var key = propertyName.equals(property) ? IndexBinding.OWN_PROPERTY : property;
+		return Optional.ofNullable(index.groups().get(key));
+	}
+
+	/** The properties a count may group by for this field. */
+	public List<String> getGroupableProperties() {
+		return index.groups().keySet().stream()
 			.map(key -> IndexBinding.OWN_PROPERTY.equals(key) ? propertyName : key)
 			.toList();
 	}

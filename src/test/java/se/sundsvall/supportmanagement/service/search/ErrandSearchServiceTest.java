@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.search;
 
 import jakarta.persistence.EntityManager;
 import java.time.Duration;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -42,9 +43,12 @@ class ErrandSearchServiceTest {
 	@Mock
 	private ErrandSearchPredicates predicatesMock;
 
+	@Mock
+	private CountGroupMapper countGroupsMock;
+
 	private ErrandSearchService service(final boolean enabled) {
 		return new ErrandSearchService(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, new SearchAvailability(enabled),
-			new SearchProperties(10000, Duration.ofSeconds(10), new SearchProperties.Reindex(Duration.ofHours(6))));
+			new SearchProperties(10000, Duration.ofSeconds(10), 100, new SearchProperties.Reindex(Duration.ofHours(6))), countGroupsMock);
 	}
 
 	@Test
@@ -74,6 +78,46 @@ class ErrandSearchServiceTest {
 		assertThat(e.getDetail()).isEqualTo("Sorting on 'description' is not supported by search. Sortable properties are: " +
 			"[assignedGroupId, assignedUserId, category, channel, created, errandNumber, modified, priority, reporterUserId, resolution, status, suspendedFrom, suspendedTo, title, touched, type]");
 		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock);
+	}
+
+	@Test
+	void countWhenDisabled() {
+		final var e = assertThrows(ThrowableProblem.class, () -> service(false).count(NAMESPACE, MUNICIPALITY_ID, "query", "status"));
+
+		assertThat(e.getStatus()).isEqualTo(SERVICE_UNAVAILABLE);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, countGroupsMock);
+	}
+
+	/**
+	 * A property nobody groups by is a bad request rather than a refusal: it says nothing about what the user may read.
+	 */
+	@Test
+	void countWithUnsupportedGroup() {
+		final var e = assertThrows(ThrowableProblem.class, () -> service(true).count(NAMESPACE, MUNICIPALITY_ID, "query", "description"));
+
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getDetail()).isEqualTo("Grouping on 'description' is not supported by search. Groupable properties are: " +
+			"[assignedGroupId, assignedUserId, category, channel, priority, reporterUserId, resolution, status, type]");
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, countGroupsMock);
+	}
+
+	/** The multi valued columns are refused too, which is what keeps the buckets from adding up to more than the count. */
+	@Test
+	void countGroupedByAMultiValuedColumnIsUnsupported() {
+		for (final var property : List.of("labels", "parameters", "jsonParameters", "stakeholders", "title", "created")) {
+			final var e = assertThrows(ThrowableProblem.class, () -> service(true).count(NAMESPACE, MUNICIPALITY_ID, null, property));
+			assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		}
+	}
+
+	/**
+	 * A breakdown is either whole or refused: answering with the largest buckets left them adding up to less than the
+	 * count beside them, with nothing saying by how much.
+	 */
+	@Test
+	void tooManyValuesToGroupByIsRefused() {
+		assertThat(ErrandSearchService.TOO_MANY_GROUPS.formatted("assignedUserId", 100))
+			.isEqualTo("Grouping on 'assignedUserId' divides this search over more than 100 values. Narrow the search instead");
 	}
 
 	@Test

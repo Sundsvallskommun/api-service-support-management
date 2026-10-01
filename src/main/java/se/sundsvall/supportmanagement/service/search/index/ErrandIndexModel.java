@@ -115,14 +115,42 @@ public class ErrandIndexModel {
 	}
 
 	/**
+	 * The index field a count grouping by sent in property groups by, empty when no field of the errand offers the
+	 * property for grouping.
+	 */
+	public static Optional<String> groupField(final String property) {
+		return Stream.of(ErrandField.values())
+			.map(field -> field.getGroupField(property))
+			.flatMap(Optional::stream)
+			.findFirst();
+	}
+
+	/** The properties a count may group by, sorted. */
+	public static List<String> groupableProperties() {
+		return Stream.of(ErrandField.values())
+			.flatMap(field -> field.getGroupableProperties().stream())
+			.sorted()
+			.toList();
+	}
+
+	/** The field of the errand sent in groupable property belongs to, which is what a route's grant is asked about. */
+	public static Optional<ErrandField> groupedField(final String property) {
+		return Stream.of(ErrandField.values())
+			.filter(field -> field.getGroupField(property).isPresent())
+			.findFirst();
+	}
+
+	/**
 	 * Holds every name the bindings and the search refer to against the index.
 	 */
 	private static void validate(final IndexDescriptor descriptor) {
 		final var problems = new ArrayList<String>();
 
 		for (final var field : ErrandField.values()) {
-			field.getSearchFields().forEach(name -> verifyExists(descriptor, name, "field " + field, problems));
-			field.getIndex().sorts().values().forEach(name -> verifySortable(descriptor, name, "field " + field, problems));
+			final var declaredOn = "field " + field;
+			field.getSearchFields().forEach(name -> verifyExists(descriptor, name, declaredOn, problems));
+			field.getIndex().sorts().values().forEach(name -> verifySortable(descriptor, name, declaredOn, problems));
+			field.getIndex().groups().values().forEach(name -> verifyAggregatable(descriptor, name, declaredOn, problems));
 		}
 		for (final var resource : ProtectedResource.values()) {
 			resource.getSearchFields().forEach(name -> verifyExists(descriptor, name, "resource " + resource, problems));
@@ -149,6 +177,7 @@ public class ErrandIndexModel {
 		for (final var field : ErrandField.values()) {
 			bound.addAll(field.getSearchFields());
 			bound.addAll(field.getIndex().sorts().values());
+			bound.addAll(field.getIndex().groups().values());
 		}
 		for (final var resource : ProtectedResource.values()) {
 			bound.addAll(resource.getSearchFields());
@@ -189,6 +218,22 @@ public class ErrandIndexModel {
 
 	private static boolean isNative(final IndexFieldDescriptor field) {
 		return field.isValueField() && JsonElement.class.equals(field.toValueField().type().dslArgumentClass());
+	}
+
+	/**
+	 * That a field a count groups by can be aggregated, which is what a terms aggregation over it needs. Said at startup
+	 * rather than as a 500 on the first grouped count, since the annotation granting it sits a long way from the binding
+	 * naming it.
+	 */
+	private static void verifyAggregatable(final IndexDescriptor descriptor, final String name, final String declaredOn, final List<String> problems) {
+		final var field = descriptor.field(name).filter(IndexFieldDescriptor::isValueField);
+		if (field.isEmpty()) {
+			problems.add("'%s' declared as a group on %s is not a field of the index".formatted(name, declaredOn));
+			return;
+		}
+		if (!field.get().toValueField().type().aggregable() && !isNative(field.get())) {
+			problems.add("'%s' declared as a group on %s cannot be aggregated".formatted(name, declaredOn));
+		}
 	}
 
 	private static void verifySortable(final IndexDescriptor descriptor, final String name, final String declaredOn, final List<String> problems) {

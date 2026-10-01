@@ -13,7 +13,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.errand.CountBucket;
+import se.sundsvall.supportmanagement.api.model.errand.CountGroup;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.SearchCountResponse;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
 import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 import tools.jackson.databind.JsonNode;
@@ -85,6 +88,60 @@ class ErrandSearchResourceTest {
 			.expectHeader().contentType(APPLICATION_JSON);
 
 		verify(searchServiceMock).search(NAMESPACE, MUNICIPALITY_ID, null, pageable);
+	}
+
+	@Test
+	void countErrands() {
+		when(searchServiceMock.count(NAMESPACE, MUNICIPALITY_ID, "status:new", null)).thenReturn(SearchCountResponse.of(137));
+
+		webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/count").queryParam("query", "status:new").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(APPLICATION_JSON)
+			.expectBody()
+			.jsonPath("$.count").isEqualTo(137)
+			.jsonPath("$.group").doesNotExist();
+
+		verify(searchServiceMock).count(NAMESPACE, MUNICIPALITY_ID, "status:new", null);
+		verifyNoMoreInteractions(searchServiceMock);
+	}
+
+	@Test
+	void countErrandsGrouped() {
+		final var group = new CountGroup("status", List.of(new CountBucket("NEW", 91), new CountBucket("ONGOING", 46)));
+		when(searchServiceMock.count(NAMESPACE, MUNICIPALITY_ID, null, "status")).thenReturn(new SearchCountResponse(137, group));
+
+		webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/count").queryParam("groupBy", "status").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody()
+			.jsonPath("$.count").isEqualTo(137)
+			.jsonPath("$.group.property").isEqualTo("status")
+			.jsonPath("$.group.buckets[0].value").isEqualTo("NEW")
+			.jsonPath("$.group.buckets[0].count").isEqualTo(91);
+
+		verify(searchServiceMock).count(NAMESPACE, MUNICIPALITY_ID, null, "status");
+	}
+
+	/** Neither has any meaning for a count, and being told so is of no use to a client that sent them by habit. */
+	@Test
+	void countErrandsIgnoresSortingAndPaging() {
+		when(searchServiceMock.count(NAMESPACE, MUNICIPALITY_ID, null, null)).thenReturn(SearchCountResponse.of(4));
+
+		webTestClient.get()
+			.uri(builder -> builder.path(PATH + "/count")
+				.queryParam("sort", "created,desc")
+				.queryParam("page", 3)
+				.queryParam("size", 50)
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody()
+			.jsonPath("$.count").isEqualTo(4);
+
+		verify(searchServiceMock).count(NAMESPACE, MUNICIPALITY_ID, null, null);
 	}
 
 	@Test

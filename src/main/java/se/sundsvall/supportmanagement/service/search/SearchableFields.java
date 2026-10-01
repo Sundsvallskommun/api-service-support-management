@@ -89,13 +89,14 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 	}
 
 	/**
-	 * Why the route may not order by sent in field, empty when it may.
+	 * Why the route may not read sent in field as a whole, empty when it may. Asked by an ordering and by a grouping
+	 * alike: both read the field of every errand they touch, rather than a key or a word of it.
 	 * <p>
-	 * Asked of the field rather than of the index field it sorts on: a sort field is a twin of the field it orders, named
-	 * for the index alone, and holding a name like {@code title_sort} against the fields a route may search would refuse
-	 * every sort and name something no client wrote.
+	 * Asked of the field rather than of the index field it sorts or groups on: those are twins of the field, named for the
+	 * index alone, and holding a name like {@code title_sort} against the fields a route may search would refuse every
+	 * sort and name something no client wrote.
 	 */
-	Optional<String> sortRefusal(final ErrandField field) {
+	Optional<String> wholeFieldRefusal(final ErrandField field) {
 		final var closedResource = guardedResources()
 			.filter(resource -> !resources.contains(resource))
 			.filter(resource -> resource.getSearchFields().stream()
