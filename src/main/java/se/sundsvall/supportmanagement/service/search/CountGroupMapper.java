@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
@@ -60,7 +60,7 @@ public class CountGroupMapper {
 	 * status configured away since the errand was given it - is answered with as the index holds it rather than left out,
 	 * since it is errands of the count either way.
 	 */
-	private Function<String, String> canonicalNames(final String property, final String namespace, final String municipalityId) {
+	private UnaryOperator<String> canonicalNames(final String property, final String namespace, final String municipalityId) {
 		final var names = switch (property) {
 			case "status" -> metadataService.findStatuses(namespace, municipalityId, Sort.unsorted()).stream().map(Status::getName);
 			case "category" -> metadataService.findCategories(namespace, municipalityId, Sort.unsorted()).stream().map(Category::getName);
