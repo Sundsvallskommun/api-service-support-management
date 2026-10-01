@@ -61,6 +61,11 @@ spring:
             scripts:
               action: create
               create-target: target/database/generated-schema.sql
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/scripts/truncate-procedure.sql
+      separator: "^^^ END OF SCRIPT ^^^"
   security:
     oauth2:
       client:
