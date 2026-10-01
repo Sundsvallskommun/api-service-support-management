@@ -110,6 +110,16 @@ class ErrandSearchServiceTest {
 		}
 	}
 
+	/**
+	 * A breakdown is either whole or refused: answering with the largest buckets left them adding up to less than the
+	 * count beside them, with nothing saying by how much.
+	 */
+	@Test
+	void tooManyValuesToGroupByIsRefused() {
+		assertThat(ErrandSearchService.TOO_MANY_GROUPS.formatted("assignedUserId", 100))
+			.isEqualTo("Grouping on 'assignedUserId' divides this search over more than 100 values. Narrow the search instead");
+	}
+
 	@Test
 	void sortablePropertiesMapToIndexFields() {
 		assertThat(ErrandIndexModel.sortableProperties()).containsExactly("assignedGroupId", "assignedUserId", "category", "channel", "created", "errandNumber", "modified", "priority",

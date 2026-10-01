@@ -47,6 +47,7 @@ public class ErrandSearchService {
 
 	static final String UNSUPPORTED_SORT = "Sorting on '%s' is not supported by search. Sortable properties are: %s";
 	static final String UNSUPPORTED_GROUP = "Grouping on '%s' is not supported by search. Groupable properties are: %s";
+	static final String TOO_MANY_GROUPS = "Grouping on '%s' divides this search over more than %d values. Narrow the search instead";
 	static final String BEYOND_RESULT_WINDOW = "Page %d of size %d reaches beyond the %d results a search can page through. Narrow the search instead";
 
 	private final EntityManager entityManager;
@@ -127,8 +128,10 @@ public class ErrandSearchService {
 	 *
 	 * @param  groupBy                                        the property to divide the count over, null or blank for
 	 *                                                        none
-	 * @throws org.springframework.web.ErrorResponseException 400 when the property cannot be grouped by, 403 when the
-	 *                                                        query or the column is beyond what the user may read
+	 * @throws org.springframework.web.ErrorResponseException 400 when the property cannot be grouped by or divides the
+	 *                                                        search over more values than a breakdown answers with, 403
+	 *                                                        when the query or the column is beyond what the user may
+	 *                                                        read
 	 */
 	@Transactional(readOnly = true)
 	public SearchCountResponse count(final String namespace, final String municipalityId, final String query, final String groupBy) {
@@ -150,7 +153,8 @@ public class ErrandSearchService {
 				return SearchCountResponse.of(search.failAfter(properties.timeout().toMillis(), MILLISECONDS).fetchTotalHitCount());
 			}
 
-			// One more bucket than is answered with, which is what tells a truncated breakdown from a whole one
+			// One bucket more than is answered with, which is how a column holding too many values to answer whole is told
+			// from one that fits
 			final var key = AggregationKey.<Map<String, Long>>of("group");
 			final var result = search
 				.aggregation(key, f -> f.terms()
@@ -160,7 +164,15 @@ public class ErrandSearchService {
 				.failAfter(properties.timeout().toMillis(), MILLISECONDS)
 				.fetch(0);
 
-			return new SearchCountResponse(result.total().hitCount(), countGroups.toGroup(groupBy, result.aggregation(key), namespace, municipalityId, properties.maxGroupBuckets()));
+			final var counts = result.aggregation(key);
+			if (counts.size() > properties.maxGroupBuckets()) {
+				// Answered with the largest buckets and a flag until now, which left the buckets adding up to less than the
+				// count beside them with nothing saying by how much. A breakdown is either whole or refused.
+				throw Problem.valueOf(BAD_REQUEST, TOO_MANY_GROUPS.formatted(groupBy, properties.maxGroupBuckets()));
+			}
+
+			return new SearchCountResponse(result.total().hitCount(),
+				countGroups.toGroup(groupBy, counts, result.total().hitCount(), namespace, municipalityId));
 		} catch (final SearchException e) {
 			throw SearchProblems.toProblem(e, properties.timeout());
 		}

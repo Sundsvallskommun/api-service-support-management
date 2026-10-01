@@ -21,8 +21,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * The index answers a grouped count with lowercased values and one bucket more than is answered with; this is what the
- * client reads instead.
+ * The index answers a grouped count with lowercased values, and counts only the errands that carry a value at all; this
+ * is what the client reads instead. The one invariant throughout: the buckets add up to the count they are answered
+ * beside.
  */
 @ExtendWith(MockitoExtension.class)
 class CountGroupMapperTest {
@@ -50,10 +51,9 @@ class CountGroupMapperTest {
 		when(metadataServiceMock.findStatuses(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(List.of(
 			Status.create().withName("NEW"), Status.create().withName("ONGOING"), Status.create().withName("SOLVED")));
 
-		final var group = mapper.toGroup("status", counts("ongoing", 46, "new", 91), NAMESPACE, MUNICIPALITY_ID, 100);
+		final var group = mapper.toGroup("status", counts("ongoing", 46, "new", 91), 137, NAMESPACE, MUNICIPALITY_ID);
 
 		assertThat(group.property()).isEqualTo("status");
-		assertThat(group.truncated()).isFalse();
 		assertThat(group.buckets()).containsExactly(new CountBucket("NEW", 91), new CountBucket("ONGOING", 46));
 	}
 
@@ -65,38 +65,47 @@ class CountGroupMapperTest {
 	void aValueTheMetadataDoesNotKnowIsAnsweredWithAsTheIndexHoldsIt() {
 		when(metadataServiceMock.findStatuses(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(List.of(Status.create().withName("NEW")));
 
-		final var group = mapper.toGroup("status", counts("new", 3, "retired_status", 1), NAMESPACE, MUNICIPALITY_ID, 100);
+		final var group = mapper.toGroup("status", counts("new", 3, "retired_status", 1), 4, NAMESPACE, MUNICIPALITY_ID);
 
 		assertThat(group.buckets()).containsExactly(new CountBucket("NEW", 3), new CountBucket("retired_status", 1));
 	}
 
 	/**
-	 * The index is asked for one bucket more than is answered with, so more than the cap means the column holds values
-	 * the breakdown does not show.
+	 * The index counts only the errands carrying a value, so the rest are counted back in under a bucket of their own
+	 * rather than going missing from a breakdown that is printed beside their count.
 	 */
 	@Test
-	void moreBucketsThanTheCapSaysSoAndAnswersWithTheLargest() {
-		final var group = mapper.toGroup("assignedUserId", counts("a", 9, "b", 8, "c", 7), NAMESPACE, MUNICIPALITY_ID, 2);
+	void theErrandsCarryingNothingGetABucketOfTheirOwn() {
+		final var group = mapper.toGroup("assignedUserId", counts("han01dle", 9, "han02dle", 3), 137, NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(group.truncated()).isTrue();
-		assertThat(group.buckets()).containsExactly(new CountBucket("a", 9), new CountBucket("b", 8));
+		assertThat(group.buckets()).containsExactly(
+			new CountBucket("han01dle", 9), new CountBucket("han02dle", 3), new CountBucket(null, 125));
+		assertThat(group.buckets()).extracting(CountBucket::count).map(Long.class::cast)
+			.satisfies(counts -> assertThat(counts.stream().mapToLong(Long::longValue).sum()).isEqualTo(137));
 		// Nothing catalogues an ad account, so the metadata is not asked
 		verifyNoInteractions(metadataServiceMock);
 	}
 
+	/** A column every errand carries gets no such bucket. */
 	@Test
-	void exactlyTheCapIsNotTruncated() {
-		final var group = mapper.toGroup("assignedUserId", counts("a", 9, "b", 8), NAMESPACE, MUNICIPALITY_ID, 2);
+	void nothingIsAddedWhenEveryErrandCarriesAValue() {
+		final var group = mapper.toGroup("assignedUserId", counts("a", 9, "b", 8), 17, NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(group.truncated()).isFalse();
-		assertThat(group.buckets()).hasSize(2);
+		assertThat(group.buckets()).containsExactly(new CountBucket("a", 9), new CountBucket("b", 8));
+	}
+
+	/** A column no errand carries is one bucket counting all of them. */
+	@Test
+	void aColumnNobodyCarriesIsOneBucketOfItsOwn() {
+		final var group = mapper.toGroup("resolution", Map.of(), 42, NAMESPACE, MUNICIPALITY_ID);
+
+		assertThat(group.buckets()).containsExactly(new CountBucket(null, 42));
 	}
 
 	@Test
-	void nothingMatchedIsAnEmptyBreakdownRatherThanNone() {
-		final var group = mapper.toGroup("assignedUserId", Map.of(), NAMESPACE, MUNICIPALITY_ID, 100);
+	void nothingMatchedIsAnEmptyBreakdownRatherThanABucketOfNone() {
+		final var group = mapper.toGroup("assignedUserId", Map.of(), 0, NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(group.truncated()).isFalse();
 		assertThat(group.buckets()).isEmpty();
 	}
 
@@ -107,9 +116,9 @@ class CountGroupMapperTest {
 			Category.create().withName("SUPPORT-CASE").withTypes(List.of(Type.create().withName("OTHER_ISSUES"))),
 			Category.create().withName("NO-TYPES")));
 
-		assertThat(mapper.toGroup("category", counts("support-case", 2), NAMESPACE, MUNICIPALITY_ID, 100).buckets())
+		assertThat(mapper.toGroup("category", counts("support-case", 2), 2, NAMESPACE, MUNICIPALITY_ID).buckets())
 			.containsExactly(new CountBucket("SUPPORT-CASE", 2));
-		assertThat(mapper.toGroup("type", counts("other_issues", 5), NAMESPACE, MUNICIPALITY_ID, 100).buckets())
+		assertThat(mapper.toGroup("type", counts("other_issues", 5), 5, NAMESPACE, MUNICIPALITY_ID).buckets())
 			.containsExactly(new CountBucket("OTHER_ISSUES", 5));
 	}
 }

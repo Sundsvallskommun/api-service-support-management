@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.search;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,8 +26,8 @@ import static java.util.stream.Collectors.toMap;
  * <p>
  * Two things have to happen on the way. Every column a count groups by is indexed through a lowercasing normalizer, so
  * the index answers with {@code new} where the errand holds {@code NEW}, and the metadata of the namespace is what
- * knows the casing. And a column with no bounded set of values is answered with in part, so a breakdown that left
- * something out has to say so rather than pass for the whole picture.
+ * knows the casing. And the index counts only the errands that carry a value in the column at all, so the ones carrying
+ * none have to be counted back in, or the buckets would add up to less than the count they are answered beside.
  */
 @Component
 public class CountGroupMapper {
@@ -38,21 +39,27 @@ public class CountGroupMapper {
 	}
 
 	/**
-	 * @param counts     the buckets the index answered with, which hold one more than is answered with where there was
-	 *                   one more
-	 * @param maxBuckets how many buckets to answer with
+	 * @param counts every value of the column and how many errands carry it, which the caller has already held to the
+	 *               number of buckets a breakdown answers with
+	 * @param total  how many errands the query matched, which is what the buckets are made to add up to
 	 */
-	public CountGroup toGroup(final String property, final Map<String, Long> counts, final String namespace, final String municipalityId, final int maxBuckets) {
-		final var truncated = counts.size() > maxBuckets;
+	public CountGroup toGroup(final String property, final Map<String, Long> counts, final long total, final String namespace, final String municipalityId) {
 		final var canonical = canonicalNames(property, namespace, municipalityId);
 
-		final var buckets = counts.entrySet().stream()
+		final var buckets = new ArrayList<CountBucket>(counts.entrySet().stream()
 			.sorted(comparingByValue(reverseOrder()))
-			.limit(maxBuckets)
 			.map(bucket -> new CountBucket(canonical.apply(bucket.getKey()), bucket.getValue()))
-			.toList();
+			.toList());
 
-		return new CountGroup(property, truncated, buckets);
+		// What the index did not count: a terms aggregation sees only the errands holding a value, and every column a count
+		// may group by holds at most one, so whatever the buckets do not add up to is the errands holding none. Subtracted
+		// rather than asked for, which is exact only because a breakdown answered in part is refused before this
+		final var withoutValue = total - buckets.stream().mapToLong(CountBucket::count).sum();
+		if (withoutValue > 0) {
+			buckets.add(new CountBucket(null, withoutValue));
+		}
+
+		return new CountGroup(property, List.copyOf(buckets));
 	}
 
 	/**
