@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.api.model.errand.CountBucket;
 import se.sundsvall.supportmanagement.api.model.errand.CountGroup;
+import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
@@ -26,8 +27,11 @@ import static java.util.stream.Collectors.toMap;
  * <p>
  * Two things have to happen on the way. Every column a count groups by is indexed through a lowercasing normalizer, so
  * the index answers with {@code new} where the errand holds {@code NEW}, and the metadata of the namespace is what
- * knows the casing. And the index counts only the errands that carry a value in the column at all, so the ones carrying
- * none have to be counted back in, or the buckets would add up to less than the count they are answered beside.
+ * knows the casing - except for the columns that are enumerations of this API, whose casing is known here. And the
+ * index
+ * counts only the errands that carry a value in the column at all, so the ones carrying none have to be counted back
+ * in,
+ * or the buckets would add up to less than the count they are answered beside.
  */
 @Component
 public class CountGroupMapper {
@@ -44,7 +48,7 @@ public class CountGroupMapper {
 	 * @param total  how many errands the query matched, which is what the buckets are made to add up to
 	 */
 	public CountGroup toGroup(final String property, final Map<String, Long> counts, final long total, final String namespace, final String municipalityId) {
-		final var canonical = canonicalNames(property, namespace, municipalityId);
+		final var canonical = canonicalNames(property, namespace, municipalityId, !counts.isEmpty());
 
 		final var buckets = new ArrayList<CountBucket>(counts.entrySet().stream()
 			.sorted(comparingByValue(reverseOrder()))
@@ -67,7 +71,13 @@ public class CountGroupMapper {
 	 * status configured away since the errand was given it - is answered with as the index holds it rather than left out,
 	 * since it is errands of the count either way.
 	 */
-	private UnaryOperator<String> canonicalNames(final String property, final String namespace, final String municipalityId) {
+	private UnaryOperator<String> canonicalNames(final String property, final String namespace, final String municipalityId, final boolean anyBuckets) {
+		if (!anyBuckets) {
+			// Nothing to name, and the metadata is a database query rather than a cache: not asked for where the answer is
+			// an empty breakdown
+			return UnaryOperator.identity();
+		}
+
 		final var names = switch (property) {
 			case "status" -> metadataService.findStatuses(namespace, municipalityId, Sort.unsorted()).stream().map(Status::getName);
 			case "category" -> metadataService.findCategories(namespace, municipalityId, Sort.unsorted()).stream().map(Category::getName);
@@ -76,7 +86,11 @@ public class CountGroupMapper {
 				.filter(Objects::nonNull)
 				.flatMap(List::stream)
 				.map(Type::getName);
-			// The identifiers and the enumerations nobody catalogues: what was written, lowercased by the index
+			// A closed enum of the API, so the casing is known here and needs no namespace to be asked. Without this the
+			// index answered 'high' where the model declares HIGH, which is a value no client can read back into Priority
+			case "priority" -> Stream.of(Priority.values()).map(Priority::name);
+			// What is left is identifiers and the uncatalogued strings: answered as the errand holds them, lowercased by
+			// the index, which is as close as the index can come to the value that was written
 			default -> Stream.<String>empty();
 		};
 

@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.0"
 servers:
-- url: http://localhost:44507
+- url: http://localhost:41275
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -15881,14 +15881,16 @@ paths:
         \ type, reporterUserId, assignedUserId, assignedGroupId. Labels, parameters\
         \ and JSON parameters cannot be grouped by, since an errand may carry several\
         \ of each and the buckets would add up to more than the count. The values\
-        \ come back in the casing the metadata of the namespace gives them, and the\
-        \ buckets always add up to the count: the errands holding nothing in the column\
-        \ are counted under a bucket whose value is null. A column dividing the search\
-        \ over more values than a breakdown answers with is refused with 400 rather\
-        \ than answered in part. The count is what the index answers, and unlike the\
-        \ search it is not held against the database afterwards, so while the index\
-        \ is behind it the number can be off by an errand or two. A rebuild puts the\
-        \ two back in step. Sorting and paging have no meaning here and are ignored."
+        \ come back in the casing the metadata of the namespace gives them, or, for\
+        \ priority, the casing of the enum; the identifiers and the uncatalogued strings\
+        \ come back lowercased as the index holds them. The buckets always add up\
+        \ to the count: the errands holding nothing in the column are counted under\
+        \ a bucket whose value is null. A column dividing the search over more values\
+        \ than a breakdown answers with is refused with 400 rather than answered in\
+        \ part. The count is what the index answers, and unlike the search it is not\
+        \ held against the database afterwards, so while the index is behind it the\
+        \ number can be off by an errand or two. A rebuild puts the two back in step.\
+        \ Sorting and paging have no meaning here and are ignored."
       operationId: countErrands
       parameters:
       - name: namespace
@@ -16485,9 +16487,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -16972,8 +16974,6 @@ components:
           type: boolean
         number:
           type: boolean
-        pojo:
-          type: boolean
         floatingPointNumber:
           type: boolean
         short:
@@ -17014,6 +17014,8 @@ components:
         string:
           type: boolean
         integralNumber:
+          type: boolean
+        pojo:
           type: boolean
         embeddedValue:
           type: boolean
