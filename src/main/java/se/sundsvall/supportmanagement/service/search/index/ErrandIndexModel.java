@@ -147,9 +147,10 @@ public class ErrandIndexModel {
 		final var problems = new ArrayList<String>();
 
 		for (final var field : ErrandField.values()) {
-			field.getSearchFields().forEach(name -> verifyExists(descriptor, name, "field " + field, problems));
-			field.getIndex().sorts().values().forEach(name -> verifySortable(descriptor, name, "field " + field, problems));
-			field.getIndex().groups().values().forEach(name -> verifyAggregatable(descriptor, name, "field " + field, problems));
+			final var declaredOn = "field " + field;
+			field.getSearchFields().forEach(name -> verifyExists(descriptor, name, declaredOn, problems));
+			field.getIndex().sorts().values().forEach(name -> verifySortable(descriptor, name, declaredOn, problems));
+			field.getIndex().groups().values().forEach(name -> verifyAggregatable(descriptor, name, declaredOn, problems));
 		}
 		for (final var resource : ProtectedResource.values()) {
 			resource.getSearchFields().forEach(name -> verifyExists(descriptor, name, "resource " + resource, problems));
