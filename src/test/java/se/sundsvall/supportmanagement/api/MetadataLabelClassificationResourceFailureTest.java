@@ -32,6 +32,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 class MetadataLabelClassificationResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/metadata/label-classifications";
+	private static final String PATTERN_MESSAGE = "may not contain slash, backslash, semicolon or percent, nor be '.' or '..'";
 
 	@MockitoBean
 	private LabelClassificationService labelClassificationServiceMock;
@@ -60,11 +61,17 @@ class MetadataLabelClassificationResourceFailureTest {
 	}
 
 	private static Stream<Arguments> createArguments() {
-		final var valid = LabelClassification.create().withClassification("subtype");
 		return Stream.of(
-			Arguments.of("MY_NAMESPACE", "666", valid, tuple("createLabelClassification.municipalityId", "not a valid municipality ID")),
-			Arguments.of("invalid,namespace", "2281", valid, tuple("createLabelClassification.namespace", "can only contain A-Z, a-z, 0-9, - and _")),
-			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withDisplayName("Undertyp"), tuple("classification", "must not be blank")));
+			Arguments.of("MY_NAMESPACE", "666", LabelClassification.create().withClassification("subtype"), tuple("createLabelClassification.municipalityId", "not a valid municipality ID")),
+			Arguments.of("invalid,namespace", "2281", LabelClassification.create().withClassification("subtype"), tuple("createLabelClassification.namespace", "can only contain A-Z, a-z, 0-9, - and _")),
+			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withDisplayName("Undertyp"), tuple("classification", "must not be blank")),
+			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withClassification("a/b"), tuple("classification", PATTERN_MESSAGE)),
+			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withClassification("a\\b"), tuple("classification", PATTERN_MESSAGE)),
+			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withClassification("a;b"), tuple("classification", PATTERN_MESSAGE)),
+			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withClassification("a%b"), tuple("classification", PATTERN_MESSAGE)),
+			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withClassification(".."), tuple("classification", PATTERN_MESSAGE)),
+			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withClassification("a".repeat(256)), tuple("classification", "size must be between 0 and 255")),
+			Arguments.of("MY_NAMESPACE", "2281", LabelClassification.create().withClassification("subtype").withDisplayName("a".repeat(256)), tuple("displayName", "size must be between 0 and 255")));
 	}
 
 	@Test
@@ -82,6 +89,25 @@ class MetadataLabelClassificationResourceFailureTest {
 		assertThat(response).isNotNull();
 		assertThat(response.getViolations()).extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("updateLabelClassification.municipalityId", "not a valid municipality ID"));
+
+		verifyNoInteractions(labelClassificationServiceMock);
+	}
+
+	@Test
+	void updateWithTooLongDisplayName() {
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{classification}").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "classification", "subtype")))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(LabelClassification.create().withDisplayName("a".repeat(256)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("displayName", "size must be between 0 and 255"));
 
 		verifyNoInteractions(labelClassificationServiceMock);
 	}
