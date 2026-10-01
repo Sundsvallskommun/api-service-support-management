@@ -115,6 +115,50 @@ class ErrandSearchAccessTest {
 		return assertThrows(ThrowableProblem.class, () -> access.plan(query, sort, grant));
 	}
 
+	// ==================================================================================
+	// What each route leaves out, so that no route searches an errand by fields the
+	// mapper then leaves out of the answer
+	// ==================================================================================
+
+	/**
+	 * The reporter fields are what the mapper gives an errand neither label set covers, so the reporter route may reach
+	 * only those. Reaching a covered errand as well let a search match on a field the mapper left out of the answer, and
+	 * the hit alone then says what that field holds.
+	 */
+	@Test
+	void theReporterRouteLeavesOutTheErrandsTheLabelsCover() {
+		final var restrictedByRole = Map.of(ErrandField.STATUS, Set.<String>of());
+		final var reporterFields = Map.of(ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, restrictedByRole, EVERY_RESOURCE), null,
+			new ReporterRoute("joe01doe", reporterFields, EVERY_RESOURCE));
+
+		assertThat(exclusionsOf("status:new", UNSORTED, grant))
+			.containsExactly(null, NamespaceGrant.scopeOf(grant.labels()));
+	}
+
+	/**
+	 * With a limited route beside it, the reporter route leaves out the wider of the two: the labels of a limited read
+	 * include those of a read, so leaving the limited errands out leaves the covered ones out as well.
+	 */
+	@Test
+	void theReporterRouteLeavesOutTheLimitedErrandsToo() {
+		final var fields = Map.of(ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, fields, EVERY_RESOURCE), new LabelRoute(WIDER_LABELS, fields, EVERY_RESOURCE),
+			new ReporterRoute("joe01doe", fields, EVERY_RESOURCE));
+
+		assertThat(exclusionsOf("status:new", UNSORTED, grant))
+			.containsExactly(null, NamespaceGrant.scopeOf(grant.labels()), NamespaceGrant.scopeOf(grant.limitedLabels()));
+	}
+
+	/** With no labels at all there is nothing for the reporter route to leave out. */
+	@Test
+	void aReporterHoldingNoLabelsLeavesNothingOut() {
+		final var fields = Map.of(ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(null, null, new ReporterRoute("joe01doe", fields, EVERY_RESOURCE));
+
+		assertThat(exclusionsOf("status:new", UNSORTED, grant)).containsExactly((AccessScope) null);
+	}
+
 	private ThrowableProblem refusedGroup(final NamespaceGrant grant, final String query, final ErrandField groupBy) {
 		return assertThrows(ThrowableProblem.class, () -> access.plan(query, UNSORTED, groupBy, grant));
 	}

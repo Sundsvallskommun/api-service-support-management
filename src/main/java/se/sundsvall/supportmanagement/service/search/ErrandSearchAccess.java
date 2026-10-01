@@ -150,19 +150,25 @@ public class ErrandSearchAccess {
 	private static List<Route> routesOf(final NamespaceGrant grant) {
 		final var routes = new ArrayList<Route>();
 		final var covered = nonNull(grant.labels()) && grant.labels().reachesAnything() ? NamespaceGrant.scopeOf(grant.labels()) : null;
+		final var limited = nonNull(grant.limitedLabels()) && grant.limitedLabels().reachesAnything() ? NamespaceGrant.scopeOf(grant.limitedLabels()) : null;
 
 		if (nonNull(covered)) {
 			routes.add(new Route(covered, null, SearchableFields.of(grant.labels().resources(), grant.labels().readable())));
 		}
-		if (nonNull(grant.limitedLabels()) && grant.limitedLabels().reachesAnything()) {
+		if (nonNull(limited)) {
 			// The labels of a level are a subset of those below it, so the limited route reaches the covered errands as
 			// well - and those are held at the level, not at limited read. Leaving them out is what keeps a limited read
 			// from widening what may be searched of an errand the user holds in full.
-			routes.add(new Route(NamespaceGrant.scopeOf(grant.limitedLabels()), covered,
-				SearchableFields.of(grant.limitedLabels().resources(), grant.limitedLabels().readable())));
+			routes.add(new Route(limited, covered, SearchableFields.of(grant.limitedLabels().resources(), grant.limitedLabels().readable())));
 		}
 		if (nonNull(grant.reporter())) {
-			routes.add(new Route(grant.reporterScope(), null, SearchableFields.of(grant.reporter().resources(), grant.reporter().readable())));
+			// The same holds for the errands the user reported, and it was missed here: the reporter fields are what the
+			// mapper gives an errand neither label set covers, so the route may only reach those. Reaching the covered
+			// errands too let a search match on a field the mapper then left out of the answer, which is the hit telling
+			// what the field holds. The limited labels are a superset of the ones at read, so leaving them out leaves the
+			// covered errands out as well.
+			routes.add(new Route(grant.reporterScope(), nonNull(limited) ? limited : covered,
+				SearchableFields.of(grant.reporter().resources(), grant.reporter().readable())));
 		}
 
 		// A grant reaching nothing at all still answers, with a search that finds nothing rather than a refusal
