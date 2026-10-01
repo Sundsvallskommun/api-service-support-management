@@ -109,7 +109,7 @@ class ErrandSearchResourceTest {
 
 	@Test
 	void countErrandsGrouped() {
-		final var group = new CountGroup("status", true, List.of(new CountBucket("NEW", 91), new CountBucket("ONGOING", 46)));
+		final var group = new CountGroup("status", List.of(new CountBucket("NEW", 91), new CountBucket("ONGOING", 46)));
 		when(searchServiceMock.count(NAMESPACE, MUNICIPALITY_ID, null, "status")).thenReturn(new SearchCountResponse(137, group));
 
 		webTestClient.get()
@@ -119,7 +119,6 @@ class ErrandSearchResourceTest {
 			.expectBody()
 			.jsonPath("$.count").isEqualTo(137)
 			.jsonPath("$.group.property").isEqualTo("status")
-			.jsonPath("$.group.truncated").isEqualTo(true)
 			.jsonPath("$.group.buckets[0].value").isEqualTo("NEW")
 			.jsonPath("$.group.buckets[0].count").isEqualTo(91);
 

@@ -16,12 +16,13 @@ import tools.jackson.databind.JsonNode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
 
 /**
- * A breakdown of a column holding more values than are answered with. The cap is a hundred in production, which no
- * fixture would reach, so it is lowered to one here: the point is that a partial breakdown says it is partial, and that
- * the count beside it still counts everything.
+ * A breakdown of a column holding more values than a breakdown answers with. The cap is a hundred in production, which
+ * no fixture would reach, so it is lowered to one here: the point is that such a breakdown is refused rather than
+ * answered in part, which is what lets the buckets of every answered breakdown add up to the count beside them.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandSearchIT/", classes = Application.class)
 @TestPropertySource(properties = "search.max-group-buckets=1")
@@ -30,7 +31,7 @@ import static org.springframework.http.HttpStatus.OK;
 	"/db/scripts/testdata-it.sql",
 	"/db/scripts/testdata-it-search.sql"
 })
-class ErrandSearchCountTruncationIT extends AbstractAppTest {
+class ErrandSearchCountTooManyGroupsIT extends AbstractAppTest {
 
 	private static final String PATH = "/2281/NAMESPACE-3/errands/search/count";
 
@@ -43,19 +44,23 @@ class ErrandSearchCountTruncationIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test01_aBreakdownLeavingSomethingOutSaysSo() {
-		final var body = setupCall()
+	void test01_aBreakdownThatWouldNotFitIsRefused() {
+		// Three errands over two statuses, and only one bucket may be answered with
+		setupCall()
 			.withServicePath(PATH + "?groupBy=status")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.sendRequest();
+
+		// The count itself is unaffected: it is the breakdown that would not fit
+		final var body = setupCall()
+			.withServicePath(PATH)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.sendRequest()
 			.getResponseBody(new TypeReference<JsonNode>() {});
 
-		// Three errands over two statuses: everything is counted, and the largest bucket alone is answered with
 		assertThat(body.path("count").asLong()).isEqualTo(3);
-		assertThat(body.path("group").path("truncated").asBoolean()).isTrue();
-		assertThat(body.path("group").path("buckets")).hasSize(1);
-		assertThat(body.path("group").path("buckets").get(0).path("value").asString()).isEqualTo("NEW");
-		assertThat(body.path("group").path("buckets").get(0).path("count").asLong()).isEqualTo(2);
+		assertThat(body.path("group").isMissingNode()).isTrue();
 	}
 }

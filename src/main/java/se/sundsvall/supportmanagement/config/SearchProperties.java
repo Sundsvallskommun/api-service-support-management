@@ -16,8 +16,9 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *                        for work the index cannot do cheaply - a wildcard open at both ends, a regular expression, a
  *                        fuzzy term - and one client asking for it must not take the cluster away from everyone else.
  * @param maxGroupBuckets how many values a grouped count answers with at most. A column such as the assigned user has
- *                        no bounded set of values, and a client asking for a breakdown of it is better served with the
- *                        largest buckets and a word that there were more than with every value the index holds.
+ *                        no
+ *                        bounded set of values, and a breakdown over more than this is refused rather than answered in
+ *                        part, so that the buckets of every answered breakdown add up to the count beside them.
  * @param reindex         settings for the mass indexer.
  */
 @ConfigurationProperties(prefix = "search")

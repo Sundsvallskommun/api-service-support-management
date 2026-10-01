@@ -499,8 +499,14 @@ class ErrandSearchIT extends AbstractAppTest {
 		final var byStatus = group(PATH, "", "status");
 
 		assertThat(byStatus.path("property").asString()).isEqualTo("status");
-		assertThat(byStatus.path("truncated").asBoolean()).isFalse();
 		assertThat(bucketsOf(byStatus)).containsExactly("NEW=2", "ONGOING=1");
+
+		// The buckets add up to the count they are answered beside, which is the whole point of refusing a partial one
+		assertThat(sumOf(byStatus)).isEqualTo(count(PATH, ""));
+
+		// A column none of the errands carries is one bucket counting all of them, rather than no buckets at all
+		assertThat(bucketsOf(group(PATH, "", "resolution"))).containsExactly("null=3");
+		assertThat(sumOf(group(PATH, "", "resolution"))).isEqualTo(3);
 
 		// The query narrows the breakdown as it narrows the count
 		assertThat(bucketsOf(group(PATH, "status:new", "status"))).containsExactly("NEW=2");
@@ -576,11 +582,21 @@ class ErrandSearchIT extends AbstractAppTest {
 		return call.sendRequest().getResponseBody(new TypeReference<JsonNode>() {});
 	}
 
+	private static long sumOf(final JsonNode group) {
+		return group.path("buckets").valueStream().mapToLong(bucket -> bucket.path("count").asLong()).sum();
+	}
+
 	/** The buckets as 'value=count', in the order they were answered with. */
 	private static List<String> bucketsOf(final JsonNode group) {
 		return group.path("buckets").valueStream()
-			.map(bucket -> bucket.path("value").asString() + "=" + bucket.path("count").asLong())
+			.map(bucket -> valueOf(bucket) + "=" + bucket.path("count").asLong())
 			.toList();
+	}
+
+	/** The value of a bucket, with the one counting the errands that hold none written as null whichever way it came. */
+	private static String valueOf(final JsonNode bucket) {
+		final var value = bucket.path("value");
+		return value.isNull() || value.isMissingNode() ? "null" : value.asString();
 	}
 
 	private List<String> search(final String path, final String query) {

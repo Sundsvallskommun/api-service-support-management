@@ -16390,12 +16390,14 @@ paths:
         \ type, reporterUserId, assignedUserId, assignedGroupId. Labels, parameters\
         \ and JSON parameters cannot be grouped by, since an errand may carry several\
         \ of each and the buckets would add up to more than the count. The values\
-        \ come back in the casing the metadata of the namespace gives them, and a\
-        \ column holding more values than are answered with says so with truncated.\
-        \ The count is what the index answers, and unlike the search it is not held\
-        \ against the database afterwards, so while the index is behind it the number\
-        \ can be off by an errand or two. A rebuild puts the two back in step. Sorting\
-        \ and paging have no meaning here and are ignored."
+        \ come back in the casing the metadata of the namespace gives them, and the\
+        \ buckets always add up to the count: the errands holding nothing in the column\
+        \ are counted under a bucket whose value is null. A column dividing the search\
+        \ over more values than a breakdown answers with is refused with 400 rather\
+        \ than answered in part. The count is what the index answers, and unlike the\
+        \ search it is not held against the database afterwards, so while the index\
+        \ is behind it the number can be off by an errand or two. A rebuild puts the\
+        \ two back in step. Sorting and paging have no meaning here and are ignored."
       operationId: countErrands
       parameters:
       - name: namespace
@@ -16996,9 +16998,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -22347,7 +22349,8 @@ components:
       properties:
         value:
           type: string
-          description: The value
+          description: "The value, or null for the errands holding nothing in the\
+            \ column"
           example: NEW
         count:
           type: integer
@@ -22356,20 +22359,17 @@ components:
           example: 91
     CountGroup:
       type: object
-      description: How a count divides over one column of the errand
+      description: How a count divides over one column of the errand. The buckets
+        add up to the count
       properties:
         property:
           type: string
           description: The property grouped by
           example: status
-        truncated:
-          type: boolean
-          description: True when the column holds more distinct values than the buckets
-            returned
-          example: false
         buckets:
           type: array
-          description: "The values and their counts, the largest first"
+          description: "The values and their counts, largest first. A bucket with\
+            \ a null value counts the errands holding nothing in the column"
           items:
             $ref: "#/components/schemas/CountBucket"
     SearchCountResponse:

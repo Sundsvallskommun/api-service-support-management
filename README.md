@@ -276,8 +276,12 @@ and with `groupBy` divides that number over one column: `status`, `resolution`, 
 labels, parameters and JSON parameters would put an errand in several buckets and make the buckets add up to more than
 the count beside them. The values come back in the casing the metadata of the namespace gives them, since every one of
 these columns is indexed lowercased, and a value the metadata no longer knows is answered with as the index holds it.
-A column with no bounded set of values, such as the assigned user, is answered with at most `search.max-group-buckets`
-(a hundred) buckets, largest first, and `truncated` then says that the breakdown is not the whole picture.
+The buckets always add up to the count they are answered beside. The index counts only the errands that carry a value in
+the column, so the rest are counted back in under a bucket whose value is `null` - every groupable column holds at most
+one value, which is what makes that subtraction exact. And a column dividing the search over more than
+`search.max-group-buckets` (a hundred) values is refused with 400 rather than answered with the largest buckets: a
+breakdown adding up to less than the number printed beside it, with nothing saying by how much, is worse than no
+breakdown.
 
 The count is cheap where the search is not: nothing is fetched and no page is mapped, which is what the search spends
 its time on. It is held to the grant exactly as the search is, and the column it groups by is held to every route
