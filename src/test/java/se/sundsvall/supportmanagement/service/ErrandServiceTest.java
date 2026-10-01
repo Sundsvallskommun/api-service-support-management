@@ -141,6 +141,9 @@ class ErrandServiceTest {
 	private ErrandPhaseService errandPhaseServiceMock;
 
 	@Mock
+	private LabelClassificationService labelClassificationServiceMock;
+
+	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
 
 	@Spy
@@ -339,6 +342,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR);
 		verify(accessControlServiceMock).roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, user);
+		verify(labelClassificationServiceMock).getClassificationDisplayNames(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(errandRepositoryMock);
 	}
 

@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.0"
+  version: "16.1"
 servers:
 - url: http://localhost:37929
   description: Generated server url
@@ -78,6 +78,8 @@ tags:
   description: Metadata operations
 - name: Metadata for measure types
   description: Measure type metadata operations
+- name: Metadata for label classifications
+  description: Label classification metadata operations
 - name: Metadata for roles
   description: Role metadata operations
 - name: Errand communication
@@ -3785,6 +3787,129 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/StatementOutcome"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/label-classifications:
+    get:
+      tags:
+      - Metadata for label classifications
+      summary: Get label classifications
+      description: Get all label classifications for the namespace and municipality
+      operationId: getLabelClassifications
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LabelClassification"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for label classifications
+      summary: Create label classification
+      description: Create new label classification for the namespace and municipality
+      operationId: createLabelClassification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelClassification"
         required: true
       responses:
         "201":
@@ -9283,6 +9408,212 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StatementOutcome"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/label-classifications/{classification}:
+    get:
+      tags:
+      - Metadata for label classifications
+      summary: Get label classification
+      description: "Get label classification matching namespace, municipality and\
+        \ classification"
+      operationId: getLabelClassification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: classification
+        in: path
+        description: Label classification
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: subtype
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelClassification"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for label classifications
+      summary: Delete label classification
+      description: "Delete label classification matching namespace, municipality\
+        \ and classification. Labels of the classification are left without a classification\
+        \ display name"
+      operationId: deleteLabelClassification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: classification
+        in: path
+        description: Label classification
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: subtype
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Metadata for label classifications
+      summary: Update label classification
+      description: "Update the display name of the label classification matching namespace,\
+        \ municipality and classification. The new display name applies to every label\
+        \ of the classification"
+      operationId: updateLabelClassification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: classification
+        in: path
+        description: Label classification
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: subtype
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelClassification"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelClassification"
         "400":
           description: Bad Request
           content:
@@ -16456,6 +16787,13 @@ components:
           examples:
           - subtype
           minLength: 1
+        classificationDisplayName:
+          type: string
+          description: "Display name for the label classification, as registered for\
+            \ the namespace"
+          examples:
+          - Undertyp
+          readOnly: true
         displayName:
           type: string
           description: Display name for the label
@@ -17156,6 +17494,46 @@ components:
           readOnly: true
       required:
       - name
+    LabelClassification:
+      type: object
+      description: Label classification model
+      properties:
+        id:
+          type: string
+          description: Label classification ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        classification:
+          type: string
+          description: Label classification. Used as key and matched against the classification
+            of the labels. Ignored on update
+          examples:
+          - subtype
+          minLength: 1
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the label classification
+          examples:
+          - Undertyp
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the label classification was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the label classification was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+      required:
+      - classification
     Role:
       type: object
       description: Role model
@@ -18108,6 +18486,13 @@ components:
           description: Label classification
           examples:
           - subtype
+          readOnly: true
+        classificationDisplayName:
+          type: string
+          description: "Display name for the label classification, as registered for\
+            \ the namespace"
+          examples:
+          - Undertyp
           readOnly: true
         displayName:
           type: string

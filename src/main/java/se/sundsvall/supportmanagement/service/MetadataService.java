@@ -71,6 +71,7 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
+import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurpose;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurposeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
@@ -146,6 +147,7 @@ public class MetadataService {
 	private final ValidationRepository validationRepository;
 	private final ContactReasonRepository contactReasonRepository;
 	private final JobService jobService;
+	private final LabelClassificationService labelClassificationService;
 	private final AntPathMatcher pathMatcher;
 
 	public MetadataService(
@@ -164,7 +166,8 @@ public class MetadataService {
 		final StatusRepository statusRepository,
 		final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository,
-		final JobService jobService) {
+		final JobService jobService,
+		final LabelClassificationService labelClassificationService) {
 		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -181,6 +184,7 @@ public class MetadataService {
 		this.validationRepository = validationRepository;
 		this.contactReasonRepository = contactReasonRepository;
 		this.jobService = jobService;
+		this.labelClassificationService = labelClassificationService;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
 	}
@@ -396,7 +400,9 @@ public class MetadataService {
 	}
 
 	public Labels findLabels(final String namespace, final String municipalityId) {
-		return toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
+		final var labels = toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
+		ofNullable(labels).ifPresent(l -> applyClassificationDisplayNames(l.getLabelStructure(), labelClassificationService.getClassificationDisplayNames(namespace, municipalityId)));
+		return labels;
 	}
 
 	public boolean labelExistsById(final String id, final String namespace, final String municipalityId) {

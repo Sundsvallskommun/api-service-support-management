@@ -28,6 +28,7 @@ class LabelTest {
 	void testCreatePattern() {
 		final var classification = "classification";
 		final var deprecated = true;
+		final var classificationDisplayName = "classificationDisplayName";
 		final var displayName = "displayName";
 		final var id = "id";
 		final var labels = List.of(Label.create());
@@ -40,6 +41,7 @@ class LabelTest {
 		final var bean = Label.create()
 			.withClassification(classification)
 			.withDeprecated(deprecated)
+			.withClassificationDisplayName(classificationDisplayName)
 			.withDisplayName(displayName)
 			.withId(id)
 			.withLabels(labels)
@@ -49,6 +51,7 @@ class LabelTest {
 
 		assertThat(bean.getClassification()).isEqualTo(classification);
 		assertThat(bean.getDeprecated()).isEqualTo(deprecated);
+		assertThat(bean.getClassificationDisplayName()).isEqualTo(classificationDisplayName);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getLabels()).isEqualTo(labels);

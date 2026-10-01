@@ -45,6 +45,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
@@ -72,6 +73,7 @@ public class ErrandService {
 	private final ErrandLabelService errandLabelService;
 	private final ErrandActionService errandActionService;
 	private final ErrandPhaseService errandPhaseService;
+	private final LabelClassificationService labelClassificationService;
 	private final EntityManager entityManager;
 
 	public ErrandService(
@@ -88,6 +90,7 @@ public class ErrandService {
 		final ErrandLabelService errandLabelService,
 		final ErrandActionService errandActionService,
 		final ErrandPhaseService errandPhaseService,
+		final LabelClassificationService labelClassificationService,
 		final EntityManager entityManager) {
 
 		this.repository = repository;
@@ -103,6 +106,7 @@ public class ErrandService {
 		this.errandLabelService = errandLabelService;
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
+		this.labelClassificationService = labelClassificationService;
 		this.entityManager = entityManager;
 	}
 
@@ -148,14 +152,19 @@ public class ErrandService {
 		final var matches = repository.findAll(fullFilter, pageable);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
 
-		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver), pageable, matches.getTotalElements());
+		final var displayNames = labelClassificationService.getClassificationDisplayNames(namespace, municipalityId);
+		final var errands = toErrandsWithAccessControl(matches.getContent(), fieldResolver).stream()
+			.map(errand -> applyClassificationDisplayNames(errand, displayNames))
+			.toList();
+
+		return new PageImpl<>(errands, pageable, matches.getTotalElements());
 	}
 
 	@Transactional(readOnly = true)
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.ERRAND, LR);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
-		return toErrandWithAccessControl(errandEntity, fieldResolver);
+		return applyClassificationDisplayNames(toErrandWithAccessControl(errandEntity, fieldResolver), labelClassificationService.getClassificationDisplayNames(namespace, municipalityId));
 	}
 
 	@Transactional
@@ -187,7 +196,7 @@ public class ErrandService {
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
-		return toErrandWithAccessControl(entity, keyAccess.readable());
+		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable()), labelClassificationService.getClassificationDisplayNames(namespace, municipalityId));
 	}
 
 	@Transactional
