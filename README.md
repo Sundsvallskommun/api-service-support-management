@@ -274,8 +274,12 @@ spring:
 and with `groupBy` divides that number over one column: `status`, `resolution`, `channel`, `priority`, `category`,
 `type`, `reporterUserId`, `assignedUserId` or `assignedGroupId`. One column at a time, and only the single valued ones -
 labels, parameters and JSON parameters would put an errand in several buckets and make the buckets add up to more than
-the count beside them. The values come back in the casing the metadata of the namespace gives them, since every one of
-these columns is indexed lowercased, and a value the metadata no longer knows is answered with as the index holds it.
+the count beside them. Every one of these columns is indexed lowercased, so the casing has to be
+recovered: `status`, `category` and `type` come back as the metadata of the namespace names them, and a value the
+metadata no longer knows is answered with as the index holds it; `priority` is an enum of this API rather than namespace
+metadata, so its casing comes from the enum. `resolution`, `channel` and the three identifier columns have no catalogue
+behind them and are answered lowercased - recovering what was written would mean indexing them a second time without the
+normalizer, which is only worth doing if a client needs the exact value.
 The buckets always add up to the count they are answered beside. The index counts only the errands that carry a value in
 the column, so the rest are counted back in under a bucket whose value is `null` - every groupable column holds at most
 one value, which is what makes that subtraction exact. And a column dividing the search over more than

@@ -109,6 +109,27 @@ class CountGroupMapperTest {
 		assertThat(group.buckets()).isEmpty();
 	}
 
+	/**
+	 * Priority is an enum of this API, so the index answering 'high' is a value no client can read back into it. The
+	 * casing is known here and needs no namespace to be asked for it.
+	 */
+	@Test
+	void theCasingOfAnEnumComesFromTheEnum() {
+		final var group = mapper.toGroup("priority", counts("high", 7, "medium", 2, "low", 1), 10, NAMESPACE, MUNICIPALITY_ID);
+
+		assertThat(group.buckets()).containsExactly(
+			new CountBucket("HIGH", 7), new CountBucket("MEDIUM", 2), new CountBucket("LOW", 1));
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	/** The metadata is a database query and not a cache, so an empty breakdown does not pay for one. */
+	@Test
+	void anEmptyBreakdownAsksTheMetadataNothing() {
+		mapper.toGroup("status", Map.of(), 0, NAMESPACE, MUNICIPALITY_ID);
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
 	/** The types of a namespace hang under its categories, so both come from the one lookup. */
 	@Test
 	void theCasingOfACategoryAndOfATypeBothComeFromTheCategories() {
