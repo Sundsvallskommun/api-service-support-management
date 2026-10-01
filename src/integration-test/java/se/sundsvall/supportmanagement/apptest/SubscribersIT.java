@@ -25,7 +25,7 @@ import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 /**
  * Subscriber IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/SubscribersIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/SubscribersIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

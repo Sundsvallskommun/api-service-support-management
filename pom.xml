@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-service-parent</artifactId>
-		<version>8.0.10</version>
+		<version>8.0.11</version>
 		<relativePath />
 		<!-- lookup parent from the repository -->
 	</parent>
@@ -130,6 +130,24 @@
 						<exclude>**/generated/se/sundsvall/**/*</exclude>
 					</excludes>
 				</configuration>
+				<executions>
+					<execution>
+						<id>pre-unit-test</id>
+						<configuration>
+							<includes>
+								<include>se.sundsvall.supportmanagement.*</include>
+							</includes>
+						</configuration>
+					</execution>
+					<execution>
+						<id>pre-integration-test</id>
+						<configuration>
+							<includes>
+								<include>se.sundsvall.supportmanagement.*</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.openapitools</groupId>

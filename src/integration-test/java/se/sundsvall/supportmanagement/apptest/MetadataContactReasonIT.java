@@ -24,7 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 /**
  * Contact Reason Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataContactReasonIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataContactReasonIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

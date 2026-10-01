@@ -26,7 +26,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 /**
  * Label Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataLabelIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataLabelIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

@@ -4,17 +4,13 @@ import generated.se.sundsvall.eventlog.EventType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.TransactionTemplate;
-import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
-import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -31,12 +27,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
  * <p>
  * Verified by writing to the errand and reading it back afterwards.
  */
-@SpringBootTest(classes = Application.class)
-@ActiveProfiles("junit")
-// The same overrides as ErrandProcessCollisionTest, so that the two share one application context
-@MockitoSpyBean(types = {
-	ErrandProcessRepository.class, ProcessEventOutboxRepository.class
-})
+@ApplicationTest
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

@@ -15,7 +15,7 @@ import se.sundsvall.supportmanagement.Application;
 /**
  * Revisions IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/RevisionsIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/RevisionsIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

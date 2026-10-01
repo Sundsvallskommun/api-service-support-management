@@ -8,18 +8,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
-import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,12 +35,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
  * Runs without a test transaction, since the recovery depends on the failed attempt rolling back a transaction of its
  * own.
  */
-@SpringBootTest(classes = Application.class)
-@ActiveProfiles("junit")
-// The same overrides as ProcessEventRollbackTest, so that the two share one application context
-@MockitoSpyBean(types = {
-	ErrandProcessRepository.class, ProcessEventOutboxRepository.class
-})
+@ApplicationTest
 @ExtendWith(OutputCaptureExtension.class)
 @Sql({
 	"/db/scripts/truncate.sql",

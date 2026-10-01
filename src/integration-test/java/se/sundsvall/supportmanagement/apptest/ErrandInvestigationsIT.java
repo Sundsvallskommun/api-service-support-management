@@ -35,7 +35,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessme
  * Errand Investigations IT tests, including the sections an investigation is assessed in, the attachments linked to it
  * and the JSON parameters it and its sections own.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandInvestigationsIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ErrandInvestigationsIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

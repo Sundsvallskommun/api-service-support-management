@@ -30,7 +30,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 /**
  * Errand time measurements IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandTimeMeasurementsIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ErrandTimeMeasurementsIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

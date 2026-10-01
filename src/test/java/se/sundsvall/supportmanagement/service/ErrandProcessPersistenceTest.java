@@ -14,13 +14,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
@@ -67,8 +65,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
  * work step and the registration of its own start comes out the same in either order, and that the process shown on an
  * errand is read for a whole page in one query.
  */
-@SpringBootTest(classes = Application.class)
-@ActiveProfiles("junit")
+@ApplicationTest
 @Transactional
 class ErrandProcessPersistenceTest {
 

@@ -23,7 +23,7 @@ import se.sundsvall.supportmanagement.Application;
 /**
  * Phase Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataPhaseIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataPhaseIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

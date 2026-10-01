@@ -25,7 +25,7 @@ import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 /**
  * Category Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataCategoryIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataCategoryIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

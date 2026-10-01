@@ -29,7 +29,7 @@ import se.sundsvall.supportmanagement.Application;
 /**
  * ErrandCommunication IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandCommunicationIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ErrandCommunicationIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

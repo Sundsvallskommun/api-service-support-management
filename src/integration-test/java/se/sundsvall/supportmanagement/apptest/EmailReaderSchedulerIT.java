@@ -17,7 +17,7 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderScheduler;
 
-@WireMockAppTestSuite(files = "classpath:/EmailReaderSchedulerIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/EmailReaderSchedulerIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

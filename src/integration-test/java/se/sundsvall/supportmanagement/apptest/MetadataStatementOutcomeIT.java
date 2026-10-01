@@ -29,7 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntit
 /**
  * StatementOutcome Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataStatementOutcomeIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataStatementOutcomeIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

@@ -34,7 +34,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
  * PROCESS-NAMESPACE names no process triggers, and the direct run is off, so every row here is written by a start
  * command and stays undelivered until a test delivers it.
  */
-@WireMockAppTestSuite(files = "classpath:/ProcessStartIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/ProcessStartIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

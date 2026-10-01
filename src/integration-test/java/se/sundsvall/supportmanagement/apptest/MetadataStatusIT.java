@@ -24,7 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 /**
  * Status Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataStatusIT/", classes = Application.class)
+@WireMockAppTestSuite(files = "classpath:/MetadataStatusIT/", classes = Application.class, sharedContext = true)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"
