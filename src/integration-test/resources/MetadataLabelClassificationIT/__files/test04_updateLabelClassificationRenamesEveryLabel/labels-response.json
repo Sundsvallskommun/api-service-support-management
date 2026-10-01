@@ -1,0 +1,27 @@
+{
+	"labelStructure": [
+		{
+			"id": "a39ed27b-6431-475c-8a42-c3d758887a1f",
+			"version": 0,
+			"classification": "CLASS",
+			"classificationDisplayName": "Ny klass",
+			"displayName": "ROOT-DISPLAY-NAME",
+			"resourcePath": "ROOT-2584",
+			"resourceName": "ROOT-2584",
+			"deprecated": false,
+			"labels": [
+				{
+					"id": "7a363843-f6e5-40af-a6b2-95252799b8c6",
+					"version": 0,
+					"classification": "CLASS",
+					"classificationDisplayName": "Ny klass",
+					"displayName": "LEVELONE-1-DISPLAY-NAME",
+					"resourcePath": "ROOT-2584/LEVELONE-1",
+					"resourceName": "LEVELONE-1",
+					"deprecated": false,
+					"labels": []
+				}
+			]
+		}
+	]
+}
