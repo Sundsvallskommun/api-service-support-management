@@ -110,6 +110,9 @@ class MetadataServiceTest {
 	@Mock
 	private PhaseRepository phaseRepositoryMock;
 
+	@Mock
+	private LabelClassificationService labelClassificationServiceMock;
+
 	@InjectMocks
 	private MetadataService metadataService;
 
@@ -1271,15 +1274,18 @@ class MetadataServiceTest {
 		final var municipalityId = "municipalityId";
 
 		// Mock
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId)).thenReturn(List.of(MetadataLabelEntity.create()));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId)).thenReturn(List.of(MetadataLabelEntity.create().withClassification("subtype")));
+		when(labelClassificationServiceMock.getClassificationDisplayNames(namespace, municipalityId)).thenReturn(Map.of("subtype", "Undertyp"));
 
 		// Call
 		final var labels = metadataService.findLabels(namespace, municipalityId);
 
 		// Verifications
 		assertThat(labels.getLabelStructure()).hasSize(1);
+		assertThat(labels.getLabelStructure().getFirst().getClassificationDisplayName()).isEqualTo("Undertyp");
 
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
+		verify(labelClassificationServiceMock).getClassificationDisplayNames(namespace, municipalityId);
 		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}
@@ -1299,6 +1305,7 @@ class MetadataServiceTest {
 		assertThat(result).isNull();
 
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
+		verifyNoInteractions(labelClassificationServiceMock);
 		verifyNoMoreInteractions(metadataLabelRepositoryMock);
 		verifyNoInteractions(categoryRepositoryMock, externalIdTypeRepositoryMock, roleRepositoryMock, validationRepositoryMock, statusRepositoryMock);
 	}

@@ -27,6 +27,7 @@ class ErrandLabelTest {
 	void testCreatePattern() {
 
 		final var classification = "classification";
+		final var classificationDisplayName = "classificationDisplayName";
 		final var displayName = "displayName";
 		final var id = "id";
 		final var resourceName = "resourceName";
@@ -35,6 +36,7 @@ class ErrandLabelTest {
 
 		final var bean = ErrandLabel.create()
 			.withClassification(classification)
+			.withClassificationDisplayName(classificationDisplayName)
 			.withDisplayName(displayName)
 			.withId(id)
 			.withResourceName(resourceName)
@@ -43,6 +45,7 @@ class ErrandLabelTest {
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getClassification()).isEqualTo(classification);
+		assertThat(bean.getClassificationDisplayName()).isEqualTo(classificationDisplayName);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getResourceName()).isEqualTo(resourceName);

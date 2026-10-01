@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.HandoverPreviewService;
 import se.sundsvall.supportmanagement.service.HandoverService;
 import se.sundsvall.supportmanagement.service.JobService;
+import se.sundsvall.supportmanagement.service.LabelClassificationService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.NotificationService;
 import se.sundsvall.supportmanagement.service.ProcessCommandService;
@@ -81,6 +82,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 	HandoverService.class,
 	JobService.class,
 	JsonSchemaClient.class,
+	LabelClassificationService.class,
 	MessageExchangeIntegrationConfigService.class,
 	MessageExchangeSyncConfigService.class,
 	MetadataService.class,

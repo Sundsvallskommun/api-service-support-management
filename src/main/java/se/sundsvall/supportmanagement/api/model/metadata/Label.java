@@ -26,6 +26,9 @@ public class Label {
 	@NotBlank
 	private String classification;
 
+	@Schema(description = "Display name for the label classification, as registered for the namespace", examples = "Undertyp", accessMode = READ_ONLY)
+	private String classificationDisplayName;
+
 	@Schema(description = "Display name for the label", examples = "Nyckelkort")
 	private String displayName;
 
@@ -97,6 +100,19 @@ public class Label {
 
 	public Label withClassification(final String classification) {
 		setClassification(classification);
+		return this;
+	}
+
+	public String getClassificationDisplayName() {
+		return classificationDisplayName;
+	}
+
+	public void setClassificationDisplayName(final String classificationDisplayName) {
+		this.classificationDisplayName = classificationDisplayName;
+	}
+
+	public Label withClassificationDisplayName(final String classificationDisplayName) {
+		setClassificationDisplayName(classificationDisplayName);
 		return this;
 	}
 
@@ -180,7 +196,7 @@ public class Label {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(attributes, classification, deprecated, displayName, id, labels, resourceName, resourcePath, version);
+		return Objects.hash(attributes, classification, classificationDisplayName, deprecated, displayName, id, labels, resourceName, resourcePath, version);
 	}
 
 	@Override
@@ -195,13 +211,15 @@ public class Label {
 			return false;
 		}
 		Label other = (Label) obj;
-		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && Objects.equals(deprecated, other.deprecated) && Objects.equals(displayName, other.displayName) &&
+		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && Objects.equals(classificationDisplayName, other.classificationDisplayName) && Objects.equals(deprecated, other.deprecated) && Objects
+			.equals(displayName, other.displayName) &&
 			Objects.equals(id, other.id) && Objects.equals(labels, other.labels) && Objects.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath) && Objects.equals(version, other.version);
 	}
 
 	@Override
 	public String toString() {
-		return "Label [id=" + id + ", version=" + version + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + ", deprecated=" + deprecated + ", labels=" + labels
+		return "Label [id=" + id + ", version=" + version + ", classification=" + classification + ", classificationDisplayName=" + classificationDisplayName + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName="
+			+ resourceName + ", deprecated=" + deprecated + ", labels=" + labels
 			+ ", attributes=" + attributes + "]";
 	}
 }

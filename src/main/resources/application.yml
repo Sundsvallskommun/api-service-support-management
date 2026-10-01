@@ -178,7 +178,7 @@ spring:
   application:
     name: support-management
   cache:
-    cache-names: namespaceConfigCache, accessibleLabelsCache
+    cache-names: namespaceConfigCache, accessibleLabelsCache, labelClassificationCache
     caffeine:
       # default setting used if no override has been defined
       spec: maximumSize=200, expireAfterWrite=10m

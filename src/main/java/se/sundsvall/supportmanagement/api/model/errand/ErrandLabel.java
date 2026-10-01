@@ -23,6 +23,9 @@ public class ErrandLabel {
 	@Schema(description = "Label classification", examples = "subtype", accessMode = READ_ONLY)
 	private String classification;
 
+	@Schema(description = "Display name for the label classification, as registered for the namespace", examples = "Undertyp", accessMode = READ_ONLY)
+	private String classificationDisplayName;
+
 	@Schema(description = "Display name for the label", examples = "Nyckelkort", accessMode = READ_ONLY)
 	private String displayName;
 
@@ -75,6 +78,19 @@ public class ErrandLabel {
 		return this;
 	}
 
+	public String getClassificationDisplayName() {
+		return classificationDisplayName;
+	}
+
+	public void setClassificationDisplayName(final String classificationDisplayName) {
+		this.classificationDisplayName = classificationDisplayName;
+	}
+
+	public ErrandLabel withClassificationDisplayName(final String classificationDisplayName) {
+		setClassificationDisplayName(classificationDisplayName);
+		return this;
+	}
+
 	public String getDisplayName() {
 		return displayName;
 	}
@@ -116,7 +132,7 @@ public class ErrandLabel {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, displayName, id, resourceName, resourcePath, version);
+		return Objects.hash(classification, classificationDisplayName, displayName, id, resourceName, resourcePath, version);
 	}
 
 	@Override
@@ -131,12 +147,14 @@ public class ErrandLabel {
 			return false;
 		}
 		ErrandLabel other = (ErrandLabel) obj;
-		return Objects.equals(classification, other.classification) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(resourceName, other.resourceName)
+		return Objects.equals(classification, other.classification) && Objects.equals(classificationDisplayName, other.classificationDisplayName) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(
+			resourceName, other.resourceName)
 			&& Objects.equals(resourcePath, other.resourcePath) && Objects.equals(version, other.version);
 	}
 
 	@Override
 	public String toString() {
-		return "ErrandLabel [id=" + id + ", version=" + version + ", classification=" + classification + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName=" + resourceName + "]";
+		return "ErrandLabel [id=" + id + ", version=" + version + ", classification=" + classification + ", classificationDisplayName=" + classificationDisplayName + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName="
+			+ resourceName + "]";
 	}
 }

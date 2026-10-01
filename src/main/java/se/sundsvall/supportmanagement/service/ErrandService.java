@@ -51,6 +51,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultLifecycle;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
@@ -85,6 +86,7 @@ public class ErrandService {
 	private final ErrandProcessService errandProcessService;
 	private final ProcessKeyGuard processKeyGuard;
 	private final DecisionValidator decisionValidator;
+	private final LabelClassificationService labelClassificationService;
 	private final EntityManager entityManager;
 	private final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator;
 
@@ -105,6 +107,7 @@ public class ErrandService {
 		final ErrandProcessService errandProcessService,
 		final ProcessKeyGuard processKeyGuard,
 		final DecisionValidator decisionValidator,
+		final LabelClassificationService labelClassificationService,
 		final EntityManager entityManager,
 		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator) {
 
@@ -124,6 +127,7 @@ public class ErrandService {
 		this.errandProcessService = errandProcessService;
 		this.processKeyGuard = processKeyGuard;
 		this.decisionValidator = decisionValidator;
+		this.labelClassificationService = labelClassificationService;
 		this.entityManager = entityManager;
 		this.attachmentSequenceNumberGenerator = attachmentSequenceNumberGenerator;
 	}
@@ -173,14 +177,20 @@ public class ErrandService {
 		final var matches = repository.findAll(fullFilter, pageable);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
 
-		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver, enrichmentOf(namespace, municipalityId, matches.getContent())), pageable, matches.getTotalElements());
+		final var displayNames = labelClassificationService.getClassificationDisplayNames(namespace, municipalityId);
+		final var errands = toErrandsWithAccessControl(matches.getContent(), fieldResolver, enrichmentOf(namespace, municipalityId, matches.getContent())).stream()
+			.map(errand -> applyClassificationDisplayNames(errand, displayNames))
+			.toList();
+
+		return new PageImpl<>(errands, pageable, matches.getTotalElements());
 	}
 
 	@Transactional(readOnly = true)
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.ERRAND, LR);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
-		return toErrandWithAccessControl(errandEntity, fieldResolver, enrichmentOf(namespace, municipalityId, List.of(errandEntity)));
+		return applyClassificationDisplayNames(toErrandWithAccessControl(errandEntity, fieldResolver, enrichmentOf(namespace, municipalityId, List.of(errandEntity))),
+			labelClassificationService.getClassificationDisplayNames(namespace, municipalityId));
 	}
 
 	/**
@@ -232,7 +242,8 @@ public class ErrandService {
 		errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity), activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true);
 
-		return toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity)));
+		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity))),
+			labelClassificationService.getClassificationDisplayNames(namespace, municipalityId));
 	}
 
 	@Transactional
