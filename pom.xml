@@ -130,6 +130,24 @@
 						<exclude>**/generated/se/sundsvall/**/*</exclude>
 					</excludes>
 				</configuration>
+				<executions>
+					<execution>
+						<id>pre-unit-test</id>
+						<configuration>
+							<includes>
+								<include>se.sundsvall.supportmanagement.*</include>
+							</includes>
+						</configuration>
+					</execution>
+					<execution>
+						<id>pre-integration-test</id>
+						<configuration>
+							<includes>
+								<include>se.sundsvall.supportmanagement.*</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.openapitools</groupId>
