@@ -224,6 +224,10 @@ public class ErrandService {
 		// Held now, since the patch is about to overwrite the life cycle it is judged from.
 		final var activates = errandEntityToUpdate.isDraft() && ACTIVE.name().equals(errand.getLifecycle());
 
+		// Read before the errand is touched, so that failing to read them cannot roll back an update whose actions and event
+		// have already gone out.
+		final var classificationDisplayNames = labelClassificationService.getClassificationDisplayNames(namespace, municipalityId);
+
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
@@ -242,8 +246,7 @@ public class ErrandService {
 		errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity), activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true);
 
-		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity))),
-			labelClassificationService.getClassificationDisplayNames(namespace, municipalityId));
+		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity))), classificationDisplayNames);
 	}
 
 	@Transactional

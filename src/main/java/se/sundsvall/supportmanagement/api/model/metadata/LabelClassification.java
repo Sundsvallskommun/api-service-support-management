@@ -3,6 +3,8 @@ package se.sundsvall.supportmanagement.api.model.metadata;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -19,15 +21,27 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 @Schema(description = "Label classification model")
 public class LabelClassification {
 
+	/**
+	 * The classification is the path key of the resource, so it may not hold what cannot be addressed in a path: a slash,
+	 * backslash, semicolon or percent sign, nor be a lone '.' or '..'.
+	 */
+	static final String CLASSIFICATION_REGEXP = "(?!\\.{1,2}$)[^/\\\\;%]+";
+	static final String CLASSIFICATION_VALIDATION_MESSAGE = "may not contain slash, backslash, semicolon or percent, nor be '.' or '..'";
+
 	@Schema(description = "Label classification ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7", accessMode = READ_ONLY)
 	private String id;
 
-	@Schema(description = "Label classification. Used as key and matched against the classification of the labels. Ignored on update", examples = "subtype")
+	@Schema(description = "Label classification. Used as key and matched against the classification of the labels. Ignored on update", examples = "subtype", maxLength = 255)
 	@NotBlank
+	@Size(max = 255)
+	@Pattern(regexp = CLASSIFICATION_REGEXP, message = CLASSIFICATION_VALIDATION_MESSAGE)
 	private String classification;
 
-	@Schema(description = "Display name for the label classification", examples = "Undertyp", types = {
+	@Schema(description = "Display name for the label classification", examples = "Undertyp", maxLength = 255, types = {
 		"string", "null"
+	})
+	@Size(max = 255, groups = {
+		Default.class, OnUpdate.class
 	})
 	private String displayName;
 

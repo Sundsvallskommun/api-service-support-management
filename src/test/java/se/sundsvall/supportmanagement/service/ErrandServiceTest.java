@@ -536,6 +536,25 @@ class ErrandServiceTest {
 	}
 
 	@Test
+	void updateErrandReadsClassificationDisplayNamesBeforeTouchingTheErrand() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(labelClassificationServiceMock.getClassificationDisplayNames(NAMESPACE, MUNICIPALITY_ID)).thenThrow(new IllegalStateException("database down"));
+
+		final var errand = Errand.create().withTitle("new title");
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
+			.isInstanceOf(IllegalStateException.class);
+
+		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
+
+		// Failing to read them leaves nothing behind that a rollback cannot undo
+		verifyNoInteractions(errandRepositoryMock, errandActionServiceMock, revisionServiceMock, eventServiceMock, entityManagerMock);
+	}
+
+	@Test
 	void updateErrandRejectsAKeyTheUserMayNotReach() {
 		final var entity = buildErrandEntity();
 		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));

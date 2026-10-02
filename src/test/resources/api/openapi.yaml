@@ -20943,7 +20943,9 @@ components:
             of the labels. Ignored on update
           examples:
           - subtype
-          minLength: 1
+          maxLength: 255
+          minLength: 0
+          pattern: "(?!\\.{1,2}$)[^/\\\\;%]+"
         displayName:
           type:
           - string
@@ -20951,6 +20953,7 @@ components:
           description: Display name for the label classification
           examples:
           - Undertyp
+          maxLength: 255
         created:
           type: string
           format: date-time
