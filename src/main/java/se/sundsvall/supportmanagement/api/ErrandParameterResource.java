@@ -66,7 +66,7 @@ class ErrandParameterResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "If-Match", description = "Optional ETag of the errand for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
-		@Valid @NotNull @RequestBody final List<se.sundsvall.supportmanagement.api.model.errand.Parameter> errandParameters) {
+		@Valid @NotNull @RequestBody final List<se.sundsvall.supportmanagement.api.model.errand.@NotNull Parameter> errandParameters) {
 
 		return ok(service.updateErrandParameters(namespace, municipalityId, errandId, ifMatch, errandParameters));
 	}
@@ -113,7 +113,7 @@ class ErrandParameterResource {
 		@Parameter(name = "errandId", description = "Errand id", example = "b82bd8ac-1507-4d9a-958d-369261eecc15") @ValidUuid @PathVariable("errandId") final String errandId,
 		@Parameter(name = "parameterKey", description = "Errand parameter key", example = "propertyInfo") @NotBlank @PathVariable("parameterKey") final String parameterKey,
 		@Parameter(name = "If-Match", description = "Optional ETag of the parameter for optimistic locking — omit to skip version check") @RequestHeader(value = "If-Match", required = false) final String ifMatch,
-		@Valid @NotNull @RequestBody final List<String> parameterValues) {
+		@Valid @NotNull @RequestBody final List<@NotNull String> parameterValues) {
 
 		final var updated = service.updateErrandParameter(namespace, municipalityId, errandId, parameterKey, ifMatch, parameterValues);
 		return ok()

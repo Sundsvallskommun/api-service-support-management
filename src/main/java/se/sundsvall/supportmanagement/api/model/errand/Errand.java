@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -62,7 +63,9 @@ public class Errand {
 
 	@Schema(description = "Parameters for the errand")
 	@Valid
-	private List<Parameter> parameters;
+	private List<@NotNull(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) Parameter> parameters;
 
 	@Schema(description = "JSON parameters for the errand")
 	@Valid

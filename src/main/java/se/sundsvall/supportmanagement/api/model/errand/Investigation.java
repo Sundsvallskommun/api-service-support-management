@@ -95,7 +95,9 @@ public class Investigation {
 	@Schema(description = "Parameters of the investigation, unstructured metadata as keys with lists of values, returned in the order of their keys. "
 		+ "Keys are trimmed, and parameters sent for the same key are merged: their values are joined in the order sent, and the display name and group "
 		+ "are those of the first. On update the sent list replaces the stored one; an omitted list leaves them as they are and an empty list removes them all")
-	private List<@Valid @ConvertGroup(from = OnUpdate.class, to = Default.class) Parameter> parameters;
+	private List<@NotNull(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) @Valid @ConvertGroup(from = OnUpdate.class, to = Default.class) Parameter> parameters;
 
 	@Schema(description = "User who created the investigation", examples = "jo12doe", accessMode = READ_ONLY)
 	private String createdBy;

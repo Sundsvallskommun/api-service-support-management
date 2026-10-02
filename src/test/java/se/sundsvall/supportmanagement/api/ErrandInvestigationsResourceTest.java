@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -141,10 +142,12 @@ class ErrandInvestigationsResourceTest {
 		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(PATH_VARIABLES))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Investigation.create().withStatus("ACTIVE").withParameters(List.of(
+			.bodyValue(Investigation.create().withStatus("ACTIVE").withParameters(Arrays.asList(
 				Parameter.create().withKey(" "),
 				Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
-				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)))))
+				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
+				null,
+				Parameter.create().withKey("other").withValues(Arrays.asList("value", null)))))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -160,7 +163,9 @@ class ErrandInvestigationsResourceTest {
 				tuple("parameters[1].values[0]", "size must be between 0 and 3000"),
 				tuple("parameters[2].key", "size must be between 0 and 255"),
 				tuple("parameters[2].displayName", "size must be between 0 and 255"),
-				tuple("parameters[2].group", "size must be between 0 and 255"));
+				tuple("parameters[2].group", "size must be between 0 and 255"),
+				tuple("parameters[3]", "must not be null"),
+				tuple("parameters[4].values[1]", "must not be null"));
 		verifyNoInteractions(serviceMock);
 	}
 
@@ -171,10 +176,12 @@ class ErrandInvestigationsResourceTest {
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH_WITH_ID).build(PATH_VARIABLES))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Investigation.create().withParameters(List.of(
+			.bodyValue(Investigation.create().withParameters(Arrays.asList(
 				Parameter.create().withValues(List.of("value")),
 				Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
-				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)))))
+				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
+				null,
+				Parameter.create().withKey("other").withValues(Arrays.asList("value", null)))))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -190,7 +197,9 @@ class ErrandInvestigationsResourceTest {
 				tuple("parameters[1].values[0]", "size must be between 0 and 3000"),
 				tuple("parameters[2].key", "size must be between 0 and 255"),
 				tuple("parameters[2].displayName", "size must be between 0 and 255"),
-				tuple("parameters[2].group", "size must be between 0 and 255"));
+				tuple("parameters[2].group", "size must be between 0 and 255"),
+				tuple("parameters[3]", "must not be null"),
+				tuple("parameters[4].values[1]", "must not be null"));
 		verifyNoInteractions(serviceMock);
 	}
 

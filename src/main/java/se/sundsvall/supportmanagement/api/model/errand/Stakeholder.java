@@ -3,10 +3,14 @@ package se.sundsvall.supportmanagement.api.model.errand;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.groups.Default;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.validation.ValidRole;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 @Schema(description = "Stakeholder model")
 public class Stakeholder {
@@ -50,7 +54,9 @@ public class Stakeholder {
 	private List<ContactChannel> contactChannels;
 
 	@Schema(description = "Parameters for the stakeholder")
-	private List<@Valid Parameter> parameters;
+	private List<@NotNull(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) @Valid Parameter> parameters;
 
 	public static Stakeholder create() {
 		return new Stakeholder();
