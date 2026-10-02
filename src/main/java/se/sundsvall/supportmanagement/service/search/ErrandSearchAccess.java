@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
@@ -44,7 +45,6 @@ public class ErrandSearchAccess {
 
 	static final String NOT_SEARCHABLE = "%s not searchable by user '%s'";
 	static final String NOT_SORTABLE = "%s not sortable by user '%s'";
-	static final String NOT_GROUPABLE = "%s not groupable by user '%s'";
 	static final String WILDCARD_NOT_SEARCHABLE = "A wildcard in a field name is not available to user '%s', who may not search every field of the errand";
 	static final String NOT_READ = "The query holds a field reference that could not be read, which user '%s' may not have searched unchecked";
 
@@ -60,8 +60,14 @@ public class ErrandSearchAccess {
 
 	/**
 	 * What a search runs with once the query has been held to the grant, one clause per route that can answer it.
+	 *
+	 * @param clauses what the search is filtered by, and what a count counts
+	 * @param grouped those of the clauses whose route may read the column a count groups by, which is what the breakdown
+	 *                is counted over. Empty where nothing is grouped by, and a subset of the clauses otherwise: an
+	 *                errand reached only by a route that may not read the column is still counted, it only lands in no
+	 *                bucket of its own
 	 */
-	public record Plan(List<Clause> clauses) {}
+	public record Plan(List<Clause> clauses, List<Clause> grouped) {}
 
 	/** A route of the grant, before the query has been held to it. */
 	private record Route(AccessScope scope, AccessScope excluded, SearchableFields fields) {}
@@ -86,12 +92,15 @@ public class ErrandSearchAccess {
 	 *
 	 * @param  groupBy                                        the field of the errand a count groups by, null when it
 	 *                                                        counts without grouping
-	 * @throws org.springframework.web.ErrorResponseException 403 when no route of the grant can answer the query, or
-	 *                                                        when a route that can may not read the group column
+	 * @throws org.springframework.web.ErrorResponseException 403 when no route of the grant can answer the query. The
+	 *                                                        group column refuses nothing: a route that may not read it
+	 *                                                        contributes no buckets, see {@link Plan#grouped()}
 	 */
 	public Plan plan(final String query, final Sort sort, final ErrandField groupBy, final NamespaceGrant grant) {
 		if (!grant.enforced()) {
-			return new Plan(List.of(new Clause(grant.scope(), null, index.textFields())));
+			// Nothing is held back, so the one clause is counted and grouped alike
+			final var open = List.of(new Clause(grant.scope(), null, index.textFields()));
+			return new Plan(open, isNull(groupBy) ? List.of() : open);
 		}
 
 		// Read once, whatever the grant turns out to reach: what the query names does not depend on who is asking
@@ -116,31 +125,31 @@ public class ErrandSearchAccess {
 				.orElseGet(() -> Problem.valueOf(FORBIDDEN, NOT_SEARCHABLE.formatted("The errands of this namespace are", getCallerIdentity())));
 		}
 
-		verifyGroupable(groupBy, answering);
-		return new Plan(List.copyOf(clauses));
+		return new Plan(List.copyOf(clauses), groupedBy(groupBy, answering, clauses));
 	}
 
 	/**
-	 * Holds the group column to every route that answers the query.
+	 * The clauses a breakdown is counted over: those whose route may read the column, and no others.
 	 * <p>
-	 * Grouping a count by a column reads that column of every errand counted, so a route that may not read it may not be
-	 * counted by it. A route already left out of the plan is not asked: it contributes no errand, so it can hide nothing.
+	 * Grouping reads the column of every errand it puts in a bucket, so a route that may not read it contributes no
+	 * buckets. It is not refused on behalf of the other routes, and nor are its errands left out of the count: the count
+	 * of a query is the count of that query however it is divided up, which is what lets a client filter with a search
+	 * and ask for the breakdown of the same filter. The errands no bucket could account for are what the count exceeds
+	 * the buckets by, and the breakdown says as much.
 	 * <p>
-	 * Refused whole rather than counted over the routes that may, because the alternative answers with buckets adding up
-	 * to less than the count printed beside them, and nothing on the endpoint could explain the difference.
+	 * Withheld per errand rather than per request, which is both safer and less blunt than refusing everyone: a namespace
+	 * excepting its reporters without saying what they may read gives every user a route held to the minimum, and
+	 * refusing on its behalf made grouping impossible for the whole namespace, however much the user could read.
 	 */
-	private static void verifyGroupable(final ErrandField groupBy, final List<Route> answering) {
+	private static List<Clause> groupedBy(final ErrandField groupBy, final List<Route> answering, final List<Clause> clauses) {
 		if (isNull(groupBy)) {
-			return;
+			return List.of();
 		}
 
-		final var refused = answering.stream()
-			.map(route -> route.fields().wholeFieldRefusal(groupBy))
-			.flatMap(Optional::stream)
-			.findFirst();
-		if (refused.isPresent()) {
-			throw Problem.valueOf(FORBIDDEN, NOT_GROUPABLE.formatted(refused.get(), getCallerIdentity()));
-		}
+		return IntStream.range(0, answering.size())
+			.filter(i -> answering.get(i).fields().wholeFieldRefusal(groupBy).isEmpty())
+			.mapToObj(clauses::get)
+			.toList();
 	}
 
 	/**

@@ -16392,14 +16392,18 @@ paths:
         \ of each and the buckets would add up to more than the count. The values\
         \ come back in the casing the metadata of the namespace gives them, or, for\
         \ priority, the casing of the enum; the identifiers and the uncatalogued strings\
-        \ come back lowercased as the index holds them. The buckets always add up\
-        \ to the count: the errands holding nothing in the column are counted under\
-        \ a bucket whose value is null. A column dividing the search over more values\
-        \ than a breakdown answers with is refused with 400 rather than answered in\
-        \ part. The count is what the index answers, and unlike the search it is not\
-        \ held against the database afterwards, so while the index is behind it the\
-        \ number can be off by an errand or two. A rebuild puts the two back in step.\
-        \ Sorting and paging have no meaning here and are ignored."
+        \ come back lowercased as the index holds them. The count is the count of\
+        \ the search however it is divided up, so the same query may be sent to both\
+        \ endpoints, and the breakdown accounts for all of it: its buckets, withoutValue\
+        \ and withheld add up to the count. An errand carrying nothing in the column\
+        \ is counted by withoutValue, and one carrying something the user may not\
+        \ read by withheld, of which nothing further is said. A column dividing the\
+        \ search over more values than a breakdown answers with is refused with 400\
+        \ rather than answered in part. The count is what the index answers, and unlike\
+        \ the search it is not held against the database afterwards, so while the\
+        \ index is behind it the number can be off by an errand or two. A rebuild\
+        \ puts the two back in step. Sorting and paging have no meaning here and are\
+        \ ignored."
       operationId: countErrands
       parameters:
       - name: namespace
@@ -17000,9 +17004,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -22351,8 +22355,7 @@ components:
       properties:
         value:
           type: string
-          description: "The value, or null for the errands holding nothing in the\
-            \ column"
+          description: The value
           example: NEW
         count:
           type: integer
@@ -22361,8 +22364,8 @@ components:
           example: 91
     CountGroup:
       type: object
-      description: How a count divides over one column of the errand. The buckets
-        add up to the count
+      description: "How a count divides over one column of the errand. The buckets,\
+        \ withoutValue and withheld together account for the count"
       properties:
         property:
           type: string
@@ -22370,10 +22373,20 @@ components:
           example: status
         buckets:
           type: array
-          description: "The values and their counts, largest first. A bucket with\
-            \ a null value counts the errands holding nothing in the column"
+          description: "The values and their counts, largest first"
           items:
             $ref: "#/components/schemas/CountBucket"
+        withoutValue:
+          type: integer
+          format: int64
+          description: How many of the counted errands carry nothing in the column
+          example: 3
+        withheld:
+          type: integer
+          format: int64
+          description: How many of the counted errands carry a column this user may
+            not read
+          example: 0
     SearchCountResponse:
       type: object
       description: "How many errands a search matches, and optionally how that number\

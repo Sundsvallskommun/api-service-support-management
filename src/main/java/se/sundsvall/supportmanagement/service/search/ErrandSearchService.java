@@ -3,10 +3,12 @@ package se.sundsvall.supportmanagement.service.search;
 import com.google.gson.JsonObject;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.hibernate.search.backend.elasticsearch.ElasticsearchExtension;
 import org.hibernate.search.engine.search.aggregation.AggregationKey;
 import org.hibernate.search.engine.search.query.SearchResult;
+import org.hibernate.search.engine.search.query.dsl.SearchQueryOptionsStep;
 import org.hibernate.search.engine.search.sort.dsl.SearchSortFactory;
 import org.hibernate.search.engine.search.sort.dsl.SortFinalStep;
 import org.hibernate.search.engine.search.sort.dsl.SortOrder;
@@ -130,8 +132,9 @@ public class ErrandSearchService {
 	 *                                                        none
 	 * @throws org.springframework.web.ErrorResponseException 400 when the property cannot be grouped by or divides the
 	 *                                                        search over more values than a breakdown answers with, 403
-	 *                                                        when the query or the column is beyond what the user may
-	 *                                                        read
+	 *                                                        when the query is beyond what the user may read. The column
+	 *                                                        never refuses: what a route may not read it simply does not
+	 *                                                        divide up
 	 */
 	@Transactional(readOnly = true)
 	public SearchCountResponse count(final String namespace, final String municipalityId, final String query, final String groupBy) {
@@ -142,21 +145,28 @@ public class ErrandSearchService {
 		final var grant = accessControlService.namespaceGrant(namespace, municipalityId, user, R);
 		final var plan = searchAccess.plan(query, Sort.unsorted(), grouped, grant);
 
-		final var search = Search.session(entityManager).search(ErrandEntity.class)
-			.where(f -> f.bool()
-				.filter(predicates.tenant(f, namespace, municipalityId))
-				.must(predicates.clauses(f, plan.clauses(), query, namespace, municipalityId)));
-
 		try {
 			if (grouped == null) {
 				// Nothing is fetched at all here: the index answers with a number and the database is never asked
-				return SearchCountResponse.of(search.failAfter(properties.timeout().toMillis(), MILLISECONDS).fetchTotalHitCount());
+				return SearchCountResponse.of(countOf(plan.clauses(), query, namespace, municipalityId));
 			}
+
+			// Where no route may read the column, every errand of the count is withheld and no breakdown is asked for
+			if (plan.grouped().isEmpty()) {
+				final var withheld = countOf(plan.clauses(), query, namespace, municipalityId);
+				return new SearchCountResponse(withheld, countGroups.toGroup(groupBy, Map.of(), withheld, 0, namespace, municipalityId));
+			}
+
+			// The buckets are counted over the routes that may read the column, and over no others: a breakdown may withhold
+			// a value, it may not reveal one the answer would leave out. The index cannot narrow an aggregation on its own -
+			// it filters one only within a nested object - so the breakdown is a search of those routes, and the count of
+			// that search is what tells the errands carrying no value from the withheld ones.
+			final var whole = plan.grouped().equals(plan.clauses());
+			final var key = AggregationKey.<Map<String, Long>>of("group");
 
 			// One bucket more than is answered with, which is how a column holding too many values to answer whole is told
 			// from one that fits
-			final var key = AggregationKey.<Map<String, Long>>of("group");
-			final var result = search
+			final var result = searchOver(plan.grouped(), query, namespace, municipalityId)
 				.aggregation(key, f -> f.terms()
 					.field(ErrandIndexModel.groupField(groupBy).orElseThrow(), String.class)
 					.orderByCountDescending()
@@ -171,11 +181,32 @@ public class ErrandSearchService {
 				throw Problem.valueOf(BAD_REQUEST, TOO_MANY_GROUPS.formatted(groupBy, properties.maxGroupBuckets()));
 			}
 
-			return new SearchCountResponse(result.total().hitCount(),
-				countGroups.toGroup(groupBy, counts, result.total().hitCount(), namespace, municipalityId));
+			// Where every route may read the column, which is every grant that restricts nothing, the search just made is
+			// the whole search and its count is the count: the index is asked once. Only where the routes differ is what
+			// they leave out counted as well, and the two counts are then taken a moment apart, so neither number may be
+			// allowed to drive the other below nothing
+			final var readable = result.total().hitCount();
+			final var total = whole ? readable : countOf(plan.clauses(), query, namespace, municipalityId);
+
+			return new SearchCountResponse(total, countGroups.toGroup(groupBy, counts, total, readable, namespace, municipalityId));
 		} catch (final SearchException e) {
 			throw SearchProblems.toProblem(e, properties.timeout());
 		}
+	}
+
+	/** How many errands sent in clauses reach, fetching none of them. */
+	private long countOf(final List<ErrandSearchAccess.Clause> clauses, final String query, final String namespace, final String municipalityId) {
+		return searchOver(clauses, query, namespace, municipalityId)
+			.failAfter(properties.timeout().toMillis(), MILLISECONDS)
+			.fetchTotalHitCount();
+	}
+
+	/** A search of the errands sent in clauses reach, within the namespace. */
+	private SearchQueryOptionsStep<?, ?, ErrandEntity, ?, ?, ?> searchOver(final List<ErrandSearchAccess.Clause> clauses, final String query, final String namespace, final String municipalityId) {
+		return Search.session(entityManager).search(ErrandEntity.class)
+			.where(f -> f.bool()
+				.filter(predicates.tenant(f, namespace, municipalityId))
+				.must(predicates.clauses(f, clauses, query, namespace, municipalityId)));
 	}
 
 	/** The field of the errand a groupable property belongs to, which is what the grant is asked about. */
