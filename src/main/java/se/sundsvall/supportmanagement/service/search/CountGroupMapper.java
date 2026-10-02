@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.search;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -43,27 +42,29 @@ public class CountGroupMapper {
 	}
 
 	/**
-	 * @param counts every value of the column and how many errands carry it, which the caller has already held to the
-	 *               number of buckets a breakdown answers with
-	 * @param total  how many errands the query matched, which is what the buckets are made to add up to
+	 * @param counts   every value of the column and how many errands carry it, counted over the routes allowed to read
+	 *                 it and already held to the number of buckets a breakdown answers with
+	 * @param total    how many errands the query matched, which is what the breakdown is made to account for
+	 * @param readable how many of those errands lie on a route allowed to read the column
 	 */
-	public CountGroup toGroup(final String property, final Map<String, Long> counts, final long total, final String namespace, final String municipalityId) {
+	public CountGroup toGroup(final String property, final Map<String, Long> counts, final long total, final long readable, final String namespace, final String municipalityId) {
 		final var canonical = canonicalNames(property, namespace, municipalityId, !counts.isEmpty());
 
-		final var buckets = new ArrayList<CountBucket>(counts.entrySet().stream()
+		final var buckets = counts.entrySet().stream()
 			.sorted(comparingByValue(reverseOrder()))
 			.map(bucket -> new CountBucket(canonical.apply(bucket.getKey()), bucket.getValue()))
-			.toList());
+			.toList();
 
-		// What the index did not count: a terms aggregation sees only the errands holding a value, and every column a count
-		// may group by holds at most one, so whatever the buckets do not add up to is the errands holding none. Subtracted
-		// rather than asked for, which is exact only because a breakdown answered in part is refused before this
-		final var withoutValue = total - buckets.stream().mapToLong(CountBucket::count).sum();
-		if (withoutValue > 0) {
-			buckets.add(new CountBucket(null, withoutValue));
-		}
+		// Every groupable column holds at most one value, so a bucket counts each errand once and what the buckets do not
+		// account for among the readable errands is the errands carrying nothing. Subtracted rather than asked for, which
+		// is exact only because a breakdown answered in part is refused before this
+		final var bucketed = buckets.stream().mapToLong(CountBucket::count).sum();
 
-		return new CountGroup(property, List.copyOf(buckets));
+		// And what lies outside the readable routes is withheld whole: not even the absence of a value is said of it, that
+		// being a fact about the column as much as a value is
+		// Never below nothing: where the routes differ the two counts are taken a moment apart, and an errand indexed in
+		// between would otherwise answer with a negative number of errands
+		return new CountGroup(property, buckets, Math.max(0, readable - bucketed), Math.max(0, total - readable));
 	}
 
 	/**

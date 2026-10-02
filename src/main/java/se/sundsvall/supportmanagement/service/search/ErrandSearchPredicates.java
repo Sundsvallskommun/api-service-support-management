@@ -69,6 +69,12 @@ public class ErrandSearchPredicates {
 	 * @param clauses what the search runs with, see {@link ErrandSearchAccess.Plan}
 	 */
 	public SearchPredicate clauses(final SearchPredicateFactory f, final List<ErrandSearchAccess.Clause> clauses, final String query, final String namespace, final String municipalityId) {
+		if (clauses.isEmpty()) {
+			// Nothing reaches anything, which no caller asks for today: a plan is refused before it holds no clause, and a
+			// breakdown over no route is answered without asking the index. Kept so that a later caller cannot turn an empty
+			// list into a search of everything
+			return f.matchNone().toPredicate();
+		}
 		if (clauses.size() == 1) {
 			return clause(f, clauses.getFirst(), query, namespace, municipalityId).toPredicate();
 		}

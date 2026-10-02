@@ -501,12 +501,16 @@ class ErrandSearchIT extends AbstractAppTest {
 		assertThat(byStatus.path("property").asString()).isEqualTo("status");
 		assertThat(bucketsOf(byStatus)).containsExactly("NEW=2", "ONGOING=1");
 
-		// The buckets add up to the count they are answered beside, which is the whole point of refusing a partial one
-		assertThat(sumOf(byStatus)).isEqualTo(count(PATH, ""));
+		// The breakdown accounts for every errand the count counted, which is the whole point of refusing a partial one
+		assertThat(accountedFor(byStatus)).isEqualTo(count(PATH, ""));
+		assertThat(byStatus.path("withoutValue").asLong()).isZero();
+		assertThat(byStatus.path("withheld").asLong()).isZero();
 
-		// A column none of the errands carries is one bucket counting all of them, rather than no buckets at all
-		assertThat(bucketsOf(group(PATH, "", "resolution"))).containsExactly("null=3");
-		assertThat(sumOf(group(PATH, "", "resolution"))).isEqualTo(3);
+		// A column none of the errands carries gets no buckets at all, and is counted as carrying nothing
+		final var byResolution = group(PATH, "", "resolution");
+		assertThat(byResolution.path("buckets")).isEmpty();
+		assertThat(byResolution.path("withoutValue").asLong()).isEqualTo(3);
+		assertThat(accountedFor(byResolution)).isEqualTo(3);
 
 		// The query narrows the breakdown as it narrows the count
 		assertThat(bucketsOf(group(PATH, "status:new", "status"))).containsExactly("NEW=2");
@@ -533,8 +537,9 @@ class ErrandSearchIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A count is held to the grant as a search is, and the column it groups by to what the route may read: the role
-	 * seeing the status alone counts by status and is refused the category.
+	 * A count is held to the grant as a search is, and the column it groups by to what the route may read: the role seeing
+	 * the status alone counts by status, and asking it for the category divides nothing up rather than refusing - the count
+	 * stays the count of the search, which is what a client filtering with one and counting with the other depends on.
 	 */
 	@Test
 	void test28_aCountIsGroupedWithinWhatTheUserMayRead() {
@@ -542,12 +547,14 @@ class ErrandSearchIT extends AbstractAppTest {
 		assertThat(countAs(STATUS_ONLY_PATH, "", "sta01usr")).isEqualTo(2);
 		assertThat(bucketsOf(groupAs(STATUS_ONLY_PATH, "", "status", "sta01usr"))).containsExactlyInAnyOrder("NEW=1", "ONGOING=1");
 
-		setupCall()
-			.withServicePath(STATUS_ONLY_PATH + "/count?groupBy=category")
-			.withHeader(SENT_BY_HEADER, "sta01usr; type=adAccount")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(FORBIDDEN)
-			.sendRequest();
+		// A column the role may not read divides nothing up, and refuses nothing either: the count is what the search of the
+		// same query answers with, and every errand of it lands in the bucket the breakdown cannot account for
+		final var byCategory = groupAs(STATUS_ONLY_PATH, "", "category", "sta01usr");
+		assertThat(byCategory.path("buckets")).isEmpty();
+		// Withheld rather than said to carry nothing: that an errand holds no category is a fact about the category
+		assertThat(byCategory.path("withheld").asLong()).isEqualTo(2);
+		assertThat(byCategory.path("withoutValue").asLong()).isZero();
+		assertThat(accountedFor(byCategory)).isEqualTo(countAs(STATUS_ONLY_PATH, "", "sta01usr"));
 
 		// The labels of the access controlled namespace reach three errands and the unlabelled one
 		assertThat(countAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).isEqualTo(4);
@@ -582,21 +589,43 @@ class ErrandSearchIT extends AbstractAppTest {
 		return call.sendRequest().getResponseBody(new TypeReference<JsonNode>() {});
 	}
 
-	private static long sumOf(final JsonNode group) {
-		return group.path("buckets").valueStream().mapToLong(bucket -> bucket.path("count").asLong()).sum();
+	/**
+	 * The shape where one route of the grant may read the column and another may not: the labels of this namespace reach
+	 * one errand at read and the other at limited read, and a limited read exposes the status but not the category. So the
+	 * breakdown divides up the errand held at read and withholds the other, while the count counts both - which is what a
+	 * client filtering with a search and counting with the same query depends on.
+	 */
+	@Test
+	void test29_aColumnOneRouteMayReadAndAnotherMayNot() {
+		// Both errands are counted, as the search of the same query answers with both
+		assertThat(countAs(MIXED_PATH, "", "mix01ed")).isEqualTo(2);
+		assertThat(searchAs(MIXED_PATH, "", "mix01ed")).hasSize(2);
+
+		// The status, which both routes may read, divides both of them up
+		final var byStatus = groupAs(MIXED_PATH, "", "status", "mix01ed");
+		assertThat(bucketsOf(byStatus)).containsExactly("NEW=2");
+		assertThat(byStatus.path("withheld").asLong()).isZero();
+		assertThat(accountedFor(byStatus)).isEqualTo(2);
+
+		// The category, which a limited read does not expose, divides up the errand held at read and withholds the other
+		final var byCategory = groupAs(MIXED_PATH, "", "category", "mix01ed");
+		assertThat(bucketsOf(byCategory)).containsExactly("VATTEN=1");
+		assertThat(byCategory.path("withheld").asLong()).isEqualTo(1);
+		assertThat(byCategory.path("withoutValue").asLong()).isZero();
+		assertThat(accountedFor(byCategory)).isEqualTo(countAs(MIXED_PATH, "", "mix01ed"));
+	}
+
+	/** What a breakdown accounts for, which must always be the count it was answered beside. */
+	private static long accountedFor(final JsonNode group) {
+		return group.path("buckets").valueStream().mapToLong(bucket -> bucket.path("count").asLong()).sum()
+			+ group.path("withoutValue").asLong() + group.path("withheld").asLong();
 	}
 
 	/** The buckets as 'value=count', in the order they were answered with. */
 	private static List<String> bucketsOf(final JsonNode group) {
 		return group.path("buckets").valueStream()
-			.map(bucket -> valueOf(bucket) + "=" + bucket.path("count").asLong())
+			.map(bucket -> bucket.path("value").asString() + "=" + bucket.path("count").asLong())
 			.toList();
-	}
-
-	/** The value of a bucket, with the one counting the errands that hold none written as null whichever way it came. */
-	private static String valueOf(final JsonNode bucket) {
-		final var value = bucket.path("value");
-		return value.isNull() || value.isMissingNode() ? "null" : value.asString();
 	}
 
 	private List<String> search(final String path, final String query) {
