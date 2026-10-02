@@ -104,31 +104,21 @@ class InvestigationEntityTest {
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
-		assertThat(result.getId()).isEqualTo(id);
-		assertThat(result.getErrandEntity()).isEqualTo(errandEntity);
-		assertThat(result.getMunicipalityId()).isEqualTo(municipalityId);
-		assertThat(result.getNamespace()).isEqualTo(namespace);
-		assertThat(result.getType()).isEqualTo(type);
-		assertThat(result.getStatus()).isEqualTo(status);
-		assertThat(result.getTitle()).isEqualTo(title);
-		assertThat(result.getDescription()).isEqualTo(description);
-		assertThat(result.getDueAt()).isEqualTo(dueAt);
-		assertThat(result.getCompletedAt()).isEqualTo(completedAt);
-		assertThat(result.getCreatedBy()).isEqualTo(createdBy);
-		assertThat(result.getModifiedBy()).isEqualTo(modifiedBy);
-		assertThat(result.getCreated()).isEqualTo(created);
-		assertThat(result.getModified()).isEqualTo(modified);
-		assertThat(result.getVersion()).isEqualTo(version);
-		assertThat(result.getInvestigatorUserId()).isEqualTo(investigatorUserId);
-		assertThat(result.getStartedAt()).isEqualTo(startedAt);
-		assertThat(result.getSummary()).isEqualTo(summary);
-		assertThat(result.getConclusion()).isEqualTo(conclusion);
-		assertThat(result.getRecommendation()).isEqualTo(recommendation);
-		assertThat(result.getRecommendationMotivation()).isEqualTo(recommendationMotivation);
-		assertThat(result.getSections()).isEqualTo(sections);
-		assertThat(result.getAttachments()).isEqualTo(attachments);
-		assertThat(result.getJsonParameters()).isEqualTo(jsonParameters);
-		assertThat(result.getParameters()).isEqualTo(parameters);
+		assertThat(result)
+			.extracting(InvestigationEntity::getId, InvestigationEntity::getErrandEntity, InvestigationEntity::getMunicipalityId, InvestigationEntity::getNamespace, InvestigationEntity::getType, InvestigationEntity::getStatus)
+			.containsExactly(id, errandEntity, municipalityId, namespace, type, status);
+		assertThat(result)
+			.extracting(InvestigationEntity::getTitle, InvestigationEntity::getDescription, InvestigationEntity::getDueAt, InvestigationEntity::getCompletedAt, InvestigationEntity::getCreatedBy, InvestigationEntity::getModifiedBy)
+			.containsExactly(title, description, dueAt, completedAt, createdBy, modifiedBy);
+		assertThat(result)
+			.extracting(InvestigationEntity::getCreated, InvestigationEntity::getModified, InvestigationEntity::getVersion, InvestigationEntity::getInvestigatorUserId, InvestigationEntity::getStartedAt, InvestigationEntity::getSummary)
+			.containsExactly(created, modified, version, investigatorUserId, startedAt, summary);
+		assertThat(result)
+			.extracting(InvestigationEntity::getConclusion, InvestigationEntity::getRecommendation, InvestigationEntity::getRecommendationMotivation)
+			.containsExactly(conclusion, recommendation, recommendationMotivation);
+		assertThat(result)
+			.extracting(InvestigationEntity::getSections, InvestigationEntity::getAttachments, InvestigationEntity::getJsonParameters, InvestigationEntity::getParameters)
+			.containsExactly(sections, attachments, jsonParameters, parameters);
 	}
 
 	@Test
