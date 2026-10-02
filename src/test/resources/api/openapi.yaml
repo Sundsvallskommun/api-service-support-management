@@ -22318,11 +22318,12 @@ components:
           maxLength: 255
         values:
           type: array
-          description: Parameter values. Each value can have a maximum length of 3000
-            characters
+          description: "Parameter values. Each value must not be blank, and can have\
+            \ a maximum length of 3000 characters"
           items:
             type: string
             maxLength: 3000
+            minLength: 1
         version:
           type: integer
           format: int64

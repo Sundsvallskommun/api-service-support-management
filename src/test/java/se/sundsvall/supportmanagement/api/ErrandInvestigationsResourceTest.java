@@ -147,7 +147,7 @@ class ErrandInvestigationsResourceTest {
 				Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
 				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
 				null,
-				Parameter.create().withKey("other").withValues(Arrays.asList("value", null)))))
+				Parameter.create().withKey("other").withValues(Arrays.asList("value", null, " ")))))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -165,7 +165,8 @@ class ErrandInvestigationsResourceTest {
 				tuple("parameters[2].displayName", "size must be between 0 and 255"),
 				tuple("parameters[2].group", "size must be between 0 and 255"),
 				tuple("parameters[3]", "must not be null"),
-				tuple("parameters[4].values[1]", "must not be null"));
+				tuple("parameters[4].values[1]", "must not be blank"),
+				tuple("parameters[4].values[2]", "must not be blank"));
 		verifyNoInteractions(serviceMock);
 	}
 
@@ -181,7 +182,7 @@ class ErrandInvestigationsResourceTest {
 				Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
 				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
 				null,
-				Parameter.create().withKey("other").withValues(Arrays.asList("value", null)))))
+				Parameter.create().withKey("other").withValues(Arrays.asList("value", null, " ")))))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)
@@ -199,7 +200,8 @@ class ErrandInvestigationsResourceTest {
 				tuple("parameters[2].displayName", "size must be between 0 and 255"),
 				tuple("parameters[2].group", "size must be between 0 and 255"),
 				tuple("parameters[3]", "must not be null"),
-				tuple("parameters[4].values[1]", "must not be null"));
+				tuple("parameters[4].values[1]", "must not be blank"),
+				tuple("parameters[4].values[2]", "must not be blank"));
 		verifyNoInteractions(serviceMock);
 	}
 

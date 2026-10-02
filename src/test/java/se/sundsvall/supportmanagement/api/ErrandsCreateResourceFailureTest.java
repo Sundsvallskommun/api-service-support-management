@@ -587,11 +587,12 @@ class ErrandsCreateResourceFailureTest {
 	}
 
 	/**
-	 * A parameter or a value that is null is refused with 400, on the errand as on its stakeholders.
+	 * A parameter that is null, or a value that is null or blank, is refused with 400, on the errand as on its
+	 * stakeholders.
 	 */
 	@Test
-	void createErrandWithNullParameterOrValue() {
-		final var parameters = Arrays.asList(null, Parameter.create().withKey("key").withValues(Arrays.asList("value", null)));
+	void createErrandWithNullParameterOrBlankValue() {
+		final var parameters = Arrays.asList(null, Parameter.create().withKey("key").withValues(Arrays.asList("value", null, " ")));
 
 		// Call
 		final var response = webTestClient.post()
@@ -612,9 +613,11 @@ class ErrandsCreateResourceFailureTest {
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("parameters[0]", "must not be null"),
-				tuple("parameters[1].values[1]", "must not be null"),
+				tuple("parameters[1].values[1]", "must not be blank"),
+				tuple("parameters[1].values[2]", "must not be blank"),
 				tuple("stakeholders[0].parameters[0]", "must not be null"),
-				tuple("stakeholders[0].parameters[1].values[1]", "must not be null"));
+				tuple("stakeholders[0].parameters[1].values[1]", "must not be blank"),
+				tuple("stakeholders[0].parameters[1].values[2]", "must not be blank"));
 
 		// Verification
 		verifyNoInteractions(errandServiceMock);
