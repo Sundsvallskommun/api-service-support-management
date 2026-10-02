@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -11,13 +12,18 @@ import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
+import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparing;
 import static java.util.Objects.isNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 public final class ErrandParameterMapper {
+
+	/** Keys regardless of case, and keys that differ only in case in their natural order. */
+	static final Comparator<Parameter> KEY_ORDER = comparing(Parameter::getKey, CASE_INSENSITIVE_ORDER).thenComparing(Parameter::getKey);
 
 	private ErrandParameterMapper() {
 		// Intentionally empty
@@ -141,6 +147,29 @@ public final class ErrandParameterMapper {
 	public static List<Parameter> toParameterList(final List<ParameterEntity> parameters) {
 		return Optional.ofNullable(parameters).orElse(emptyList()).stream()
 			.map(ErrandParameterMapper::toParameter)
+			.toList();
+	}
+
+	/**
+	 * Parameters one per key, with the values of every parameter sent for it. Keys are trimmed before they are compared,
+	 * and the display name and group are those of the first parameter sent for a key. The sent parameters are left as they
+	 * were.
+	 *
+	 * @param  parameters parameters of the request
+	 * @return            one parameter per trimmed key, ordered by key regardless of case, and keys that differ only in
+	 *                    case in their natural order
+	 */
+	public static List<Parameter> toTrimmedUniqueKeyList(final List<Parameter> parameters) {
+		final var trimmed = Optional.ofNullable(parameters).orElse(emptyList()).stream()
+			.map(parameter -> Parameter.create()
+				.withKey(parameter.getKey().trim())
+				.withDisplayName(parameter.getDisplayName())
+				.withGroup(parameter.getGroup())
+				.withValues(parameter.getValues()))
+			.toList();
+
+		return toUniqueKeyList(trimmed).stream()
+			.sorted(KEY_ORDER)
 			.toList();
 	}
 

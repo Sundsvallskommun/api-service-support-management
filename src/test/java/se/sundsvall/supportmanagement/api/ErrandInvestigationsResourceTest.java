@@ -8,16 +8,20 @@ import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
+import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.service.ErrandInvestigationService;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -128,6 +132,66 @@ class ErrandInvestigationsResourceTest {
 			.expectHeader().valueEquals("ETag", "\"4\"");
 
 		verify(serviceMock).updateErrandInvestigation(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(INVESTIGATION_ID), eq("\"3\""), any(Investigation.class));
+	}
+
+	@Test
+	void createErrandInvestigationWithInvalidParameters() {
+
+		// Act
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(PATH_VARIABLES))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Investigation.create().withStatus("ACTIVE").withParameters(List.of(
+				Parameter.create().withKey(" "),
+				Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
+				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verify
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].key", "must not be blank"),
+				tuple("parameters[1].values[0]", "size must be between 0 and 3000"),
+				tuple("parameters[2].key", "size must be between 0 and 255"),
+				tuple("parameters[2].displayName", "size must be between 0 and 255"),
+				tuple("parameters[2].group", "size must be between 0 and 255"));
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void updateErrandInvestigationWithInvalidParameters() {
+
+		// Act
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH_WITH_ID).build(PATH_VARIABLES))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Investigation.create().withParameters(List.of(
+				Parameter.create().withValues(List.of("value")),
+				Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
+				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		// Verify
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].key", "must not be blank"),
+				tuple("parameters[1].values[0]", "size must be between 0 and 3000"),
+				tuple("parameters[2].key", "size must be between 0 and 255"),
+				tuple("parameters[2].displayName", "size must be between 0 and 255"),
+				tuple("parameters[2].group", "size must be between 0 and 255"));
+		verifyNoInteractions(serviceMock);
 	}
 
 	@Test

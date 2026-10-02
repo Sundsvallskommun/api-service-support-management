@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
@@ -14,17 +13,13 @@ import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 
-import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Collections.emptyList;
-import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toUniqueKeyList;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.KEY_ORDER;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toTrimmedUniqueKeyList;
 
 public final class ErrandDecisionMapper {
-
-	/** Keys regardless of case, and keys that differ only in case in their natural order. */
-	private static final Comparator<Parameter> KEY_ORDER = comparing(Parameter::getKey, CASE_INSENSITIVE_ORDER).thenComparing(Parameter::getKey);
 
 	private ErrandDecisionMapper() {}
 
@@ -131,16 +126,7 @@ public final class ErrandDecisionMapper {
 	 * parameter sent for a key.
 	 */
 	public static List<DecisionParameterEntity> toDecisionParameterEntities(final List<Parameter> parameters, final DecisionEntity decisionEntity) {
-		final var trimmed = ofNullable(parameters).orElse(emptyList()).stream()
-			.map(parameter -> Parameter.create()
-				.withKey(parameter.getKey().trim())
-				.withDisplayName(parameter.getDisplayName())
-				.withGroup(parameter.getGroup())
-				.withValues(parameter.getValues()))
-			.toList();
-
-		return new ArrayList<>(toUniqueKeyList(trimmed).stream()
-			.sorted(KEY_ORDER)
+		return new ArrayList<>(toTrimmedUniqueKeyList(parameters).stream()
 			.map(parameter -> DecisionParameterEntity.create()
 				.withDecisionEntity(decisionEntity)
 				.withKey(parameter.getKey())
@@ -172,9 +158,9 @@ public final class ErrandDecisionMapper {
 	}
 
 	/**
-	 * Replaces the parameters of the decision in place, as the collection is held by JPA, and marks the decision modified
-	 * so that its version moves. Parameters that come out the same as the stored ones, in whatever order they are sent,
-	 * leave the decision untouched.
+	 * Replaces the parameters of the decision in place and marks the decision modified so that its version moves.
+	 * Parameters that come out the same as the stored ones, in whatever order they are sent, leave the decision
+	 * untouched.
 	 */
 	private static void replaceParameters(final DecisionEntity entity, final List<Parameter> parameters) {
 		final var replacements = toDecisionParameterEntities(parameters, entity);

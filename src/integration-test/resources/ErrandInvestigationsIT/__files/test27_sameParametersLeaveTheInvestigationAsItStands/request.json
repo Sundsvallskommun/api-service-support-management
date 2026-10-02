@@ -1,27 +1,23 @@
 {
-	"type": "PREMISES",
-	"status": "DRAFT",
-	"title": "Utredning av lokalen",
-	"investigatorUserId": "joe01doe",
 	"parameters": [
 		{
 			"key": "riskLevel",
-			"displayName": "Risknivå",
 			"values": [
 				"low"
 			]
 		},
 		{
 			"key": "checkedSources",
+			"displayName": "Kontrollerade källor",
 			"group": "underlag",
 			"values": [
 				"Skatteverket"
 			]
 		},
 		{
-			"key": "riskLevel",
+			"key": "checkedSources",
 			"values": [
-				"medium"
+				"Kronofogden"
 			]
 		}
 	]

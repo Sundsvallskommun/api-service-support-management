@@ -1,0 +1,16 @@
+{
+	"parameters": [
+		{
+			"key": "checkedSources",
+			"values": [
+				"Skatteverket"
+			]
+		},
+		{
+			"key": "checkedSources",
+			"values": [
+				"Polisen"
+			]
+		}
+	]
+}

@@ -39,22 +39,26 @@
 	],
 	"parameters": [
 		{
-			"key": "checkedSources",
-			"displayName": "Kontrollerade källor",
-			"group": "underlag",
+			"key": "Zon",
 			"values": [
-				"Skatteverket",
-				"Kronofogden"
+				"c"
 			]
 		},
 		{
-			"key": "riskLevel",
+			"key": "zon",
 			"values": [
-				"low"
+				"a"
+			]
+		},
+		{
+			"key": "ärende",
+			"values": [
+				"b"
 			]
 		}
 	],
 	"createdBy": "joe01doe",
 	"created": "2024-01-10T12:00:00+01:00",
+	"modifiedBy": "joe01doe",
 	"version": 0
 }

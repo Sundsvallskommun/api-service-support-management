@@ -765,6 +765,15 @@ VALUES ('f3000000-0000-0000-0000-000000000001', 'f2000000-0000-0000-0000-0000000
         'Inga betalningsanmärkningar finns registrerade.'),
        ('f3000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'premises', 'Lokalen', 2, 'PENDING', null);
 
+INSERT INTO investigation_parameter(id, investigation_id, parameters_key, display_name, parameter_group)
+VALUES ('fa000000-0000-0000-0000-000000000001', 'f2000000-0000-0000-0000-000000000001', 'checkedSources', 'Kontrollerade källor', 'underlag'),
+       ('fa000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'riskLevel', null, null);
+
+INSERT INTO investigation_parameter_values(investigation_parameter_id, value_order, value)
+VALUES ('fa000000-0000-0000-0000-000000000001', 0, 'Skatteverket'),
+       ('fa000000-0000-0000-0000-000000000001', 1, 'Kronofogden'),
+       ('fa000000-0000-0000-0000-000000000002', 0, 'low');
+
 -- -----------------------------------
 -- Decision (beslut) and its terms
 -- -----------------------------------

@@ -40,6 +40,14 @@
 			}
 		}
 	],
+	"parameters": [
+		{
+			"key": "riskLevel",
+			"values": [
+				"medium"
+			]
+		}
+	],
 	"createdBy": "joe01doe",
 	"created": "2024-01-10T12:00:00+01:00",
 	"modified": "${json-unit.any-string}",

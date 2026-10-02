@@ -152,4 +152,32 @@ class ErrandParameterMapperTest {
 		// Assert
 		assertThat(result).isEmpty();
 	}
+
+	@Test
+	void toTrimmedUniqueKeyList() {
+
+		// Arrange
+		final var parameters = List.of(
+			Parameter.create().withKey(" zone ").withDisplayName("Zon").withValues(List.of("A")),
+			Parameter.create().withKey("ärende").withValues(List.of("b")),
+			Parameter.create().withKey("Area").withGroup("place"),
+			Parameter.create().withKey("zone").withDisplayName("ignored").withGroup("ignored").withValues(List.of("B")),
+			Parameter.create().withKey("Zone").withValues(List.of("C")));
+
+		// Act
+		final var result = ErrandParameterMapper.toTrimmedUniqueKeyList(parameters);
+
+		// Assert
+		assertThat(result).containsExactly(
+			Parameter.create().withKey("Area").withGroup("place").withValues(emptyList()),
+			Parameter.create().withKey("Zone").withValues(List.of("C")),
+			Parameter.create().withKey("zone").withDisplayName("Zon").withValues(List.of("A", "B")),
+			Parameter.create().withKey("ärende").withValues(List.of("b")));
+		assertThat(parameters.getFirst().getKey()).as("the sent parameters are left as they were").isEqualTo(" zone ");
+	}
+
+	@Test
+	void toTrimmedUniqueKeyListWhenInputIsNull() {
+		assertThat(ErrandParameterMapper.toTrimmedUniqueKeyList(null)).isEmpty();
+	}
 }

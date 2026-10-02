@@ -25,7 +25,7 @@ class InvestigationEntityTest {
 	// What the artefact points at rather than what it is. None of it identifies the artefact, and comparing it would
 	// walk back into the errand the artefact already hangs on.
 	private static final String[] RELATIONS = {
-		"errandEntity", "sections", "attachments", "jsonParameters"
+		"errandEntity", "sections", "attachments", "jsonParameters", "parameters"
 	};
 
 	@BeforeAll
@@ -72,6 +72,7 @@ class InvestigationEntityTest {
 		final var sections = List.of(InvestigationSectionEntity.create());
 		final var attachments = List.of(AttachmentEntity.create());
 		final var jsonParameters = List.of(InvestigationJsonParameterEntity.create());
+		final var parameters = List.of(InvestigationParameterEntity.create());
 
 		// Act
 		final var result = InvestigationEntity.create()
@@ -98,7 +99,8 @@ class InvestigationEntityTest {
 			.withRecommendationMotivation(recommendationMotivation)
 			.withSections(sections)
 			.withAttachments(attachments)
-			.withJsonParameters(jsonParameters);
+			.withJsonParameters(jsonParameters)
+			.withParameters(parameters);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -126,6 +128,7 @@ class InvestigationEntityTest {
 		assertThat(result.getSections()).isEqualTo(sections);
 		assertThat(result.getAttachments()).isEqualTo(attachments);
 		assertThat(result.getJsonParameters()).isEqualTo(jsonParameters);
+		assertThat(result.getParameters()).isEqualTo(parameters);
 	}
 
 	@Test
@@ -141,6 +144,15 @@ class InvestigationEntityTest {
 	void onUpdateSetsModified() {
 		final var entity = InvestigationEntity.create();
 		entity.onUpdate();
+
+		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+	}
+
+	@Test
+	void markModifiedSetsModified() {
+		final var entity = InvestigationEntity.create();
+		entity.markModified();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
 		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");

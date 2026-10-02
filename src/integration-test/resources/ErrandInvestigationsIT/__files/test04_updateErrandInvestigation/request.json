@@ -2,5 +2,13 @@
 	"status": "COMPLETED",
 	"conclusion": "Sökanden bedöms uppfylla kraven.",
 	"recommendation": "APPROVAL",
-	"recommendationMotivation": "Inga brister har konstaterats."
+	"recommendationMotivation": "Inga brister har konstaterats.",
+	"parameters": [
+		{
+			"key": "riskLevel",
+			"values": [
+				"medium"
+			]
+		}
+	]
 }
