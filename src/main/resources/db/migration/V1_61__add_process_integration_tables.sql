@@ -175,3 +175,6 @@ create table if not exists investigation_parameter_values (
         foreign key (investigation_parameter_id) references investigation_parameter (id)
         on delete cascade
 ) engine=InnoDB;
+
+alter table if exists stakeholder_parameter_values
+    modify column if exists value varchar(3000);

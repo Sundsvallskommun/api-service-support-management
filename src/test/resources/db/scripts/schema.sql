@@ -858,7 +858,7 @@
 
     create table stakeholder_parameter_values (
         stakeholder_parameter_id bigint not null,
-        value varchar(255)
+        value varchar(3000)
     ) engine=InnoDB;
 
     create table statement (
