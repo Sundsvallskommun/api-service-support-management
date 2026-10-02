@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.2"
+  version: "16.3"
 servers:
 - url: http://localhost:63139
   description: Generated server url
@@ -4384,186 +4384,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — path collision at destination, or a job is already\
-            \ running for this namespace"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/metadata/labels/{labelId}/merge:
-    post:
-      tags:
-      - Metadata for labels
-      summary: Merge labels
-      description: "Validates merging one or more source labels into a destination\
-        \ label. When dryRun is true, returns the number of affected errands and actions\
-        \ without making any changes. When dryRun is false, starts the merge as an\
-        \ asynchronous job."
-      operationId: mergeLabels
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: labelId
-        in: path
-        description: Destination label ID
-        required: true
-        schema:
-          type: string
-        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LabelMergeRequest"
-        required: true
-      responses:
-        "200":
-          description: Successful dry-run operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LabelMergeDryRunResponse"
-        "202":
-          description: Merge accepted and started as an asynchronous job
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/JobResponse"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "409":
-          description: Conflict — a merge job is already running for this namespace
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "500":
-          description: Internal Server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /{municipalityId}/{namespace}/metadata/labels/restructure:
-    post:
-      tags:
-      - Metadata for labels
-      summary: Restructure label tree
-      description: "Validates an ordered sequence of add/rename/delete/move/merge\
-        \ steps. When dryRun is true, returns per-step affected counts without making\
-        \ any changes. When dryRun is false, starts the restructure as a single asynchronous\
-        \ job."
-      operationId: restructureLabels
-      parameters:
-      - name: namespace
-        in: path
-        description: Namespace
-        required: true
-        schema:
-          type: string
-          pattern: "[\\w|\\-]+"
-        example: MY_NAMESPACE
-      - name: municipalityId
-        in: path
-        description: Municipality id
-        required: true
-        schema:
-          type: string
-        example: 2281
-      - name: X-Request-Group-Id
-        in: header
-        description: "Optional UUID that groups related events and notifications for\
-          \ this operation. If omitted, no grouping is applied."
-        required: false
-        schema:
-          type: string
-          format: uuid
-        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LabelRestructureRequest"
-        required: true
-      responses:
-        "200":
-          description: Successful dry-run operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LabelRestructureDryRunResponse"
-        "202":
-          description: Restructure accepted and started as an asynchronous job
-          headers:
-            Location:
-              style: simple
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/JobResponse"
-        "400":
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
-        "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        "409":
-          description: "Conflict — path collision at a step's destination, or a job\
-            \ is already running for this namespace"
+          description: "Conflict — path collision at destination, or a move for this\
+            \ label is already in progress"
           content:
             application/problem+json:
               schema:
@@ -16251,16 +16073,16 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        detail:
+          type: string
+        title:
+          type: string
         status:
           type: integer
           format: int32
@@ -16279,13 +16101,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        instance:
+          type: string
+          format: uri
         detail:
           type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
-        instance:
-          type: string
-          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -16730,33 +16552,21 @@ components:
     JsonNode:
       type: object
       properties:
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
+          type: boolean
         container:
           type: boolean
         number:
           type: boolean
         floatingPointNumber:
-          type: boolean
-        nodeType:
-          type: string
-          enum:
-          - ARRAY
-          - BINARY
-          - BOOLEAN
-          - MISSING
-          - "NULL"
-          - NUMBER
-          - OBJECT
-          - POJO
-          - STRING
-        string:
-          type: boolean
-        integralNumber:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
-        pojo:
           type: boolean
         short:
           type: boolean
@@ -16777,15 +16587,27 @@ components:
           type: boolean
         binary:
           type: boolean
-        empty:
+        valueNode:
           type: boolean
-        array:
+        missingNode:
           type: boolean
-        "null":
+        nodeType:
+          type: string
+          enum:
+          - ARRAY
+          - BINARY
+          - BOOLEAN
+          - MISSING
+          - "NULL"
+          - NUMBER
+          - OBJECT
+          - POJO
+          - STRING
+        string:
           type: boolean
-        object:
+        integralNumber:
           type: boolean
-        float:
+        pojo:
           type: boolean
         embeddedValue:
           type: boolean
@@ -17601,9 +17423,7 @@ components:
           description: Job type
           enum:
           - MOVE_LABEL
-          - MERGE_LABELS
           - ERRAND_PURGE
-          - RESTRUCTURE_LABEL_TREE
         status:
           type: string
           description: Job status
@@ -17654,169 +17474,6 @@ components:
           - true
       required:
       - dryRun
-    LabelMergeDryRunResponse:
-      type: object
-      description: Result of a label merge dry-run — no changes are made
-      properties:
-        affectedErrandCount:
-          type: integer
-          format: int64
-          description: Number of errands that reference one or more of the source
-            labels
-        affectedActions:
-          type: array
-          description: Actions that have hasLabel conditions referencing one or more
-            of the source labels
-          items:
-            $ref: "#/components/schemas/AffectedAction"
-    LabelMergeRequest:
-      type: object
-      description: Request for merging one or more source labels into a destination
-        label
-      properties:
-        sourceLabelIds:
-          type: array
-          description: IDs of the source labels to merge into the destination label
-          items:
-            type: string
-          minItems: 1
-        dryRun:
-          type: boolean
-          description: "When true, return affected counts without making any changes.\
-            \ When false, starts the merge as an asynchronous job."
-          examples:
-          - true
-      required:
-      - dryRun
-      - sourceLabelIds
-    LabelRestructureDryRunResponse:
-      type: object
-      description: Result of a label-tree restructure dry-run — no changes are made
-      properties:
-        totalAffectedErrandCount:
-          type: integer
-          format: int64
-          description: "Sum of affectedErrandCount across all steps. An errand touched\
-            \ by more than one step is counted once per step that touches it, not\
-            \ deduplicated across steps"
-        steps:
-          type: array
-          description: "Per-step results, in the same order as the request's steps"
-          items:
-            $ref: "#/components/schemas/LabelRestructureStepResult"
-    LabelRestructureStepResult:
-      type: object
-      description: Dry-run result for one step of a label-tree restructure
-      properties:
-        index:
-          type: integer
-          format: int32
-          description: Index of the step in the request's steps list
-          examples:
-          - 0
-        type:
-          type: string
-          description: The step's type
-          enum:
-          - ADD
-          - RENAME
-          - DELETE
-          - MOVE
-          - MERGE
-        path:
-          type: array
-          description: "The step's path, as submitted"
-          items:
-            type: string
-        affectedErrandCount:
-          type: integer
-          format: int64
-          description: "Number of errands that reference the label or, for MOVE/MERGE,\
-            \ any of its descendants/sources. Always 0 for ADD/RENAME, and for a step\
-            \ whose path was only created by an earlier step in the same request"
-        affectedActions:
-          type: array
-          description: Actions that have hasLabel conditions referencing a label this
-            step affects
-          items:
-            $ref: "#/components/schemas/AffectedAction"
-    LabelRestructureRequest:
-      type: object
-      description: Request for restructuring the label tree as one ordered sequence
-        of add/rename/delete/move/merge steps
-      properties:
-        steps:
-          type: array
-          description: "Steps to apply, in order. A later step may reference a label\
-            \ an earlier step in this same request added or moved"
-          items:
-            $ref: "#/components/schemas/LabelRestructureStep"
-          minItems: 1
-        dryRun:
-          type: boolean
-          description: "When true, return affected counts for every step without making\
-            \ any changes. When false, starts the restructure as an asynchronous job."
-          examples:
-          - true
-      required:
-      - dryRun
-      - steps
-    LabelRestructureStep:
-      type: object
-      description: One step of a label-tree restructure
-      properties:
-        type:
-          type: string
-          description: The kind of change this step makes
-          enum:
-          - ADD
-          - RENAME
-          - DELETE
-          - MOVE
-          - MERGE
-        path:
-          type: array
-          description: "Path (resourceName segments from the root) of the label this\
-            \ step acts on. The label added, renamed or deleted for ADD/RENAME/DELETE;\
-            \ the label moved for MOVE; the merge destination for MERGE"
-          items:
-            type: string
-            minLength: 1
-            pattern: "[A-Z0-9_]+"
-          minItems: 1
-        destinationParentPath:
-          type: array
-          description: "MOVE only: path of the new parent, or null/absent to move\
-            \ to root"
-          items:
-            type: string
-            minLength: 1
-            pattern: "[A-Z0-9_]+"
-        sourcePaths:
-          type: array
-          description: "MERGE only: paths of the source labels merged into path"
-          items:
-            type: array
-            items:
-              type: string
-            minItems: 1
-        displayName:
-          type: string
-          description: "ADD: display name of the new label. RENAME: the new display\
-            \ name. MOVE: an optional new display name to set at the same time"
-        classification:
-          type: string
-          description: "ADD only: classification of the new label"
-          examples:
-          - SUBTYPE
-        newResourceName:
-          type: string
-          description: "MOVE only: an optional new resourceName to set at the same\
-            \ time (used for a combined move+rename)"
-          pattern: "[A-Z0-9_]+"
-      required:
-      - path
-      - type
     ExternalIdType:
       type: object
       description: ExternalIdType model
@@ -20537,8 +20194,9 @@ components:
     PageableObject:
       type: object
       properties:
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        offset:
+          type: integer
+          format: int64
         paged:
           type: boolean
         pageNumber:
@@ -20547,19 +20205,18 @@ components:
         pageSize:
           type: integer
           format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
-        offset:
-          type: integer
-          format: int64
     SortObject:
       type: object
       properties:
+        empty:
+          type: boolean
         sorted:
           type: boolean
         unsorted:
-          type: boolean
-        empty:
           type: boolean
     SubscriberNotification:
       type: object

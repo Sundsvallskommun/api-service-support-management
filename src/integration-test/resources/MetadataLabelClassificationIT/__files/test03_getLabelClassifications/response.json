@@ -1,0 +1,14 @@
+[
+	{
+		"id": "${json-unit.any-string}",
+		"classification": "CLASS",
+		"displayName": "Klass",
+		"created": "${json-unit.any-string}"
+	},
+	{
+		"id": "${json-unit.any-string}",
+		"classification": "OTHER",
+		"displayName": "Annan",
+		"created": "${json-unit.any-string}"
+	}
+]

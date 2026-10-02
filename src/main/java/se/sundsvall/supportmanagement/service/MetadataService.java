@@ -88,6 +88,7 @@ import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructure
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.MOVE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MERGE_LABELS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
+import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.RESTRUCTURE_LABEL_TREE;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurpose;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurposeEntity;
@@ -169,10 +170,6 @@ public class MetadataService {
 	private final ValidationRepository validationRepository;
 	private final ContactReasonRepository contactReasonRepository;
 	private final JobService jobService;
-	private final LabelMoveWorker labelMoveWorker;
-	private final LabelMergeWorker labelMergeWorker;
-	private final LabelTreeRestructureWorker labelTreeRestructureWorker;
-	private final AsyncTaskExecutor labelMoveTaskExecutor;
 	private final AntPathMatcher pathMatcher;
 	private final TransactionTemplate readOnlyTransactionTemplate;
 
@@ -192,17 +189,7 @@ public class MetadataService {
 		final StatusRepository statusRepository,
 		final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository,
-		final JobService jobService,
-		// Lazy: LabelMoveWorker sits behind ErrandService -> RevisionService -> AccessControlService -> AccessMapperService
-		// -> MetadataService, a cycle back to this very bean. Never actually needed before the async dispatch fires, by
-		// which point every bean in the cycle is already constructed.
-		@Lazy final LabelMoveWorker labelMoveWorker,
-		// Same cycle, same reason: LabelMergeWorker also sits behind ErrandService.
-		@Lazy final LabelMergeWorker labelMergeWorker,
-		// Same cycle, same reason: LabelTreeRestructureWorker itself calls into LabelMoveWorker/LabelMergeWorker.
-		@Lazy final LabelTreeRestructureWorker labelTreeRestructureWorker,
-		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor,
-		final PlatformTransactionManager transactionManager) {
+		final JobService jobService) {
 		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -219,10 +206,6 @@ public class MetadataService {
 		this.validationRepository = validationRepository;
 		this.contactReasonRepository = contactReasonRepository;
 		this.jobService = jobService;
-		this.labelMoveWorker = labelMoveWorker;
-		this.labelMergeWorker = labelMergeWorker;
-		this.labelTreeRestructureWorker = labelTreeRestructureWorker;
-		this.labelMoveTaskExecutor = labelMoveTaskExecutor;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
 		this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
@@ -440,7 +423,9 @@ public class MetadataService {
 	}
 
 	public Labels findLabels(final String namespace, final String municipalityId) {
-		return toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
+		final var labels = toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
+		ofNullable(labels).ifPresent(l -> applyClassificationDisplayNames(l.getLabelStructure(), labelClassificationService.getClassificationDisplayNames(namespace, municipalityId)));
+		return labels;
 	}
 
 	public boolean labelExistsById(final String id, final String namespace, final String municipalityId) {

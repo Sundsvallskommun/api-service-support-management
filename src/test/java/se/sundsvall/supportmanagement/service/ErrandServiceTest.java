@@ -142,6 +142,9 @@ class ErrandServiceTest {
 	private ErrandPhaseService errandPhaseServiceMock;
 
 	@Mock
+	private LabelClassificationService labelClassificationServiceMock;
+
+	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
 
 	@Spy
@@ -340,6 +343,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR);
 		verify(accessControlServiceMock).roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, user);
+		verify(labelClassificationServiceMock).getClassificationDisplayNames(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(errandRepositoryMock);
 	}
 
@@ -395,6 +399,25 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	void updateErrandReadsClassificationDisplayNamesBeforeTouchingTheErrand() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(labelClassificationServiceMock.getClassificationDisplayNames(NAMESPACE, MUNICIPALITY_ID)).thenThrow(new IllegalStateException("database down"));
+
+		final var errand = Errand.create().withTitle("new title");
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
+			.isInstanceOf(IllegalStateException.class);
+
+		verify(errandLabelServiceMock).validateVersions(any());
+
+		// Failing to read them leaves nothing behind that a rollback cannot undo
+		verifyNoInteractions(errandRepositoryMock, errandActionServiceMock, revisionServiceMock, eventServiceMock, entityManagerMock);
 	}
 
 	@Test
