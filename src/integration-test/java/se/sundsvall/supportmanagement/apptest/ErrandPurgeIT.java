@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.apptest;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +77,8 @@ class ErrandPurgeIT extends AbstractAppTest {
 	private static final String CUTOFF_PLACEHOLDER = "<CUTOFF>";
 
 	// Last touched before the cutoff, and reached by a run in the order their ids sort in. The first of them is the one
-	// carrying an attachment, a stakeholder, a notification, revisions, a communication and a conversation.
+	// carrying an attachment, a stakeholder, a notification, revisions, a communication, a conversation, and an
+	// investigation and a decision with parameters.
 	private static final String FIRST_ERRAND_REACHED = "aaaa1111-0000-0000-0000-000000000001";
 	private static final String ERRAND_A_MILLISECOND_BEFORE_THE_CUTOFF = "aaaa1111-0000-0000-0000-000000000005";
 	private static final String ERRAND_DATED_BY_MODIFIED = "aaaa1111-0000-0000-0000-000000000007";
@@ -106,6 +108,12 @@ class ErrandPurgeIT extends AbstractAppTest {
 		"1be673c0-6ba3-4fb0-af4a-43acf23389f6",
 		"f4a7a771-bb75-487b-b7d8-2684a0c3512c",
 		"e29906af-3083-4dcf-bb8a-d787ccf2dcc4");
+
+	// The investigation and the decision of the first errand reached, and the one parameter each holds
+	private static final String INVESTIGATION_ID = "aaaa9999-0000-0000-0000-000000000001";
+	private static final String INVESTIGATION_PARAMETER_ID = "aaaa9999-0000-0000-0000-000000000002";
+	private static final String DECISION_ID = "aaaa9999-0000-0000-0000-000000000003";
+	private static final String DECISION_PARAMETER_ID = "aaaa9999-0000-0000-0000-000000000004";
 
 	private static final String ACCESS_CONTROLLED_ERRAND = "58c41b44-0b9f-413d-bd46-406d24bf5ca8";
 
@@ -163,6 +171,7 @@ class ErrandPurgeIT extends AbstractAppTest {
 	@DisplayName("Verification that a run removes the errands past the cutoff along with everything hanging off them, and leaves every errand it was not pointed at where it is")
 	void test02_purgeRemovesErrandsPastTheCutoff() throws Exception {
 		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, FIRST_ERRAND_REACHED)).hasSize(2);
+		assertThat(artefactRowsOfThePurgedErrand()).allSatisfy((table, count) -> assertThat(count).as(table).isPositive());
 
 		final var job = startPurge(PATH);
 
@@ -190,6 +199,7 @@ class ErrandPurgeIT extends AbstractAppTest {
 		assertThat(rowsIn("conversation", FIRST_ERRAND_REACHED)).isZero();
 		assertThat(communicationsFor("PU-23020001")).isZero();
 		assertThat(blobsOfThePurgedErrand()).isZero();
+		assertThat(artefactRowsOfThePurgedErrand()).allSatisfy((table, count) -> assertThat(count).as(table).isZero());
 
 		// The revisions go with the errand as well, since each of them holds a full snapshot of what the run set out to remove
 		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, FIRST_ERRAND_REACHED)).isEmpty();
@@ -416,5 +426,21 @@ class ErrandPurgeIT extends AbstractAppTest {
 	 */
 	private int blobsOfThePurgedErrand() {
 		return jdbcTemplate.queryForObject("SELECT count(*) FROM attachment_data WHERE id IN (101, 102)", Integer.class);
+	}
+
+	/**
+	 * Counts, by table, the rows of the investigation and the decision of the purged errand, of their parameters and of
+	 * the values of those.
+	 */
+	private Map<String, Integer> artefactRowsOfThePurgedErrand() {
+		return Map.of(
+			"investigation", rowsIn("investigation", FIRST_ERRAND_REACHED),
+			"investigation_parameter", jdbcTemplate.queryForObject("SELECT count(*) FROM investigation_parameter WHERE investigation_id = ?", Integer.class, INVESTIGATION_ID),
+			"investigation_parameter_values", jdbcTemplate.queryForObject("SELECT count(*) FROM investigation_parameter_values WHERE investigation_parameter_id = ?", Integer.class,
+				INVESTIGATION_PARAMETER_ID),
+			"decision", rowsIn("decision", FIRST_ERRAND_REACHED),
+			"decision_parameter", jdbcTemplate.queryForObject("SELECT count(*) FROM decision_parameter WHERE decision_id = ?", Integer.class, DECISION_ID),
+			"decision_parameter_values", jdbcTemplate.queryForObject("SELECT count(*) FROM decision_parameter_values WHERE decision_parameter_id = ?", Integer.class,
+				DECISION_PARAMETER_ID));
 	}
 }

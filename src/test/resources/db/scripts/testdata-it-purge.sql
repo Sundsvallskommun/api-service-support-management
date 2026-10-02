@@ -106,3 +106,29 @@ VALUES ('2281', 100, 'PURGE-NAMESPACE', 'INTERNAL', 'aaaa7777-0000-0000-0000-000
 INSERT INTO conversation_relation_id(conversation_id, relation_id)
 VALUES ('aaaa7777-0000-0000-0000-000000000001', 'PURGE-RELATION-1');
 
+
+-- An investigation and the decision resting on it, each holding a parameter with two values. A run removes them with
+-- the errand, the decision whether it is concluded or not.
+INSERT INTO investigation(id, errand_id, municipality_id, namespace, status, created, version)
+VALUES ('aaaa9999-0000-0000-0000-000000000001', 'aaaa1111-0000-0000-0000-000000000001', '2281', 'PURGE-NAMESPACE',
+        'ACTIVE', '2020-01-01 12:00:00.000', 0);
+
+INSERT INTO investigation_parameter(id, investigation_id, parameters_key)
+VALUES ('aaaa9999-0000-0000-0000-000000000002', 'aaaa9999-0000-0000-0000-000000000001', 'checkedSources');
+
+INSERT INTO investigation_parameter_values(investigation_parameter_id, value_order, value)
+VALUES ('aaaa9999-0000-0000-0000-000000000002', 0, 'Skatteverket'),
+       ('aaaa9999-0000-0000-0000-000000000002', 1, 'Kronofogden');
+
+INSERT INTO decision(id, errand_id, municipality_id, namespace, status, outcome, method, decided_by, decided_at,
+                     investigation_id, created, version)
+VALUES ('aaaa9999-0000-0000-0000-000000000003', 'aaaa1111-0000-0000-0000-000000000001', '2281', 'PURGE-NAMESPACE',
+        'COMPLETED', 'APPROVAL', 'MANUAL', 'joe01doe', '2020-01-01 12:00:00.000',
+        'aaaa9999-0000-0000-0000-000000000001', '2020-01-01 12:00:00.000', 0);
+
+INSERT INTO decision_parameter(id, decision_id, parameters_key)
+VALUES ('aaaa9999-0000-0000-0000-000000000004', 'aaaa9999-0000-0000-0000-000000000003', 'servingArea');
+
+INSERT INTO decision_parameter_values(decision_parameter_id, value_order, value)
+VALUES ('aaaa9999-0000-0000-0000-000000000004', 0, 'inomhus'),
+       ('aaaa9999-0000-0000-0000-000000000004', 1, 'uteservering');
