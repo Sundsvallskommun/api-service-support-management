@@ -20,6 +20,8 @@ public class ConfigPropertyExtractor {
 	public static final String PROPERTY_ROLE_BASED_MAPPING = "ROLE_BASED_MAPPING";
 	public static final String PROPERTY_RESOURCE_ACCESS_CONTROL = "RESOURCE_ACCESS_CONTROL";
 	public static final String PROPERTY_SINGLE_DECISION_PER_ERRAND = "SINGLE_DECISION_PER_ERRAND";
+	public static final String PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL = "EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL";
+	public static final String PROPERTY_BASE_URL = "BASE_URL";
 
 	/**
 	 * Get the value for provided key as the type that is defined for the key/value-pair or null if no property matching

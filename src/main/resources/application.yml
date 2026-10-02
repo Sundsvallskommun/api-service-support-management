@@ -40,6 +40,15 @@ scheduler:
     maximum-execution-time: PT4M
     transaction-buffer: PT10S
     max-age: P30D
+    email:
+      sender-address: noreply@sundsvall.se
+      sender-name: Sundsvalls kommun
+  email-dispatch:
+    name: process_email_dispatch
+    cron: "*/30 * * * * *"
+    shedlock-lock-at-most-for: PT2M
+    maximum-execution-time: PT1M
+    max-attempts: 5
   search-reindex:
     name: search_reindex
     enabled: true
