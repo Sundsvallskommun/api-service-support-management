@@ -383,7 +383,7 @@ class EventServiceTest {
 	}
 
 	@Test
-	void createErrandEventWhenRequestAsksNotToNotifyNotifiesNoSubscriber() {
+	void createErrandEventWhenRequestAsksNotToNotifyNotifiesNoOne() {
 		// Setup — the request carried X-notify: false
 		final var municipalityId = "2281";
 		final var namespace = "MY_NAMESPACE";
@@ -398,11 +398,10 @@ class EventServiceTest {
 		// Call
 		service.createErrandEvent(EventType.UPDATE, "Ärende uppdaterat", entity, null, null, ERRAND);
 
-		// Verify the update is logged, auto subscribed to and notifies the assigned user as before, but reaches no subscriber
+		// Verify the update is logged and auto subscribed to, but neither notifies the assigned user nor reaches any subscriber
 		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(errandId), any());
 		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
-		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandId), any());
-		verifyNoInteractions(notificationDispatchRepositoryMock);
+		verifyNoInteractions(notificationServiceMock, notificationDispatchRepositoryMock);
 	}
 
 	@Test
