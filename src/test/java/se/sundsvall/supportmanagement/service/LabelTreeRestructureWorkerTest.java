@@ -103,9 +103,9 @@ class LabelTreeRestructureWorkerTest {
 				((IntConsumer) invocation.getArgument(7)).accept(3);
 				return 3;
 			});
-		when(labelMergeWorkerMock.mergeAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), any()))
+		when(labelMergeWorkerMock.mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), any()))
 			.thenAnswer(invocation -> {
-				((IntConsumer) invocation.getArgument(5)).accept(2);
+				((IntConsumer) invocation.getArgument(6)).accept(2);
 				return 2;
 			});
 
@@ -140,7 +140,7 @@ class LabelTreeRestructureWorkerTest {
 
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_TARGET");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_SOURCE");
-		verify(labelMergeWorkerMock).mergeAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), any());
+		verify(labelMergeWorkerMock).mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), any());
 		// Cumulative across both restow-reporting steps (3 from the move, then +2 from the merge), onto the one composite job.
 		verify(jobServiceMock).updateProgress(JOB_ID, 5);
 

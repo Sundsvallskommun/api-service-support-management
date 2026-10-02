@@ -97,13 +97,7 @@ public class EventService {
 	 * executed by nobody. The caller is expected to have captured it from the request thread that accepted the move.
 	 */
 	public void createLabelMoveEvent(final String municipalityId, final String labelId, final String startedBy, final String message) {
-		final var executedBy = Identifier.create().withType(Identifier.Type.CUSTOM).withValue(startedBy);
-		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), executedBy, SYSTEM.getValue(), getRequestGroupId());
-		try {
-			eventLogClient.createEvent(municipalityId, labelId, event);
-		} catch (final Exception e) {
-			LOG.warn("Failed to create event log entry for label move {}: {}", sanitizeForLogging(labelId), sanitizeForLogging(e.getMessage()));
-		}
+		createLabelOperationEvent(municipalityId, labelId, startedBy, message, "label move");
 	}
 
 	/**
@@ -113,12 +107,21 @@ public class EventService {
 	 * out.
 	 */
 	public void createLabelMergeEvent(final String municipalityId, final String targetLabelId, final String startedBy, final String message) {
+		createLabelOperationEvent(municipalityId, targetLabelId, startedBy, message, "label merge");
+	}
+
+	/**
+	 * Shared by {@link #createLabelMoveEvent}/{@link #createLabelMergeEvent} - the two differ only in which operation
+	 * a failure to log is reported as, and which label id the entry is logged against, not in how the entry itself is
+	 * built or that logging it is best-effort.
+	 */
+	private void createLabelOperationEvent(final String municipalityId, final String labelId, final String startedBy, final String message, final String operationName) {
 		final var executedBy = Identifier.create().withType(Identifier.Type.CUSTOM).withValue(startedBy);
 		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), executedBy, SYSTEM.getValue(), getRequestGroupId());
 		try {
-			eventLogClient.createEvent(municipalityId, targetLabelId, event);
+			eventLogClient.createEvent(municipalityId, labelId, event);
 		} catch (final Exception e) {
-			LOG.warn("Failed to create event log entry for label merge {}: {}", sanitizeForLogging(targetLabelId), sanitizeForLogging(e.getMessage()));
+			LOG.warn("Failed to create event log entry for {} {}: {}", operationName, sanitizeForLogging(labelId), sanitizeForLogging(e.getMessage()));
 		}
 	}
 

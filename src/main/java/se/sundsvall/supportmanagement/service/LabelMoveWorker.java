@@ -19,7 +19,7 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
  * as failed, since the thread this runs on has nobody to report to.
  */
 @Component
-public class LabelMoveWorker {
+public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LabelMoveWorker.class);
 
@@ -45,6 +45,7 @@ public class LabelMoveWorker {
 		final JobService jobService,
 		final EventService eventService,
 		final LabelMoveProperties properties) {
+		super(jobService);
 		this.errandsRepository = errandsRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.errandService = errandService;
@@ -53,35 +54,41 @@ public class LabelMoveWorker {
 		this.restowPager = new RestowPager(LOG, properties.batchSize(), MAX_BATCH_ATTEMPTS);
 	}
 
-	/**
-	 * Runs a label move to its end.
-	 *
-	 * @param run the run to carry out.
-	 */
-	public void run(final LabelMoveRun run) {
+	@Override
+	protected String jobId(final LabelMoveRun run) {
+		return run.jobId();
+	}
+
+	@Override
+	protected void work(final LabelMoveRun run) {
+		move(run);
+	}
+
+	@Override
+	protected void logStarted(final LabelMoveRun run) {
 		LOG.info("Label move {} started for label {} to parent {} in namespace {} for municipality {} by {}",
 			run.jobId(), sanitizeForLogging(run.labelId()), sanitizeForLogging(run.newParentId()),
 			sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), sanitizeForLogging(run.startedBy()));
+	}
 
-		var ended = false;
+	@Override
+	protected void logAborted(final LabelMoveRun run, final Exception e) {
+		LOG.error("Label move {} aborted for label {} in namespace {}", run.jobId(), sanitizeForLogging(run.labelId()), sanitizeForLogging(run.namespace()), e);
+	}
 
-		try {
-			jobService.setRunning(run.jobId());
-			move(run);
-			ended = true;
-		} catch (final Exception e) {
-			LOG.error("Label move {} aborted for label {} in namespace {}", run.jobId(), sanitizeForLogging(run.labelId()), sanitizeForLogging(run.namespace()), e);
-			jobService.fail(run.jobId(), ABORTED_MESSAGE.formatted(e.getMessage()));
-			ended = true;
-		} finally {
-			// A thread taken down by something that is not an exception - an Error - would otherwise leave the job reading
-			// as running for as long as it lives.
-			if (!ended) {
-				jobService.fail(run.jobId(), ENDED_WITHOUT_RESULT);
-			}
-		}
+	@Override
+	protected String abortedMessage(final Exception e) {
+		return ABORTED_MESSAGE.formatted(e.getMessage());
+	}
 
+	@Override
+	protected void logEnded(final LabelMoveRun run) {
 		LOG.info("Label move {} ended", run.jobId());
+	}
+
+	@Override
+	protected String endedWithoutResultMessage() {
+		return ENDED_WITHOUT_RESULT;
 	}
 
 	private void move(final LabelMoveRun run) {

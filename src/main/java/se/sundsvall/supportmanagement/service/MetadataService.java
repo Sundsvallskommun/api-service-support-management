@@ -453,14 +453,7 @@ public class MetadataService {
 		var allMovedIds = collectMovedLabelIds(context.labelToMove().getId(), context.descendants());
 
 		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
-
-		var affectedActions = actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.filter(action -> referencesAnyLabel(action, allMovedIds))
-			.map(action -> AffectedAction.create()
-				.withId(action.getId())
-				.withName(action.getName())
-				.withDisplayValue(action.getDisplayValue()))
-			.toList();
+		var affectedActions = actionsReferencing(actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId), allMovedIds);
 
 		return LabelMoveDryRunResponse.create()
 			.withAffectedErrandCount(affectedErrandCount)
@@ -657,14 +650,7 @@ public class MetadataService {
 		var context = validateAndFindLabelsToMerge(namespace, municipalityId, targetLabelId, request.getSourceLabelIds());
 
 		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(context.sourceIds());
-
-		var affectedActions = actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
-			.filter(action -> referencesAnyLabel(action, context.sourceIds()))
-			.map(action -> AffectedAction.create()
-				.withId(action.getId())
-				.withName(action.getName())
-				.withDisplayValue(action.getDisplayValue()))
-			.toList();
+		var affectedActions = actionsReferencing(actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId), context.sourceIds());
 
 		return LabelMergeDryRunResponse.create()
 			.withAffectedErrandCount(affectedErrandCount)
@@ -721,27 +707,27 @@ public class MetadataService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, targetLabelId, namespace, municipalityId)));
 		validateIsLeaf(namespace, municipalityId, target);
 
-		// Compared against the target's canonical id, not the raw path variable, for the same reason validateNoCycle
-		// compares against the canonical id on both sides - a client sending the same id differently cased must not slip
-		// the check.
-		var sourceIds = new HashSet<>(requestedSourceIds);
+		// Built from each looked-up label's own stored id, never from the raw strings the client sent: a source id
+		// differing from the target's only in case would otherwise still resolve to the very same row below (a
+		// case-insensitive id lookup/collation) while failing the self-merge check above it, which compares the raw
+		// string against target.getId() verbatim - letting the destination label itself slip into sourceIds and, once
+		// every real source is restowed away, get deleted right along with them.
+		var sourceIds = requestedSourceIds.stream()
+			.map(sourceId -> metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(sourceId, namespace, municipalityId)
+				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, sourceId, namespace, municipalityId))))
+			.peek(source -> validateIsLeaf(namespace, municipalityId, source))
+			.map(MetadataLabelEntity::getId)
+			.collect(toSet());
+
 		if (sourceIds.contains(target.getId())) {
 			throw Problem.valueOf(BAD_REQUEST, "Label '%s' cannot be merged into itself".formatted(target.getId()));
 		}
-
-		sourceIds.forEach(sourceId -> {
-			var source = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(sourceId, namespace, municipalityId)
-				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, sourceId, namespace, municipalityId)));
-			validateIsLeaf(namespace, municipalityId, source);
-		});
 
 		return new LabelMergeContext(target.getId(), sourceIds);
 	}
 
 	private void validateIsLeaf(final String namespace, final String municipalityId, final MetadataLabelEntity label) {
-		var hasChildren = !metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
-			namespace, municipalityId, label.getResourcePath() + "/").isEmpty();
-		if (hasChildren) {
+		if (metadataLabelRepository.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(namespace, municipalityId, label.getResourcePath() + "/")) {
 			throw Problem.valueOf(BAD_REQUEST, "Label '%s' has children and cannot take part in a merge".formatted(label.getId()));
 		}
 	}
@@ -905,7 +891,7 @@ public class MetadataService {
 		final var path = LabelTreeSnapshot.join(step.getPath());
 
 		if (!snapshot.exists(path)) {
-			final var parentPath = LabelTreeSnapshot.join(allButLast(step.getPath()));
+			final var parentPath = LabelTreeSnapshot.join(LabelTreeSnapshot.allButLast(step.getPath()));
 			if (!snapshot.exists(parentPath)) {
 				throw Problem.valueOf(BAD_REQUEST, "Step %d (ADD): parent path '%s' does not exist".formatted(index, parentPath));
 			}
@@ -943,8 +929,13 @@ public class MetadataService {
 			throw Problem.valueOf(BAD_REQUEST, "Step %d (DELETE): label at path '%s' still has children".formatted(index, path));
 		}
 
-		final var id = snapshot.idAt(path);
-		if ((id != null) && errandsRepository.existsByLabelsMetadataLabelIdIn(Set.of(id))) {
+		// accessLabels, not labels: labels carries the full ancestor chain, so an errand tagged with a child this path
+		// used to have would still show up against this path's own id there even after an earlier step in this same
+		// request already moved that child elsewhere - accessLabels holds only an errand's own leaf tags, which earlier
+		// steps already elsewhere in the tree do not touch. realIdsAtOrUnder rather than a plain idAt, so an id an
+		// earlier MERGE step folded into this exact (leaf) path is still asked about too.
+		final var realIds = snapshot.realIdsAtOrUnder(path);
+		if (!realIds.isEmpty() && errandsRepository.existsByAccessLabelsMetadataLabelIdIn(realIds)) {
 			throw Problem.valueOf(BAD_REQUEST, "Step %d (DELETE): label at path '%s' is referenced by one or more errands".formatted(index, path));
 		}
 
@@ -964,11 +955,11 @@ public class MetadataService {
 			throw Problem.valueOf(BAD_REQUEST, "Step %d (MOVE): destination parent path '%s' does not exist".formatted(index, destinationParentPath));
 		}
 
-		final var newResourceName = ofNullable(step.getNewResourceName()).orElseGet(() -> lastSegment(step.getPath()));
+		final var newResourceName = ofNullable(step.getNewResourceName()).orElseGet(() -> LabelTreeSnapshot.lastSegment(step.getPath()));
 		final var newPath = destinationParentPath.isEmpty() ? newResourceName : destinationParentPath + "/" + newResourceName;
-		final var currentParentPath = LabelTreeSnapshot.join(allButLast(step.getPath()));
+		final var currentParentPath = LabelTreeSnapshot.join(LabelTreeSnapshot.allButLast(step.getPath()));
 
-		if (currentParentPath.equals(destinationParentPath) && newResourceName.equals(lastSegment(step.getPath()))) {
+		if (currentParentPath.equals(destinationParentPath) && newResourceName.equals(LabelTreeSnapshot.lastSegment(step.getPath()))) {
 			throw Problem.valueOf(BAD_REQUEST, "Step %d (MOVE): label at path '%s' is already at that destination - move would be a no-op".formatted(index, sourcePath));
 		}
 		if (newPath.equals(sourcePath) || destinationParentPath.equals(sourcePath) || destinationParentPath.startsWith(sourcePath + "/")) {
@@ -980,7 +971,7 @@ public class MetadataService {
 		rejectIfTooLong(newPath);
 		validateDescendantPathsAfterMove(snapshot, sourcePath, newPath, index);
 
-		final var realIds = Set.copyOf(snapshot.realIdsAtOrUnder(sourcePath));
+		final var realIds = snapshot.realIdsAtOrUnder(sourcePath);
 		final var affected = affectedBy(realIds, actions);
 
 		snapshot.recordMove(sourcePath, newPath);
@@ -1027,7 +1018,9 @@ public class MetadataService {
 			}
 		});
 
-		final var realSourceIds = sourcePaths.stream().map(snapshot::idAt).filter(Objects::nonNull).collect(toSet());
+		// realIdsAtOrUnder rather than idAt: a source path targeted by an earlier MERGE step in this same request may
+		// itself already carry along ids folded into it from a still-earlier source - see LabelTreeSnapshot's own doc.
+		final var realSourceIds = sourcePaths.stream().flatMap(sourcePath -> snapshot.realIdsAtOrUnder(sourcePath).stream()).collect(toSet());
 		final var affected = affectedBy(realSourceIds, actions);
 
 		snapshot.recordMerge(targetPath, sourcePaths);
@@ -1065,14 +1058,6 @@ public class MetadataService {
 				.withName(action.getName())
 				.withDisplayValue(action.getDisplayValue()))
 			.toList();
-	}
-
-	private static List<String> allButLast(final List<String> path) {
-		return path.subList(0, path.size() - 1);
-	}
-
-	private static String lastSegment(final List<String> path) {
-		return path.get(path.size() - 1);
 	}
 
 	// =================================================================

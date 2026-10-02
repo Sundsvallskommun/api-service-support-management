@@ -38,7 +38,7 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
  * simply fails fast again if its own precondition still doesn't hold.
  */
 @Component
-public class LabelTreeRestructureWorker {
+public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LabelTreeRestructureWorker.class);
 
@@ -65,6 +65,7 @@ public class LabelTreeRestructureWorker {
 		final LabelMergeWorker labelMergeWorker,
 		final JobService jobService,
 		final PlatformTransactionManager transactionManager) {
+		super(jobService);
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.errandsRepository = errandsRepository;
 		this.labelMoveWorker = labelMoveWorker;
@@ -73,34 +74,40 @@ public class LabelTreeRestructureWorker {
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
 	}
 
-	/**
-	 * Runs a label-tree restructure to its end.
-	 *
-	 * @param run the run to carry out.
-	 */
-	public void run(final LabelRestructureRun run) {
+	@Override
+	protected String jobId(final LabelRestructureRun run) {
+		return run.jobId();
+	}
+
+	@Override
+	protected void work(final LabelRestructureRun run) {
+		restructure(run);
+	}
+
+	@Override
+	protected void logStarted(final LabelRestructureRun run) {
 		LOG.info("Label tree restructure {} started with {} step(s) in namespace {} for municipality {} by {}",
 			run.jobId(), run.steps().size(), sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), sanitizeForLogging(run.startedBy()));
+	}
 
-		var ended = false;
+	@Override
+	protected void logAborted(final LabelRestructureRun run, final Exception e) {
+		LOG.error("Label tree restructure {} aborted in namespace {}", run.jobId(), sanitizeForLogging(run.namespace()), e);
+	}
 
-		try {
-			jobService.setRunning(run.jobId());
-			restructure(run);
-			ended = true;
-		} catch (final Exception e) {
-			LOG.error("Label tree restructure {} aborted in namespace {}", run.jobId(), sanitizeForLogging(run.namespace()), e);
-			jobService.fail(run.jobId(), ABORTED_MESSAGE.formatted(e.getMessage()));
-			ended = true;
-		} finally {
-			// A thread taken down by something that is not an exception - an Error - would otherwise leave the job reading
-			// as running for as long as it lives.
-			if (!ended) {
-				jobService.fail(run.jobId(), ENDED_WITHOUT_RESULT);
-			}
-		}
+	@Override
+	protected String abortedMessage(final Exception e) {
+		return ABORTED_MESSAGE.formatted(e.getMessage());
+	}
 
+	@Override
+	protected void logEnded(final LabelRestructureRun run) {
 		LOG.info("Label tree restructure {} ended", run.jobId());
+	}
+
+	@Override
+	protected String endedWithoutResultMessage() {
+		return ENDED_WITHOUT_RESULT;
 	}
 
 	private void restructure(final LabelRestructureRun run) {
@@ -156,8 +163,8 @@ public class LabelTreeRestructureWorker {
 	 * would have no session left to resolve against past the first hop.
 	 */
 	private void applyAdd(final String namespace, final String municipalityId, final LabelRestructureStep step) {
-		final var path = join(step.getPath());
-		final var parentPath = join(allButLast(step.getPath()));
+		final var path = LabelTreeSnapshot.join(step.getPath());
+		final var parentPath = LabelTreeSnapshot.join(LabelTreeSnapshot.allButLast(step.getPath()));
 
 		transactionTemplate.executeWithoutResult(status -> {
 			if (metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, path).isPresent()) {
@@ -171,20 +178,20 @@ public class LabelTreeRestructureWorker {
 				.withMunicipalityId(municipalityId)
 				.withClassification(step.getClassification())
 				.withDisplayName(step.getDisplayName())
-				.withResourceName(lastSegment(step.getPath()))
+				.withResourceName(LabelTreeSnapshot.lastSegment(step.getPath()))
 				.withParent(parent));
 		});
 	}
 
 	private void applyRename(final String namespace, final String municipalityId, final LabelRestructureStep step) {
-		final var path = join(step.getPath());
+		final var path = LabelTreeSnapshot.join(step.getPath());
 		final var entity = findOrThrow(namespace, municipalityId, path, LABEL_GONE);
 		entity.setDisplayName(step.getDisplayName());
 		metadataLabelRepository.save(entity);
 	}
 
 	private void applyDelete(final String namespace, final String municipalityId, final LabelRestructureStep step) {
-		final var path = join(step.getPath());
+		final var path = LabelTreeSnapshot.join(step.getPath());
 		final var entity = findOrThrow(namespace, municipalityId, path, LABEL_GONE);
 
 		if (!metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(namespace, municipalityId, path + "/").isEmpty()) {
@@ -198,40 +205,28 @@ public class LabelTreeRestructureWorker {
 	}
 
 	private int applyMove(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final IntConsumer progressReporter) {
-		final var sourceId = findOrThrow(namespace, municipalityId, join(step.getPath()), LABEL_GONE).getId();
+		final var sourceId = findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(step.getPath()), LABEL_GONE).getId();
 
 		final var destinationSegments = ofNullable(step.getDestinationParentPath()).orElse(List.of());
 		final var destinationParentId = destinationSegments.isEmpty()
 			? null
-			: findOrThrow(namespace, municipalityId, join(destinationSegments), PARENT_GONE).getId();
+			: findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(destinationSegments), PARENT_GONE).getId();
 
 		return labelMoveWorker.moveAndRestow(jobId, municipalityId, sourceId, destinationParentId, step.getNewResourceName(), step.getDisplayName(), startedBy, progressReporter);
 	}
 
 	private int applyMerge(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final IntConsumer progressReporter) {
-		final var targetId = findOrThrow(namespace, municipalityId, join(step.getPath()), LABEL_GONE).getId();
+		final var targetId = findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(step.getPath()), LABEL_GONE).getId();
 
 		final var sourceIds = step.getSourcePaths().stream()
-			.map(sourcePath -> findOrThrow(namespace, municipalityId, join(sourcePath), LABEL_GONE).getId())
+			.map(sourcePath -> findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(sourcePath), LABEL_GONE).getId())
 			.collect(toSet());
 
-		return labelMergeWorker.mergeAndRestow(jobId, municipalityId, targetId, sourceIds, startedBy, progressReporter);
+		return labelMergeWorker.mergeAndRestow(jobId, namespace, municipalityId, targetId, sourceIds, startedBy, progressReporter);
 	}
 
 	private MetadataLabelEntity findOrThrow(final String namespace, final String municipalityId, final String path, final String messageTemplate) {
 		return metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, path)
 			.orElseThrow(() -> new IllegalStateException(messageTemplate.formatted(path)));
-	}
-
-	private static String join(final List<String> path) {
-		return String.join("/", path);
-	}
-
-	private static List<String> allButLast(final List<String> path) {
-		return path.subList(0, path.size() - 1);
-	}
-
-	private static String lastSegment(final List<String> path) {
-		return path.get(path.size() - 1);
 	}
 }

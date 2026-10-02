@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 
@@ -91,6 +92,33 @@ class LabelTreeSnapshotTest {
 		assertThat(snapshot.exists("TARGET")).isTrue();
 		assertThat(snapshot.exists("SOURCE_1")).isFalse();
 		assertThat(snapshot.exists("SOURCE_2")).isFalse();
+	}
+
+	@Test
+	@DisplayName("Verification that recordMerge folds each source's real ids into the target rather than discarding them, so a later step in the same request asking realIdsAtOrUnder the target still finds the source id a plain idByPath lookup would have lost")
+	void recordMerge_foldsSourceRealIdsIntoTarget() {
+		var snapshot = LabelTreeSnapshot.of(List.of(
+			labelEntity("target-id", "TARGET", "ROOT"),
+			labelEntity("source-id", "SOURCE", "ROOT")));
+
+		snapshot.recordMerge("TARGET", List.of("SOURCE"));
+
+		assertThat(snapshot.realIdsAtOrUnder("TARGET")).containsExactlyInAnyOrder("target-id", "source-id");
+		assertThat(snapshot.idAt("TARGET")).isEqualTo("target-id");
+	}
+
+	@Test
+	@DisplayName("Verification that a real id folded into a path by an earlier MERGE survives a later MOVE of that same path, rebased along with everything else recordMove carries over")
+	void recordMove_carriesOverRealIdsFoldedInByAnEarlierMerge() {
+		var snapshot = LabelTreeSnapshot.of(List.of(
+			labelEntity("target-id", "TARGET", "ROOT"),
+			labelEntity("source-id", "SOURCE", "ROOT"),
+			labelEntity("dest-id", "DEST", "ROOT")));
+
+		snapshot.recordMerge("TARGET", List.of("SOURCE"));
+		snapshot.recordMove("TARGET", "DEST/TARGET");
+
+		assertThat(snapshot.realIdsAtOrUnder("DEST/TARGET")).containsExactlyInAnyOrder("target-id", "source-id");
 	}
 
 	private static MetadataLabelEntity labelEntity(final String id, final String resourcePath, final String classification) {

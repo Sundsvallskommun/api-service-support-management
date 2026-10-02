@@ -170,7 +170,7 @@ class MetadataServiceRestructureLabelTreeTest {
 		final var label = labelEntity("label-id", "CATEGORY/TYPE");
 
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(label));
-		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(Set.of("label-id"))).thenReturn(true);
+		when(errandsRepositoryMock.existsByAccessLabelsMetadataLabelIdIn(Set.of("label-id"))).thenReturn(true);
 
 		final var request = LabelRestructureRequest.create()
 			.withDryRun(true)
@@ -180,6 +180,67 @@ class MetadataServiceRestructureLabelTreeTest {
 			.isThrownBy(() -> service.restructureLabelTree(NAMESPACE, MUNICIPALITY_ID, request))
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
 			.withMessageContaining("referenced");
+	}
+
+	@Test
+	@DisplayName("Verification that moving a label's only child out and then deleting the now-empty label in the same request succeeds - the DELETE step's reference check must ask about accessLabels (an errand's own leaf tags), not labels (which still carries the pre-move ancestor chain in the database until the real run actually restows it)")
+	void restructureLabelTree_moveChildOutThenDeleteEmptiedParent_isAllowed() {
+		final var category = labelEntity("category-id", "CATEGORY");
+		final var parent = labelEntity("parent-id", "CATEGORY/PARENT");
+		final var child = labelEntity("child-id", "CATEGORY/PARENT/CHILD");
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(List.of(category, parent, child));
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of("child-id"))).thenReturn(0L);
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
+		// Not referenced directly - any errand that used to reach this path only did so via an ancestor-chain entry
+		// through the child this request already moved elsewhere.
+		when(errandsRepositoryMock.existsByAccessLabelsMetadataLabelIdIn(Set.of("parent-id"))).thenReturn(false);
+
+		final var request = LabelRestructureRequest.create()
+			.withDryRun(true)
+			.withSteps(List.of(
+				moveStep(List.of("CATEGORY", "PARENT", "CHILD"), List.of("CATEGORY")),
+				deleteStep(List.of("CATEGORY", "PARENT"))));
+
+		final var result = service.restructureLabelTree(NAMESPACE, MUNICIPALITY_ID, request);
+
+		assertThat(result.getSteps()).hasSize(2);
+		assertThat(result.getSteps().get(1).getAffectedErrandCount()).isZero();
+
+		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of("child-id"));
+		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).existsByAccessLabelsMetadataLabelIdIn(Set.of("parent-id"));
+	}
+
+	@Test
+	@DisplayName("Verification that a MOVE step's affected-errand count still includes a source label an earlier MERGE step in the same request already folded into the moved label - those real ids must not be lost by a later step asking only about the surviving label's own id")
+	void restructureLabelTree_moveAfterEarlierMergeIntoSamePath_includesMergedSourceInAffectedCount() {
+		final var category = labelEntity("category-id", "CATEGORY");
+		final var source = labelEntity("source-id", "CATEGORY/SOURCE");
+		final var target = labelEntity("target-id", "CATEGORY/TARGET");
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(List.of(category, source, target));
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of("source-id"))).thenReturn(2L);
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of("target-id", "source-id"))).thenReturn(5L);
+
+		final var request = LabelRestructureRequest.create()
+			.withDryRun(true)
+			.withSteps(List.of(
+				mergeStep(List.of("CATEGORY", "TARGET"), List.of(List.of("CATEGORY", "SOURCE"))),
+				moveStep(List.of("CATEGORY", "TARGET"), List.of())));
+
+		final var result = service.restructureLabelTree(NAMESPACE, MUNICIPALITY_ID, request);
+
+		assertThat(result.getSteps()).hasSize(2);
+		assertThat(result.getSteps().get(0).getAffectedErrandCount()).isEqualTo(2L);
+		assertThat(result.getSteps().get(1).getAffectedErrandCount()).isEqualTo(5L);
+
+		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of("source-id"));
+		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of("target-id", "source-id"));
+		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test

@@ -309,10 +309,15 @@ public class ErrandService {
 	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
-		batch.forEach(this::restowFromAccessLabels);
+		final var idsWithLabels = idsWithNonEmptyLabels(batch);
+		batch.forEach(errand -> restowFromAccessLabels(errand, idsWithLabels));
 	}
 
-	private void restowFromAccessLabels(final ErrandEntity errand) {
+	private void restowFromAccessLabels(final ErrandEntity errand, final Set<String> idsWithLabels) {
+		if (skipIfAccessLabelsMissing(errand, idsWithLabels)) {
+			return;
+		}
+
 		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
 			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
 			.toList();
@@ -329,10 +334,15 @@ public class ErrandService {
 	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	void persistLabelMergeBatch(final List<ErrandEntity> batch, final Set<String> sourceLabelIds, final String targetLabelId) {
-		batch.forEach(errand -> restowFromAccessLabelsWithSubstitution(errand, sourceLabelIds, targetLabelId));
+		final var idsWithLabels = idsWithNonEmptyLabels(batch);
+		batch.forEach(errand -> restowFromAccessLabelsWithSubstitution(errand, sourceLabelIds, targetLabelId, idsWithLabels));
 	}
 
-	private void restowFromAccessLabelsWithSubstitution(final ErrandEntity errand, final Set<String> sourceLabelIds, final String targetLabelId) {
+	private void restowFromAccessLabelsWithSubstitution(final ErrandEntity errand, final Set<String> sourceLabelIds, final String targetLabelId, final Set<String> idsWithLabels) {
+		if (skipIfAccessLabelsMissing(errand, idsWithLabels)) {
+			return;
+		}
+
 		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
 			.map(AccessLabelEmbeddable::getMetadataLabelId)
 			.map(leafId -> sourceLabelIds.contains(leafId) ? targetLabelId : leafId)
@@ -342,6 +352,36 @@ public class ErrandService {
 
 		errand.setLabels(leafLabels);
 		persistLabelUpdate(errand);
+	}
+
+	/**
+	 * Which of {@code batch}'s errands have a non-empty {@code labels}, asked as one cheap id-only query rather than
+	 * by touching each entity's own {@code labels} collection - {@code labels} is lazy and these errands are already
+	 * detached by the time this runs (read by the worker in a transaction that has since closed), and eagerly
+	 * fetching it alongside {@code accessLabels} is not an option: both are {@code @ElementCollection} bags, and
+	 * Hibernate refuses to join-fetch two bags in the same query.
+	 */
+	private Set<String> idsWithNonEmptyLabels(final List<ErrandEntity> batch) {
+		return repository.findIdsWithNonEmptyLabels(batch.stream().map(ErrandEntity::getId).toList());
+	}
+
+	/**
+	 * Whether this errand's {@code accessLabels} are missing while {@code labels} are not - a data inconsistency
+	 * (the two are meant to always agree: {@code accessLabels} is computed from {@code labels} by
+	 * {@link ErrandLabelService#settleAccessLabels}) that a restow driven purely by {@code accessLabels} must not
+	 * paper over by treating "no access labels" as "no labels" and wiping the real label set out from under whoever
+	 * could previously reach this errand through it. Logged and left alone rather than restowed: a later write path
+	 * that keeps the two in sync will settle it the normal way, and leaving it as it was costs nothing in the
+	 * meantime, unlike silently erasing it would.
+	 */
+	private boolean skipIfAccessLabelsMissing(final ErrandEntity errand, final Set<String> idsWithLabels) {
+		final var hasAccessLabels = !ofNullable(errand.getAccessLabels()).orElse(emptyList()).isEmpty();
+
+		if (idsWithLabels.contains(errand.getId()) && !hasAccessLabels) {
+			LOG.warn("Errand {} has labels but no access labels - skipping restow rather than clearing its label set", sanitizeForLogging(errand.getId()));
+			return true;
+		}
+		return false;
 	}
 
 	/**

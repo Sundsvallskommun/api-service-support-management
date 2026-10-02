@@ -632,12 +632,14 @@ class ErrandServiceTest {
 	void persistLabelMigrationBatch_rebuildsEachErrandsLabelsFromItsAccessLabels() {
 		var leafId = "leaf-id";
 		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			// A stale chain from before the move - restowing must replace it, not merge into it
 			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
 			.withAccessLabels(List.of(se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(leafId)));
 
+		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
 		service.persistLabelMigrationBatch(List.of(errand));
@@ -645,9 +647,31 @@ class ErrandServiceTest {
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactly(leafId);
+		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
 		verify(errandLabelServiceMock).settleAccessLabels(errand);
 		verify(errandRepositoryMock).saveAndFlush(errand);
 		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a migration batch leaves an errand's labels untouched, rather than clearing them, when it has labels but no access labels - a data inconsistency the restow must not paper over by treating it as having no labels at all")
+	void persistLabelMigrationBatch_skipsErrandWithLabelsButNoAccessLabels() {
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("real-id")))
+			.withAccessLabels(List.of());
+
+		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
+
+		service.persistLabelMigrationBatch(List.of(errand));
+
+		assertThat(errand.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly("real-id");
+		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
+		verifyNoInteractions(errandLabelServiceMock, errandActionServiceMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@Test
@@ -656,6 +680,7 @@ class ErrandServiceTest {
 		var targetId = "target-id";
 		var otherLeafId = "other-leaf-id";
 		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			// A stale chain from before the merge - restowing must replace it, not merge into it
@@ -665,6 +690,7 @@ class ErrandServiceTest {
 				se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId("source-2"),
 				se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(otherLeafId)));
 
+		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
 		service.persistLabelMergeBatch(List.of(errand), Set.of("source-1", "source-2"), targetId);
@@ -673,6 +699,7 @@ class ErrandServiceTest {
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(targetId, otherLeafId);
+		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
 		verify(errandLabelServiceMock).settleAccessLabels(errand);
 		verify(errandRepositoryMock).saveAndFlush(errand);
 		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);

@@ -43,6 +43,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -139,8 +140,8 @@ class MetadataServiceMergeLabelsTest {
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of(leafLabel("child-id", "TARGET/CHILD")));
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(true);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.mergeLabels(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(SOURCE_ID)).withDryRun(true)))
@@ -148,25 +149,50 @@ class MetadataServiceMergeLabelsTest {
 			.withMessageContaining("children");
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 	}
 
 	@Test
+	@DisplayName("Verification that a source id resolved to the same row as the target is still caught as a self-merge - each source is looked up and canonicalized before the self-merge check runs, which is why the target's own id and leaf check are each hit twice here: once resolving the target itself, once resolving it again as the (self-referencing) source")
 	void mergeLabels_targetAmongSources_throws400() {
 		var target = leafLabel(TARGET_ID, "TARGET");
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.mergeLabels(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(TARGET_ID)).withDryRun(true)))
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
 			.withMessageContaining("merged into itself");
 
+		verify(metadataLabelRepositoryMock, times(2)).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataLabelRepositoryMock, times(2)).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+	}
+
+	@Test
+	@DisplayName("Verification that a source id differing from the target's only in case is still caught as a self-merge, rather than slipping through to be deleted along with the real sources once the merge restows everything onto what is, underneath the casing, the very same label")
+	void mergeLabels_targetAmongSources_differentCase_throws400() {
+		var target = leafLabel(TARGET_ID, "TARGET");
+		var differentlyCasedTargetId = TARGET_ID.toUpperCase();
+
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(target));
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
+		// A case-insensitive id lookup/collation resolves the differently-cased source id to the very same row.
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(differentlyCasedTargetId, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(target));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.mergeLabels(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(differentlyCasedTargetId)).withDryRun(true)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
+			.withMessageContaining("merged into itself");
+
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(differentlyCasedTargetId, NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataLabelRepositoryMock, times(2)).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 	}
 
 	@Test
@@ -175,8 +201,8 @@ class MetadataServiceMergeLabelsTest {
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.empty());
 
@@ -185,7 +211,7 @@ class MetadataServiceMergeLabelsTest {
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()));
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
 	}
 
@@ -196,12 +222,12 @@ class MetadataServiceMergeLabelsTest {
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(source));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
-			.thenReturn(List.of(leafLabel("child-id", "SOURCE/CHILD")));
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
+			.thenReturn(true);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.mergeLabels(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(SOURCE_ID)).withDryRun(true)))
@@ -209,9 +235,9 @@ class MetadataServiceMergeLabelsTest {
 			.withMessageContaining("children");
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
 	}
 
 	@Test
@@ -223,12 +249,12 @@ class MetadataServiceMergeLabelsTest {
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(source));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
+			.thenReturn(false);
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(4L);
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of(actionWithLabel, actionWithoutLabel));
@@ -249,12 +275,12 @@ class MetadataServiceMergeLabelsTest {
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(source));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
+			.thenReturn(false);
 		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
@@ -262,9 +288,9 @@ class MetadataServiceMergeLabelsTest {
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(CONFLICT.value()));
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock, never()).countDistinctByLabelsMetadataLabelIdIn(any());
 	}
@@ -289,12 +315,12 @@ class MetadataServiceMergeLabelsTest {
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(source));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
+			.thenReturn(false);
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(4L);
 		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 4, TARGET_ID)).thenReturn("job-id");
 		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(jobResponse);
@@ -303,9 +329,9 @@ class MetadataServiceMergeLabelsTest {
 
 		assertThat(result).isEqualTo(jobResponse);
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
 		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 4, TARGET_ID);
@@ -321,12 +347,12 @@ class MetadataServiceMergeLabelsTest {
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(source));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
+			.thenReturn(false);
 		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(0L);
 		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID)).thenReturn("job-id");
@@ -352,9 +378,9 @@ class MetadataServiceMergeLabelsTest {
 		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
 		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID);
@@ -370,12 +396,12 @@ class MetadataServiceMergeLabelsTest {
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
+			.thenReturn(false);
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(source));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
-			.thenReturn(List.of());
+		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
+			.thenReturn(false);
 		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(0L);
 		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID)).thenReturn("job-id");
@@ -387,9 +413,9 @@ class MetadataServiceMergeLabelsTest {
 			.withMessageContaining("Label merge could not be started: No thread available");
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
+		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
 		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID);

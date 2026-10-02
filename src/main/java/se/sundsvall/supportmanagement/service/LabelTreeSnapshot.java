@@ -37,6 +37,14 @@ final class LabelTreeSnapshot {
 	// lookup never has to distinguish "no children" from "path does not exist" via a missing map entry.
 	private final Map<String, Set<String>> childrenByPath = new HashMap<>();
 
+	// path -> every real, persisted id currently folded into it - starts as a singleton of the label's own id, but
+	// recordMerge unions a source path's accumulated ids into its target's rather than discarding them, so a later
+	// step asking "which real ids does this path represent" still finds a source a prior step already merged away.
+	// Without this, a step after an in-request MERGE would ask the database about only the target's own id and miss
+	// every errand still carrying a source id the real merge has not actually restowed yet (see
+	// MetadataService#simulateDelete/#simulateMove/#simulateMerge for where that matters).
+	private final Map<String, Set<String>> realIdsByPath = new HashMap<>();
+
 	private LabelTreeSnapshot() {
 		childrenByPath.put(ROOT, new HashSet<>());
 	}
@@ -48,12 +56,30 @@ final class LabelTreeSnapshot {
 			snapshot.idByPath.put(path, label.getId());
 			snapshot.childrenByPath.putIfAbsent(path, new HashSet<>());
 			snapshot.childrenByPath.computeIfAbsent(parentOf(path), k -> new HashSet<>()).add(label.getResourceName());
+			snapshot.realIdsByPath.computeIfAbsent(path, k -> new HashSet<>()).add(label.getId());
 		});
 		return snapshot;
 	}
 
 	static String join(final List<String> path) {
 		return String.join(SEPARATOR, path);
+	}
+
+	/**
+	 * Every segment of {@code path} but the last - a step's own parent path, which both {@link MetadataService}'s
+	 * simulation and {@code LabelTreeRestructureWorker}'s real execution need from the exact same
+	 * {@code LabelRestructureStep#getPath()} shape, hence held here rather than as a private copy in each.
+	 */
+	static List<String> allButLast(final List<String> path) {
+		return path.subList(0, path.size() - 1);
+	}
+
+	/**
+	 * The last segment of {@code path} - a step's own resourceName, absent an explicit override. See
+	 * {@link #allButLast} for why this lives here rather than as a private copy in each of its two callers.
+	 */
+	static String lastSegment(final List<String> path) {
+		return path.get(path.size() - 1);
 	}
 
 	private static String parentOf(final String path) {
@@ -83,15 +109,17 @@ final class LabelTreeSnapshot {
 	}
 
 	/**
-	 * Every path at or under {@code path} (itself included) that carries a real, persisted id - used to collect the
-	 * full set of ids a move must restow, mirroring {@link MetadataService}'s existing descendant-collection for the
-	 * standalone move endpoint.
+	 * Every real, persisted id currently folded into a path at or under {@code path} (itself included) - used to
+	 * collect the full set of ids a move or merge must ask the database about, mirroring {@link MetadataService}'s
+	 * existing descendant-collection for the standalone move endpoint, but additionally carrying along any id an
+	 * earlier {@code MERGE} step in the same request already folded into a surviving path - see
+	 * {@link #realIdsByPath}'s own doc for why a plain {@code idByPath} lookup would lose track of those.
 	 */
-	List<String> realIdsAtOrUnder(final String path) {
-		final var ids = new ArrayList<String>();
-		idByPath.forEach((candidatePath, id) -> {
-			if ((id != null) && (candidatePath.equals(path) || candidatePath.startsWith(path + SEPARATOR))) {
-				ids.add(id);
+	Set<String> realIdsAtOrUnder(final String path) {
+		final var ids = new HashSet<String>();
+		realIdsByPath.forEach((candidatePath, pathIds) -> {
+			if (candidatePath.equals(path) || candidatePath.startsWith(path + SEPARATOR)) {
+				ids.addAll(pathIds);
 			}
 		});
 		return ids;
@@ -124,6 +152,7 @@ final class LabelTreeSnapshot {
 		idByPath.remove(path);
 		childrenByPath.remove(path);
 		childrenByPath.getOrDefault(parentOf(path), Set.of()).remove(lastSegmentOf(path));
+		realIdsByPath.remove(path);
 	}
 
 	/**
@@ -150,12 +179,26 @@ final class LabelTreeSnapshot {
 			final var children = childrenByPath.remove(oldPath);
 			idByPath.put(rebasedPath, id);
 			childrenByPath.put(rebasedPath, children != null ? children : new HashSet<>());
+
+			final var realIds = realIdsByPath.remove(oldPath);
+			if (realIds != null) {
+				realIdsByPath.put(rebasedPath, realIds);
+			}
 		});
 
 		childrenByPath.computeIfAbsent(parentOf(newPath), k -> new HashSet<>()).add(lastSegmentOf(newPath));
 	}
 
+	/**
+	 * Folds each source path's accumulated real ids into the target's before dropping the source paths from the tree,
+	 * rather than simply deleting them - see {@link #realIdsByPath}'s own doc for why a later step must still be able
+	 * to find them there.
+	 */
 	void recordMerge(final String targetPath, final List<String> sourcePaths) {
-		sourcePaths.forEach(this::recordDelete);
+		final var targetRealIds = realIdsByPath.computeIfAbsent(targetPath, k -> new HashSet<>());
+		sourcePaths.forEach(sourcePath -> {
+			targetRealIds.addAll(realIdsByPath.getOrDefault(sourcePath, Set.of()));
+			recordDelete(sourcePath);
+		});
 	}
 }
