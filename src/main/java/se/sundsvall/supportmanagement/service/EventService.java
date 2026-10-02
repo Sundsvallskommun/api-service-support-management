@@ -75,12 +75,13 @@ public class EventService {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		}
 
-		if (sendNotification) {
+		// A request that asked to notify no one reaches no one, neither those notified directly nor any subscriber on any
+		// channel
+		if (sendNotification && shouldNotify()) {
 			createNotification(errandEntity, event);
 		}
 
-		// Which subscribers hear of the event is up to their subscriptions. A request that asked to notify no one reaches none
-		// of them, on any channel
+		// Which subscribers hear of the event is up to their subscriptions
 		if (shouldNotify()) {
 			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
 		}
