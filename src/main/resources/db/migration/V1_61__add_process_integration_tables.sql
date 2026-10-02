@@ -150,3 +150,31 @@ create table if not exists decision_parameter_values (
         foreign key (decision_parameter_id) references decision_parameter (id)
         on delete cascade
 ) engine=InnoDB;
+
+create table if not exists investigation_parameter (
+    id               varchar(255) not null,
+    investigation_id varchar(255) not null,
+    parameters_key   varchar(255) not null,
+    display_name     varchar(255),
+    parameter_group  varchar(255),
+    primary key (id),
+    constraint fk_investigation_parameter_investigation_id
+        foreign key (investigation_id) references investigation (id)
+        on delete cascade
+) engine=InnoDB;
+
+create index if not exists idx_investigation_parameter_investigation_id
+    on investigation_parameter (investigation_id);
+
+create table if not exists investigation_parameter_values (
+    investigation_parameter_id varchar(255)  not null,
+    value_order                integer       default 0 not null,
+    value                      varchar(3000),
+    primary key (investigation_parameter_id, value_order),
+    constraint fk_investigation_parameter_values_investigation_parameter_id
+        foreign key (investigation_parameter_id) references investigation_parameter (id)
+        on delete cascade
+) engine=InnoDB;
+
+alter table if exists stakeholder_parameter_values
+    modify column if exists value varchar(3000);

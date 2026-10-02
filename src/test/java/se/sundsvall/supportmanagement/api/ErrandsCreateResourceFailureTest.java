@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -580,6 +581,43 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactlyInAnyOrder(
 				tuple("parameters[0].values[0]", "size must be between 0 and 3000"),
 				tuple("stakeholders[0].parameters[0].values[0]", "size must be between 0 and 3000"));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	/**
+	 * A parameter that is null, or a value that is null or blank, is refused with 400, on the errand as on its
+	 * stakeholders.
+	 */
+	@Test
+	void createErrandWithNullParameterOrBlankValue() {
+		final var parameters = Arrays.asList(null, Parameter.create().withKey("key").withValues(Arrays.asList("value", null, " ")));
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withId(null).withCreated(null).withModified(null)
+				.withParameters(parameters)
+				.withStakeholders(List.of(Stakeholder.create().withParameters(parameters))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0]", "must not be null"),
+				tuple("parameters[1].values[1]", "must not be blank"),
+				tuple("parameters[1].values[2]", "must not be blank"),
+				tuple("stakeholders[0].parameters[0]", "must not be null"),
+				tuple("stakeholders[0].parameters[1].values[1]", "must not be blank"),
+				tuple("stakeholders[0].parameters[1].values[2]", "must not be blank"));
 
 		// Verification
 		verifyNoInteractions(errandServiceMock);

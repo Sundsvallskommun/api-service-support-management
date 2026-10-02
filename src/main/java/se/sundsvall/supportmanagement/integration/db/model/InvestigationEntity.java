@@ -93,6 +93,12 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 	@OrderBy("key")
 	private List<InvestigationJsonParameterEntity> jsonParameters;
 
+	/**
+	 * The parameters of the investigation: unstructured metadata as keys with lists of values, held in no particular order.
+	 */
+	@OneToMany(mappedBy = "investigationEntity", cascade = ALL, orphanRemoval = true)
+	private List<InvestigationParameterEntity> parameters;
+
 	public static InvestigationEntity create() {
 		return new InvestigationEntity();
 	}
@@ -211,6 +217,19 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 
 	public InvestigationEntity withJsonParameters(final List<InvestigationJsonParameterEntity> jsonParameters) {
 		this.jsonParameters = jsonParameters;
+		return this;
+	}
+
+	public List<InvestigationParameterEntity> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<InvestigationParameterEntity> parameters) {
+		this.parameters = parameters;
+	}
+
+	public InvestigationEntity withParameters(final List<InvestigationParameterEntity> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 

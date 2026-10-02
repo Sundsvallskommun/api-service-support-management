@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -83,6 +84,32 @@ class ErrandParameterResourceFailureTest {
 				tuple("updateErrandParameters.errandParameters[0].key", "size must be between 0 and 255"),
 				tuple("updateErrandParameters.errandParameters[0].displayName", "size must be between 0 and 255"),
 				tuple("updateErrandParameters.errandParameters[0].group", "size must be between 0 and 255"));
+
+		verifyNoInteractions(errandParameterServiceMock);
+	}
+
+	@Test
+	void updateErrandParametersWithNullParameterOrBlankValue() {
+		final var requestBody = Arrays.asList(null, Parameter.create().withKey("key").withValues(Arrays.asList("value", null, " ")));
+
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("updateErrandParameters.errandParameters[0].<list element>", "must not be null"),
+				tuple("updateErrandParameters.errandParameters[1].values[1].<list element>", "must not be blank"),
+				tuple("updateErrandParameters.errandParameters[1].values[2].<list element>", "must not be blank"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -283,6 +310,33 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("updateErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		verifyNoInteractions(errandParameterServiceMock);
+	}
+
+	@Test
+	void updateErrandParameterWithBlankValue() {
+
+		final var requestBody = Arrays.asList("value", null, " ");
+
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
+			.contentType(APPLICATION_JSON)
+			.accept(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("updateErrandParameter.parameterValues[1].<list element>", "must not be blank"),
+				tuple("updateErrandParameter.parameterValues[2].<list element>", "must not be blank"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}

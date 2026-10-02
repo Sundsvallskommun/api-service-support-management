@@ -1,10 +1,13 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.InvestigationParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
@@ -12,13 +15,15 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessme
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.KEY_ORDER;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toTrimmedUniqueKeyList;
 
 public final class ErrandInvestigationMapper {
 
 	private ErrandInvestigationMapper() {}
 
 	public static InvestigationEntity toInvestigationEntity(final Investigation investigation, final ErrandEntity errandEntity, final String namespace, final String municipalityId) {
-		return InvestigationEntity.create()
+		final var entity = InvestigationEntity.create()
 			.withErrandEntity(errandEntity)
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
@@ -34,8 +39,13 @@ public final class ErrandInvestigationMapper {
 			.withConclusion(investigation.getConclusion())
 			.withRecommendation(investigation.getRecommendation())
 			.withRecommendationMotivation(investigation.getRecommendationMotivation());
+		return entity.withParameters(toInvestigationParameterEntities(investigation.getParameters(), entity));
 	}
 
+	/**
+	 * Applies the fields the investigation carries to the entity. Sent in parameters replace the stored ones, and leave
+	 * them untouched when they come out the same.
+	 */
 	public static InvestigationEntity updateInvestigationEntity(final InvestigationEntity entity, final Investigation investigation) {
 		ofNullable(investigation.getType()).ifPresent(entity::setType);
 		ofNullable(investigation.getStatus()).map(ItemStatus::valueOf).ifPresent(entity::setStatus);
@@ -49,6 +59,7 @@ public final class ErrandInvestigationMapper {
 		ofNullable(investigation.getConclusion()).ifPresent(entity::setConclusion);
 		ofNullable(investigation.getRecommendation()).ifPresent(entity::setRecommendation);
 		ofNullable(investigation.getRecommendationMotivation()).ifPresent(entity::setRecommendationMotivation);
+		ofNullable(investigation.getParameters()).ifPresent(parameters -> replaceParameters(entity, parameters));
 		return entity;
 	}
 
@@ -70,6 +81,7 @@ public final class ErrandInvestigationMapper {
 				.withRecommendationMotivation(e.getRecommendationMotivation())
 				.withSections(toInvestigationSections(e.getSections()))
 				.withAttachments(toErrandAttachments(e.getAttachments()))
+				.withParameters(toInvestigationParameters(e.getParameters()))
 				.withCreatedBy(e.getCreatedBy())
 				.withModifiedBy(e.getModifiedBy())
 				.withCreated(e.getCreated())
@@ -82,6 +94,61 @@ public final class ErrandInvestigationMapper {
 		return ofNullable(entities).orElse(emptyList()).stream()
 			.map(ErrandInvestigationMapper::toInvestigation)
 			.toList();
+	}
+
+	/**
+	 * Maps parameters to entities of the investigation, one per key with the values of every parameter sent for it, in the
+	 * order of the keys. Keys are trimmed before they are compared, and the display name and group are those of the first
+	 * parameter sent for a key.
+	 */
+	public static List<InvestigationParameterEntity> toInvestigationParameterEntities(final List<Parameter> parameters, final InvestigationEntity investigationEntity) {
+		return new ArrayList<>(toTrimmedUniqueKeyList(parameters).stream()
+			.map(parameter -> InvestigationParameterEntity.create()
+				.withInvestigationEntity(investigationEntity)
+				.withKey(parameter.getKey())
+				.withDisplayName(parameter.getDisplayName())
+				.withParameterGroup(parameter.getGroup())
+				.withValues(parameter.getValues()))
+			.toList());
+	}
+
+	public static Parameter toInvestigationParameter(final InvestigationParameterEntity entity) {
+		return ofNullable(entity)
+			.map(e -> Parameter.create()
+				.withKey(e.getKey())
+				.withDisplayName(e.getDisplayName())
+				.withGroup(e.getParameterGroup())
+				.withValues(e.getValues()))
+			.orElse(null);
+	}
+
+	/**
+	 * Maps the parameters of an investigation in the order of their keys, the same order whatever order the database reads
+	 * them in.
+	 */
+	public static List<Parameter> toInvestigationParameters(final List<InvestigationParameterEntity> entities) {
+		return ofNullable(entities).orElse(emptyList()).stream()
+			.map(ErrandInvestigationMapper::toInvestigationParameter)
+			.sorted(KEY_ORDER)
+			.toList();
+	}
+
+	/**
+	 * Replaces the parameters of the investigation in place and marks the investigation modified so that its version
+	 * moves. Parameters that come out the same as the stored ones, in whatever order they are sent, leave the
+	 * investigation untouched.
+	 */
+	private static void replaceParameters(final InvestigationEntity entity, final List<Parameter> parameters) {
+		final var replacements = toInvestigationParameterEntities(parameters, entity);
+		if (toInvestigationParameters(replacements).equals(toInvestigationParameters(entity.getParameters()))) {
+			return;
+		}
+		if (entity.getParameters() == null) {
+			entity.setParameters(new ArrayList<>());
+		}
+		entity.getParameters().clear();
+		entity.getParameters().addAll(replacements);
+		entity.markModified();
 	}
 
 	public static InvestigationSectionEntity toInvestigationSectionEntity(final InvestigationSection section, final InvestigationEntity investigationEntity) {

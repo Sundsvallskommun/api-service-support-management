@@ -38,9 +38,11 @@ public class Parameter {
 	})
 	private String group;
 
-	@ArraySchema(schema = @Schema(maxLength = 3000),
-		arraySchema = @Schema(description = "Parameter values. Each value can have a maximum length of 3000 characters"))
-	private List<@Size(max = 3000, groups = {
+	@ArraySchema(schema = @Schema(minLength = 1, maxLength = 3000),
+		arraySchema = @Schema(description = "Parameter values. Each value must not be blank, and can have a maximum length of 3000 characters"))
+	private List<@NotBlank(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) @Size(max = 3000, groups = {
 		Default.class, OnCreate.class, OnUpdate.class
 	}) String> values;
 

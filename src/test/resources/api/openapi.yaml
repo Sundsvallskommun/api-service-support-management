@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.3"
+  version: "16.4"
 servers:
 - url: http://localhost:37929
   description: Generated server url
@@ -22318,11 +22318,12 @@ components:
           maxLength: 255
         values:
           type: array
-          description: Parameter values. Each value can have a maximum length of 3000
-            characters
+          description: "Parameter values. Each value must not be blank, and can have\
+            \ a maximum length of 3000 characters"
           items:
             type: string
             maxLength: 3000
+            minLength: 1
         version:
           type: integer
           format: int64
@@ -22742,6 +22743,17 @@ components:
           items:
             $ref: "#/components/schemas/ErrandAttachment"
             readOnly: true
+        parameters:
+          type: array
+          description: "Parameters of the investigation, unstructured metadata as\
+            \ keys with lists of values, returned in the order of their keys. Keys\
+            \ are trimmed, and parameters sent for the same key are merged: their\
+            \ values are joined in the order sent, and the display name and group\
+            \ are those of the first. On update the sent list replaces the stored\
+            \ one; an omitted list leaves them as they are and an empty list removes\
+            \ them all"
+          items:
+            $ref: "#/components/schemas/Parameter"
         createdBy:
           type: string
           description: User who created the investigation

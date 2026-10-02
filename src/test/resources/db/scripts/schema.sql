@@ -496,6 +496,22 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table investigation_parameter (
+        display_name varchar(255),
+        id varchar(255) not null,
+        investigation_id varchar(255) not null,
+        parameter_group varchar(255),
+        parameters_key varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table investigation_parameter_values (
+        value_order integer default 0 not null check ((value_order>=0)),
+        value varchar(3000),
+        investigation_parameter_id varchar(255) not null,
+        primary key (value_order, investigation_parameter_id)
+    ) engine=InnoDB;
+
     create table investigation_section (
         sort_order integer,
         completed_at datetime(6),
@@ -842,7 +858,7 @@
 
     create table stakeholder_parameter_values (
         stakeholder_parameter_id bigint not null,
-        value varchar(255)
+        value varchar(3000)
     ) engine=InnoDB;
 
     create table statement (
@@ -1306,6 +1322,9 @@
     alter table if exists investigation_json_parameter 
        add constraint uq_investigation_json_parameter_investigation_id_key unique (investigation_id, parameter_key);
 
+    create index idx_investigation_parameter_investigation_id 
+       on investigation_parameter (investigation_id);
+
     create index idx_investigation_section_investigation_id 
        on investigation_section (investigation_id);
 
@@ -1737,6 +1756,18 @@
        add constraint fk_investigation_json_parameter_investigation_id 
        foreign key (investigation_id) 
        references investigation (id) 
+       on delete cascade;
+
+    alter table if exists investigation_parameter 
+       add constraint fk_investigation_parameter_investigation_id 
+       foreign key (investigation_id) 
+       references investigation (id) 
+       on delete cascade;
+
+    alter table if exists investigation_parameter_values 
+       add constraint fk_investigation_parameter_values_investigation_parameter_id 
+       foreign key (investigation_parameter_id) 
+       references investigation_parameter (id) 
        on delete cascade;
 
     alter table if exists investigation_section 
