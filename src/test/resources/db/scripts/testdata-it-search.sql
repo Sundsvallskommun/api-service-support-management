@@ -1,12 +1,18 @@
 -- Errands for the search integration test, in a namespace of their own so that the expected hits do not shift when
 -- the shared test data changes. Loaded on top of testdata-it.sql, which holds the namespace configuration.
+-- The category the errands of NAMESPACE-2508 carry, so that a grouped count answers with the casing the namespace gives
+-- it rather than with the lowercased value the index holds.
+INSERT INTO category(id, created, display_name, modified, municipality_id, name, namespace, deprecated)
+VALUES ('aa000000-0000-0000-0000-0000000se001', '2023-01-01 12:00:00.000', 'Vatten', null, '2506', 'VATTEN', 'NAMESPACE-2508', false);
+
 -- The statuses the errands below carry. Named in the metadata so that a grouped count can answer with the casing the
 -- namespace gives them rather than with the lowercased value the index holds.
 INSERT INTO status(id, created, modified, municipality_id, name, display_name, external_display_name, sort_order, namespace, deprecated)
 VALUES ('bb000000-0000-0000-0000-0000000se001', '2023-01-01 12:00:00.000', null, '2281', 'NEW', 'Ny', 'Ny', null, 'NAMESPACE-3', false),
        ('bb000000-0000-0000-0000-0000000se002', '2023-01-01 12:00:00.000', null, '2281', 'ONGOING', 'Pågående', 'Pågående', null, 'NAMESPACE-3', false),
        ('bb000000-0000-0000-0000-0000000se003', '2023-01-01 12:00:00.000', null, '2506', 'NEW', 'Ny', 'Ny', null, 'NAMESPACE-2509', false),
-       ('bb000000-0000-0000-0000-0000000se004', '2023-01-01 12:00:00.000', null, '2506', 'ONGOING', 'Pågående', 'Pågående', null, 'NAMESPACE-2509', false);
+       ('bb000000-0000-0000-0000-0000000se004', '2023-01-01 12:00:00.000', null, '2506', 'ONGOING', 'Pågående', 'Pågående', null, 'NAMESPACE-2509', false),
+       ('bb000000-0000-0000-0000-0000000se005', '2023-01-01 12:00:00.000', null, '2506', 'NEW', 'Ny', 'Ny', null, 'NAMESPACE-2508', false);
 
 INSERT INTO errand(municipality_id, id, namespace, priority, status, category, type, title, description, reporter_user_id,
                    assigned_user_id, created, touched, errand_number, business_related)

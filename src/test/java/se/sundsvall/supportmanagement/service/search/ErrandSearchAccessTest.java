@@ -159,8 +159,9 @@ class ErrandSearchAccessTest {
 		assertThat(exclusionsOf("status:new", UNSORTED, grant)).containsExactly((AccessScope) null);
 	}
 
-	private ThrowableProblem refusedGroup(final NamespaceGrant grant, final String query, final ErrandField groupBy) {
-		return assertThrows(ThrowableProblem.class, () -> access.plan(query, UNSORTED, groupBy, grant));
+	/** The clauses a breakdown is counted over, which is a subset of the clauses the count is taken over. */
+	private List<AccessScope> groupedScopesOf(final String query, final ErrandField groupBy, final NamespaceGrant grant) {
+		return access.plan(query, UNSORTED, groupBy, grant).grouped().stream().map(ErrandSearchAccess.Clause::scope).toList();
 	}
 
 	// ==================================================================================
@@ -168,60 +169,77 @@ class ErrandSearchAccessTest {
 	// ==================================================================================
 
 	@Test
-	void groupingByAColumnEveryRouteMayReadPasses() {
+	void groupingByAColumnEveryRouteMayReadCountsEveryClause() {
 		final var readable = Map.of(ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
 		final var grant = grantOf(new LabelRoute(LABELS, readable, EVERY_RESOURCE), null, null);
 
-		assertThat(access.plan("title:x", UNSORTED, ErrandField.STATUS, grant).clauses()).hasSize(1);
+		final var plan = access.plan("title:x", UNSORTED, ErrandField.STATUS, grant);
+
+		assertThat(plan.clauses()).hasSize(1);
+		assertThat(plan.grouped()).isEqualTo(plan.clauses());
 	}
 
 	@Test
 	void groupingIsNotHeldAgainstAnUnrestrictedGrant() {
-		assertThat(access.plan("", UNSORTED, ErrandField.STATUS, NamespaceGrant.UNRESTRICTED).clauses()).hasSize(1);
+		final var plan = access.plan("", UNSORTED, ErrandField.STATUS, NamespaceGrant.UNRESTRICTED);
+
+		assertThat(plan.grouped()).isEqualTo(plan.clauses());
+	}
+
+	/** Nothing is grouped by unless a grouping was asked for. */
+	@Test
+	void nothingIsGroupedWithoutAColumn() {
+		assertThat(access.plan("", UNSORTED, null, NamespaceGrant.UNRESTRICTED).grouped()).isEmpty();
 	}
 
 	/**
-	 * Grouping reads the column of every errand counted, so a route that may not read it may not be counted by it.
+	 * A route that may not read the column contributes no bucket, and refuses nothing on behalf of the rest: the count is
+	 * the count of the query however it is divided up, so a client may filter with a search and ask for the breakdown of
+	 * the same filter.
 	 */
 	@Test
-	void groupingByAColumnTheRolesKeepFromTheUserIsRefused() {
-		final var readable = Map.of(ErrandField.TITLE, Set.<String>of());
-		final var grant = grantOf(new LabelRoute(LABELS, readable, EVERY_RESOURCE), null, null);
-
-		assertThat(refusedGroup(grant, "title:x", ErrandField.STATUS).getDetail())
-			.isEqualTo("Field 'status' not groupable by user 'joe01doe'");
-	}
-
-	/**
-	 * One route answering the query while another may not read the column is refused whole: buckets adding up to less
-	 * than the count printed beside them are a difference nothing on the endpoint could explain.
-	 */
-	@Test
-	void groupingIsRefusedWhenOneAnsweringRouteMayNotReadTheColumn() {
+	void aRouteThatMayNotReadTheColumnContributesNoBucket() {
 		final var full = Map.of(ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
-		final var limited = Map.of(ErrandField.TITLE, Set.<String>of());
-		final var grant = grantOf(new LabelRoute(LABELS, full, EVERY_RESOURCE), new LabelRoute(WIDER_LABELS, limited, EVERY_RESOURCE), null);
+		final var reporterFields = Map.of(ErrandField.TITLE, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, full, EVERY_RESOURCE), null,
+			new ReporterRoute("joe01doe", reporterFields, EVERY_RESOURCE));
 
-		// Both routes answer a query on the title
-		assertThat(access.plan("title:x", UNSORTED, null, grant).clauses()).hasSize(2);
+		final var plan = access.plan("title:x", UNSORTED, ErrandField.STATUS, grant);
 
-		assertThat(refusedGroup(grant, "title:x", ErrandField.STATUS).getDetail())
-			.isEqualTo("Field 'status' not groupable by user 'joe01doe'");
+		// Both routes answer the query and are counted
+		assertThat(plan.clauses()).hasSize(2);
+		// Only the one that may read the status divides it up
+		assertThat(plan.grouped()).containsExactly(plan.clauses().getFirst());
 	}
 
 	/**
-	 * A route already left out of the plan is not asked: it contributes no errand, so it can hide nothing.
+	 * The shape that made grouping impossible for a whole namespace: one excepting its reporters without saying what they
+	 * may read gives every user a route held to the minimum, and refusing on its behalf refused everyone.
 	 */
 	@Test
-	void aRouteThatCannotAnswerTheQueryDoesNotRefuseTheGroup() {
-		final var full = Map.of(ErrandField.DESCRIPTION, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
-		final var limited = Map.of(ErrandField.TITLE, Set.<String>of());
-		final var grant = grantOf(new LabelRoute(LABELS, full, EVERY_RESOURCE), new LabelRoute(WIDER_LABELS, limited, EVERY_RESOURCE), null);
+	void aMinimalReporterRouteNoLongerRefusesTheWholeRequest() {
+		final var reporterMinimum = Map.of(ErrandField.ID, Set.<String>of(), ErrandField.ERRAND_NUMBER, Set.<String>of(),
+			ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, null, EVERY_RESOURCE), null,
+			new ReporterRoute("joe01doe", reporterMinimum, EVERY_RESOURCE));
 
-		// Only the full route can answer a query on the description, and it may read the status
-		final var plan = access.plan("description:x", UNSORTED, ErrandField.STATUS, grant);
+		final var plan = access.plan("", UNSORTED, ErrandField.ASSIGNED_USER_ID, grant);
+
+		assertThat(plan.clauses()).hasSize(2);
+		assertThat(plan.grouped()).containsExactly(plan.clauses().getFirst());
+		assertThat(groupedScopesOf("", ErrandField.ASSIGNED_USER_ID, grant)).containsExactly(NamespaceGrant.scopeOf(grant.labels()));
+	}
+
+	/** Where no route may read it, the breakdown is counted over nothing while the count stands. */
+	@Test
+	void whereNoRouteMayReadTheColumnNothingIsGrouped() {
+		final var fields = Map.of(ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(new LabelRoute(LABELS, fields, EVERY_RESOURCE), null, null);
+
+		final var plan = access.plan("status:new", UNSORTED, ErrandField.ASSIGNED_USER_ID, grant);
 
 		assertThat(plan.clauses()).hasSize(1);
+		assertThat(plan.grouped()).isEmpty();
 	}
 
 	@Test

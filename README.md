@@ -280,17 +280,30 @@ metadata no longer knows is answered with as the index holds it; `priority` is a
 metadata, so its casing comes from the enum. `resolution`, `channel` and the three identifier columns have no catalogue
 behind them and are answered lowercased - recovering what was written would mean indexing them a second time without the
 normalizer, which is only worth doing if a client needs the exact value.
-The buckets always add up to the count they are answered beside. The index counts only the errands that carry a value in
-the column, so the rest are counted back in under a bucket whose value is `null` - every groupable column holds at most
-one value, which is what makes that subtraction exact. And a column dividing the search over more than
+
+A breakdown accounts for every errand the count counted - its buckets, `withoutValue` and `withheld` add up to the count -
+and that count is the count of the search however it is divided up: a client filters with a search and asks for the
+breakdown of the same filter, so the two endpoints may not disagree on what was counted. The breakdown itself is counted over the routes of the grant that may read the column: a route that
+may not read it contributes no bucket rather than refusing the request, which is what keeps a namespace excepting its
+reporters from losing grouping altogether. What the buckets do not add up to is accounted for beside them, and the two
+reasons are kept apart: `withoutValue` counts the errands carrying nothing in the column, `withheld` the errands on a
+route that may not read it - of those nothing further is said, not even whether they carry a value, that being a fact
+about the column as much as a value is. Every groupable column holds at most one value, which is what makes those
+subtractions exact.
+
+The index cannot narrow an aggregation on its own - it filters one only inside a nested object - so where the routes
+differ the breakdown is a search of its own over the routes that may read the column, and its count is what tells the two
+apart. Where every route may read it, which is every grant that restricts nothing, that is the search already made and
+the count asks the index nothing further. And a column dividing the search over more than
 `search.max-group-buckets` (a hundred) values is refused with 400 rather than answered with the largest buckets: a
 breakdown adding up to less than the number printed beside it, with nothing saying by how much, is worse than no
 breakdown.
 
-The count is cheap where the search is not: nothing is fetched and no page is mapped, which is what the search spends
-its time on. It is held to the grant exactly as the search is, and the column it groups by is held to every route
-answering the query - grouping reads that column of every errand counted, so a route that may not read it makes the
-whole request 403 rather than answering with buckets that add up to less than the count.
+The count is cheap where the search is not: nothing is fetched and no page is mapped, which is what the search spends its
+time on. Asking for a breakdown adds one aggregation to that search, and a second count only where the routes of the
+grant differ on whether the column may be read at all. It is held to the grant exactly as the search is: the query is
+refused where the search of it would be refused, while the column it groups by refuses nothing - what a route may not
+read, it does not divide up.
 
 What the count does not do is ask the database afterwards. The search does, because an index write lost while OpenSearch
 was away could otherwise answer for labels an errand no longer carries, but a count never loads the errands it counts.
