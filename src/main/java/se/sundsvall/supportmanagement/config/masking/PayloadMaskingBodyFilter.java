@@ -112,24 +112,34 @@ public class PayloadMaskingBodyFilter implements BodyFilter {
 	 */
 	private void mask(final JsonNode node, final String within) {
 		if (node instanceof final ObjectNode object) {
-			final var replace = new ArrayList<String>();
-			object.properties().forEach(property -> {
-				final var value = property.getValue();
-				if (value.isObject() || value.isArray()) {
-					mask(value, property.getKey());
-				} else if (isText(value) && !kept(property.getKey(), within)) {
-					replace.add(property.getKey());
-				}
-			});
-			replace.forEach(name -> object.put(name, placeholder));
+			maskProperties(object, within);
 		} else if (node instanceof final ArrayNode array) {
-			for (var i = 0; i < array.size(); i++) {
-				final var element = array.get(i);
-				if (element.isObject() || element.isArray()) {
-					mask(element, within);
-				} else if (isText(element) && !kept(within, null)) {
-					array.set(i, placeholder);
-				}
+			maskElements(array, within);
+		}
+	}
+
+	private void maskProperties(final ObjectNode object, final String within) {
+		// Collected and replaced afterwards rather than as they are found, so that nothing is written to the object
+		// while it is being read
+		final var replace = new ArrayList<String>();
+		object.properties().forEach(property -> {
+			final var value = property.getValue();
+			if (value.isObject() || value.isArray()) {
+				mask(value, property.getKey());
+			} else if (isText(value) && !kept(property.getKey(), within)) {
+				replace.add(property.getKey());
+			}
+		});
+		replace.forEach(name -> object.put(name, placeholder));
+	}
+
+	private void maskElements(final ArrayNode array, final String within) {
+		for (var i = 0; i < array.size(); i++) {
+			final var element = array.get(i);
+			if (element.isObject() || element.isArray()) {
+				mask(element, within);
+			} else if (isText(element) && !kept(within, null)) {
+				array.set(i, placeholder);
 			}
 		}
 	}
