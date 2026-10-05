@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 
+import static java.util.stream.Collectors.toSet;
+
 /**
  * A path-indexed view of a namespace's label tree, shared by {@link MetadataService#restructureLabelTree} (dry-run)
  * and {@code LabelTreeRestructureWorker} (real execution) so that both walk the exact same ordered list of
@@ -26,7 +28,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
  */
 final class LabelTreeSnapshot {
 
-	private static final String SEPARATOR = "/";
+	static final String SEPARATOR = "/";
 	static final String ROOT = "";
 
 	// path -> id. A value of null means a label exists at this path only because an earlier step in the same request
@@ -133,13 +135,9 @@ final class LabelTreeSnapshot {
 	 */
 	Set<String> descendantPathsUnder(final String path) {
 		final var prefix = path + SEPARATOR;
-		final var descendants = new HashSet<String>();
-		for (final var candidatePath : idByPath.keySet()) {
-			if (candidatePath.startsWith(prefix)) {
-				descendants.add(candidatePath);
-			}
-		}
-		return descendants;
+		return idByPath.keySet().stream()
+			.filter(candidatePath -> candidatePath.startsWith(prefix))
+			.collect(toSet());
 	}
 
 	void recordAdd(final String path, final String id) {

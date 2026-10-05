@@ -560,13 +560,13 @@ public class MetadataService {
 		validateNoCycle(labelToMove.getId(), newParent);
 
 		var newPath = newParent != null
-			? newParent.getResourcePath() + "/" + labelToMove.getResourceName()
+			? newParent.getResourcePath() + LabelTreeSnapshot.SEPARATOR + labelToMove.getResourceName()
 			: labelToMove.getResourceName();
 
 		validatePathNotTaken(namespace, municipalityId, labelToMove.getId(), newPath);
 
 		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
-			namespace, municipalityId, labelToMove.getResourcePath() + "/");
+			namespace, municipalityId, labelToMove.getResourcePath() + LabelTreeSnapshot.SEPARATOR);
 
 		validateNoDescendantPathCollision(namespace, municipalityId, labelToMove, newPath, descendants);
 		validateResourcePathLength(labelToMove, newPath, descendants);
@@ -733,7 +733,7 @@ public class MetadataService {
 	}
 
 	private void validateIsLeaf(final String namespace, final String municipalityId, final MetadataLabelEntity label) {
-		if (metadataLabelRepository.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(namespace, municipalityId, label.getResourcePath() + "/")) {
+		if (metadataLabelRepository.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(namespace, municipalityId, label.getResourcePath() + LabelTreeSnapshot.SEPARATOR)) {
 			throw Problem.valueOf(BAD_REQUEST, "Label '%s' has children and cannot take part in a merge".formatted(label.getId()));
 		}
 	}
@@ -962,13 +962,13 @@ public class MetadataService {
 		}
 
 		final var newResourceName = ofNullable(step.getNewResourceName()).orElseGet(() -> LabelTreeSnapshot.lastSegment(step.getPath()));
-		final var newPath = destinationParentPath.isEmpty() ? newResourceName : destinationParentPath + "/" + newResourceName;
+		final var newPath = destinationParentPath.isEmpty() ? newResourceName : destinationParentPath + LabelTreeSnapshot.SEPARATOR + newResourceName;
 		final var currentParentPath = LabelTreeSnapshot.join(LabelTreeSnapshot.allButLast(step.getPath()));
 
 		if (currentParentPath.equals(destinationParentPath) && newResourceName.equals(LabelTreeSnapshot.lastSegment(step.getPath()))) {
 			throw Problem.valueOf(BAD_REQUEST, "Step %d (MOVE): label at path '%s' is already at that destination - move would be a no-op".formatted(index, sourcePath));
 		}
-		if (newPath.equals(sourcePath) || destinationParentPath.equals(sourcePath) || destinationParentPath.startsWith(sourcePath + "/")) {
+		if (newPath.equals(sourcePath) || destinationParentPath.equals(sourcePath) || destinationParentPath.startsWith(sourcePath + LabelTreeSnapshot.SEPARATOR)) {
 			throw Problem.valueOf(BAD_REQUEST, "Step %d (MOVE): moving '%s' under '%s' would create a cycle".formatted(index, sourcePath, destinationParentPath));
 		}
 		if (snapshot.exists(newPath)) {

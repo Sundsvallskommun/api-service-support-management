@@ -121,7 +121,7 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 		for (var index = 0; index < steps.size(); index++) {
 			final var step = steps.get(index);
 			try {
-				applyStep(run, step, index, totalRestowed);
+				applyStep(run, step, totalRestowed);
 			} catch (final Exception e) {
 				throw new IllegalStateException(STEP_FAILED.formatted(index, step.getType(), e.getMessage()), e);
 			}
@@ -130,7 +130,7 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 		jobService.complete(run.jobId(), SUMMARY.formatted(steps.size(), totalRestowed[0]));
 	}
 
-	private void applyStep(final LabelRestructureRun run, final LabelRestructureStep step, final int index, final int[] totalRestowed) {
+	private void applyStep(final LabelRestructureRun run, final LabelRestructureStep step, final int[] totalRestowed) {
 		final var namespace = run.namespace();
 		final var municipalityId = run.municipalityId();
 

@@ -59,6 +59,8 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 @Tag(name = "Metadata for labels", description = "Label metadata operations")
 class MetadataLabelResource {
 
+	private static final String JOB_LOCATION_PATH = "/{municipalityId}/{namespace}/jobs/{jobId}";
+
 	private final MetadataService metadataService;
 	private final AccessControlService accessControlService;
 
@@ -155,7 +157,7 @@ class MetadataLabelResource {
 
 		final var job = metadataService.startLabelMove(namespace, municipalityId, labelId, request);
 		return accepted()
-			.header(LOCATION, fromPath("/{municipalityId}/{namespace}/jobs/{jobId}")
+			.header(LOCATION, fromPath(JOB_LOCATION_PATH)
 				.buildAndExpand(municipalityId, namespace, job.getJobId())
 				.toString())
 			.body(job);
@@ -193,7 +195,7 @@ class MetadataLabelResource {
 
 		final var job = metadataService.startLabelMerge(namespace, municipalityId, labelId, request);
 		return accepted()
-			.header(LOCATION, fromPath("/{municipalityId}/{namespace}/jobs/{jobId}")
+			.header(LOCATION, fromPath(JOB_LOCATION_PATH)
 				.buildAndExpand(municipalityId, namespace, job.getJobId())
 				.toString())
 			.body(job);
@@ -230,7 +232,7 @@ class MetadataLabelResource {
 
 		final var job = metadataService.startLabelTreeRestructure(namespace, municipalityId, request);
 		return accepted()
-			.header(LOCATION, fromPath("/{municipalityId}/{namespace}/jobs/{jobId}")
+			.header(LOCATION, fromPath(JOB_LOCATION_PATH)
 				.buildAndExpand(municipalityId, namespace, job.getJobId())
 				.toString())
 			.body(job);
