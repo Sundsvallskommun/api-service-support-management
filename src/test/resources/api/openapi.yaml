@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "16.3"
 servers:
-- url: http://localhost:63139
+- url: http://localhost:62061
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -49,6 +49,8 @@ tags:
   description: Errand decision operations
 - name: Metadata for statement outcomes
   description: Statement outcome metadata operations
+- name: Metadata for label classifications
+  description: Label classification metadata operations
 - name: Errand attachments
   description: Errand attachments operations
 - name: Errand Parameters
@@ -4384,12 +4386,313 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — path collision at destination, or a move for this\
-            \ label is already in progress"
+          description: "Conflict — path collision at destination, or a job is already\
+            \ running for this namespace"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/labels/{labelId}/merge:
+    post:
+      tags:
+      - Metadata for labels
+      summary: Merge labels
+      description: "Validates merging one or more source labels into a destination\
+        \ label. When dryRun is true, returns the number of affected errands and actions\
+        \ without making any changes. When dryRun is false, starts the merge as an\
+        \ asynchronous job."
+      operationId: mergeLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: labelId
+        in: path
+        description: Destination label ID
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelMergeRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful dry-run operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelMergeDryRunResponse"
+        "202":
+          description: Merge accepted and started as an asynchronous job
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — a merge job is already running for this namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/labels/restructure:
+    post:
+      tags:
+      - Metadata for labels
+      summary: Restructure label tree
+      description: "Validates an ordered sequence of add/rename/delete/move/merge\
+        \ steps. When dryRun is true, returns per-step affected counts without making\
+        \ any changes. When dryRun is false, starts the restructure as a single asynchronous\
+        \ job."
+      operationId: restructureLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelRestructureRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful dry-run operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelRestructureDryRunResponse"
+        "202":
+          description: Restructure accepted and started as an asynchronous job
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict — path collision at a step's destination, or a job\
+            \ is already running for this namespace"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/label-classifications:
+    get:
+      tags:
+      - Metadata for label classifications
+      summary: Get label classifications
+      description: Get all label classifications for the namespace and municipality
+      operationId: getLabelClassifications
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LabelClassification"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for label classifications
+      summary: Create label classification
+      description: Create new label classification for the namespace and municipality
+      operationId: createLabelClassification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelClassification"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -9871,6 +10174,212 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MeasureType"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/label-classifications/{classification}:
+    get:
+      tags:
+      - Metadata for label classifications
+      summary: Get label classification
+      description: "Get label classification matching namespace, municipality and\
+        \ classification"
+      operationId: getLabelClassification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: classification
+        in: path
+        description: Label classification
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: subtype
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelClassification"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for label classifications
+      summary: Delete label classification
+      description: "Delete label classification matching namespace, municipality and\
+        \ classification. Labels of the classification are left without a classification\
+        \ display name"
+      operationId: deleteLabelClassification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: classification
+        in: path
+        description: Label classification
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: subtype
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Metadata for label classifications
+      summary: Update label classification
+      description: "Update the display name of the label classification matching namespace,\
+        \ municipality and classification. The new display name applies to every label\
+        \ of the classification"
+      operationId: updateLabelClassification
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: classification
+        in: path
+        description: Label classification
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        example: subtype
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelClassification"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelClassification"
         "400":
           description: Bad Request
           content:
@@ -16073,16 +16582,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        detail:
-          type: string
-        title:
-          type: string
         status:
           type: integer
           format: int32
@@ -16101,13 +16610,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        instance:
-          type: string
-          format: uri
         detail:
           type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
+        instance:
+          type: string
+          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -16124,7 +16633,8 @@ components:
         instance:
           type: string
           format: uri
-        causeAsProblem: {}
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
     Violation:
       type: object
       properties:
@@ -16455,6 +16965,13 @@ components:
           examples:
           - subtype
           minLength: 1
+        classificationDisplayName:
+          type: string
+          description: "Display name for the label classification, as registered for\
+            \ the namespace"
+          examples:
+          - Undertyp
+          readOnly: true
         displayName:
           type: string
           description: Display name for the label
@@ -16552,44 +17069,13 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        binary:
           type: boolean
         container:
           type: boolean
-        number:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
         boolean:
           type: boolean
-        binary:
-          type: boolean
-        valueNode:
-          type: boolean
-        missingNode:
+        number:
           type: boolean
         nodeType:
           type: string
@@ -16607,7 +17093,38 @@ components:
           type: boolean
         integralNumber:
           type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
         pojo:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        floatingPointNumber:
+          type: boolean
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -17423,7 +17940,9 @@ components:
           description: Job type
           enum:
           - MOVE_LABEL
+          - MERGE_LABELS
           - ERRAND_PURGE
+          - RESTRUCTURE_LABEL_TREE
         status:
           type: string
           description: Job status
@@ -17474,6 +17993,212 @@ components:
           - true
       required:
       - dryRun
+    LabelMergeDryRunResponse:
+      type: object
+      description: Result of a label merge dry-run — no changes are made
+      properties:
+        affectedErrandCount:
+          type: integer
+          format: int64
+          description: Number of errands that reference one or more of the source
+            labels
+        affectedActions:
+          type: array
+          description: Actions that have hasLabel conditions referencing one or more
+            of the source labels
+          items:
+            $ref: "#/components/schemas/AffectedAction"
+    LabelMergeRequest:
+      type: object
+      description: Request for merging one or more source labels into a destination
+        label
+      properties:
+        sourceLabelIds:
+          type: array
+          description: IDs of the source labels to merge into the destination label
+          items:
+            type: string
+          minItems: 1
+        dryRun:
+          type: boolean
+          description: "When true, return affected counts without making any changes.\
+            \ When false, starts the merge as an asynchronous job."
+          examples:
+          - true
+      required:
+      - dryRun
+      - sourceLabelIds
+    LabelRestructureDryRunResponse:
+      type: object
+      description: Result of a label-tree restructure dry-run — no changes are made
+      properties:
+        totalAffectedErrandCount:
+          type: integer
+          format: int64
+          description: "Sum of affectedErrandCount across all steps. An errand touched\
+            \ by more than one step is counted once per step that touches it, not\
+            \ deduplicated across steps"
+        steps:
+          type: array
+          description: "Per-step results, in the same order as the request's steps"
+          items:
+            $ref: "#/components/schemas/LabelRestructureStepResult"
+    LabelRestructureStepResult:
+      type: object
+      description: Dry-run result for one step of a label-tree restructure
+      properties:
+        index:
+          type: integer
+          format: int32
+          description: Index of the step in the request's steps list
+          examples:
+          - 0
+        type:
+          type: string
+          description: The step's type
+          enum:
+          - ADD
+          - RENAME
+          - DELETE
+          - MOVE
+          - MERGE
+        path:
+          type: array
+          description: "The step's path, as submitted"
+          items:
+            type: string
+        affectedErrandCount:
+          type: integer
+          format: int64
+          description: "Number of errands that reference the label or, for MOVE/MERGE,\
+            \ any of its descendants/sources. Always 0 for ADD/RENAME, and for a step\
+            \ whose path was only created by an earlier step in the same request"
+        affectedActions:
+          type: array
+          description: Actions that have hasLabel conditions referencing a label this
+            step affects
+          items:
+            $ref: "#/components/schemas/AffectedAction"
+    LabelRestructureRequest:
+      type: object
+      description: Request for restructuring the label tree as one ordered sequence
+        of add/rename/delete/move/merge steps
+      properties:
+        steps:
+          type: array
+          description: "Steps to apply, in order. A later step may reference a label\
+            \ an earlier step in this same request added or moved"
+          items:
+            $ref: "#/components/schemas/LabelRestructureStep"
+          minItems: 1
+        dryRun:
+          type: boolean
+          description: "When true, return affected counts for every step without making\
+            \ any changes. When false, starts the restructure as an asynchronous job."
+          examples:
+          - true
+      required:
+      - dryRun
+      - steps
+    LabelRestructureStep:
+      type: object
+      description: One step of a label-tree restructure
+      properties:
+        type:
+          type: string
+          description: The kind of change this step makes
+          enum:
+          - ADD
+          - RENAME
+          - DELETE
+          - MOVE
+          - MERGE
+        path:
+          type: array
+          description: "Path (resourceName segments from the root) of the label this\
+            \ step acts on. The label added, renamed or deleted for ADD/RENAME/DELETE;\
+            \ the label moved for MOVE; the merge destination for MERGE"
+          items:
+            type: string
+            minLength: 1
+            pattern: "[A-Z0-9_]+"
+          minItems: 1
+        destinationParentPath:
+          type: array
+          description: "MOVE only: path of the new parent, or null/absent to move\
+            \ to root"
+          items:
+            type: string
+            minLength: 1
+            pattern: "[A-Z0-9_]+"
+        sourcePaths:
+          type: array
+          description: "MERGE only: paths of the source labels merged into path"
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 1
+        displayName:
+          type: string
+          description: "ADD: display name of the new label. RENAME: the new display\
+            \ name. MOVE: an optional new display name to set at the same time"
+        classification:
+          type: string
+          description: "ADD only: classification of the new label"
+          examples:
+          - SUBTYPE
+        newResourceName:
+          type: string
+          description: "MOVE only: an optional new resourceName to set at the same\
+            \ time (used for a combined move+rename)"
+          pattern: "[A-Z0-9_]+"
+      required:
+      - path
+      - type
+    LabelClassification:
+      type: object
+      description: Label classification model
+      properties:
+        id:
+          type: string
+          description: Label classification ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        classification:
+          type: string
+          description: Label classification. Used as key and matched against the classification
+            of the labels. Ignored on update
+          examples:
+          - subtype
+          maxLength: 255
+          minLength: 0
+          pattern: "(?!\\.{1,2}$)[^/\\\\;%]+"
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the label classification
+          examples:
+          - Undertyp
+          maxLength: 255
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the label classification was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the label classification was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+      required:
+      - classification
     ExternalIdType:
       type: object
       description: ExternalIdType model
@@ -18107,6 +18832,13 @@ components:
           description: Label classification
           examples:
           - subtype
+          readOnly: true
+        classificationDisplayName:
+          type: string
+          description: "Display name for the label classification, as registered for\
+            \ the namespace"
+          examples:
+          - Undertyp
           readOnly: true
         displayName:
           type: string
