@@ -300,6 +300,16 @@ public class JobService {
 	}
 
 	/**
+	 * Type-agnostic sibling of {@link #hasActiveJob(String, String, JobType)} - for work that can race against a job of
+	 * any kind in the namespace, not just another of its own: a label move, merge, and tree restructure can all touch
+	 * overlapping parts of the same label tree, so each guards against every one of the others starting at once, not
+	 * only another of its own kind.
+	 */
+	public boolean hasActiveJob(final String namespace, final String municipalityId) {
+		return jobRepository.existsByNamespaceAndMunicipalityIdAndStatusIn(namespace, municipalityId, ACTIVE_STATUSES);
+	}
+
+	/**
 	 * Clears the way for a new run of one kind in one namespace, stealing a stale lease rather than leaving the
 	 * namespace blocked for as long as {@code staleAfter} - the active-job row doubles as that lease: {@code modified}
 	 * is its heartbeat, {@code staleAfter} the duration one may go quiet for, and the guard in

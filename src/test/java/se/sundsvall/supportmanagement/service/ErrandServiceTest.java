@@ -666,7 +666,6 @@ class ErrandServiceTest {
 			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
 			.withAccessLabels(List.of(se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(leafId)));
 
-		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
 		service.persistLabelMigration(errand);
@@ -674,9 +673,9 @@ class ErrandServiceTest {
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactly(leafId);
-		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
 		verify(errandLabelServiceMock).settleAccessLabels(errand);
 		verify(errandRepositoryMock).saveAndFlush(errand);
+		verify(errandRepositoryMock).restoreModifiedAndTouched(ERRAND_ID, originalModified, originalTouched);
 		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
 	}
 
@@ -729,7 +728,6 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
 		verify(errandLabelServiceMock).settleAccessLabels(errand);
 		verify(errandRepositoryMock).saveAndFlush(errand);
-		verify(errandRepositoryMock).restoreModifiedAndTouched(ERRAND_ID, originalModified, originalTouched);
 		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
 	}
 

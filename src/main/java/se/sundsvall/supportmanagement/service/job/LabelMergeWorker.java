@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -11,6 +11,9 @@ import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
@@ -70,30 +73,20 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 
 	@Override
 	protected void work(final LabelMergeRun run) {
-		merge(run);
-	}
-
-	@Override
-	protected void logStarted(final LabelMergeRun run) {
 		LOG.info("Label merge {} started for labels {} into {} in namespace {} for municipality {} by {}",
 			run.jobId(), sanitizeForLogging(run.sourceLabelIds().toString()), sanitizeForLogging(run.targetLabelId()),
 			sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), sanitizeForLogging(run.startedBy()));
+
+		merge(run);
+
+		LOG.info("Label merge {} ended", run.jobId());
 	}
 
 	@Override
-	protected void logAborted(final LabelMergeRun run, final Exception e) {
+	protected String reportAborted(final LabelMergeRun run, final Exception e) {
 		LOG.error("Label merge {} aborted for labels {} into {} in namespace {}", run.jobId(), sanitizeForLogging(run.sourceLabelIds().toString()),
 			sanitizeForLogging(run.targetLabelId()), sanitizeForLogging(run.namespace()), e);
-	}
-
-	@Override
-	protected String abortedMessage(final Exception e) {
 		return ABORTED_MESSAGE.formatted(e.getMessage());
-	}
-
-	@Override
-	protected void logEnded(final LabelMergeRun run) {
-		LOG.info("Label merge {} ended", run.jobId());
 	}
 
 	@Override

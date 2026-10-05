@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.3"
+  version: "16.4"
 servers:
-- url: http://localhost:62061
+- url: http://localhost:65188
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -17069,13 +17069,15 @@ components:
     JsonNode:
       type: object
       properties:
-        binary:
-          type: boolean
         container:
           type: boolean
-        boolean:
-          type: boolean
         number:
+          type: boolean
+        pojo:
+          type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -17093,11 +17095,7 @@ components:
           type: boolean
         integralNumber:
           type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
-        pojo:
+        floatingPointNumber:
           type: boolean
         short:
           type: boolean
@@ -17114,7 +17112,9 @@ components:
         textual:
           type: boolean
           deprecated: true
-        floatingPointNumber:
+        boolean:
+          type: boolean
+        binary:
           type: boolean
         empty:
           type: boolean
@@ -20934,8 +20934,9 @@ components:
     PageableObject:
       type: object
       properties:
-        sort:
-          $ref: "#/components/schemas/SortObject"
+        offset:
+          type: integer
+          format: int64
         paged:
           type: boolean
         pageNumber:

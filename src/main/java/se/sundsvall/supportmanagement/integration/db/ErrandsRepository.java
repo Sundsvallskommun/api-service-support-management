@@ -91,6 +91,10 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	@Query("select e from ErrandEntity e where e.id in :ids order by e.id")
 	List<ErrandEntity> findAllByIdForUpdate(@Param("ids") Collection<String> ids);
 
+	// Used by the internal LabelMoveWorker helper's keyset-paged restow walk for a single moved label.
+	@EntityGraph(attributePaths = "accessLabels")
+	List<ErrandEntity> findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(String metadataLabelId, String id, Pageable pageable);
+
 	// Sibling of the single-id query above, for the label-merge worker walking several source labels at once - same
 	// keyset paging, same reason for it.
 	@EntityGraph(attributePaths = "accessLabels")

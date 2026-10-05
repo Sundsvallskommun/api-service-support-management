@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.util.List;
 import java.util.Set;
@@ -12,6 +12,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStep;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.service.LabelTreeSnapshot;
+import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
@@ -81,28 +83,18 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 
 	@Override
 	protected void work(final LabelRestructureRun run) {
-		restructure(run);
-	}
-
-	@Override
-	protected void logStarted(final LabelRestructureRun run) {
 		LOG.info("Label tree restructure {} started with {} step(s) in namespace {} for municipality {} by {}",
 			run.jobId(), run.steps().size(), sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), sanitizeForLogging(run.startedBy()));
-	}
 
-	@Override
-	protected void logAborted(final LabelRestructureRun run, final Exception e) {
-		LOG.error("Label tree restructure {} aborted in namespace {}", run.jobId(), sanitizeForLogging(run.namespace()), e);
-	}
+		restructure(run);
 
-	@Override
-	protected String abortedMessage(final Exception e) {
-		return ABORTED_MESSAGE.formatted(e.getMessage());
-	}
-
-	@Override
-	protected void logEnded(final LabelRestructureRun run) {
 		LOG.info("Label tree restructure {} ended", run.jobId());
+	}
+
+	@Override
+	protected String reportAborted(final LabelRestructureRun run, final Exception e) {
+		LOG.error("Label tree restructure {} aborted in namespace {}", run.jobId(), sanitizeForLogging(run.namespace()), e);
+		return ABORTED_MESSAGE.formatted(e.getMessage());
 	}
 
 	@Override
