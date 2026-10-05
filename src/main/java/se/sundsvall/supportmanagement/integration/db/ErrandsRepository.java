@@ -64,6 +64,22 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	@EntityGraph(attributePaths = "accessLabels")
 	List<ErrandEntity> findAllById(Iterable<String> ids);
 
+	/**
+	 * Locks every errand in {@code ids} with {@code SELECT ... FOR UPDATE}, ordered by id - used by the label-move
+	 * runner, which restows a whole move inside one transaction and needs every affected errand locked against a
+	 * concurrent write for the duration rather than retried against one. Ordered acquisition, combined with the
+	 * runner chunking a globally-sorted id list, keeps lock acquisition ascending across the whole run, so it cannot
+	 * deadlock against another ordered multi-row operation (a user PATCHing several errands, {@code ErrandPurgeRunner}'s
+	 * own ascending-id walk).
+	 * <p>
+	 * No lock-timeout hint - left at the server/session default ({@code innodb_lock_wait_timeout}, 50s), deliberately:
+	 * a brief conflict is worth waiting through rather than bouncing the run, and the default can be raised later,
+	 * without a code change, if that ever proves too tight.
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select e from ErrandEntity e where e.id in :ids order by e.id")
+	List<ErrandEntity> findAllByIdForUpdate(@Param("ids") Collection<String> ids);
+
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
 	/**

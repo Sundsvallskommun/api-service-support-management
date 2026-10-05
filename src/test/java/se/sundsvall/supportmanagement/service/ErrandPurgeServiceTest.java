@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -15,6 +16,7 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.job.ErrandPurgeRunner;
 import se.sundsvall.supportmanagement.service.job.JobService;
@@ -26,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -43,6 +46,7 @@ class ErrandPurgeServiceTest {
 	private static final OffsetDateTime OLDER_THAN = OffsetDateTime.parse("2020-08-28T00:00:00+02:00");
 	private static final int TOTAL = 1000;
 	private static final String COULD_NOT_START = "Purge could not be started: %s";
+	private static final Duration JOB_STALE_AFTER = Duration.ofMinutes(30);
 
 	/**
 	 * Accepts what it is handed and never runs it, which leaves the run pending for as long as the test needs it to.
@@ -59,6 +63,9 @@ class ErrandPurgeServiceTest {
 
 	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
+
+	@Mock
+	private JobProperties jobPropertiesMock;
 
 	@AfterEach
 	void tearDown() {
@@ -152,7 +159,7 @@ class ErrandPurgeServiceTest {
 	@DisplayName("Verification that a namespace already being purged is refused rather than walked by two runs at once")
 	void startPurgeWhileOneIsAlreadyRunning() {
 		final var service = service(NEVER_RUNS);
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE)).thenReturn(true);
+		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, JOB_STALE_AFTER)).thenReturn(false);
 
 		assertThatThrownBy(() -> service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(true, null)))
 			.isInstanceOf(ThrowableProblem.class)
@@ -167,6 +174,7 @@ class ErrandPurgeServiceTest {
 	@DisplayName("Verification that a namespace with access control is refused outright rather than being purged past its own guard")
 	void startPurgeWhenAccessControlIsActive() {
 		final var service = service(NEVER_RUNS);
+		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, JOB_STALE_AFTER)).thenReturn(true);
 		when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		assertThatThrownBy(() -> service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(true, null)))
@@ -194,6 +202,7 @@ class ErrandPurgeServiceTest {
 	 * What the job side answers for a run that gets as far as being accepted.
 	 */
 	private void acceptsRuns() {
+		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, JOB_STALE_AFTER)).thenReturn(true);
 		when(runnerMock.countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).thenReturn(TOTAL);
 		when(jobServiceMock.launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), any(), any(), eq(COULD_NOT_START)))
 			.thenReturn(JobResponse.create()
@@ -202,7 +211,10 @@ class ErrandPurgeServiceTest {
 	}
 
 	private ErrandPurgeService service(final AsyncTaskExecutor taskExecutor) {
-		return new ErrandPurgeService(runnerMock, jobServiceMock, namespaceConfigServiceMock, taskExecutor);
+		// staleAfter() is read once, eagerly, in the constructor - stubbed here, immediately before construction,
+		// rather than in a shared @BeforeEach, so every test's own call to service(...) is what actually takes effect.
+		lenient().when(jobPropertiesMock.staleAfter()).thenReturn(JOB_STALE_AFTER);
+		return new ErrandPurgeService(runnerMock, jobServiceMock, namespaceConfigServiceMock, taskExecutor, jobPropertiesMock);
 	}
 
 	private static ErrandPurgeRequest request(final boolean dryRun, final Integer maxErrands) {

@@ -75,7 +75,7 @@ public class JobService {
 	 * carries a transaction of its own regardless of what, if anything, is open in the caller.
 	 * <p>
 	 * Flushed rather than merely saved, so that a namespace-scoped DB constraint a caller relies on to close a
-	 * check-then-act race against its own precheck (see {@code V1_60__add_active_job_guard.sql}) is violated
+	 * check-then-act race against its own precheck (see {@code V1_61__add_active_job_guard.sql}) is violated
 	 * here, inside this call's own transaction, rather than staying unflushed until some later point picks the
 	 * failure up out of context.
 	 */
@@ -243,8 +243,16 @@ public class JobService {
 
 	/**
 	 * The state a job is in, for work that needs to know whether it is still wanted. Empty for a job that is not there.
+	 * <p>
+	 * {@code REQUIRES_NEW} rather than the default propagation: a caller whose own work runs inside one long
+	 * transaction - {@code LabelMoveRunner}, since the atomicity redesign - would otherwise have this call join that
+	 * same transaction and reuse its snapshot, under MySQL's default {@code REPEATABLE READ}. A stop or a lease steal
+	 * committed by some other request after that long transaction began would then never become visible to it, no
+	 * matter how often this is asked, which defeats the stop check entirely. A fresh transaction here always reads the
+	 * latest committed state instead. Harmless for a caller with no transaction of its own already open, such as
+	 * {@code ErrandPurgeRunner}.
 	 */
-	@Transactional(readOnly = true)
+	@Transactional(propagation = REQUIRES_NEW, readOnly = true)
 	public Optional<JobStatus> statusOf(final String jobId) {
 		return jobRepository.findById(jobId).map(JobEntity::getStatus);
 	}
@@ -293,7 +301,7 @@ public class JobService {
 	 * Clears the way for a new run of one kind in one namespace, stealing a stale lease rather than leaving the
 	 * namespace blocked for as long as {@code staleAfter} - the active-job row doubles as that lease: {@code modified}
 	 * is its heartbeat, {@code staleAfter} the duration one may go quiet for, and the guard in
-	 * {@code V1_60__add_active_job_guard.sql} (or its counterpart for another type) is what makes it exclusive.
+	 * {@code V1_61__add_active_job_guard.sql} (or its counterpart for another type) is what makes it exclusive.
 	 * <p>
 	 * Deliberately narrower than {@link #failStaleJobs(Duration)}: that sweep ends every kind of job in every namespace
 	 * that has gone quiet, on its own schedule; this steals the lease for exactly the one namespace and kind a caller is

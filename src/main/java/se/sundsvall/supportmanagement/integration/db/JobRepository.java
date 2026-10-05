@@ -28,7 +28,7 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
 	/**
 	 * The active job of one kind in one namespace, if there is one - for a caller that needs to look at it (its
 	 * {@code modified}, to judge whether it has gone stale) rather than merely know it exists. At most one such row can
-	 * exist per type per namespace while the guard in {@code V1_60__add_active_job_guard.sql} (or its
+	 * exist per type per namespace while the guard in {@code V1_61__add_active_job_guard.sql} (or its
 	 * counterpart for another type) holds.
 	 */
 	Optional<JobEntity> findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(String namespace, String municipalityId, JobType type, Collection<JobStatus> statuses);

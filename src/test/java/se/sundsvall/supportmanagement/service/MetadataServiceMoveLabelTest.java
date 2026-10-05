@@ -23,6 +23,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
 import se.sundsvall.supportmanagement.config.JobProperties;
+import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
@@ -124,6 +125,9 @@ class MetadataServiceMoveLabelTest {
 	@Mock
 	private JobProperties jobPropertiesMock;
 
+	@Mock
+	private LabelMoveProperties labelMovePropertiesMock;
+
 	@InjectMocks
 	private MetadataService service;
 
@@ -133,7 +137,10 @@ class MetadataServiceMoveLabelTest {
 		// touch it, are not flagged for an unused stub.
 		lenient().when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
 		// jobPropertiesMock.staleAfter() is NOT stubbed here on purpose - see STALE_AFTER's own comment for why that
-		// would be too late to matter.
+		// would be too late to matter. labelMovePropertiesMock.maxAffectedErrands() has no such caveat - it is read at
+		// call time inside startLabelMove, not cached in the constructor - so a permissive default here is safe for
+		// every test that does not care about the cap; the one that does overrides it with its own, more specific stub.
+		lenient().when(labelMovePropertiesMock.maxAffectedErrands()).thenReturn(Integer.MAX_VALUE);
 	}
 
 	@Test
@@ -163,57 +170,39 @@ class MetadataServiceMoveLabelTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a move to the label's current parent is accepted rather than rejected as a no-op - this is what an interrupted run's own resume looks like, and restowing is idempotent per errand, so retrying the exact same move is safe")
-	void moveLabel_sameParent_dryRun_returnsCount() {
+	@DisplayName("Verification that a move to the label's current parent is rejected as a no-op by the dry run too - the same shared check startLabelMove and revalidateAndReparent both go through")
+	void moveLabel_sameParent_dryRun_throws400AsNoOp() {
 		var parent = labelEntity(PARENT_ID, "PARENT", "PARENT");
 		var label = labelEntityWithParent(LABEL_ID, "CHILD", "PARENT/CHILD", parent);
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(label));
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(PARENT_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(parent));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD"))
-			.thenReturn(Optional.empty());
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
-			.thenReturn(List.of());
-		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(List.of("errand-1"));
-		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 
-		var result = service.moveLabel(NAMESPACE, MUNICIPALITY_ID, LABEL_ID,
-			LabelMoveRequest.create().withNewParentId(PARENT_ID).withDryRun(true));
-
-		assertThat(result.getAffectedErrandCount()).isEqualTo(1L);
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.moveLabel(NAMESPACE, MUNICIPALITY_ID, LABEL_ID,
+				LabelMoveRequest.create().withNewParentId(PARENT_ID).withDryRun(true)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
+			.withMessageContaining("no-op");
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(PARENT_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD");
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
-		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
-		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
-	@DisplayName("Verification that moving a root label to root (no parent, still no parent) is accepted rather than rejected as a no-op, for the same resume reason")
-	void moveLabel_bothNull_dryRun_returnsCount() {
+	@DisplayName("Verification that moving a root label to root (no parent, still no parent) is rejected as a no-op too, by the same check")
+	void moveLabel_bothNull_dryRun_throws400AsNoOp() {
 		var label = labelEntity(LABEL_ID, "ROOT", "ROOT");
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(label));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "ROOT"))
-			.thenReturn(Optional.empty());
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "ROOT/"))
-			.thenReturn(List.of());
-		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(List.of());
-		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 
-		var result = service.moveLabel(NAMESPACE, MUNICIPALITY_ID, LABEL_ID,
-			LabelMoveRequest.create().withNewParentId(null).withDryRun(true));
-
-		assertThat(result.getAffectedErrandCount()).isZero();
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.moveLabel(NAMESPACE, MUNICIPALITY_ID, LABEL_ID,
+				LabelMoveRequest.create().withNewParentId(null).withDryRun(true)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
+			.withMessageContaining("no-op");
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "ROOT");
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "ROOT/");
-		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
-		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test
@@ -263,8 +252,8 @@ class MetadataServiceMoveLabelTest {
 	}
 
 	@Test
-	@DisplayName("Verification that revalidateAndReparent treats a label already at newParentId as a resume rather than an error - the write is a no-op in substance, and the caller goes on to restow every affected errand again")
-	void revalidateAndReparent_alreadyAtTargetParent_reparentsAsNoOp() {
+	@DisplayName("Verification that revalidateAndReparent rejects a label already at newParentId as a no-op - restoring the original behavior now that the move is atomic: a rolled-back attempt leaves the label at its original parent, so a genuine retry is never mistaken for a no-op, and only a true duplicate request reaches this check")
+	void revalidateAndReparent_alreadyAtTargetParent_throws400() {
 		var parent = labelEntity(PARENT_ID, "PARENT", "PARENT");
 		var label = labelEntityWithParent(LABEL_ID, "CHILD", "PARENT/CHILD", parent);
 
@@ -272,20 +261,16 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.of(label));
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(PARENT_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(parent));
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD"))
-			.thenReturn(Optional.empty());
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
-			.thenReturn(List.of());
-		when(metadataLabelRepositoryMock.saveAndFlush(label)).thenReturn(label);
 
-		service.revalidateAndReparent(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, PARENT_ID);
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.revalidateAndReparent(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, PARENT_ID))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
+			.withMessageContaining("no-op");
 
 		assertThat(label.getParent()).isSameAs(parent);
-		verify(metadataLabelRepositoryMock).saveAndFlush(label);
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(PARENT_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD");
-		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
+		verify(metadataLabelRepositoryMock, never()).saveAndFlush(any());
 	}
 
 	@Test
@@ -540,6 +525,35 @@ class MetadataServiceMoveLabelTest {
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(NOT_FOUND.value()));
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
+	}
+
+	@Test
+	@DisplayName("Verification that a move affecting more errands than the configured cap is refused before any lock is ever taken - the dry run that would have told the admin this up front takes no such cap, since it locks nothing")
+	void startLabelMove_affectedErrandsExceedCap_throws400() {
+		var label = labelEntityWithParent(LABEL_ID, "CHILD", "PARENT/CHILD", labelEntity(PARENT_ID, "PARENT", null));
+
+		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(label));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD"))
+			.thenReturn(Optional.empty());
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
+			.thenReturn(List.of());
+		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER)).thenReturn(true);
+		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(List.of("errand-1", "errand-2", "errand-3"));
+		when(labelMovePropertiesMock.maxAffectedErrands()).thenReturn(2);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false)))
+			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()))
+			.withMessageContaining("3")
+			.withMessageContaining("2");
+
+		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
+		verify(jobServiceMock).stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER);
+		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
+		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
 	}
 
 	@Test

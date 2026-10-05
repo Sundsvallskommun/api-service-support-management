@@ -628,8 +628,8 @@ class ErrandServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a migration batch restows each errand's labels from its access labels, settles them through ErrandLabelService, and puts modified/touched back so the restow leaves no trace on either")
-	void persistLabelMigrationBatch_rebuildsEachErrandsLabelsFromItsAccessLabels() {
+	@DisplayName("Verification that a label migration restows an errand's labels from its access labels, settles them through ErrandLabelService, and puts modified/touched back so the restow leaves no trace on either")
+	void persistLabelMigration_rebuildsErrandsLabelsFromItsAccessLabels() {
 		var leafId = "leaf-id";
 		var originalModified = java.time.OffsetDateTime.parse("2026-01-01T00:00:00Z");
 		var originalTouched = java.time.OffsetDateTime.parse("2026-01-02T00:00:00Z");
@@ -645,7 +645,7 @@ class ErrandServiceTest {
 
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
-		service.persistLabelMigrationBatch(List.of(errand));
+		service.persistLabelMigration(errand);
 
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
@@ -654,6 +654,26 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(errand);
 		verify(errandRepositoryMock).restoreModifiedAndTouched(ERRAND_ID, originalModified, originalTouched);
 		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a label migration is skipped, rather than wiping every errand_labels row, for an errand whose access labels have gone empty while its labels have not")
+	void persistLabelMigration_emptyAccessLabelsButNonEmptyLabels_skipsRestow() {
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
+			.withAccessLabels(List.of());
+
+		service.persistLabelMigration(errand);
+
+		assertThat(errand.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly("stale-id");
+		verifyNoInteractions(errandLabelServiceMock, errandActionServiceMock, revisionServiceMock, eventServiceMock);
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verify(errandRepositoryMock, never()).restoreModifiedAndTouched(any(), any(), any());
 	}
 
 	@Test

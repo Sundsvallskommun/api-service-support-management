@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -9,6 +10,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.job.ErrandPurgeRunner;
 import se.sundsvall.supportmanagement.service.job.JobService;
@@ -44,17 +46,20 @@ public class ErrandPurgeService {
 	private final JobService jobService;
 	private final NamespaceConfigService namespaceConfigService;
 	private final AsyncTaskExecutor taskExecutor;
+	private final Duration jobStaleAfter;
 
 	public ErrandPurgeService(
 		final ErrandPurgeRunner runner,
 		final JobService jobService,
 		final NamespaceConfigService namespaceConfigService,
-		@Qualifier("errandPurgeTaskExecutor") final AsyncTaskExecutor taskExecutor) {
+		@Qualifier("errandPurgeTaskExecutor") final AsyncTaskExecutor taskExecutor,
+		final JobProperties jobProperties) {
 
 		this.runner = runner;
 		this.jobService = jobService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.taskExecutor = taskExecutor;
+		this.jobStaleAfter = jobProperties.staleAfter();
 	}
 
 	/**
@@ -62,6 +67,11 @@ public class ErrandPurgeService {
 	 * <p>
 	 * The errands to remove are counted before the run is accepted, both to answer the caller with how much there is to
 	 * do and to give the job a total to report progress against. That count is the one thing a caller waits for.
+	 * <p>
+	 * {@link JobService#stealStaleLease} is asked rather than {@link JobService#hasActiveJob}, same as
+	 * {@code MetadataService#startLabelMove} - a purge whose instance died mid-run would otherwise go on blocking the
+	 * namespace for as long as {@link se.sundsvall.supportmanagement.config.JobProperties#staleAfter()} allows, and a
+	 * purge is the longer-running of the two kinds of job, so it is the more likely of the two to be interrupted.
 	 *
 	 * @param  namespace      namespace to purge within.
 	 * @param  municipalityId id of the municipality to purge within.
@@ -76,9 +86,9 @@ public class ErrandPurgeService {
 
 		// Two runs walking the same namespace would do each other's work twice over. This precheck alone is not a lock -
 		// two requests arriving at the same moment could both pass it - but JobService.launch's insert (via createJob) is
-		// guarded at the DB level too (see V1_60__add_active_job_guard.sql), so the second of the two is refused there
+		// guarded at the DB level too (see V1_61__add_active_job_guard.sql), so the second of the two is refused there
 		// instead of starting a duplicate run.
-		if (jobService.hasActiveJob(namespace, municipalityId, ERRAND_PURGE)) {
+		if (!jobService.stealStaleLease(namespace, municipalityId, ERRAND_PURGE, jobStaleAfter)) {
 			throw Problem.valueOf(CONFLICT, ALREADY_RUNNING.formatted(namespace, municipalityId));
 		}
 

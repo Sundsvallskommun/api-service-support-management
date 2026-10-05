@@ -45,6 +45,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.config.JobProperties;
+import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
@@ -127,6 +128,7 @@ public class MetadataService {
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
 	private static final String MOVE_ALREADY_IN_PROGRESS = "A job is already running for namespace '%s' in municipality with id '%s'";
+	private static final String TOO_MANY_AFFECTED_ERRANDS = "Move affects %d errand(s), exceeding the maximum of %d allowed in one move";
 	private static final String COULD_NOT_START = "Label move could not be started: %s";
 	private static final String UNKNOWN_CALLER = "unknown";
 	private static final int RESOURCE_PATH_MAX_LENGTH = 255;
@@ -166,6 +168,7 @@ public class MetadataService {
 	private final AntPathMatcher pathMatcher;
 	private final TransactionTemplate readOnlyTransactionTemplate;
 	private final Duration jobStaleAfter;
+	private final LabelMoveProperties labelMoveProperties;
 
 	public MetadataService(
 		final ActionConfigRepository actionConfigRepository,
@@ -190,7 +193,8 @@ public class MetadataService {
 		@Lazy final LabelMoveRunner labelMoveRunner,
 		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor,
 		final PlatformTransactionManager transactionManager,
-		final JobProperties jobProperties) {
+		final JobProperties jobProperties,
+		final LabelMoveProperties labelMoveProperties) {
 		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -214,6 +218,7 @@ public class MetadataService {
 		this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
 		this.readOnlyTransactionTemplate.setReadOnly(true);
 		this.jobStaleAfter = jobProperties.staleAfter();
+		this.labelMoveProperties = labelMoveProperties;
 	}
 
 	// =================================================================
@@ -473,8 +478,9 @@ public class MetadataService {
 	 * "Genuinely" matters: {@link JobService#stealStaleLease} is asked rather than {@link JobService#hasActiveJob}, so
 	 * a job whose instance died mid-run does not go on blocking the namespace for as long as
 	 * {@link JobProperties#staleAfter()} allows - only until the next caller tries to start a move, at which point the
-	 * stale lease is reclaimed on the spot. This does not by itself give a crashed run a way to resume the restow it
-	 * left half done; it only shrinks how long the namespace stays blocked because of it.
+	 * stale lease is reclaimed on the spot. A crashed instance's own connection is rolled back cleanly by the
+	 * database the moment it drops - the restow runs as one transaction (see {@code LabelMoveRunner}), so there is no
+	 * half-done state to resume - this only shrinks how long the namespace stays blocked waiting for a fresh attempt.
 	 * <p>
 	 * Deliberately not itself {@code @Transactional}: validation runs in a read-only transaction of its own, and job
 	 * creation and dispatch are handed to {@link JobService#launch} - see its own javadoc for why wrapping this whole
@@ -498,6 +504,15 @@ public class MetadataService {
 		// point deliberately: an errand created after this is created against the tree the move already left in
 		// place, so it needs no restowing.
 		var affectedErrandIds = errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(allMovedIds);
+
+		// Refused here, before any lock is taken rather than left unbounded: the move locks every one of these errands
+		// for the life of one transaction (see LabelMoveRunner), so an unexpectedly large subtree would otherwise hold
+		// that many rows for however long restowing them all takes. The dry run deliberately has no such limit - it
+		// takes no lock, and is exactly what lets an admin discover they are over the cap before ever trying.
+		if (affectedErrandIds.size() > labelMoveProperties.maxAffectedErrands()) {
+			throw Problem.valueOf(BAD_REQUEST, TOO_MANY_AFFECTED_ERRANDS.formatted(affectedErrandIds.size(), labelMoveProperties.maxAffectedErrands()));
+		}
+
 		// Resolved once, here, and attached below to the response this method itself returns - an admin who skips the
 		// dry run and starts the move directly still learns which actions are affected, without waiting on a later
 		// GET .../jobs/{jobId} that stores no such thing.
@@ -548,12 +563,13 @@ public class MetadataService {
 	}
 
 	/**
-	 * Validated as far as a fresh request can be told from a retry of one already under way: a move to the label's
-	 * <em>current</em> parent is not rejected as a no-op the way it once was. It is exactly what an interrupted run's
-	 * own resume looks like once the re-parent committed but the restow it started did not finish — the re-parent
-	 * {@link #revalidateAndReparent} performs is then a no-op in substance, and the caller goes straight on to restow
-	 * every affected errand again, which is safe since {@link ErrandService#persistLabelMigrationBatch} is idempotent
-	 * per errand. Every other validation below - cycle, path collision, path length - still applies regardless.
+	 * A move to the label's current parent is rejected as a no-op. That rejection was dropped for one release so that
+	 * an interrupted run could be "resumed" by re-POSTing the same move: the old per-errand design committed the
+	 * re-parent in its own transaction before restowing a single errand, so a crash in between left the re-parent
+	 * done but the restow unfinished, and a retry looked exactly like a no-op. The label move is restowed atomically
+	 * now - one transaction covers the re-parent and every restow (see {@code LabelMoveRunner}) - so a failure rolls
+	 * the re-parent back too, and a genuine retry after one is never a no-op; only a true duplicate request is. The
+	 * rejection is restored on that basis.
 	 */
 	private LabelMoveContext validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
 		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
@@ -565,6 +581,7 @@ public class MetadataService {
 				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, newParentId, namespace, municipalityId)));
 		}
 
+		validateNotNoOp(labelToMove, newParentId);
 		validateNoCycle(labelToMove.getId(), newParent);
 
 		var newPath = newParent != null
@@ -603,6 +620,13 @@ public class MetadataService {
 		// the moved node and, recursively, for every descendant reachable through its metadataLabels collection, all
 		// within this single saveAndFlush's own session - the whole subtree is already correct and persisted by the
 		// time this call returns.
+	}
+
+	private static void validateNotNoOp(final MetadataLabelEntity labelToMove, final String newParentId) {
+		var currentParentId = labelToMove.getParent() != null ? labelToMove.getParent().getId() : null;
+		if (Objects.equals(currentParentId, newParentId)) {
+			throw Problem.valueOf(BAD_REQUEST, "Label '%s' is already under the specified parent — move would be a no-op".formatted(labelToMove.getId()));
+		}
 	}
 
 	/**
