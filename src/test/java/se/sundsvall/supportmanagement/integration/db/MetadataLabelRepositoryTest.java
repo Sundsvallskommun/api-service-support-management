@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -389,6 +390,52 @@ class MetadataLabelRepositoryTest {
 				tuple("parent/level1/level2c", "level2c"),
 				tuple("parent/level1/level2a/level3a", "level3a"),
 				tuple("parent/level1/level2b/level3b", "level3b"));
+	}
+
+	@Test
+	@DisplayName("Verification that '_' in a resourcePath prefix is not treated as a SQL LIKE single-char wildcard, since resourceName legally contains it")
+	void findByNamespaceAndMunicipalityIdAndResourcePathStartingWithDoesNotTreatUnderscoreAsWildcard() {
+
+		// Arrange
+		final var municipalityId = "2289";
+		final var namespace = "namespace-like-escape";
+
+		final var target = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("CATEGORY_A");
+
+		final var targetChild = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("CHILD")
+			.withParent(target);
+		target.addChild(targetChild);
+
+		// A label whose path differs from "CATEGORY_A/..." only by one character where "_" sits - would incorrectly
+		// match "CATEGORY_A/%" if "_" were interpreted as a SQL LIKE single-char wildcard instead of a literal.
+		final var decoy = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("CATEGORYXA");
+
+		final var decoyChild = MetadataLabelEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withNamespace(namespace)
+			.withResourceName("CHILD")
+			.withParent(decoy);
+		decoy.addChild(decoyChild);
+
+		metadataLabelRepository.saveAndFlush(target);
+		metadataLabelRepository.saveAndFlush(decoy);
+
+		// Act
+		final var result = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(namespace, municipalityId, "CATEGORY_A/");
+
+		// Assert
+		assertThat(result)
+			.extracting(MetadataLabelEntity::getResourcePath)
+			.containsExactly("CATEGORY_A/CHILD");
 	}
 
 	@Test

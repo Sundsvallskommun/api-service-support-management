@@ -142,6 +142,9 @@ class ErrandServiceTest {
 	private ErrandPhaseService errandPhaseServiceMock;
 
 	@Mock
+	private LabelClassificationService labelClassificationServiceMock;
+
+	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
 
 	@Spy
@@ -340,6 +343,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR);
 		verify(accessControlServiceMock).roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, user);
+		verify(labelClassificationServiceMock).getClassificationDisplayNames(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(errandRepositoryMock);
 	}
 
@@ -395,6 +399,25 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	void updateErrandReadsClassificationDisplayNamesBeforeTouchingTheErrand() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(labelClassificationServiceMock.getClassificationDisplayNames(NAMESPACE, MUNICIPALITY_ID)).thenThrow(new IllegalStateException("database down"));
+
+		final var errand = Errand.create().withTitle("new title");
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
+			.isInstanceOf(IllegalStateException.class);
+
+		verify(errandLabelServiceMock).validateVersions(any());
+
+		// Failing to read them leaves nothing behind that a rollback cannot undo
+		verifyNoInteractions(errandRepositoryMock, errandActionServiceMock, revisionServiceMock, eventServiceMock, entityManagerMock);
 	}
 
 	@Test
@@ -643,6 +666,7 @@ class ErrandServiceTest {
 			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
 			.withAccessLabels(List.of(se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(leafId)));
 
+		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
 		service.persistLabelMigration(errand);
@@ -650,6 +674,59 @@ class ErrandServiceTest {
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactly(leafId);
+		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
+		verify(errandLabelServiceMock).settleAccessLabels(errand);
+		verify(errandRepositoryMock).saveAndFlush(errand);
+		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a migration batch leaves an errand's labels untouched, rather than clearing them, when it has labels but no access labels - a data inconsistency the restow must not paper over by treating it as having no labels at all")
+	void persistLabelMigrationBatch_skipsErrandWithLabelsButNoAccessLabels() {
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("real-id")))
+			.withAccessLabels(List.of());
+
+		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
+
+		service.persistLabelMigrationBatch(List.of(errand));
+
+		assertThat(errand.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly("real-id");
+		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
+		verifyNoInteractions(errandLabelServiceMock, errandActionServiceMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a merge batch substitutes any source label id for the target id, dedupes, and settles the result through ErrandLabelService")
+	void persistLabelMergeBatch_substitutesSourceIdsForTargetAndDedupes() {
+		var targetId = "target-id";
+		var otherLeafId = "other-leaf-id";
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			// A stale chain from before the merge - restowing must replace it, not merge into it
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
+			.withAccessLabels(List.of(
+				se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId("source-1"),
+				se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId("source-2"),
+				se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(otherLeafId)));
+
+		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
+		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
+
+		service.persistLabelMergeBatch(List.of(errand), Set.of("source-1", "source-2"), targetId);
+
+		// Both source-1 and source-2 collapse into a single targetId entry, the untouched leaf is kept as-is
+		assertThat(errand.getLabels())
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactlyInAnyOrder(targetId, otherLeafId);
+		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
 		verify(errandLabelServiceMock).settleAccessLabels(errand);
 		verify(errandRepositoryMock).saveAndFlush(errand);
 		verify(errandRepositoryMock).restoreModifiedAndTouched(ERRAND_ID, originalModified, originalTouched);

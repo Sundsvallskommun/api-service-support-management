@@ -18,6 +18,7 @@ TRUNCATE table attachment_data;
 TRUNCATE table errand_number_sequence;
 TRUNCATE table metadata_label_attribute;
 TRUNCATE table metadata_label;
+TRUNCATE table metadata_label_classification;
 TRUNCATE table communication;
 TRUNCATE table communication_attachment;
 TRUNCATE table communication_errand_attachment;

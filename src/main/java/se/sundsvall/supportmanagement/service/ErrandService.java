@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -46,6 +48,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
+import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
@@ -73,6 +76,7 @@ public class ErrandService {
 	private final ErrandLabelService errandLabelService;
 	private final ErrandActionService errandActionService;
 	private final ErrandPhaseService errandPhaseService;
+	private final LabelClassificationService labelClassificationService;
 	private final EntityManager entityManager;
 
 	public ErrandService(
@@ -89,6 +93,7 @@ public class ErrandService {
 		final ErrandLabelService errandLabelService,
 		final ErrandActionService errandActionService,
 		final ErrandPhaseService errandPhaseService,
+		final LabelClassificationService labelClassificationService,
 		final EntityManager entityManager) {
 
 		this.repository = repository;
@@ -104,6 +109,7 @@ public class ErrandService {
 		this.errandLabelService = errandLabelService;
 		this.errandActionService = errandActionService;
 		this.errandPhaseService = errandPhaseService;
+		this.labelClassificationService = labelClassificationService;
 		this.entityManager = entityManager;
 	}
 
@@ -149,14 +155,19 @@ public class ErrandService {
 		final var matches = repository.findAll(fullFilter, pageable);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
 
-		return new PageImpl<>(toErrandsWithAccessControl(matches.getContent(), fieldResolver), pageable, matches.getTotalElements());
+		final var displayNames = labelClassificationService.getClassificationDisplayNames(namespace, municipalityId);
+		final var errands = toErrandsWithAccessControl(matches.getContent(), fieldResolver).stream()
+			.map(errand -> applyClassificationDisplayNames(errand, displayNames))
+			.toList();
+
+		return new PageImpl<>(errands, pageable, matches.getTotalElements());
 	}
 
 	@Transactional(readOnly = true)
 	public Errand readErrand(final String namespace, final String municipalityId, final String id) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.ERRAND, LR);
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, Identifier.get());
-		return toErrandWithAccessControl(errandEntity, fieldResolver);
+		return applyClassificationDisplayNames(toErrandWithAccessControl(errandEntity, fieldResolver), labelClassificationService.getClassificationDisplayNames(namespace, municipalityId));
 	}
 
 	@Transactional
@@ -172,6 +183,10 @@ public class ErrandService {
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
 		errandLabelService.validateVersions(errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
+
+		// Read before the errand is touched, so that failing to read them cannot roll back an update whose actions and event
+		// have already gone out.
+		final var classificationDisplayNames = labelClassificationService.getClassificationDisplayNames(namespace, municipalityId);
 
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
@@ -189,7 +204,7 @@ public class ErrandService {
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
 		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
 
-		return toErrandWithAccessControl(entity, keyAccess.readable());
+		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable()), classificationDisplayNames);
 	}
 
 	@Transactional
@@ -307,12 +322,17 @@ public class ErrandService {
 	 * {@code se.sundsvall.supportmanagement.service.job} - a different package from this one - the same reason
 	 * {@link #purgeErrand} is public for {@code ErrandPurgeRunner}.
 	 */
-	@Transactional
-	public void persistLabelMigration(final ErrandEntity errand) {
-		restowFromAccessLabels(errand);
+	@Transactional(propagation = REQUIRES_NEW)
+	void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
+		final var idsWithLabels = idsWithNonEmptyLabels(batch);
+		batch.forEach(errand -> restowFromAccessLabels(errand, idsWithLabels));
 	}
 
-	private void restowFromAccessLabels(final ErrandEntity errand) {
+	private void restowFromAccessLabels(final ErrandEntity errand, final Set<String> idsWithLabels) {
+		if (skipIfAccessLabelsMissing(errand, idsWithLabels)) {
+			return;
+		}
+
 		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
 			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
 			.toList();
@@ -336,6 +356,64 @@ public class ErrandService {
 		persistLabelUpdate(errand);
 
 		repository.restoreModifiedAndTouched(errand.getId(), modified, touched);
+	}
+
+	/**
+	 * Restows a batch of errands the same way {@link #persistLabelMigrationBatch} does, except that any leaf carrying
+	 * one of the source label ids is substituted for the destination label id before the ancestor chain is re-derived -
+	 * used by the label-merge worker, once the leaf ids referenced no longer point at labels a move alone would resolve
+	 * against (the sources are deleted once every errand has moved off them).
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	void persistLabelMergeBatch(final List<ErrandEntity> batch, final Set<String> sourceLabelIds, final String targetLabelId) {
+		final var idsWithLabels = idsWithNonEmptyLabels(batch);
+		batch.forEach(errand -> restowFromAccessLabelsWithSubstitution(errand, sourceLabelIds, targetLabelId, idsWithLabels));
+	}
+
+	private void restowFromAccessLabelsWithSubstitution(final ErrandEntity errand, final Set<String> sourceLabelIds, final String targetLabelId, final Set<String> idsWithLabels) {
+		if (skipIfAccessLabelsMissing(errand, idsWithLabels)) {
+			return;
+		}
+
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(AccessLabelEmbeddable::getMetadataLabelId)
+			.map(leafId -> sourceLabelIds.contains(leafId) ? targetLabelId : leafId)
+			.distinct()
+			.map(leafId -> ErrandLabelEmbeddable.create().withMetadataLabelId(leafId))
+			.toList();
+
+		errand.setLabels(leafLabels);
+		persistLabelUpdate(errand);
+	}
+
+	/**
+	 * Which of {@code batch}'s errands have a non-empty {@code labels}, asked as one cheap id-only query rather than
+	 * by touching each entity's own {@code labels} collection - {@code labels} is lazy and these errands are already
+	 * detached by the time this runs (read by the worker in a transaction that has since closed), and eagerly
+	 * fetching it alongside {@code accessLabels} is not an option: both are {@code @ElementCollection} bags, and
+	 * Hibernate refuses to join-fetch two bags in the same query.
+	 */
+	private Set<String> idsWithNonEmptyLabels(final List<ErrandEntity> batch) {
+		return repository.findIdsWithNonEmptyLabels(batch.stream().map(ErrandEntity::getId).toList());
+	}
+
+	/**
+	 * Whether this errand's {@code accessLabels} are missing while {@code labels} are not - a data inconsistency
+	 * (the two are meant to always agree: {@code accessLabels} is computed from {@code labels} by
+	 * {@link ErrandLabelService#settleAccessLabels}) that a restow driven purely by {@code accessLabels} must not
+	 * paper over by treating "no access labels" as "no labels" and wiping the real label set out from under whoever
+	 * could previously reach this errand through it. Logged and left alone rather than restowed: a later write path
+	 * that keeps the two in sync will settle it the normal way, and leaving it as it was costs nothing in the
+	 * meantime, unlike silently erasing it would.
+	 */
+	private boolean skipIfAccessLabelsMissing(final ErrandEntity errand, final Set<String> idsWithLabels) {
+		final var hasAccessLabels = !ofNullable(errand.getAccessLabels()).orElse(emptyList()).isEmpty();
+
+		if (idsWithLabels.contains(errand.getId()) && !hasAccessLabels) {
+			LOG.warn("Errand {} has labels but no access labels - skipping restow rather than clearing its label set", sanitizeForLogging(errand.getId()));
+			return true;
+		}
+		return false;
 	}
 
 	/**

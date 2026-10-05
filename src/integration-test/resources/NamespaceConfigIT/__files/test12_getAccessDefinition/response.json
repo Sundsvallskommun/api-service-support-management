@@ -293,6 +293,11 @@
 			"errandScoped": false
 		},
 		{
+			"resource": "METADATA_LABEL_CLASSIFICATION",
+			"path": "metadata/label-classification",
+			"errandScoped": false
+		},
+		{
 			"resource": "METADATA_MEASURE_TYPE",
 			"path": "metadata/measure-type",
 			"errandScoped": false

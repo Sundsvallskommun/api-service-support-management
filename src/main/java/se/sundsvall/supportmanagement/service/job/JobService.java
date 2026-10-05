@@ -75,9 +75,11 @@ public class JobService {
 	 * carries a transaction of its own regardless of what, if anything, is open in the caller.
 	 * <p>
 	 * Flushed rather than merely saved, so that a namespace-scoped DB constraint a caller relies on to close a
-	 * check-then-act race against its own precheck (see {@code V1_61__add_active_job_guard.sql}) is violated
-	 * here, inside this call's own transaction, rather than staying unflushed until some later point picks the
-	 * failure up out of context.
+	 * check-then-act race against its own precheck (see {@code V1_63__add_active_label_job_guard.sql}, which covers
+	 * all three label-tree job types together - the per-type guards it supersedes, {@code V1_60}/{@code V1_61}/
+	 * {@code V1_62}, are still in the schema but redundant once it is in place) is violated here, inside this
+	 * method's own transaction, rather than staying unflushed until some later point picks the failure up out of
+	 * context.
 	 */
 	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String subjectId) {
 		try {
@@ -88,8 +90,8 @@ public class JobService {
 				.withTotal(total)
 				.withSubjectId(subjectId)).getId();
 		} catch (final DataIntegrityViolationException e) {
-			// The only unique constraint this table carries besides its primary key - a second request that raced the
-			// precheck above and lost is answered the same way a sequential one already is.
+			// Every unique constraint this table carries besides its primary key answers a racing caller the same way -
+			// a second request that raced the precheck above and lost is told the same thing a sequential one already is.
 			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
 		}
 	}

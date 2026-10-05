@@ -97,12 +97,31 @@ public class EventService {
 	 * executed by nobody. The caller is expected to have captured it from the request thread that accepted the move.
 	 */
 	public void createLabelMoveEvent(final String municipalityId, final String labelId, final String startedBy, final String message) {
+		createLabelOperationEvent(municipalityId, labelId, startedBy, message, "label move");
+	}
+
+	/**
+	 * Logs a single, aggregated entry for a label merge, against the destination label's id - mirrors
+	 * {@link #createLabelMoveEvent} for the same reasons: no single errand's revision history is what this is about,
+	 * and {@code startedBy} is taken as a parameter since this too runs from the background thread carrying the merge
+	 * out.
+	 */
+	public void createLabelMergeEvent(final String municipalityId, final String targetLabelId, final String startedBy, final String message) {
+		createLabelOperationEvent(municipalityId, targetLabelId, startedBy, message, "label merge");
+	}
+
+	/**
+	 * Shared by {@link #createLabelMoveEvent}/{@link #createLabelMergeEvent} - the two differ only in which operation
+	 * a failure to log is reported as, and which label id the entry is logged against, not in how the entry itself is
+	 * built or that logging it is best-effort.
+	 */
+	private void createLabelOperationEvent(final String municipalityId, final String labelId, final String startedBy, final String message, final String operationName) {
 		final var executedBy = toExecutedBy(startedBy);
 		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), executedBy, SYSTEM.getValue(), getRequestGroupId());
 		try {
 			eventLogClient.createEvent(municipalityId, labelId, event);
 		} catch (final Exception e) {
-			LOG.warn("Failed to create event log entry for label move {}: {}", sanitizeForLogging(labelId), sanitizeForLogging(e.getMessage()));
+			LOG.warn("Failed to create event log entry for {} {}: {}", operationName, sanitizeForLogging(labelId), sanitizeForLogging(e.getMessage()));
 		}
 	}
 

@@ -33,8 +33,14 @@ import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureRequest;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStep;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepResult;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
@@ -83,7 +89,12 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
+import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.MERGE;
+import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.MOVE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MERGE_LABELS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.RESTRUCTURE_LABEL_TREE;
+import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurpose;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toAttachmentPurposeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toCategory;
@@ -127,9 +138,11 @@ public class MetadataService {
 	private static final String ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID = "%s '%s' is not present in namespace '%s' for municipalityId '%s'";
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
-	private static final String MOVE_ALREADY_IN_PROGRESS = "A job is already running for namespace '%s' in municipality with id '%s'";
+	private static final String ACTIVE_JOB_IN_NAMESPACE = "A job is already running for namespace '%s' in municipality with id '%s'";
 	private static final String TOO_MANY_AFFECTED_ERRANDS = "Move affects %d errand(s), exceeding the maximum of %d allowed in one move";
 	private static final String COULD_NOT_START = "Label move could not be started: %s";
+	private static final String COULD_NOT_START_MERGE = "Label merge could not be started: %s";
+	private static final String COULD_NOT_START_RESTRUCTURE = "Label tree restructure could not be started: %s";
 	private static final String UNKNOWN_CALLER = "unknown";
 	private static final int RESOURCE_PATH_MAX_LENGTH = 255;
 
@@ -164,7 +177,10 @@ public class MetadataService {
 	private final ContactReasonRepository contactReasonRepository;
 	private final JobService jobService;
 	private final LabelMoveRunner labelMoveRunner;
+	private final LabelMergeWorker labelMergeWorker;
+	private final LabelTreeRestructureWorker labelTreeRestructureWorker;
 	private final AsyncTaskExecutor labelMoveTaskExecutor;
+	private final LabelClassificationService labelClassificationService;
 	private final AntPathMatcher pathMatcher;
 	private final TransactionTemplate readOnlyTransactionTemplate;
 	private final Duration jobStaleAfter;
@@ -191,7 +207,12 @@ public class MetadataService {
 		// -> MetadataService, a cycle back to this very bean. Never actually needed before the async dispatch fires, by
 		// which point every bean in the cycle is already constructed.
 		@Lazy final LabelMoveRunner labelMoveRunner,
+		// Same cycle, same reason: LabelMergeWorker also sits behind ErrandService.
+		@Lazy final LabelMergeWorker labelMergeWorker,
+		// Same cycle, same reason: LabelTreeRestructureWorker itself calls into LabelMoveWorker/LabelMergeWorker.
+		@Lazy final LabelTreeRestructureWorker labelTreeRestructureWorker,
 		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor,
+		final LabelClassificationService labelClassificationService,
 		final PlatformTransactionManager transactionManager,
 		final JobProperties jobProperties,
 		final LabelMoveProperties labelMoveProperties) {
@@ -212,7 +233,10 @@ public class MetadataService {
 		this.contactReasonRepository = contactReasonRepository;
 		this.jobService = jobService;
 		this.labelMoveRunner = labelMoveRunner;
+		this.labelMergeWorker = labelMergeWorker;
+		this.labelTreeRestructureWorker = labelTreeRestructureWorker;
 		this.labelMoveTaskExecutor = labelMoveTaskExecutor;
+		this.labelClassificationService = labelClassificationService;
 		this.pathMatcher = new AntPathMatcher();
 		this.pathMatcher.setCaseSensitive(false);
 		this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
@@ -432,7 +456,9 @@ public class MetadataService {
 	}
 
 	public Labels findLabels(final String namespace, final String municipalityId) {
-		return toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
+		final var labels = toLabels(metadataLabelRepository.findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId));
+		ofNullable(labels).ifPresent(l -> applyClassificationDisplayNames(l.getLabelStructure(), labelClassificationService.getClassificationDisplayNames(namespace, municipalityId)));
+		return labels;
 	}
 
 	public boolean labelExistsById(final String id, final String namespace, final String municipalityId) {
@@ -444,6 +470,12 @@ public class MetadataService {
 		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
 		var allMovedIds = collectMovedLabelIds(context.labelToMove().getId(), context.descendants());
 
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
+		var affectedActions = actionsReferencing(actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId), allMovedIds);
+
+		return LabelMoveDryRunResponse.create()
+			.withAffectedErrandCount(affectedErrandCount)
+			.withAffectedActions(affectedActions);
 		var affectedErrandIds = errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(allMovedIds);
 		var affectedActions = resolveAffectedActions(namespace, municipalityId, allMovedIds);
 
@@ -469,11 +501,14 @@ public class MetadataService {
 	/**
 	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
 	 * <p>
-	 * Refused if another job is genuinely still under way for the namespace, not just for this label — two moves in
-	 * the same namespace can target overlapping subtrees (one label and one of its own descendants, or a label and the
-	 * destination it is headed into) without either id matching the other, so a check scoped to this label alone would
-	 * let them run at the same time and race on the same errands. Namespace-wide serialization costs nothing here,
-	 * since label moves are rare.
+	 * Refused if another job is genuinely still under way for the namespace, not just for this label and not just for
+	 * moves — two moves in the same namespace can target overlapping subtrees (one label and one of its own
+	 * descendants, or a label and the destination it is headed into) without either id matching the other, so a check
+	 * scoped to this label alone would let them run at the same time and race on the same errands. And a merge or a
+	 * restructure run touches labels the same way a move does, so a check scoped to {@code MOVE_LABEL} alone would let
+	 * this run alongside one of those and race the same tree just as easily — hence the type-agnostic
+	 * {@link JobService#hasActiveJob(String, String)}, mirroring {@link #startLabelTreeRestructure}. Namespace-wide
+	 * serialization costs nothing here, since label moves are rare.
 	 * <p>
 	 * "Genuinely" matters: {@link JobService#stealStaleLease} is asked rather than {@link JobService#hasActiveJob}, so
 	 * a job whose instance died mid-run does not go on blocking the namespace for as long as
@@ -494,7 +529,7 @@ public class MetadataService {
 		var context = readOnlyTransactionTemplate.execute(status -> validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId()));
 		var canonicalLabelId = context.labelToMove().getId();
 
-		if (!jobService.stealStaleLease(namespace, municipalityId, MOVE_LABEL, jobStaleAfter)) {
+		if (jobService.hasActiveJob(namespace, municipalityId, MOVE_LABEL)) {
 			throw Problem.valueOf(CONFLICT, MOVE_ALREADY_IN_PROGRESS.formatted(namespace, municipalityId));
 		}
 
@@ -585,13 +620,13 @@ public class MetadataService {
 		validateNoCycle(labelToMove.getId(), newParent);
 
 		var newPath = newParent != null
-			? newParent.getResourcePath() + "/" + labelToMove.getResourceName()
+			? newParent.getResourcePath() + LabelTreeSnapshot.SEPARATOR + labelToMove.getResourceName()
 			: labelToMove.getResourceName();
 
 		validatePathNotTaken(namespace, municipalityId, labelToMove.getId(), newPath);
 
 		var descendants = metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(
-			namespace, municipalityId, labelToMove.getResourcePath() + "/");
+			namespace, municipalityId, labelToMove.getResourcePath() + LabelTreeSnapshot.SEPARATOR);
 
 		validateNoDescendantPathCollision(namespace, municipalityId, labelToMove, newPath, descendants);
 		validateResourcePathLength(labelToMove, newPath, descendants);
@@ -688,11 +723,102 @@ public class MetadataService {
 		}
 	}
 
-	private static boolean isAffectedByMove(final ActionConfigEntity action, final Set<String> movedLabelIds) {
+	/**
+	 * Whether an action has a {@code hasLabel} condition naming any of the given label ids - shared by the move and
+	 * merge dry-runs, each of which asks it about the set of label ids their own operation would affect.
+	 */
+	private static boolean referencesAnyLabel(final ActionConfigEntity action, final Set<String> labelIds) {
 		return action.getConditions().stream()
 			.filter(c -> HAS_LABEL.equals(c.getKey()))
 			.flatMap(c -> c.getValues().stream())
-			.anyMatch(movedLabelIds::contains);
+			.anyMatch(labelIds::contains);
+	}
+
+	@Transactional(readOnly = true)
+	public LabelMergeDryRunResponse mergeLabels(final String namespace, final String municipalityId, final String targetLabelId, final LabelMergeRequest request) {
+		var context = validateAndFindLabelsToMerge(namespace, municipalityId, targetLabelId, request.getSourceLabelIds());
+
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(context.sourceIds());
+		var affectedActions = actionsReferencing(actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId), context.sourceIds());
+
+		return LabelMergeDryRunResponse.create()
+			.withAffectedErrandCount(affectedErrandCount)
+			.withAffectedActions(affectedActions);
+	}
+
+	/**
+	 * Starts a label merge as an asynchronous job, reported through {@code GET .../jobs/{jobId}}. Mirrors
+	 * {@link #startLabelMove} - refused outright if another job is already under way for the namespace, not just
+	 * another merge (for the same reason the move guard is type-agnostic: a move or a restructure run touches labels
+	 * the same way a merge does, and could race the same tree), and validation, job creation and dispatch are kept as
+	 * three separate steps rather than one enclosing transaction, for the same reasons given there.
+	 */
+	public JobResponse startLabelMerge(final String namespace, final String municipalityId, final String targetLabelId, final LabelMergeRequest request) {
+		var context = readOnlyTransactionTemplate.execute(status -> validateAndFindLabelsToMerge(namespace, municipalityId, targetLabelId, request.getSourceLabelIds()));
+
+		if (jobService.hasActiveJob(namespace, municipalityId)) {
+			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
+		}
+
+		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(context.sourceIds());
+		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
+		// worker dispatched right after is free to look the job up from another thread.
+		var jobId = jobService.create(namespace, municipalityId, MERGE_LABELS, (int) affectedErrandCount, context.targetId());
+		var startedBy = startedBy();
+
+		try {
+			labelMoveTaskExecutor.execute(() -> labelMergeWorker.run(new LabelMergeRun(jobId, namespace, municipalityId, context.targetId(), context.sourceIds(), startedBy)));
+		} catch (final Exception e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			jobService.fail(jobId, COULD_NOT_START_MERGE.formatted(e.getMessage()));
+
+			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START_MERGE.formatted(e.getMessage()));
+		}
+
+		return jobService.get(namespace, municipalityId, jobId);
+	}
+
+	/**
+	 * The destination label together with the source ids being merged into it - read once by
+	 * {@link #validateAndFindLabelsToMerge} and reused by both callers, mirrors {@link LabelMoveContext}.
+	 */
+	private record LabelMergeContext(String targetId, Set<String> sourceIds) {
+	}
+
+	/**
+	 * v1 scope is deliberately narrow: both the destination and every source must be leaf labels (no children). Every
+	 * real consolidation this exists for merges leaf-level categories; broadening to subtrees is not needed yet and
+	 * would have to decide how descendants of several sources fold together, which a leaf-only merge sidesteps
+	 * entirely.
+	 */
+	private LabelMergeContext validateAndFindLabelsToMerge(final String namespace, final String municipalityId, final String targetLabelId, final List<String> requestedSourceIds) {
+		var target = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(targetLabelId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, targetLabelId, namespace, municipalityId)));
+		validateIsLeaf(namespace, municipalityId, target);
+
+		// Built from each looked-up label's own stored id, never from the raw strings the client sent: a source id
+		// differing from the target's only in case would otherwise still resolve to the very same row below (a
+		// case-insensitive id lookup/collation) while failing the self-merge check above it, which compares the raw
+		// string against target.getId() verbatim - letting the destination label itself slip into sourceIds and, once
+		// every real source is restowed away, get deleted right along with them.
+		var sourceIds = requestedSourceIds.stream()
+			.map(sourceId -> metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(sourceId, namespace, municipalityId)
+				.orElseThrow(() -> Problem.valueOf(BAD_REQUEST, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, sourceId, namespace, municipalityId))))
+			.peek(source -> validateIsLeaf(namespace, municipalityId, source))
+			.map(MetadataLabelEntity::getId)
+			.collect(toSet());
+
+		if (sourceIds.contains(target.getId())) {
+			throw Problem.valueOf(BAD_REQUEST, "Label '%s' cannot be merged into itself".formatted(target.getId()));
+		}
+
+		return new LabelMergeContext(target.getId(), sourceIds);
+	}
+
+	private void validateIsLeaf(final String namespace, final String municipalityId, final MetadataLabelEntity label) {
+		if (metadataLabelRepository.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(namespace, municipalityId, label.getResourcePath() + LabelTreeSnapshot.SEPARATOR)) {
+			throw Problem.valueOf(BAD_REQUEST, "Label '%s' has children and cannot take part in a merge".formatted(label.getId()));
+		}
 	}
 
 	public boolean hasLabels(final String namespace, final String municipalityId) {
@@ -746,6 +872,281 @@ public class MetadataService {
 			.filter(entity -> resourcePathPatterns.stream()
 				.anyMatch(pattern -> pathMatcher.match(pattern, entity.getResourcePath())))
 			.collect(Collectors.toSet());
+	}
+
+	// =================================================================
+	// Label tree restructure operations
+	// =================================================================
+
+	/**
+	 * Validates and reports the effect of every step in {@code request} without making any change - mirrors
+	 * {@link #moveLabel}/{@link #mergeLabels}.
+	 */
+	@Transactional(readOnly = true)
+	public LabelRestructureDryRunResponse restructureLabelTree(final String namespace, final String municipalityId, final LabelRestructureRequest request) {
+		final var results = simulateSteps(namespace, municipalityId, request.getSteps());
+		final var total = results.stream().mapToLong(LabelRestructureStepResult::getAffectedErrandCount).sum();
+
+		return LabelRestructureDryRunResponse.create()
+			.withTotalAffectedErrandCount(total)
+			.withSteps(results);
+	}
+
+	/**
+	 * Starts a label-tree restructure as an asynchronous job, reported through {@code GET .../jobs/{jobId}}. Mirrors
+	 * {@link #startLabelMove}/{@link #startLabelMerge}: validation (here, the same step-by-step simulation
+	 * {@link #restructureLabelTree} uses, so every step is checked up front rather than discovered mid-run), job
+	 * creation and dispatch are kept as separate steps rather than one enclosing transaction, for the same reasons
+	 * given there.
+	 * <p>
+	 * Guarded by the type-agnostic {@link JobService#hasActiveJob(String, String)} rather than one scoped to
+	 * {@code RESTRUCTURE_LABEL_TREE} - a restructure carries out many moves and merges over the course of one run, so it
+	 * must not be started alongside a lone {@code MOVE_LABEL}/{@code MERGE_LABELS} job racing the same tree either.
+	 * {@link #startLabelMove}/{@link #startLabelMerge} guard the other direction the same way.
+	 */
+	public JobResponse startLabelTreeRestructure(final String namespace, final String municipalityId, final LabelRestructureRequest request) {
+		final var results = simulateSteps(namespace, municipalityId, request.getSteps());
+
+		if (jobService.hasActiveJob(namespace, municipalityId)) {
+			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
+		}
+
+		final var estimatedTotal = (int) results.stream().mapToLong(LabelRestructureStepResult::getAffectedErrandCount).sum();
+		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
+		// worker dispatched right after is free to look the job up from another thread.
+		final var jobId = jobService.create(namespace, municipalityId, RESTRUCTURE_LABEL_TREE, estimatedTotal);
+		final var startedBy = startedBy();
+
+		try {
+			labelMoveTaskExecutor.execute(() -> labelTreeRestructureWorker.run(new LabelRestructureRun(jobId, namespace, municipalityId, request.getSteps(), startedBy)));
+		} catch (final Exception e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			jobService.fail(jobId, COULD_NOT_START_RESTRUCTURE.formatted(e.getMessage()));
+
+			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START_RESTRUCTURE.formatted(e.getMessage()));
+		}
+
+		return jobService.get(namespace, municipalityId, jobId);
+	}
+
+	/**
+	 * Walks {@code steps} in order against a {@link LabelTreeSnapshot} built once from the namespace's current label
+	 * tree, so that a step referencing a label an earlier step in this same list added or moved resolves against what
+	 * that earlier step did, not against what is actually persisted yet. Used both for a pure dry-run
+	 * ({@link #restructureLabelTree}) and as {@link #startLabelTreeRestructure}'s up-front validation pass - neither
+	 * call persists anything itself, that is {@code LabelTreeRestructureWorker}'s job once a run is actually dispatched.
+	 */
+	private List<LabelRestructureStepResult> simulateSteps(final String namespace, final String municipalityId, final List<LabelRestructureStep> steps) {
+		final var snapshot = LabelTreeSnapshot.of(metadataLabelRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId));
+		// Fetched once up front, rather than once per MOVE/MERGE step - every step in the same request asks the same
+		// namespace the same question, and fetched at all only when some step actually needs it.
+		final var needsActions = steps.stream().anyMatch(step -> (step.getType() == MOVE) || (step.getType() == MERGE));
+		final var actions = needsActions ? actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId) : List.<ActionConfigEntity>of();
+		final var results = new ArrayList<LabelRestructureStepResult>();
+
+		for (var index = 0; index < steps.size(); index++) {
+			results.add(simulateStep(snapshot, actions, steps.get(index), index));
+		}
+
+		return results;
+	}
+
+	private LabelRestructureStepResult simulateStep(final LabelTreeSnapshot snapshot, final List<ActionConfigEntity> actions, final LabelRestructureStep step, final int index) {
+		return switch (step.getType()) {
+			case ADD -> simulateAdd(snapshot, step, index);
+			case RENAME -> simulateRename(snapshot, step, index);
+			case DELETE -> simulateDelete(snapshot, step, index);
+			case MOVE -> simulateMove(snapshot, actions, step, index);
+			case MERGE -> simulateMerge(snapshot, actions, step, index);
+		};
+	}
+
+	private static LabelRestructureStepResult stepResult(final LabelRestructureStep step, final int index, final long affectedErrandCount, final List<AffectedAction> affectedActions) {
+		return LabelRestructureStepResult.create()
+			.withIndex(index)
+			.withType(step.getType())
+			.withPath(step.getPath())
+			.withAffectedErrandCount(affectedErrandCount)
+			.withAffectedActions(affectedActions);
+	}
+
+	/**
+	 * Never affects an existing errand - a label freshly added by this step cannot be referenced by anything yet.
+	 * A no-op (this step's path already exists) is not an error - resubmitting a request whose earlier steps already
+	 * ran must be safe, mirroring the reference {@code ange_kommun_category_restructure.py} runbook's own
+	 * "skip add, already present" behaviour.
+	 */
+	private LabelRestructureStepResult simulateAdd(final LabelTreeSnapshot snapshot, final LabelRestructureStep step, final int index) {
+		final var path = LabelTreeSnapshot.join(step.getPath());
+
+		if (!snapshot.exists(path)) {
+			final var parentPath = LabelTreeSnapshot.join(LabelTreeSnapshot.allButLast(step.getPath()));
+			if (!snapshot.exists(parentPath)) {
+				throw Problem.valueOf(BAD_REQUEST, "Step %d (ADD): parent path '%s' does not exist".formatted(index, parentPath));
+			}
+			rejectIfTooLong(path);
+			snapshot.recordAdd(path, null);
+		}
+
+		return stepResult(step, index, 0, emptyList());
+	}
+
+	/**
+	 * Never restows anything or changes an action's conditions - the id and resourceName a merge/move/action condition
+	 * would reference are untouched by a display-name-only rename.
+	 */
+	private LabelRestructureStepResult simulateRename(final LabelTreeSnapshot snapshot, final LabelRestructureStep step, final int index) {
+		final var path = LabelTreeSnapshot.join(step.getPath());
+		if (!snapshot.exists(path)) {
+			throw Problem.valueOf(NOT_FOUND, "Step %d (RENAME): label at path '%s' does not exist".formatted(index, path));
+		}
+
+		return stepResult(step, index, 0, emptyList());
+	}
+
+	/**
+	 * Mirrors the errand-reference guard {@link #updateLabels} already applies, and the "never deleted blindly, only
+	 * once actually empty" caution the reference runbook's cleanup step follows - a DELETE step for a category emptied
+	 * by earlier steps in the same request only succeeds once those earlier steps have already emptied it.
+	 */
+	private LabelRestructureStepResult simulateDelete(final LabelTreeSnapshot snapshot, final LabelRestructureStep step, final int index) {
+		final var path = LabelTreeSnapshot.join(step.getPath());
+		if (!snapshot.exists(path)) {
+			throw Problem.valueOf(NOT_FOUND, "Step %d (DELETE): label at path '%s' does not exist".formatted(index, path));
+		}
+		if (!snapshot.isLeaf(path)) {
+			throw Problem.valueOf(BAD_REQUEST, "Step %d (DELETE): label at path '%s' still has children".formatted(index, path));
+		}
+
+		// accessLabels, not labels: labels carries the full ancestor chain, so an errand tagged with a child this path
+		// used to have would still show up against this path's own id there even after an earlier step in this same
+		// request already moved that child elsewhere - accessLabels holds only an errand's own leaf tags, which earlier
+		// steps already elsewhere in the tree do not touch. realIdsAtOrUnder rather than a plain idAt, so an id an
+		// earlier MERGE step folded into this exact (leaf) path is still asked about too.
+		final var realIds = snapshot.realIdsAtOrUnder(path);
+		if (!realIds.isEmpty() && errandsRepository.existsByAccessLabelsMetadataLabelIdIn(realIds)) {
+			throw Problem.valueOf(BAD_REQUEST, "Step %d (DELETE): label at path '%s' is referenced by one or more errands".formatted(index, path));
+		}
+
+		snapshot.recordDelete(path);
+		return stepResult(step, index, 0, emptyList());
+	}
+
+	private LabelRestructureStepResult simulateMove(final LabelTreeSnapshot snapshot, final List<ActionConfigEntity> actions, final LabelRestructureStep step, final int index) {
+		final var sourcePath = LabelTreeSnapshot.join(step.getPath());
+		if (!snapshot.exists(sourcePath)) {
+			throw Problem.valueOf(NOT_FOUND, "Step %d (MOVE): label at path '%s' does not exist".formatted(index, sourcePath));
+		}
+
+		final var destinationParentSegments = ofNullable(step.getDestinationParentPath()).orElse(emptyList());
+		final var destinationParentPath = LabelTreeSnapshot.join(destinationParentSegments);
+		if (!snapshot.exists(destinationParentPath)) {
+			throw Problem.valueOf(BAD_REQUEST, "Step %d (MOVE): destination parent path '%s' does not exist".formatted(index, destinationParentPath));
+		}
+
+		final var newResourceName = ofNullable(step.getNewResourceName()).orElseGet(() -> LabelTreeSnapshot.lastSegment(step.getPath()));
+		final var newPath = destinationParentPath.isEmpty() ? newResourceName : destinationParentPath + LabelTreeSnapshot.SEPARATOR + newResourceName;
+		final var currentParentPath = LabelTreeSnapshot.join(LabelTreeSnapshot.allButLast(step.getPath()));
+
+		if (currentParentPath.equals(destinationParentPath) && newResourceName.equals(LabelTreeSnapshot.lastSegment(step.getPath()))) {
+			throw Problem.valueOf(BAD_REQUEST, "Step %d (MOVE): label at path '%s' is already at that destination - move would be a no-op".formatted(index, sourcePath));
+		}
+		if (newPath.equals(sourcePath) || destinationParentPath.equals(sourcePath) || destinationParentPath.startsWith(sourcePath + LabelTreeSnapshot.SEPARATOR)) {
+			throw Problem.valueOf(BAD_REQUEST, "Step %d (MOVE): moving '%s' under '%s' would create a cycle".formatted(index, sourcePath, destinationParentPath));
+		}
+		if (snapshot.exists(newPath)) {
+			throw Problem.valueOf(CONFLICT, "Step %d (MOVE): a label already exists at destination path '%s'".formatted(index, newPath));
+		}
+		rejectIfTooLong(newPath);
+		validateDescendantPathsAfterMove(snapshot, sourcePath, newPath, index);
+
+		final var realIds = snapshot.realIdsAtOrUnder(sourcePath);
+		final var affected = affectedBy(realIds, actions);
+
+		snapshot.recordMove(sourcePath, newPath);
+		return stepResult(step, index, affected.errandCount(), affected.actions());
+	}
+
+	/**
+	 * A descendant's resulting path can collide or overflow just as easily as the moved label's own, since both land
+	 * under a destination neither of them has occupied before - checked here the same way
+	 * {@link #validateNoDescendantPathCollision}/{@link #validateResourcePathLength} check it for the standalone move
+	 * endpoint, so a dry run and the up-front validation {@link #startLabelTreeRestructure} runs before dispatching a
+	 * worker cannot report success on a step that would later fail mid-run against the DB's own path constraints.
+	 */
+	private void validateDescendantPathsAfterMove(final LabelTreeSnapshot snapshot, final String sourcePath, final String newPath, final int index) {
+		final var oldPrefixLength = sourcePath.length();
+		for (final var descendantPath : snapshot.descendantPathsUnder(sourcePath)) {
+			final var rebasedPath = newPath + descendantPath.substring(oldPrefixLength);
+			rejectIfTooLong(rebasedPath);
+			if (snapshot.exists(rebasedPath)) {
+				throw Problem.valueOf(CONFLICT, "Step %d (MOVE): moving '%s' would collide with an existing label at '%s'".formatted(index, sourcePath, rebasedPath));
+			}
+		}
+	}
+
+	private LabelRestructureStepResult simulateMerge(final LabelTreeSnapshot snapshot, final List<ActionConfigEntity> actions, final LabelRestructureStep step, final int index) {
+		final var targetPath = LabelTreeSnapshot.join(step.getPath());
+		if (!snapshot.exists(targetPath)) {
+			throw Problem.valueOf(NOT_FOUND, "Step %d (MERGE): destination label at path '%s' does not exist".formatted(index, targetPath));
+		}
+		if (!snapshot.isLeaf(targetPath)) {
+			throw Problem.valueOf(BAD_REQUEST, "Step %d (MERGE): destination label at path '%s' has children and cannot take part in a merge".formatted(index, targetPath));
+		}
+
+		final var sourcePaths = step.getSourcePaths().stream().map(LabelTreeSnapshot::join).toList();
+		if (sourcePaths.contains(targetPath)) {
+			throw Problem.valueOf(BAD_REQUEST, "Step %d (MERGE): label at path '%s' cannot be merged into itself".formatted(index, targetPath));
+		}
+		sourcePaths.forEach(sourcePath -> {
+			if (!snapshot.exists(sourcePath)) {
+				throw Problem.valueOf(BAD_REQUEST, "Step %d (MERGE): source label at path '%s' does not exist".formatted(index, sourcePath));
+			}
+			if (!snapshot.isLeaf(sourcePath)) {
+				throw Problem.valueOf(BAD_REQUEST, "Step %d (MERGE): source label at path '%s' has children and cannot take part in a merge".formatted(index, sourcePath));
+			}
+		});
+
+		// realIdsAtOrUnder rather than idAt: a source path targeted by an earlier MERGE step in this same request may
+		// itself already carry along ids folded into it from a still-earlier source - see LabelTreeSnapshot's own doc.
+		final var realSourceIds = sourcePaths.stream().flatMap(sourcePath -> snapshot.realIdsAtOrUnder(sourcePath).stream()).collect(toSet());
+		final var affected = affectedBy(realSourceIds, actions);
+
+		snapshot.recordMerge(targetPath, sourcePaths);
+		return stepResult(step, index, affected.errandCount(), affected.actions());
+	}
+
+	/**
+	 * How many errands and which actions {@code labelIds} affects - shared by {@link #simulateMove}/
+	 * {@link #simulateMerge}, which each ask it about the set of real (persisted) label ids their own step would
+	 * touch. A set built entirely from labels an earlier {@code ADD} step in the same request created has no real ids
+	 * to ask the database about yet, hence the short-circuit rather than querying with an empty set.
+	 */
+	private AffectedLabels affectedBy(final Set<String> labelIds, final List<ActionConfigEntity> actions) {
+		if (labelIds.isEmpty()) {
+			return new AffectedLabels(0L, List.of());
+		}
+		return new AffectedLabels(errandsRepository.countDistinctByLabelsMetadataLabelIdIn(labelIds), actionsReferencing(actions, labelIds));
+	}
+
+	private record AffectedLabels(long errandCount, List<AffectedAction> actions) {
+	}
+
+	/**
+	 * Shared by {@link #simulateMove}/{@link #simulateMerge} - both need "which of this namespace's actions have a
+	 * hasLabel condition naming any of these ids", the same question {@link #moveLabel}/{@link #mergeLabels} already
+	 * ask via {@link #referencesAnyLabel} for the standalone endpoints. Filters {@code actions} rather than querying
+	 * the namespace itself, since {@link #simulateSteps} already fetched it once for the whole request - a restructure
+	 * with several MOVE/MERGE steps must not re-run that same namespace-wide query once per step.
+	 */
+	private static List<AffectedAction> actionsReferencing(final List<ActionConfigEntity> actions, final Set<String> labelIds) {
+		return actions.stream()
+			.filter(action -> referencesAnyLabel(action, labelIds))
+			.map(action -> AffectedAction.create()
+				.withId(action.getId())
+				.withName(action.getName())
+				.withDisplayValue(action.getDisplayValue()))
+			.toList();
 	}
 
 	// =================================================================

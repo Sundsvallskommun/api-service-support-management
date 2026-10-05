@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "A job is already running for namespace 'NAMESPACE-1' in municipality with id '2281'"
+}

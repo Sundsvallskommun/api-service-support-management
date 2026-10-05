@@ -1,0 +1,57 @@
+{
+	"totalAffectedErrandCount": 2,
+	"steps": [
+		{
+			"index": 0,
+			"type": "ADD",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_TYPE",
+				"NEW_SUBTYPE"
+			],
+			"affectedErrandCount": 0,
+			"affectedActions": []
+		},
+		{
+			"index": 1,
+			"type": "MOVE",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_TYPE",
+				"TEST_SUBTYPE_OLD"
+			],
+			"affectedErrandCount": 1,
+			"affectedActions": []
+		},
+		{
+			"index": 2,
+			"type": "RENAME",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_RENAME_ME"
+			],
+			"affectedErrandCount": 0,
+			"affectedActions": []
+		},
+		{
+			"index": 3,
+			"type": "DELETE",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_SUBTYPE_DELETE"
+			],
+			"affectedErrandCount": 0,
+			"affectedActions": []
+		},
+		{
+			"index": 4,
+			"type": "MERGE",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_MERGE_TARGET"
+			],
+			"affectedErrandCount": 1,
+			"affectedActions": []
+		}
+	]
+}

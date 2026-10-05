@@ -475,6 +475,7 @@ class MetadataServiceMoveLabelTest {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
 			.thenReturn(List.of());
 		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER)).thenReturn(false);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false)))
@@ -483,6 +484,8 @@ class MetadataServiceMoveLabelTest {
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock, never()).countDistinctByLabelsMetadataLabelIdIn(any());
 		verify(jobServiceMock).stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER);
 		verify(errandsRepositoryMock, never()).findDistinctIdsByLabelsMetadataLabelIdIn(any());
 	}
@@ -500,7 +503,7 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.empty());
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
 			.thenReturn(List.of());
-		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER)).thenReturn(false);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL)).thenReturn(true);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false)))
@@ -511,8 +514,8 @@ class MetadataServiceMoveLabelTest {
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
-		verify(jobServiceMock).stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER);
-		verify(errandsRepositoryMock, never()).findDistinctIdsByLabelsMetadataLabelIdIn(any());
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL);
+		verify(errandsRepositoryMock, never()).countDistinctByLabelsMetadataLabelIdIn(any());
 	}
 
 	@Test
@@ -551,9 +554,11 @@ class MetadataServiceMoveLabelTest {
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
-		verify(jobServiceMock).stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER);
-		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
-		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL);
+		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
+		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3, LABEL_ID);
+		verify(labelMoveTaskExecutorMock).execute(any());
+		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
 	}
 
 	@Test
@@ -567,11 +572,21 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.of(label));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD"))
 			.thenReturn(Optional.empty());
-		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER)).thenReturn(true);
-		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(List.of("errand-1", "errand-2", "errand-3"));
-		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(actionWithLabel));
-		when(jobServiceMock.launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3, LABEL_ID)), eq(labelMoveTaskExecutorMock), any(), any(), eq(COULD_NOT_START)))
-			.thenReturn(jobResponse);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL)).thenReturn(false);
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
+			.thenReturn(List.of());
+		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(0L);
+		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 0, LABEL_ID)).thenReturn("job-id");
+		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(JobResponse.create().withJobId("job-id"));
+		doAnswer(invocation -> {
+			((Runnable) invocation.getArgument(0)).run();
+			return null;
+		}).when(labelMoveTaskExecutorMock).execute(any());
+		doAnswer(invocation -> {
+			handled.add(invocation.getArgument(0));
+			return null;
+		}).when(labelMoveWorkerMock).run(any());
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
 
 		var result = service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false));
 
@@ -580,10 +595,12 @@ class MetadataServiceMoveLabelTest {
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
-		verify(jobServiceMock).stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER);
-		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
-		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
-		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 3, LABEL_ID)), eq(labelMoveTaskExecutorMock), any(), any(), eq(COULD_NOT_START));
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL);
+		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
+		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 0, LABEL_ID);
+		verify(labelMoveTaskExecutorMock).execute(any());
+		verify(labelMoveWorkerMock).run(any());
+		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
 	}
 
 	@Test
@@ -596,7 +613,7 @@ class MetadataServiceMoveLabelTest {
 			.thenReturn(Optional.of(label));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD"))
 			.thenReturn(Optional.empty());
-		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER)).thenReturn(true);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL)).thenReturn(false);
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/"))
 			.thenReturn(List.of());
 		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID))).thenReturn(List.of());
@@ -629,9 +646,10 @@ class MetadataServiceMoveLabelTest {
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "PARENT/CHILD/");
-		verify(jobServiceMock).stealStaleLease(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, STALE_AFTER);
-		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
-		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL);
+		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(LABEL_ID));
+		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 0, LABEL_ID);
+		verify(jobServiceMock).fail("job-id", "Label move could not be started: No thread available");
 	}
 
 	@AfterEach

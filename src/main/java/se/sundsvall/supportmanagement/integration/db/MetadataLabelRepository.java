@@ -27,4 +27,9 @@ public interface MetadataLabelRepository extends JpaRepository<MetadataLabelEnti
 	Optional<MetadataLabelEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	List<MetadataLabelEntity> findByNamespaceAndMunicipalityIdAndResourcePathStartingWith(String namespace, String municipalityId, String resourcePathPrefix);
+
+	// A leaf check needs only to know whether a descendant exists, not to load every one of them - this is what
+	// MetadataService#validateIsLeaf asks, where the full list findByNamespaceAndMunicipalityIdAndResourcePathStartingWith
+	// returns was being discarded immediately after a single isEmpty() check.
+	boolean existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(String namespace, String municipalityId, String resourcePathPrefix);
 }

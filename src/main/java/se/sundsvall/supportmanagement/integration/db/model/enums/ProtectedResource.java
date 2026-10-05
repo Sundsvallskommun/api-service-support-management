@@ -39,6 +39,7 @@ public enum ProtectedResource {
 	METADATA_DECISION_OUTCOME("metadata/decision-outcome"),
 	METADATA_EXTERNAL_ID_TYPE("metadata/external-id-type"),
 	METADATA_LABEL("metadata/label"),
+	METADATA_LABEL_CLASSIFICATION("metadata/label-classification"),
 	METADATA_MEASURE_TYPE("metadata/measure-type"),
 	METADATA_PHASE("metadata/phase"),
 	METADATA_ROLE("metadata/role"),
