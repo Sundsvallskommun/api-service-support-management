@@ -27,8 +27,12 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelAttributes;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelSiblings;
@@ -54,6 +58,8 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 @RequestMapping("/{municipalityId}/{namespace}/metadata/labels")
 @Tag(name = "Metadata for labels", description = "Label metadata operations")
 class MetadataLabelResource {
+
+	private static final String JOB_LOCATION_PATH = "/{municipalityId}/{namespace}/jobs/{jobId}";
 
 	private final MetadataService metadataService;
 	private final AccessControlService accessControlService;
@@ -133,7 +139,7 @@ class MetadataLabelResource {
 		}))),
 		@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "409",
-			description = "Conflict — path collision at destination, or a move for this label is already in progress",
+			description = "Conflict — path collision at destination, or a job is already running for this namespace",
 			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
@@ -151,7 +157,82 @@ class MetadataLabelResource {
 
 		final var job = metadataService.startLabelMove(namespace, municipalityId, labelId, request);
 		return accepted()
-			.header(LOCATION, fromPath("/{municipalityId}/{namespace}/jobs/{jobId}")
+			.header(LOCATION, fromPath(JOB_LOCATION_PATH)
+				.buildAndExpand(municipalityId, namespace, job.getJobId())
+				.toString())
+			.body(job);
+	}
+
+	@PostMapping(path = "/{labelId}/merge", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Merge labels",
+		description = "Validates merging one or more source labels into a destination label. When dryRun is true, returns the number of affected errands and actions without making any changes. When dryRun is false, starts the merge as an asynchronous job.",
+		responses = {
+			@ApiResponse(responseCode = "200", description = "Successful dry-run operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = LabelMergeDryRunResponse.class))),
+			@ApiResponse(responseCode = "202",
+				headers = @Header(name = LOCATION, schema = @Schema(type = "string")),
+				description = "Merge accepted and started as an asynchronous job",
+				content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = JobResponse.class))),
+			@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+				Problem.class, ConstraintViolationProblem.class
+			}))),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+			@ApiResponse(responseCode = "409",
+				description = "Conflict — a merge job is already running for this namespace",
+				content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+			@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		})
+	ResponseEntity<Object> mergeLabels(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Parameter(name = "labelId", description = "Destination label ID", example = "5f79a808-0ef3-4985-99b9-b12f23e202a7") @ValidUuid @PathVariable final String labelId,
+		@Valid @NotNull @RequestBody final LabelMergeRequest request) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
+
+		if (Boolean.TRUE.equals(request.getDryRun())) {
+			return ok(metadataService.mergeLabels(namespace, municipalityId, labelId, request));
+		}
+
+		final var job = metadataService.startLabelMerge(namespace, municipalityId, labelId, request);
+		return accepted()
+			.header(LOCATION, fromPath(JOB_LOCATION_PATH)
+				.buildAndExpand(municipalityId, namespace, job.getJobId())
+				.toString())
+			.body(job);
+	}
+
+	@PostMapping(path = "/restructure", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Restructure label tree",
+		description = "Validates an ordered sequence of add/rename/delete/move/merge steps. When dryRun is true, returns per-step affected counts without making any changes. When dryRun is false, starts the restructure as a single asynchronous job.",
+		responses = {
+			@ApiResponse(responseCode = "200", description = "Successful dry-run operation", content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = LabelRestructureDryRunResponse.class))),
+			@ApiResponse(responseCode = "202",
+				headers = @Header(name = LOCATION, schema = @Schema(type = "string")),
+				description = "Restructure accepted and started as an asynchronous job",
+				content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = JobResponse.class))),
+			@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+				Problem.class, ConstraintViolationProblem.class
+			}))),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+			@ApiResponse(responseCode = "409",
+				description = "Conflict — path collision at a step's destination, or a job is already running for this namespace",
+				content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+			@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		})
+	ResponseEntity<Object> restructureLabels(
+		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
+		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
+		@Valid @NotNull @RequestBody final LabelRestructureRequest request) {
+
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
+
+		if (Boolean.TRUE.equals(request.getDryRun())) {
+			return ok(metadataService.restructureLabelTree(namespace, municipalityId, request));
+		}
+
+		final var job = metadataService.startLabelTreeRestructure(namespace, municipalityId, request);
+		return accepted()
+			.header(LOCATION, fromPath(JOB_LOCATION_PATH)
 				.buildAndExpand(municipalityId, namespace, job.getJobId())
 				.toString())
 			.body(job);

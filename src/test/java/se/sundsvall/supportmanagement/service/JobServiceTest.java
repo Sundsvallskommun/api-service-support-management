@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
@@ -53,13 +54,13 @@ class JobServiceTest {
 	@Test
 	void create() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
 
 		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100);
 
 		assertThat(result).isEqualTo(JOB_ID);
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
-		verify(jobRepositoryMock).save(captor.capture());
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(captor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(captor.getValue().getType()).isEqualTo(MOVE_LABEL);
@@ -69,13 +70,13 @@ class JobServiceTest {
 	@Test
 	void createWithLabelId() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
 
 		final var result = jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "label-id");
 
 		assertThat(result).isEqualTo(JOB_ID);
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
-		verify(jobRepositoryMock).save(captor.capture());
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(captor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(captor.getValue().getType()).isEqualTo(MOVE_LABEL);
@@ -87,13 +88,25 @@ class JobServiceTest {
 	@DisplayName("Verification that create without a labelId stores none, since not every kind of job works on one label")
 	void createWithoutLabelIdStoresNoLabelId() {
 		final var entity = JobEntity.create().withId(JOB_ID);
-		when(jobRepositoryMock.save(any())).thenReturn(entity);
+		when(jobRepositoryMock.saveAndFlush(any())).thenReturn(entity);
 
 		jobService.create(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, 100);
 
 		final var captor = ArgumentCaptor.forClass(JobEntity.class);
-		verify(jobRepositoryMock).save(captor.capture());
+		verify(jobRepositoryMock).saveAndFlush(captor.capture());
 		assertThat(captor.getValue().getLabelId()).isNull();
+	}
+
+	@Test
+	@DisplayName("Verification that a second create racing the caller's own precheck and losing on the DB's active-move-per-namespace constraint is answered the same way a sequential one already is, rather than as a raw persistence failure")
+	void createRacingPrecheckLosesOnDbConstraint_throws409() {
+		when(jobRepositoryMock.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("Duplicate entry for key 'uq_job_active_move_label_per_namespace'"));
+
+		assertThatThrownBy(() -> jobService.create(NAMESPACE, MUNICIPALITY_ID, MOVE_LABEL, 100, "label-id"))
+			.isInstanceOf(ThrowableProblem.class)
+			.satisfies(e -> assertThat(((ThrowableProblem) e).getStatus().value()).isEqualTo(409))
+			.hasMessageContaining(NAMESPACE)
+			.hasMessageContaining(MUNICIPALITY_ID);
 	}
 
 	@Test

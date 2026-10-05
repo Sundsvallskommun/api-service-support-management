@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Step 0 (ADD): parent path 'NONEXISTENT_CATEGORY/NONEXISTENT_TYPE' does not exist"
+}

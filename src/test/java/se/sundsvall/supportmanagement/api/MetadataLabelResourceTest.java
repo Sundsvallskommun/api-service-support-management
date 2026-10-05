@@ -13,8 +13,15 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveRequest;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureDryRunResponse;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureRequest;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStep;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepResult;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
@@ -173,6 +180,106 @@ class MetadataLabelResourceTest {
 
 		assertThat(result).isEqualTo(jobResponse);
 		verify(metadataServiceMock).startLabelMove(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(labelId), any());
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void mergeLabels() {
+		final var targetLabelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var request = LabelMergeRequest.create().withSourceLabelIds(List.of("6f79a808-0ef3-4985-99b9-b12f23e202a8")).withDryRun(true);
+		final var response = LabelMergeDryRunResponse.create()
+			.withAffectedErrandCount(4L)
+			.withAffectedActions(List.of(AffectedAction.create().withId("action-id").withName("ACTION").withDisplayValue("Display")));
+
+		when(metadataServiceMock.mergeLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(targetLabelId), any())).thenReturn(response);
+
+		final var result = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "labelId", targetLabelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody(LabelMergeDryRunResponse.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(result).isEqualTo(response);
+		verify(metadataServiceMock).mergeLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(targetLabelId), any());
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void mergeLabels_notDryRun_startsJobAndReturnsAccepted() {
+		final var targetLabelId = "5f79a808-0ef3-4985-99b9-b12f23e202a7";
+		final var request = LabelMergeRequest.create().withSourceLabelIds(List.of("6f79a808-0ef3-4985-99b9-b12f23e202a8")).withDryRun(false);
+		final var jobResponse = JobResponse.create().withJobId("job-id").withType(JobType.MERGE_LABELS).withStatus(JobStatus.PENDING).withTotal(4);
+
+		when(metadataServiceMock.startLabelMerge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(targetLabelId), any())).thenReturn(jobResponse);
+
+		final var result = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/{labelId}/merge").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "labelId", targetLabelId)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectHeader().valueEquals(LOCATION, "/%s/%s/jobs/job-id".formatted(MUNICIPALITY_ID, NAMESPACE))
+			.expectBody(JobResponse.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(result).isEqualTo(jobResponse);
+		verify(metadataServiceMock).startLabelMerge(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(targetLabelId), any());
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void restructureLabels() {
+		final var request = LabelRestructureRequest.create()
+			.withDryRun(true)
+			.withSteps(List.of(LabelRestructureStep.create().withType(LabelRestructureStepType.ADD).withPath(List.of("CATEGORY", "TYPE")).withDisplayName("Type").withClassification("TYPE")));
+		final var response = LabelRestructureDryRunResponse.create()
+			.withTotalAffectedErrandCount(0L)
+			.withSteps(List.of(LabelRestructureStepResult.create().withIndex(0).withType(LabelRestructureStepType.ADD).withPath(List.of("CATEGORY", "TYPE")).withAffectedErrandCount(0L).withAffectedActions(List.of())));
+
+		when(metadataServiceMock.restructureLabelTree(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(response);
+
+		final var result = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/restructure").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody(LabelRestructureDryRunResponse.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(result).isEqualTo(response);
+		verify(metadataServiceMock).restructureLabelTree(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void restructureLabels_notDryRun_startsJobAndReturnsAccepted() {
+		final var request = LabelRestructureRequest.create()
+			.withDryRun(false)
+			.withSteps(List.of(LabelRestructureStep.create().withType(LabelRestructureStepType.ADD).withPath(List.of("CATEGORY", "TYPE")).withDisplayName("Type").withClassification("TYPE")));
+		final var jobResponse = JobResponse.create().withJobId("job-id").withType(JobType.RESTRUCTURE_LABEL_TREE).withStatus(JobStatus.PENDING).withTotal(0);
+
+		when(metadataServiceMock.startLabelTreeRestructure(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(jobResponse);
+
+		final var result = webTestClient.post()
+			.uri(builder -> builder.path(PATH + "/restructure").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(request)
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectHeader().valueEquals(LOCATION, "/%s/%s/jobs/job-id".formatted(MUNICIPALITY_ID, NAMESPACE))
+			.expectBody(JobResponse.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(result).isEqualTo(jobResponse);
+		verify(metadataServiceMock).startLabelTreeRestructure(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verifyNoMoreInteractions(metadataServiceMock);
 	}
 }
