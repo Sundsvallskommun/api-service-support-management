@@ -2,8 +2,10 @@ package se.sundsvall.supportmanagement.config.masking;
 
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 class PayloadMaskingBodyFilterTest {
 
@@ -107,7 +109,7 @@ class PayloadMaskingBodyFilterTest {
 
 	@Test
 	void withholdsABodyItCannotRead() {
-		assertThat(filter().filter(JSON, "{not json at all")).isEqualTo("[masked]");
+		assertThat(filter().filter(JSON, "{not json at all")).isEqualTo("{\"masked\":\"unreadable\"}");
 	}
 
 	@Test
@@ -118,7 +120,24 @@ class PayloadMaskingBodyFilterTest {
 			.filter(JSON, attachment);
 
 		assertThat(result)
-			.isEqualTo("[" + attachment.length() + " characters, too large to mask]")
+			.isEqualTo("{\"masked\":\"too large\",\"characters\":" + attachment.length() + "}")
 			.doesNotContain("AAAA");
+	}
+
+	/**
+	 * A replacement is embedded into the log entry as it is, so one that is not JSON costs the entry its fields
+	 * wherever the log server reads it as JSON.
+	 */
+	@Test
+	void replacesABodyWithSomethingThatIsStillJson() {
+		final var filter = filter();
+
+		assertThat(filter.filter(JSON, "{not json at all")).satisfies(PayloadMaskingBodyFilterTest::isJson);
+		assertThat(new PayloadMaskingBodyFilter(new PayloadMaskingProperties(Set.of(), "[masked]", 8))
+			.filter(JSON, "{\"a\":\"bbbbbbbbbbbbbbbb\"}")).satisfies(PayloadMaskingBodyFilterTest::isJson);
+	}
+
+	private static void isJson(final String body) {
+		assertThatNoException().isThrownBy(() -> new ObjectMapper().readTree(body));
 	}
 }

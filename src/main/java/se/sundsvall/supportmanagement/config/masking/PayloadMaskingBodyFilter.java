@@ -41,6 +41,17 @@ public class PayloadMaskingBodyFilter implements BodyFilter {
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
+	/**
+	 * What replaces a body that is not logged at all. A JSON document rather than a bare word, because the formatter
+	 * embeds a body it takes for JSON into the log entry as it is, without quoting or checking it: Logbook's
+	 * {@code JsonHttpLogFormatter} is built here without body validation, and its {@code looksLikeJson} asks only
+	 * whether the first and last character could begin and end one. A plain {@code [masked]} passes that test on its
+	 * brackets alone and leaves the entry unparseable, which costs the entry its fields wherever the log server reads
+	 * them as JSON.
+	 */
+	private static final String UNREADABLE_BODY = "{\"masked\":\"unreadable\"}";
+	private static final String TOO_LARGE_BODY = "{\"masked\":\"too large\",\"characters\":%d}";
+
 	/** Field names kept wherever they occur. */
 	private final Set<String> keep;
 
@@ -87,7 +98,7 @@ public class PayloadMaskingBodyFilter implements BodyFilter {
 		// several times the body. The length is what is logged instead, since that is the one thing worth knowing
 		// about a body too big to log.
 		if (body.length() > maxSize) {
-			return "[" + body.length() + " characters, too large to mask]";
+			return TOO_LARGE_BODY.formatted(body.length());
 		}
 
 		try {
@@ -99,7 +110,7 @@ public class PayloadMaskingBodyFilter implements BodyFilter {
 			// Answering with the body as it came would be answering with what this class exists to withhold, so what
 			// is logged is that there was something here and that it could not be read.
 			LOG.warn("Could not mask payload for logging ({}), replacing it", e.toString());
-			return placeholder;
+			return UNREADABLE_BODY;
 		}
 	}
 
