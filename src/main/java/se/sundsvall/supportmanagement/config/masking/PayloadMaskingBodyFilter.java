@@ -1,10 +1,7 @@
 package se.sundsvall.supportmanagement.config.masking;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -15,7 +12,6 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 /**
@@ -25,17 +21,17 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  * Registered as a {@link BodyFilter} bean, which dept44's Logbook configuration collects and applies to every request
  * and response it logs, ours and the ones made to the services around us.
  * <p>
- * The body is parsed once, walked once and written once, whatever the number of fields involved. The JSONPath filters
- * dept44 builds from {@code logbook.body-filters} parse and write the whole body once per path, so masking fifty
- * fields of a small errand cost about fifty times the single pass this does, and a page of a hundred errands most of a
- * second. Both run on the thread that is answering the request.
+ * The body is parsed once, walked once and written once, whatever the number of rules involved. The JSONPath filters
+ * dept44 builds from {@code logbook.body-filters} parse and write the whole body once per path, which measured about
+ * 160 times this for fifty rules on a small errand, and most of half a second for a page of a hundred. Both run on the
+ * thread that is answering the request.
  * <p>
  * Kept as it is, regardless of the field it belongs to: every property name, so a log line still shows the shape of
  * what was sent, and every number, boolean and null, which carry sizes, counts, versions and flags rather than text.
  * A personal identity number written as a number rather than a string is therefore not caught here - that is what
  * {@code dept44.logback.pii-masking} is under this.
  */
-public class PayloadMaskingBodyFilter implements BodyFilter {
+class PayloadMaskingBodyFilter implements BodyFilter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PayloadMaskingBodyFilter.class);
 
@@ -52,39 +48,14 @@ public class PayloadMaskingBodyFilter implements BodyFilter {
 	private static final String UNREADABLE_BODY = "{\"masked\":\"unreadable\"}";
 	private static final String TOO_LARGE_BODY = "{\"masked\":\"too large\",\"characters\":%d}";
 
-	/** Field names kept wherever they occur. */
-	private final Set<String> keep;
-
-	/** Field names kept only under one parent, by that parent: what {@code metadata.value} in the list means. */
-	private final Map<String, Set<String>> keepWithin;
-
+	private final KeepRules keep;
 	private final String placeholder;
 	private final int maxSize;
 
-	public PayloadMaskingBodyFilter(final PayloadMaskingProperties properties) {
-		final var plain = new HashSet<String>();
-		final var scoped = new HashMap<String, Set<String>>();
-		properties.keep().forEach(entry -> {
-			final var separator = entry.indexOf('.');
-			if (separator < 0) {
-				plain.add(entry);
-			} else {
-				scoped.computeIfAbsent(entry.substring(0, separator), key -> new HashSet<>())
-					.add(entry.substring(separator + 1));
-			}
-		});
-		this.keep = Set.copyOf(plain);
-		this.keepWithin = Map.copyOf(scoped);
+	PayloadMaskingBodyFilter(final PayloadMaskingProperties properties) {
+		this.keep = KeepRules.of(properties.keep());
 		this.placeholder = properties.placeholder();
 		this.maxSize = properties.maxSize();
-	}
-
-	private boolean kept(final String name, final String within) {
-		// A string in an array at the root of a body has neither a name nor a parent, and is kept by nothing
-		if (isNull(name)) {
-			return false;
-		}
-		return keep.contains(name) || (nonNull(within) && keepWithin.getOrDefault(within, Set.of()).contains(name));
 	}
 
 	@Override
@@ -103,7 +74,12 @@ public class PayloadMaskingBodyFilter implements BodyFilter {
 
 		try {
 			final var root = MAPPER.readTree(body);
-			mask(root, null);
+			// A body that is nothing but a string has no field to be kept by, so nothing keeps it. Written back as a
+			// string rather than as the word alone, so that what replaces it is still a document
+			if (root.isString()) {
+				return MAPPER.writeValueAsString(placeholder);
+			}
+			mask(root, new ArrayList<>());
 			return root.toString();
 		} catch (final Exception e) {
 			// A body that cannot be read cannot be masked either, and a log entry is not worth failing a request over.
@@ -115,48 +91,46 @@ public class PayloadMaskingBodyFilter implements BodyFilter {
 	}
 
 	/**
-	 * @param node   the node to mask in place.
-	 * @param within the name of the field this node was found under. Two things are judged by it: an element of an
-	 *               array, since the strings in {@code recipients} are the value of {@code recipients} and have no name
-	 *               of their own, and a field kept only under one parent, which is what {@code metadata.value} in the
-	 *               list means.
+	 * @param node the node to mask in place.
+	 * @param path the fields from the root of the body down to this node, used as a stack. An array is not a field of
+	 *             its own: its elements are at the path of the array, which is what makes the strings of
+	 *             {@code recipients} askable as {@code recipients} and an object inside {@code metadata} askable as
+	 *             {@code metadata.value}.
 	 */
-	private void mask(final JsonNode node, final String within) {
+	private void mask(final JsonNode node, final List<String> path) {
 		if (node instanceof final ObjectNode object) {
-			maskProperties(object, within);
+			maskProperties(object, path);
 		} else if (node instanceof final ArrayNode array) {
-			maskElements(array, within);
+			maskElements(array, path);
 		}
 	}
 
-	private void maskProperties(final ObjectNode object, final String within) {
+	private void maskProperties(final ObjectNode object, final List<String> path) {
 		// Collected and replaced afterwards rather than as they are found, so that nothing is written to the object
 		// while it is being read
 		final var replace = new ArrayList<String>();
 		object.properties().forEach(property -> {
 			final var value = property.getValue();
+			path.add(property.getKey());
 			if (value.isObject() || value.isArray()) {
-				mask(value, property.getKey());
-			} else if (isText(value) && !kept(property.getKey(), within)) {
+				mask(value, path);
+			} else if (value.isString() && !keep.keeps(path)) {
 				replace.add(property.getKey());
 			}
+			path.removeLast();
 		});
 		replace.forEach(name -> object.put(name, placeholder));
 	}
 
-	private void maskElements(final ArrayNode array, final String within) {
+	private void maskElements(final ArrayNode array, final List<String> path) {
 		for (var i = 0; i < array.size(); i++) {
 			final var element = array.get(i);
 			if (element.isObject() || element.isArray()) {
-				mask(element, within);
-			} else if (isText(element) && !kept(within, null)) {
+				mask(element, path);
+			} else if (element.isString() && !keep.keeps(path)) {
 				array.set(i, placeholder);
 			}
 		}
-	}
-
-	private static boolean isText(final JsonNode node) {
-		return node.isString();
 	}
 
 	private static boolean isJson(final String contentType) {
