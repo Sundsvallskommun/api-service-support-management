@@ -237,8 +237,9 @@ class LabelMoveWorkerTest {
 
 		var progressReporter = (IntConsumer) processed -> {
 		};
+		var sut = worker();
 		assertThatIllegalStateException()
-			.isThrownBy(() -> worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, progressReporter))
+			.isThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, progressReporter))
 			.withMessageContaining("no longer exists");
 
 		verify(metadataLabelRepositoryMock).findById(movedId);
@@ -257,8 +258,9 @@ class LabelMoveWorkerTest {
 
 		var progressReporter = (IntConsumer) processed -> {
 		};
+		var sut = worker();
 		assertThatIllegalStateException()
-			.isThrownBy(() -> worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, newParentId, null, null), STARTED_BY, progressReporter))
+			.isThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, newParentId, null, null), STARTED_BY, progressReporter))
 			.withMessageContaining("no longer exists");
 
 		verify(metadataLabelRepositoryMock).findById(movedId);
