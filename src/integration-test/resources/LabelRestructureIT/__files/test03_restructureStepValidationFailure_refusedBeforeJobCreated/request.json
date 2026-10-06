@@ -1,0 +1,15 @@
+{
+	"dryRun": false,
+	"steps": [
+		{
+			"type": "ADD",
+			"path": [
+				"NONEXISTENT_CATEGORY",
+				"NONEXISTENT_TYPE",
+				"NEW_SUBTYPE"
+			],
+			"displayName": "New subtype",
+			"classification": "SUBTYPE"
+		}
+	]
+}

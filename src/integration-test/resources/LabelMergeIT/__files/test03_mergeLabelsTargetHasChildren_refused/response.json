@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Label 'cd99569f-6b6d-4d7a-b04c-9ae528be8258' has children and cannot take part in a merge"
+}

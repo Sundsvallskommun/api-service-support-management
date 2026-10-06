@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
@@ -18,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -33,6 +35,7 @@ public class JobService {
 	private static final int MAX_MESSAGE_LENGTH = 1024;
 	private static final String JOB_NOT_FOUND = "Job with id '%s' not found in namespace '%s' for municipality with id '%s'";
 	private static final String NOT_REPORTED_ON = "Job was not reported on for %s and is taken to have ended with the instance carrying it out";
+	private static final String ACTIVE_JOB_IN_NAMESPACE = "A job is already running for namespace '%s' in municipality with id '%s'";
 
 	/**
 	 * The states in which a job counts as under way, both for the guard that keeps two runs of a kind out of the same
@@ -62,14 +65,23 @@ public class JobService {
 
 	/**
 	 * Saves a new job and returns its id, in the transaction of the {@code create} overload that was called.
+	 * <p>
+	 * The row is flushed at once, so that a job refused by a unique constraint on the table, such as a second active label
+	 * job in the namespace ({@code V1_64__add_active_label_job_guard.sql}), is answered here with 409.
 	 */
 	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String labelId) {
-		return jobRepository.save(JobEntity.create()
-			.withNamespace(namespace)
-			.withMunicipalityId(municipalityId)
-			.withType(type)
-			.withTotal(total)
-			.withLabelId(labelId)).getId();
+		try {
+			return jobRepository.saveAndFlush(JobEntity.create()
+				.withNamespace(namespace)
+				.withMunicipalityId(municipalityId)
+				.withType(type)
+				.withTotal(total)
+				.withLabelId(labelId)).getId();
+		} catch (final DataIntegrityViolationException e) {
+			// Every unique constraint this table carries besides its primary key answers a racing caller the same way -
+			// a second request that raced the precheck above and lost is told the same thing a sequential one already is.
+			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
+		}
 	}
 
 	@Transactional(readOnly = true)

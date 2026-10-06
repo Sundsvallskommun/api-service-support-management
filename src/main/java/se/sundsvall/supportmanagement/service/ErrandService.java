@@ -3,12 +3,15 @@ package se.sundsvall.supportmanagement.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
@@ -18,6 +21,7 @@ import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -68,7 +72,7 @@ public class ErrandService {
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_ACTIVATE_ERRAND = "Ärendet har aktiverats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
-	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after a label was moved, and it keeps the labels it had. Move the label back, or give the errand labels that name the process it runs.";
+	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had. Give the errand labels that name the process it runs, or put the labels back as they were.";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
@@ -344,29 +348,110 @@ public class ErrandService {
 	}
 
 	/**
-	 * Puts labels rebuilt after a label was moved on an errand, and settles its access labels from them.
+	 * Rebuilds the labels of a batch of errands from their access labels after a label was moved, each through
+	 * {@link #persistLabelUpdate(ErrandEntity, List)}, in a transaction of its own.
 	 * <p>
-	 * A change that would move the errand off the process it runs is refused: the errand keeps the labels it has, and an
-	 * error entry on it says why. A change made is recorded as a revision and an update event, without a notification.
+	 * The errands are to have been read with their access labels in a transaction that has ended, and nothing else on them
+	 * is read. An errand with labels but no access labels is left as it is.
 	 *
-	 * @param  entity the errand to relabel.
-	 * @param  labels the labels it is to wear, ancestors included.
-	 * @return        true when the labels were put on the errand, false when the change was refused.
+	 * @param batch the errands to relabel.
 	 */
-	boolean persistLabelUpdate(final ErrandEntity entity, final List<ErrandLabelEmbeddable> labels) {
-		final var labelsBefore = List.copyOf(ofNullable(entity.getLabels()).orElse(emptyList()));
+	@Transactional(propagation = REQUIRES_NEW)
+	void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
+		final var idsWithLabels = idsWithNonEmptyLabels(batch);
+		batch.forEach(errand -> restowFromAccessLabels(errand, idsWithLabels));
+	}
 
-		if (processKeyGuard.refusesLabelChange(entity.getId(), labelsBefore, labels, LABELS_KEPT)) {
-			return false;
+	private void restowFromAccessLabels(final ErrandEntity errand, final Set<String> idsWithLabels) {
+		if (skipIfAccessLabelsMissing(errand, idsWithLabels)) {
+			return;
 		}
 
-		entity.setLabels(labels);
-		errandLabelService.settleAccessLabels(entity);
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
+			.toList();
 
-		final var saved = repository.saveAndFlush(entity);
+		persistLabelUpdate(errand, leafLabels);
+	}
+
+	/**
+	 * Rebuilds the labels of a batch of errands after labels were merged, as {@link #persistLabelMigrationBatch(List)}
+	 * does, with every access label among {@code sourceLabelIds} replaced by {@code targetLabelId} first.
+	 *
+	 * @param batch          the errands to relabel.
+	 * @param sourceLabelIds the labels merged into the target.
+	 * @param targetLabelId  the label the sources were merged into.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	void persistLabelMergeBatch(final List<ErrandEntity> batch, final Set<String> sourceLabelIds, final String targetLabelId) {
+		final var idsWithLabels = idsWithNonEmptyLabels(batch);
+		batch.forEach(errand -> restowFromAccessLabelsWithSubstitution(errand, sourceLabelIds, targetLabelId, idsWithLabels));
+	}
+
+	private void restowFromAccessLabelsWithSubstitution(final ErrandEntity errand, final Set<String> sourceLabelIds, final String targetLabelId, final Set<String> idsWithLabels) {
+		if (skipIfAccessLabelsMissing(errand, idsWithLabels)) {
+			return;
+		}
+
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(AccessLabelEmbeddable::getMetadataLabelId)
+			.map(leafId -> sourceLabelIds.contains(leafId) ? targetLabelId : leafId)
+			.distinct()
+			.map(leafId -> ErrandLabelEmbeddable.create().withMetadataLabelId(leafId))
+			.toList();
+
+		persistLabelUpdate(errand, leafLabels);
+	}
+
+	/**
+	 * The ids of the errands in the batch whose labels are not empty, read in one query, as the labels of an errand read in
+	 * a transaction that has ended cannot be loaded.
+	 */
+	private Set<String> idsWithNonEmptyLabels(final List<ErrandEntity> batch) {
+		return repository.findIdsWithNonEmptyLabels(batch.stream().map(ErrandEntity::getId).toList());
+	}
+
+	/**
+	 * Whether the errand has labels but no access labels, which a rebuild from its access labels would wipe. Such an errand
+	 * is logged and left as it is.
+	 */
+	private boolean skipIfAccessLabelsMissing(final ErrandEntity errand, final Set<String> idsWithLabels) {
+		final var hasAccessLabels = !ofNullable(errand.getAccessLabels()).orElse(emptyList()).isEmpty();
+
+		if (idsWithLabels.contains(errand.getId()) && !hasAccessLabels) {
+			LOG.warn("Errand {} has labels but no access labels - skipping restow rather than clearing its label set", sanitizeForLogging(errand.getId()));
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Puts labels rebuilt after labels were moved or merged on an errand, expanded to their ancestors, and settles its
+	 * access labels from them.
+	 * <p>
+	 * Runs in the transaction of the batch, on an errand read before it. An errand that has been changed or removed since
+	 * it was read is answered with {@link ObjectOptimisticLockingFailureException}, so that the batch is retried on a fresh
+	 * read. A change that would move the errand off the process it runs is refused: the errand keeps the labels it has, and
+	 * an error entry on it says why. A change made is recorded as a revision and an update event, without a notification.
+	 *
+	 * @param errand the errand to relabel, as read before the transaction.
+	 * @param labels the labels it is to wear, without their ancestors.
+	 */
+	void persistLabelUpdate(final ErrandEntity errand, final List<ErrandLabelEmbeddable> labels) {
+		final var stored = repository.findById(errand.getId())
+			.filter(current -> Objects.equals(current.getVersion(), errand.getVersion()))
+			.orElseThrow(() -> new ObjectOptimisticLockingFailureException(ErrandEntity.class, errand.getId()));
+		final var labelsBefore = List.copyOf(ofNullable(stored.getLabels()).orElse(emptyList()));
+
+		errand.setLabels(labels);
+		errandLabelService.settleAccessLabels(errand);
+
+		if (processKeyGuard.refusesLabelChange(errand.getId(), labelsBefore, errand.getLabels(), LABELS_KEPT)) {
+			return;
+		}
+
+		final var saved = repository.saveAndFlush(errand);
 		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, false);
-
-		return true;
 	}
 
 	se.sundsvall.dept44.support.Relation expandRelation(final String referredFromAsString) {

@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.net.URI;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -13,12 +14,14 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -37,6 +40,7 @@ import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotification;
@@ -123,6 +127,37 @@ public class EventService {
 	public void createDecisionEvent(final String message, final ErrandEntity errandEntity, final boolean concludesDecision) {
 		writeErrandEvent(UPDATE, message, errandEntity, null, null, true, DECISION);
 		publishToProcess(errandEntity, UPDATE, DECISION, null, concludesDecision);
+	}
+
+	/**
+	 * Writes one event for a label move as a whole, logged against the moved label rather than an errand.
+	 * <p>
+	 * {@code startedBy} is recorded as the one who executed it, and is to be read on the request thread that accepted the
+	 * move, since the thread carrying it out has no identifier of its own.
+	 */
+	public void createLabelMoveEvent(final String municipalityId, final String labelId, final String startedBy, final String message) {
+		createLabelOperationEvent(municipalityId, labelId, startedBy, message, "label move");
+	}
+
+	/**
+	 * Writes one event for a label merge as a whole, logged against the label the others were merged into, in the same way
+	 * as {@link #createLabelMoveEvent}.
+	 */
+	public void createLabelMergeEvent(final String municipalityId, final String targetLabelId, final String startedBy, final String message) {
+		createLabelOperationEvent(municipalityId, targetLabelId, startedBy, message, "label merge");
+	}
+
+	/**
+	 * Writes the event of a label operation to the event log. A failure to write it is logged rather than thrown.
+	 */
+	private void createLabelOperationEvent(final String municipalityId, final String labelId, final String startedBy, final String message, final String operationName) {
+		final var executedBy = Identifier.create().withType(Identifier.Type.CUSTOM).withValue(startedBy);
+		final var event = toEvent(EventType.UPDATE, message, null, MetadataLabelEntity.class, Map.of(), executedBy, SYSTEM.getValue(), getRequestGroupId());
+		try {
+			eventLogClient.createEvent(municipalityId, labelId, event);
+		} catch (final Exception e) {
+			LOG.warn("Failed to create event log entry for {} {}: {}", operationName, sanitizeForLogging(labelId), sanitizeForLogging(e.getMessage()));
+		}
 	}
 
 	public void createErrandNoteEvent(final EventType eventType, final String message, final String logKey, final ErrandEntity errandEntity, final String noteId, final Revision currentRevision, final Revision previousRevision) {

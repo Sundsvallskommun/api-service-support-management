@@ -723,14 +723,14 @@ the errand just stops moving. Two rules therefore hold whenever labels are writt
 
 Only the key is held still: `processStartMode` may be changed freely, even on an errand with a process.
 
-|                      Writer                       |  Rules  |                                   When refused                                    |
-|---------------------------------------------------|---------|-----------------------------------------------------------------------------------|
-| `POST /errands` (also handover and e-mail intake) | 1       | `400` — a new errand has no process yet                                           |
-| `PATCH /errands/{errandId}`                       | 1 and 2 | `400`                                                                             |
-| The `ADD_LABEL` action (scheduled)                | 1 and 2 | The labels are not added, and an `ERROR` entry is written on the errand           |
-| A label moved in the metadata (`LabelMoveWorker`) | 1 and 2 | The errand keeps the labels it had, and an `ERROR` entry is written on the errand |
+|                                                  Writer                                                   |  Rules  |                                   When refused                                    |
+|-----------------------------------------------------------------------------------------------------------|---------|-----------------------------------------------------------------------------------|
+| `POST /errands` (also handover and e-mail intake)                                                         | 1       | `400` — a new errand has no process yet                                           |
+| `PATCH /errands/{errandId}`                                                                               | 1 and 2 | `400`                                                                             |
+| The `ADD_LABEL` action (scheduled)                                                                        | 1 and 2 | The labels are not added, and an `ERROR` entry is written on the errand           |
+| Labels moved or merged in the metadata (`LabelMoveWorker`, `LabelMergeWorker`, also within a restructure) | 1 and 2 | The errand keeps the labels it had, and an `ERROR` entry is written on the errand |
 
-A scheduled action or a label move that goes through is recorded as a revision and an errand event without a
+A scheduled action, or a label move or merge, that goes through is recorded as a revision and an errand event without a
 notification, and reaches the process like any other change.
 
 The rules are checked against the labels the errand would actually wear, including the ancestors added to them.

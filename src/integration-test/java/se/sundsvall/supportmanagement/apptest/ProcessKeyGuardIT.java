@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,13 +9,26 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.integration.db.JobRepository;
+import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.service.scheduler.action.ActionScheduler;
 
+import static java.time.Duration.ofMillis;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
 
 /**
  * Verifies the process key guard over the wire: a label change that would leave an errand naming a process it does not
@@ -23,8 +37,8 @@ import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE
  * The refusal reaches the caller as a 400 whose detail names what is wrong, and is decided by the process rows in the
  * database - a live process, one that has run to its end, and none at all.
  * <p>
- * A label change made by a scheduled action is refused as well, and the refusal is written on the errand, since there is
- * no caller to answer.
+ * A label change made by a scheduled action or a label move is refused as well, and the refusal is written on the errand,
+ * since there is no caller to answer.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessKeyGuardIT/", classes = Application.class, sharedContext = true)
 @Sql({
@@ -40,12 +54,16 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 	private static final String ERRAND_WITH_LIVE_PROCESS = "aa000000-0000-0000-0000-0000000000a1";
 	private static final String ERRAND_WITHOUT_PROCESS = "aa000000-0000-0000-0000-0000000000a2";
 	private static final String ERRAND_WITH_FINISHED_PROCESS = "aa000000-0000-0000-0000-0000000000a3";
+	private static final String MOVED_LABEL = "bb000000-0000-0000-0000-0000000000b6";
 
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 
 	@Autowired
 	private ActionScheduler actionScheduler;
+
+	@Autowired
+	private JobRepository jobRepository;
 
 	private static String errandPath(final String errandId) {
 		return "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + errandId;
@@ -165,6 +183,58 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 			.withJsonAssertOptions(null)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse("response-errand.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A label move has no caller to answer either. The label is moved from under the application process to under the
+	 * supervision process, which takes both errands wearing it there: the errand running the application process keeps the
+	 * labels it had and the refusal is written on it, while the errand that has never had a process follows the label.
+	 */
+	@Test
+	@DisplayName("Verification that a label move taking an errand off the process it runs leaves that errand as it is and writes the refusal on it, while an errand without a process follows the label")
+	@Sql("/db/scripts/testdata-process-key-guard-move.sql")
+	void test08_aMovedLabelNamingAnotherProcessLeavesTheErrandRunningOneAsItIs() throws Exception {
+		final var job = setupCall()
+			.withServicePath("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/labels/" + MOVED_LABEL + "/move")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(ACCEPTED)
+			.sendRequest()
+			.andReturnBody(JobResponse.class);
+
+		await()
+			.atMost(60, SECONDS)
+			.pollInterval(ofMillis(250))
+			.until(() -> jobRepository.findById(job.getJobId())
+				.map(JobEntity::getStatus)
+				.filter(List.of(COMPLETED, STOPPED, FAILED)::contains)
+				.isPresent());
+
+		assertThat(jobRepository.findById(job.getJobId())).hasValueSatisfying(ended -> assertThat(ended.getStatus()).isEqualTo(COMPLETED));
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS) + "/process-activities")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-activities.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS))
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(null)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-errand-with-process.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITHOUT_PROCESS))
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(null)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-errand-without-process.json")
 			.sendRequestAndVerifyResponse();
 	}
 }

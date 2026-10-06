@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -55,6 +56,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -565,5 +567,40 @@ class EventServiceTest {
 		service.createErrandNoteEvent(EventType.CREATE, "message", "logKey", entity, randomUUID().toString(), null, null);
 
 		verifyNoInteractions(processEventPublisherMock);
+	}
+
+	@Test
+	@DisplayName("Verification that the audit event's executing user comes from the startedBy parameter, not the thread-local Identifier - createLabelMoveEvent runs on a worker thread where that thread-local was never set")
+	void createLabelMoveEventLogsAggregatedSystemEvent() {
+		final var municipalityId = "2281";
+		final var labelId = randomUUID().toString();
+		final var startedBy = "joe01doe";
+		final var message = "Label moved under new-parent, 3 errand(s) restowed";
+		Identifier.remove();
+
+		service.createLabelMoveEvent(municipalityId, labelId, startedBy, message);
+
+		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(labelId), eventCaptor.capture());
+
+		final var event = eventCaptor.getValue();
+		assertThat(event.getType()).isEqualTo(EventType.UPDATE);
+		assertThat(event.getMessage()).isEqualTo(message);
+		assertThat(event.getSourceType()).isEqualTo(MetadataLabelEntity.class.getSimpleName());
+		assertThat(event.getSubType()).isEqualTo(SYSTEM.getValue());
+		assertThat(event.getHistoryReference()).isNull();
+		assertThat(event.getExecutingUser()).isNotNull()
+			.satisfies(eu -> assertThat(eu.getValue()).isEqualTo(startedBy));
+	}
+
+	@Test
+	void createLabelMoveEventSwallowsClientException() {
+		final var municipalityId = "2281";
+		final var labelId = randomUUID().toString();
+
+		when(eventLogClientMock.createEvent(any(), any(), any())).thenThrow(new RuntimeException("boom"));
+
+		service.createLabelMoveEvent(municipalityId, labelId, "joe01doe", "message");
+
+		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(labelId), any());
 	}
 }

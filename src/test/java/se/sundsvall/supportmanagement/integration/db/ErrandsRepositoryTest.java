@@ -328,6 +328,51 @@ class ErrandsRepositoryTest {
 			.containsExactlyInAnyOrder(saved1.getId(), saved2.getId());
 	}
 
+	@Test
+	void findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc_noMatch() {
+		assertThat(errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc("non-existent-label-id", "", PageRequest.ofSize(10)))
+			.isEmpty();
+	}
+
+	@Test
+	void findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc_pagesByIdAscendingPastTheGivenLowerBound() {
+		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		final var ids = List.of(
+			errandsRepository.save(errandWithLabel("errand-keyset-1", labelId)).getId(),
+			errandsRepository.save(errandWithLabel("errand-keyset-2", labelId)).getId(),
+			errandsRepository.save(errandWithLabel("errand-keyset-3", labelId)).getId())
+			.stream().sorted().toList();
+
+		final var firstPage = errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(labelId, "", PageRequest.ofSize(2));
+		assertThat(firstPage).extracting(ErrandEntity::getId).containsExactly(ids.get(0), ids.get(1));
+
+		final var secondPage = errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(labelId, ids.get(1), PageRequest.ofSize(2));
+		assertThat(secondPage).extracting(ErrandEntity::getId).containsExactly(ids.get(2));
+	}
+
+	@Test
+	void findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc_noMatch() {
+		assertThat(errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(List.of("non-existent-label-id"), "", PageRequest.ofSize(10)))
+			.isEmpty();
+	}
+
+	@Test
+	void findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc_matchesAnyOfSeveralLabelIdsAndPagesByIdAscending() {
+		final var labelIdA = "a0bb7b61-8d55-4857-b619-547572eed26f";
+		final var labelIdB = "86d459cd-4810-4b4a-b365-97aa0c2c0ff5";
+		final var ids = List.of(
+			errandsRepository.save(errandWithLabel("errand-keyset-in-1", labelIdA)).getId(),
+			errandsRepository.save(errandWithLabel("errand-keyset-in-2", labelIdB)).getId(),
+			errandsRepository.save(errandWithLabel("errand-keyset-in-3", labelIdA)).getId())
+			.stream().sorted().toList();
+
+		final var firstPage = errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(List.of(labelIdA, labelIdB), "", PageRequest.ofSize(2));
+		assertThat(firstPage).extracting(ErrandEntity::getId).containsExactly(ids.get(0), ids.get(1));
+
+		final var secondPage = errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(List.of(labelIdA, labelIdB), ids.get(1), PageRequest.ofSize(2));
+		assertThat(secondPage).extracting(ErrandEntity::getId).containsExactly(ids.get(2));
+	}
+
 	private ErrandEntity errandWithLabel(final String errandNumber, final String labelId) {
 		return ErrandEntity.create()
 			.withNamespace("namespace-1")

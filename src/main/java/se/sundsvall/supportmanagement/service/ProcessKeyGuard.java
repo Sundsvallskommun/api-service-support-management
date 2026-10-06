@@ -43,7 +43,7 @@ import static se.sundsvall.supportmanagement.service.ProcessActivityLog.CONFIG_A
  * POST /errands            -&gt; ErrandService.createErrand       -&gt; 400, and only rule 5: a new errand has no process
  * PATCH /errands/{id}      -&gt; ErrandService.updateErrand       -&gt; 400
  * a scheduled job          -&gt; AddLabelAction.executeAction     -&gt; the labels are left off, and an entry says so
- * a moved label            -&gt; ErrandService.persistLabelUpdate -&gt; the errand is left as it is, and an entry says so
+ * a moved or merged label  -&gt; ErrandService.persistLabelUpdate -&gt; the errand is left as it is, and an entry says so
  * </pre>
  */
 @Component

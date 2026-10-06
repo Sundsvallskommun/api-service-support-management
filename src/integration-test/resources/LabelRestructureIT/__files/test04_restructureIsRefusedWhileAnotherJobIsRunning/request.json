@@ -1,0 +1,13 @@
+{
+	"dryRun": false,
+	"steps": [
+		{
+			"type": "RENAME",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_RENAME_ME"
+			],
+			"displayName": "Renamed"
+		}
+	]
+}
