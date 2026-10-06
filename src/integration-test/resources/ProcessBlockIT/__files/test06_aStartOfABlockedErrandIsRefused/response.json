@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Processes are blocked for the errand 'aa000000-0000-0000-0000-0000000000a2': a label of the errand carries processBlocked=true, and no process is started, signalled or told anything about the errand while it wears that label"
+}

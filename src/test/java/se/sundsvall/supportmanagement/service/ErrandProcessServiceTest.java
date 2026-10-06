@@ -71,6 +71,7 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProc
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_ENGINE;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_BLOCKED;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.START_PENDING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.WARN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
@@ -964,7 +965,7 @@ class ErrandProcessServiceTest {
 	// ---------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Verifies that an errand running its process is answered with LIVE_INSTANCE without its labels being read.
+	 * Verifies that an errand running its process is answered with LIVE_INSTANCE, its labels read only for a block.
 	 */
 	@Test
 	void readingTheProcessesAnswersWithTheOverview() {
@@ -984,7 +985,8 @@ class ErrandProcessServiceTest {
 				tuple("oldest", List.of()));
 		assertThat(processes.getStartable()).isEqualTo(ProcessStartable.create().withStatus(LIVE_INSTANCE).withProcessKeys(List.of()));
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, PROCESS, R);
-		verifyNoInteractions(processKeySelectorMock);
+		verify(processKeySelectorMock).isBlocked(errand);
+		verifyNoMoreInteractions(processKeySelectorMock);
 	}
 
 	@Test
@@ -1012,6 +1014,21 @@ class ErrandProcessServiceTest {
 
 		assertThat(service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID).getStartable())
 			.isEqualTo(ProcessStartable.create().withStatus(START_PENDING).withProcessKeys(List.of()));
+	}
+
+	@Test
+	@DisplayName("Verification that an errand wearing a label that blocks processes is shown as PROCESS_BLOCKED, with no key to start, before its process rows, its keys or the outbox are asked about")
+	void readingTheProcessesOfABlockedErrand() {
+		final var errand = ErrandEntity.create().withId(ERRAND_ID);
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, PROCESS, R)).thenReturn(errand);
+		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(entity("newest", WAITING).withId("row-newest")));
+		when(processKeySelectorMock.isBlocked(errand)).thenReturn(true);
+
+		assertThat(service.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID).getStartable())
+			.isEqualTo(ProcessStartable.create().withStatus(PROCESS_BLOCKED).withProcessKeys(List.of()));
+		verify(processKeySelectorMock).isBlocked(errand);
+		verifyNoMoreInteractions(processKeySelectorMock);
+		verifyNoInteractions(outboxRepositoryMock);
 	}
 
 	@Test

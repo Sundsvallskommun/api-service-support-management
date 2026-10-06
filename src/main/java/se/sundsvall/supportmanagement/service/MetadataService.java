@@ -124,6 +124,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updat
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatementOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatusEntity;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 
 @Service
 public class MetadataService {
@@ -487,9 +488,10 @@ public class MetadataService {
 		// worker dispatched right after is free to look the job up from another thread.
 		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
 		var startedBy = startedBy();
+		var startedByAdAccount = nonNull(getAdUser());
 
 		try {
-			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), startedBy)));
+			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), startedBy, startedByAdAccount)));
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
 			jobService.fail(jobId, COULD_NOT_START.formatted(e.getMessage()));
@@ -661,9 +663,10 @@ public class MetadataService {
 		// worker dispatched right after is free to look the job up from another thread.
 		var jobId = jobService.create(namespace, municipalityId, MERGE_LABELS, (int) affectedErrandCount, context.targetId());
 		var startedBy = startedBy();
+		var startedByAdAccount = nonNull(getAdUser());
 
 		try {
-			labelMoveTaskExecutor.execute(() -> labelMergeWorker.run(new LabelMergeRun(jobId, namespace, municipalityId, context.targetId(), context.sourceIds(), startedBy)));
+			labelMoveTaskExecutor.execute(() -> labelMergeWorker.run(new LabelMergeRun(jobId, namespace, municipalityId, context.targetId(), context.sourceIds(), startedBy, startedByAdAccount)));
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
 			jobService.fail(jobId, COULD_NOT_START_MERGE.formatted(e.getMessage()));
@@ -811,9 +814,10 @@ public class MetadataService {
 		// worker dispatched right after is free to look the job up from another thread.
 		final var jobId = jobService.create(namespace, municipalityId, RESTRUCTURE_LABEL_TREE, estimatedTotal);
 		final var startedBy = startedBy();
+		final var startedByAdAccount = nonNull(getAdUser());
 
 		try {
-			labelMoveTaskExecutor.execute(() -> labelTreeRestructureWorker.run(new LabelRestructureRun(jobId, namespace, municipalityId, request.getSteps(), startedBy)));
+			labelMoveTaskExecutor.execute(() -> labelTreeRestructureWorker.run(new LabelRestructureRun(jobId, namespace, municipalityId, request.getSteps(), startedBy, startedByAdAccount)));
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
 			jobService.fail(jobId, COULD_NOT_START_RESTRUCTURE.formatted(e.getMessage()));

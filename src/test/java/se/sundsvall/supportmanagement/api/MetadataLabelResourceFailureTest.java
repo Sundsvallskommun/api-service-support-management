@@ -113,6 +113,14 @@ class MetadataLabelResourceFailureTest {
 				LabelAttribute.create().withKey("processstartmode").withValue("MANUAL"))),
 				tuples(
 					tuple(method + ".labels", "label 'TILLSYN' has the attribute 'processstartmode', which is read only when spelled exactly 'processStartMode'"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "SPARRAD",
+				LabelAttribute.create().withKey("processBlocked").withValue("TRUE"))),
+				tuples(
+					tuple(method + ".labels", "label 'SPARRAD' has the processBlocked 'TRUE', which must be exactly one of [true, false]"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "SPARRAD",
+				LabelAttribute.create().withKey("processblocked").withValue("true"))),
+				tuples(
+					tuple(method + ".labels", "label 'SPARRAD' has the attribute 'processblocked', which is read only when spelled exactly 'processBlocked'"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
 				LabelAttribute.create().withKey("dup").withValue("a"),
 				LabelAttribute.create().withKey("dup").withValue("b"))),

@@ -92,7 +92,7 @@ public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 	}
 
 	private void move(final LabelMoveRun run) {
-		final var restowed = moveAndRestow(run.jobId(), run.municipalityId(), run.labelId(), run.newParentId(), null, null, run.startedBy(),
+		final var restowed = moveAndRestow(run.jobId(), run.municipalityId(), run.labelId(), run.newParentId(), null, null, run.startedBy(), run.startedByAdAccount(),
 			processed -> jobService.updateProgress(run.jobId(), processed));
 
 		jobService.complete(run.jobId(), SUMMARY.formatted(run.labelId(), run.newParentId(), restowed));
@@ -111,12 +111,14 @@ public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 	 * for log correlation in {@link #fetchAndPersistPage}, so a restructure's MOVE step logs against the restructure's
 	 * own job rather than a move job that, called this way, never exists.
 	 *
-	 * @param  newResourceName optional new resourceName to set in the same update, or {@code null} to keep it.
-	 * @param  newDisplayName  optional new displayName to set in the same update, or {@code null} to keep it.
-	 * @return                 number of errands restowed.
+	 * @param  newResourceName    optional new resourceName to set in the same update, or {@code null} to keep it.
+	 * @param  newDisplayName     optional new displayName to set in the same update, or {@code null} to keep it.
+	 * @param  startedByAdAccount whether the move was asked for by an ad account, which holds the errands it restows to
+	 *                            the rule that an ad account may not take a label blocking processes off an errand.
+	 * @return                    number of errands restowed.
 	 */
 	int moveAndRestow(final String jobId, final String municipalityId, final String labelId, final String newParentId, final String newResourceName, final String newDisplayName,
-		final String startedBy, final IntConsumer progressReporter) {
+		final String startedBy, final boolean startedByAdAccount, final IntConsumer progressReporter) {
 		final var labelToMove = metadataLabelRepository.findById(labelId)
 			.orElseThrow(() -> new IllegalStateException(LABEL_GONE.formatted(labelId)));
 		final var newParent = newParentId != null
@@ -138,7 +140,7 @@ public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 		// cascade above already moved every descendant off it), and refreshing whatever it did find by walking a lazy
 		// getParent() chain would run on entities already detached from that query's own, separate transaction.
 
-		final var restowed = restowErrands(jobId, labelId, progressReporter);
+		final var restowed = restowErrands(jobId, labelId, startedByAdAccount, progressReporter);
 
 		eventService.createLabelMoveEvent(municipalityId, labelId, startedBy, AUDIT_MESSAGE.formatted(labelId, newParentId, startedBy, restowed));
 
@@ -157,10 +159,10 @@ public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 	 * while this walk is under way would otherwise shift where a later page starts, and an errand landing on that
 	 * boundary would be skipped and keep its stale ancestor chain.
 	 */
-	private int restowErrands(final String jobId, final String labelId, final IntConsumer progressReporter) {
+	private int restowErrands(final String jobId, final String labelId, final boolean startedByAdAccount, final IntConsumer progressReporter) {
 		return restowPager.restow(
 			(lastSeenId, pageable) -> errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(labelId, lastSeenId, pageable),
-			errandService::persistLabelMigrationBatch,
+			page -> errandService.persistLabelMigrationBatch(page, startedByAdAccount),
 			attempt -> "Label move %s retrying a page for label %s after a concurrent edit lost the optimistic-lock race (attempt %d/%d)"
 				.formatted(jobId, sanitizeForLogging(labelId), attempt, MAX_BATCH_ATTEMPTS),
 			progressReporter);

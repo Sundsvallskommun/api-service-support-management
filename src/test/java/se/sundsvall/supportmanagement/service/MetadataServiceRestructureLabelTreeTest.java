@@ -7,6 +7,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -343,8 +345,11 @@ class MetadataServiceRestructureLabelTreeTest {
 		verify(jobServiceMock, never()).create(any(), any(), any(), anyInt());
 	}
 
-	@Test
-	void startLabelTreeRestructure_handsTheRunToTheWorkerWithExpectedParameters() {
+	@ParameterizedTest
+	@EnumSource(value = Identifier.Type.class, names = {
+		"AD_ACCOUNT", "CUSTOM"
+	})
+	void startLabelTreeRestructure_handsTheRunToTheWorkerWithExpectedParameters(final Identifier.Type callerType) {
 		final var handled = new ArrayList<LabelRestructureRun>();
 		final var jobResponse = JobResponse.create().withJobId("job-id").withType(RESTRUCTURE_LABEL_TREE).withStatus(JobStatus.PENDING);
 
@@ -360,7 +365,7 @@ class MetadataServiceRestructureLabelTreeTest {
 			handled.add(invocation.getArgument(0));
 			return null;
 		}).when(labelTreeRestructureWorkerMock).run(any());
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		Identifier.set(Identifier.create().withType(callerType).withValue("joe01doe"));
 
 		final var steps = List.of(addStep(List.of("CATEGORY"), "Category", "CATEGORY"));
 		final var result = service.startLabelTreeRestructure(NAMESPACE, MUNICIPALITY_ID, LabelRestructureRequest.create().withDryRun(false).withSteps(steps));
@@ -372,6 +377,7 @@ class MetadataServiceRestructureLabelTreeTest {
 		assertThat(handled.getFirst().municipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(handled.getFirst().steps()).isEqualTo(steps);
 		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
+		assertThat(handled.getFirst().startedByAdAccount()).isEqualTo(callerType == Identifier.Type.AD_ACCOUNT);
 
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE, 0);

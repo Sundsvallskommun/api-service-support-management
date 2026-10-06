@@ -101,6 +101,37 @@ class ValidProcessLabelAttributesConstraintValidatorTest {
 			"label 'TILLSYN' has the attribute '" + key + "', which is read only when spelled exactly 'processKey'");
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"true", "false"
+	})
+	@DisplayName("Verification that processBlocked set to exactly true or false is valid, with or without a process key on the label")
+	void aBlockedOfExactlyTrueOrFalseIsValid(final String blocked) {
+		assertValid(List.of(
+			label("SPARRAD", attribute("processBlocked", blocked)),
+			label("TILLSYN", attribute("processKey", "alkt-tillsyn"), attribute("processBlocked", blocked))));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"TRUE", "True", " true", "false ", "yes", "1", "blocked"
+	})
+	@DisplayName("Verification that processBlocked other than exactly true or false is invalid")
+	void aBlockedThatIsNotExactlyTrueOrFalseIsInvalid(final String blocked) {
+		assertInvalid(List.of(label("SPARRAD", attribute("processBlocked", blocked))),
+			"label 'SPARRAD' has the processBlocked '" + blocked + "', which must be exactly one of [true, false]");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"processblocked", "PROCESSBLOCKED", "ProcessBlocked", " processBlocked", "processBlocked "
+	})
+	@DisplayName("Verification that a key spelled like processBlocked in another way is invalid")
+	void aMisspelledBlockedKeyIsInvalid(final String key) {
+		assertInvalid(List.of(label("SPARRAD", attribute(key, "true"))),
+			"label 'SPARRAD' has the attribute '" + key + "', which is read only when spelled exactly 'processBlocked'");
+	}
+
 	@Test
 	@DisplayName("Verification that every fault in a tree is reported on its own, naming the label by its path of resource names")
 	void everyFaultInATreeIsReportedNamingItsLabel() {

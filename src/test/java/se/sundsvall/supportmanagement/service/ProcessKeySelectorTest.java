@@ -29,6 +29,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
+import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_BLOCKED_ATTRIBUTE;
 import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_KEY_ATTRIBUTE;
 import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_START_MODE_ATTRIBUTE;
 
@@ -258,6 +259,63 @@ class ProcessKeySelectorTest {
 		final var excerpt = ProcessKeySelector.excerptOf(List.of("k".repeat(1000), APPLICATION));
 
 		assertThat(excerpt).endsWith(", " + APPLICATION).hasSize(64 + ", ".length() + APPLICATION.length());
+	}
+
+	@Test
+	@DisplayName("Verification that an errand wearing a label with processBlocked=true among others is blocked, and that the ids of only the blocking labels are named")
+	void aLabelWithProcessBlockedTrueBlocks() {
+		final var blocking = blocking("true");
+		final var application = label(APPLICATION, null);
+
+		assertThat(selector.isBlocked(errandWith(application, blocking))).isTrue();
+		assertThat(selector.blockingLabelIdsOf(List.of(loaded(application), loaded(blocking)))).containsExactly(blocking.getId());
+		verifyNoInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a blocking label the errand has just been given is looked up by id and blocks")
+	void aNewlyGivenBlockingLabelIsLookedUp() {
+		final var blocking = blocking("true");
+		when(metadataLabelRepositoryMock.findAllById(Set.of(blocking.getId()))).thenReturn(List.of(blocking));
+
+		assertThat(selector.isBlocked(errandWearing(loaded(label(APPLICATION, null)), notLoaded(blocking.getId())))).isTrue();
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(blocking.getId()));
+	}
+
+	@Test
+	@DisplayName("Verification that a deprecated label with processBlocked=true still blocks, unlike a deprecated label naming a process")
+	void aDeprecatedBlockingLabelStillBlocks() {
+		assertThat(selector.isBlocked(errandWith(blocking("true").withDeprecated(true)))).isTrue();
+	}
+
+	@ParameterizedTest
+	@MethodSource("valuesThatDoNotBlock")
+	@DisplayName("Verification that processBlocked blocks only when its value is exactly true")
+	void onlyExactlyTrueBlocks(final String value) {
+		assertThat(selector.isBlocked(errandWith(blocking(value)))).isFalse();
+	}
+
+	private static Stream<Arguments> valuesThatDoNotBlock() {
+		return Stream.of(
+			arguments("false"),
+			arguments("TRUE"),
+			arguments(" true"),
+			arguments("yes"));
+	}
+
+	@Test
+	@DisplayName("Verification that an errand without labels, or with labels saying nothing about a block, is not blocked")
+	void anErrandWithoutABlockingLabelIsNotBlocked() {
+		assertThat(selector.isBlocked(ErrandEntity.create())).isFalse();
+		assertThat(selector.isBlocked(errandWith(label(APPLICATION, null)))).isFalse();
+		assertThat(selector.blockingLabelIdsOf(List.of())).isEmpty();
+		verifyNoInteractions(metadataLabelRepositoryMock);
+	}
+
+	private MetadataLabelEntity blocking(final String value) {
+		return MetadataLabelEntity.create()
+			.withId(randomUUID().toString())
+			.withAttributes(List.of(attribute(PROCESS_BLOCKED_ATTRIBUTE, value)));
 	}
 
 	private ErrandEntity errandWith(final MetadataLabelEntity... labels) {

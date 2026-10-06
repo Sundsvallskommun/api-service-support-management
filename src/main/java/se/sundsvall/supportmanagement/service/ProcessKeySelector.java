@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +28,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessS
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
 
 /**
- * Which process an errand belongs to, according to its own labels.
+ * Which process an errand belongs to, and whether processes are blocked for it, according to its own labels.
  * <p>
  * Only the labels the errand actually wears are read - the tree is walked neither up nor down. The answer is read from
  * the attributes of the labels only, so renaming a label does not change it, and neither does moving it as long as the
@@ -42,6 +43,10 @@ public class ProcessKeySelector {
 	/** The label attributes read here, matched exactly as spelled. */
 	public static final String PROCESS_KEY_ATTRIBUTE = "processKey";
 	public static final String PROCESS_START_MODE_ATTRIBUTE = "processStartMode";
+	public static final String PROCESS_BLOCKED_ATTRIBUTE = "processBlocked";
+
+	/** The value of {@link #PROCESS_BLOCKED_ATTRIBUTE} that blocks processes, matched exactly as spelled. */
+	public static final String BLOCKED = "true";
 
 	/** How much of a key is worth showing in a message that reports what is wrong with it. */
 	private static final int KEY_EXCERPT_LENGTH = 64;
@@ -82,6 +87,41 @@ public class ProcessKeySelector {
 	 *                when they agree on none or on more than one.
 	 */
 	public ProcessKeySelection select(final Collection<ErrandLabelEmbeddable> labels) {
+		return selectFrom(metadataLabelsOf(labels));
+	}
+
+	/**
+	 * Whether processes are blocked for an errand: whether any label it wears carries {@code processBlocked} with the
+	 * value {@code true}. A deprecated label blocks as well. The labels are read as {@link #select(ErrandEntity)} reads
+	 * them.
+	 *
+	 * @param  errand the errand to read.
+	 * @return        true when a label of the errand blocks processes.
+	 */
+	public boolean isBlocked(final ErrandEntity errand) {
+		return !blockingLabelIdsOf(ofNullable(errand.getLabels()).orElse(emptyList())).isEmpty();
+	}
+
+	/**
+	 * The ids of the labels, among labels an errand wears or would wear, that block processes. The labels are read as
+	 * {@link #select(Collection)} reads them.
+	 *
+	 * @param  labels the labels to read.
+	 * @return        the ids of those carrying {@code processBlocked} with the value {@code true}, empty when none does.
+	 */
+	public Set<String> blockingLabelIdsOf(final Collection<ErrandLabelEmbeddable> labels) {
+		return metadataLabelsOf(labels).stream()
+			.filter(label -> BLOCKED.equals(attribute(label, PROCESS_BLOCKED_ATTRIBUTE)))
+			.map(MetadataLabelEntity::getId)
+			.collect(toSet());
+	}
+
+	/**
+	 * The metadata labels behind the labels: read off a label where Hibernate has filled it in, and looked up by id where
+	 * it has not, in a single query made only when such a label is there. A label the lookup does not find is passed
+	 * over.
+	 */
+	private List<MetadataLabelEntity> metadataLabelsOf(final Collection<ErrandLabelEmbeddable> labels) {
 		final var loaded = labels.stream()
 			.map(ErrandLabelEmbeddable::getMetadataLabel)
 			.filter(Objects::nonNull)
@@ -94,10 +134,10 @@ public class ProcessKeySelector {
 			.collect(toSet());
 
 		if (idsToLookUp.isEmpty()) {
-			return selectFrom(loaded);
+			return loaded;
 		}
 
-		return selectFrom(Stream.concat(loaded.stream(), metadataLabelRepository.findAllById(idsToLookUp).stream()).toList());
+		return Stream.concat(loaded.stream(), metadataLabelRepository.findAllById(idsToLookUp).stream()).toList();
 	}
 
 	/**

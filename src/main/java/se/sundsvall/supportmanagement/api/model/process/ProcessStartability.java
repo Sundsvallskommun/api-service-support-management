@@ -26,5 +26,11 @@ public enum ProcessStartability {
 	NO_PROCESS_ENGINE,
 
 	/** The errand is a draft, and a process is started only once it has been made active. */
-	ERRAND_DRAFT
+	ERRAND_DRAFT,
+
+	/**
+	 * A label of the errand carries processBlocked=true, and no process is started or told anything about the errand
+	 * while it wears that label.
+	 */
+	PROCESS_BLOCKED
 }

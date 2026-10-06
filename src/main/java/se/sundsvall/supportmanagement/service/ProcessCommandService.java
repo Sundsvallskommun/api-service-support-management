@@ -63,6 +63,9 @@ public class ProcessCommandService {
 		labels names it. Give the errand back the label carrying that process key""";
 	private static final String KEY_NOT_CHOSEN = "The labels of the errand '%s' point at more than one process (%s), and the request has to name the one to start";
 	private static final String KEY_NOT_OFFERED = "The process key '%s' is not one the errand '%s' can be started with, which are: %s";
+	private static final String PROCESSES_BLOCKED = """
+		Processes are blocked for the errand '%s': a label of the errand carries processBlocked=true, and no process is \
+		started, signalled or told anything about the errand while it wears that label""";
 	private static final String OTHER_START_ON_ITS_WAY = """
 		A start of the process '%s' is already on its way for the errand '%s', so '%s' is not started. Wait for the \
 		process to be registered, and read the errand again""";
@@ -130,7 +133,7 @@ public class ProcessCommandService {
 		final var runsProcesses = namespaceConfigService.getProcessConsumer(namespace, municipalityId).isPresent();
 		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errandId);
 
-		final var options = startOptionsOf(runsProcesses, errand.getLifecycle(), instances, () -> processKeySelector.select(errand));
+		final var options = startOptionsOf(runsProcesses, errand.getLifecycle(), () -> processKeySelector.isBlocked(errand), instances, () -> processKeySelector.select(errand));
 		final var chosenKey = chooseProcessKey(namespace, municipalityId, errandId, options, instances, processKey);
 		final var alreadyOnItsWay = isAlreadyOnItsWay(errandId, chosenKey);
 
@@ -150,8 +153,8 @@ public class ProcessCommandService {
 	 * The signal is a request and forces nothing: the gate decides what it means where the process stands.
 	 * <p>
 	 * Only a signal the process waits for right now is taken, matched exactly as the process named it. Anything else is
-	 * refused with 409 and writes nothing, as is every signal to a process that has completed. A process that has failed
-	 * still takes the signals it last reported.
+	 * refused with 409 and writes nothing, as is every signal to a process that has completed, and every signal about an
+	 * errand a label of which blocks processes. A process that has failed still takes the signals it last reported.
 	 * <p>
 	 * Taking a signal consumes nothing. Until the process reports where it went, the same signal is taken again - a double
 	 * click writes two entries and two events.
@@ -170,6 +173,10 @@ public class ProcessCommandService {
 		final var errand = accessControlService.getErrand(namespace, municipalityId, errandId, true, PROCESS, RW);
 
 		requireProcessConsumer(namespaceConfigService.getProcessConsumer(namespace, municipalityId), namespace, municipalityId);
+
+		if (processKeySelector.isBlocked(errand)) {
+			throw Problem.valueOf(CONFLICT, PROCESSES_BLOCKED.formatted(errandId));
+		}
 
 		final var process = processRepository.findByProcessInstanceIdAndErrandId(processInstanceId, errandId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NO_SUCH_INSTANCE.formatted(errandId, processInstanceId)));
@@ -197,9 +204,9 @@ public class ProcessCommandService {
 	}
 
 	/**
-	 * The key a start names. Throws 409 for a draft, for a live instance and for a completed one, and 400 when the
-	 * namespace runs no process, when no key can be started, and when the request does not choose among several keys or
-	 * names one not offered.
+	 * The key a start names. Throws 409 for a draft, for an errand a label of which blocks processes, for a live instance
+	 * and for a completed one, and 400 when the namespace runs no process, when no key can be started, and when the
+	 * request does not choose among several keys or names one not offered.
 	 */
 	private static String chooseProcessKey(final String namespace, final String municipalityId, final String errandId, final ProcessStartOptions options,
 		final List<ErrandProcessEntity> instances, final String requestedKey) {
@@ -207,6 +214,7 @@ public class ProcessCommandService {
 		return switch (options.status()) {
 			case NO_PROCESS_ENGINE -> throw Problem.valueOf(BAD_REQUEST, NO_PROCESS_CONSUMER.formatted(namespace, municipalityId));
 			case ERRAND_DRAFT -> throw draftConflict(errandId);
+			case PROCESS_BLOCKED -> throw Problem.valueOf(CONFLICT, PROCESSES_BLOCKED.formatted(errandId));
 			case LIVE_INSTANCE -> throw Problem.valueOf(CONFLICT, LIVE_PROCESS_IN_THE_WAY.formatted(errandId));
 			case PROCESS_COMPLETED -> throw Problem.valueOf(CONFLICT, PROCESS_LIFE_OVER.formatted(errandId));
 			case NO_PROCESS_KEY -> throw Problem.valueOf(BAD_REQUEST, instances.isEmpty()

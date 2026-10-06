@@ -29,6 +29,9 @@ public class ProcessStartable {
 		is nothing to start. Setting the right label is the fix. \
 		NO_PROCESS_ENGINE - this namespace does not run processes at all. \
 		ERRAND_DRAFT - the errand is a draft. A process is started only once the errand has been made active. \
+		PROCESS_BLOCKED - a label on the errand carries the attribute processBlocked=true. No process is started, \
+		signalled or told anything about the errand while it wears that label. An ad account cannot take the label off; \
+		a service identity can. \
 		The answer is the same whether or not the labels start the process on their own: an errand whose process starts \
 		by itself is AVAILABLE too, and starting it by hand is how a start that failed is tried again. \
 		Treat any value you do not recognise as not startable - values may be added over time.""", examples = "AVAILABLE", accessMode = READ_ONLY)

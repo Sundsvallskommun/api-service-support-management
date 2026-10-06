@@ -80,6 +80,7 @@ class ProcessCommandServiceTest {
 	private static final String APPLICATION = "alkt-ansokan";
 	private static final String SUPERVISION = "alkt-tillsyn";
 	private static final String HANDLER = "joe01doe";
+	private static final String BLOCKED_DETAIL = "Processes are blocked for the errand 'errandId': a label of the errand carries processBlocked=true, and no process is started, signalled or told anything about the errand while it wears that label";
 	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-21T10:15:30.123456Z"), ZoneId.of("UTC"));
 
 	@Mock
@@ -242,6 +243,23 @@ class ProcessCommandServiceTest {
 
 		verifyNothingWritten();
 		verifyNoInteractions(processKeySelectorMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a start of an errand wearing a label that blocks processes is a conflict, refused before the labels are read for a key and without writing anything")
+	void aStartOfABlockedErrandIsAConflict() {
+		when(processKeySelectorMock.isBlocked(errand)).thenReturn(true);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, APPLICATION))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).isEqualTo(BLOCKED_DETAIL);
+			});
+
+		verifyNothingWritten();
+		verify(processKeySelectorMock, never()).select(any(ErrandEntity.class));
+		verifyNoInteractions(outboxRepositoryMock);
 	}
 
 	@Test
@@ -552,6 +570,22 @@ class ProcessCommandServiceTest {
 			.satisfies(problem -> {
 				assertThat(problem.getStatus().value()).isEqualTo(400);
 				assertThat(problem.getDetail()).contains(NAMESPACE);
+			});
+
+		verifyNothingWritten();
+		verifyNoInteractions(processRepositoryMock, signalRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a signal about an errand wearing a label that blocks processes is a conflict, refused before the instance is read and without writing anything")
+	void aSignalToABlockedErrandIsAConflict() {
+		when(processKeySelectorMock.isBlocked(errand)).thenReturn(true);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.signalProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, SIGNAL_NAME))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(409);
+				assertThat(problem.getDetail()).isEqualTo(BLOCKED_DETAIL);
 			});
 
 		verifyNothingWritten();

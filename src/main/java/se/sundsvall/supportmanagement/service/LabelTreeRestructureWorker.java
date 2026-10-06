@@ -140,12 +140,12 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 			case DELETE -> applyDelete(namespace, municipalityId, step);
 			case MOVE -> {
 				final var before = totalRestowed[0];
-				final var restowed = applyMove(run.jobId(), namespace, municipalityId, step, run.startedBy(), processed -> jobService.updateProgress(run.jobId(), before + processed));
+				final var restowed = applyMove(run.jobId(), namespace, municipalityId, step, run.startedBy(), run.startedByAdAccount(), processed -> jobService.updateProgress(run.jobId(), before + processed));
 				totalRestowed[0] = before + restowed;
 			}
 			case MERGE -> {
 				final var before = totalRestowed[0];
-				final var restowed = applyMerge(run.jobId(), namespace, municipalityId, step, run.startedBy(), processed -> jobService.updateProgress(run.jobId(), before + processed));
+				final var restowed = applyMerge(run.jobId(), namespace, municipalityId, step, run.startedBy(), run.startedByAdAccount(), processed -> jobService.updateProgress(run.jobId(), before + processed));
 				totalRestowed[0] = before + restowed;
 			}
 		}
@@ -204,7 +204,8 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 		metadataLabelRepository.deleteById(entity.getId());
 	}
 
-	private int applyMove(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final IntConsumer progressReporter) {
+	private int applyMove(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final boolean startedByAdAccount,
+		final IntConsumer progressReporter) {
 		final var sourceId = findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(step.getPath()), LABEL_GONE).getId();
 
 		final var destinationSegments = ofNullable(step.getDestinationParentPath()).orElse(List.of());
@@ -212,17 +213,18 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 			? null
 			: findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(destinationSegments), PARENT_GONE).getId();
 
-		return labelMoveWorker.moveAndRestow(jobId, municipalityId, sourceId, destinationParentId, step.getNewResourceName(), step.getDisplayName(), startedBy, progressReporter);
+		return labelMoveWorker.moveAndRestow(jobId, municipalityId, sourceId, destinationParentId, step.getNewResourceName(), step.getDisplayName(), startedBy, startedByAdAccount, progressReporter);
 	}
 
-	private int applyMerge(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final IntConsumer progressReporter) {
+	private int applyMerge(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final boolean startedByAdAccount,
+		final IntConsumer progressReporter) {
 		final var targetId = findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(step.getPath()), LABEL_GONE).getId();
 
 		final var sourceIds = step.getSourcePaths().stream()
 			.map(sourcePath -> findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(sourcePath), LABEL_GONE).getId())
 			.collect(toSet());
 
-		return labelMergeWorker.mergeAndRestow(jobId, namespace, municipalityId, targetId, sourceIds, startedBy, progressReporter);
+		return labelMergeWorker.mergeAndRestow(jobId, namespace, municipalityId, targetId, sourceIds, startedBy, startedByAdAccount, progressReporter);
 	}
 
 	private MetadataLabelEntity findOrThrow(final String namespace, final String municipalityId, final String path, final String messageTemplate) {
