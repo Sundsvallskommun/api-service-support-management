@@ -15,8 +15,6 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 @CircuitBreaker(name = "errandsRepository")

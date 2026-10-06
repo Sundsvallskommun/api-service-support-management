@@ -82,7 +82,7 @@ class LabelMoveWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable))
 			.thenReturn(List.of(errand));
 
-		var restowed = worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, movedId, newParentId, null, null, STARTED_BY, processed -> progress[0] = processed);
+		var restowed = worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, newParentId, null, null), STARTED_BY, processed -> progress[0] = processed);
 
 		assertThat(restowed).isEqualTo(1);
 		assertThat(progress[0]).isEqualTo(1);
@@ -109,7 +109,7 @@ class LabelMoveWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable))
 			.thenReturn(List.of());
 
-		worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, movedId, newParentId, "NEW_NAME", "New display", STARTED_BY, processed -> {
+		worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, newParentId, "NEW_NAME", "New display"), STARTED_BY, processed -> {
 		});
 
 		assertThat(moved.getResourceName()).isEqualTo("NEW_NAME");
@@ -131,7 +131,7 @@ class LabelMoveWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable))
 			.thenReturn(List.of());
 
-		worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, movedId, null, null, null, STARTED_BY, processed -> {
+		worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, processed -> {
 		});
 
 		assertThat(moved.getParent()).isNull();
@@ -161,7 +161,7 @@ class LabelMoveWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "errand-2", pageable))
 			.thenReturn(List.of());
 
-		var restowed = pagedWorker.moveAndRestow(JOB_ID, MUNICIPALITY_ID, movedId, null, null, null, STARTED_BY, progressUpdates::add);
+		var restowed = pagedWorker.moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, progressUpdates::add);
 
 		assertThat(restowed).isEqualTo(2);
 		assertThat(progressUpdates).containsExactly(1, 2);
@@ -191,7 +191,7 @@ class LabelMoveWorkerTest {
 			.doNothing()
 			.when(errandServiceMock).persistLabelMigrationBatch(any());
 
-		var restowed = worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, movedId, null, null, null, STARTED_BY, processed -> {
+		var restowed = worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, processed -> {
 		});
 
 		assertThat(restowed).isEqualTo(1);
@@ -219,7 +219,8 @@ class LabelMoveWorkerTest {
 
 		var progressReporter = (IntConsumer) processed -> {
 		};
-		org.assertj.core.api.Assertions.assertThatThrownBy(() -> worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, movedId, null, null, null, STARTED_BY, progressReporter))
+		var sut = worker();
+		org.assertj.core.api.Assertions.assertThatThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, progressReporter))
 			.isInstanceOf(ObjectOptimisticLockingFailureException.class);
 
 		verify(errandsRepositoryMock, times(3)).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
@@ -237,7 +238,7 @@ class LabelMoveWorkerTest {
 		var progressReporter = (IntConsumer) processed -> {
 		};
 		assertThatIllegalStateException()
-			.isThrownBy(() -> worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, movedId, null, null, null, STARTED_BY, progressReporter))
+			.isThrownBy(() -> worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, progressReporter))
 			.withMessageContaining("no longer exists");
 
 		verify(metadataLabelRepositoryMock).findById(movedId);
@@ -257,7 +258,7 @@ class LabelMoveWorkerTest {
 		var progressReporter = (IntConsumer) processed -> {
 		};
 		assertThatIllegalStateException()
-			.isThrownBy(() -> worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, movedId, newParentId, null, null, STARTED_BY, progressReporter))
+			.isThrownBy(() -> worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, newParentId, null, null), STARTED_BY, progressReporter))
 			.withMessageContaining("no longer exists");
 
 		verify(metadataLabelRepositoryMock).findById(movedId);

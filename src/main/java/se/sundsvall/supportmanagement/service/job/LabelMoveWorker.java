@@ -65,12 +65,12 @@ public class LabelMoveWorker {
 	 * a run of this class's own - purely for log correlation in {@link #restowErrands}, so a restructure's MOVE step
 	 * logs against the restructure's own job rather than a move job that, called this way, never exists.
 	 *
-	 * @param  newResourceName optional new resourceName to set in the same update, or {@code null} to keep it.
-	 * @param  newDisplayName  optional new displayName to set in the same update, or {@code null} to keep it.
-	 * @return                 number of errands restowed.
+	 * @param  step which label moves where, and the rename to combine with it, if any.
+	 * @return      number of errands restowed.
 	 */
-	int moveAndRestow(final String jobId, final String municipalityId, final String labelId, final String newParentId, final String newResourceName, final String newDisplayName,
-		final String startedBy, final IntConsumer progressReporter) {
+	int moveAndRestow(final String jobId, final String municipalityId, final LabelMoveStep step, final String startedBy, final IntConsumer progressReporter) {
+		final var labelId = step.labelId();
+		final var newParentId = step.newParentId();
 		final var labelToMove = metadataLabelRepository.findById(labelId)
 			.orElseThrow(() -> new IllegalStateException(LABEL_GONE.formatted(labelId)));
 		final var newParent = newParentId != null
@@ -78,11 +78,11 @@ public class LabelMoveWorker {
 			: null;
 
 		labelToMove.setParent(newParent);
-		if (newResourceName != null) {
-			labelToMove.setResourceName(newResourceName);
+		if (step.newResourceName() != null) {
+			labelToMove.setResourceName(step.newResourceName());
 		}
-		if (newDisplayName != null) {
-			labelToMove.setDisplayName(newDisplayName);
+		if (step.newDisplayName() != null) {
+			labelToMove.setDisplayName(step.newDisplayName());
 		}
 		metadataLabelRepository.saveAndFlush(labelToMove);
 		// The @PreUpdate cascade on labelToMove (onUpdate -> updateChildrenPathsRecursively) recomputes resourcePath for

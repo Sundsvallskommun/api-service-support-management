@@ -204,7 +204,7 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 			? null
 			: findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(destinationSegments), PARENT_GONE).getId();
 
-		return labelMoveWorker.moveAndRestow(jobId, municipalityId, sourceId, destinationParentId, step.getNewResourceName(), step.getDisplayName(), startedBy, progressReporter);
+		return labelMoveWorker.moveAndRestow(jobId, municipalityId, new LabelMoveStep(sourceId, destinationParentId, step.getNewResourceName(), step.getDisplayName()), startedBy, progressReporter);
 	}
 
 	private int applyMerge(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final IntConsumer progressReporter) {

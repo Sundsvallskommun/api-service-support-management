@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -98,9 +97,9 @@ class LabelTreeRestructureWorkerTest {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_TARGET")).thenReturn(Optional.of(mergeTarget));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_SOURCE")).thenReturn(Optional.of(mergeSource));
 
-		when(labelMoveWorkerMock.moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("move-id"), eq("dest-parent-id"), isNull(), isNull(), eq(STARTED_BY), any()))
+		when(labelMoveWorkerMock.moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq(new LabelMoveStep("move-id", "dest-parent-id", null, null)), eq(STARTED_BY), any()))
 			.thenAnswer(invocation -> {
-				((IntConsumer) invocation.getArgument(7)).accept(3);
+				((IntConsumer) invocation.getArgument(4)).accept(3);
 				return 3;
 			});
 		when(labelMergeWorkerMock.mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), any()))
@@ -135,7 +134,7 @@ class LabelTreeRestructureWorkerTest {
 
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MOVE_ME");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/DEST");
-		verify(labelMoveWorkerMock).moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("move-id"), eq("dest-parent-id"), isNull(), isNull(), eq(STARTED_BY), any());
+		verify(labelMoveWorkerMock).moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq(new LabelMoveStep("move-id", "dest-parent-id", null, null)), eq(STARTED_BY), any());
 		verify(jobServiceMock).updateProgress(JOB_ID, 3);
 
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_TARGET");
