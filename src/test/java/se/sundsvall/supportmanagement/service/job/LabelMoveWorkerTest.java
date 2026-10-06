@@ -220,7 +220,8 @@ class LabelMoveWorkerTest {
 		var progressReporter = (IntConsumer) processed -> {
 		};
 		var sut = worker();
-		org.assertj.core.api.Assertions.assertThatThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, progressReporter))
+		var step = new LabelMoveStep(movedId, null, null, null);
+		org.assertj.core.api.Assertions.assertThatThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, step, STARTED_BY, progressReporter))
 			.isInstanceOf(ObjectOptimisticLockingFailureException.class);
 
 		verify(errandsRepositoryMock, times(3)).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
@@ -238,8 +239,9 @@ class LabelMoveWorkerTest {
 		var progressReporter = (IntConsumer) processed -> {
 		};
 		var sut = worker();
+		var step = new LabelMoveStep(movedId, null, null, null);
 		assertThatIllegalStateException()
-			.isThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, progressReporter))
+			.isThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, step, STARTED_BY, progressReporter))
 			.withMessageContaining("no longer exists");
 
 		verify(metadataLabelRepositoryMock).findById(movedId);
@@ -259,8 +261,9 @@ class LabelMoveWorkerTest {
 		var progressReporter = (IntConsumer) processed -> {
 		};
 		var sut = worker();
+		var step = new LabelMoveStep(movedId, newParentId, null, null);
 		assertThatIllegalStateException()
-			.isThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, newParentId, null, null), STARTED_BY, progressReporter))
+			.isThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, step, STARTED_BY, progressReporter))
 			.withMessageContaining("no longer exists");
 
 		verify(metadataLabelRepositoryMock).findById(movedId);
