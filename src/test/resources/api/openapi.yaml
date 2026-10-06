@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "16.3"
+  version: "16.4"
 servers:
-- url: http://localhost:62061
+- url: http://localhost:65188
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -17069,13 +17069,15 @@ components:
     JsonNode:
       type: object
       properties:
-        binary:
-          type: boolean
         container:
           type: boolean
-        boolean:
-          type: boolean
         number:
+          type: boolean
+        pojo:
+          type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -17093,11 +17095,7 @@ components:
           type: boolean
         integralNumber:
           type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
-        pojo:
+        floatingPointNumber:
           type: boolean
         short:
           type: boolean
@@ -17114,7 +17112,9 @@ components:
         textual:
           type: boolean
           deprecated: true
-        floatingPointNumber:
+        boolean:
+          type: boolean
+        binary:
           type: boolean
         empty:
           type: boolean
@@ -17975,6 +17975,14 @@ components:
           type: string
           format: date-time
           description: When the job was last updated
+        affectedActions:
+          type: array
+          description: "Actions affected by the operation this job carries out - populated\
+            \ only on the response returned when the job is started, not on later\
+            \ reads through GET, since it reflects a dry-run-style computation done\
+            \ once at start time rather than state stored on the job itself"
+          items:
+            $ref: "#/components/schemas/AffectedAction"
     LabelMoveRequest:
       type: object
       description: Request for moving a label to a new parent

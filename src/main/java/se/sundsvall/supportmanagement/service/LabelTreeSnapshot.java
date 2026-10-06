@@ -26,7 +26,7 @@ import static java.util.stream.Collectors.toSet;
  * {@link MetadataLabelEntity#getResourcePath()}
  * - root is the empty string.
  */
-final class LabelTreeSnapshot {
+public final class LabelTreeSnapshot {
 
 	static final String SEPARATOR = "/";
 	static final String ROOT = "";
@@ -63,7 +63,7 @@ final class LabelTreeSnapshot {
 		return snapshot;
 	}
 
-	static String join(final List<String> path) {
+	public static String join(final List<String> path) {
 		return String.join(SEPARATOR, path);
 	}
 
@@ -72,7 +72,7 @@ final class LabelTreeSnapshot {
 	 * simulation and {@code LabelTreeRestructureWorker}'s real execution need from the exact same
 	 * {@code LabelRestructureStep#getPath()} shape, hence held here rather than as a private copy in each.
 	 */
-	static List<String> allButLast(final List<String> path) {
+	public static List<String> allButLast(final List<String> path) {
 		return path.subList(0, path.size() - 1);
 	}
 
@@ -80,7 +80,7 @@ final class LabelTreeSnapshot {
 	 * The last segment of {@code path} - a step's own resourceName, absent an explicit override. See
 	 * {@link #allButLast} for why this lives here rather than as a private copy in each of its two callers.
 	 */
-	static String lastSegment(final List<String> path) {
+	public static String lastSegment(final List<String> path) {
 		return path.get(path.size() - 1);
 	}
 

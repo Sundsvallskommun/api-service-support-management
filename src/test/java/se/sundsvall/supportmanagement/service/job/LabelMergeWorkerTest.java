@@ -1,5 +1,6 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
@@ -18,6 +19,8 @@ import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +43,8 @@ class LabelMergeWorkerTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String STARTED_BY = "joe01doe";
 	private static final String TARGET_ID = "target";
+	private static final Duration PROGRESS_INTERVAL = Duration.ofMinutes(1);
+	private static final Duration SHUTDOWN_GRACE_PERIOD = Duration.ofSeconds(20);
 	private static final int BATCH_SIZE = 2;
 
 	@Mock
@@ -65,7 +70,7 @@ class LabelMergeWorkerTest {
 	private LabelMergeWorker worker() {
 		if (worker == null) {
 			worker = new LabelMergeWorker(errandsRepositoryMock, metadataLabelRepositoryMock, actionConfigRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
-				new LabelMoveProperties(BATCH_SIZE, 2));
+				new LabelMoveProperties(BATCH_SIZE, 2, PROGRESS_INTERVAL, SHUTDOWN_GRACE_PERIOD, 10_000));
 		}
 		return worker;
 	}
@@ -142,7 +147,7 @@ class LabelMergeWorkerTest {
 		var errand2 = errandWithAccessLabels("source-1").withId("errand-2");
 		var pageable = PageRequest.ofSize(1);
 		var pagedWorker = new LabelMergeWorker(errandsRepositoryMock, metadataLabelRepositoryMock, actionConfigRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
-			new LabelMoveProperties(1, 2));
+			new LabelMoveProperties(1, 2, PROGRESS_INTERVAL, SHUTDOWN_GRACE_PERIOD, 10_000));
 
 		when(metadataLabelRepositoryMock.existsById(TARGET_ID)).thenReturn(true);
 		when(metadataLabelRepositoryMock.existsById("source-1")).thenReturn(true);

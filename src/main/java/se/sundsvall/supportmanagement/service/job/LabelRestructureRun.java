@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.util.List;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStep;

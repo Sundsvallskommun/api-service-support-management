@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,7 +24,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
@@ -50,6 +50,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
+import se.sundsvall.supportmanagement.config.JobProperties;
+import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentPurposeRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
@@ -70,6 +72,14 @@ import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.service.job.JobService;
+import se.sundsvall.supportmanagement.service.job.JobSpec;
+import se.sundsvall.supportmanagement.service.job.LabelMergeRun;
+import se.sundsvall.supportmanagement.service.job.LabelMergeWorker;
+import se.sundsvall.supportmanagement.service.job.LabelMoveRun;
+import se.sundsvall.supportmanagement.service.job.LabelMoveRunner;
+import se.sundsvall.supportmanagement.service.job.LabelRestructureRun;
+import se.sundsvall.supportmanagement.service.job.LabelTreeRestructureWorker;
 import se.sundsvall.supportmanagement.service.mapper.MetadataMapper;
 
 import static java.util.Collections.emptyList;
@@ -81,7 +91,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.MERGE;
@@ -134,6 +143,7 @@ public class MetadataService {
 	private static final String LABEL = "Label";
 	private static final String HAS_LABEL = "hasLabel";
 	private static final String ACTIVE_JOB_IN_NAMESPACE = "A job is already running for namespace '%s' in municipality with id '%s'";
+	private static final String TOO_MANY_AFFECTED_ERRANDS = "Move affects %d errand(s), exceeding the maximum of %d allowed in one move";
 	private static final String COULD_NOT_START = "Label move could not be started: %s";
 	private static final String COULD_NOT_START_MERGE = "Label merge could not be started: %s";
 	private static final String COULD_NOT_START_RESTRUCTURE = "Label tree restructure could not be started: %s";
@@ -170,13 +180,15 @@ public class MetadataService {
 	private final ValidationRepository validationRepository;
 	private final ContactReasonRepository contactReasonRepository;
 	private final JobService jobService;
-	private final LabelMoveWorker labelMoveWorker;
+	private final LabelMoveRunner labelMoveRunner;
 	private final LabelMergeWorker labelMergeWorker;
 	private final LabelTreeRestructureWorker labelTreeRestructureWorker;
 	private final AsyncTaskExecutor labelMoveTaskExecutor;
 	private final LabelClassificationService labelClassificationService;
 	private final AntPathMatcher pathMatcher;
 	private final TransactionTemplate readOnlyTransactionTemplate;
+	private final Duration jobStaleAfter;
+	private final LabelMoveProperties labelMoveProperties;
 
 	public MetadataService(
 		final ActionConfigRepository actionConfigRepository,
@@ -195,17 +207,19 @@ public class MetadataService {
 		final ValidationRepository validationRepository,
 		final ContactReasonRepository contactReasonRepository,
 		final JobService jobService,
-		// Lazy: LabelMoveWorker sits behind ErrandService -> RevisionService -> AccessControlService -> AccessMapperService
+		// Lazy: LabelMoveRunner sits behind ErrandService -> RevisionService -> AccessControlService -> AccessMapperService
 		// -> MetadataService, a cycle back to this very bean. Never actually needed before the async dispatch fires, by
 		// which point every bean in the cycle is already constructed.
-		@Lazy final LabelMoveWorker labelMoveWorker,
+		@Lazy final LabelMoveRunner labelMoveRunner,
 		// Same cycle, same reason: LabelMergeWorker also sits behind ErrandService.
 		@Lazy final LabelMergeWorker labelMergeWorker,
 		// Same cycle, same reason: LabelTreeRestructureWorker itself calls into LabelMoveWorker/LabelMergeWorker.
 		@Lazy final LabelTreeRestructureWorker labelTreeRestructureWorker,
 		@Qualifier("labelMoveTaskExecutor") final AsyncTaskExecutor labelMoveTaskExecutor,
 		final LabelClassificationService labelClassificationService,
-		final PlatformTransactionManager transactionManager) {
+		final PlatformTransactionManager transactionManager,
+		final JobProperties jobProperties,
+		final LabelMoveProperties labelMoveProperties) {
 		this.actionConfigRepository = actionConfigRepository;
 		this.categoryRepository = categoryRepository;
 		this.errandsRepository = errandsRepository;
@@ -222,7 +236,7 @@ public class MetadataService {
 		this.validationRepository = validationRepository;
 		this.contactReasonRepository = contactReasonRepository;
 		this.jobService = jobService;
-		this.labelMoveWorker = labelMoveWorker;
+		this.labelMoveRunner = labelMoveRunner;
 		this.labelMergeWorker = labelMergeWorker;
 		this.labelTreeRestructureWorker = labelTreeRestructureWorker;
 		this.labelMoveTaskExecutor = labelMoveTaskExecutor;
@@ -231,6 +245,8 @@ public class MetadataService {
 		this.pathMatcher.setCaseSensitive(false);
 		this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
 		this.readOnlyTransactionTemplate.setReadOnly(true);
+		this.jobStaleAfter = jobProperties.staleAfter();
+		this.labelMoveProperties = labelMoveProperties;
 	}
 
 	// =================================================================
@@ -458,71 +474,112 @@ public class MetadataService {
 		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId());
 		var allMovedIds = collectMovedLabelIds(context.labelToMove().getId(), context.descendants());
 
-		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
-		var affectedActions = actionsReferencing(actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId), allMovedIds);
+		var affectedErrandIds = errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(allMovedIds);
+		var affectedActions = resolveAffectedActions(namespace, municipalityId, allMovedIds);
 
 		return LabelMoveDryRunResponse.create()
-			.withAffectedErrandCount(affectedErrandCount)
+			.withAffectedErrandCount(affectedErrandIds.size())
 			.withAffectedActions(affectedActions);
+	}
+
+	/**
+	 * The actions a move of these label ids would affect - shared by the dry-run response and, so an admin who skips
+	 * straight to a real move learns the same thing, the {@link JobResponse} {@link #startLabelMove} returns.
+	 */
+	private List<AffectedAction> resolveAffectedActions(final String namespace, final String municipalityId, final Set<String> movedLabelIds) {
+		return actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId).stream()
+			.filter(action -> isAffectedByMove(action, movedLabelIds))
+			.map(action -> AffectedAction.create()
+				.withId(action.getId())
+				.withName(action.getName())
+				.withDisplayValue(action.getDisplayValue()))
+			.toList();
 	}
 
 	/**
 	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
 	 * <p>
-	 * Refused outright if another job is already under way for the namespace, not just for this label and not just for
+	 * Refused if another job is genuinely still under way for the namespace, not just for this label and not just for
 	 * moves — two moves in the same namespace can target overlapping subtrees (one label and one of its own
 	 * descendants, or a label and the destination it is headed into) without either id matching the other, so a check
 	 * scoped to this label alone would let them run at the same time and race on the same errands. And a merge or a
 	 * restructure run touches labels the same way a move does, so a check scoped to {@code MOVE_LABEL} alone would let
 	 * this run alongside one of those and race the same tree just as easily — hence the type-agnostic
-	 * {@link JobService#hasActiveJob(String, String)}, mirroring {@link #startLabelTreeRestructure}. Namespace-wide
-	 * serialization costs nothing here, since label moves are rare.
+	 * {@link JobService#hasActiveJob(String, String)}, mirroring
+	 * {@link #startLabelMerge}/{@link #startLabelTreeRestructure}.
+	 * Namespace-wide serialization costs nothing here, since label moves are rare.
 	 * <p>
-	 * Deliberately not itself {@code @Transactional}, and validation, job creation and dispatch are kept in three
-	 * separate steps rather than one enclosing transaction — mirrors {@link ErrandPurgeService#startPurge}. Wrapping
-	 * the whole method would flush {@link JobService#create}'s row without committing it before the worker is handed
-	 * to the executor, and the worker's {@link JobService#setRunning} runs in its own {@code REQUIRES_NEW} transaction
-	 * on a different thread that cannot see an uncommitted row — it would find no job, log a warning, and leave the
-	 * job stuck PENDING until the stale-job sweep eventually fails it. Validation still needs a session of its own:
-	 * {@link #validateAndFindLabelToMove}'s cycle check walks LAZY {@code parent} proxies one hop at a time, and each
-	 * hop past the first needs the session to still be there to load from - hence {@link #readOnlyTransactionTemplate}
-	 * rather than a plain call, which would only cover the very first repository call before the session behind it
-	 * closes.
+	 * Asked first, and specifically for {@code MOVE_LABEL}: {@link JobService#stealStaleLease}, so a move job whose
+	 * instance died mid-run does not go on blocking the namespace for as long as {@link JobProperties#staleAfter()}
+	 * allows - only until the next caller tries to start a move, at which point the stale lease is reclaimed on the
+	 * spot (committed before this method returns to it) and the type-agnostic check right after no longer sees it. A
+	 * crashed instance's own connection is rolled back cleanly by the database the moment it drops - the restow runs
+	 * as one transaction (see {@code LabelMoveRunner}), so there is no half-done state to resume - this only shrinks
+	 * how long the namespace stays blocked waiting for a fresh attempt. The reclaim is necessarily scoped to
+	 * {@code MOVE_LABEL} alone - a stale merge or restructure lease is reclaimed by its own starting method instead -
+	 * so the type-agnostic check still runs afterward to catch a genuinely active job of one of those other kinds.
+	 * <p>
+	 * Deliberately not itself {@code @Transactional}: validation runs in a read-only transaction of its own, and job
+	 * creation and dispatch are handed to {@link JobService#launch} - see its own javadoc for why wrapping this whole
+	 * method in one transaction would leave the job it creates stuck PENDING. Validation still needs a session of its
+	 * own regardless: {@link #validateAndFindLabelToMove}'s cycle check walks LAZY {@code parent} proxies one hop at a
+	 * time, and each hop past the first needs the session to still be there to load from - hence
+	 * {@link #readOnlyTransactionTemplate} rather than a plain call, which would only cover the very first repository
+	 * call before the session behind it closes.
 	 */
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
 		var context = readOnlyTransactionTemplate.execute(status -> validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId()));
 		var canonicalLabelId = context.labelToMove().getId();
 
-		if (jobService.hasActiveJob(namespace, municipalityId)) {
+		// Both asked unconditionally, rather than short-circuited: a stale MOVE_LABEL lease reclaimed by the first call
+		// must not suppress the second, type-agnostic one, which is the only one that would ever see a genuinely active
+		// merge or restructure job blocking this namespace.
+		var reclaimed = jobService.stealStaleLease(namespace, municipalityId, MOVE_LABEL, jobStaleAfter);
+		var activeInNamespace = jobService.hasActiveJob(namespace, municipalityId);
+		if (!reclaimed || activeInNamespace) {
 			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
 		}
 
 		var allMovedIds = collectMovedLabelIds(canonicalLabelId, context.descendants());
-		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(allMovedIds);
-		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
-		// worker dispatched right after is free to look the job up from another thread.
-		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
-		var startedBy = startedBy();
+		// Resolved once, here - the job's own total and the walk that restows them both read from this exact list
+		// rather than each re-deriving their own (see LabelMoveRun#errandIds for why that matters). Frozen at this
+		// point deliberately: an errand created after this is created against the tree the move already left in
+		// place, so it needs no restowing.
+		var affectedErrandIds = errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(allMovedIds);
 
-		try {
-			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), startedBy)));
-		} catch (final Exception e) {
-			// The job is already there and would otherwise sit waiting for a run that never comes.
-			jobService.fail(jobId, COULD_NOT_START.formatted(e.getMessage()));
-
-			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START.formatted(e.getMessage()));
+		// Refused here, before any lock is taken rather than left unbounded: the move locks every one of these errands
+		// for the life of one transaction (see LabelMoveRunner), so an unexpectedly large subtree would otherwise hold
+		// that many rows for however long restowing them all takes. The dry run deliberately has no such limit - it
+		// takes no lock, and is exactly what lets an admin discover they are over the cap before ever trying.
+		if (affectedErrandIds.size() > labelMoveProperties.maxAffectedErrands()) {
+			throw Problem.valueOf(BAD_REQUEST, TOO_MANY_AFFECTED_ERRANDS.formatted(affectedErrandIds.size(), labelMoveProperties.maxAffectedErrands()));
 		}
 
-		return jobService.get(namespace, municipalityId, jobId);
+		// Resolved once, here, and attached below to the response this method itself returns - an admin who skips the
+		// dry run and starts the move directly still learns which actions are affected, without waiting on a later
+		// GET .../jobs/{jobId} that stores no such thing.
+		var affectedActions = resolveAffectedActions(namespace, municipalityId, allMovedIds);
+		var startedBy = startedBy();
+
+		return jobService.launch(new JobSpec(namespace, municipalityId, MOVE_LABEL, affectedErrandIds.size(), canonicalLabelId), labelMoveTaskExecutor,
+			jobId -> new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), affectedErrandIds, startedBy),
+			labelMoveRunner::run,
+			COULD_NOT_START)
+			.withAffectedActions(affectedActions);
 	}
 
 	/**
 	 * The caller a label move is recorded against. Read here, on the request thread, since the thread carrying out the
 	 * run has no identifier of its own to read.
+	 * <p>
+	 * Carries the whole identifier - type and value, via {@link Identifier#toHeaderValue()} - rather than just the
+	 * value, so that {@link EventService#createLabelMoveEvent} can rebuild the original {@link Identifier} instead of
+	 * defaulting the type to {@code CUSTOM} and misrepresenting an AD user's account name as a party id in the audit
+	 * trail.
 	 */
 	private static String startedBy() {
 		return ofNullable(Identifier.get())
-			.map(Identifier::getValue)
+			.map(Identifier::toHeaderValue)
 			.orElse(UNKNOWN_CALLER);
 	}
 
@@ -539,13 +596,23 @@ public class MetadataService {
 	}
 
 	/**
-	 * The moved label plus the descendants that move with it — read once by {@link #validateAndFindLabelToMove} and
-	 * reused by both callers, so that neither {@link #moveLabel} nor {@link #startLabelMove} re-reads the descendant
-	 * tree that validation already fetched.
+	 * The moved label, the parent it is headed to (or {@code null} for the root), and the descendants that move with
+	 * it — read once by {@link #validateAndFindLabelToMove} and reused by every caller, so that none of
+	 * {@link #moveLabel}, {@link #startLabelMove} or {@link #revalidateAndReparent} re-reads what validation already
+	 * fetched.
 	 */
-	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {
+	private record LabelMoveContext(MetadataLabelEntity labelToMove, MetadataLabelEntity newParent, List<MetadataLabelEntity> descendants) {
 	}
 
+	/**
+	 * A move to the label's current parent is rejected as a no-op. That rejection was dropped for one release so that
+	 * an interrupted run could be "resumed" by re-POSTing the same move: the old per-errand design committed the
+	 * re-parent in its own transaction before restowing a single errand, so a crash in between left the re-parent
+	 * done but the restow unfinished, and a retry looked exactly like a no-op. The label move is restowed atomically
+	 * now - one transaction covers the re-parent and every restow (see {@code LabelMoveRunner}) - so a failure rolls
+	 * the re-parent back too, and a genuine retry after one is never a no-op; only a true duplicate request is. The
+	 * rejection is restored on that basis.
+	 */
 	private LabelMoveContext validateAndFindLabelToMove(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
 		var labelToMove = metadataLabelRepository.findByIdAndNamespaceAndMunicipalityId(labelId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(LABEL, labelId, namespace, municipalityId)));
@@ -571,7 +638,30 @@ public class MetadataService {
 		validateNoDescendantPathCollision(namespace, municipalityId, labelToMove, newPath, descendants);
 		validateResourcePathLength(labelToMove, newPath, descendants);
 
-		return new LabelMoveContext(labelToMove, descendants);
+		return new LabelMoveContext(labelToMove, newParent, descendants);
+	}
+
+	/**
+	 * Re-validates and re-parents the label, inside the worker's own transaction, immediately before the write - not
+	 * the validation the request thread ran when the move was accepted. A concurrent {@code PUT .../labels} (a
+	 * wholesale replace of the tree) landing between that validation and this point could otherwise turn a cycle, a
+	 * path collision, or an oversized path into an {@code IllegalStateException} or a unique-constraint violation
+	 * partway through the write, instead of the same clear, typed {@link Problem} a fresh request would have been
+	 * refused with up front.
+	 * <p>
+	 * Called by {@link se.sundsvall.supportmanagement.service.job.LabelMoveRunner}, a different package from this one
+	 * - the same reason {@link #startLabelMove} is public.
+	 */
+	@Transactional
+	public void revalidateAndReparent(final String namespace, final String municipalityId, final String labelId, final String newParentId) {
+		var context = validateAndFindLabelToMove(namespace, municipalityId, labelId, newParentId);
+
+		context.labelToMove().setParent(context.newParent());
+		metadataLabelRepository.saveAndFlush(context.labelToMove());
+		// The @PreUpdate cascade on labelToMove (onUpdate -> updateChildrenPathsRecursively) recomputes resourcePath for
+		// the moved node and, recursively, for every descendant reachable through its metadataLabels collection, all
+		// within this single saveAndFlush's own session - the whole subtree is already correct and persisted by the
+		// time this call returns.
 	}
 
 	private static void validateNotNoOp(final MetadataLabelEntity labelToMove, final String newParentId) {
@@ -651,15 +741,23 @@ public class MetadataService {
 			.anyMatch(labelIds::contains);
 	}
 
+	/**
+	 * Same question as {@link #referencesAnyLabel}, asked by {@link #resolveAffectedActions} for the move endpoints
+	 * specifically.
+	 */
+	private static boolean isAffectedByMove(final ActionConfigEntity action, final Set<String> movedLabelIds) {
+		return referencesAnyLabel(action, movedLabelIds);
+	}
+
 	@Transactional(readOnly = true)
 	public LabelMergeDryRunResponse mergeLabels(final String namespace, final String municipalityId, final String targetLabelId, final LabelMergeRequest request) {
 		var context = validateAndFindLabelsToMerge(namespace, municipalityId, targetLabelId, request.getSourceLabelIds());
 
-		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(context.sourceIds());
+		var affectedErrandIds = errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(context.sourceIds());
 		var affectedActions = actionsReferencing(actionConfigRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId), context.sourceIds());
 
 		return LabelMergeDryRunResponse.create()
-			.withAffectedErrandCount(affectedErrandCount)
+			.withAffectedErrandCount(affectedErrandIds.size())
 			.withAffectedActions(affectedActions);
 	}
 
@@ -677,22 +775,13 @@ public class MetadataService {
 			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
 		}
 
-		var affectedErrandCount = errandsRepository.countDistinctByLabelsMetadataLabelIdIn(context.sourceIds());
-		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
-		// worker dispatched right after is free to look the job up from another thread.
-		var jobId = jobService.create(namespace, municipalityId, MERGE_LABELS, (int) affectedErrandCount, context.targetId());
+		var affectedErrandCount = errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(context.sourceIds()).size();
 		var startedBy = startedBy();
 
-		try {
-			labelMoveTaskExecutor.execute(() -> labelMergeWorker.run(new LabelMergeRun(jobId, namespace, municipalityId, context.targetId(), context.sourceIds(), startedBy)));
-		} catch (final Exception e) {
-			// The job is already there and would otherwise sit waiting for a run that never comes.
-			jobService.fail(jobId, COULD_NOT_START_MERGE.formatted(e.getMessage()));
-
-			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START_MERGE.formatted(e.getMessage()));
-		}
-
-		return jobService.get(namespace, municipalityId, jobId);
+		return jobService.launch(new JobSpec(namespace, municipalityId, MERGE_LABELS, affectedErrandCount, context.targetId()), labelMoveTaskExecutor,
+			jobId -> new LabelMergeRun(jobId, namespace, municipalityId, context.targetId(), context.sourceIds(), startedBy),
+			labelMergeWorker::run,
+			COULD_NOT_START_MERGE);
 	}
 
 	/**
@@ -829,21 +918,12 @@ public class MetadataService {
 		}
 
 		final var estimatedTotal = (int) results.stream().mapToLong(LabelRestructureStepResult::getAffectedErrandCount).sum();
-		// Committed by the time this call returns, since it is not wrapped in a transaction of this method's own - the
-		// worker dispatched right after is free to look the job up from another thread.
-		final var jobId = jobService.create(namespace, municipalityId, RESTRUCTURE_LABEL_TREE, estimatedTotal);
 		final var startedBy = startedBy();
 
-		try {
-			labelMoveTaskExecutor.execute(() -> labelTreeRestructureWorker.run(new LabelRestructureRun(jobId, namespace, municipalityId, request.getSteps(), startedBy)));
-		} catch (final Exception e) {
-			// The job is already there and would otherwise sit waiting for a run that never comes.
-			jobService.fail(jobId, COULD_NOT_START_RESTRUCTURE.formatted(e.getMessage()));
-
-			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, COULD_NOT_START_RESTRUCTURE.formatted(e.getMessage()));
-		}
-
-		return jobService.get(namespace, municipalityId, jobId);
+		return jobService.launch(new JobSpec(namespace, municipalityId, RESTRUCTURE_LABEL_TREE, estimatedTotal, null), labelMoveTaskExecutor,
+			jobId -> new LabelRestructureRun(jobId, namespace, municipalityId, request.getSteps(), startedBy),
+			labelTreeRestructureWorker::run,
+			COULD_NOT_START_RESTRUCTURE);
 	}
 
 	/**
@@ -1043,7 +1123,7 @@ public class MetadataService {
 		if (labelIds.isEmpty()) {
 			return new AffectedLabels(0L, List.of());
 		}
-		return new AffectedLabels(errandsRepository.countDistinctByLabelsMetadataLabelIdIn(labelIds), actionsReferencing(actions, labelIds));
+		return new AffectedLabels(errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(labelIds).size(), actionsReferencing(actions, labelIds));
 	}
 
 	private record AffectedLabels(long errandCount, List<AffectedAction> actions) {

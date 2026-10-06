@@ -1,7 +1,9 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.IntConsumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,11 +18,12 @@ import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
 
-import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -33,11 +36,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LabelMoveWorkerTest {
 
-	private static final String JOB_ID = randomUUID().toString();
-	private static final String NAMESPACE = "namespace";
+	private static final String JOB_ID = "job-id";
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String STARTED_BY = "joe01doe";
 	private static final int BATCH_SIZE = 2;
+	private static final Duration PROGRESS_INTERVAL = Duration.ofMinutes(1);
+	private static final Duration SHUTDOWN_GRACE_PERIOD = Duration.ofSeconds(20);
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -49,56 +53,76 @@ class LabelMoveWorkerTest {
 	private ErrandService errandServiceMock;
 
 	@Mock
-	private JobService jobServiceMock;
-
-	@Mock
 	private EventService eventServiceMock;
 
 	private LabelMoveWorker worker;
 
 	private LabelMoveWorker worker() {
 		if (worker == null) {
-			worker = new LabelMoveWorker(errandsRepositoryMock, metadataLabelRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
-				new LabelMoveProperties(BATCH_SIZE, 2));
+			worker = new LabelMoveWorker(errandsRepositoryMock, metadataLabelRepositoryMock, errandServiceMock, eventServiceMock,
+				new LabelMoveProperties(BATCH_SIZE, 2, PROGRESS_INTERVAL, SHUTDOWN_GRACE_PERIOD, 10_000));
 		}
 		return worker;
 	}
 
 	@Test
-	void run_happyPath_reparentsLabelRestowsErrandsAndCompletesJob() {
+	void moveAndRestow_happyPath_reparentsLabelAndRestowsErrands() {
 		var movedId = "moved";
 		var newParentId = "new-parent";
-
 		var newParent = labelEntity(newParentId, null, "TARGET");
 		var moved = labelEntity(movedId, labelEntity("old-parent", null, "ROOT"), "ROOT/MOVED");
 		var errand = errandWithAccessLabels(movedId).withId("errand-1");
 		var pageable = PageRequest.ofSize(BATCH_SIZE);
+		var progress = new int[] {
+			-1
+		};
 
 		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
 		when(metadataLabelRepositoryMock.findById(newParentId)).thenReturn(Optional.of(newParent));
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable))
 			.thenReturn(List.of(errand));
 
-		worker().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, newParentId, STARTED_BY));
+		var restowed = worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, newParentId, null, null), STARTED_BY, processed -> progress[0] = processed);
 
-		verify(jobServiceMock).setRunning(JOB_ID);
+		assertThat(restowed).isEqualTo(1);
+		assertThat(progress[0]).isEqualTo(1);
+		assertThat(moved.getParent()).isSameAs(newParent);
 		verify(metadataLabelRepositoryMock).findById(movedId);
 		verify(metadataLabelRepositoryMock).findById(newParentId);
-		assertThat(moved.getParent()).isSameAs(newParent);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
-		// The whole subtree's resourcePath is refreshed by the @PreUpdate cascade inside saveAndFlush above - the worker
-		// itself does no separate re-parent-and-refresh pass, and issues no further calls to metadataLabelRepository.
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
-		// The label rebuild itself is ErrandService's job (persistLabelMigrationBatch), not the worker's - it hands
-		// over the page exactly as read, still carrying its pre-move labels.
 		verify(errandServiceMock).persistLabelMigrationBatch(List.of(errand));
-		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
-		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
 
 	@Test
-	void run_moveToRoot_setsParentNullAndSkipsNewParentLookup() {
+	@DisplayName("Verification that a combined move+rename sets the new resourceName and displayName in the same update, as a label-tree restructure's MOVE step may ask for")
+	void moveAndRestow_withRename_setsResourceNameAndDisplayNameToo() {
+		var movedId = "moved";
+		var newParentId = "new-parent";
+		var newParent = labelEntity(newParentId, null, "TARGET");
+		var moved = labelEntity(movedId, null, "ROOT/MOVED");
+		var pageable = PageRequest.ofSize(BATCH_SIZE);
+
+		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
+		when(metadataLabelRepositoryMock.findById(newParentId)).thenReturn(Optional.of(newParent));
+		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable))
+			.thenReturn(List.of());
+
+		worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, newParentId, "NEW_NAME", "New display"), STARTED_BY, processed -> {
+		});
+
+		assertThat(moved.getResourceName()).isEqualTo("NEW_NAME");
+		assertThat(moved.getDisplayName()).isEqualTo("New display");
+		verify(metadataLabelRepositoryMock).findById(movedId);
+		verify(metadataLabelRepositoryMock).findById(newParentId);
+		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
+		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
+		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
+	}
+
+	@Test
+	void moveAndRestow_moveToRoot_setsParentNullAndSkipsNewParentLookup() {
 		var movedId = "moved";
 		var moved = labelEntity(movedId, labelEntity("old-parent", null, "ROOT"), "ROOT/MOVED");
 		var pageable = PageRequest.ofSize(BATCH_SIZE);
@@ -107,27 +131,27 @@ class LabelMoveWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable))
 			.thenReturn(List.of());
 
-		worker().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, STARTED_BY));
+		worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, processed -> {
+		});
 
 		assertThat(moved.getParent()).isNull();
-		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).findById(movedId);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
-		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
 
 	@Test
-	@DisplayName("Verification that paging keeps walking by keyset (id > lastSeenId) until a page comes back shorter than the batch size, including the extra round-trip needed when the last real page happens to be exactly full")
-	void run_multiplePages_persistsEachPageInItsOwnBatchAndReportsProgressPerPage() {
+	@DisplayName("Verification that paging keeps walking by keyset (id > lastSeenId) until a page comes back shorter than the batch size")
+	void moveAndRestow_multiplePages_persistsEachPageInItsOwnBatchAndReportsCumulativeProgress() {
 		var movedId = "moved";
 		var moved = labelEntity(movedId, null, "ROOT");
 		var errand1 = errandWithAccessLabels(movedId).withId("errand-1");
 		var errand2 = errandWithAccessLabels(movedId).withId("errand-2");
 		var pageable = PageRequest.ofSize(1);
-		var pagedWorker = new LabelMoveWorker(errandsRepositoryMock, metadataLabelRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
-			new LabelMoveProperties(1, 2));
+		var pagedWorker = new LabelMoveWorker(errandsRepositoryMock, metadataLabelRepositoryMock, errandServiceMock, eventServiceMock,
+			new LabelMoveProperties(1, 2, PROGRESS_INTERVAL, SHUTDOWN_GRACE_PERIOD, 10_000));
+		var progressUpdates = new java.util.ArrayList<Integer>();
 
 		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable))
@@ -137,29 +161,25 @@ class LabelMoveWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "errand-2", pageable))
 			.thenReturn(List.of());
 
-		pagedWorker.run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, STARTED_BY));
+		var restowed = pagedWorker.moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, progressUpdates::add);
 
+		assertThat(restowed).isEqualTo(2);
+		assertThat(progressUpdates).containsExactly(1, 2);
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "errand-1", pageable);
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "errand-2", pageable);
 		verify(errandServiceMock).persistLabelMigrationBatch(List.of(errand1));
 		verify(errandServiceMock).persistLabelMigrationBatch(List.of(errand2));
-		verify(jobServiceMock).updateProgress(JOB_ID, 1);
-		verify(jobServiceMock).updateProgress(JOB_ID, 2);
-		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).findById(movedId);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
-		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
 
 	@Test
-	@DisplayName("Verification that a page which loses the optimistic-lock race against a concurrent edit is retried against a fresh read rather than failing the whole job")
-	void run_optimisticLockConflictOnPage_retriesAgainstFreshReadAndSucceeds() {
+	@DisplayName("Verification that a page which loses the optimistic-lock race against a concurrent edit is retried against a fresh read rather than failing the whole move")
+	void moveAndRestow_optimisticLockConflictOnPage_retriesAgainstFreshReadAndSucceeds() {
 		var movedId = "moved";
 		var moved = labelEntity(movedId, null, "ROOT");
-		// Same id (a retry re-reads the same errand); errandNumber differs only so the two invocations below can be
-		// told apart in the verifications - ErrandEntity.equals() does not compare version.
 		var staleErrand = errandWithAccessLabels(movedId).withId("errand-1").withErrandNumber("stale");
 		var freshErrand = errandWithAccessLabels(movedId).withId("errand-1").withErrandNumber("fresh");
 		var pageable = PageRequest.ofSize(BATCH_SIZE);
@@ -171,21 +191,21 @@ class LabelMoveWorkerTest {
 			.doNothing()
 			.when(errandServiceMock).persistLabelMigrationBatch(any());
 
-		worker().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, STARTED_BY));
+		var restowed = worker().moveAndRestow(JOB_ID, MUNICIPALITY_ID, new LabelMoveStep(movedId, null, null, null), STARTED_BY, processed -> {
+		});
 
+		assertThat(restowed).isEqualTo(1);
 		verify(errandsRepositoryMock, times(2)).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
 		verify(errandServiceMock).persistLabelMigrationBatch(List.of(staleErrand));
 		verify(errandServiceMock).persistLabelMigrationBatch(List.of(freshErrand));
-		verify(jobServiceMock).updateProgress(JOB_ID, 1);
-		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).findById(movedId);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
 		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), any());
-		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
 
 	@Test
-	@DisplayName("Verification that a page which keeps losing the optimistic-lock race on every attempt fails the job instead of retrying forever")
-	void run_optimisticLockConflictOnEveryAttempt_failsJob() {
+	@DisplayName("Verification that a page which keeps losing the optimistic-lock race on every attempt lets the exception propagate rather than retrying forever")
+	void moveAndRestow_optimisticLockConflictOnEveryAttempt_propagatesException() {
 		var movedId = "moved";
 		var moved = labelEntity(movedId, null, "ROOT");
 		var errand = errandWithAccessLabels(movedId).withId("errand-1");
@@ -197,33 +217,64 @@ class LabelMoveWorkerTest {
 		doThrow(new ObjectOptimisticLockingFailureException(ErrandEntity.class, "errand-1"))
 			.when(errandServiceMock).persistLabelMigrationBatch(any());
 
-		worker().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, STARTED_BY));
+		var progressReporter = (IntConsumer) processed -> {
+		};
+		var sut = worker();
+		var step = new LabelMoveStep(movedId, null, null, null);
+		org.assertj.core.api.Assertions.assertThatThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, step, STARTED_BY, progressReporter))
+			.isInstanceOf(ObjectOptimisticLockingFailureException.class);
 
 		verify(errandsRepositoryMock, times(3)).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
 		verify(errandServiceMock, times(3)).persistLabelMigrationBatch(List.of(errand));
-		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).findById(movedId);
 		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
-		verify(jobServiceMock).fail(eq(JOB_ID), argThat(message -> message.startsWith("Label move aborted:")));
 		verifyNoInteractions(eventServiceMock);
 	}
 
 	@Test
-	void run_labelNoLongerExists_failsJobWithoutTouchingErrandsOrAuditing() {
+	void moveAndRestow_labelNoLongerExists_throwsWithoutTouchingErrandsOrAuditing() {
 		var movedId = "gone";
 		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.empty());
 
-		worker().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, STARTED_BY));
+		var progressReporter = (IntConsumer) processed -> {
+		};
+		var sut = worker();
+		var step = new LabelMoveStep(movedId, null, null, null);
+		assertThatIllegalStateException()
+			.isThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, step, STARTED_BY, progressReporter))
+			.withMessageContaining("no longer exists");
 
-		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).findById(movedId);
-		verify(jobServiceMock).fail(eq(JOB_ID), argThat(message -> message.contains("no longer exists")));
+		verifyNoInteractions(errandServiceMock, eventServiceMock);
+		verify(errandsRepositoryMock, never()).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(any(), any(), any());
+	}
+
+	@Test
+	void moveAndRestow_newParentNoLongerExists_throwsWithoutTouchingErrandsOrAuditing() {
+		var movedId = "moved";
+		var newParentId = "gone";
+		var moved = labelEntity(movedId, null, "ROOT/MOVED");
+
+		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
+		when(metadataLabelRepositoryMock.findById(newParentId)).thenReturn(Optional.empty());
+
+		var progressReporter = (IntConsumer) processed -> {
+		};
+		var sut = worker();
+		var step = new LabelMoveStep(movedId, newParentId, null, null);
+		assertThatIllegalStateException()
+			.isThrownBy(() -> sut.moveAndRestow(JOB_ID, MUNICIPALITY_ID, step, STARTED_BY, progressReporter))
+			.withMessageContaining("no longer exists");
+
+		verify(metadataLabelRepositoryMock).findById(movedId);
+		verify(metadataLabelRepositoryMock).findById(newParentId);
 		verifyNoInteractions(errandServiceMock, eventServiceMock);
 		verify(errandsRepositoryMock, never()).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(any(), any(), any());
 	}
 
 	@AfterEach
 	void verifyNoMoreInteractionsOnMocks() {
-		verifyNoMoreInteractions(errandsRepositoryMock, metadataLabelRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock);
+		verifyNoMoreInteractions(errandsRepositoryMock, metadataLabelRepositoryMock, errandServiceMock, eventServiceMock);
 	}
 
 	private static ErrandEntity errandWithAccessLabels(final String... leafIds) {

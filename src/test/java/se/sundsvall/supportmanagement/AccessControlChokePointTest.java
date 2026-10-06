@@ -54,21 +54,26 @@ class AccessControlChokePointTest {
 		// The retention purge runs on a cutoff rather than on behalf of a caller, so there is no user to authorize.
 		// It reaches errands without an access check by design, which is why ErrandPurgeService refuses to start a run
 		// at all in a namespace that has access control switched on.
-		se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker.class,
+		se.sundsvall.supportmanagement.service.job.ErrandPurgeRunner.class,
 
-		// LabelMoveWorker re-computes errand label sets after a label tree re-parenting. It is triggered by a system
+		// LabelMoveRunner re-computes errand label sets after a label tree re-parenting. It is triggered by a system
 		// operation (move-label job), not a user request, so there is no caller to authorize.
-		se.sundsvall.supportmanagement.service.LabelMoveWorker.class,
+		se.sundsvall.supportmanagement.service.job.LabelMoveRunner.class,
+
+		// LabelMoveWorker is the internal helper LabelTreeRestructureWorker calls directly to carry out one MOVE step
+		// of a larger restructure. Same reasoning as LabelMoveRunner: triggered by a system operation, not a user
+		// request.
+		se.sundsvall.supportmanagement.service.job.LabelMoveWorker.class,
 
 		// LabelMergeWorker re-computes errand label sets after source labels are merged into a destination. Same
 		// reasoning as LabelMoveWorker: triggered by a system operation (merge-labels job), not a user request.
-		se.sundsvall.supportmanagement.service.LabelMergeWorker.class,
+		se.sundsvall.supportmanagement.service.job.LabelMergeWorker.class,
 
 		// LabelTreeRestructureWorker only checks whether a label being deleted is still referenced by an errand (the
 		// same guard MetadataService applies to its own delete path below), and delegates the actual restow of any
 		// affected errand to LabelMoveWorker/LabelMergeWorker. Same reasoning as those two: triggered by a system
 		// operation (restructure-label-tree job), not a user request.
-		se.sundsvall.supportmanagement.service.LabelTreeRestructureWorker.class,
+		se.sundsvall.supportmanagement.service.job.LabelTreeRestructureWorker.class,
 
 		// MetadataService only reads errands to check whether metadata is referenced. It cannot inject
 		// AccessControlService without creating a circular dependency
