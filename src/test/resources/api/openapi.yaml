@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.0"
 servers:
-- url: http://localhost:52338
+- url: http://localhost:55176
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -20342,9 +20342,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -20875,17 +20875,28 @@ components:
           type: boolean
         container:
           type: boolean
-        integralNumber:
+        string:
+          type: boolean
+        long:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        double:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        pojo:
+          type: boolean
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        number:
           type: boolean
         floatingPointNumber:
-          type: boolean
-        bigInteger:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
-        bigDecimal:
           type: boolean
         nodeType:
           type: string
@@ -20899,26 +20910,15 @@ components:
           - OBJECT
           - POJO
           - STRING
-        pojo:
+        bigDecimal:
           type: boolean
-        boolean:
+        valueNode:
           type: boolean
-        string:
+        integralNumber:
           type: boolean
-        binary:
+        missingNode:
           type: boolean
-        short:
-          type: boolean
-        double:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        int:
-          type: boolean
-        long:
-          type: boolean
-        number:
+        bigInteger:
           type: boolean
         embeddedValue:
           type: boolean
@@ -21161,6 +21161,13 @@ components:
           - ATTACHMENT
           maxLength: 64
           minLength: 0
+        labelAdded:
+          type: string
+          description: "Optional id of a metadata label. When set, only events that\
+            \ added this label to the errand match - every label counts as added when\
+            \ the errand is created. If null, the labels of the errand do not matter."
+          examples:
+          - f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b
       required:
       - type
     SubscriptionProfile:

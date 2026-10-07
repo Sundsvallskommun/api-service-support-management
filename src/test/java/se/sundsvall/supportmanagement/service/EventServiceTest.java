@@ -6,6 +6,7 @@ import generated.se.sundsvall.eventlog.Metadata;
 import generated.se.sundsvall.eventlog.PageEvent;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -380,6 +381,22 @@ class EventServiceTest {
 		assertThat(dispatch.getEventType()).isEqualTo("CREATE");
 		assertThat(dispatch.getDescription()).isEqualTo(message);
 		assertThat(dispatch.getSubType()).isEqualTo(ERRAND.getValue());
+		assertThat(dispatch.getAddedLabelIds()).isEmpty();
+		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void createErrandEventCarriesTheAddedLabelsToSubscribers() {
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("MY_NAMESPACE")
+			.withId(randomUUID().toString());
+
+		service.createErrandEvent(EventType.UPDATE, "Ärendet har uppdaterats.", entity, null, null, false, ERRAND, Set.of("label-1", "label-2"));
+
+		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getValue().getAddedLabelIds()).containsExactlyInAnyOrder("label-1", "label-2");
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
 		verifyNoInteractions(notificationServiceMock);
 	}
 

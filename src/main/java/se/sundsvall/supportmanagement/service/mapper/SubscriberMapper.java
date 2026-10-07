@@ -128,7 +128,8 @@ public final class SubscriberMapper {
 		return Optional.ofNullable(embeddable)
 			.map(e -> EventFilter.create()
 				.withType(e.getType())
-				.withSubtype(e.getSubtype()))
+				.withSubtype(e.getSubtype())
+				.withLabelAdded(e.getLabelAdded()))
 			.orElse(null);
 	}
 
@@ -144,7 +145,8 @@ public final class SubscriberMapper {
 		return Optional.ofNullable(dto)
 			.map(d -> EventFilterEmbeddable.create()
 				.withType(d.getType())
-				.withSubtype(d.getSubtype()))
+				.withSubtype(d.getSubtype())
+				.withLabelAdded(d.getLabelAdded()))
 			.orElse(null);
 	}
 }

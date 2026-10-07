@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -277,6 +278,23 @@ class NotificationDispatchWorkerTest {
 
 		// Assert
 		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(entry)));
+	}
+
+	@Test
+	void processGroupMatchesLabelAddedOnlyWhenTheEventAddedTheLabel() {
+
+		// Arrange — the profile wants the HSL label being added; only the second event added it
+		final var otherLabel = buildEntry("other-user").withId("entry-1").withEventType("UPDATE").withSubType("ERRAND").withAddedLabelIds(Set.of("other-label"));
+		final var hslLabel = buildEntry("other-user").withId("entry-2").withEventType("UPDATE").withSubType("ERRAND").withAddedLabelIds(Set.of("other-label", "hsl-label"));
+		final var noLabels = buildEntry("other-user").withId("entry-3").withEventType("UPDATE").withSubType("ERRAND");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildProfileSubscription(subscriber, "hsl", List.of(filter("UPDATE", "ERRAND").withLabelAdded("hsl-label")), List.of(EMAIL)));
+
+		// Act
+		worker.processGroup(List.of(otherLabel, hslLabel, noLabels));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, Map.of(EMAIL, List.of(hslLabel)));
 	}
 
 	@Test

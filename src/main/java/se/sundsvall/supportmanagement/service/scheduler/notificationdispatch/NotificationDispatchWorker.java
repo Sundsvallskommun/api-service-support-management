@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.service.AccessControlService;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.time.OffsetDateTime.now;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
@@ -202,6 +203,7 @@ public class NotificationDispatchWorker {
 
 	private boolean matches(final EventFilterEmbeddable filter, final NotificationDispatchEntity entry) {
 		return Objects.equals(filter.getType(), entry.getEventType())
-			&& (filter.getSubtype() == null || Objects.equals(filter.getSubtype(), entry.getSubType()));
+			&& (filter.getSubtype() == null || Objects.equals(filter.getSubtype(), entry.getSubType()))
+			&& (filter.getLabelAdded() == null || ofNullable(entry.getAddedLabelIds()).orElse(emptySet()).contains(filter.getLabelAdded()));
 	}
 }

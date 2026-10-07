@@ -1,13 +1,19 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import java.util.Set;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -52,6 +58,17 @@ public class NotificationDispatchEntity {
 
 	@Column(name = "executing_user_id")
 	private String executingUserId;
+
+	/**
+	 * The metadata labels the event added to the errand - every label on it for an errand just created - which is what
+	 * an event filter's labelAdded condition is held against. Fetched along with the entry, since the dispatch job reads
+	 * the entries in one transaction and matches them against filters in another.
+	 */
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name = "notification_dispatch_added_label",
+		joinColumns = @JoinColumn(name = "dispatch_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_notification_dispatch_added_label_dispatch_id")))
+	@Column(name = "metadata_label_id", nullable = false, length = 36)
+	private Set<String> addedLabelIds;
 
 	@Column(name = "created", nullable = false, columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
@@ -196,6 +213,19 @@ public class NotificationDispatchEntity {
 		return this;
 	}
 
+	public Set<String> getAddedLabelIds() {
+		return addedLabelIds;
+	}
+
+	public void setAddedLabelIds(final Set<String> addedLabelIds) {
+		this.addedLabelIds = addedLabelIds;
+	}
+
+	public NotificationDispatchEntity withAddedLabelIds(final Set<String> addedLabelIds) {
+		this.addedLabelIds = addedLabelIds;
+		return this;
+	}
+
 	public OffsetDateTime getCreated() {
 		return created;
 	}
@@ -211,7 +241,7 @@ public class NotificationDispatchEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, eventId, requestGroupId, errandId, municipalityId, namespace, eventType, description, subType, executingUserId, created);
+		return Objects.hash(id, eventId, requestGroupId, errandId, municipalityId, namespace, eventType, description, subType, executingUserId, addedLabelIds, created);
 	}
 
 	@Override
@@ -233,6 +263,7 @@ public class NotificationDispatchEntity {
 			&& Objects.equals(description, other.description)
 			&& Objects.equals(subType, other.subType)
 			&& Objects.equals(executingUserId, other.executingUserId)
+			&& Objects.equals(addedLabelIds, other.addedLabelIds)
 			&& Objects.equals(created, other.created);
 	}
 
@@ -249,6 +280,7 @@ public class NotificationDispatchEntity {
 			", description='" + description + '\'' +
 			", subType='" + subType + '\'' +
 			", executingUserId='" + executingUserId + '\'' +
+			", addedLabelIds=" + addedLabelIds +
 			", created=" + created +
 			'}';
 	}

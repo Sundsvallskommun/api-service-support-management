@@ -31,6 +31,8 @@ class EmailDispatchIT extends AbstractAppTest {
 	private static final String EMAIL_SUBSCRIBER_ID = "11111111-0000-0000-0000-000000000001";
 	private static final String UPDATE_DISPATCH_ID = "33333333-0000-0000-0000-000000000001";
 	private static final String CREATE_DISPATCH_ID = "33333333-0000-0000-0000-000000000002";
+	private static final String MAS_SUBSCRIBER_ID = "11111111-0000-0000-0000-000000000003";
+	private static final String HSL_LABEL_ID = "44444444-0000-0000-0000-000000000001";
 
 	@Autowired
 	private NotificationDispatchWorker notificationDispatchWorker;
@@ -155,5 +157,35 @@ class EmailDispatchIT extends AbstractAppTest {
 		notificationDispatchWorker.processGroup(processable);
 
 		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+	}
+
+	/**
+	 * A PATCH adding the HSL risk label queues an UPDATE/ERRAND event carrying the label, which the MAS profile's
+	 * labelAdded filter matches. The MAS subscriber only has the internal channel, but the profile routes the event to
+	 * email, so it lands in the outbox for them and for no one else.
+	 */
+	@Test
+	void test06_addingTheHslLabelMailsTheMasProfile() {
+		notificationDispatchRepository.deleteAll();
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "patcher01; type=adAccount")
+			.withServicePath(PATH + "/" + ERRAND_ID)
+			.withHttpMethod(PATCH)
+			.withRequest("request.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		final var processable = notificationDispatchWorker.fetchProcessable();
+		transactionTemplate.executeWithoutResult(_ -> assertThat(notificationDispatchRepository.findAll())
+			.filteredOn(entry -> "ERRAND".equals(entry.getSubType()))
+			.singleElement()
+			.satisfies(entry -> assertThat(entry.getAddedLabelIds()).containsExactly(HSL_LABEL_ID)));
+
+		notificationDispatchWorker.processGroup(processable);
+
+		transactionTemplate.executeWithoutResult(_ -> assertThat(emailDispatchOutboxRepository.findAll())
+			.singleElement()
+			.satisfies(outbox -> assertThat(outbox.getSubscriber().getId()).isEqualTo(MAS_SUBSCRIBER_ID)));
 	}
 }

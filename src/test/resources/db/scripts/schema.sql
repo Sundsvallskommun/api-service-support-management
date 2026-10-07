@@ -667,6 +667,12 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table notification_dispatch_added_label (
+        dispatch_id varchar(36) not null,
+        metadata_label_id varchar(36) not null,
+        primary key (dispatch_id, metadata_label_id)
+    ) engine=InnoDB;
+
     create table parameter (
         version bigint default 0 not null,
         display_name varchar(255),
@@ -868,6 +874,7 @@
 
     create table subscriber_event_filter (
         sort_order integer not null check ((sort_order>=0)),
+        label_added varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         subscriber_id varchar(255) not null,
@@ -914,6 +921,7 @@
 
     create table subscription_event_filter (
         sort_order integer not null check ((sort_order>=0)),
+        label_added varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         subscription_id varchar(255) not null,
@@ -948,6 +956,7 @@
 
     create table subscription_profile_event_filter (
         sort_order integer not null check ((sort_order>=0)),
+        label_added varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         profile_id varchar(255) not null,
@@ -1753,6 +1762,11 @@
        add constraint fk_notification_errand_id 
        foreign key (errand_id) 
        references errand (id);
+
+    alter table if exists notification_dispatch_added_label 
+       add constraint fk_notification_dispatch_added_label_dispatch_id 
+       foreign key (dispatch_id) 
+       references notification_dispatch (id);
 
     alter table if exists parameter 
        add constraint fk_parameter_errand_id 
