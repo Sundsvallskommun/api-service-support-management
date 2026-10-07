@@ -60,6 +60,21 @@ class SearchProblemsTest {
 		assertThat(problem.getDetail()).isEqualTo("The search query could not be parsed: failed to parse date field [2025-02-01] with format [\"strict\"]");
 	}
 
+	/**
+	 * OpenSearch repeats the query in the reason, so a reason is as long as the query the client sent.
+	 */
+	@Test
+	void aLongReasonIsReadWhole() {
+		final var reason = "x".repeat(10_000);
+		final var exception = new SearchException("""
+			{"error":{"root_cause":[{"type":"parse_exception","reason":"%s"}]}}""".formatted(reason));
+
+		final var problem = (ThrowableProblem) SearchProblems.toProblem(exception, TIMEOUT);
+
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(problem.getDetail()).isEqualTo("The search query could not be parsed: " + reason);
+	}
+
 	@Test
 	void unreachableClusterIsWorthRetrying() {
 		final var exception = new SearchException("HSEARCH400007: Elasticsearch request failed: Connection refused", new ConnectException("Connection refused"));

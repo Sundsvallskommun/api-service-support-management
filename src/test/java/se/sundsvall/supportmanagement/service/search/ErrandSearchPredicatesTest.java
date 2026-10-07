@@ -148,7 +148,7 @@ class ErrandSearchPredicatesTest {
 		when(factoryMock.matchAll()).thenReturn(matchAllMock);
 		when(matchAllMock.toPredicate()).thenReturn(predicateMock);
 
-		assertThat(predicates().access(factoryMock, new AccessScope(false, null, null), NAMESPACE, MUNICIPALITY_ID)).isSameAs(predicateMock);
+		assertThat(predicates().access(factoryMock, new AccessScope(false, null, null))).isSameAs(predicateMock);
 
 	}
 
@@ -159,7 +159,7 @@ class ErrandSearchPredicatesTest {
 		when(factoryMock.matchNone()).thenReturn(matchNoneMock);
 		when(matchNoneMock.toPredicate()).thenReturn(predicateMock);
 
-		assertThat(predicates().access(factoryMock, new AccessScope(true, null, null), NAMESPACE, MUNICIPALITY_ID)).isSameAs(predicateMock);
+		assertThat(predicates().access(factoryMock, new AccessScope(true, null, null))).isSameAs(predicateMock);
 
 		verify(orMock, never()).add(any(PredicateFinalStep.class));
 	}
@@ -227,7 +227,7 @@ class ErrandSearchPredicatesTest {
 		when(orMock.toPredicate()).thenReturn(predicateMock);
 		when(factoryMock.matchNone()).thenReturn(matchNoneMock);
 
-		predicates().access(factoryMock, new AccessScope(true, Set.of(), null), NAMESPACE, MUNICIPALITY_ID);
+		predicates().access(factoryMock, new AccessScope(true, Set.of(), null));
 
 		verify(orMock).add(matchNoneMock);
 	}
@@ -249,7 +249,7 @@ class ErrandSearchPredicatesTest {
 		when(elasticsearchFactoryMock.fromJson(any(com.google.gson.JsonObject.class))).thenReturn(notMock);
 		when(factoryMock.or(any(PredicateFinalStep.class), any(PredicateFinalStep.class))).thenReturn(andMock);
 
-		assertThat(predicates().access(factoryMock, new AccessScope(true, Set.of(allowed), "rep01ort"), NAMESPACE, MUNICIPALITY_ID)).isSameAs(predicateMock);
+		assertThat(predicates().access(factoryMock, new AccessScope(true, Set.of(allowed), "rep01ort"))).isSameAs(predicateMock);
 
 		// The labels branch is written as the index takes it, so what is asserted of it is the JSON above
 		verify(orMock).add(matchOptionsMock);

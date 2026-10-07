@@ -31,7 +31,7 @@ final class ErrandFilters {
 	// merely starting with the same word, such as decisionsCount, filterable
 	private static final Pattern INDEX_ONLY_ASSOCIATION = Pattern.compile("(?<!\\w)(" + String.join("|", ErrandEntity.INDEX_ONLY_ASSOCIATIONS) + ")(?!\\w)");
 	// What is quoted is a value, not a path
-	private static final Pattern QUOTED = Pattern.compile("'(?:[^'\\\\]|\\\\.)*'");
+	private static final Pattern QUOTED = Pattern.compile("'(?:[^'\\\\]|\\\\.)*+'");
 
 	private ErrandFilters() {}
 

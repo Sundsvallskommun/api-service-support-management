@@ -100,7 +100,7 @@ public class ErrandSearchService {
 			result = Search.session(entityManager).search(ErrandEntity.class)
 				.where(f -> f.bool()
 					.filter(predicates.tenant(f, namespace, municipalityId))
-					.must(predicates.clauses(f, plan.clauses(), query, namespace, municipalityId)))
+					.must(predicates.clauses(f, plan.clauses(), query)))
 				.sort(f -> toSort(f, pageable.getSort()))
 				// A query the index cannot answer within this is given up on, rather than held against everyone else
 				.failAfter(properties.timeout().toMillis(), MILLISECONDS)
@@ -206,7 +206,7 @@ public class ErrandSearchService {
 		return Search.session(entityManager).search(ErrandEntity.class)
 			.where(f -> f.bool()
 				.filter(predicates.tenant(f, namespace, municipalityId))
-				.must(predicates.clauses(f, clauses, query, namespace, municipalityId)));
+				.must(predicates.clauses(f, clauses, query)));
 	}
 
 	/** The field of the errand a groupable property belongs to, which is what the grant is asked about. */

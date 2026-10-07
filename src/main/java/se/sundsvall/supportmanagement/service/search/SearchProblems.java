@@ -27,7 +27,7 @@ final class SearchProblems {
 
 	// The reason OpenSearch gives inside the body of its response to a query it could not parse
 	private static final Pattern PARSE_FAILURE_REASON = Pattern.compile(
-		"\"type\"\\s*:\\s*\"(?:query_shard_exception|parse_exception|parsing_exception)\"\\s*,\\s*\"reason\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+		"\"type\"\\s*:\\s*\"(?:query_shard_exception|parse_exception|parsing_exception)\"\\s*,\\s*\"reason\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*+)\"");
 
 	private SearchProblems() {}
 

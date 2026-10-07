@@ -110,6 +110,17 @@ class ErrandFiltersTest {
 		assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifySortable(pageable));
 	}
 
+	/**
+	 * A value as long as a request line allows is read as one value, rather than overflowing the stack of a matcher that
+	 * recurses once per character.
+	 */
+	@Test
+	void aLongQuotedValueIsReadAsAValue() {
+		when(requestMock.getParameter(ErrandFilters.FILTER_PARAMETER)).thenReturn("title:'" + "communications ".repeat(1000) + "'");
+
+		assertThatCode(() -> ErrandFilters.verifyFilterable(requestMock)).doesNotThrowAnyException();
+	}
+
 	@Test
 	void countIsGuardedTheSameWay() {
 		when(requestMock.getParameter(ErrandFilters.FILTER_PARAMETER)).thenReturn("communications.subject:'x'");

@@ -68,7 +68,7 @@ public class ErrandSearchPredicates {
 	 *
 	 * @param clauses what the search runs with, see {@link ErrandSearchAccess.Plan}
 	 */
-	public SearchPredicate clauses(final SearchPredicateFactory f, final List<ErrandSearchAccess.Clause> clauses, final String query, final String namespace, final String municipalityId) {
+	public SearchPredicate clauses(final SearchPredicateFactory f, final List<ErrandSearchAccess.Clause> clauses, final String query) {
 		if (clauses.isEmpty()) {
 			// Nothing reaches anything, which no caller asks for today: a plan is refused before it holds no clause, and a
 			// breakdown over no route is answered without asking the index. Kept so that a later caller cannot turn an empty
@@ -76,21 +76,21 @@ public class ErrandSearchPredicates {
 			return f.matchNone().toPredicate();
 		}
 		if (clauses.size() == 1) {
-			return clause(f, clauses.getFirst(), query, namespace, municipalityId).toPredicate();
+			return clause(f, clauses.getFirst(), query).toPredicate();
 		}
 
 		final var union = f.or();
-		clauses.forEach(clause -> union.add(clause(f, clause, query, namespace, municipalityId)));
+		clauses.forEach(clause -> union.add(clause(f, clause, query)));
 		return union.toPredicate();
 	}
 
-	private PredicateFinalStep clause(final SearchPredicateFactory f, final ErrandSearchAccess.Clause clause, final String query, final String namespace, final String municipalityId) {
+	private PredicateFinalStep clause(final SearchPredicateFactory f, final ErrandSearchAccess.Clause clause, final String query) {
 		final var predicate = f.bool()
-			.filter(access(f, clause.scope(), namespace, municipalityId))
+			.filter(access(f, clause.scope()))
 			.must(query(f, query, clause.fields()));
 
 		if (nonNull(clause.excluded())) {
-			predicate.mustNot(access(f, clause.excluded(), namespace, municipalityId));
+			predicate.mustNot(access(f, clause.excluded()));
 		}
 
 		return predicate;
@@ -123,7 +123,7 @@ public class ErrandSearchPredicates {
 	 * separately: a count of none satisfies no covering query, whatever it is counted against. A user holding no labels
 	 * reaches nothing at all, unlabelled errands included, which is the database's answer too.
 	 */
-	public SearchPredicate access(final SearchPredicateFactory f, final AccessScope scope, final String namespace, final String municipalityId) {
+	public SearchPredicate access(final SearchPredicateFactory f, final AccessScope scope) {
 		if (!scope.enforced()) {
 			return f.matchAll().toPredicate();
 		}
