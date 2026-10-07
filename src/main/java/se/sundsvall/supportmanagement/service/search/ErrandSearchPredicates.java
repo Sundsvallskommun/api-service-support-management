@@ -47,8 +47,7 @@ public class ErrandSearchPredicates {
 		// alone, which is searched by name and not by word. A field no errand carries stands in for the list then, so that
 		// a word matches nothing by itself while the fielded terms, the disjunctions and the negations of the query still
 		// compose - answering "status:new OR vatten" with the new errands rather than with nothing, which is what refusing
-		// the whole clause did. Stood in for by the field the errands are filtered on until searching for the municipality
-		// id itself answered with every errand the route reaches.
+		// the whole clause would. See NoOpenFieldBinder for why the stand-in is a field no errand carries.
 		return f.queryString()
 			.fields(fields.isEmpty() ? new String[] {
 				NO_OPEN_FIELD

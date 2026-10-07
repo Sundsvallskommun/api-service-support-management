@@ -12,9 +12,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
  * <p>
  * A query string is searched in a list of fields, and the list may not be empty. Where a route of a grant opens no
  * field of the errand to a word without a field, something has to stand in for the list, and whatever stands in is
- * searched: the field the errands are filtered on did the job until a user searching for the municipality id itself
- * was answered with every errand the route reaches. A field no errand carries answers no word, and a query that names
- * its fields still runs beside it - which is the whole point of standing in rather than refusing the clause.
+ * searched: a field the errands carry, such as the municipality id, would answer a word naming its value with every
+ * errand the route reaches. A field no errand carries answers no word, and a query that names its fields still runs
+ * beside it - which is the whole point of standing in rather than refusing the clause.
  * <p>
  * Declared through a binder because the index holds it and the entity does not: there is no property to hang it on,
  * and nothing to write when the errand is indexed.

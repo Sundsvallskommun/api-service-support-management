@@ -15,14 +15,12 @@ import static java.util.Objects.isNull;
  * Writes how many access labels an errand carries, which is what the label filter of a search counts against.
  * <p>
  * The filter asks that every access label of the errand is among the labels the user holds. An index can ask how many
- * of
- * a field's values lie within a set, but not whether all of them do, so the number to reach is written beside them and
- * the question becomes "at least this many of them", which is the same question. Said this way rather than as "none of
- * the labels you lack", which needed the labels of the namespace to be known and therefore fresh, and let a label
- * nobody had heard of yet pass for allowed.
+ * of a field's values lie within a set, but not whether all of them do, so the number to reach is written beside them
+ * and the question becomes "at least this many of them", which is the same question. It needs nothing but the labels
+ * the user holds, and a label nobody has heard of keeps an errand out rather than letting it through.
  * <p>
- * A count that disagreed with the labels beside it would be worse than the filter it replaces, so the binder declares
- * the labels as what it is derived from: an errand whose access labels change is reindexed, count and all.
+ * A count that disagreed with the labels beside it would let errands through or keep them out wrongly, so the binder
+ * declares the labels as what it is derived from: an errand whose access labels change is reindexed, count and all.
  */
 public class AccessLabelCountBinder implements TypeBinder {
 

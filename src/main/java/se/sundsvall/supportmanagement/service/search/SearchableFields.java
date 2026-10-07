@@ -13,12 +13,9 @@ import static java.util.Objects.isNull;
 /**
  * Which index fields one route of a grant may search.
  * <p>
- * This used to say what a route kept closed, and everything it did not name stayed open. Every time the reading of a
- * query turned out to differ from the parser's - a name opened by a minus, a unicode escape, the value of
- * {@code _exists_}, the name of an object rather than a field under it - the difference was a field searched without
- * being granted, because being unrecognised meant being permitted. So it says what is open instead: a name is
- * searchable only where it is bound to a field or a resource the route reaches, and a name nobody bound is refused
- * whether or not anyone thought of it.
+ * It is an allow-list: a name is searchable only where it is bound to a field or a resource the route reaches, and a
+ * name nobody bound is refused whether or not anyone thought of it. Saying what is closed instead would let every name
+ * nobody listed through.
  * <p>
  * A name is open when both hold, and it is bound to at least one of the two:
  * <ul>

@@ -29,9 +29,9 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
  * sorting on one, is refused. {@link QueryScanner} says what a query names, {@link SearchableFields} what a route may
  * search; this puts the two together.
  * <p>
- * Both of those fail closed, which is the lesson of the shapes this got wrong before. A name the fields cannot place
- * is refused rather than passed on, and a query the parser could not read is refused whole: reading a query
- * differently from the index that answers it is how a field gets searched without being granted.
+ * Both of those fail closed. A name the fields cannot place is refused rather than passed on, and a query the parser
+ * could not read is refused whole: reading a query differently from the index that answers it is how a field gets
+ * searched without being granted.
  * <p>
  * A grant reaches errands by several routes, and what may be read differs between them: an errand the labels cover at
  * read is searched by everything the roles of the user allow, one they cover at limited read only by what a limited
@@ -171,11 +171,11 @@ public class ErrandSearchAccess {
 			routes.add(new Route(limited, covered, SearchableFields.of(grant.limitedLabels().resources(), grant.limitedLabels().readable())));
 		}
 		if (nonNull(grant.reporter())) {
-			// The same holds for the errands the user reported, and it was missed here: the reporter fields are what the
-			// mapper gives an errand neither label set covers, so the route may only reach those. Reaching the covered
-			// errands too let a search match on a field the mapper then left out of the answer, which is the hit telling
-			// what the field holds. The limited labels are a superset of the ones at read, so leaving them out leaves the
-			// covered errands out as well.
+			// The same holds for the errands the user reported: the reporter fields are what the mapper gives an errand
+			// neither label set covers, so the route may only reach those. Reaching the covered errands too would let a
+			// search match on a field the mapper then leaves out of the answer, which is the hit telling what the field
+			// holds. The limited labels are a superset of the ones at read, so leaving them out leaves the covered errands
+			// out as well.
 			routes.add(new Route(grant.reporterScope(), nonNull(limited) ? limited : covered,
 				SearchableFields.of(grant.reporter().resources(), grant.reporter().readable())));
 		}

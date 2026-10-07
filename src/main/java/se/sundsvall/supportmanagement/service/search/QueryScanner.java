@@ -13,11 +13,10 @@ import org.apache.lucene.search.Query;
  * Reads the fields a Lucene query string names, with the parser that OpenSearch reads it with.
  * <p>
  * What a search may look in is decided from the fields the query names, so reading the query wrongly is not a wrong
- * answer but an open door: a name we do not see is a field the index searches all the same. A copy of the grammar was
- * tried for this and kept being wrong about one shape or another - a quote ending a term, a regular expression inside
- * a group, a bracket within a range - so the query is read by the grammar itself instead. {@code query_string} is
- * Lucene's classic query parser with the leaf queries built by OpenSearch, so this is that parser with the leaf queries
- * built by nothing: every leaf the parser makes hands over the field it is made for, and that field is noted.
+ * answer but an open door: a name we do not see is a field the index searches all the same. The query is therefore read
+ * by the grammar the index reads it with. {@code query_string} is Lucene's classic query parser with the leaf queries
+ * built by OpenSearch, so this is that parser with the leaf queries built by nothing: every leaf the parser makes hands
+ * over the field it is made for, and that field is noted.
  * <p>
  * A query the parser cannot read is reported as not read rather than as naming nothing. The index would refuse it as
  * well, but a restricted search may not lean on that.
