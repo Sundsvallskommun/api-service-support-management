@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import java.util.List;
 import java.util.Set;
 import org.hibernate.search.backend.elasticsearch.ElasticsearchExtension;
-import org.hibernate.search.engine.search.common.BooleanOperator;
 import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.predicate.dsl.PredicateFinalStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
@@ -26,6 +25,7 @@ public class ErrandSearchPredicates {
 	static final String MUNICIPALITY_ID_FIELD = ErrandIndex.MUNICIPALITY_ID;
 	static final String NO_OPEN_FIELD = ErrandIndex.NO_OPEN_FIELD;
 	static final String NAMESPACE_FIELD = ErrandIndex.NAMESPACE;
+	static final String TIME_ZONE = "Europe/Stockholm";
 	static final String REPORTER_USER_ID_FIELD = ErrandIndex.REPORTER_USER_ID;
 	static final String ACCESS_LABEL_ID_FIELD = ErrandIndex.ACCESS_LABEL_ID;
 
@@ -48,13 +48,29 @@ public class ErrandSearchPredicates {
 		// a word matches nothing by itself while the fielded terms, the disjunctions and the negations of the query still
 		// compose - answering "status:new OR vatten" with the new errands rather than with nothing, which is what refusing
 		// the whole clause would. See NoOpenFieldBinder for why the stand-in is a field no errand carries.
-		return f.queryString()
-			.fields(fields.isEmpty() ? new String[] {
-				NO_OPEN_FIELD
-			} : fields.toArray(String[]::new))
-			.matching(query)
-			.defaultOperator(BooleanOperator.AND)
+		return f.extension(ElasticsearchExtension.get())
+			.fromJson(queryString(query, fields.isEmpty() ? List.of(NO_OPEN_FIELD) : fields))
 			.toPredicate();
+	}
+
+	/**
+	 * The query string as OpenSearch takes it, every word required. Written out rather than built through the query DSL,
+	 * which has no time zone: a date without one is read in the zone the errands are handled in, so that
+	 * {@code created:2025-06-01} is the first of June in Sweden and not in UTC.
+	 */
+	static JsonObject queryString(final String query, final List<String> fields) {
+		final var fieldArray = new JsonArray();
+		fields.forEach(fieldArray::add);
+
+		final var options = new JsonObject();
+		options.addProperty("query", query);
+		options.add("fields", fieldArray);
+		options.addProperty("default_operator", "and");
+		options.addProperty("time_zone", TIME_ZONE);
+
+		final var queryString = new JsonObject();
+		queryString.add("query_string", options);
+		return queryString;
 	}
 
 	/**

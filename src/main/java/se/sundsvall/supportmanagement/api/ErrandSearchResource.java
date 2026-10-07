@@ -73,7 +73,7 @@ class ErrandSearchResource {
 		| `berg*`, `b?rg`, `*ander*` | wildcards in a value |
 		| `jsonParameters.\\*.regNo:abc123`, `\\*.probability:3` | a wildcard in a field name, escaped, standing for any part of the path |
 		| `bergh~1` | fuzzy, at most one edit away |
-		| `created:[2025-01-01 TO 2025-12-31]`, `created:>=2025-06-01`, `created:{* TO now-7d}` | ranges, with date math |
+		| `created:[2025-01-01 TO 2025-12-31]`, `created:>=2025-06-01`, `created:{* TO now-7d}` | ranges, with date math. A date without a time zone is read in Swedish time (Europe/Stockholm) |
 		| `_exists_:assignedUserId` | the field has a value |
 		| `title:vatten^3 description:vatten` | boost a clause |
 

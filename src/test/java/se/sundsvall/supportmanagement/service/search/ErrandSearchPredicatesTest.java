@@ -1,8 +1,9 @@
 package se.sundsvall.supportmanagement.service.search;
 
+import com.google.gson.JsonObject;
 import java.util.List;
 import java.util.Set;
-import org.hibernate.search.engine.search.common.BooleanOperator;
+import org.hibernate.search.backend.elasticsearch.ElasticsearchExtension;
 import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.predicate.dsl.MatchAllPredicateOptionsStep;
 import org.hibernate.search.engine.search.predicate.dsl.MatchNonePredicateFinalStep;
@@ -11,9 +12,6 @@ import org.hibernate.search.engine.search.predicate.dsl.MatchPredicateFieldStep;
 import org.hibernate.search.engine.search.predicate.dsl.MatchPredicateOptionsStep;
 import org.hibernate.search.engine.search.predicate.dsl.NotPredicateFinalStep;
 import org.hibernate.search.engine.search.predicate.dsl.PredicateFinalStep;
-import org.hibernate.search.engine.search.predicate.dsl.QueryStringPredicateFieldMoreStep;
-import org.hibernate.search.engine.search.predicate.dsl.QueryStringPredicateFieldStep;
-import org.hibernate.search.engine.search.predicate.dsl.QueryStringPredicateOptionsStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.hibernate.search.engine.search.predicate.dsl.SimpleBooleanPredicateClausesStep;
 import org.hibernate.search.engine.search.predicate.dsl.SimpleBooleanPredicateOptionsStep;
@@ -89,15 +87,6 @@ class ErrandSearchPredicatesTest {
 	@Mock
 	private TermsPredicateOptionsStep termsOptionsMock;
 
-	@Mock
-	private QueryStringPredicateFieldStep queryStringFieldStepMock;
-
-	@Mock
-	private QueryStringPredicateFieldMoreStep queryStringFieldMoreStepMock;
-
-	@Mock
-	private QueryStringPredicateOptionsStep queryStringOptionsMock;
-
 	private ErrandSearchPredicates predicates() {
 		return new ErrandSearchPredicates();
 	}
@@ -109,22 +98,27 @@ class ErrandSearchPredicatesTest {
 
 		assertThat(predicates().query(factoryMock, " ", List.of("title"))).isSameAs(predicateMock);
 		assertThat(predicates().query(factoryMock, null, List.of("title"))).isSameAs(predicateMock);
-		verify(factoryMock, never()).queryString();
+		verify(factoryMock, never()).extension(ElasticsearchExtension.get());
 	}
 
 	@Test
 	void queryIsAQueryStringOverTheGivenFieldsWithEveryWordRequired() {
-		when(factoryMock.queryString()).thenReturn(queryStringFieldStepMock);
-		when(queryStringFieldStepMock.fields(any(String[].class))).thenReturn(queryStringFieldMoreStepMock);
-		when(queryStringFieldMoreStepMock.matching(anyString())).thenReturn(queryStringOptionsMock);
-		when(queryStringOptionsMock.defaultOperator(any())).thenReturn(queryStringOptionsMock);
-		when(queryStringOptionsMock.toPredicate()).thenReturn(predicateMock);
+		when(factoryMock.extension(ElasticsearchExtension.get())).thenReturn(elasticsearchFactoryMock);
+		when(elasticsearchFactoryMock.fromJson(any(JsonObject.class))).thenReturn(notMock);
+		when(notMock.toPredicate()).thenReturn(predicateMock);
 
 		assertThat(predicates().query(factoryMock, "vatten status:new", List.of("title", "description"))).isSameAs(predicateMock);
 
-		verify(queryStringFieldStepMock).fields("title", "description");
-		verify(queryStringFieldMoreStepMock).matching("vatten status:new");
-		verify(queryStringOptionsMock).defaultOperator(BooleanOperator.AND);
+		verify(elasticsearchFactoryMock).fromJson(ErrandSearchPredicates.queryString("vatten status:new", List.of("title", "description")));
+	}
+
+	/**
+	 * A date without a zone is read in Swedish time, and every word is required.
+	 */
+	@Test
+	void theQueryStringIsReadInSwedishTime() {
+		assertThat(ErrandSearchPredicates.queryString("created:2025-06-01", List.of("title")).toString())
+			.isEqualTo("{\"query_string\":{\"query\":\"created:2025-06-01\",\"fields\":[\"title\"],\"default_operator\":\"and\",\"time_zone\":\"Europe/Stockholm\"}}");
 	}
 
 	@Test
@@ -170,15 +164,13 @@ class ErrandSearchPredicatesTest {
 	 */
 	@Test
 	void aWordWithNoFieldToLookInSearchesAFieldNoErrandCarries() {
-		when(factoryMock.queryString()).thenReturn(queryStringFieldStepMock);
-		when(queryStringFieldStepMock.fields(any(String[].class))).thenReturn(queryStringFieldMoreStepMock);
-		when(queryStringFieldMoreStepMock.matching(anyString())).thenReturn(queryStringOptionsMock);
-		when(queryStringOptionsMock.defaultOperator(BooleanOperator.AND)).thenReturn(queryStringOptionsMock);
-		when(queryStringOptionsMock.toPredicate()).thenReturn(predicateMock);
+		when(factoryMock.extension(ElasticsearchExtension.get())).thenReturn(elasticsearchFactoryMock);
+		when(elasticsearchFactoryMock.fromJson(any(JsonObject.class))).thenReturn(notMock);
+		when(notMock.toPredicate()).thenReturn(predicateMock);
 
 		assertThat(predicates().query(factoryMock, "vatten", List.of())).isSameAs(predicateMock);
 
-		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.NO_OPEN_FIELD);
+		verify(elasticsearchFactoryMock).fromJson(ErrandSearchPredicates.queryString("vatten", List.of(ErrandSearchPredicates.NO_OPEN_FIELD)));
 		verify(factoryMock, never()).matchNone();
 	}
 
@@ -188,15 +180,13 @@ class ErrandSearchPredicatesTest {
 	 */
 	@Test
 	void aQueryNamingItsOwnFieldsRunsWithNoFieldsOfItsOwn() {
-		when(factoryMock.queryString()).thenReturn(queryStringFieldStepMock);
-		when(queryStringFieldStepMock.fields(any(String[].class))).thenReturn(queryStringFieldMoreStepMock);
-		when(queryStringFieldMoreStepMock.matching(anyString())).thenReturn(queryStringOptionsMock);
-		when(queryStringOptionsMock.defaultOperator(BooleanOperator.AND)).thenReturn(queryStringOptionsMock);
-		when(queryStringOptionsMock.toPredicate()).thenReturn(predicateMock);
+		when(factoryMock.extension(ElasticsearchExtension.get())).thenReturn(elasticsearchFactoryMock);
+		when(elasticsearchFactoryMock.fromJson(any(JsonObject.class))).thenReturn(notMock);
+		when(notMock.toPredicate()).thenReturn(predicateMock);
 
 		assertThat(predicates().query(factoryMock, "status:new", List.of())).isSameAs(predicateMock);
 
-		verify(queryStringFieldStepMock).fields(ErrandSearchPredicates.NO_OPEN_FIELD);
+		verify(elasticsearchFactoryMock).fromJson(ErrandSearchPredicates.queryString("status:new", List.of(ErrandSearchPredicates.NO_OPEN_FIELD)));
 		verify(factoryMock, never()).matchNone();
 	}
 
