@@ -380,7 +380,7 @@ How the pieces hold together, from the API to the index:
   configuration and one snapshot of the access mapper; `AccessControlService` fetches those, enforces the decision and
   loads errands; `ErrandAccessSpecifications` renders it for the database.
 - `service/search` renders the same grant for the index: `SearchableFields` says what a route may search,
-  `QueryScanner` what a query names, `ErrandSearchAccess` puts the two together, `ErrandSearchPredicates` builds the
+  `QueryScanner` what a query names (read by Lucene's classic query parser, the one OpenSearch reads `query_string` with), `ErrandSearchAccess` puts the two together, `ErrandSearchPredicates` builds the
   query. `SearchableFields` is an allow-list on purpose: a name is searchable only where it is bound to a field or a
   resource the route reaches, so a name nobody thought of is refused instead of permitted. `service/search/index` is the index itself: rebuild, schema, health, and the one facade (`SearchIndexing`) the
   services writing the database may use.

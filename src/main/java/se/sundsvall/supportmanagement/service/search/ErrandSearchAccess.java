@@ -29,9 +29,9 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
  * sorting on one, is refused. {@link QueryScanner} says what a query names, {@link SearchableFields} what a route may
  * search; this puts the two together.
  * <p>
- * Both of those fail closed, which is the lesson of the shapes this got wrong before. A name the scanner cannot place
- * is refused rather than passed on, and a query holding a colon the scanner could not read at all is refused whole:
- * reading a query differently from the index that answers it is how a field gets searched without being granted.
+ * Both of those fail closed, which is the lesson of the shapes this got wrong before. A name the fields cannot place
+ * is refused rather than passed on, and a query the parser could not read is refused whole: reading a query
+ * differently from the index that answers it is how a field gets searched without being granted.
  * <p>
  * A grant reaches errands by several routes, and what may be read differs between them: an errand the labels cover at
  * read is searched by everything the roles of the user allow, one they cover at limited read only by what a limited
@@ -46,7 +46,7 @@ public class ErrandSearchAccess {
 	static final String NOT_SEARCHABLE = "%s not searchable by user '%s'";
 	static final String NOT_SORTABLE = "%s not sortable by user '%s'";
 	static final String WILDCARD_NOT_SEARCHABLE = "A wildcard in a field name is not available to user '%s', who may not search every field of the errand";
-	static final String NOT_READ = "The query holds a field reference that could not be read, which user '%s' may not have searched unchecked";
+	static final String NOT_READ = "The query could not be read, which user '%s' may not have searched unchecked";
 
 	/**
 	 * One part of a search: the errands it reaches and the fields a word without a field is looked for in there.
@@ -193,7 +193,7 @@ public class ErrandSearchAccess {
 			return Optional.empty();
 		}
 
-		if (!scan.isFullyRead()) {
+		if (!scan.fullyRead()) {
 			return Optional.of(Problem.valueOf(FORBIDDEN, NOT_READ.formatted(getCallerIdentity())));
 		}
 
@@ -211,12 +211,12 @@ public class ErrandSearchAccess {
 			}
 		}
 
-		for (final var reference : scan.fields()) {
+		for (final var name : scan.fields()) {
 			// A wildcard stands for names nobody enumerated, so it belongs to a route that is held to nothing
-			if (QueryScanner.isWildcard(reference.name())) {
+			if (QueryScanner.isWildcard(name)) {
 				return Optional.of(Problem.valueOf(FORBIDDEN, WILDCARD_NOT_SEARCHABLE.formatted(getCallerIdentity())));
 			}
-			final var refused = fields.refusal(reference.name());
+			final var refused = fields.refusal(name);
 			if (refused.isPresent()) {
 				return Optional.of(Problem.valueOf(FORBIDDEN, NOT_SEARCHABLE.formatted(refused.get(), getCallerIdentity())));
 			}

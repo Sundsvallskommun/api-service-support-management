@@ -2,62 +2,59 @@ package se.sundsvall.supportmanagement.service.search;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
 
 /**
- * Reads a Lucene query string the way the parser behind {@code query_string} reads it.
+ * Reads the fields a Lucene query string names, with the parser that OpenSearch reads it with.
  * <p>
  * What a search may look in is decided from the fields the query names, so reading the query wrongly is not a wrong
- * answer but an open door: a name we do not see is a field the index searches all the same. Patterns were tried for
- * this and kept being wrong about one shape or another - a space before the colon, an ideographic space, a name opened
- * by a minus, a unicode escape, a quote that was escaped - so this walks the query once instead, holding the state the
- * grammar holds: escaped, quoted, inside a regular expression, inside brackets.
+ * answer but an open door: a name we do not see is a field the index searches all the same. A copy of the grammar was
+ * tried for this and kept being wrong about one shape or another - a quote ending a term, a regular expression inside
+ * a group, a bracket within a range - so the query is read by the grammar itself instead. {@code query_string} is
+ * Lucene's classic query parser with the leaf queries built by OpenSearch, so this is that parser with the leaf queries
+ * built by nothing: every leaf the parser makes hands over the field it is made for, and that field is noted.
  * <p>
- * Two things it reports are what the access rules are built on. The fields the query names, each with the span it
- * occupies, so that a name can be rewritten without touching anything else. And the colons it could not account for:
- * a colon that is not part of a reference it parsed, and not inside a phrase, a regular expression or a range, is a
- * fielded term this does not understand, which a restricted search refuses rather than passes on.
+ * A query the parser cannot read is reported as not read rather than as naming nothing. The index would refuse it as
+ * well, but a restricted search may not lean on that.
  */
 final class QueryScanner {
-
-	/**
-	 * The ideographic space, which the parser passes over and Java's own class of whitespace does not hold. Written as
-	 * the escape it is: the character itself cannot be seen in a source file, and what cannot be seen is what a tool
-	 * normalising whitespace quietly takes away - here that would open the gap it is here to close.
-	 */
-	private static final char IDEOGRAPHIC_SPACE = '\u3000';
-
-	/** What the parser passes over between tokens. */
-	private static final String WHITESPACE = " \t\n\r" + IDEOGRAPHIC_SPACE;
-
-	/** Characters a field name is made of besides letters and digits, escapes aside. */
-	private static final String NAME_PUNCTUATION = "_.-*?@";
-
-	/** Words the grammar owns, which name no field and are no terms of their own. */
-	private static final List<String> OPERATORS = List.of("AND", "OR", "NOT", "TO");
 
 	/** The field whose value is itself a field name. */
 	private static final String EXISTS = "_exists_";
 
-	private final String query;
-	private final List<FieldReference> fields = new ArrayList<>();
-	private final List<Span> freeTerms = new ArrayList<>();
-	private int unaccountedColons;
-	private int position;
+	/**
+	 * What the parser gives a word that names no field, which no field of the index can be called: a field name holds no
+	 * character below a space.
+	 */
+	private static final String FREE_TEXT = "\u0000";
 
-	private QueryScanner(final String query) {
-		this.query = query;
-	}
+	/** What every leaf is built as, since what the query would find is the index's business and not this one's. */
+	private static final Query LEAF = new MatchAllDocsQuery();
+
+	private QueryScanner() {}
 
 	/**
 	 * @param query the query as the client wrote it, null or blank giving an empty scan
 	 */
 	static Scan scan(final String query) {
 		if (query == null || query.isBlank()) {
-			return new Scan(List.of(), List.of(), 0);
+			return new Scan(List.of(), true);
 		}
-		final var scanner = new QueryScanner(query);
-		scanner.run();
-		return new Scan(List.copyOf(scanner.fields), List.copyOf(scanner.freeTerms), scanner.unaccountedColons);
+
+		final var parser = new FieldCollector();
+		try {
+			parser.parse(query);
+		} catch (final ParseException | RuntimeException | StackOverflowError e) {
+			// Not read to its end, so what it names is not known. The parser recurses into every group, so a client nesting
+			// deep enough overflows the stack rather than failing to parse, and that is the same answer
+			return new Scan(List.of(), false);
+		}
+		return new Scan(List.copyOf(parser.fields), true);
 	}
 
 	/**
@@ -68,320 +65,80 @@ final class QueryScanner {
 		return name.indexOf('*') >= 0 || name.indexOf('?') >= 0;
 	}
 
-	/** A stretch of the query, from start inclusive to end exclusive. */
-	record Span(int start, int end) {}
-
-	/**
-	 * A field the query names.
-	 *
-	 * @param name   the name as the parser reads it, escapes resolved
-	 * @param inName where the name stands, which is what a rewrite replaces
-	 * @param inTerm where the whole term stands, the leading operator excluded, which is what a rewrite into several
-	 *               alternatives replaces
-	 * @param exists whether the field is named as the value of {@code _exists_} rather than by a colon of its own
-	 */
-	record FieldReference(String name, Span inName, Span inTerm, boolean exists) {}
-
 	/**
 	 * What one query names.
 	 *
-	 * @param fields            the fields it names, in the order they appear
-	 * @param freeTerms         the words and phrases it carries that name no field
-	 * @param unaccountedColons colons this could not read as part of a reference, see {@link QueryScanner}
+	 * @param fields    the fields it names, escapes resolved, in the order the parser met them
+	 * @param fullyRead whether the parser read it to its end, which a restricted search may not pass on without
 	 */
-	record Scan(List<FieldReference> fields, List<Span> freeTerms, int unaccountedColons) {
-
-		List<String> fieldNames() {
-			return fields.stream().map(FieldReference::name).toList();
-		}
-
-		boolean hasFreeTerms() {
-			return !freeTerms.isEmpty();
-		}
-
-		/** Whether the query holds something this could not read, which a restricted search may not pass on. */
-		boolean isFullyRead() {
-			return unaccountedColons == 0;
-		}
-	}
-
-	private void run() {
-		while (position < query.length()) {
-			final var character = query.charAt(position);
-
-			if (WHITESPACE.indexOf(character) >= 0 || character == '(' || character == ')') {
-				position++;
-			} else if (character == '+' || character == '-' || character == '!') {
-				// An operator where a term begins, part of a name nowhere: a name is never read from here
-				position++;
-			} else if (character == '"') {
-				freeTerms.add(readPhrase());
-			} else if (character == '/') {
-				freeTerms.add(readRegex());
-			} else if (character == '[' || character == '{') {
-				// A range standing on its own names nothing, and is no word either
-				readRange();
-			} else if (character == ':') {
-				// A colon where no name stands before it, so no reference was read from it
-				unaccountedColons++;
-				position++;
-			} else {
-				readTermOrReference();
-			}
-		}
-	}
+	record Scan(List<String> fields, boolean fullyRead) {}
 
 	/**
-	 * A word, and the field reference it makes where a colon follows it. The parser passes over whitespace between the
-	 * name and its colon, so this does too.
+	 * The classic parser, noting the field of every leaf instead of building it. These are the methods OpenSearch's own
+	 * parser overrides to build its leaves, so a field reaches one of them here exactly where it reaches the index there.
 	 */
-	private void readTermOrReference() {
-		final var start = position;
-		final var name = readName();
-		final var nameEnd = position;
+	private static final class FieldCollector extends QueryParser {
 
-		if (nameEnd == start) {
-			// Punctuation the grammar owns rather than a word: a boost, a fuzziness, an ampersand. Nothing names a field
-			// here, and stepping over it is what keeps the walk moving
-			position++;
-			return;
+		private final List<String> fields = new ArrayList<>();
+
+		private FieldCollector() {
+			// The analyzer is never asked, since no leaf is built
+			super(FREE_TEXT, new StandardAnalyzer());
+			// As OpenSearch has it, where a term opening with a wildcard is a term and not an error
+			setAllowLeadingWildcard(true);
 		}
 
-		final var afterWhitespace = skipWhitespace(position);
+		@Override
+		protected Query getFieldQuery(final String field, final String queryText, final boolean quoted) {
+			return noteValueOrField(field, queryText);
+		}
 
-		if (afterWhitespace >= query.length() || query.charAt(afterWhitespace) != ':') {
-			if (!OPERATORS.contains(name)) {
-				freeTerms.add(new Span(start, nameEnd));
+		@Override
+		protected Query getFieldQuery(final String field, final String queryText, final int slop) {
+			return noteValueOrField(field, queryText);
+		}
+
+		@Override
+		protected Query getRangeQuery(final String field, final String part1, final String part2, final boolean startInclusive, final boolean endInclusive) {
+			return note(field);
+		}
+
+		@Override
+		protected Query getPrefixQuery(final String field, final String termStr) {
+			return note(field);
+		}
+
+		@Override
+		protected Query getWildcardQuery(final String field, final String termStr) {
+			return note(field);
+		}
+
+		@Override
+		protected Query getRegexpQuery(final String field, final String termStr) {
+			return note(field);
+		}
+
+		@Override
+		protected Query getFuzzyQuery(final String field, final String termStr, final float minSimilarity) {
+			return note(field);
+		}
+
+		@Override
+		protected Query getBooleanQuery(final List<BooleanClause> clauses) {
+			// Nothing is built, so neither is the clause limit of a real query reached
+			return LEAF;
+		}
+
+		/** The value of {@code _exists_} is the field it asks about, which OpenSearch searches for as such. */
+		private Query noteValueOrField(final String field, final String queryText) {
+			return note(EXISTS.equals(field) ? queryText : field);
+		}
+
+		private Query note(final String field) {
+			if (!FREE_TEXT.equals(field)) {
+				fields.add(field);
 			}
-			return;
+			return LEAF;
 		}
-
-		position = afterWhitespace + 1;
-		final var value = readValue();
-
-		if (EXISTS.equals(name)) {
-			// The value names the field, whether it stands bare, in a group or in quotes
-			final var named = unwrap(value);
-			fields.add(new FieldReference(decode(query.substring(named.start(), named.end())), named, new Span(start, value.end()), true));
-			return;
-		}
-
-		fields.add(new FieldReference(name, new Span(start, nameEnd), new Span(start, value.end()), false));
-	}
-
-	/**
-	 * The value of a field, which spans a group, a range, a phrase or a regular expression whole rather than stopping
-	 * inside one.
-	 */
-	private Span readValue() {
-		position = skipWhitespace(position);
-		if (position >= query.length()) {
-			return new Span(position, position);
-		}
-
-		return switch (query.charAt(position)) {
-			case '(' -> readBalanced('(', ')');
-			case '[' -> readBalanced('[', ']');
-			case '{' -> readBalanced('{', '}');
-			case '"' -> readPhrase();
-			case '/' -> readRegex();
-			default -> readBareValue();
-		};
-	}
-
-	/** A name, escapes resolved: what the parser has once it is done reading the characters. */
-	private String readName() {
-		final var start = position;
-		while (position < query.length()) {
-			final var character = query.charAt(position);
-			if (character == '\\') {
-				position += escapeLength(position);
-			} else if (isNameCharacter(character)) {
-				position++;
-			} else {
-				break;
-			}
-		}
-		return decode(query.substring(start, position));
-	}
-
-	private Span readBareValue() {
-		final var start = position;
-		while (position < query.length()) {
-			final var character = query.charAt(position);
-			if (character == '\\') {
-				position += escapeLength(position);
-			} else if (WHITESPACE.indexOf(character) >= 0 || character == ')') {
-				break;
-			} else {
-				if (character == ':') {
-					// A colon within a bare value: the parser may read a field out of what follows it, and this does not
-					unaccountedColons++;
-				}
-				position++;
-			}
-		}
-		return new Span(start, position);
-	}
-
-	private Span readPhrase() {
-		final var start = position;
-		position++;
-		while (position < query.length()) {
-			final var character = query.charAt(position);
-			if (character == '\\') {
-				position += escapeLength(position);
-			} else if (character == '"') {
-				position++;
-				return new Span(start, position);
-			} else {
-				position++;
-			}
-		}
-		// Never closed, so it runs to the end, as the parser would have it
-		return new Span(start, position);
-	}
-
-	private Span readRegex() {
-		final var start = position;
-		position++;
-		while (position < query.length()) {
-			final var character = query.charAt(position);
-			if (character == '\\') {
-				position += escapeLength(position);
-			} else if (character == '/') {
-				position++;
-				return new Span(start, position);
-			} else {
-				position++;
-			}
-		}
-		return new Span(start, position);
-	}
-
-	private void readRange() {
-		final var opening = query.charAt(position);
-		readBalanced(opening, opening == '[' ? ']' : '}');
-	}
-
-	/**
-	 * A group, a range or a bracketed value, whole.
-	 * <p>
-	 * A colon inside a range belongs to the value it stands in - a timestamp carries three of them - while a colon inside
-	 * a group may name a field of its own, which nothing here reads. And a region that never closes is one this did not
-	 * read to its end, so what follows it was never looked at: both are reported rather than passed over.
-	 */
-	private Span readBalanced(final char opening, final char closing) {
-		final var start = position;
-		var depth = 0;
-		while (position < query.length()) {
-			final var character = query.charAt(position);
-
-			if (character == '\\') {
-				position += escapeLength(position);
-			} else if (character == '"') {
-				readPhrase();
-			} else {
-				if (character == opening) {
-					depth++;
-				} else if (character == closing) {
-					depth--;
-					if (depth == 0) {
-						position++;
-						return new Span(start, position);
-					}
-				} else if (character == ':' && opening == '(') {
-					// A colon inside a group may name a field, and the body of a group is not walked for references
-					unaccountedColons++;
-				}
-				position++;
-			}
-		}
-
-		// Never closed, so what stands after it was never read
-		unaccountedColons++;
-		return new Span(start, position);
-	}
-
-	/** What a value holds once a group or a pair of quotes around it is taken off. */
-	private Span unwrap(final Span value) {
-		if (value.end() - value.start() < 2) {
-			return value;
-		}
-		final var first = query.charAt(value.start());
-		final var last = query.charAt(value.end() - 1);
-		final var wrapped = (first == '(' && last == ')') || (first == '"' && last == '"');
-		return wrapped ? new Span(value.start() + 1, value.end() - 1) : value;
-	}
-
-	private int skipWhitespace(final int from) {
-		var index = from;
-		while (index < query.length() && WHITESPACE.indexOf(query.charAt(index)) >= 0) {
-			index++;
-		}
-		return index;
-	}
-
-	/**
-	 * How many characters an escape occupies: a unicode escape names its character with four digits, anything else
-	 * escapes the one character after the backslash.
-	 */
-	private int escapeLength(final int at) {
-		if (at + 1 < query.length() && (query.charAt(at + 1) == 'u' || query.charAt(at + 1) == 'U') && at + 5 < query.length() + 1 && isHex(at + 2)) {
-			return 6;
-		}
-		return at + 1 < query.length() ? 2 : 1;
-	}
-
-	/**
-	 * Whether the character may stand in a field name. Letters are taken as the language has them rather than as ASCII
-	 * has them, since an errand is written in Swedish.
-	 */
-	private static boolean isNameCharacter(final char character) {
-		return Character.isLetterOrDigit(character) || NAME_PUNCTUATION.indexOf(character) >= 0;
-	}
-
-	private boolean isHex(final int from) {
-		if (from + 4 > query.length()) {
-			return false;
-		}
-		for (var index = from; index < from + 4; index++) {
-			if (Character.digit(query.charAt(index), 16) < 0) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * The characters the parser is left with: an escape gives up the character it protects, and a unicode escape gives
-	 * up the character it names, which is what makes {@code communications} the field {@code communications}.
-	 */
-	private String decode(final String text) {
-		final var decoded = new StringBuilder(text.length());
-		var index = 0;
-		while (index < text.length()) {
-			final var character = text.charAt(index);
-			if (character != '\\' || index + 1 >= text.length()) {
-				decoded.append(character);
-				index++;
-			} else if ((text.charAt(index + 1) == 'u' || text.charAt(index + 1) == 'U') && index + 6 <= text.length() && isHex(text, index + 2)) {
-				decoded.append((char) Integer.parseInt(text.substring(index + 2, index + 6), 16));
-				index += 6;
-			} else {
-				decoded.append(text.charAt(index + 1));
-				index += 2;
-			}
-		}
-		return decoded.toString();
-	}
-
-	private static boolean isHex(final String text, final int from) {
-		for (var index = from; index < from + 4; index++) {
-			if (Character.digit(text.charAt(index), 16) < 0) {
-				return false;
-			}
-		}
-		return true;
 	}
 }

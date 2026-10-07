@@ -19,38 +19,34 @@ class QueryScannerTest {
 	@ParameterizedTest
 	@NullAndEmptySource
 	@ValueSource(strings = {
-		" ", "\u3000"
+		" ", "　"
 	})
 	void nothingIsNamedByNothing(final String query) {
 		final var scan = QueryScanner.scan(query);
 
 		assertThat(scan.fields()).isEmpty();
-		assertThat(scan.hasFreeTerms()).isFalse();
-		assertThat(scan.isFullyRead()).isTrue();
+		assertThat(scan.fullyRead()).isTrue();
 	}
 
 	@Test
 	void aFieldAndItsValue() {
-		final var scan = QueryScanner.scan("title:vatten");
-
-		assertThat(scan.fieldNames()).containsExactly("title");
-		assertThat(scan.hasFreeTerms()).isFalse();
+		assertThat(QueryScanner.scan("title:vatten").fields()).containsExactly("title");
 	}
 
-	@Test
-	void wordsNamingNoField() {
-		final var scan = QueryScanner.scan("vatten läcka");
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"vatten läcka", "\"communications.subject:inside a phrase\"", "title\\:x", "a b a b a b"
+	})
+	void wordsAndPhrasesNameNoField(final String query) {
+		final var scan = QueryScanner.scan(query);
 
 		assertThat(scan.fields()).isEmpty();
-		assertThat(scan.freeTerms()).hasSize(2);
+		assertThat(scan.fullyRead()).isTrue();
 	}
 
 	@Test
 	void aFieldBesideAWord() {
-		final var scan = QueryScanner.scan("title:x vatten");
-
-		assertThat(scan.fieldNames()).containsExactly("title");
-		assertThat(scan.hasFreeTerms()).isTrue();
+		assertThat(QueryScanner.scan("title:x vatten").fields()).containsExactly("title");
 	}
 
 	/**
@@ -59,11 +55,10 @@ class QueryScannerTest {
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"description:x", "description :x", "description : x", "description\t:x", "description\n:x", "description\u3000:x", "description     :     x"
+		"description:x", "description :x", "description : x", "description\t:x", "description\n:x", "description　:x", "description     :     x"
 	})
 	void aNameIsANameWhateverStandsBetweenItAndTheColon(final String query) {
-		assertThat(QueryScanner.scan(query).fieldNames()).containsExactly("description");
-		assertThat(QueryScanner.scan(query).hasFreeTerms()).isFalse();
+		assertThat(QueryScanner.scan(query).fields()).containsExactly("description");
 	}
 
 	/**
@@ -74,7 +69,7 @@ class QueryScannerTest {
 		"-communications.subject:secret", "+communications.subject:secret", "!communications.subject:secret", "title:x -communications.subject:secret", "(communications.subject:secret)"
 	})
 	void anOperatorInFrontOfANameIsNoPartOfIt(final String query) {
-		assertThat(QueryScanner.scan(query).fieldNames()).contains("communications.subject");
+		assertThat(QueryScanner.scan(query).fields()).contains("communications.subject");
 	}
 
 	/**
@@ -83,9 +78,9 @@ class QueryScannerTest {
 	 */
 	@Test
 	void escapesAreResolvedBeforeTheNameIsRead() {
-		assertThat(QueryScanner.scan("\\u0063ommunications.subject:secret").fieldNames()).containsExactly("communications.subject");
-		assertThat(QueryScanner.scan("communications.\\u0073ubject:secret").fieldNames()).containsExactly("communications.subject");
-		assertThat(QueryScanner.scan("jsonParameters.\\*.regNo:abc").fieldNames()).containsExactly("jsonParameters.*.regNo");
+		assertThat(QueryScanner.scan("\\u0063ommunications.subject:secret").fields()).containsExactly("communications.subject");
+		assertThat(QueryScanner.scan("communications.\\u0073ubject:secret").fields()).containsExactly("communications.subject");
+		assertThat(QueryScanner.scan("jsonParameters.\\*.regNo:abc").fields()).containsExactly("jsonParameters.*.regNo");
 	}
 
 	/**
@@ -93,17 +88,7 @@ class QueryScannerTest {
 	 */
 	@Test
 	void anEscapedQuoteHidesNothing() {
-		final var scan = QueryScanner.scan("x\\\" communications.subject:secret \"y\"");
-
-		assertThat(scan.fieldNames()).containsExactly("communications.subject");
-	}
-
-	@Test
-	void aPhraseNamesNoField() {
-		final var scan = QueryScanner.scan("\"communications.subject:inside a phrase\"");
-
-		assertThat(scan.fields()).isEmpty();
-		assertThat(scan.hasFreeTerms()).isTrue();
+		assertThat(QueryScanner.scan("x\\\" communications.subject:secret \"y\"").fields()).containsExactly("communications.subject");
 	}
 
 	/**
@@ -111,9 +96,26 @@ class QueryScannerTest {
 	 */
 	@Test
 	void aRegularExpressionHidesNothingEither() {
-		final var scan = QueryScanner.scan("title:/a\"/ communications.subject:x");
+		assertThat(QueryScanner.scan("title:/a\"/ communications.subject:x").fields()).containsExactly("title", "communications.subject");
+	}
 
-		assertThat(scan.fieldNames()).containsExactly("title", "communications.subject");
+	/**
+	 * The shapes a copy of the grammar read as naming the status alone: a quote or a slash ends a term, a group holds
+	 * regular expressions, and a bracket inside a range is part of its bound. The parser reads the description out of
+	 * every one of them, so this must too.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"status:x\"y z\" description:secret",
+		"status:x/y /description:secret",
+		"status:(/\"/ description:secret /\"/)",
+		"status:[[a TO b] description:secret /]/"
+	})
+	void whatEndsATermIsWhatTheParserEndsItAt(final String query) {
+		final var scan = QueryScanner.scan(query);
+
+		assertThat(scan.fullyRead()).isTrue();
+		assertThat(scan.fields()).contains("status", "description");
 	}
 
 	/**
@@ -124,7 +126,7 @@ class QueryScannerTest {
 		"_exists_:communications.subject", "_exists_:(communications.subject)", "_exists_:\"communications.subject\"", "_exists_ : communications.subject"
 	})
 	void theValueOfExistsIsAField(final String query) {
-		assertThat(QueryScanner.scan(query).fieldNames()).containsExactly("communications.subject");
+		assertThat(QueryScanner.scan(query).fields()).containsExactly("communications.subject");
 	}
 
 	/**
@@ -133,99 +135,85 @@ class QueryScannerTest {
 	 */
 	@Test
 	void theNameOfAnObjectIsAFieldOfItsOwn() {
-		assertThat(QueryScanner.scan("_exists_:communications").fieldNames()).containsExactly("communications");
-	}
-
-	@Test
-	void aRangeIsAValueAndNoWordOfItsOwn() {
-		final var scan = QueryScanner.scan("created:[2025-01-01 TO 2025-12-31]");
-
-		assertThat(scan.fieldNames()).containsExactly("created");
-		assertThat(scan.hasFreeTerms()).isFalse();
-	}
-
-	@Test
-	void aGroupIsAValueAndTheWordAfterItIsNot() {
-		final var scan = QueryScanner.scan("title:(a OR b) läcka");
-
-		assertThat(scan.fieldNames()).containsExactly("title");
-		assertThat(scan.freeTerms()).hasSize(1);
-	}
-
-	@Test
-	void operatorsAreNoWordsOfTheirOwn() {
-		assertThat(QueryScanner.scan("title:a AND NOT status:b").hasFreeTerms()).isFalse();
-		assertThat(QueryScanner.scan("created:{* TO now-7d}").hasFreeTerms()).isFalse();
+		assertThat(QueryScanner.scan("_exists_:communications").fields()).containsExactly("communications");
 	}
 
 	/**
-	 * A colon this cannot read as part of a reference is a fielded term it does not understand. Saying so is what keeps
-	 * a shape nobody thought of from reaching the index unchecked.
+	 * Every kind of leaf the parser builds hands over its field: a term, a phrase, a range, a prefix, a wildcard, a
+	 * regular expression and a fuzzy term.
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
-		":x", "title:a :b"
+		"title:x", "title:\"a b\"", "title:\"a b\"~2", "title:[a TO b]", "title:{a TO *}", "title:>=a", "title:ab*", "title:a?c", "title:*", "title:/a.c/", "title:abc~", "title:(a OR b)"
 	})
-	void aColonThatCouldNotBeReadIsReported(final String query) {
-		assertThat(QueryScanner.scan(query).isFullyRead()).isFalse();
+	void everyLeafHandsOverItsField(final String query) {
+		final var scan = QueryScanner.scan(query);
+
+		assertThat(scan.fullyRead()).isTrue();
+		assertThat(scan.fields()).isNotEmpty().containsOnly("title");
 	}
 
-	/**
-	 * A colon within a range belongs to the value it stands in: a timestamp carries three of them, and the endpoint
-	 * documents ranges, so counting them as references this could not read refused a legal query.
-	 */
 	@Test
-	void theColonsOfATimestampBelongToTheRangeTheyStandIn() {
-		final var scan = QueryScanner.scan("created:[2025-01-01T00:00:00Z TO 2025-12-31T23:59:59Z]");
-
-		assertThat(scan.fieldNames()).containsExactly("created");
-		assertThat(scan.isFullyRead()).isTrue();
+	void aRangeIsAValue() {
+		assertThat(QueryScanner.scan("created:[2025-01-01 TO 2025-12-31]").fields()).containsExactly("created");
 	}
 
 	/**
-	 * The shapes where this reads less than the parser does: a colon inside a bare value, which the parser may read a
-	 * field out of, and a bracket that never closes, after which nothing was read at all. Neither may pass for
-	 * understood.
+	 * A range may be closed on one end and open on the other, and the colons of a timestamp belong to the bound they
+	 * stand in.
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
+		"created:[2025-01-01T00:00:00Z TO 2025-12-31T23:59:59Z] status:new", "created:[2025-01-01 TO 2025-12-31} status:new"
+	})
+	void aRangeEndsWhereTheParserEndsIt(final String query) {
+		final var scan = QueryScanner.scan(query);
+
+		assertThat(scan.fullyRead()).isTrue();
+		assertThat(scan.fields()).containsExactly("created", "status");
+	}
+
+	@Test
+	void aFieldInFrontOfAGroupIsTheFieldOfEveryTermInIt() {
+		assertThat(QueryScanner.scan("title:(a OR b) läcka").fields()).containsExactly("title", "title");
+	}
+
+	/**
+	 * What the parser cannot read names nothing anyone knows of, so it is reported rather than passed for understood.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		":x",
+		"title:a :b",
 		"title:a:communications.subject:secret",
 		"errandNumber:x:decisions.justification:avslag",
-		"created:[2025-01-01 TO 2025-12-31} status:new",
-		"title:(a OR b status:new"
+		"title:(a OR b status:new",
+		"\"never closed"
 	})
-	void aQueryThisReadsLessOfThanTheParserIsReported(final String query) {
-		assertThat(QueryScanner.scan(query).isFullyRead()).isFalse();
-	}
+	void aQueryTheParserCannotReadIsReported(final String query) {
+		final var scan = QueryScanner.scan(query);
 
-	@ParameterizedTest
-	@ValueSource(strings = {
-		"title:x", "vatten", "_exists_:title", "title:\"a:b\"", "title:/a:b/", "created:[2025-01-01 TO 2025-12-31]"
-	})
-	void aQueryThisUnderstandsSaysSo(final String query) {
-		assertThat(QueryScanner.scan(query).isFullyRead()).isTrue();
+		assertThat(scan.fullyRead()).isFalse();
+		assertThat(scan.fields()).isEmpty();
 	}
 
 	@Test
-	void theSpanOfANameIsWhereItStands() {
-		final var scan = QueryScanner.scan("title:x -communications.subject:secret");
-		final var reference = scan.fields().get(1);
-
-		assertThat("title:x -communications.subject:secret".substring(reference.inName().start(), reference.inName().end())).isEqualTo("communications.subject");
-		// The term the name belongs to, the minus in front of it left out, which is what a rewrite of it replaces
-		assertThat("title:x -communications.subject:secret".substring(reference.inTerm().start(), reference.inTerm().end())).isEqualTo("communications.subject:secret");
+	void aWildcardInANameStandsForMoreThanItself() {
+		assertThat(QueryScanner.isWildcard("jsonParameters.*.regNo")).isTrue();
+		assertThat(QueryScanner.isWildcard("titl?")).isTrue();
+		assertThat(QueryScanner.isWildcard("title")).isFalse();
 	}
 
 	/**
-	 * The query comes from the client, so a long one must cost what its length costs.
+	 * The query comes from the client, so a long one must cost what its length costs, and one nested deeper than the
+	 * parser can follow is not read rather than failing the request.
 	 */
 	@Test
 	void aLongQueryIsReadInItsLength() {
 		assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-			assertThat(QueryScanner.scan("\"" + "a".repeat(200_000)).fields()).isEmpty();
-			assertThat(QueryScanner.scan("title:" + "a".repeat(200_000)).fieldNames()).containsExactly("title");
-			assertThat(QueryScanner.scan("a:( ".repeat(50_000)).fields()).isNotEmpty();
-			assertThat(QueryScanner.scan("a b ".repeat(50_000)).freeTerms()).isNotEmpty();
+			assertThat(QueryScanner.scan("title:" + "a".repeat(200_000)).fields()).containsExactly("title");
+			assertThat(QueryScanner.scan("a b ".repeat(50_000)).fullyRead()).isTrue();
+			assertThat(QueryScanner.scan("a:( ".repeat(50_000)).fullyRead()).isFalse();
 		});
 	}
 }

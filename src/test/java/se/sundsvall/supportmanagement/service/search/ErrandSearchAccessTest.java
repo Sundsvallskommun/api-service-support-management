@@ -278,7 +278,7 @@ class ErrandSearchAccessTest {
 	@ValueSource(strings = {
 		"jsonParameters.\\*.regNo:abc",
 		"\\*.subject:x",
-		"comm?nications.subject:x"
+		"comm\\?nications.subject:x"
 	})
 	void wildcardFieldNamesAreRefusedWhileSomethingIsClosed(final String query) {
 		final var e = refused(grant(new LabelRoute(LABELS, null, EVERY_RESOURCE), null, allBut(ProtectedResource.COMMUNICATION)), query, UNSORTED);
@@ -343,6 +343,24 @@ class ErrandSearchAccessTest {
 			.doesNotContain("description", "stakeholders.lastName", "jsonParametersText", "communications.subject");
 		assertThat(scopesOf("title:x", UNSORTED, grant)).containsExactly(grant.reporterScope());
 		assertThat(refused(grant, "description:x", UNSORTED).getDetail()).isEqualTo("Field 'description' not searchable by user 'joe01doe'");
+	}
+
+	/**
+	 * Queries that hid the description behind a field the route may read, by ending a term where the parser ends it
+	 * and a hand written copy of its grammar did not.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"status:x\"y z\" description:secret",
+		"status:x/y /description:secret",
+		"status:(/\"/ description:secret /\"/)",
+		"status:[[a TO b] description:secret /]/"
+	})
+	void aFieldHiddenBehindAReadableOneIsRefused(final String query) {
+		final var reporterFields = Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of(), ErrandField.TITLE, Set.<String>of(), ErrandField.STATUS, Set.<String>of());
+		final var grant = grantOf(null, null, new ReporterRoute("joe01doe", reporterFields, Set.of()));
+
+		assertThat(refused(grant, query, UNSORTED).getDetail()).isEqualTo("Field 'description' not searchable by user 'joe01doe'");
 	}
 
 	@Test

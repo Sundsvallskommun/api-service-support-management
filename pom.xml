@@ -16,6 +16,8 @@
 		<spring-filter.version>4.1.1</spring-filter.version>
 		<hibernate-search.version>8.4.0.Final</hibernate-search.version>
 		<opensearch-testcontainers.version>4.1.0</opensearch-testcontainers.version>
+		<!-- The Lucene of the OpenSearch the index runs on, whose query parser reads a search the way the index will -->
+		<lucene.version>10.4.0</lucene.version>
 		<tika-core.version>4.1.0</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<commons-validator.version>1.11.0</commons-validator.version>
@@ -93,6 +95,11 @@
 		<dependency>
 			<groupId>org.hibernate.search</groupId>
 			<artifactId>hibernate-search-backend-elasticsearch</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-queryparser</artifactId>
+			<version>${lucene.version}</version>
 		</dependency>
 		<!-- Test -->
 		<dependency>
