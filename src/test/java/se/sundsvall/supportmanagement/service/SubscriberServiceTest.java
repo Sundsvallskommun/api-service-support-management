@@ -450,6 +450,25 @@ class SubscriberServiceTest {
 	}
 
 	@Test
+	void findOrCreateSubscriberForPartyId() {
+		final var partyId = "c4e9b1f7-1111-2222-3333-444455556666";
+		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "partyId", partyId)).thenReturn(List.of());
+		when(subscriberRepositoryMock.save(any(SubscriberEntity.class)))
+			.thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(randomUUID().toString()));
+
+		service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "partyId", partyId);
+
+		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "partyId", partyId);
+		verify(subscriberRepositoryMock).save(entityCaptor.capture());
+		assertThat(entityCaptor.getValue().getIdentifier().getType()).isEqualTo("partyId");
+		assertThat(entityCaptor.getValue().getIdentifier().getValue()).isEqualTo(partyId);
+		verifyNoMoreInteractions(subscriberRepositoryMock);
+		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
 	void updatingAnotherUsersSubscriberIsRefused() {
 		final var id = randomUUID().toString();
 		final var entity = SubscriberEntity.create().withId(id)
