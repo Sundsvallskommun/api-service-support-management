@@ -63,6 +63,10 @@ class CircularReferenceExclusionStrategyTest {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandPhaseEntity.class, "errandEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(PhaseTransitionEntity.class, "phaseEntity", true)))).isTrue();
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(TimeMeasurementEntity.class, "errandEntity", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "decisions", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "statements", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "investigations", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "communications", true)))).isTrue();
 	}
 
 }

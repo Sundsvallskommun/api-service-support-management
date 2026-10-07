@@ -24,13 +24,23 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.PropertyBinderRef;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 import se.sundsvall.supportmanagement.integration.db.model.enums.MeasureResult;
+import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
+import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import static org.hibernate.type.SqlTypes.VARCHAR;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 /**
  * A measure on an errand.
@@ -66,46 +76,57 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
 public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 
 	@Column(name = "responsible_user")
+	@KeywordField(normalizer = LOWERCASE)
 	private String responsibleUser;
 
 	@Column(name = "planned_start")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime plannedStart;
 
 	@Column(name = "planned_complete")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime plannedComplete;
 
 	@Column(name = "executed")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime executed;
 
 	@Column(name = "added_by_user")
+	@KeywordField(normalizer = LOWERCASE)
 	private String addedByUser;
 
 	@Column(name = "added_by_role")
+	@KeywordField(normalizer = LOWERCASE)
 	private String addedByRole;
 
 	@Column(name = "goal", length = 3000)
+	@FullTextField(analyzer = TEXT)
 	private String goal;
 
 	// The length says what the column has held since V1_51, and the jdbc type says it is a string rather than the
 	// native enum type Hibernate would otherwise generate for it.
 	@Column(name = "accept", length = 50)
 	@Enumerated(EnumType.STRING)
+	@KeywordField(normalizer = LOWERCASE)
 	@JdbcTypeCode(VARCHAR)
 	private Accept accept;
 
 	@Column(name = "accept_motivation")
+	@FullTextField(analyzer = TEXT)
 	private String acceptMotivation;
 
 	/** The outcome once the measure has been carried out. Not {@link Accept}, which means something else. */
 	@Enumerated(EnumType.STRING)
 	@JdbcTypeCode(VARCHAR)
 	@Column(name = "result", length = 32)
+	@KeywordField(normalizer = LOWERCASE)
 	private MeasureResult result;
 
 	@Column(name = "result_text", length = LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String resultText;
 
 	/** Where the measure comes from: it follows from a decision. Set to null rather than cascading. */
@@ -142,6 +163,7 @@ public class MeasureEntity extends AbstractErrandItemEntity<MeasureEntity> {
 	/** The JSON parameters of the measure. See {@link StatementEntity#getJsonParameters()} for how they are held. */
 	@OneToMany(mappedBy = "measureEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("key")
+	@PropertyBinding(binder = @PropertyBinderRef(type = JsonParametersBinder.class))
 	private List<MeasureJsonParameterEntity> jsonParameters;
 
 	public static MeasureEntity create() {

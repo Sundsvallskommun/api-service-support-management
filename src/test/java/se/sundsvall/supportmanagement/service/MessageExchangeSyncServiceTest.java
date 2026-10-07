@@ -11,6 +11,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
@@ -132,7 +134,7 @@ class MessageExchangeSyncServiceTest {
 		// Assert
 		verify(errandsRepositoryMock).getReferenceById(errandId);
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >123", Pageable.unpaged());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse för topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(EventSubType.MESSAGE));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse för topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(EventSubType.MESSAGE), eq(null));
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 
 		final var savedEntity = conversationEntityCaptor.getValue();
@@ -161,7 +163,7 @@ class MessageExchangeSyncServiceTest {
 		final var shouldNotify = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId(user));
 
 		// Assert
-		assertThat(shouldNotify).isTrue();
+		assertThat(shouldNotify.fromOthers()).isTrue();
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
@@ -176,13 +178,16 @@ class MessageExchangeSyncServiceTest {
 		final var conversationEntity = baseConversation(municipalityId, messageExchangeId);
 
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
-			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().value(user))))));
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().type("adAccount").value(user))))));
 
 		// Act
 		final var shouldNotify = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId(user));
 
 		// Assert
-		assertThat(shouldNotify).isFalse();
+		assertThat(shouldNotify.fromOthers()).isFalse();
+		// The assigned user wrote every message, so they are the one who acted
+		assertThat(shouldNotify.author().getType()).isEqualTo(se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT);
+		assertThat(shouldNotify.author().getValue()).isEqualTo(user);
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
@@ -199,14 +204,16 @@ class MessageExchangeSyncServiceTest {
 
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(
-				new Message().createdBy(new Identifier().value(user)),
-				new Message().createdBy(new Identifier().value(otherUser))))));
+				new Message().createdBy(new Identifier().type("adAccount").value(user)),
+				new Message().createdBy(new Identifier().type("adAccount").value(otherUser))))));
 
 		// Act
 		final var shouldNotify = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId(user));
 
 		// Assert
-		assertThat(shouldNotify).isTrue();
+		assertThat(shouldNotify.fromOthers()).isTrue();
+		// Two authors, so nobody in particular acted
+		assertThat(shouldNotify.author()).isNull();
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
@@ -227,7 +234,7 @@ class MessageExchangeSyncServiceTest {
 		final var shouldNotify = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId(user));
 
 		// Assert
-		assertThat(shouldNotify).isFalse();
+		assertThat(shouldNotify.fromOthers()).isFalse();
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >99", Pageable.unpaged());
 		verifyNoMoreInteractions(messageExchangeClientMock);
 		verifyNoInteractions(attachmentServiceMock, conversationRepositoryMock);
@@ -256,6 +263,38 @@ class MessageExchangeSyncServiceTest {
 	}
 
 	@Test
+	void syncMessagesCreatedByOneOtherUser() {
+		final var municipalityId = "municipalityId";
+		final var conversationEntity = baseConversation(municipalityId, "messageExchangeId");
+
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(
+				new Message().createdBy(new Identifier().type("partyId").value("citizen")),
+				new Message().createdBy(new Identifier().type("partyId").value("citizen"))))));
+
+		final var synced = service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId("handler"));
+
+		// The assigned user hears of it, and the one who wrote it all is the one who acted
+		assertThat(synced.fromOthers()).isTrue();
+		assertThat(synced.author().getType()).isEqualTo(se.sundsvall.dept44.support.Identifier.Type.PARTY_ID);
+		assertThat(synced.author().getValue()).isEqualTo("citizen");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"unknownType", ""
+	})
+	void syncMessagesWithAnAuthorOfUnknownTypeHasNoAuthor(final String type) {
+		final var municipalityId = "municipalityId";
+		final var conversationEntity = baseConversation(municipalityId, "messageExchangeId");
+
+		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().type(type).value("handler"))))));
+
+		assertThat(service.syncMessages(conversationEntity, ErrandEntity.create().withAssignedUserId("handler")).author()).isNull();
+	}
+
+	@Test
 	void syncMessagesTriggersStatusChangeWhenIncomingFromOther() {
 		// Arrange
 		final var municipalityId = "municipalityId";
@@ -274,7 +313,7 @@ class MessageExchangeSyncServiceTest {
 		final var shouldNotify = service.syncMessages(conversationEntity, errand);
 
 		// Assert
-		assertThat(shouldNotify).isTrue();
+		assertThat(shouldNotify.fromOthers()).isTrue();
 		assertThat(errand.getStatus()).isEqualTo("OPEN");
 		verify(errandsRepositoryMock).save(errand);
 	}
@@ -298,7 +337,7 @@ class MessageExchangeSyncServiceTest {
 		final var shouldNotify = service.syncMessages(conversationEntity, errand);
 
 		// Assert
-		assertThat(shouldNotify).isTrue();
+		assertThat(shouldNotify.fromOthers()).isTrue();
 		assertThat(errand.getStatus()).isEqualTo("NEW");
 		verify(errandsRepositoryMock, never()).save(any());
 	}
@@ -321,7 +360,7 @@ class MessageExchangeSyncServiceTest {
 		final var shouldNotify = service.syncMessages(conversationEntity, errand);
 
 		// Assert
-		assertThat(shouldNotify).isTrue();
+		assertThat(shouldNotify.fromOthers()).isTrue();
 		assertThat(errand.getStatus()).isEqualTo("SOLVED");
 		verify(errandsRepositoryMock, never()).save(any());
 	}
@@ -345,7 +384,7 @@ class MessageExchangeSyncServiceTest {
 		final var shouldNotify = service.syncMessages(conversationEntity, errand);
 
 		// Assert
-		assertThat(shouldNotify).isTrue();
+		assertThat(shouldNotify.fromOthers()).isTrue();
 		assertThat(errand.getStatus()).isEqualTo("SOLVED");
 		verify(errandsRepositoryMock, never()).save(any());
 	}
@@ -366,7 +405,7 @@ class MessageExchangeSyncServiceTest {
 		final var shouldNotify = service.syncMessages(conversationEntity, errand);
 
 		// Assert
-		assertThat(shouldNotify).isFalse();
+		assertThat(shouldNotify.fromOthers()).isFalse();
 		assertThat(errand.getStatus()).isEqualTo("SOLVED");
 		verifyNoInteractions(messageExchangeIntegrationConfigRepositoryMock);
 		verify(errandsRepositoryMock, never()).save(any());

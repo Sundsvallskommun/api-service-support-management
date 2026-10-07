@@ -3,11 +3,13 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 @Embeddable
 public class AccessLabelEmbeddable {
 
 	@Column(name = "metadata_label_id", nullable = false)
+	@KeywordField
 	private String metadataLabelId;
 
 	public static AccessLabelEmbeddable create() {

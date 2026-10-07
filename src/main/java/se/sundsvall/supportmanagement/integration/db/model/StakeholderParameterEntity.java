@@ -13,8 +13,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 @Entity
 @Table(name = "stakeholder_parameter")
@@ -30,9 +34,11 @@ public class StakeholderParameterEntity {
 	private StakeholderEntity stakeholderEntity;
 
 	@Column(name = "display_name")
+	@KeywordField(normalizer = LOWERCASE)
 	private String displayName;
 
 	@Column(name = "parameters_key")
+	@KeywordField(normalizer = LOWERCASE)
 	private String key;
 
 	@ElementCollection(fetch = FetchType.EAGER)
@@ -41,6 +47,7 @@ public class StakeholderParameterEntity {
 		joinColumns = @JoinColumn(name = "stakeholder_parameter_id",
 			foreignKey = @ForeignKey(name = "fk_stakeholder_parameter_values_stakeholder_parameter_id")))
 	@Column(name = "value")
+	@FullTextField(analyzer = TEXT)
 	private List<String> values;
 
 	public static StakeholderParameterEntity create() {

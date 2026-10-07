@@ -1,0 +1,37 @@
+[
+	{
+		"accessByType": [
+			{
+				"type": "label",
+				"access": [
+					{
+						"pattern": "TEAM-S",
+						"accessLevel": "R"
+					}
+				]
+			},
+			{
+				"type": "resource",
+				"access": [
+					{
+						"pattern": "errand",
+						"accessLevel": "R"
+					}
+				]
+			}
+		]
+	},
+	{
+		"accessByType": [
+			{
+				"type": "role",
+				"access": [
+					{
+						"pattern": "STATUS_ONLY",
+						"accessLevel": "R"
+					}
+				]
+			}
+		]
+	}
+]

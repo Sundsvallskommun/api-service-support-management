@@ -1,0 +1,5 @@
+{
+	"title": "Forbidden",
+	"status": 403,
+	"detail": "Key 'hidden-json' of Field 'jsonParameters' not searchable by user 'smo02key'"
+}

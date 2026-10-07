@@ -42,6 +42,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        search:
+          enabled: false
         hbm2ddl:
           schema-generation:
             script:
@@ -129,6 +131,9 @@ scheduler:
     cron: "-"
   notification-dispatch:
     cron: "-"
+    email:
+      sender-address: no-reply@test.local
+      sender-name: Sundsvalls kommun
   messageexchange:
     cron: "-"
     enabled: false
@@ -138,6 +143,9 @@ scheduler:
     cron: "-"
   attachment-hash:
     cron: "-"
+  search-reindex:
+    cron: "-"
+    enabled: false
   job:
     cron: "-"
 

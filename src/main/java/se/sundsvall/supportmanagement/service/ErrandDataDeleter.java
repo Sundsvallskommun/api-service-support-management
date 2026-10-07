@@ -11,7 +11,9 @@ import se.sundsvall.supportmanagement.integration.db.HandoverIdempotencyReposito
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.service.search.index.SearchIndexing;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -50,6 +52,7 @@ public class ErrandDataDeleter {
 	private final HandoverIdempotencyRepository handoverIdempotencyRepository;
 	private final EntityManager entityManager;
 	private final ChunkedDeleter chunkedDeleter;
+	private final SearchIndexing searchIndexing;
 
 	public ErrandDataDeleter(
 		final ConversationService conversationService,
@@ -60,7 +63,8 @@ public class ErrandDataDeleter {
 		final SubscriberNotificationRepository subscriberNotificationRepository,
 		final HandoverIdempotencyRepository handoverIdempotencyRepository,
 		final EntityManager entityManager,
-		final ChunkedDeleter chunkedDeleter) {
+		final ChunkedDeleter chunkedDeleter,
+		final SearchIndexing searchIndexing) {
 
 		this.conversationService = conversationService;
 		this.communicationService = communicationService;
@@ -71,6 +75,7 @@ public class ErrandDataDeleter {
 		this.handoverIdempotencyRepository = handoverIdempotencyRepository;
 		this.entityManager = entityManager;
 		this.chunkedDeleter = chunkedDeleter;
+		this.searchIndexing = searchIndexing;
 	}
 
 	/**
@@ -97,6 +102,11 @@ public class ErrandDataDeleter {
 		final var municipalityId = entity.getMunicipalityId();
 		final var namespace = entity.getNamespace();
 		final var errandNumber = entity.getErrandNumber();
+
+		// The errand goes with its data, so its search document is removed rather than rebuilt. Left to itself the index
+		// would rebuild it for every chunk of communications removed, and a rebuild reads every communication that is
+		// left, bodies and all, which is the very pile up the chunking is there to prevent.
+		searchIndexing.withoutIndexingOf(CommunicationEntity.class);
 
 		conversationService.deleteByErrandId(entity);
 

@@ -17,12 +17,16 @@ import java.time.ZoneId;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Optional.ofNullable;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 @Entity
 @Table(name = "attachment",
@@ -51,9 +55,11 @@ public class AttachmentEntity {
 	private String municipalityId;
 
 	@Column(name = "file_name")
+	@FullTextField(analyzer = TEXT)
 	private String fileName;
 
 	@Column(name = "mime_type")
+	@KeywordField(normalizer = LOWERCASE)
 	private String mimeType;
 
 	@Column(name = "channel")

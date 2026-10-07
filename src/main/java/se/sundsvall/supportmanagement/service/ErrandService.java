@@ -211,7 +211,7 @@ public class ErrandService {
 	public void deleteErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
-		if (ifMatch == null) {
+		if (ifMatch == null && LOG.isDebugEnabled()) {
 			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, entity.getVersion());
@@ -432,7 +432,7 @@ public class ErrandService {
 	 * Holds the errand to the version the caller believes it is at, noting the requests that leave it to chance.
 	 */
 	private void requireMatchingVersion(final String ifMatch, final Long version, final String id, final String namespace, final String municipalityId) {
-		if (isNull(ifMatch)) {
+		if (isNull(ifMatch) && LOG.isDebugEnabled()) {
 			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 

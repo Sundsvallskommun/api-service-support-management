@@ -15,6 +15,11 @@ import jakarta.persistence.Version;
 import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 @Entity
 @Table(name = "parameter")
@@ -29,12 +34,15 @@ public class ParameterEntity {
 	private ErrandEntity errandEntity;
 
 	@Column(name = "display_name")
+	@KeywordField(normalizer = LOWERCASE)
 	private String displayName;
 
 	@Column(name = "parameter_group")
+	@KeywordField(normalizer = LOWERCASE)
 	private String parameterGroup;
 
 	@Column(name = "parameters_key")
+	@KeywordField(normalizer = LOWERCASE)
 	private String key;
 
 	@Version
@@ -48,6 +56,8 @@ public class ParameterEntity {
 			foreignKey = @ForeignKey(name = "fk_parameter_values_parameter_id")))
 	@OrderColumn(name = "value_order", nullable = false, columnDefinition = "integer default 0")
 	@Column(name = "value", length = 3000)
+	@KeywordField(name = "values_raw", normalizer = LOWERCASE)
+	@FullTextField(analyzer = TEXT)
 	private List<String> values;
 
 	public static ParameterEntity create() {

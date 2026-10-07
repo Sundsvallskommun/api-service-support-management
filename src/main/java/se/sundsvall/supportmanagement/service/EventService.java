@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,6 +42,7 @@ import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.t
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.shouldNotify;
 
 @Service
 public class EventService {
@@ -62,10 +64,24 @@ public class EventService {
 		this.accessControlService = accessControlService;
 	}
 
-	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
+		final EventSubType subtype) {
+		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype, getExecutingUser());
+	}
+
+	/**
+	 * Logs an errand event on behalf of a given user rather than of the caller of the request.
+	 * <p>
+	 * For work done where no request says who acted, such as a scheduled job carrying out what a user did elsewhere. The
+	 * user is recorded as the one who acted, and so is not notified of it as a subscriber.
+	 *
+	 * @param actor the user who acted, or null when nobody did
+	 */
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
+		final EventSubType subtype, final Identifier actor) {
 		final var requestGroupId = getRequestGroupId();
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
-		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
+		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, actor, subtype.getValue(), requestGroupId);
 		String eventId = null;
 		try {
 			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event));
@@ -76,9 +92,15 @@ public class EventService {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		}
 
-		if (sendNotification) {
+		// A request that asked to notify no one reaches no one, neither those notified directly nor any subscriber on any
+		// channel
+		if (sendNotification && shouldNotify()) {
 			createNotification(errandEntity, event);
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
+		}
+
+		// Which subscribers hear of the event is up to their subscriptions
+		if (shouldNotify()) {
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), actor);
 		}
 	}
 
@@ -138,7 +160,9 @@ public class EventService {
 		}
 		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		createNotification(errandEntity, event);
-		saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue());
+		if (shouldNotify()) {
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue(), getExecutingUser());
+		}
 	}
 
 	public Page<Event> readEvents(final String namespace, final String municipalityId, final String id, final Pageable pageable) {
@@ -156,8 +180,8 @@ public class EventService {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
 
-	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType) {
-		final var executingUser = getExecutingUser();
+	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType,
+		final Identifier executingUser) {
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
 			.withEventId(eventId)
 			.withRequestGroupId(requestGroupId)
@@ -172,7 +196,7 @@ public class EventService {
 
 	private String extractEventId(final ResponseEntity<Void> response) {
 		return ofNullable(response.getHeaders().getLocation())
-			.map(uri -> uri.getPath())
+			.map(URI::getPath)
 			.map(path -> path.substring(path.lastIndexOf('/') + 1))
 			.orElse(null);
 	}

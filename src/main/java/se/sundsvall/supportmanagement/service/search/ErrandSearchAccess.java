@@ -1,0 +1,227 @@
+package se.sundsvall.supportmanagement.service.search;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Component;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.service.access.AccessScope;
+import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
+import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
+
+/**
+ * Holds a search to what the requesting user may read.
+ * <p>
+ * The index holds the errand together with resources that are guarded on their own, and fields that a role may be
+ * kept from. Trimming those from the answer is not enough, since a query naming a field tells by hit or miss what the
+ * field holds. So the user is held to the same grant for the query as for reading, see {@link NamespaceGrant}: the
+ * fields they may not read are left out of what a free text search looks in, and a query naming one of them, or
+ * sorting on one, is refused. {@link QueryScanner} says what a query names, {@link SearchableFields} what a route may
+ * search; this puts the two together.
+ * <p>
+ * Both of those fail closed. A name the fields cannot place is refused rather than passed on, and a query the parser
+ * could not read is refused whole: reading a query differently from the index that answers it is how a field gets
+ * searched without being granted.
+ * <p>
+ * A grant reaches errands by several routes, and what may be read differs between them: an errand the labels cover at
+ * read is searched by everything the roles of the user allow, one they cover at limited read only by what a limited
+ * read exposes, one the user reported by the reporter fields of the namespace. So a search is a clause per route, each
+ * with its own errands and its own fields, and one query can search an errand by its body and another by its title
+ * alone. A route whose fields cannot answer the query is left out rather than refused, which is what keeps a hit or a
+ * miss from saying anything about the errands it reaches; the query is refused only when no route can answer it.
+ */
+@Component
+public class ErrandSearchAccess {
+
+	static final String NOT_SEARCHABLE = "%s not searchable by user '%s'";
+	static final String NOT_SORTABLE = "%s not sortable by user '%s'";
+	static final String WILDCARD_NOT_SEARCHABLE = "A wildcard in a field name is not available to user '%s', who may not search every field of the errand";
+	static final String NOT_READ = "The query could not be read, which user '%s' may not have searched unchecked";
+
+	/**
+	 * One part of a search: the errands it reaches and the fields a word without a field is looked for in there.
+	 *
+	 * @param scope    the errands the clause reaches
+	 * @param excluded errands to leave out of it although the scope reaches them, because another route holds them at a
+	 *                 level exposing something else. Null when there are none
+	 * @param fields   the fields a word without a field is looked for in
+	 */
+	public record Clause(AccessScope scope, AccessScope excluded, List<String> fields) {}
+
+	/**
+	 * What a search runs with once the query has been held to the grant, one clause per route that can answer it.
+	 *
+	 * @param clauses what the search is filtered by, and what a count counts
+	 * @param grouped those of the clauses whose route may read the column a count groups by, which is what the breakdown
+	 *                is counted over. Empty where nothing is grouped by, and a subset of the clauses otherwise: an
+	 *                errand reached only by a route that may not read the column is still counted, it only lands in no
+	 *                bucket of its own
+	 */
+	public record Plan(List<Clause> clauses, List<Clause> grouped) {}
+
+	/** A route of the grant, before the query has been held to it. */
+	private record Route(AccessScope scope, AccessScope excluded, SearchableFields fields) {}
+
+	private final ErrandIndexModel index;
+
+	public ErrandSearchAccess(final ErrandIndexModel index) {
+		this.index = index;
+	}
+
+	/**
+	 * Holds the query and the sort to the grant, and settles what the search runs with.
+	 *
+	 * @throws org.springframework.web.ErrorResponseException 403 when no route of the grant can answer the query
+	 */
+	public Plan plan(final String query, final Sort sort, final NamespaceGrant grant) {
+		return plan(query, sort, null, grant);
+	}
+
+	/**
+	 * Holds the query, the sort and the column a count groups by to the grant, and settles what the search runs with.
+	 *
+	 * @param  groupBy                                        the field of the errand a count groups by, null when it
+	 *                                                        counts without grouping
+	 * @throws org.springframework.web.ErrorResponseException 403 when no route of the grant can answer the query. The
+	 *                                                        group column refuses nothing: a route that may not read it
+	 *                                                        contributes no buckets, see {@link Plan#grouped()}
+	 */
+	public Plan plan(final String query, final Sort sort, final ErrandField groupBy, final NamespaceGrant grant) {
+		if (!grant.enforced()) {
+			// Nothing is held back, so the one clause is counted and grouped alike
+			final var open = List.of(new Clause(grant.scope(), null, index.textFields()));
+			return new Plan(open, isNull(groupBy) ? List.of() : open);
+		}
+
+		// Read once, whatever the grant turns out to reach: what the query names does not depend on who is asking
+		final var scan = QueryScanner.scan(query);
+		final var routes = routesOf(grant);
+		final var clauses = new ArrayList<Clause>();
+		final var answering = new ArrayList<Route>();
+
+		for (final var route : routes) {
+			if (refusal(scan, sort, route.fields()).isEmpty()) {
+				answering.add(route);
+				clauses.add(new Clause(route.scope(), route.excluded(), route.fields().openFields(index.textFields())));
+			}
+		}
+
+		if (clauses.isEmpty()) {
+			// The widest route comes first, so its refusal is the one naming what the user would most expect to search
+			throw routes.stream()
+				.map(route -> refusal(scan, sort, route.fields()))
+				.flatMap(Optional::stream)
+				.findFirst()
+				.orElseGet(() -> Problem.valueOf(FORBIDDEN, NOT_SEARCHABLE.formatted("The errands of this namespace are", getCallerIdentity())));
+		}
+
+		return new Plan(List.copyOf(clauses), groupedBy(groupBy, answering, clauses));
+	}
+
+	/**
+	 * The clauses a breakdown is counted over: those whose route may read the column, and no others.
+	 * <p>
+	 * Grouping reads the column of every errand it puts in a bucket, so a route that may not read it contributes no
+	 * buckets. It is not refused on behalf of the other routes, and nor are its errands left out of the count: the count
+	 * of a query is the count of that query however it is divided up, which is what lets a client filter with a search
+	 * and ask for the breakdown of the same filter. The errands no bucket could account for are what the count exceeds
+	 * the buckets by, and the breakdown says as much.
+	 * <p>
+	 * Withheld per errand rather than per request, which is both safer and less blunt than refusing everyone: a namespace
+	 * excepting its reporters without saying what they may read gives every user a route held to the minimum, and
+	 * refusing on its behalf made grouping impossible for the whole namespace, however much the user could read.
+	 */
+	private static List<Clause> groupedBy(final ErrandField groupBy, final List<Route> answering, final List<Clause> clauses) {
+		if (isNull(groupBy)) {
+			return List.of();
+		}
+
+		return IntStream.range(0, answering.size())
+			.filter(i -> answering.get(i).fields().wholeFieldRefusal(groupBy).isEmpty())
+			.mapToObj(clauses::get)
+			.toList();
+	}
+
+	/**
+	 * The routes a search may run on, widest first: the errands the labels cover at read, those they cover at limited
+	 * read, and those the user reported. A route the grant does not open is left out, and so is one reaching nothing.
+	 */
+	private static List<Route> routesOf(final NamespaceGrant grant) {
+		final var routes = new ArrayList<Route>();
+		final var covered = nonNull(grant.labels()) && grant.labels().reachesAnything() ? NamespaceGrant.scopeOf(grant.labels()) : null;
+		final var limited = nonNull(grant.limitedLabels()) && grant.limitedLabels().reachesAnything() ? NamespaceGrant.scopeOf(grant.limitedLabels()) : null;
+
+		if (nonNull(covered)) {
+			routes.add(new Route(covered, null, SearchableFields.of(grant.labels().resources(), grant.labels().readable())));
+		}
+		if (nonNull(limited)) {
+			// The labels of a level are a subset of those below it, so the limited route reaches the covered errands as
+			// well - and those are held at the level, not at limited read. Leaving them out is what keeps a limited read
+			// from widening what may be searched of an errand the user holds in full.
+			routes.add(new Route(limited, covered, SearchableFields.of(grant.limitedLabels().resources(), grant.limitedLabels().readable())));
+		}
+		if (nonNull(grant.reporter())) {
+			// The same holds for the errands the user reported: the reporter fields are what the mapper gives an errand
+			// neither label set covers, so the route may only reach those. Reaching the covered errands too would let a
+			// search match on a field the mapper then leaves out of the answer, which is the hit telling what the field
+			// holds. The limited labels are a superset of the ones at read, so leaving them out leaves the covered errands
+			// out as well.
+			routes.add(new Route(grant.reporterScope(), nonNull(limited) ? limited : covered,
+				SearchableFields.of(grant.reporter().resources(), grant.reporter().readable())));
+		}
+
+		// A grant reaching nothing at all still answers, with a search that finds nothing rather than a refusal
+		return routes.isEmpty() ? List.of(new Route(grant.scope(), null, SearchableFields.of(Set.of(), null))) : routes;
+	}
+
+	/**
+	 * Why the query or the sort would be refused on a route, empty when it would not.
+	 */
+	private static Optional<RuntimeException> refusal(final QueryScanner.Scan scan, final Sort sort, final SearchableFields fields) {
+		if (fields.unrestricted()) {
+			// Nothing is held back here, so nothing the query names can be held back either
+			return Optional.empty();
+		}
+
+		if (!scan.fullyRead()) {
+			return Optional.of(Problem.valueOf(FORBIDDEN, NOT_READ.formatted(getCallerIdentity())));
+		}
+
+		// A sort names a property, which belongs to a field of the errand: ordering by it says as much about that field as
+		// searching it does. Every field offering the property is asked, which is what holds a sort on 'category' to the
+		// classification it belongs to rather than to a field named after it
+		for (final var order : sort) {
+			final var refused = Stream.of(ErrandField.values())
+				.filter(field -> field.getSortField(order.getProperty()).isPresent())
+				.map(fields::wholeFieldRefusal)
+				.flatMap(Optional::stream)
+				.findFirst();
+			if (refused.isPresent()) {
+				return Optional.of(Problem.valueOf(FORBIDDEN, NOT_SORTABLE.formatted(refused.get(), getCallerIdentity())));
+			}
+		}
+
+		for (final var name : scan.fields()) {
+			// A wildcard stands for names nobody enumerated, so it belongs to a route that is held to nothing
+			if (QueryScanner.isWildcard(name)) {
+				return Optional.of(Problem.valueOf(FORBIDDEN, WILDCARD_NOT_SEARCHABLE.formatted(getCallerIdentity())));
+			}
+			final var refused = fields.refusal(name);
+			if (refused.isPresent()) {
+				return Optional.of(Problem.valueOf(FORBIDDEN, NOT_SEARCHABLE.formatted(refused.get(), getCallerIdentity())));
+			}
+		}
+
+		return Optional.empty();
+	}
+}

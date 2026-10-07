@@ -1,3 +1,7 @@
+search:
+  max-result-window: 10000
+  reindex:
+    lock-at-most-for: PT6H
 scheduler:
   emailreader:
     name: fetch_emails
@@ -36,6 +40,16 @@ scheduler:
     maximum-execution-time: PT4M
     transaction-buffer: PT10S
     max-age: P30D
+    email:
+      sender-address: noreply@sundsvall.se
+      sender-name: Sundsvalls kommun
+  search-reindex:
+    name: search_reindex
+    enabled: true
+    # Nightly, when the hole a namespace is rebuilt through is least in the way. Does nothing where search is off
+    cron: 0 0 1 * * *
+    shedlock-lock-at-most-for: PT2H
+    maximum-execution-time: PT1H
   attachment-hash:
     name: compute_attachment_hash
     enabled: true
@@ -149,6 +163,38 @@ spring:
           schema-generation:
             database:
               action: none
+      hibernate:
+        # Lazy collections of the rows a query returns are loaded a batch at a time instead of one row at a time.
+        # Every read of several errands carries their stakeholders, parameters and communications, which is what a
+        # page of a listing or a search spends its time on: measured on a hundred thousand errands, a page of twenty
+        # went from 39 to 11 ms, one of a hundred from 172 to 23 ms, and a full reindex from 75 to 11 seconds.
+        default_batch_fetch_size: 64
+        search:
+          # Off unless the environment has an OpenSearch instance. The search endpoint answers 503 while off.
+          enabled: false
+          backend:
+            # Pinned instead of detected so that starting the application never depends on the cluster being up
+            version: opensearch:3.6
+            version_check:
+              enabled: false
+            # Where the cluster is, and how it is reached, belongs to the environment that has one: the profile of the
+            # deployment names the hosts, and the protocol with them where it is not the plain one assumed here
+            analysis:
+              configurer: class:se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer
+            schema_management:
+              # How the JSON parameters, which the entity mapping cannot describe, are mapped as they come
+              mapping_file: search-mapping.json
+              # Room for the fields the JSON parameters bring, two per scalar path, beyond the default of a thousand
+              settings_file: search-settings.json
+          schema_management:
+            # The index schema is created by SearchSchemaInitializer after startup and by a full reindex
+            strategy: none
+          indexing:
+            plan:
+              synchronization:
+                # MariaDB is the source of truth and the index is rebuildable, so a request never waits for or
+                # fails on OpenSearch. Indexing failures are logged.
+                strategy: async
   security:
     oauth2:
       client:

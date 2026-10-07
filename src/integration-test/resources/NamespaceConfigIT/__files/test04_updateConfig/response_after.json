@@ -10,5 +10,7 @@
 	"notifyReporter": true,
 	"roleBasedMapping": false,
 	"resourceAccessControl": false,
-	"singleDecisionPerErrand": false
+	"singleDecisionPerErrand": false,
+	"excludeEventDescriptionsInEmail": false,
+	"baseUrl": "https://draken.example.com"
 }
