@@ -209,7 +209,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
-		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity, true));
 	}
 
 	@Test
@@ -255,7 +255,7 @@ class EventServiceTest {
 		assertThat(event.getOwner()).isEqualTo(owner);
 		assertThat(event.getSourceType()).isEqualTo(sourceType);
 		assertThat(event.getType()).isEqualTo(eventType);
-		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
+		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity, true));
 	}
 
 	@Test

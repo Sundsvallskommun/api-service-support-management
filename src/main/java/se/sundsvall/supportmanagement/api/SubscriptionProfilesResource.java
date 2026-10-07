@@ -135,7 +135,10 @@ class SubscriptionProfilesResource {
 	@DeleteMapping(path = "/{profileId}", produces = ALL_VALUE)
 	@Operation(summary = "Delete subscription profile", description = "Delete a subscription profile. All subscriptions pointing at the profile are also removed.", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation"),
-		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409",
+			description = "Conflict — the profile is the reporter profile of the namespace",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Void> deleteSubscriptionProfile(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,

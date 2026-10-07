@@ -39,11 +39,13 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_CONSUMER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_REPORTER_PROFILE_ID;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 class NamespaceConfigMapperTest {
 
 	private static final String BASE_URL = "https://draken.example.com";
+	private static final String REPORTER_PROFILE_ID = "123e4567-e89b-12d3-a456-426614174000";
 
 	private final NamespaceConfigMapper mapper = new NamespaceConfigMapper();
 
@@ -58,7 +60,8 @@ class NamespaceConfigMapperTest {
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withType(INTEGER).withValue(String.valueOf(40)),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFY_REPORTER).withType(BOOLEAN).withValue(String.valueOf(notifyReporter)),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(shortCode),
-				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_BASE_URL).withType(STRING).withValue(BASE_URL)))
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_BASE_URL).withType(STRING).withValue(BASE_URL),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_REPORTER_PROFILE_ID).withType(STRING).withValue(REPORTER_PROFILE_ID)))
 			.withCreated(created)
 			.withModified(modified);
 	}
@@ -80,7 +83,8 @@ class NamespaceConfigMapperTest {
 			.withShortCode(shortCode)
 			.withAccessControl(toggleValue)
 			.withNotifyReporter(!toggleValue)
-			.withBaseUrl(BASE_URL);
+			.withBaseUrl(BASE_URL)
+			.withReporterProfileId(REPORTER_PROFILE_ID);
 
 		final var entity = mapper.toEntity(config, namespace, municipalityId);
 
@@ -96,6 +100,7 @@ class NamespaceConfigMapperTest {
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(toggleValue);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(!toggleValue);
 		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_BASE_URL)).isEqualTo(BASE_URL);
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_REPORTER_PROFILE_ID)).isEqualTo(REPORTER_PROFILE_ID);
 	}
 
 	@Test
@@ -125,7 +130,7 @@ class NamespaceConfigMapperTest {
 		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(40);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(accessControl);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(notifyReporter);
-		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(PROPERTY_BASE_URL);
+		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(PROPERTY_BASE_URL, PROPERTY_REPORTER_PROFILE_ID);
 	}
 
 	@Test
@@ -153,6 +158,7 @@ class NamespaceConfigMapperTest {
 		assertThat(config.isAccessControl()).isEqualTo(accessControl);
 		assertThat(config.isNotifyReporter()).isEqualTo(notifyReporter);
 		assertThat(config.getBaseUrl()).isEqualTo(BASE_URL);
+		assertThat(config.getReporterProfileId()).isEqualTo(REPORTER_PROFILE_ID);
 	}
 
 	@Test
@@ -196,6 +202,7 @@ class NamespaceConfigMapperTest {
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue("shortCode")));
 
 		assertThat(mapper.toNamespaceConfig(entity).getBaseUrl()).isNull();
+		assertThat(mapper.toNamespaceConfig(entity).getReporterProfileId()).isNull();
 	}
 
 	@Test

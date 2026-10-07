@@ -25,8 +25,10 @@ import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,8 +54,13 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Protecte
 @ExtendWith(MockitoExtension.class)
 class NamespaceConfigServiceTest {
 
+	private static final String REPORTER_PROFILE_ID = "123e4567-e89b-12d3-a456-426614174000";
+
 	@Mock
 	private NamespaceConfigRepository configRepositoryMock;
+
+	@Mock
+	private SubscriptionProfileRepository subscriptionProfileRepositoryMock;
 
 	@Mock
 	private NamespaceConfigMapper mapperMock;
@@ -65,7 +72,7 @@ class NamespaceConfigServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		configService = new NamespaceConfigService(configRepositoryMock, mapperMock);
+		configService = new NamespaceConfigService(configRepositoryMock, subscriptionProfileRepositoryMock, mapperMock);
 	}
 
 	@Test
@@ -98,6 +105,67 @@ class NamespaceConfigServiceTest {
 
 		verify(mapperMock).toEntity(same(request), eq(namespace), eq(municipalityId));
 		verify(configRepositoryMock).save(same(entity));
+	}
+
+	@Test
+	void createWithoutReporterProfileLooksUpNoProfile() {
+		// Most namespaces have no reporter profile, and are then not checked for one
+		final var request = NamespaceConfig.create();
+		when(mapperMock.toEntity(any(), any(), any())).thenReturn(NamespaceConfigEntity.create());
+
+		configService.create(request, "namespace", "municipalityId");
+
+		verifyNoInteractions(subscriptionProfileRepositoryMock);
+	}
+
+	@Test
+	void createWithExistingReporterProfile() {
+		final var request = NamespaceConfig.create().withReporterProfileId(REPORTER_PROFILE_ID);
+		final var entity = NamespaceConfigEntity.create();
+		when(subscriptionProfileRepositoryMock.findByIdAndNamespaceAndMunicipalityId(REPORTER_PROFILE_ID, "namespace", "municipalityId"))
+			.thenReturn(Optional.of(SubscriptionProfileEntity.create().withId(REPORTER_PROFILE_ID)));
+		when(mapperMock.toEntity(any(), any(), any())).thenReturn(entity);
+
+		configService.create(request, "namespace", "municipalityId");
+
+		verify(subscriptionProfileRepositoryMock).findByIdAndNamespaceAndMunicipalityId(REPORTER_PROFILE_ID, "namespace", "municipalityId");
+		verify(configRepositoryMock).save(same(entity));
+	}
+
+	@Test
+	void replaceWithUnknownReporterProfile() {
+		final var request = NamespaceConfig.create().withReporterProfileId(REPORTER_PROFILE_ID);
+		when(subscriptionProfileRepositoryMock.findByIdAndNamespaceAndMunicipalityId(REPORTER_PROFILE_ID, "namespace", "municipalityId")).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> configService.replace(request, "namespace", "municipalityId"))
+			.isInstanceOf(Problem.class)
+			.hasMessage("Bad Request: Reporter profile '%s' is not a subscription profile in namespace 'namespace' for municipality 'municipalityId'".formatted(REPORTER_PROFILE_ID))
+			.extracting("status").isEqualTo(BAD_REQUEST);
+
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void findReporterProfileId() {
+		final var entity = NamespaceConfigEntity.create();
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create().withReporterProfileId(REPORTER_PROFILE_ID));
+
+		assertThat(configService.findReporterProfileId("namespace", "municipalityId")).contains(REPORTER_PROFILE_ID);
+		assertThat(configService.isReporterProfile("namespace", "municipalityId", REPORTER_PROFILE_ID)).isTrue();
+		assertThat(configService.isReporterProfile("namespace", "municipalityId", "other-profile")).isFalse();
+	}
+
+	@Test
+	void findReporterProfileIdWithoutOne() {
+		final var entity = NamespaceConfigEntity.create();
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create());
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("other-namespace", "municipalityId")).thenReturn(Optional.empty());
+
+		assertThat(configService.findReporterProfileId("namespace", "municipalityId")).isEmpty();
+		assertThat(configService.findReporterProfileId("other-namespace", "municipalityId")).isEmpty();
+		assertThat(configService.isReporterProfile("other-namespace", "municipalityId", REPORTER_PROFILE_ID)).isFalse();
 	}
 
 	@Test
@@ -384,7 +452,7 @@ class NamespaceConfigServiceTest {
 	 * A service with the real mapper, for the duplicate checks, which run against the mapped rows.
 	 */
 	private NamespaceConfigService serviceWithRealMapper() {
-		return new NamespaceConfigService(configRepositoryMock, new NamespaceConfigMapper());
+		return new NamespaceConfigService(configRepositoryMock, subscriptionProfileRepositoryMock, new NamespaceConfigMapper());
 	}
 
 	@Test

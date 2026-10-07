@@ -58,6 +58,7 @@ class NamespaceConfigTest {
 		final var teliaAceWorkItemEnabled = true;
 		final var teliaAceWorkItemBaseUrl = "https://draken.sundsvall.se/kontaktsundsvall";
 		final var baseUrl = "https://draken.example.com";
+		final var reporterProfileId = "123e4567-e89b-12d3-a456-426614174000";
 
 		final var bean = NamespaceConfig.create()
 			.withNamespace(namespace)
@@ -75,6 +76,7 @@ class NamespaceConfigTest {
 			.withLimitedReadAccess(limitedReadAccess)
 			.withReporterAccess(reporterAccess)
 			.withBaseUrl(baseUrl)
+			.withReporterProfileId(reporterProfileId)
 			.withCreated(created)
 			.withModified(modified)
 			.withTeliaAceWorkItemEnabled(teliaAceWorkItemEnabled)
@@ -96,6 +98,7 @@ class NamespaceConfigTest {
 		assertThat(bean.getLimitedReadAccess()).isEqualTo(limitedReadAccess);
 		assertThat(bean.getReporterAccess()).isEqualTo(reporterAccess);
 		assertThat(bean.getBaseUrl()).isEqualTo(baseUrl);
+		assertThat(bean.getReporterProfileId()).isEqualTo(reporterProfileId);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.isTeliaAceWorkItemEnabled()).isEqualTo(teliaAceWorkItemEnabled);
