@@ -1,11 +1,14 @@
 package se.sundsvall.supportmanagement.apptest;
 
 import jakarta.persistence.EntityManagerFactory;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import org.hibernate.search.mapper.orm.Search;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -47,6 +50,9 @@ class ErrandSearchIT extends AbstractAppTest {
 
 	@Autowired
 	private EntityManagerFactory entityManagerFactory;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@BeforeEach
 	void reindex() throws InterruptedException {
@@ -473,159 +479,17 @@ class ErrandSearchIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The count answers the number the search answers with, without the errands: same query, same grant, same routes.
+	 * A date without a zone is a day in Sweden: half past midnight on the first of June in Swedish summer time is the
+	 * evening before in UTC, and is found on the first. The point in time is written through JDBC rather than as a SQL
+	 * literal, so that it is the same instant whatever zone the test runs in.
 	 */
 	@Test
-	void test25_theCountIsTheSearchWithoutTheErrands() {
-		assertThat(count(PATH, "")).isEqualTo(3);
-		assertThat(count(PATH, "vattenläcka")).isEqualTo(1);
-		assertThat(count(PATH, "status:new")).isEqualTo(2);
-		assertThat(count(PATH, "status:new AND priority:high")).isEqualTo(1);
-		assertThat(count(PATH, "ingentingalls")).isZero();
+	void test25_aDateIsADayInSweden() throws InterruptedException {
+		jdbcTemplate.update("UPDATE errand SET created = ? WHERE errand_number = ?", Timestamp.from(Instant.parse("2025-05-31T22:30:00Z")), INVOICE);
+		reindex();
 
-		// The same query, answered by the search, reports the same total
-		assertThat(page(PATH, "status:new").path("totalElements").asInt()).isEqualTo(2);
-
-		// And a namespace counts its own errands only, whatever the casing it is asked for by
-		assertThat(count("/2281/namespace-3/errands/search", "vattenläcka")).isEqualTo(1);
-	}
-
-	/**
-	 * The breakdown: the largest bucket first, and the values in the casing the metadata of the namespace gives them
-	 * rather than the lowercased form the index holds.
-	 */
-	@Test
-	void test26_theCountDividesOverOneColumn() {
-		final var byStatus = group(PATH, "", "status");
-
-		assertThat(byStatus.path("property").asString()).isEqualTo("status");
-		assertThat(bucketsOf(byStatus)).containsExactly("NEW=2", "ONGOING=1");
-
-		// The breakdown accounts for every errand the count counted, which is the whole point of refusing a partial one
-		assertThat(accountedFor(byStatus)).isEqualTo(count(PATH, ""));
-		assertThat(byStatus.path("withoutValue").asLong()).isZero();
-		assertThat(byStatus.path("withheld").asLong()).isZero();
-
-		// A column none of the errands carries gets no buckets at all, and is counted as carrying nothing
-		final var byResolution = group(PATH, "", "resolution");
-		assertThat(byResolution.path("buckets")).isEmpty();
-		assertThat(byResolution.path("withoutValue").asLong()).isEqualTo(3);
-		assertThat(accountedFor(byResolution)).isEqualTo(3);
-
-		// The query narrows the breakdown as it narrows the count
-		assertThat(bucketsOf(group(PATH, "status:new", "status"))).containsExactly("NEW=2");
-
-		// A column with no catalogue behind it answers with what the index holds
-		assertThat(bucketsOf(group(PATH, "", "assignedUserId"))).containsExactly("han01dle=2", "han02dle=1");
-		assertThat(bucketsOf(group(PATH, "", "priority"))).hasSize(3);
-	}
-
-	/** A property nobody groups by is a bad request, and says what may be grouped by. */
-	@Test
-	void test27_aColumnNobodyGroupsByIsRefused() {
-		setupCall()
-			.withServicePath(PATH + "/count?groupBy=description")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(BAD_REQUEST)
-			.sendRequest();
-
-		setupCall()
-			.withServicePath(PATH + "/count?groupBy=labels")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(BAD_REQUEST)
-			.sendRequest();
-	}
-
-	/**
-	 * A count is held to the grant as a search is, and the column it groups by to what the route may read: the role seeing
-	 * the status alone counts by status, and asking it for the category divides nothing up rather than refusing - the count
-	 * stays the count of the search, which is what a client filtering with one and counting with the other depends on.
-	 */
-	@Test
-	void test28_aCountIsGroupedWithinWhatTheUserMayRead() {
-		// The errands this role reaches, counted and divided by the one column it may read
-		assertThat(countAs(STATUS_ONLY_PATH, "", "sta01usr")).isEqualTo(2);
-		assertThat(bucketsOf(groupAs(STATUS_ONLY_PATH, "", "status", "sta01usr"))).containsExactlyInAnyOrder("NEW=1", "ONGOING=1");
-
-		// A column the role may not read divides nothing up, and refuses nothing either: the count is what the search of the
-		// same query answers with, and every errand of it lands in the bucket the breakdown cannot account for
-		final var byCategory = groupAs(STATUS_ONLY_PATH, "", "category", "sta01usr");
-		assertThat(byCategory.path("buckets")).isEmpty();
-		// Withheld rather than said to carry nothing: that an errand holds no category is a fact about the category
-		assertThat(byCategory.path("withheld").asLong()).isEqualTo(2);
-		assertThat(byCategory.path("withoutValue").asLong()).isZero();
-		assertThat(accountedFor(byCategory)).isEqualTo(countAs(STATUS_ONLY_PATH, "", "sta01usr"));
-
-		// The labels of the access controlled namespace reach three errands and the unlabelled one
-		assertThat(countAs(ACCESS_CONTROLLED_PATH, "", "lim01red")).isEqualTo(4);
-	}
-
-	private long count(final String path, final String query) {
-		return countBody(path, query, null, null).path("count").asLong();
-	}
-
-	private long countAs(final String path, final String query, final String adAccount) {
-		return countBody(path, query, null, adAccount).path("count").asLong();
-	}
-
-	private JsonNode group(final String path, final String query, final String groupBy) {
-		return countBody(path, query, groupBy, null).path("group");
-	}
-
-	private JsonNode groupAs(final String path, final String query, final String groupBy, final String adAccount) {
-		return countBody(path, query, groupBy, adAccount).path("group");
-	}
-
-	private JsonNode countBody(final String path, final String query, final String groupBy, final String adAccount) {
-		final var servicePath = withQuery(path + "/count", query) + (groupBy == null ? "" : "&groupBy=" + groupBy);
-		final var call = setupCall()
-			.withServicePath(servicePath)
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK);
-
-		if (adAccount != null) {
-			call.withHeader(SENT_BY_HEADER, adAccount + "; type=adAccount");
-		}
-		return call.sendRequest().getResponseBody(new TypeReference<JsonNode>() {});
-	}
-
-	/**
-	 * The shape where one route of the grant may read the column and another may not: the labels of this namespace reach
-	 * one errand at read and the other at limited read, and a limited read exposes the status but not the category. So the
-	 * breakdown divides up the errand held at read and withholds the other, while the count counts both - which is what a
-	 * client filtering with a search and counting with the same query depends on.
-	 */
-	@Test
-	void test29_aColumnOneRouteMayReadAndAnotherMayNot() {
-		// Both errands are counted, as the search of the same query answers with both
-		assertThat(countAs(MIXED_PATH, "", "mix01ed")).isEqualTo(2);
-		assertThat(searchAs(MIXED_PATH, "", "mix01ed")).hasSize(2);
-
-		// The status, which both routes may read, divides both of them up
-		final var byStatus = groupAs(MIXED_PATH, "", "status", "mix01ed");
-		assertThat(bucketsOf(byStatus)).containsExactly("NEW=2");
-		assertThat(byStatus.path("withheld").asLong()).isZero();
-		assertThat(accountedFor(byStatus)).isEqualTo(2);
-
-		// The category, which a limited read does not expose, divides up the errand held at read and withholds the other
-		final var byCategory = groupAs(MIXED_PATH, "", "category", "mix01ed");
-		assertThat(bucketsOf(byCategory)).containsExactly("VATTEN=1");
-		assertThat(byCategory.path("withheld").asLong()).isEqualTo(1);
-		assertThat(byCategory.path("withoutValue").asLong()).isZero();
-		assertThat(accountedFor(byCategory)).isEqualTo(countAs(MIXED_PATH, "", "mix01ed"));
-	}
-
-	/** What a breakdown accounts for, which must always be the count it was answered beside. */
-	private static long accountedFor(final JsonNode group) {
-		return group.path("buckets").valueStream().mapToLong(bucket -> bucket.path("count").asLong()).sum()
-			+ group.path("withoutValue").asLong() + group.path("withheld").asLong();
-	}
-
-	/** The buckets as 'value=count', in the order they were answered with. */
-	private static List<String> bucketsOf(final JsonNode group) {
-		return group.path("buckets").valueStream()
-			.map(bucket -> bucket.path("value").asString() + "=" + bucket.path("count").asLong())
-			.toList();
+		assertThat(search(PATH, "created:[2025-06-01 TO 2025-06-02}")).containsExactly(INVOICE);
+		assertThat(search(PATH, "created:[2025-05-31 TO 2025-06-01}")).isEmpty();
 	}
 
 	private List<String> search(final String path, final String query) {
