@@ -16,12 +16,15 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  */
 class QueryScannerTest {
 
+	/**
+	 * Nothing at all, words, a phrase and an escaped colon name no field.
+	 */
 	@ParameterizedTest
 	@NullAndEmptySource
 	@ValueSource(strings = {
-		" ", "　"
+		" ", "\u3000", "vatten läcka", "\"communications.subject:inside a phrase\"", "title\\:x", "a b a b a b"
 	})
-	void nothingIsNamedByNothing(final String query) {
+	void aQueryNamingNoFieldNamesNothing(final String query) {
 		final var scan = QueryScanner.scan(query);
 
 		assertThat(scan.fields()).isEmpty();
@@ -31,17 +34,6 @@ class QueryScannerTest {
 	@Test
 	void aFieldAndItsValue() {
 		assertThat(QueryScanner.scan("title:vatten").fields()).containsExactly("title");
-	}
-
-	@ParameterizedTest
-	@ValueSource(strings = {
-		"vatten läcka", "\"communications.subject:inside a phrase\"", "title\\:x", "a b a b a b"
-	})
-	void wordsAndPhrasesNameNoField(final String query) {
-		final var scan = QueryScanner.scan(query);
-
-		assertThat(scan.fields()).isEmpty();
-		assertThat(scan.fullyRead()).isTrue();
 	}
 
 	@Test
@@ -55,7 +47,7 @@ class QueryScannerTest {
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"description:x", "description :x", "description : x", "description\t:x", "description\n:x", "description　:x", "description     :     x"
+		"description:x", "description :x", "description : x", "description\t:x", "description\n:x", "description\u3000:x", "description     :     x"
 	})
 	void aNameIsANameWhateverStandsBetweenItAndTheColon(final String query) {
 		assertThat(QueryScanner.scan(query).fields()).containsExactly("description");

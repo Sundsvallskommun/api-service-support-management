@@ -136,9 +136,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -201,9 +203,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -269,9 +273,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -333,9 +339,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -402,9 +410,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -473,9 +483,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -543,9 +555,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -608,9 +622,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -670,9 +686,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -742,9 +760,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -808,9 +828,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -873,9 +895,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -942,9 +966,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1007,9 +1033,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1076,9 +1104,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1163,9 +1193,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1265,9 +1297,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1390,9 +1424,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1469,9 +1505,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1556,9 +1594,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1658,9 +1698,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1783,9 +1825,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1870,9 +1914,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -1961,9 +2007,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2076,9 +2124,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2183,9 +2233,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2293,9 +2345,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2426,9 +2480,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2519,9 +2575,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2621,9 +2679,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2746,9 +2806,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2839,9 +2901,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -2941,9 +3005,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3066,9 +3132,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3157,9 +3225,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3216,9 +3286,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3285,9 +3357,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3350,9 +3424,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3419,9 +3495,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3484,9 +3562,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3548,9 +3628,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3627,9 +3709,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3691,9 +3775,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3775,9 +3861,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3856,9 +3944,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -3938,9 +4028,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4002,9 +4094,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4081,9 +4175,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4145,9 +4241,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4224,9 +4322,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4288,9 +4388,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4367,9 +4469,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4431,9 +4535,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4501,9 +4607,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4565,9 +4673,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4642,9 +4752,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4713,9 +4825,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4800,9 +4914,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4864,9 +4980,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -4943,9 +5061,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5046,9 +5166,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5141,9 +5263,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5243,9 +5367,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5307,9 +5433,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5386,9 +5514,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5450,9 +5580,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5529,9 +5661,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5593,9 +5727,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5672,9 +5808,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5736,9 +5874,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5816,9 +5956,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5880,9 +6022,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -5959,9 +6103,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6023,9 +6169,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6127,9 +6275,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6196,9 +6346,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6279,9 +6431,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6356,9 +6510,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6447,9 +6603,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6550,9 +6708,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6651,9 +6811,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6734,9 +6896,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6811,9 +6975,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6899,9 +7065,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -6968,9 +7136,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7045,9 +7215,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7116,9 +7288,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7207,9 +7381,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7310,9 +7486,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7411,9 +7589,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7483,9 +7663,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7560,9 +7742,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7650,9 +7834,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7734,9 +7920,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7831,9 +8019,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -7934,9 +8124,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8035,9 +8227,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8109,9 +8303,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8202,9 +8398,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8296,9 +8494,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8373,9 +8573,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8477,9 +8679,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8561,9 +8765,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8652,9 +8858,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8755,9 +8963,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8856,9 +9066,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -8928,9 +9140,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9000,9 +9214,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9072,9 +9288,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9145,9 +9363,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9217,9 +9437,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9294,9 +9516,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9403,9 +9627,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9485,9 +9711,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9580,9 +9808,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9659,9 +9889,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9736,9 +9968,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9820,9 +10054,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9898,9 +10134,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -9971,9 +10209,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10034,9 +10274,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10094,9 +10336,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10171,9 +10415,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10247,9 +10493,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10321,9 +10569,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10415,9 +10665,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10485,9 +10737,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10573,9 +10827,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10655,9 +10911,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10730,9 +10988,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10801,9 +11061,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10883,9 +11145,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -10959,9 +11223,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11031,9 +11297,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11113,9 +11381,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11188,9 +11458,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11259,9 +11531,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11341,9 +11615,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11410,9 +11686,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11481,9 +11759,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11563,9 +11843,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11638,9 +11920,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11709,9 +11993,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11793,9 +12079,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11871,9 +12159,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -11945,9 +12235,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12027,9 +12319,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12102,9 +12396,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12173,9 +12469,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12255,9 +12553,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12330,9 +12630,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12401,9 +12703,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12483,9 +12787,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12552,9 +12858,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12623,9 +12931,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12705,9 +13015,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12774,9 +13086,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12845,9 +13159,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -12927,9 +13243,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13003,9 +13321,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13075,9 +13395,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13157,9 +13479,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13238,9 +13562,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13327,9 +13653,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13429,9 +13757,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13524,9 +13854,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13616,9 +13948,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13709,9 +14043,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13787,9 +14123,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13894,9 +14232,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -13985,9 +14325,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14084,9 +14426,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14188,9 +14532,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14271,9 +14617,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14350,9 +14698,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14440,9 +14790,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14535,9 +14887,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14627,9 +14981,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14728,9 +15084,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14823,9 +15181,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -14915,9 +15275,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15023,9 +15385,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15113,9 +15477,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15199,9 +15565,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15295,9 +15663,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15390,9 +15760,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15482,9 +15854,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15596,9 +15970,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15685,9 +16061,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15770,9 +16148,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15859,9 +16239,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -15941,9 +16323,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16031,9 +16415,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16110,9 +16496,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16190,9 +16578,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16306,9 +16696,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16370,9 +16762,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16441,9 +16835,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16508,9 +16904,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16571,9 +16969,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16641,9 +17041,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16704,9 +17106,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16780,9 +17184,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16855,9 +17261,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -16934,9 +17342,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17033,9 +17443,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17116,9 +17528,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17198,9 +17612,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17278,9 +17694,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17384,9 +17802,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17467,9 +17887,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17545,9 +17967,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17637,9 +18061,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17722,9 +18148,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17826,9 +18254,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17909,9 +18339,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -17986,9 +18418,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18073,9 +18507,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18150,9 +18586,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18244,9 +18682,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18337,9 +18777,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18411,9 +18853,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18561,9 +19005,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18711,9 +19157,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18800,9 +19248,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18855,9 +19305,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18904,9 +19356,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -18970,9 +19424,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -19042,9 +19498,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -19121,9 +19579,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -19201,9 +19661,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean
@@ -19274,9 +19736,11 @@ paths:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
       - name: X-notify
         in: header
-        description: "Set to false to make the operation notify no one: neither the\
-          \ users notified directly nor the subscribers of the errand, on any channel.\
-          \ Any other value, or leaving the header out, notifies as usual."
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
         required: false
         schema:
           type: boolean

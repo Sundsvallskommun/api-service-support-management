@@ -39,7 +39,8 @@ class OpenApiConfig {
 				.name(NOTIFY_HEADER)
 				.in("header")
 				.required(false)
-				.description("Set to false to make the operation notify no one: neither the users notified directly nor the subscribers of the errand, on any channel. Any other value, or leaving the header out, notifies as usual.")
+				.description(
+					"Set to false to keep the operation from notifying the subscribers of the errand, on any channel. A change to the errand itself then notifies no one directly either, while a change to a note still notifies the users it would notify directly. Any other value, or leaving the header out, notifies as usual.")
 				.example(false)
 				.schema(new BooleanSchema()._default(true)));
 			return operation;
