@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ATTACHMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
@@ -26,6 +27,7 @@ class EventSubTypeTest {
 
 	private static Stream<Arguments> commands() {
 		return Stream.of(
+			arguments(ASSIGNMENT, false),
 			arguments(ATTACHMENT, false),
 			arguments(DECISION, false),
 			arguments(ERRAND, false),
@@ -41,7 +43,7 @@ class EventSubTypeTest {
 
 	@Test
 	void enums() {
-		assertThat(values()).containsExactlyInAnyOrder(ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, PROCESS, SIGNAL, SYSTEM, SUSPENSION);
+		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, PROCESS, SIGNAL, SYSTEM, SUSPENSION);
 	}
 
 	@Test

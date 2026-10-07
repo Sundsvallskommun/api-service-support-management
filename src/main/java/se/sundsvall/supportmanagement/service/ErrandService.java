@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -44,12 +45,14 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
@@ -72,6 +75,7 @@ public class ErrandService {
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_ACTIVATE_ERRAND = "Ärendet har aktiverats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+	private static final String EVENT_LOG_ASSIGN_ERRAND = "Ärendet har tilldelats.";
 	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had. Give the errand labels that name the process it runs, or put the labels back as they were.";
 	private static final String LABELS_NOT_REBUILT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had.";
 
@@ -164,6 +168,9 @@ public class ErrandService {
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		logCreateEvent(persistedEntity, revision);
+		if (nonNull(persistedEntity.getAssignedUserId())) {
+			logAssignmentEvent(persistedEntity, revision);
+		}
 
 		if (isNotBlank(referredFrom)) {
 			final var relation = ErrandMapper.toReferredFromRelation(namespace, expandRelation(referredFrom), persistedEntity.getId());
@@ -238,6 +245,10 @@ public class ErrandService {
 
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
+		// Copied before patching, since the patch changes the errand in place and its events tell what changed
+		final var previousAssignee = errandEntityToUpdate.getAssignedUserId();
+		final var previousLabelIds = labelIdsOf(errandEntityToUpdate);
+
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
 		ofNullable(contactReason).ifPresent(errandEntity::withContactReason);
 
@@ -253,7 +264,18 @@ public class ErrandService {
 
 		final var entity = repository.saveAndFlush(errandEntity);
 		errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
-		logUpdateEvent(entity, revisionService.createErrandRevision(entity), activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true);
+		final var revisionResult = revisionService.createErrandRevision(entity);
+
+		// A draft notified no one, so the draft made active tells of every label it has and of its assignee as a new errand
+		// would
+		final var addedLabelIds = labelIdsOf(entity);
+		if (!activates) {
+			addedLabelIds.removeAll(previousLabelIds);
+		}
+		logUpdateEvent(entity, revisionResult, activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true, addedLabelIds);
+		if (isNewAssignment(activates ? null : previousAssignee, entity.getAssignedUserId())) {
+			logAssignmentEvent(entity, revisionResult);
+		}
 
 		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity))), classificationDisplayNames);
 	}
@@ -278,7 +300,7 @@ public class ErrandService {
 		// built from its external tags - a collection that can no longer be loaded by then. Held here and put back, so
 		// that a removal which happened is answered for rather than lost to a lazy collection.
 		final var externalTags = List.copyOf(ofNullable(entity.getExternalTags()).orElse(emptyList()));
-		final var labels = labelIdsOf(entity);
+		final var labels = labelsByIdOf(entity);
 
 		// Attachments are read through the attachment service rather than off the entity, so that the access check
 		// guarding them applies to a caller deleting them along with the errand.
@@ -322,7 +344,7 @@ public class ErrandService {
 			return false;
 		}
 
-		final var labels = labelIdsOf(entity);
+		final var labels = labelsByIdOf(entity);
 
 		// Taken straight off the entity, since a purge runs with no caller to authorize.
 		removeErrand(entity, ofNullable(entity.getAttachments()).orElse(emptyList()).stream()
@@ -340,7 +362,7 @@ public class ErrandService {
 	 * back from the process by them when one of them blocks processes, and the removal leaves the errand and the metadata
 	 * labels it points at detached, so the labels are looked up again by id rather than read off them.
 	 */
-	private static List<ErrandLabelEmbeddable> labelIdsOf(final ErrandEntity entity) {
+	private static List<ErrandLabelEmbeddable> labelsByIdOf(final ErrandEntity entity) {
 		return ofNullable(entity.getLabels()).orElse(emptyList()).stream()
 			.map(label -> ErrandLabelEmbeddable.create().withMetadataLabelId(label.getMetadataLabelId()))
 			.toList();
@@ -502,7 +524,7 @@ public class ErrandService {
 		}
 
 		final var saved = repository.saveAndFlush(errand);
-		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, false);
+		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, false, Set.of());
 		return true;
 	}
 
@@ -545,7 +567,8 @@ public class ErrandService {
 	 */
 	private void logCreateEvent(final ErrandEntity entity, final RevisionResult revision) {
 		try {
-			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision.latest(), null, false, ERRAND);
+			// Every label of a new errand was added by creating it
+			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision.latest(), null, false, ERRAND, labelIdsOf(entity));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log CREATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}
@@ -561,18 +584,48 @@ public class ErrandService {
 	}
 
 	/**
+	 * Logs that the errand was assigned, apart from the change it is part of, so that subscribers may be notified of
+	 * assignments alone. No direct notification is made, as the change itself already makes one.
+	 */
+	private void logAssignmentEvent(final ErrandEntity entity, final RevisionResult revisionResult) {
+		try {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity,
+				ofNullable(revisionResult).map(RevisionResult::latest).orElse(null),
+				ofNullable(revisionResult).map(RevisionResult::previous).orElse(null),
+				false, ASSIGNMENT);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log assignment event for errand {}: {}", entity.getId(), e.getMessage());
+		}
+	}
+
+	/**
+	 * An errand counts as assigned when it gets an assignee it did not have, which leaves out taking the assignee away.
+	 */
+	private static boolean isNewAssignment(final String previousAssignee, final String currentAssignee) {
+		return nonNull(currentAssignee) && !currentAssignee.equals(previousAssignee);
+	}
+
+	private static Set<String> labelIdsOf(final ErrandEntity entity) {
+		return ofNullable(entity.getLabels()).orElse(emptyList()).stream()
+			.map(ErrandLabelEmbeddable::getMetadataLabelId)
+			.filter(Objects::nonNull)
+			.collect(toCollection(LinkedHashSet::new));
+	}
+
+	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
 	 *
-	 * @param notifies whether the event notifies the handler and the subscribers of the errand, or no one.
+	 * @param notifies      whether the event notifies the handler and the subscribers of the errand, or no one.
+	 * @param addedLabelIds the metadata labels the update added to the errand.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean notifies) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean notifies, final Set<String> addedLabelIds) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
 			if (notifies) {
-				eventService.createErrandEvent(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), true, ERRAND);
+				eventService.createErrandEvent(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), true, ERRAND, addedLabelIds);
 			} else {
 				eventService.createErrandEventWithoutNotification(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
 			}
