@@ -232,6 +232,22 @@ class SubscriptionRepositoryTest {
 	}
 
 	@Test
+	void findAllByProfileIdAndTargetType() {
+
+		// Arrange
+		final var fixture = createIsolatedProfileFixture();
+
+		// Act
+		final var namespaceMembers = subscriptionRepository.findAllByProfileIdAndTargetType(fixture.profileId, DbSubscriptionTargetType.NAMESPACE);
+		final var errandSubscriptions = subscriptionRepository.findAllByProfileIdAndTargetType(fixture.profileId, DbSubscriptionTargetType.ERRAND);
+
+		// Assert
+		assertThat(namespaceMembers).extracting(SubscriptionEntity::getId).containsExactly(fixture.subscriptionId);
+		assertThat(namespaceMembers.getFirst().getSubscriber().getIdentifier().getValue()).isEqualTo("profile01");
+		assertThat(errandSubscriptions).isEmpty();
+	}
+
+	@Test
 	void deletingProfileCascadesToItsSubscriptions() {
 
 		// Arrange

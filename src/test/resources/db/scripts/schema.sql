@@ -920,6 +920,14 @@
         primary key (sort_order, subscription_id)
     ) engine=InnoDB;
 
+    create table subscription_opt_out (
+        created datetime(6),
+        id varchar(255) not null,
+        profile_id varchar(255) not null,
+        subscriber_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table subscription_profile (
         created datetime(6),
         modified datetime(6),
@@ -1431,6 +1439,12 @@
     create index idx_subscription_profile_id 
        on subscription (profile_id);
 
+    create index idx_subscription_opt_out_profile_id 
+       on subscription_opt_out (profile_id);
+
+    alter table if exists subscription_opt_out 
+       add constraint uq_subscription_opt_out_subscriber_profile unique (subscriber_id, profile_id);
+
     create index idx_subscription_profile_municipality_id_namespace 
        on subscription_profile (municipality_id, namespace);
 
@@ -1836,6 +1850,18 @@
        add constraint fk_subscription_event_filter_subscription_id 
        foreign key (subscription_id) 
        references subscription (id);
+
+    alter table if exists subscription_opt_out 
+       add constraint fk_subscription_opt_out_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id) 
+       on delete cascade;
+
+    alter table if exists subscription_opt_out 
+       add constraint fk_subscription_opt_out_subscriber_id 
+       foreign key (subscriber_id) 
+       references subscriber (id) 
+       on delete cascade;
 
     alter table if exists subscription_profile_channel 
        add constraint fk_subscription_profile_channel_profile_id 

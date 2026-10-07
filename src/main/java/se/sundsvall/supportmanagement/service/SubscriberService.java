@@ -107,8 +107,18 @@ public class SubscriberService {
 
 	@Transactional
 	public SubscriberEntity findOrCreateSubscriberForAssignee(final String municipalityId, final String namespace, final String assignedUserId) {
+		return findOrCreateSubscriber(municipalityId, namespace, IdentifierTypeValues.AD_ACCOUNT, assignedUserId);
+	}
+
+	/**
+	 * The subscriber of the given principal, created with only the internal channel when there is none yet. A principal
+	 * holding several subscribers gets the first of them, so subscriptions made on their behalf gather on one subscriber
+	 * rather than spawning another.
+	 */
+	@Transactional
+	public SubscriberEntity findOrCreateSubscriber(final String municipalityId, final String namespace, final String identifierType, final String identifierValue) {
 		final var existing = subscriberRepository.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
-			namespace, municipalityId, IdentifierTypeValues.AD_ACCOUNT, assignedUserId);
+			namespace, municipalityId, identifierType, identifierValue);
 		if (!existing.isEmpty()) {
 			return existing.get(0);
 		}
@@ -116,8 +126,8 @@ public class SubscriberService {
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withIdentifier(IdentifierEmbeddable.create()
-				.withType(IdentifierTypeValues.AD_ACCOUNT)
-				.withValue(assignedUserId))
+				.withType(identifierType)
+				.withValue(identifierValue))
 			.withChannels(new ArrayList<>(List.of(
 				NotificationChannelEmbeddable.create()
 					.withType(NotificationChannelType.INTERNAL)))));

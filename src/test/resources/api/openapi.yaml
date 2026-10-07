@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.0"
 servers:
-- url: http://localhost:57578
+- url: http://localhost:52338
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -98,6 +98,171 @@ tags:
 - name: Subscriber notifications
   description: Subscriber notification operations
 paths:
+  /{municipalityId}/{namespace}/subscription-profiles/{profileId}/members:
+    get:
+      tags:
+      - Subscription profiles
+      summary: List subscription profile members
+      description: List the principals holding a namespace subscription to the profile.
+      operationId: getSubscriptionProfileMembers
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Identifier"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    put:
+      tags:
+      - Subscription profiles
+      summary: Replace subscription profile members
+      description: "Makes the given principals the members of the profile. Principals\
+        \ not yet members are subscribed to the profile for the whole namespace, creating\
+        \ a subscriber for them when they have none, and members missing from the\
+        \ list lose their subscription to the profile. A principal who has left the\
+        \ profile themselves is not subscribed again."
+      operationId: replaceSubscriptionProfileMembers
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Identifier"
+        required: true
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/notifications/{notificationId}/acknowledge:
     put:
       tags:
@@ -20177,13 +20342,38 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
           format: int32
+    Identifier:
+      type: object
+      description: Identifier describing a user or subject (AD-account or party-id)
+      properties:
+        type:
+          type: string
+          description: Identifier type
+          enum:
+          - adAccount
+          - partyId
+          examples:
+          - adAccount
+          - partyId
+          minLength: 1
+          pattern: ^(adAccount|partyId)$
+        value:
+          type: string
+          description: Identifier value (AD-account name or partyId UUID)
+          examples:
+          - joe01doe
+          maxLength: 255
+          minLength: 0
+      required:
+      - type
+      - value
     ConstraintViolationProblem:
       type: object
       properties:
@@ -20685,28 +20875,17 @@ components:
           type: boolean
         container:
           type: boolean
-        number:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        pojo:
-          type: boolean
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
-        string:
-          type: boolean
-        long:
-          type: boolean
-        int:
-          type: boolean
-        double:
-          type: boolean
-        short:
+        integralNumber:
           type: boolean
         floatingPointNumber:
+          type: boolean
+        bigInteger:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
+        bigDecimal:
           type: boolean
         nodeType:
           type: string
@@ -20720,15 +20899,26 @@ components:
           - OBJECT
           - POJO
           - STRING
-        integralNumber:
+        pojo:
           type: boolean
-        bigDecimal:
+        boolean:
           type: boolean
-        bigInteger:
+        string:
           type: boolean
-        valueNode:
+        binary:
           type: boolean
-        missingNode:
+        short:
+          type: boolean
+        double:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        int:
+          type: boolean
+        long:
+          type: boolean
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -21026,31 +21216,6 @@ components:
           format: date-time
           description: Timestamp when the profile was last modified
           readOnly: true
-    Identifier:
-      type: object
-      description: Identifier describing a user or subject (AD-account or party-id)
-      properties:
-        type:
-          type: string
-          description: Identifier type
-          enum:
-          - adAccount
-          - partyId
-          examples:
-          - adAccount
-          - partyId
-          minLength: 1
-          pattern: ^(adAccount|partyId)$
-        value:
-          type: string
-          description: Identifier value (AD-account name or partyId UUID)
-          examples:
-          - joe01doe
-          maxLength: 255
-          minLength: 0
-      required:
-      - type
-      - value
     NotificationChannel:
       type: object
       description: Channel a subscriber wants to receive notifications on

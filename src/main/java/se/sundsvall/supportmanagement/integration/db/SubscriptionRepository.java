@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,6 +29,9 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
 	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileIsNull(String subscriberId, DbSubscriptionTargetType targetType);
 
 	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileId(String subscriberId, DbSubscriptionTargetType targetType, String profileId);
+
+	@EntityGraph(attributePaths = "subscriber")
+	List<SubscriptionEntity> findAllByProfileIdAndTargetType(String profileId, DbSubscriptionTargetType targetType);
 
 	long countBySubscriberId(String subscriberId);
 

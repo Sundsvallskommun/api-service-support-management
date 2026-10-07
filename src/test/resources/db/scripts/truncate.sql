@@ -57,6 +57,7 @@ TRUNCATE table phase_allowed_status;
 TRUNCATE table phase;
 TRUNCATE table subscription_event_filter;
 TRUNCATE table subscription;
+TRUNCATE table subscription_opt_out;
 TRUNCATE table subscription_profile_event_filter;
 TRUNCATE table subscription_profile_channel;
 TRUNCATE table subscription_profile;

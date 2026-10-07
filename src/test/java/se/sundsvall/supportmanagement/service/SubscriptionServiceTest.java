@@ -18,12 +18,14 @@ import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionOptOutRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionOptOutEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 
 import static java.util.UUID.randomUUID;
@@ -64,6 +66,9 @@ class SubscriptionServiceTest {
 	private SubscriptionRepository subscriptionRepositoryMock;
 
 	@Mock
+	private SubscriptionOptOutRepository subscriptionOptOutRepositoryMock;
+
+	@Mock
 	private ErrandsRepository errandsRepositoryMock;
 
 	@InjectMocks
@@ -71,6 +76,9 @@ class SubscriptionServiceTest {
 
 	@Captor
 	private ArgumentCaptor<SubscriptionEntity> entityCaptor;
+
+	@Captor
+	private ArgumentCaptor<SubscriptionOptOutEntity> optOutCaptor;
 
 	@BeforeEach
 	void setUpIdentity() {
@@ -262,9 +270,11 @@ class SubscriptionServiceTest {
 		verify(subscriptionProfileServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileId(SUBSCRIBER_ID, DB_NAMESPACE, PROFILE_ID);
 		verify(subscriptionRepositoryMock).saveAndFlush(entityCaptor.capture());
+		// Choosing the profile again clears an earlier opt-out
+		verify(subscriptionOptOutRepositoryMock).deleteBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID);
 		assertThat(entityCaptor.getValue().getProfile()).isSameAs(profile);
 		assertThat(entityCaptor.getValue().getTargetType()).isEqualTo(DB_NAMESPACE);
-		verifyNoMoreInteractions(subscriberServiceMock, subscriptionProfileServiceMock, subscriptionRepositoryMock);
+		verifyNoMoreInteractions(subscriberServiceMock, subscriptionProfileServiceMock, subscriptionRepositoryMock, subscriptionOptOutRepositoryMock);
 		verifyNoInteractions(errandsRepositoryMock);
 	}
 
@@ -416,7 +426,61 @@ class SubscriptionServiceTest {
 		verify(subscriptionRepositoryMock).findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).delete(entity);
 		verifyNoMoreInteractions(subscriptionRepositoryMock);
-		verifyNoInteractions(errandsRepositoryMock);
+		verifyNoInteractions(errandsRepositoryMock, subscriptionOptOutRepositoryMock);
+	}
+
+	@Test
+	void deleteProfileSubscriptionRecordsOptOut() {
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
+		final var profile = SubscriptionProfileEntity.create().withId(PROFILE_ID);
+		final var entity = SubscriptionEntity.create().withId("sub-1").withSubscriber(subscriber).withTargetType(DB_NAMESPACE).withProfile(profile);
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(entity));
+		when(subscriptionOptOutRepositoryMock.existsBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID)).thenReturn(false);
+
+		service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "sub-1");
+
+		verify(subscriptionOptOutRepositoryMock).existsBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID);
+		verify(subscriptionOptOutRepositoryMock).save(optOutCaptor.capture());
+		assertThat(optOutCaptor.getValue().getSubscriber()).isSameAs(subscriber);
+		assertThat(optOutCaptor.getValue().getProfile()).isSameAs(profile);
+		verify(subscriptionRepositoryMock).findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(subscriptionRepositoryMock).delete(entity);
+		verifyNoMoreInteractions(subscriptionRepositoryMock, subscriptionOptOutRepositoryMock);
+	}
+
+	@Test
+	void deleteProfileSubscriptionAlreadyOptedOut() {
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
+		final var entity = SubscriptionEntity.create().withId("sub-1").withSubscriber(subscriber).withTargetType(DB_NAMESPACE)
+			.withProfile(SubscriptionProfileEntity.create().withId(PROFILE_ID));
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(entity));
+		when(subscriptionOptOutRepositoryMock.existsBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID)).thenReturn(true);
+
+		service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "sub-1");
+
+		verify(subscriptionOptOutRepositoryMock).existsBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID);
+		verify(subscriptionRepositoryMock).delete(entity);
+		verify(subscriptionOptOutRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void deleteErrandProfileSubscriptionRecordsNoOptOut() {
+		// A profile subscription for a single errand is not a membership the sync manages, so leaving it needs no record
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
+		final var entity = SubscriptionEntity.create().withId("sub-1").withSubscriber(subscriber).withTargetType(DB_ERRAND)
+			.withProfile(SubscriptionProfileEntity.create().withId(PROFILE_ID));
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(entity));
+
+		service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "sub-1");
+
+		verify(subscriptionRepositoryMock).delete(entity);
+		verifyNoInteractions(subscriptionOptOutRepositoryMock);
 	}
 
 	@Test
