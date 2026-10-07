@@ -17,11 +17,13 @@ import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionOptOutRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionOptOutEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
@@ -52,16 +54,19 @@ public class SubscriptionService {
 	private final SubscriberService subscriberService;
 	private final SubscriptionProfileService subscriptionProfileService;
 	private final SubscriptionRepository subscriptionRepository;
+	private final SubscriptionOptOutRepository subscriptionOptOutRepository;
 	private final ErrandsRepository errandsRepository;
 
 	public SubscriptionService(
 		final SubscriberService subscriberService,
 		final SubscriptionProfileService subscriptionProfileService,
 		final SubscriptionRepository subscriptionRepository,
+		final SubscriptionOptOutRepository subscriptionOptOutRepository,
 		final ErrandsRepository errandsRepository) {
 		this.subscriberService = subscriberService;
 		this.subscriptionProfileService = subscriptionProfileService;
 		this.subscriptionRepository = subscriptionRepository;
+		this.subscriptionOptOutRepository = subscriptionOptOutRepository;
 		this.errandsRepository = errandsRepository;
 	}
 
@@ -88,6 +93,11 @@ public class SubscriptionService {
 		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, errand, profile, subscription)
 			.withCreatedBy(IdentifierEmbeddableMapper.fromExecutingUser(Identifier.get()));
 
+		// Choosing a profile again undoes having left it, so the members sync keeps the subscriber on it from now on
+		if (isProfileMembership(entity)) {
+			subscriptionOptOutRepository.deleteBySubscriberIdAndProfileId(subscriberId, profile.getId());
+		}
+
 		return persistOrThrowConflict(entity, subscriberId, target.getType(), errand, profile).getId();
 	}
 
@@ -95,7 +105,23 @@ public class SubscriptionService {
 	public void deleteSubscription(final String municipalityId, final String namespace, final String subscriberId, final String subscriptionId) {
 		verifyOwnedByRequestingUser(subscriberService.findEntity(municipalityId, namespace, subscriberId));
 		final var entity = loadSubscriptionOrThrow(municipalityId, namespace, subscriberId, subscriptionId);
+
+		// Leaving a profile is remembered, or the members sync would subscribe the subscriber to it again
+		if (isProfileMembership(entity) && !subscriptionOptOutRepository.existsBySubscriberIdAndProfileId(subscriberId, entity.getProfile().getId())) {
+			subscriptionOptOutRepository.save(SubscriptionOptOutEntity.create()
+				.withSubscriber(entity.getSubscriber())
+				.withProfile(entity.getProfile()));
+		}
+
 		subscriptionRepository.delete(entity);
+	}
+
+	/**
+	 * A namespace subscription to a profile is what membership of the profile consists of, and what the members sync
+	 * adds and removes. Subscriptions to a profile for a single errand are not memberships.
+	 */
+	private static boolean isProfileMembership(final SubscriptionEntity subscription) {
+		return subscription.getProfile() != null && subscription.getTargetType() == DbSubscriptionTargetType.NAMESPACE;
 	}
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
