@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
@@ -20,6 +22,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
 
@@ -43,16 +46,21 @@ public class SubscriptionService {
 	private static final String TARGET_ID_NOT_ALLOWED_FOR_NAMESPACE = "Subscription target id must be null when target type is NAMESPACE";
 	private static final String DUPLICATE_ERRAND_SUBSCRIPTION = "Subscription for errand:'%s' already exists for subscriber with id:'%s'";
 	private static final String DUPLICATE_NAMESPACE_SUBSCRIPTION = "Namespace subscription already exists for subscriber with id:'%s'";
+	private static final String DUPLICATE_PROFILE_SUFFIX = " with profile:'%s'";
+	private static final String PROFILE_AND_EVENT_FILTERS = "A subscription cannot have both profileId and eventFilters - the profile decides which events it delivers";
 
 	private final SubscriberService subscriberService;
+	private final SubscriptionProfileService subscriptionProfileService;
 	private final SubscriptionRepository subscriptionRepository;
 	private final ErrandsRepository errandsRepository;
 
 	public SubscriptionService(
 		final SubscriberService subscriberService,
+		final SubscriptionProfileService subscriptionProfileService,
 		final SubscriptionRepository subscriptionRepository,
 		final ErrandsRepository errandsRepository) {
 		this.subscriberService = subscriberService;
+		this.subscriptionProfileService = subscriptionProfileService;
 		this.subscriptionRepository = subscriptionRepository;
 		this.errandsRepository = errandsRepository;
 	}
@@ -71,14 +79,16 @@ public class SubscriptionService {
 		final var subscriber = subscriberService.findEntity(municipalityId, namespace, subscriberId);
 		final var target = subscription.getTarget();
 		validateTarget(target);
+		validateProfileExclusivity(subscription);
 
 		final var errand = resolveErrand(target, namespace, municipalityId);
-		rejectDuplicate(subscriberId, target.getType(), errand);
+		final var profile = resolveProfile(subscription.getProfileId(), namespace, municipalityId);
+		rejectDuplicate(subscriberId, target.getType(), errand, profile);
 
-		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, errand, subscription)
+		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, errand, profile, subscription)
 			.withCreatedBy(IdentifierEmbeddableMapper.fromExecutingUser(Identifier.get()));
 
-		return persistOrThrowConflict(entity, subscriberId, target.getType(), errand).getId();
+		return persistOrThrowConflict(entity, subscriberId, target.getType(), errand, profile).getId();
 	}
 
 	@Transactional
@@ -106,7 +116,7 @@ public class SubscriptionService {
 		}
 		final var subscriber = subscriberService.findOrCreateSubscriberForAssignee(
 			errand.getMunicipalityId(), errand.getNamespace(), assignedUserId);
-		if (!subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandId(
+		if (!subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(
 			subscriber.getId(), DbSubscriptionTargetType.ERRAND, errand.getId())) {
 			subscriptionRepository.save(SubscriptionEntity.create()
 				.withSubscriber(subscriber)
@@ -150,32 +160,58 @@ public class SubscriptionService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERRAND_NOT_FOUND.formatted(target.getId(), namespace, municipalityId)));
 	}
 
-	private void rejectDuplicate(final String subscriberId, final SubscriptionTargetType targetType, final ErrandEntity errand) {
-		final var dbTargetType = SubscriptionMapper.toDbTargetType(targetType);
-		if (targetType == SubscriptionTargetType.ERRAND) {
-			if (subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandId(subscriberId, dbTargetType, errand.getId())) {
-				throw duplicateConflict(targetType, subscriberId, errand);
-			}
-		} else if (subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNull(subscriberId, dbTargetType)) {
-			throw duplicateConflict(targetType, subscriberId, errand);
+	/**
+	 * A subscription to a profile is governed by the profile alone, so filters of its own would never be consulted.
+	 * Refusing the combination keeps that from silently surprising the caller.
+	 */
+	private static void validateProfileExclusivity(final Subscription subscription) {
+		if (subscription.getProfileId() != null && subscription.getEventFilters() != null && !subscription.getEventFilters().isEmpty()) {
+			throw Problem.valueOf(BAD_REQUEST, PROFILE_AND_EVENT_FILTERS);
 		}
 	}
 
-	// Flush eagerly so the uq_subscription_subscriber_target_errand constraint (V1_36) fires
+	private SubscriptionProfileEntity resolveProfile(final String profileId, final String namespace, final String municipalityId) {
+		return Optional.ofNullable(profileId)
+			.map(id -> subscriptionProfileService.findEntity(municipalityId, namespace, id))
+			.orElse(null);
+	}
+
+	private void rejectDuplicate(final String subscriberId, final SubscriptionTargetType targetType, final ErrandEntity errand, final SubscriptionProfileEntity profile) {
+		final var dbTargetType = SubscriptionMapper.toDbTargetType(targetType);
+		final var profileId = Optional.ofNullable(profile).map(SubscriptionProfileEntity::getId);
+		final boolean exists;
+		if (targetType == SubscriptionTargetType.ERRAND) {
+			exists = profileId
+				.map(id -> subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(subscriberId, dbTargetType, errand.getId(), id))
+				.orElseGet(() -> subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(subscriberId, dbTargetType, errand.getId()));
+		} else {
+			exists = profileId
+				.map(id -> subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileId(subscriberId, dbTargetType, id))
+				.orElseGet(() -> subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileIsNull(subscriberId, dbTargetType));
+		}
+		if (exists) {
+			throw duplicateConflict(targetType, subscriberId, errand, profileId.orElse(null));
+		}
+	}
+
+	// Flush eagerly so the uq_subscription_subscriber_target_errand_profile constraint (V1_66) fires
 	// inside this method, catching the TOCTOU race past rejectDuplicate. Translate to 409 instead of 500.
-	private SubscriptionEntity persistOrThrowConflict(final SubscriptionEntity entity, final String subscriberId, final SubscriptionTargetType targetType, final ErrandEntity errand) {
+	private SubscriptionEntity persistOrThrowConflict(final SubscriptionEntity entity, final String subscriberId, final SubscriptionTargetType targetType, final ErrandEntity errand,
+		final SubscriptionProfileEntity profile) {
 		try {
 			return subscriptionRepository.saveAndFlush(entity);
 		} catch (final DataIntegrityViolationException e) {
-			throw duplicateConflict(targetType, subscriberId, errand);
+			throw duplicateConflict(targetType, subscriberId, errand, Optional.ofNullable(profile).map(SubscriptionProfileEntity::getId).orElse(null));
 		}
 	}
 
-	private static se.sundsvall.dept44.problem.ThrowableProblem duplicateConflict(final SubscriptionTargetType targetType, final String subscriberId, final ErrandEntity errand) {
-		if (targetType == SubscriptionTargetType.ERRAND) {
-			return Problem.valueOf(CONFLICT, DUPLICATE_ERRAND_SUBSCRIPTION.formatted(errand.getId(), subscriberId));
-		}
-		return Problem.valueOf(CONFLICT, DUPLICATE_NAMESPACE_SUBSCRIPTION.formatted(subscriberId));
+	private static ThrowableProblem duplicateConflict(final SubscriptionTargetType targetType, final String subscriberId, final ErrandEntity errand, final String profileId) {
+		final var message = targetType == SubscriptionTargetType.ERRAND
+			? DUPLICATE_ERRAND_SUBSCRIPTION.formatted(errand.getId(), subscriberId)
+			: DUPLICATE_NAMESPACE_SUBSCRIPTION.formatted(subscriberId);
+		return Problem.valueOf(CONFLICT, Optional.ofNullable(profileId)
+			.map(id -> message + DUPLICATE_PROFILE_SUFFIX.formatted(id))
+			.orElse(message));
 	}
 
 	private SubscriptionEntity loadSubscriptionOrThrow(final String municipalityId, final String namespace, final String subscriberId, final String subscriptionId) {

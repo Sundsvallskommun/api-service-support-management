@@ -36,7 +36,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 		@Index(name = "idx_subscription_errand_id", columnList = "errand_id"),
 		// Covers all queries that filter by subscriber_id alone (subscriber_id is the leading column),
 		// so a separate idx_subscription_subscriber_id index would be redundant.
-		@Index(name = "idx_subscription_subscriber_target", columnList = "subscriber_id, target_type, errand_id")
+		@Index(name = "idx_subscription_subscriber_target", columnList = "subscriber_id, target_type, errand_id"),
+		@Index(name = "idx_subscription_profile_id", columnList = "profile_id")
 	})
 public class SubscriptionEntity {
 
@@ -57,6 +58,11 @@ public class SubscriptionEntity {
 	@JoinColumn(name = "errand_id", foreignKey = @ForeignKey(name = "fk_subscription_errand_id"))
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private ErrandEntity errand;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "profile_id", foreignKey = @ForeignKey(name = "fk_subscription_profile_id"))
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private SubscriptionProfileEntity profile;
 
 	@ElementCollection
 	@CollectionTable(name = "subscription_event_filter",
@@ -140,6 +146,19 @@ public class SubscriptionEntity {
 		return this;
 	}
 
+	public SubscriptionProfileEntity getProfile() {
+		return profile;
+	}
+
+	public void setProfile(final SubscriptionProfileEntity profile) {
+		this.profile = profile;
+	}
+
+	public SubscriptionEntity withProfile(final SubscriptionProfileEntity profile) {
+		this.profile = profile;
+		return this;
+	}
+
 	public List<EventFilterEmbeddable> getEventFilters() {
 		return eventFilters;
 	}
@@ -199,6 +218,7 @@ public class SubscriptionEntity {
 			subscriber != null ? subscriber.getId() : null,
 			targetType,
 			errand != null ? errand.getId() : null,
+			profile != null ? profile.getId() : null,
 			eventFilters,
 			expiresAt,
 			created,
@@ -218,6 +238,7 @@ public class SubscriptionEntity {
 			&& Objects.equals(subscriber != null ? subscriber.getId() : null, other.subscriber != null ? other.subscriber.getId() : null)
 			&& targetType == other.targetType
 			&& Objects.equals(errand != null ? errand.getId() : null, other.errand != null ? other.errand.getId() : null)
+			&& Objects.equals(profile != null ? profile.getId() : null, other.profile != null ? other.profile.getId() : null)
 			&& Objects.equals(eventFilters, other.eventFilters)
 			&& Objects.equals(expiresAt, other.expiresAt)
 			&& Objects.equals(created, other.created)
@@ -231,6 +252,7 @@ public class SubscriptionEntity {
 			", subscriberId=" + (subscriber != null ? subscriber.getId() : null) +
 			", targetType=" + targetType +
 			", errandId=" + (errand != null ? errand.getId() : null) +
+			", profileId=" + (profile != null ? profile.getId() : null) +
 			", eventFilters=" + eventFilters +
 			", expiresAt=" + expiresAt +
 			", created=" + created +

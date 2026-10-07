@@ -6,8 +6,8 @@ import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscriber.EventFilter;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -19,7 +19,7 @@ import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 
-class SubscriptionTest {
+class SubscriptionProfileTest {
 
 	@BeforeAll
 	static void setup() {
@@ -28,7 +28,7 @@ class SubscriptionTest {
 
 	@Test
 	void testBean() {
-		MatcherAssert.assertThat(Subscription.class, allOf(
+		MatcherAssert.assertThat(SubscriptionProfile.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -39,34 +39,35 @@ class SubscriptionTest {
 	@Test
 	void testBuilderMethods() {
 		final var id = "123e4567-e89b-12d3-a456-426614174000";
-		final var target = SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId("b82bd8ac-1507-4d9a-958d-369261eecc15");
-		final var profileId = "c3f1a1e2-4b5d-4e6f-8a9b-0c1d2e3f4a5b";
-		final var eventFilters = List.of(EventFilter.create().withType("UPDATE"));
-		final var expiresAt = now().plusDays(14);
-		final var created = now();
-		final var createdBy = Identifier.create().withType("adAccount").withValue("joe01doe");
+		final var name = "Mejl om nya ärenden";
+		final var description = "Används av enhetschefer";
+		final var eventFilters = List.of(EventFilter.create().withType("CREATE").withSubtype("ERRAND"));
+		final var channels = List.of(NotificationChannelType.EMAIL);
+		final var created = now().minusDays(1);
+		final var modified = now();
 
-		final var subscription = Subscription.create()
+		final var profile = SubscriptionProfile.create()
 			.withId(id)
-			.withTarget(target)
-			.withProfileId(profileId)
+			.withName(name)
+			.withDescription(description)
 			.withEventFilters(eventFilters)
-			.withExpiresAt(expiresAt)
+			.withChannels(channels)
 			.withCreated(created)
-			.withCreatedBy(createdBy);
+			.withModified(modified);
 
-		assertThat(subscription.getId()).isEqualTo(id);
-		assertThat(subscription.getTarget()).isEqualTo(target);
-		assertThat(subscription.getProfileId()).isEqualTo(profileId);
-		assertThat(subscription.getEventFilters()).isEqualTo(eventFilters);
-		assertThat(subscription.getExpiresAt()).isEqualTo(expiresAt);
-		assertThat(subscription.getCreated()).isEqualTo(created);
-		assertThat(subscription.getCreatedBy()).isEqualTo(createdBy);
+		assertThat(profile).hasNoNullFieldsOrProperties();
+		assertThat(profile.getId()).isEqualTo(id);
+		assertThat(profile.getName()).isEqualTo(name);
+		assertThat(profile.getDescription()).isEqualTo(description);
+		assertThat(profile.getEventFilters()).isEqualTo(eventFilters);
+		assertThat(profile.getChannels()).isEqualTo(channels);
+		assertThat(profile.getCreated()).isEqualTo(created);
+		assertThat(profile.getModified()).isEqualTo(modified);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Subscription.create()).hasAllNullFieldsOrProperties();
-		assertThat(new Subscription()).hasAllNullFieldsOrProperties();
+		assertThat(SubscriptionProfile.create()).hasAllNullFieldsOrProperties();
+		assertThat(new SubscriptionProfile()).hasAllNullFieldsOrProperties();
 	}
 }

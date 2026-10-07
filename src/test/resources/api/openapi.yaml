@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.0"
 servers:
-- url: http://localhost:38151
+- url: http://localhost:57578
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -82,6 +82,9 @@ tags:
   description: ExternalIdType metadata operations
 - name: Metadata
   description: Metadata operations
+- name: Subscription profiles
+  description: Subscription profile CRUD operations. A profile is a named set of event
+    filters and the channels the events they match are delivered on.
 - name: Metadata for measure types
   description: Measure type metadata operations
 - name: Metadata for roles
@@ -3655,6 +3658,151 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/subscription-profiles:
+    get:
+      tags:
+      - Subscription profiles
+      summary: List subscription profiles
+      description: List the subscription profiles of the namespace.
+      operationId: getSubscriptionProfiles
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionProfile"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Subscription profiles
+      summary: Create subscription profile
+      description: Create a new subscription profile in the namespace.
+      operationId: createSubscriptionProfile
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionProfile"
+        required: true
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "409":
+          description: Conflict — a subscription profile with the same name already
+            exists in the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -10370,6 +10518,251 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "503":
           description: Search not available
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/subscription-profiles/{profileId}:
+    get:
+      tags:
+      - Subscription profiles
+      summary: Get subscription profile
+      description: Fetch a single subscription profile by id.
+      operationId: getSubscriptionProfile
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionProfile"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Subscription profiles
+      summary: Delete subscription profile
+      description: Delete a subscription profile. All subscriptions pointing at the
+        profile are also removed.
+      operationId: deleteSubscriptionProfile
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Subscription profiles
+      summary: Update subscription profile
+      description: Partially update an existing subscription profile. Only non-null
+        fields in the request body are applied; eventFilters and channels are replaced
+        as a whole. The change applies at once to every subscription pointing at the
+        profile.
+      operationId: updateSubscriptionProfile
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionProfile"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionProfile"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — a subscription profile with the same name already
+            exists in the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -19784,9 +20177,9 @@ components:
         type:
           type: string
           format: uri
-        detail:
-          type: string
         title:
+          type: string
+        detail:
           type: string
         status:
           type: integer
@@ -20294,9 +20687,26 @@ components:
           type: boolean
         number:
           type: boolean
-        valueNode:
+        textual:
           type: boolean
-        missingNode:
+          deprecated: true
+        pojo:
+          type: boolean
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        string:
+          type: boolean
+        long:
+          type: boolean
+        int:
+          type: boolean
+        double:
+          type: boolean
+        short:
+          type: boolean
+        floatingPointNumber:
           type: boolean
         nodeType:
           type: string
@@ -20310,32 +20720,15 @@ components:
           - OBJECT
           - POJO
           - STRING
-        string:
-          type: boolean
         integralNumber:
-          type: boolean
-        pojo:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
           type: boolean
         bigDecimal:
           type: boolean
         bigInteger:
           type: boolean
-        textual:
+        valueNode:
           type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
+        missingNode:
           type: boolean
         embeddedValue:
           type: boolean
@@ -20580,6 +20973,59 @@ components:
           minLength: 0
       required:
       - type
+    SubscriptionProfile:
+      type: object
+      description: A subscription profile is a named set of event filters and the
+        channels the events they match are delivered on. A subscription pointing at
+        a profile is governed by the profile alone - the subscriber's own event filters
+        and channels do not apply to it.
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the subscription profile
+          examples:
+          - 123e4567-e89b-12d3-a456-426614174000
+          readOnly: true
+        name:
+          type: string
+          description: "Name of the profile, unique within the namespace"
+          examples:
+          - Mejl om nya ärenden och meddelanden
+          maxLength: 255
+          minLength: 0
+        description:
+          type: string
+          description: Optional description of what the profile is for
+          examples:
+          - Används av enhetschefer och verksamhetschefer
+          maxLength: 255
+          minLength: 0
+        eventFilters:
+          type: array
+          description: Event filters selecting which events the profile delivers.
+            An event matching any of them is delivered.
+          items:
+            $ref: "#/components/schemas/EventFilter"
+        channels:
+          type: array
+          description: Channels the events matched by the profile are delivered on
+          items:
+            type: string
+            description: Channel through which a notification is delivered
+            enum:
+            - INTERNAL
+            - EMAIL
+            - SMS
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the profile was created
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the profile was last modified
+          readOnly: true
     Identifier:
       type: object
       description: Identifier describing a user or subject (AD-account or party-id)
@@ -20714,12 +21160,21 @@ components:
         target:
           $ref: "#/components/schemas/SubscriptionTarget"
           description: What this subscription targets (an errand or the whole namespace).
+        profileId:
+          type: string
+          description: "Optional id of a subscription profile. When set, the profile\
+            \ alone decides which events this subscription delivers and on which channels\
+            \ - the subscriber's event filters and channels do not apply. Cannot be\
+            \ combined with eventFilters."
+          examples:
+          - 123e4567-e89b-12d3-a456-426614174000
         eventFilters:
           type: array
           description: "Optional per-subscription override of the subscriber-level\
             \ event filters. When set, these filters apply to events matched by this\
             \ subscription instead of the subscriber's global filters. When null or\
-            \ empty, the subscriber-level filters are used as-is."
+            \ empty, the subscriber-level filters are used as-is. Cannot be combined\
+            \ with profileId."
           items:
             $ref: "#/components/schemas/EventFilter"
         expiresAt:

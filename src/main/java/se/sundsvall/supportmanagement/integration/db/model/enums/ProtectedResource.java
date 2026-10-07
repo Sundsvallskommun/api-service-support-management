@@ -50,6 +50,7 @@ public enum ProtectedResource {
 	METADATA_STATUS("metadata/status"),
 	SUBSCRIBER("subscriber"),
 	SUBSCRIPTION("subscriber/subscription"),
+	SUBSCRIPTION_PROFILE("subscription-profile"),
 	SUBSCRIBER_NOTIFICATION("subscriber-notification");
 
 	private final String path;

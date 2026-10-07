@@ -656,6 +656,22 @@ INSERT INTO subscription_event_filter(subscription_id, sort_order, type, subtype
 VALUES ('bbccddee-0000-0000-0000-000000000003', 0, 'UPDATE', 'ATTACHMENT');
 
 -- -----------------------------------
+-- Subscription profiles
+-- -----------------------------------
+INSERT INTO subscription_profile(id, municipality_id, namespace, name, description, created, modified)
+VALUES ('ccddeeff-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'Notis om meddelanden', 'Notis om nya meddelanden', '2024-01-10 12:00:00.000', null),
+       ('ccddeeff-0000-0000-0000-000000000002', '2281', 'NAMESPACE-1', 'Mejl om nya arenden', null, '2024-01-11 12:00:00.000', null);
+
+INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype)
+VALUES ('ccddeeff-0000-0000-0000-000000000001', 0, 'UPDATE', 'MESSAGE'),
+       ('ccddeeff-0000-0000-0000-000000000002', 0, 'CREATE', 'ERRAND'),
+       ('ccddeeff-0000-0000-0000-000000000002', 1, 'UPDATE', 'MESSAGE');
+
+INSERT INTO subscription_profile_channel(profile_id, sort_order, type)
+VALUES ('ccddeeff-0000-0000-0000-000000000001', 0, 'INTERNAL'),
+       ('ccddeeff-0000-0000-0000-000000000002', 0, 'EMAIL');
+
+-- -----------------------------------
 -- Subscriber Notifications
 -- -----------------------------------
 INSERT INTO subscriber_notification(id, created, modified, identifier_type, identifier_value, municipality_id, namespace, errand_id, errand_number, expires, acknowledged)

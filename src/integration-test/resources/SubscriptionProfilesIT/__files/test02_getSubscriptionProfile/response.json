@@ -1,0 +1,18 @@
+{
+	"id": "ccddeeff-0000-0000-0000-000000000002",
+	"name": "Mejl om nya arenden",
+	"eventFilters": [
+		{
+			"type": "CREATE",
+			"subtype": "ERRAND"
+		},
+		{
+			"type": "UPDATE",
+			"subtype": "MESSAGE"
+		}
+	],
+	"channels": [
+		"EMAIL"
+	],
+	"created": "${json-unit.any-string}"
+}

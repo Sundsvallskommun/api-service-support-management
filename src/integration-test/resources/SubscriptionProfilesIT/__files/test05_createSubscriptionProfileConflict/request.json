@@ -1,0 +1,12 @@
+{
+	"name": "Notis om meddelanden",
+	"eventFilters": [
+		{
+			"type": "UPDATE",
+			"subtype": "MESSAGE"
+		}
+	],
+	"channels": [
+		"INTERNAL"
+	]
+}

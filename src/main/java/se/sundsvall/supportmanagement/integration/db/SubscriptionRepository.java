@@ -21,9 +21,13 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
 	Optional<SubscriptionEntity> findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId(
 		String id, String subscriberId, String namespace, String municipalityId);
 
-	boolean existsBySubscriberIdAndTargetTypeAndErrandId(String subscriberId, DbSubscriptionTargetType targetType, String errandId);
+	boolean existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(String subscriberId, DbSubscriptionTargetType targetType, String errandId);
 
-	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNull(String subscriberId, DbSubscriptionTargetType targetType);
+	boolean existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(String subscriberId, DbSubscriptionTargetType targetType, String errandId, String profileId);
+
+	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileIsNull(String subscriberId, DbSubscriptionTargetType targetType);
+
+	boolean existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileId(String subscriberId, DbSubscriptionTargetType targetType, String profileId);
 
 	long countBySubscriberId(String subscriberId);
 

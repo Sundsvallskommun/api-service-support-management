@@ -1,0 +1,11 @@
+{
+	"target": {
+		"type": "NAMESPACE"
+	},
+	"profileId": "ccddeeff-0000-0000-0000-000000000001",
+	"eventFilters": [
+		{
+			"type": "UPDATE"
+		}
+	]
+}

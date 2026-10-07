@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscriber.EventFilter;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
@@ -28,10 +29,16 @@ public class Subscription {
 	@Schema(description = "What this subscription targets (an errand or the whole namespace).")
 	private SubscriptionTarget target;
 
+	@ValidUuid(nullable = true)
+	@Schema(description = "Optional id of a subscription profile. When set, the profile alone decides which events this subscription delivers " +
+		"and on which channels - the subscriber's event filters and channels do not apply. Cannot be combined with eventFilters.",
+		examples = "123e4567-e89b-12d3-a456-426614174000")
+	private String profileId;
+
 	@Valid
 	@Schema(description = "Optional per-subscription override of the subscriber-level event filters. " +
 		"When set, these filters apply to events matched by this subscription instead of the subscriber's global filters. " +
-		"When null or empty, the subscriber-level filters are used as-is.")
+		"When null or empty, the subscriber-level filters are used as-is. Cannot be combined with profileId.")
 	private List<EventFilter> eventFilters;
 
 	@DateTimeFormat(iso = DATE_TIME)
@@ -74,6 +81,19 @@ public class Subscription {
 
 	public Subscription withTarget(final SubscriptionTarget target) {
 		this.target = target;
+		return this;
+	}
+
+	public String getProfileId() {
+		return profileId;
+	}
+
+	public void setProfileId(final String profileId) {
+		this.profileId = profileId;
+	}
+
+	public Subscription withProfileId(final String profileId) {
+		this.profileId = profileId;
 		return this;
 	}
 
@@ -131,7 +151,7 @@ public class Subscription {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, target, eventFilters, expiresAt, created, createdBy);
+		return Objects.hash(id, target, profileId, eventFilters, expiresAt, created, createdBy);
 	}
 
 	@Override
@@ -143,7 +163,7 @@ public class Subscription {
 			return false;
 		}
 		final Subscription other = (Subscription) obj;
-		return Objects.equals(id, other.id) && Objects.equals(target, other.target)
+		return Objects.equals(id, other.id) && Objects.equals(target, other.target) && Objects.equals(profileId, other.profileId)
 			&& Objects.equals(eventFilters, other.eventFilters) && Objects.equals(expiresAt, other.expiresAt)
 			&& Objects.equals(created, other.created) && Objects.equals(createdBy, other.createdBy);
 	}
@@ -153,6 +173,7 @@ public class Subscription {
 		return "Subscription{" +
 			"id='" + id + '\'' +
 			", target=" + target +
+			", profileId='" + profileId + '\'' +
 			", eventFilters=" + eventFilters +
 			", expiresAt=" + expiresAt +
 			", created=" + created +

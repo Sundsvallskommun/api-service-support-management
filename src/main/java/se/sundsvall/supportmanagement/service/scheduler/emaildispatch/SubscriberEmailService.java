@@ -189,17 +189,17 @@ public class SubscriberEmailService {
 	}
 
 	/**
-	 * The addresses of the subscriber's email channels as they are now, so a subscriber who has since dropped email gets
-	 * nothing. An email channel without an address stands for the subscriber's own address in the employee directory.
+	 * The addresses of the subscriber's email channels as they are now. An email channel without an address stands for
+	 * the subscriber's own address in the employee directory, and so does having no email channel at all: email is then
+	 * only enqueued because a subscription profile routes events to it, and a profile carries no addresses of its own.
 	 */
 	private List<String> resolveRecipients(final SubscriberEntity subscriber) {
 		final var emailChannels = ofNullable(subscriber.getChannels()).orElse(emptyList()).stream()
 			.filter(channel -> channel.getType() == EMAIL)
 			.toList();
 
-		final var employeeEmail = emailChannels.stream()
-			.filter(channel -> isNull(channel.getDestination()))
-			.findAny()
+		final var employeeEmail = Optional.of(emailChannels)
+			.filter(channels -> channels.isEmpty() || channels.stream().anyMatch(channel -> isNull(channel.getDestination())))
 			.flatMap(_ -> ofNullable(subscriber.getIdentifier()))
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
 			.map(identifier -> employeeService.getEmployeeByLoginName(subscriber.getMunicipalityId(), identifier.getValue()))
