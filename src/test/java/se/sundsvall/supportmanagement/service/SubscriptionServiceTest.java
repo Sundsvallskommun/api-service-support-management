@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionOptOutEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,6 +71,9 @@ class SubscriptionServiceTest {
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
+
+	@Mock
+	private NamespaceConfigService namespaceConfigServiceMock;
 
 	@InjectMocks
 	private SubscriptionService service;
@@ -380,7 +384,7 @@ class SubscriptionServiceTest {
 	@Test
 	void createErrandSubscriptionRaceTranslatesDbViolationToConflict() {
 		// Precheck reports no duplicate (false), but saveAndFlush throws DataIntegrityViolationException
-		// — simulates the TOCTOU race past rejectDuplicate.
+		// â€” simulates the TOCTOU race past rejectDuplicate.
 		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var errand = new ErrandEntity().withId(ERRAND_ID);
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
@@ -558,7 +562,88 @@ class SubscriptionServiceTest {
 
 		verify(subscriberServiceMock).findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, "joe01doe");
 		verifyNoMoreInteractions(subscriberServiceMock);
-		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock);
+		// The errand was not just created, so the reporter is not considered
+		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock, namespaceConfigServiceMock);
+	}
+
+	@Test
+	void handleAutoSubscribeEventForCreatedErrandLooksUpTheReporterProfile() {
+		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withReporterUserId("rep01usr");
+		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		service.handleAutoSubscribeEvent(new AutoSubscribeEvent(errand, true));
+
+		verify(namespaceConfigServiceMock).findReporterProfileId(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(subscriberServiceMock, subscriptionRepositoryMock);
+	}
+
+	@Test
+	void handleAutoSubscribeEventSwallowsReporterFailures() {
+		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withReporterUserId("rep01usr");
+		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenThrow(new RuntimeException("boom"));
+
+		service.handleAutoSubscribeEvent(new AutoSubscribeEvent(errand, true));
+
+		verify(namespaceConfigServiceMock).findReporterProfileId(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(subscriberServiceMock, subscriptionRepositoryMock);
+	}
+
+	@Test
+	void autoSubscribeReporterWithoutReporter() {
+		service.autoSubscribeReporter(new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE));
+
+		verifyNoInteractions(namespaceConfigServiceMock, subscriptionProfileServiceMock, subscriberServiceMock, subscriptionRepositoryMock);
+	}
+
+	@Test
+	void autoSubscribeReporterInNamespaceWithoutReporterProfile() {
+		// Most namespaces have no reporter profile, and their reporters are then left alone
+		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withReporterUserId("rep01usr");
+		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+
+		service.autoSubscribeReporter(errand);
+
+		verify(namespaceConfigServiceMock).findReporterProfileId(NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(subscriptionProfileServiceMock, subscriberServiceMock, subscriptionRepositoryMock);
+	}
+
+	@Test
+	void autoSubscribeReporterCreatesProfileSubscription() {
+		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withReporterUserId("rep01usr");
+		final var profile = SubscriptionProfileEntity.create().withId(PROFILE_ID);
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID);
+		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(PROFILE_ID));
+		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID)).thenReturn(profile);
+		when(subscriberServiceMock.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, "rep01usr")).thenReturn(subscriber);
+		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID, PROFILE_ID)).thenReturn(false);
+
+		service.autoSubscribeReporter(errand);
+
+		verify(subscriptionRepositoryMock).save(entityCaptor.capture());
+		final var saved = entityCaptor.getValue();
+		assertThat(saved.getSubscriber()).isSameAs(subscriber);
+		assertThat(saved.getErrand()).isSameAs(errand);
+		assertThat(saved.getProfile()).isSameAs(profile);
+		assertThat(saved.getTargetType()).isEqualTo(DB_ERRAND);
+		verify(namespaceConfigServiceMock).findReporterProfileId(NAMESPACE, MUNICIPALITY_ID);
+		verify(subscriptionProfileServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID);
+		verify(subscriberServiceMock).findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, "rep01usr");
+		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID, PROFILE_ID);
+		verifyNoMoreInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void autoSubscribeReporterWhenAlreadySubscribed() {
+		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withReporterUserId("rep01usr");
+		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(PROFILE_ID));
+		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID)).thenReturn(SubscriptionProfileEntity.create().withId(PROFILE_ID));
+		when(subscriberServiceMock.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, IDENTIFIER_TYPE, "rep01usr")).thenReturn(SubscriberEntity.create().withId(SUBSCRIBER_ID));
+		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID, PROFILE_ID)).thenReturn(true);
+
+		service.autoSubscribeReporter(errand);
+
+		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID, PROFILE_ID);
+		verify(subscriptionRepositoryMock, never()).save(any());
 	}
 
 	@Test

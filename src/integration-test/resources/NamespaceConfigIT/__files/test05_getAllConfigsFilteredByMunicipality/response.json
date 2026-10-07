@@ -28,7 +28,8 @@
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
 		"teliaAceWorkItemEnabled": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"reporterProfileId": "ccddeeff-0000-0000-0000-000000000099"
 	},
 	{
 		"namespace": "NAMESPACE-3",

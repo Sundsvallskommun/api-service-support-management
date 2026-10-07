@@ -13,6 +13,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.api.model.identifier.IdentifierTypeValues;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
@@ -25,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionOptOutEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
 
@@ -56,18 +58,21 @@ public class SubscriptionService {
 	private final SubscriptionRepository subscriptionRepository;
 	private final SubscriptionOptOutRepository subscriptionOptOutRepository;
 	private final ErrandsRepository errandsRepository;
+	private final NamespaceConfigService namespaceConfigService;
 
 	public SubscriptionService(
 		final SubscriberService subscriberService,
 		final SubscriptionProfileService subscriptionProfileService,
 		final SubscriptionRepository subscriptionRepository,
 		final SubscriptionOptOutRepository subscriptionOptOutRepository,
-		final ErrandsRepository errandsRepository) {
+		final ErrandsRepository errandsRepository,
+		final NamespaceConfigService namespaceConfigService) {
 		this.subscriberService = subscriberService;
 		this.subscriptionProfileService = subscriptionProfileService;
 		this.subscriptionRepository = subscriptionRepository;
 		this.subscriptionOptOutRepository = subscriptionOptOutRepository;
 		this.errandsRepository = errandsRepository;
+		this.namespaceConfigService = namespaceConfigService;
 	}
 
 	@Transactional(readOnly = true)
@@ -132,6 +137,37 @@ public class SubscriptionService {
 		} catch (final Exception e) {
 			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", event.errandEntity().getId(), e);
 		}
+		if (event.errandCreated()) {
+			try {
+				autoSubscribeReporter(event.errandEntity());
+			} catch (final Exception e) {
+				LOG.warn("Auto-subscribe of reporter failed for errand '{}' – continuing without subscription", event.errandEntity().getId(), e);
+			}
+		}
+	}
+
+	/**
+	 * Subscribes the reporter of a newly created errand to it with the reporter profile of the namespace. Namespaces
+	 * without a reporter profile, and errands without a reporter, are left alone.
+	 */
+	@Transactional
+	public void autoSubscribeReporter(final ErrandEntity errand) {
+		final var reporterUserId = errand.getReporterUserId();
+		if (reporterUserId == null) {
+			return;
+		}
+		namespaceConfigService.findReporterProfileId(errand.getNamespace(), errand.getMunicipalityId())
+			.map(profileId -> subscriptionProfileService.findEntity(errand.getMunicipalityId(), errand.getNamespace(), profileId))
+			.ifPresent(profile -> {
+				final var subscriber = subscriberService.findOrCreateSubscriber(errand.getMunicipalityId(), errand.getNamespace(), IdentifierTypeValues.AD_ACCOUNT, reporterUserId);
+				if (!subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(subscriber.getId(), DbSubscriptionTargetType.ERRAND, errand.getId(), profile.getId())) {
+					subscriptionRepository.save(SubscriptionEntity.create()
+						.withSubscriber(subscriber)
+						.withTargetType(DbSubscriptionTargetType.ERRAND)
+						.withErrand(errand)
+						.withProfile(profile));
+				}
+			});
 	}
 
 	@Transactional

@@ -12749,6 +12749,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — the profile is the reporter profile of the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -23817,6 +23823,13 @@ components:
           examples:
           - https://draken.sundsvall.se
           pattern: ^https?://\S+$
+        reporterProfileId:
+          type: string
+          description: "Id of a subscription profile in this namespace. When set,\
+            \ the reporter of an errand is subscribed to the errand with this profile\
+            \ as the errand is created. Leaving it out subscribes no reporter."
+          examples:
+          - 123e4567-e89b-12d3-a456-426614174000
         limitedReadAccess:
           $ref: "#/components/schemas/LimitedReadAccess"
           description: "What a user whose labels only grant them limited read for\
@@ -24138,9 +24151,14 @@ components:
           type: boolean
         binary:
           type: boolean
-        number:
+        textual:
           type: boolean
-        floatingPointNumber:
+          deprecated: true
+        container:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
           type: boolean
         nodeType:
           type: string
@@ -24169,8 +24187,6 @@ components:
         bigDecimal:
           type: boolean
         integralNumber:
-          type: boolean
-        missingNode:
           type: boolean
         bigInteger:
           type: boolean
