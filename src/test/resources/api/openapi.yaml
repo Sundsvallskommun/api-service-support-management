@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.0"
 servers:
-- url: http://localhost:62061
+- url: http://localhost:38151
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -134,6 +134,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -189,6 +199,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -247,6 +267,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -301,6 +331,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -360,6 +400,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -421,6 +471,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -481,6 +541,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -536,6 +606,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -588,6 +668,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -650,6 +740,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -706,6 +806,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -761,6 +871,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -820,6 +940,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -875,6 +1005,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -934,6 +1074,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -1011,6 +1161,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -1103,6 +1263,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -1218,6 +1388,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -1287,6 +1467,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -1364,6 +1554,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -1456,6 +1656,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -1571,6 +1781,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -1648,6 +1868,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -1729,6 +1959,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -1834,6 +2074,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -1931,6 +2181,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -2031,6 +2291,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -2154,6 +2424,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -2237,6 +2517,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -2329,6 +2619,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -2444,6 +2744,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -2527,6 +2837,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -2619,6 +2939,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -2734,6 +3064,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -2815,6 +3155,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: No content - Successful operation
@@ -2864,6 +3214,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -2923,6 +3283,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -2978,6 +3348,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -3037,6 +3417,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -3092,6 +3482,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -3146,6 +3546,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -3215,6 +3625,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -3269,6 +3689,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -3343,6 +3773,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -3414,6 +3854,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -3486,6 +3936,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -3540,6 +4000,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -3609,6 +4079,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -3663,6 +4143,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -3732,6 +4222,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -3786,6 +4286,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -3855,6 +4365,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -3909,6 +4429,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -3969,6 +4499,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -4023,6 +4563,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4090,6 +4640,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -4151,6 +4711,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4228,6 +4798,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -4282,6 +4862,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4351,6 +4941,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4444,6 +5044,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4529,6 +5139,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4621,6 +5241,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -4675,6 +5305,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4744,6 +5384,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -4798,6 +5448,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4867,6 +5527,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -4921,6 +5591,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -4990,6 +5670,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -5044,6 +5734,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -5114,6 +5814,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -5168,6 +5878,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -5237,6 +5957,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -5291,6 +6021,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -5385,6 +6125,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -5444,6 +6194,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -5517,6 +6277,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -5584,6 +6354,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -5665,6 +6445,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           multipart/form-data:
@@ -5758,6 +6548,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "201":
           description: Successful operation
@@ -5849,6 +6649,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -5922,6 +6732,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -5989,6 +6809,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -6067,6 +6897,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -6126,6 +6966,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -6193,6 +7043,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -6254,6 +7114,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -6335,6 +7205,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           multipart/form-data:
@@ -6428,6 +7308,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "201":
           description: Successful operation
@@ -6519,6 +7409,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -6581,6 +7481,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -6648,6 +7558,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -6728,6 +7648,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -6802,6 +7732,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -6889,6 +7829,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           multipart/form-data:
@@ -6982,6 +7932,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "201":
           description: Successful operation
@@ -7073,6 +8033,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -7137,6 +8107,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -7220,6 +8200,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -7304,6 +8294,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -7371,6 +8371,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -7465,6 +8475,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -7539,6 +8559,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -7620,6 +8650,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           multipart/form-data:
@@ -7713,6 +8753,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "201":
           description: Successful operation
@@ -7804,6 +8854,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -7866,6 +8926,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -7928,6 +8998,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -7990,6 +9070,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -8053,6 +9143,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -8115,6 +9215,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -8182,6 +9292,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -8281,6 +9401,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -8353,6 +9483,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           multipart/form-data:
@@ -8438,6 +9578,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -8507,6 +9657,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -8574,6 +9734,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           multipart/form-data:
@@ -8648,6 +9818,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "202":
           description: Rebuild started
@@ -8716,6 +9896,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -8779,6 +9969,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -8832,6 +10032,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -8882,6 +10092,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "202":
           description: Rebuild started
@@ -8949,6 +10169,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -9015,6 +10245,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -9079,6 +10319,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -9163,6 +10413,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -9223,6 +10483,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -9301,6 +10571,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -9373,6 +10653,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -9438,6 +10728,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -9499,6 +10799,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -9571,6 +10881,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -9637,6 +10957,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -9699,6 +11029,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -9771,6 +11111,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -9836,6 +11186,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -9897,6 +11257,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -9969,6 +11339,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -10028,6 +11408,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -10089,6 +11479,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -10161,6 +11561,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -10226,6 +11636,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -10287,6 +11707,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -10361,6 +11791,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -10429,6 +11869,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -10493,6 +11943,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -10565,6 +12025,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -10630,6 +12100,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -10691,6 +12171,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -10763,6 +12253,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -10828,6 +12328,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -10889,6 +12399,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -10961,6 +12481,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -11020,6 +12550,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -11081,6 +12621,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -11153,6 +12703,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -11212,6 +12772,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -11273,6 +12843,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -11345,6 +12925,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -11411,6 +13001,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -11473,6 +13073,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -11545,6 +13155,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -11616,6 +13236,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -11695,6 +13325,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -11787,6 +13427,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -11872,6 +13522,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -11954,6 +13614,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -12037,6 +13707,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -12105,6 +13785,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -12202,6 +13892,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -12283,6 +13983,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -12372,6 +14082,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -12466,6 +14186,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -12539,6 +14269,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -12608,6 +14348,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -12688,6 +14438,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -12773,6 +14533,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -12855,6 +14625,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -12946,6 +14726,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -13031,6 +14821,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -13113,6 +14913,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -13211,6 +15021,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -13291,6 +15111,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -13367,6 +15197,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -13453,6 +15293,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -13538,6 +15388,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -13620,6 +15480,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -13724,6 +15594,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -13803,6 +15683,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -13878,6 +15768,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -13957,6 +15857,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -14029,6 +15939,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -14109,6 +16029,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -14178,6 +16108,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -14248,6 +16188,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       requestBody:
         content:
           application/json:
@@ -14354,6 +16304,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -14408,6 +16368,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -14469,6 +16439,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -14526,6 +16506,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -14579,6 +16569,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -14639,6 +16639,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -14692,6 +16702,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -14758,6 +16778,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -14823,6 +16853,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -14892,6 +16932,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -14981,6 +17031,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15054,6 +17114,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15126,6 +17196,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -15196,6 +17276,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15292,6 +17382,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15365,6 +17465,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15433,6 +17543,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -15515,6 +17635,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15590,6 +17720,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15684,6 +17824,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15757,6 +17907,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -15824,6 +17984,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: OK - Successful operation
@@ -15901,6 +18071,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -15968,6 +18148,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: OK - Successful operation
@@ -16052,6 +18242,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -16135,6 +18335,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -16199,6 +18409,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -16339,6 +18559,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -16479,6 +18709,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -16558,6 +18798,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful operation
@@ -16603,6 +18853,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: Successful Operation
@@ -16642,6 +18902,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "200":
           description: OK
@@ -16698,6 +18968,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -16760,6 +19040,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -16829,6 +19119,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -16899,6 +19199,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "204":
           description: Successful operation
@@ -16962,6 +19272,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-notify
+        in: header
+        description: "Set to false to make the operation notify no one: neither the\
+          \ users notified directly nor the subscribers of the errand, on any channel.\
+          \ Any other value, or leaving the header out, notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
       responses:
         "202":
           description: Successful operation
@@ -16994,19 +19314,15 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -17026,13 +19342,13 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        instance:
+          type: string
+          format: uri
         detail:
           type: string
         causeAsProblem:
           $ref: "#/components/schemas/ThrowableProblem"
-        instance:
-          type: string
-          format: uri
     ThrowableProblem:
       type: object
       properties:
@@ -17205,12 +19521,12 @@ components:
           - true
         baseUrl:
           type: string
-          description: "Base url of the web application handling errands in this\
-            \ namespace. Links to errands are made as <baseUrl>/<municipalityId>/<namespace>/errands/<errandNumber>.\
-            \ Leaving it out means emails carry no links to errands."
+          description: Base url of the web application handling errands in this namespace.
+            Links to errands are made as <baseUrl>/<municipalityId>/<namespace>/errands/<errandNumber>.
+            Leaving it out means emails carry no links to errands.
           examples:
           - https://draken.sundsvall.se
-          pattern: '^https?://\S+$'
+          pattern: ^https?://\S+$
         limitedReadAccess:
           $ref: "#/components/schemas/LimitedReadAccess"
           description: "What a user whose labels only grant them limited read for\
@@ -17500,13 +19816,23 @@ components:
     JsonNode:
       type: object
       properties:
-        binary:
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         container:
           type: boolean
-        boolean:
-          type: boolean
         number:
+          type: boolean
+        valueNode:
+          type: boolean
+        missingNode:
           type: boolean
         nodeType:
           type: string
@@ -17524,11 +19850,9 @@ components:
           type: boolean
         integralNumber:
           type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
         pojo:
+          type: boolean
+        floatingPointNumber:
           type: boolean
         short:
           type: boolean
@@ -17545,17 +19869,9 @@ components:
         textual:
           type: boolean
           deprecated: true
-        floatingPointNumber:
+        boolean:
           type: boolean
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        binary:
           type: boolean
         embeddedValue:
           type: boolean
