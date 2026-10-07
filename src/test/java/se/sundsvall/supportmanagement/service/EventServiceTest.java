@@ -49,6 +49,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearNotify;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setNotify;
@@ -380,6 +381,27 @@ class EventServiceTest {
 		assertThat(dispatch.getDescription()).isEqualTo(message);
 		assertThat(dispatch.getSubType()).isEqualTo(ERRAND.getValue());
 		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void createErrandEventOnBehalfOfAUserRecordsThemAsTheOneWhoActed() {
+		// Setup — a scheduled job carrying out what a user did elsewhere, so the caller is not the one who acted
+		final var errandId = randomUUID().toString();
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("MY_NAMESPACE")
+			.withId(errandId);
+		final var actor = Identifier.create().withType(AD_ACCOUNT).withValue("handler");
+
+		// Call
+		service.createErrandEvent(EventType.UPDATE, "Ny händelse för topic", entity, null, null, false, MESSAGE, actor);
+
+		// Verify the event log and the dispatch both name the actor, which is what keeps them from being notified of it
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(errandId), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getMetadata()).extracting(Metadata::getKey, Metadata::getValue)
+			.contains(tuple("ExecutedBy", "handler"));
+		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getValue().getExecutingUserId()).isEqualTo("handler");
 	}
 
 	@Test
