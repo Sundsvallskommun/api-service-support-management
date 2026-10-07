@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.0"
 servers:
-- url: http://localhost:55176
+- url: http://localhost:55088
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -10825,6 +10825,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — the profile is the reporter profile of the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
           content:
@@ -20342,9 +20348,9 @@ components:
         type:
           type: string
           format: uri
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         status:
           type: integer
@@ -20574,6 +20580,13 @@ components:
           examples:
           - https://draken.sundsvall.se
           pattern: ^https?://\S+$
+        reporterProfileId:
+          type: string
+          description: "Id of a subscription profile in this namespace. When set,\
+            \ the reporter of an errand is subscribed to the errand with this profile\
+            \ as the errand is created. Leaving it out subscribes no reporter."
+          examples:
+          - 123e4567-e89b-12d3-a456-426614174000
         limitedReadAccess:
           $ref: "#/components/schemas/LimitedReadAccess"
           description: "What a user whose labels only grant them limited read for\
@@ -20873,30 +20886,18 @@ components:
           type: boolean
         float:
           type: boolean
-        container:
-          type: boolean
-        string:
-          type: boolean
-        long:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        double:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        pojo:
-          type: boolean
         boolean:
           type: boolean
         binary:
           type: boolean
-        number:
+        textual:
           type: boolean
-        floatingPointNumber:
+          deprecated: true
+        container:
+          type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
           type: boolean
         nodeType:
           type: string
@@ -20910,15 +20911,27 @@ components:
           - OBJECT
           - POJO
           - STRING
-        bigDecimal:
-          type: boolean
-        valueNode:
-          type: boolean
         integralNumber:
           type: boolean
-        missingNode:
-          type: boolean
         bigInteger:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        number:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        short:
+          type: boolean
+        string:
+          type: boolean
+        int:
+          type: boolean
+        pojo:
           type: boolean
         embeddedValue:
           type: boolean

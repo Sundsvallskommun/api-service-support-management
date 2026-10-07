@@ -112,7 +112,7 @@ public class EventService {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
 		if (eventType != EventType.DELETE) {
-			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
+			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity, eventType == EventType.CREATE && subtype == EventSubType.ERRAND));
 		}
 
 		// A request that asked to notify no one reaches no one, neither those notified directly nor any subscriber on any

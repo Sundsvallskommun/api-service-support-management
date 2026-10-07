@@ -17,6 +17,7 @@ import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelTy
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionProfile;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,6 +40,9 @@ class SubscriptionProfileServiceTest {
 	@Mock
 	private SubscriptionProfileRepository subscriptionProfileRepositoryMock;
 
+	@Mock
+	private NamespaceConfigService namespaceConfigServiceMock;
+
 	@InjectMocks
 	private SubscriptionProfileService service;
 
@@ -47,7 +51,7 @@ class SubscriptionProfileServiceTest {
 
 	@AfterEach
 	void verifyNoMore() {
-		verifyNoMoreInteractions(subscriptionProfileRepositoryMock);
+		verifyNoMoreInteractions(subscriptionProfileRepositoryMock, namespaceConfigServiceMock);
 	}
 
 	@Test
@@ -167,7 +171,22 @@ class SubscriptionProfileServiceTest {
 		service.deleteSubscriptionProfile(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID);
 
 		verify(subscriptionProfileRepositoryMock).findByIdAndNamespaceAndMunicipalityId(PROFILE_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(namespaceConfigServiceMock).isReporterProfile(NAMESPACE, MUNICIPALITY_ID, PROFILE_ID);
 		verify(subscriptionProfileRepositoryMock).delete(entity);
+	}
+
+	@Test
+	void deleteSubscriptionProfileThatIsTheReporterProfile() {
+		final var entity = SubscriptionProfileEntity.create().withId(PROFILE_ID);
+		when(subscriptionProfileRepositoryMock.findByIdAndNamespaceAndMunicipalityId(PROFILE_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+		when(namespaceConfigServiceMock.isReporterProfile(NAMESPACE, MUNICIPALITY_ID, PROFILE_ID)).thenReturn(true);
+
+		assertThatThrownBy(() -> service.deleteSubscriptionProfile(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(CONFLICT);
+
+		verify(subscriptionProfileRepositoryMock).findByIdAndNamespaceAndMunicipalityId(PROFILE_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(namespaceConfigServiceMock).isReporterProfile(NAMESPACE, MUNICIPALITY_ID, PROFILE_ID);
 	}
 
 	@Test

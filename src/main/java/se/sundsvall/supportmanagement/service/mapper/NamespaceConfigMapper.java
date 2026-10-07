@@ -48,6 +48,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_REPORTER_PROFILE_ID;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_RESOURCE_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ROLE_BASED_MAPPING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
@@ -108,9 +109,11 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
 			.withAccessGrants(toAccessGrants(config));
 
-		// A stored value may not be null, so an absent base url is left out rather than stored empty
+		// A stored value may not be null, so an absent base url or reporter profile is left out rather than stored empty
 		ofNullable(config.getBaseUrl())
 			.ifPresent(baseUrl -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_BASE_URL, baseUrl, STRING)));
+		ofNullable(config.getReporterProfileId())
+			.ifPresent(profileId -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_REPORTER_PROFILE_ID, profileId, STRING)));
 		return entity;
 	}
 
@@ -143,6 +146,7 @@ public class NamespaceConfigMapper {
 			.withSingleDecisionPerErrand(readOptionalToggle(entity, PROPERTY_SINGLE_DECISION_PER_ERRAND))
 			.withExcludeEventDescriptionsInEmail(readOptionalToggle(entity, PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL))
 			.withBaseUrl(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_BASE_URL))
+			.withReporterProfileId(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_REPORTER_PROFILE_ID))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
 			.withLimitedReadAccess(toLimitedReadAccess(entity))
 			.withReporterAccess(toReporterAccess(entity))

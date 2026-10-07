@@ -425,6 +425,7 @@ VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
        (2, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
        (2, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
        (2, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (2, 'REPORTER_PROFILE_ID', 'ccddeeff-0000-0000-0000-000000000099', 'STRING'),
        (3, 'DISPLAY_NAME', 'Namespace 3', 'STRING'),
        (3, 'SHORT_CODE', 'NS3', 'STRING'),
        (3, 'NOTIFICATION_TTL_IN_DAYS', '30', 'INTEGER'),
@@ -841,3 +842,15 @@ VALUES ('f9000000-0000-0000-0000-000000000004', 'f4000000-0000-0000-0000-0000000
 
 INSERT INTO measure_json_parameter(id, measure_id, parameter_key, schema_id, value, version)
 VALUES ('f9000000-0000-0000-0000-000000000005', 'ee000000-0000-0000-0000-000000000200', 'measureForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
+
+-- -----------------------------------
+-- Reporter profile of CONTACTCENTER (2281): reporters are subscribed to their new errands with it
+-- -----------------------------------
+INSERT INTO subscription_profile(id, municipality_id, namespace, name, description, created, modified)
+VALUES ('ccddeeff-0000-0000-0000-000000000099', '2281', 'CONTACTCENTER', 'Notis om meddelanden till rapportor', null, '2024-01-10 12:00:00.000', null);
+
+INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype, label_added)
+VALUES ('ccddeeff-0000-0000-0000-000000000099', 0, 'UPDATE', 'MESSAGE', null);
+
+INSERT INTO subscription_profile_channel(profile_id, sort_order, type)
+VALUES ('ccddeeff-0000-0000-0000-000000000099', 0, 'INTERNAL');

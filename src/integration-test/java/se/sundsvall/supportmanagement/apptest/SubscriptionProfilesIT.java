@@ -46,6 +46,7 @@ class SubscriptionProfilesIT extends AbstractAppTest {
 	private static final String PROFILE_NOTICE_ID = "ccddeeff-0000-0000-0000-000000000001";
 	private static final String PROFILE_MAIL_ID = "ccddeeff-0000-0000-0000-000000000002";
 	private static final String UNKNOWN_PROFILE_ID = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+	private static final String REPORTER_PROFILE_ID = "ccddeeff-0000-0000-0000-000000000099";
 
 	// Subscriber of joe01doe from testdata-it.sql
 	private static final String SUBSCRIBER_SERVICEDESK_ID = "aabbccdd-0000-0000-0000-000000000001";
@@ -130,6 +131,19 @@ class SubscriptionProfilesIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(subscriptionProfileRepository.findByIdAndNamespaceAndMunicipalityId(PROFILE_NOTICE_ID, NAMESPACE, MUNICIPALITY_2281)).isNotPresent();
+	}
+
+	@Test
+	void test10_deleteReporterProfileConflict() {
+		// CONTACTCENTER subscribes reporters with this profile, so it cannot go before the namespace stops naming it
+		setupCall()
+			.withServicePath("/" + MUNICIPALITY_2281 + "/CONTACTCENTER/subscription-profiles/" + REPORTER_PROFILE_ID)
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(subscriptionProfileRepository.findByIdAndNamespaceAndMunicipalityId(REPORTER_PROFILE_ID, "CONTACTCENTER", MUNICIPALITY_2281)).isPresent();
 	}
 
 	@Test

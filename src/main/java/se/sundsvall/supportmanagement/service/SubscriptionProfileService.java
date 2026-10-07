@@ -9,6 +9,7 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionProfile;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -23,10 +24,14 @@ public class SubscriptionProfileService {
 	private static final String PROFILE_NOT_FOUND = "Subscription profile with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 	private static final String PROFILE_CONFLICT = "Subscription profile with name:'%s' already exists in namespace:'%s' for municipality with id:'%s'";
 
-	private final SubscriptionProfileRepository subscriptionProfileRepository;
+	private static final String PROFILE_IS_REPORTER_PROFILE = "Subscription profile with id:'%s' is the reporter profile of namespace:'%s' for municipality with id:'%s' and cannot be deleted";
 
-	public SubscriptionProfileService(final SubscriptionProfileRepository subscriptionProfileRepository) {
+	private final SubscriptionProfileRepository subscriptionProfileRepository;
+	private final NamespaceConfigService namespaceConfigService;
+
+	public SubscriptionProfileService(final SubscriptionProfileRepository subscriptionProfileRepository, final NamespaceConfigService namespaceConfigService) {
 		this.subscriptionProfileRepository = subscriptionProfileRepository;
+		this.namespaceConfigService = namespaceConfigService;
 	}
 
 	@Transactional(readOnly = true)
@@ -66,7 +71,12 @@ public class SubscriptionProfileService {
 	 */
 	@Transactional
 	public void deleteSubscriptionProfile(final String municipalityId, final String namespace, final String profileId) {
-		subscriptionProfileRepository.delete(findEntity(municipalityId, namespace, profileId));
+		final var entity = findEntity(municipalityId, namespace, profileId);
+		// Reporters would quietly stop being subscribed, so the namespace has to be pointed elsewhere first
+		if (namespaceConfigService.isReporterProfile(namespace, municipalityId, profileId)) {
+			throw Problem.valueOf(CONFLICT, PROFILE_IS_REPORTER_PROFILE.formatted(profileId, namespace, municipalityId));
+		}
+		subscriptionProfileRepository.delete(entity);
 	}
 
 	// Flush eagerly so the uq_subscription_profile_municipality_namespace_name constraint fires inside this method, both on

@@ -22,6 +22,7 @@ public class ConfigPropertyExtractor {
 	public static final String PROPERTY_SINGLE_DECISION_PER_ERRAND = "SINGLE_DECISION_PER_ERRAND";
 	public static final String PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL = "EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL";
 	public static final String PROPERTY_BASE_URL = "BASE_URL";
+	public static final String PROPERTY_REPORTER_PROFILE_ID = "REPORTER_PROFILE_ID";
 
 	/**
 	 * Get the value for provided key as the type that is defined for the key/value-pair or null if no property matching
