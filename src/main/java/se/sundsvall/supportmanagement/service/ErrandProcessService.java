@@ -259,8 +259,9 @@ public class ErrandProcessService {
 	 * Every process an errand has had, newest first, together with whether a new one may be started right now.
 	 * <p>
 	 * Whether one may be started is answered by {@link ProcessRules#startableOf}, from the process rows read for the list.
-	 * The labels of the errand are read only when no process row stands in the way, and the outbox only when a start
-	 * would otherwise be available.
+	 * The labels of an active errand in a namespace that runs processes are read for whether they block processes, and
+	 * for their keys only when no process row stands in the way. The outbox is read only when a start would otherwise be
+	 * available.
 	 *
 	 * @param  namespace      the namespace of the errand.
 	 * @param  municipalityId the municipality of the errand.
@@ -274,7 +275,7 @@ public class ErrandProcessService {
 		final var runsProcesses = namespaceConfigService.getProcessConsumer(namespace, municipalityId).isPresent();
 
 		return ErrandProcessOverview.create()
-			.withStartable(toProcessStartable(startableOf(runsProcesses, errand.getLifecycle(), instances, () -> processKeySelector.select(errand),
+			.withStartable(toProcessStartable(startableOf(runsProcesses, errand.getLifecycle(), () -> processKeySelector.isBlocked(errand), instances, () -> processKeySelector.select(errand),
 				() -> outboxRepository.existsByErrandIdAndStartAllowedIsTrueAndDeliveredAtIsNull(errandId))))
 			.withProcesses(toErrandProcesses(instances, signalsOf(instances)));
 	}

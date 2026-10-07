@@ -106,6 +106,7 @@ T12 — automatisk och manuell start — ligger på DRAKEN-4811.
 | 87 | **`DELETE /errands/{errandId}` svarar `409` när ärendet bär ett beslut som inte längre får ändras** (2026-09-22)                                                                                                                                                                                                                                                                                | Att låta kaskaden ta beslutet och skriva in det i §7.5                                                                                                              | Användarens beslut. Samma lås som för bilagan och utredningen: beslutet hade annars försvunnit förbi beslutets egna regler. Gallringen omfattas inte — §7.5                                                                                                                                                                                                                                                          |
 | 88 | **Varje beslutsskrivning, i alla namespace, ger händelse, notis, `notification_dispatch`-rad och höjd `errand.version`** (2026-09-22)                                                                                                                                                                                                                                                           | Att begränsa versionshöjningen och notisen till namespace med `PROCESS_CONSUMER`                                                                                    | Användarens beslut: beteendet står kvar, och dokumentet rättas. En klient som håller ärendets `ETag` får `412` efter en beslutsskrivning, också utan process — §5.7                                                                                                                                                                                                                                                  |
 | 89 | **Dokumentet hålls samlat** (2026-09-22)                                                                                                                                                                                                                                                                                                                                                        | En del för gällande design och en för beslutslogg och historik                                                                                                      | Användarens beslut. Det har börjat glida isär med koden, och rättelserna görs i stället i det befintliga dokumentet                                                                                                                                                                                                                                                                                                  |
+| 90 | **En etikett med `processBlocked=true` håller allt om ärendet borta från processen, och bara en tjänsteidentitet tar bort den** (2026-10-06, DRAKEN-5105)                                                                                                                                                                                                                                       | Att låta kommandon och raderingar passera spärren som de passerar loop-skyddet; att låta etikettjobb räknas som tjänst                                              | Spärren är till för att stoppa allt medan något utreds utanför processen, och en radering eller en start som slank igenom vore just det som skulle hindras. Ett etikettjobb bär med sig om ett AD-konto startade det, annars kunde en handläggare häva spärren genom att flytta om i etikettträdet (§7.8)                                                                                                            |
 
 ---
 
@@ -167,7 +168,7 @@ Ett undantag finns: **`HandoverService.handover`** hämtar utan filter men ändr
 
 ### 1.6 Övrigt
 
-- `metadata_label_attribute` (`V1_37`): fri key/value, unik på `(metadata_label_id, key)`. Nycklar **inte** whitelistade (`ValidLabelAttributesConstraintValidator.hasUniqueAttributeKeys`).
+- `metadata_label_attribute` (`V1_37`): fri key/value, unik på `(metadata_label_id, key)`. Nycklar **inte** whitelistade (`ValidLabelAttributesConstraintValidator`).
 - `errand.id` är `varchar(255)` (`V1_0`).
 - pw-alkt är stateless. `AbstractTaskWorker.clearUpdateAvailable` varnar för races vid skrivning av processvariabler. `alkt-ansokan.bpmn` innehåller **inget** `updateAvailable`; `clearUpdateAvailable` har **inga anropare**.
 - Varje PW-tjänst har eget API i WSO2 ⇒ en OAuth2-registrering per PW-tjänst.
@@ -1463,6 +1464,9 @@ att ärendet väntar på en knapptryckning, på att processen redan gått i mål
 }
 ```
 
+Ett ärende som bär en etikett med `processBlocked=true` svarar `PROCESS_BLOCKED`, och både starten och signalerna
+avvisas med `409` (§7.8).
+
 **Två nycklar i `processKeys` betyder att någon måste välja.** Etiketterna pekar åt två håll (§7.3), och i
 stället för att gissa lämnar SM över valet: gränssnittet frågar handläggaren och skickar den valda nyckeln
 i kroppen. Det är samma tvetydighet som stoppar den automatiska starten — skillnaden är att här finns en
@@ -1816,6 +1820,10 @@ från att komma igång.
 en radering som hålls tillbaka lämnar processinstansen levande i Operaton för ett ärende som inte finns. Det gäller
 även en radering från en maskinidentitet med `X-Trigger-Process: false`, och även när `ERRAND` saknas i
 `PROCESS_TRIGGER`.
+
+**En etikett med `processBlocked=true` håller tillbaka allt, kommandon och raderingar inräknade** (beslut 90). Spärren
+frågas direkt efter om ärendet är ett utkast och före undantaget för kommandon och `DELETE`, så ingen rad skrivs för
+ett spärrat ärende, oavsett händelse, skrivare och header (§7.8).
 
 **Skrivningen där en handläggare gör ett beslut `COMPLETED` passerar bromsen, men bara den** (beslut 54). Det
 är den händelse ett väntläge väntar på, och kastas den står ärendet still hur mycket annan trafik som än orsakade
@@ -2395,9 +2403,9 @@ insert into metadata_label_attribute (metadata_label_id, `key`, `value`) values
 `MANUAL`, `processStartMode` utan `processKey` på samma etikett avvisas eftersom attributet är
 meningslöst ensamt, och en nyckel som stavas som `processKey` eller `processStartMode` på annat sätt —
 andra versaler, blanksteg runt — avvisas (beslut 68). Utan den tredje går `processstartmode: MANUAL`
-igenom de två första och läses som inget läge alls. Kontrollerna gäller `POST` och `PUT` av
-`/metadata/labels`, de enda vägarna som skriver etikettattribut, och varje fel namnger etiketten med dess
-sökväg av resursnamn.
+igenom de två första och läses som inget läge alls. Kontrollerna sitter på `Label.attributes` och gäller
+därmed `POST` och `PUT` av `/metadata/labels`, de enda vägarna som skriver etikettattribut. Varje fel pekar
+ut etiketten med sin fältväg, till exempel `createLabels.labels[0].labels[1].attributes`.
 
 Skälet till att kontrollerna ligger vid skrivningen och inte vid läsningen är att attributnycklar **inte**
 är whitelistade (§1.6). En etikett med `processstartmode` — litet s — skulle annars tyst betyda
@@ -2489,6 +2497,38 @@ första ärendena för hand och se att kedjan beter sig, och byt sedan till `AUT
 attribut. Ingen kodändring, ingen driftsättning, och vägen tillbaka är lika kort om något ser fel ut.
 
 ---
+
+### 7.8 Spärr — `processBlocked`
+
+Etikettattributet `processBlocked` håller ett ärende borta från alla processer (beslut 90, DRAKEN-5105). Värdet ska
+vara exakt `true` eller `false`; ett annat värde, och en nyckel som stavas som `processBlocked` på något annat sätt,
+avvisas med `400` när etiketten skrivs. Attributet får stå på en etikett utan `processKey`.
+
+Spärren läses ur **alla** etiketter ärendet bär, även en `deprecated`. Etiketterna lagras med sina förfäder, så en
+spärr på en föräldraetikett gäller varje ärende som bär en etikett under den.
+
+- **Publiceringen:** `ProcessEventPublisher.isHeldBack` frågar spärren direkt efter utkastet och före undantaget för
+  kommandon och `DELETE`. Ingen rad skrivs i outboxen för ett spärrat ärende — skapande, ändring, bilaga, beslut,
+  meddelande, start, signal eller radering — vem som än skriver och vad `X-Trigger-Process` än säger. Händelsen skrivs
+  till eventloggen som vanligt. En radering läser etiketterna innan ärendet tas bort och lägger tillbaka dem som id,
+  eftersom borttagningen lämnar ärendet frikopplat från sessionen.
+- **Startbarheten:** `startable.status` är `PROCESS_BLOCKED`, frågat efter `NO_PROCESS_ENGINE` och `ERRAND_DRAFT` men
+  före processraderna. `POST .../processes/start` och `POST .../processes/{processInstanceId}/signals` svarar `409`.
+- **Att ta bort spärren:** en ändring av etiketterna som ett AD-konto gör och som lämnar ärendet utan en spärrande
+  etikett avvisas med `409` (`ProcessBlockGuard`). En tjänsteidentitet får ta bort den. Regeln jämför etiketterna
+  efter att de utökats med sina förfäder, så en etikett under spärren håller spärren kvar.
+- **Etikettjobb:** en flytt, sammanslagning eller omstrukturering bär med sig om den startades av ett AD-konto.
+  Startad av ett AD-konto behåller ett ärende som skulle tappa sin spärr de etiketter det har, och en felpost
+  `LABEL_REMOVES_PROCESS_BLOCK` skrivs på det. Startad av en tjänst tas spärren bort.
+- **Efter spärren:** nästa händelse når processen som vanligt. Det som hölls tillbaka under spärren skickas inte i
+  efterhand.
+
+|                    Skrivare                     | Kan ta bort etiketter |                Vid försök från AD-konto                |
+|-------------------------------------------------|-----------------------|--------------------------------------------------------|
+| `POST /errands`                                 | Nej                   | —                                                      |
+| `PATCH /errands/{errandId}`                     | Ja                    | `409`                                                  |
+| `ADD_LABEL`-åtgärden                            | Nej                   | —                                                      |
+| Etikettflytt, -sammanslagning, -omstrukturering | Ja                    | Ärendet behåller sina etiketter, och en felpost skrivs |
 
 ## 8. Drift och förvaltning
 

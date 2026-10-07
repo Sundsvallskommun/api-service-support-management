@@ -382,6 +382,27 @@ class ErrandPurgeIT extends AbstractAppTest {
 	}
 
 	/**
+	 * The errand the run reaches wears a label blocking processes, so its deletion is held back from the process. The
+	 * errand is removed all the same.
+	 */
+	@Test
+	@DisplayName("Verification that a run in a namespace running a process removes an errand wearing a label that blocks processes without telling the process")
+	@Sql({
+		"/db/scripts/testdata-it-purge-process.sql", "/db/scripts/testdata-it-purge-process-block.sql"
+	})
+	void test11_aPurgeOfABlockedErrandTellsNoProcess() throws Exception {
+		final var job = startPurge(PATH);
+
+		final var ended = awaitEndOf(job.getJobId());
+
+		assertThat(ended.getStatus()).isEqualTo(COMPLETED);
+		assertThat(ended.getMessage()).isEqualTo("Removed 1 of 1 errands reached, 0 could not be removed");
+		assertThat(errandsRepository.existsById(FIRST_ERRAND_REACHED)).isFalse();
+		assertThat(outboxRepository.findAll()).isEmpty();
+		verifyStubs();
+	}
+
+	/**
 	 * Asks for a purge and hands back the job it was answered with. The run is carried out on a thread of its own.
 	 */
 	private JobResponse startPurge(final String servicePath) throws Exception {

@@ -10,8 +10,9 @@ import java.lang.annotation.Target;
 import se.sundsvall.supportmanagement.api.validation.impl.ValidProcessLabelAttributesConstraintValidator;
 
 /**
- * Validates the label attributes the service reads itself - {@code processKey} and {@code processStartMode} -
- * throughout a label tree. The rules are listed on {@link ValidProcessLabelAttributesConstraintValidator}.
+ * Validates the label attributes the service reads itself - {@code processKey}, {@code processStartMode} and
+ * {@code processBlocked} - among the attributes of a label. The rules are listed on
+ * {@link ValidProcessLabelAttributesConstraintValidator}.
  */
 @Documented
 @Target({

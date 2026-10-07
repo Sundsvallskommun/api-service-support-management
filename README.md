@@ -684,21 +684,24 @@ before these rules is not checked until it is written again.
 
 ### Which process an errand belongs to
 
-The answer is read from the errand's **own** labels, through two label attributes:
+The answer is read from the errand's **own** labels, through three label attributes:
 
-|     Attribute      |             Values              |                                          Meaning                                           |
-|--------------------|---------------------------------|--------------------------------------------------------------------------------------------|
-| `processKey`       | the key of a process            | Which process the errand runs                                                              |
-| `processStartMode` | `AUTOMATIC` (default), `MANUAL` | Whether SupportManagement starts the process itself. Read from the label that gave the key |
+|     Attribute      |             Values              |                                                   Meaning                                                    |
+|--------------------|---------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `processKey`       | the key of a process            | Which process the errand runs                                                                                |
+| `processStartMode` | `AUTOMATIC` (default), `MANUAL` | Whether SupportManagement starts the process itself. Read from the label that gave the key                   |
+| `processBlocked`   | `true`, `false`                 | `true` keeps every process away from the errand, see [Blocking processes](#blocking-processes-for-an-errand) |
 
 The label tree is not walked, so the answer stays the same as long as the errand wears the same labels. Renaming a
 label leaves it alone, while moving one gives the errands wearing it new ancestors, which the label rules below hold
-like any other change. Deprecated labels are not read.
+like any other change. Deprecated labels are not read for the key, but a deprecated label with `processBlocked` set
+to `true` still blocks.
 
 A label write (`POST` or `PUT` of `/metadata/labels`) is refused with `400` when `processStartMode` is anything but
-exactly `AUTOMATIC` or `MANUAL`, when it stands on a label without `processKey`, when an attribute key is spelled
-like `processKey` or `processStartMode` in any other way (another case, surrounding blanks), or when `processKey` is
-longer than 128 characters.
+exactly `AUTOMATIC` or `MANUAL`, when it stands on a label without `processKey`, when `processBlocked` is anything but
+exactly `true` or `false`, when an attribute key is spelled like `processKey`, `processStartMode` or `processBlocked`
+in any other way (another case, surrounding blanks), or when `processKey` is longer than 128 characters.
+`processBlocked` may stand on a label without `processKey`.
 
 | The labels resolve to |                          Result                          |
 |-----------------------|----------------------------------------------------------|
@@ -739,6 +742,26 @@ An errand can still end up naming two processes if `processKey` is added to a la
 write to the errand happens. Such an errand gets `400` on every label change until one of the labels is removed — which
 is always allowed, as it resolves the errand to a single key.
 
+### Blocking processes for an errand
+
+An errand wearing a label with `processBlocked` set to `true` is kept away from every process. Labels are stored
+together with their ancestors, so a block on a parent label holds for every errand wearing a label under it.
+
+- **Nothing about the errand reaches a process.** No outbox row is written for any event of the errand — a creation,
+  a change, an attachment, a decision, a message, a start, a signal or a deletion — whoever writes it, whatever
+  `X-Trigger-Process` says, and whatever other labels the errand wears. The event itself is written to the event log as
+  usual. The block is asked right after whether the errand is a draft, before anything else.
+- `startable.status` is `PROCESS_BLOCKED`, and `POST .../processes/start` and `POST .../processes/{id}/signals` answer
+  `409`.
+- **An AD account cannot take the label off.** A change to the labels made by an AD account that would leave the
+  errand without a label carrying `processBlocked=true` is refused with `409`, and nothing of the change is written. A
+  service identity may take the label off. Adding the label is open to both.
+- A label move, merge or restructure carries the identity of the one who asked for it. Asked for by an AD account, it
+  leaves an errand whose blocking label it would take off with the labels it had, and writes an `ERROR` entry
+  `LABEL_REMOVES_PROCESS_BLOCK` on it. Asked for by a service identity, the label is taken off.
+- Once the label is off, the next event of the errand reaches the process as usual. The events held back while the
+  errand was blocked are not sent afterwards.
+
 ### How events reach the process
 
 - Every errand event that matches the triggers becomes a row in an outbox, **in the same transaction** as the change.
@@ -756,7 +779,7 @@ is always allowed, as it resolves the errand to a single key.
 - An emergency brake stops publishing for an errand once `process-engine.loop-guard.max-events-per-errand` events (20
   by default) have been delivered to its process within `window` (10 minutes). Further events are dropped and an
   `ERROR` entry is written. Only delivered events are counted, so a delivery outage never trips it.
-- A deletion passes the trigger filter, the header and the brake alike: it cannot loop, and holding it back would leave
+- A deletion passes the trigger filter, the header and the brake alike, though not a block (see above): it cannot loop, and holding it back would leave
   the process running for an errand that no longer exists.
 - So does a command, a handler's start or signal: it is a person pressing a button rather than something that
   happened to the errand.
@@ -807,6 +830,7 @@ explained by:
 | `START_PENDING`     | A start is on its way to the process engine and not yet delivered     |
 | `NO_PROCESS_KEY`    | No label of the errand names a process the errand can be started with |
 | `NO_PROCESS_ENGINE` | The namespace runs no processes                                       |
+| `PROCESS_BLOCKED`   | A label of the errand carries `processBlocked=true`                   |
 
 `processKeys` is empty whenever the status is not `AVAILABLE`, and holds two or more keys when the labels point at
 different processes. Once an errand has had a process, a start that failed included, only the key of that process is
@@ -816,13 +840,13 @@ answer.
 A handler starts the process with `POST .../processes/start`, and `{ "processKey": "<key>" }` when more than one key is
 offered — the body may be left out otherwise, and a blank key counts as none:
 
-| Code  |                                                                       When                                                                       |
-|-------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `202` | The start is recorded and handed on to the process                                                                                               |
-| `400` | No label names a process to start, several do and the request names none, the key is not among those offered, or the namespace runs no processes |
-| `403` | The caller is not an AD account                                                                                                                  |
-| `404` | The errand does not exist in the namespace                                                                                                       |
-| `409` | The errand has a live process, its process has run to its end, or a start of another process is already on its way                               |
+| Code  |                                                                            When                                                                            |
+|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `202` | The start is recorded and handed on to the process                                                                                                         |
+| `400` | No label names a process to start, several do and the request names none, the key is not among those offered, or the namespace runs no processes           |
+| `403` | The caller is not an AD account                                                                                                                            |
+| `404` | The errand does not exist in the namespace                                                                                                                 |
+| `409` | The errand has a live process, its process has run to its end, a start of another process is already on its way, or a label of the errand blocks processes |
 
 - An accepted start writes an entry of type `START` to the activity log, naming the sender and belonging to no process
   instance, and an errand event with the sub type `PROCESS` carrying the chosen key and `startAllowed`. It changes
@@ -845,13 +869,13 @@ a process that has ended always waits for no one.
 
 A handler answers with `POST .../processes/{processInstanceId}/signals` and `{ "signal": "<name>" }`:
 
-| Code  |                                           When                                           |
-|-------|------------------------------------------------------------------------------------------|
-| `202` | The signal is recorded and handed on to the process                                      |
-| `400` | `signal` is missing or blank, or the namespace has no process consumer                   |
-| `403` | The caller is not an AD account                                                          |
-| `404` | The errand does not exist, or has no such process instance                               |
-| `409` | The process does not wait for the signal right now, or has ended — read the errand again |
+| Code  |                                                                    When                                                                    |
+|-------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `202` | The signal is recorded and handed on to the process                                                                                        |
+| `400` | `signal` is missing or blank, or the namespace has no process consumer                                                                     |
+| `403` | The caller is not an AD account                                                                                                            |
+| `404` | The errand does not exist, or has no such process instance                                                                                 |
+| `409` | The process does not wait for the signal right now, or has ended — read the errand again. Also when a label of the errand blocks processes |
 
 - The name has to match one of `awaitingSignals` **exactly**, case included, since that is what the process engine
   correlates on. Names are stored and compared exactly too, so names differing only in case are two signals. A button

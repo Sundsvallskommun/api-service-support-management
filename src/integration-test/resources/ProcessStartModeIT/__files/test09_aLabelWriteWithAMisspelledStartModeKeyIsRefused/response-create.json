@@ -4,8 +4,8 @@
 	"status": 400,
 	"violations": [
 		{
-			"field": "createLabels.labels",
-			"message": "label 'NY_TILLSYN' has the attribute 'processstartmode', which is read only when spelled exactly 'processStartMode'"
+			"field": "createLabels.labels[0].attributes",
+			"message": "the attribute 'processstartmode' is read only when spelled exactly 'processStartMode'"
 		}
 	]
 }

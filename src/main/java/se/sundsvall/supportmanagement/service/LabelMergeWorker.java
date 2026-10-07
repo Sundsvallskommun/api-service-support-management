@@ -102,7 +102,7 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	}
 
 	private void merge(final LabelMergeRun run) {
-		final var restowed = mergeAndRestow(run.jobId(), run.namespace(), run.municipalityId(), run.targetLabelId(), run.sourceLabelIds(), run.startedBy(),
+		final var restowed = mergeAndRestow(run.jobId(), run.namespace(), run.municipalityId(), run.targetLabelId(), run.sourceLabelIds(), run.startedBy(), run.startedByAdAccount(),
 			processed -> jobService.updateProgress(run.jobId(), processed));
 
 		jobService.complete(run.jobId(), SUMMARY.formatted(run.sourceLabelIds(), run.targetLabelId(), restowed));
@@ -118,9 +118,12 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	 * instead of a per-merge job - mirrors {@link LabelMoveWorker#moveAndRestow}, including taking {@code jobId}
 	 * separately from that caller's own job, purely for log correlation in {@link RestowPager}.
 	 *
-	 * @return number of errands restowed.
+	 * @param  startedByAdAccount whether the merge was asked for by an ad account, which holds the errands it restows to
+	 *                            the rule that an ad account may not take a label blocking processes off an errand.
+	 * @return                    number of errands restowed.
 	 */
 	int mergeAndRestow(final String jobId, final String namespace, final String municipalityId, final String targetLabelId, final Set<String> sourceLabelIds, final String startedBy,
+		final boolean startedByAdAccount,
 		final IntConsumer progressReporter) {
 		if (!metadataLabelRepository.existsById(targetLabelId)) {
 			throw new IllegalStateException(LABEL_GONE.formatted(targetLabelId));
@@ -131,7 +134,7 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 			}
 		});
 
-		final var restowed = restowErrands(jobId, targetLabelId, sourceLabelIds, progressReporter);
+		final var restowed = restowErrands(jobId, targetLabelId, sourceLabelIds, startedByAdAccount, progressReporter);
 
 		// An action's hasLabel condition is a plain id reference, not a foreign key the DB enforces for us - left
 		// pointing at a source id once that row is gone below, a condition would silently stop matching anything
@@ -188,10 +191,10 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	 * {@link RestowPager}, shared with {@link LabelMoveWorker}: a page at a time, read and persisted each in a
 	 * transaction of its own.
 	 */
-	private int restowErrands(final String jobId, final String targetLabelId, final Set<String> sourceLabelIds, final IntConsumer progressReporter) {
+	private int restowErrands(final String jobId, final String targetLabelId, final Set<String> sourceLabelIds, final boolean startedByAdAccount, final IntConsumer progressReporter) {
 		return restowPager.restow(
 			(lastSeenId, pageable) -> errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceLabelIds, lastSeenId, pageable),
-			page -> errandService.persistLabelMergeBatch(page, sourceLabelIds, targetLabelId),
+			page -> errandService.persistLabelMergeBatch(page, sourceLabelIds, targetLabelId, startedByAdAccount),
 			attempt -> "Label merge %s retrying a page for target %s after a concurrent edit lost the optimistic-lock race (attempt %d/%d)"
 				.formatted(jobId, sanitizeForLogging(targetLabelId), attempt, MAX_BATCH_ATTEMPTS),
 			progressReporter);

@@ -1,0 +1,25 @@
+{
+	"startable": {
+		"status": "PROCESS_BLOCKED",
+		"processKeys": []
+	},
+	"processes": [
+		{
+			"id": "ep-it-live",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processInstanceId": "pi-it-live",
+			"processStatus": "RUNNING",
+			"currentActivityId": "granska-ansokan",
+			"currentActivityName": "Granska ansokan",
+			"started": "2026-01-01T10:00:00+01:00",
+			"awaitingSignals": [
+				{
+					"name": "granskning-godkand",
+					"label": "Godkänn granskning"
+				}
+			],
+			"created": "2026-01-01T10:00:00+01:00"
+		}
+	]
+}

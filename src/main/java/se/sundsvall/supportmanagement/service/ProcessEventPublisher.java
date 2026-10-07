@@ -55,6 +55,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  * 1. process consumer for (municipalityId, namespace)?   no   -&gt; return
  *    event type CREATE, UPDATE or DELETE?                no   -&gt; throw, which takes the errand change down
  *    errand a draft?                                     yes  -&gt; return
+ *    a label of the errand with processBlocked=true?     yes  -&gt; return
  * 2. X-Trigger-Process: false, from a non ad identity?   yes  -&gt; return                 (loop guard, layer 1)
  *                    commands (PROCESS, SIGNAL) and deletions skip steps 2, 3 and 4
  * 3. event sub type among the process triggers?          no   -&gt; return                 (layer 2)
@@ -73,7 +74,9 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  *
  * Layer 1 lets a process ask, through the header, not to be woken by its own writes.
  * <p>
- * The three layers guard the machine traffic about an errand. Commands and deletions pass them all.
+ * The three layers guard the machine traffic about an errand. Commands and deletions pass them all, but not a draft or
+ * a label blocking processes: nothing about such an errand reaches a process, commands and deletions included. The
+ * labels of a deletion are those the errand wore before it was removed, which the remover puts back on it.
  * <p>
  * A decision concluded by a handler passes the emergency brake and nothing else; the process triggers still apply. A
  * decision the process concludes itself is held to the brake like any other write of the process.
@@ -212,14 +215,19 @@ public class ProcessEventPublisher {
 	}
 
 	/**
-	 * Whether the event is kept from the process before its key is looked for: always for a draft, and for an event that
-	 * is neither a command nor a deletion also when the write asked not to wake the process, when its sub type is no
-	 * process trigger of the namespace, and when the emergency brake has tripped - which a decision concluded by a person
-	 * passes.
+	 * Whether the event is kept from the process before its key is looked for: always for a draft and for an errand a
+	 * label of which blocks processes, and for an event that is neither a command nor a deletion also when the write
+	 * asked not to wake the process, when its sub type is no process trigger of the namespace, and when the emergency
+	 * brake has tripped - which a decision concluded by a person passes.
 	 */
 	private boolean isHeldBack(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final boolean concludesDecision) {
 		if (errand.isDraft()) {
 			LOG.debug("No process event written for errand {}: the errand is a draft", sanitizeForLogging(errand.getId()));
+			return true;
+		}
+
+		if (processKeySelector.isBlocked(errand)) {
+			LOG.debug("No process event written for errand {}: a label of the errand blocks processes", sanitizeForLogging(errand.getId()));
 			return true;
 		}
 
@@ -294,10 +302,10 @@ public class ProcessEventPublisher {
 	}
 
 	/**
-	 * What the labels say, asked for every event but a deletion.
+	 * What the labels say about the process key, asked for every event but a deletion.
 	 * <p>
-	 * For a deletion the labels are not read and {@link ProcessKeySelection#NONE} is returned, so a deletion can be
-	 * published after the errand and its labels are gone.
+	 * For a deletion {@link ProcessKeySelection#NONE} is returned, so a deletion is published with the key of its
+	 * instance, or with none.
 	 */
 	private ProcessKeySelection selectFromLabels(final ErrandEntity errand, final EventType eventType) {
 		return DELETE == eventType ? ProcessKeySelection.NONE : processKeySelector.select(errand);

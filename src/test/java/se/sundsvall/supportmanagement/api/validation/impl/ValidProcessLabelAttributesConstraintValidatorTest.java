@@ -13,7 +13,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 
 import static java.util.Collections.emptyList;
@@ -48,18 +47,17 @@ class ValidProcessLabelAttributesConstraintValidatorTest {
 	@ValueSource(strings = {
 		"AUTOMATIC", "MANUAL"
 	})
-	@DisplayName("Verification that a label carrying a process key and either start mode is valid")
-	void aLabelWithAKeyAndAStartModeIsValid(final String startMode) {
-		assertValid(List.of(label("TILLSYN", attribute("processKey", "alkt-tillsyn"), attribute("processStartMode", startMode))));
+	@DisplayName("Verification that a process key with either start mode is valid")
+	void aKeyWithAStartModeIsValid(final String startMode) {
+		assertValid(attributes(attribute("processKey", "alkt-tillsyn"), attribute("processStartMode", startMode)));
 	}
 
 	@Test
-	@DisplayName("Verification that labels carrying neither attribute, or only the key, are valid")
-	void labelsWithoutAStartModeAreValid() {
-		assertValid(List.of(
-			label("ANSOKAN", attribute("processKey", "alkt-ansokan")),
-			label("BRADSKANDE", attribute("escalationEmail", "a@example.com")),
-			Label.create().withResourceName("TOM")));
+	@DisplayName("Verification that attributes carrying no start mode, or none at all, are valid")
+	void attributesWithoutAStartModeAreValid() {
+		assertValid(attributes(attribute("processKey", "alkt-ansokan")));
+		assertValid(attributes(attribute("escalationEmail", "a@example.com")));
+		assertValid(attributes(null, attribute(null, "value")));
 		assertValid(null);
 		assertValid(emptyList());
 	}
@@ -70,15 +68,15 @@ class ValidProcessLabelAttributesConstraintValidatorTest {
 	})
 	@DisplayName("Verification that a start mode other than exactly AUTOMATIC or MANUAL is invalid")
 	void aStartModeThatIsNotExactlyOneOfTheModesIsInvalid(final String startMode) {
-		assertInvalid(List.of(label("TILLSYN", attribute("processKey", "alkt-tillsyn"), attribute("processStartMode", startMode))),
-			"label 'TILLSYN' has the processStartMode '" + startMode + "', which must be exactly one of [AUTOMATIC, MANUAL]");
+		assertInvalid(attributes(attribute("processKey", "alkt-tillsyn"), attribute("processStartMode", startMode)),
+			"the processStartMode '" + startMode + "' must be exactly one of [AUTOMATIC, MANUAL]");
 	}
 
 	@Test
-	@DisplayName("Verification that a start mode on a label without a process key is invalid")
+	@DisplayName("Verification that a start mode without a process key is invalid")
 	void aStartModeWithoutAKeyIsInvalid() {
-		assertInvalid(List.of(label("TILLSYN", attribute("processStartMode", "MANUAL"))),
-			"label 'TILLSYN' has a processStartMode but no processKey, and a start mode means nothing without the process it starts");
+		assertInvalid(attributes(attribute("processStartMode", "MANUAL")),
+			"a processStartMode needs a processKey on the same label, since a start mode means nothing without the process it starts");
 	}
 
 	@ParameterizedTest
@@ -87,8 +85,8 @@ class ValidProcessLabelAttributesConstraintValidatorTest {
 	})
 	@DisplayName("Verification that a key spelled like processStartMode in another way is invalid")
 	void aMisspelledStartModeKeyIsInvalid(final String key) {
-		assertInvalid(List.of(label("TILLSYN", attribute("processKey", "alkt-tillsyn"), attribute(key, "MANUAL"))),
-			"label 'TILLSYN' has the attribute '" + key + "', which is read only when spelled exactly 'processStartMode'");
+		assertInvalid(attributes(attribute("processKey", "alkt-tillsyn"), attribute(key, "MANUAL")),
+			"the attribute '" + key + "' is read only when spelled exactly 'processStartMode'");
 	}
 
 	@ParameterizedTest
@@ -97,33 +95,60 @@ class ValidProcessLabelAttributesConstraintValidatorTest {
 	})
 	@DisplayName("Verification that a key spelled like processKey in another way is invalid")
 	void aMisspelledProcessKeyIsInvalid(final String key) {
-		assertInvalid(List.of(label("TILLSYN", attribute(key, "alkt-tillsyn"))),
-			"label 'TILLSYN' has the attribute '" + key + "', which is read only when spelled exactly 'processKey'");
+		assertInvalid(attributes(attribute(key, "alkt-tillsyn")),
+			"the attribute '" + key + "' is read only when spelled exactly 'processKey'");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"true", "false"
+	})
+	@DisplayName("Verification that processBlocked set to exactly true or false is valid, with or without a process key")
+	void aBlockedOfExactlyTrueOrFalseIsValid(final String blocked) {
+		assertValid(attributes(attribute("processBlocked", blocked)));
+		assertValid(attributes(attribute("processKey", "alkt-tillsyn"), attribute("processBlocked", blocked)));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"TRUE", "True", " true", "false ", "yes", "1", "blocked"
+	})
+	@DisplayName("Verification that processBlocked other than exactly true or false is invalid")
+	void aBlockedThatIsNotExactlyTrueOrFalseIsInvalid(final String blocked) {
+		assertInvalid(attributes(attribute("processBlocked", blocked)),
+			"the processBlocked '" + blocked + "' must be exactly one of [true, false]");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"processblocked", "PROCESSBLOCKED", "ProcessBlocked", " processBlocked", "processBlocked "
+	})
+	@DisplayName("Verification that a key spelled like processBlocked in another way is invalid")
+	void aMisspelledBlockedKeyIsInvalid(final String key) {
+		assertInvalid(attributes(attribute(key, "true")),
+			"the attribute '" + key + "' is read only when spelled exactly 'processBlocked'");
 	}
 
 	@Test
-	@DisplayName("Verification that every fault in a tree is reported on its own, naming the label by its path of resource names")
-	void everyFaultInATreeIsReportedNamingItsLabel() {
-		final var child = label("TILLSYN", attribute("processStartMode", "manual"));
-		final var parent = label("ALKT", attribute("processkey", "alkt-ansokan")).withLabels(List.of(child));
-
-		assertInvalid(List.of(parent),
-			"label 'ALKT' has the attribute 'processkey', which is read only when spelled exactly 'processKey'",
-			"label 'ALKT/TILLSYN' has the processStartMode 'manual', which must be exactly one of [AUTOMATIC, MANUAL]",
-			"label 'ALKT/TILLSYN' has a processStartMode but no processKey, and a start mode means nothing without the process it starts");
+	@DisplayName("Verification that every fault among the attributes is reported on its own")
+	void everyFaultIsReportedOnItsOwn() {
+		assertInvalid(attributes(attribute("processkey", "alkt-ansokan"), attribute("processStartMode", "manual")),
+			"the attribute 'processkey' is read only when spelled exactly 'processKey'",
+			"the processStartMode 'manual' must be exactly one of [AUTOMATIC, MANUAL]",
+			"a processStartMode needs a processKey on the same label, since a start mode means nothing without the process it starts");
 	}
 
 	@Test
 	@DisplayName("Verification that a process key as long as a process key may be is valid, also with blanks around it")
 	void aProcessKeyOfTheLongestLengthIsValid() {
-		assertValid(List.of(label("TILLSYN", attribute("processKey", " " + "k".repeat(128) + " "))));
+		assertValid(attributes(attribute("processKey", " " + "k".repeat(128) + " ")));
 	}
 
 	@Test
 	@DisplayName("Verification that a process key one character longer than a process key may be is invalid")
 	void aProcessKeyTooLongIsInvalid() {
-		assertInvalid(List.of(label("ALKT", attribute("processKey", "alkt-ansokan")).withLabels(List.of(label("TILLSYN", attribute("processKey", "k".repeat(129)))))),
-			"label 'ALKT/TILLSYN' has a processKey of 129 characters, and a process key may hold at most 128");
+		assertInvalid(attributes(attribute("processKey", "k".repeat(129))),
+			"the processKey has 129 characters, and a process key may hold at most 128");
 	}
 
 	@Test
@@ -131,7 +156,7 @@ class ValidProcessLabelAttributesConstraintValidatorTest {
 	void anOversizedValueIsCutInTheMessage() {
 		final var oversized = "M".repeat(200);
 
-		assertThat(validator.isValid(List.of(label("TILLSYN", attribute("processKey", "alkt-tillsyn"), attribute("processStartMode", oversized))), contextMock)).isFalse();
+		assertThat(validator.isValid(attributes(attribute("processKey", "alkt-tillsyn"), attribute("processStartMode", oversized)), contextMock)).isFalse();
 
 		assertThat(messages).singleElement().satisfies(message -> assertThat(message).doesNotContain(oversized).contains("M".repeat(61) + "..."));
 	}
@@ -139,25 +164,25 @@ class ValidProcessLabelAttributesConstraintValidatorTest {
 	@Test
 	@DisplayName("Verification that braces in a value are escaped, so that the message is not interpolated")
 	void aValueIsEscapedInTheMessage() {
-		assertThat(validator.isValid(List.of(label("TILLSYN", attribute("processKey", "alkt-tillsyn"), attribute("processStartMode", "${1+1}{x}"))), contextMock)).isFalse();
+		assertThat(validator.isValid(attributes(attribute("processKey", "alkt-tillsyn"), attribute("processStartMode", "${1+1}{x}")), contextMock)).isFalse();
 
 		assertThat(messages).singleElement().satisfies(message -> assertThat(message).contains("\\$\\{1+1\\}\\{x\\}"));
 	}
 
-	private void assertValid(final List<Label> labels) {
-		assertThat(validator.isValid(labels, contextMock)).isTrue();
+	private void assertValid(final List<LabelAttribute> attributes) {
+		assertThat(validator.isValid(attributes, contextMock)).isTrue();
 		verifyNoInteractions(contextMock);
 	}
 
-	private void assertInvalid(final List<Label> labels, final String... expectedMessages) {
-		assertThat(validator.isValid(labels, contextMock)).isFalse();
+	private void assertInvalid(final List<LabelAttribute> attributes, final String... expectedMessages) {
+		assertThat(validator.isValid(attributes, contextMock)).isFalse();
 
 		verify(contextMock).disableDefaultConstraintViolation();
 		assertThat(messages).containsExactly(expectedMessages);
 	}
 
-	private static Label label(final String resourceName, final LabelAttribute... attributes) {
-		return Label.create().withResourceName(resourceName).withAttributes(new ArrayList<>(Arrays.asList(attributes)));
+	private static List<LabelAttribute> attributes(final LabelAttribute... attributes) {
+		return new ArrayList<>(Arrays.asList(attributes));
 	}
 
 	private static LabelAttribute attribute(final String key, final String value) {
