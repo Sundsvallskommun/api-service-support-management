@@ -102,36 +102,46 @@ class MetadataLabelResourceFailureTest {
 				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
 				LabelAttribute.create().withKey("processStartMode").withValue("manual"))),
 				tuples(
-					tuple(method + ".labels", "label 'TILLSYN' has the processStartMode 'manual', which must be exactly one of [AUTOMATIC, MANUAL]"))),
+					tuple(method + ".labels[0].attributes", "the processStartMode 'manual' must be exactly one of [AUTOMATIC, MANUAL]"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "ALKT").withLabels(List.of(
 				createLabelWithAttributes("class", "TILLSYN",
 					LabelAttribute.create().withKey("processStartMode").withValue("MANUAL"))))),
 				tuples(
-					tuple(method + ".labels", "label 'ALKT/TILLSYN' has a processStartMode but no processKey, and a start mode means nothing without the process it starts"))),
+					tuple(method + ".labels[0].labels[0].attributes", "a processStartMode needs a processKey on the same label, since a start mode means nothing without the process it starts"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "TILLSYN",
 				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
 				LabelAttribute.create().withKey("processstartmode").withValue("MANUAL"))),
 				tuples(
-					tuple(method + ".labels", "label 'TILLSYN' has the attribute 'processstartmode', which is read only when spelled exactly 'processStartMode'"))),
+					tuple(method + ".labels[0].attributes", "the attribute 'processstartmode' is read only when spelled exactly 'processStartMode'"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "SPARRAD",
 				LabelAttribute.create().withKey("processBlocked").withValue("TRUE"))),
 				tuples(
-					tuple(method + ".labels", "label 'SPARRAD' has the processBlocked 'TRUE', which must be exactly one of [true, false]"))),
+					tuple(method + ".labels[0].attributes", "the processBlocked 'TRUE' must be exactly one of [true, false]"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "SPARRAD",
 				LabelAttribute.create().withKey("processblocked").withValue("true"))),
 				tuples(
-					tuple(method + ".labels", "label 'SPARRAD' has the attribute 'processblocked', which is read only when spelled exactly 'processBlocked'"))),
+					tuple(method + ".labels[0].attributes", "the attribute 'processblocked' is read only when spelled exactly 'processBlocked'"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "ALKT",
+				LabelAttribute.create().withKey("processkey").withValue("alkt-ansokan"))
+				.withLabels(List.of(
+					createLabel("class", "ANSOKAN"),
+					createLabelWithAttributes("class", "TILLSYN",
+						LabelAttribute.create().withKey("processStartMode").withValue("manual"))))),
+				tuples(
+					tuple(method + ".labels[0].attributes", "the attribute 'processkey' is read only when spelled exactly 'processKey'"),
+					tuple(method + ".labels[0].labels[1].attributes", "the processStartMode 'manual' must be exactly one of [AUTOMATIC, MANUAL]"),
+					tuple(method + ".labels[0].labels[1].attributes", "a processStartMode needs a processKey on the same label, since a start mode means nothing without the process it starts"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
 				LabelAttribute.create().withKey("dup").withValue("a"),
 				LabelAttribute.create().withKey("dup").withValue("b"))),
 				tuples(
-					tuple(method + ".labels", "each label must have unique attribute keys"))),
+					tuple(method + ".labels[0].attributes", "attribute keys must be unique"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RES").withLabels(List.of(
 				createLabelWithAttributes("class", "CHILD",
 					LabelAttribute.create().withKey("k").withValue("v1"),
 					LabelAttribute.create().withKey("k").withValue("v2"))))),
 				tuples(
-					tuple(method + ".labels", "each label must have unique attribute keys"))),
+					tuple(method + ".labels[0].labels[0].attributes", "attribute keys must be unique"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
 				LabelAttribute.create().withKey("k".repeat(256)).withValue("v"))),
 				tuples(

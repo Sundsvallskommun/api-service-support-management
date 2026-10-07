@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Strings;
-import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.validation.ValidProcessLabelAttributes;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
@@ -29,37 +28,33 @@ import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_
 import static se.sundsvall.supportmanagement.service.ProcessKeySelector.excerptOf;
 
 /**
- * Validates the process attributes of every label in a tree against five rules, and reports each fault as a violation
- * of its own naming the label by its path of resource names:
+ * Validates the process attributes of a label against five rules, and reports each fault as a violation of its own:
  *
  * <pre>
  * a key equal to processKey, processStartMode or processBlocked when case and surrounding blanks are ignored, but not
  *   spelled exactly so
  * a processStartMode other than exactly AUTOMATIC or MANUAL
- * a processStartMode on a label without a processKey
+ * a processStartMode without a processKey
  * a processKey longer than a process key may be
  * a processBlocked other than exactly true or false
  * </pre>
  */
-public class ValidProcessLabelAttributesConstraintValidator implements ConstraintValidator<ValidProcessLabelAttributes, Collection<Label>> {
+public class ValidProcessLabelAttributesConstraintValidator implements ConstraintValidator<ValidProcessLabelAttributes, Collection<LabelAttribute>> {
 
 	private static final List<String> READ_ATTRIBUTES = List.of(PROCESS_KEY_ATTRIBUTE, PROCESS_START_MODE_ATTRIBUTE, PROCESS_BLOCKED_ATTRIBUTE);
 	private static final List<String> START_MODES = Arrays.stream(ProcessStartMode.values()).map(Enum::name).toList();
 	private static final List<String> BLOCKED_VALUES = List.of(TRUE.toString(), FALSE.toString());
 
-	/** Joins the resource names of a label and its ancestors into its path, as the resource path of a label is built. */
-	private static final String RESOURCE_PATH_SEPARATOR = "/";
-
-	private static final String MISSPELLED_KEY = "label '%s' has the attribute '%s', which is read only when spelled exactly '%s'";
-	private static final String UNKNOWN_START_MODE = "label '%s' has the processStartMode '%s', which must be exactly one of %s";
-	private static final String START_MODE_WITHOUT_KEY = "label '%s' has a processStartMode but no processKey, and a start mode means nothing without the process it starts";
-	private static final String OVERSIZED_KEY = "label '%s' has a processKey of %d characters, and a process key may hold at most %d";
-	private static final String UNKNOWN_BLOCKED = "label '%s' has the processBlocked '%s', which must be exactly one of %s";
+	private static final String MISSPELLED_KEY = "the attribute '%s' is read only when spelled exactly '%s'";
+	private static final String UNKNOWN_START_MODE = "the processStartMode '%s' must be exactly one of %s";
+	private static final String START_MODE_WITHOUT_KEY = "a processStartMode needs a processKey on the same label, since a start mode means nothing without the process it starts";
+	private static final String OVERSIZED_KEY = "the processKey has %d characters, and a process key may hold at most %d";
+	private static final String UNKNOWN_BLOCKED = "the processBlocked '%s' must be exactly one of %s";
 
 	@Override
-	public boolean isValid(final Collection<Label> value, final ConstraintValidatorContext context) {
+	public boolean isValid(final Collection<LabelAttribute> value, final ConstraintValidatorContext context) {
 		final var faults = new ArrayList<String>();
-		collectFaults(value, null, faults);
+		collectFaults(ofNullable(value).orElse(emptyList()), faults);
 
 		if (faults.isEmpty()) {
 			return true;
@@ -71,17 +66,7 @@ public class ValidProcessLabelAttributesConstraintValidator implements Constrain
 		return false;
 	}
 
-	private static void collectFaults(final Collection<Label> labels, final String parentPath, final List<String> faults) {
-		ofNullable(labels).orElse(emptyList()).stream()
-			.filter(Objects::nonNull)
-			.forEach(label -> {
-				final var path = isNull(parentPath) ? label.getResourceName() : parentPath + RESOURCE_PATH_SEPARATOR + label.getResourceName();
-				collectFaults(path, ofNullable(label.getAttributes()).orElse(emptyList()), faults);
-				collectFaults(label.getLabels(), path, faults);
-			});
-	}
-
-	private static void collectFaults(final String path, final List<LabelAttribute> attributes, final List<String> faults) {
+	private static void collectFaults(final Collection<LabelAttribute> attributes, final List<String> faults) {
 		final var present = attributes.stream()
 			.filter(Objects::nonNull)
 			.filter(attribute -> nonNull(attribute.getKey()))
@@ -90,12 +75,12 @@ public class ValidProcessLabelAttributesConstraintValidator implements Constrain
 		present.forEach(attribute -> READ_ATTRIBUTES.stream()
 			.filter(read -> isMisspelled(attribute.getKey(), read))
 			.findFirst()
-			.ifPresent(read -> faults.add(MISSPELLED_KEY.formatted(path, excerptOf(attribute.getKey()), read))));
+			.ifPresent(read -> faults.add(MISSPELLED_KEY.formatted(excerptOf(attribute.getKey()), read))));
 
 		ofNullable(valueOf(present, PROCESS_KEY_ATTRIBUTE))
 			.map(String::trim)
 			.filter(ProcessRules::isOversized)
-			.ifPresent(key -> faults.add(OVERSIZED_KEY.formatted(path, key.length(), PROCESS_KEY_LENGTH)));
+			.ifPresent(key -> faults.add(OVERSIZED_KEY.formatted(key.length(), PROCESS_KEY_LENGTH)));
 
 		present.stream()
 			.filter(attribute -> PROCESS_BLOCKED_ATTRIBUTE.equals(attribute.getKey()))
@@ -103,7 +88,7 @@ public class ValidProcessLabelAttributesConstraintValidator implements Constrain
 			.filter(Objects::nonNull)
 			.filter(blocked -> !BLOCKED_VALUES.contains(blocked))
 			.findFirst()
-			.ifPresent(blocked -> faults.add(UNKNOWN_BLOCKED.formatted(path, excerptOf(blocked), BLOCKED_VALUES)));
+			.ifPresent(blocked -> faults.add(UNKNOWN_BLOCKED.formatted(excerptOf(blocked), BLOCKED_VALUES)));
 
 		final var startMode = valueOf(present, PROCESS_START_MODE_ATTRIBUTE);
 
@@ -112,11 +97,11 @@ public class ValidProcessLabelAttributesConstraintValidator implements Constrain
 		}
 
 		if (!EnumUtils.isValidEnum(ProcessStartMode.class, startMode)) {
-			faults.add(UNKNOWN_START_MODE.formatted(path, excerptOf(startMode), START_MODES));
+			faults.add(UNKNOWN_START_MODE.formatted(excerptOf(startMode), START_MODES));
 		}
 
 		if (isNull(valueOf(present, PROCESS_KEY_ATTRIBUTE))) {
-			faults.add(START_MODE_WITHOUT_KEY.formatted(path));
+			faults.add(START_MODE_WITHOUT_KEY);
 		}
 	}
 

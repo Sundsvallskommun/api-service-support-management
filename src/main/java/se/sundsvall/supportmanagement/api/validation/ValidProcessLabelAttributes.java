@@ -11,7 +11,7 @@ import se.sundsvall.supportmanagement.api.validation.impl.ValidProcessLabelAttri
 
 /**
  * Validates the label attributes the service reads itself - {@code processKey}, {@code processStartMode} and
- * {@code processBlocked} - throughout a label tree. The rules are listed on
+ * {@code processBlocked} - among the attributes of a label. The rules are listed on
  * {@link ValidProcessLabelAttributesConstraintValidator}.
  */
 @Documented

@@ -168,7 +168,7 @@ Ett undantag finns: **`HandoverService.handover`** hämtar utan filter men ändr
 
 ### 1.6 Övrigt
 
-- `metadata_label_attribute` (`V1_37`): fri key/value, unik på `(metadata_label_id, key)`. Nycklar **inte** whitelistade (`ValidLabelAttributesConstraintValidator.hasUniqueAttributeKeys`).
+- `metadata_label_attribute` (`V1_37`): fri key/value, unik på `(metadata_label_id, key)`. Nycklar **inte** whitelistade (`ValidLabelAttributesConstraintValidator`).
 - `errand.id` är `varchar(255)` (`V1_0`).
 - pw-alkt är stateless. `AbstractTaskWorker.clearUpdateAvailable` varnar för races vid skrivning av processvariabler. `alkt-ansokan.bpmn` innehåller **inget** `updateAvailable`; `clearUpdateAvailable` har **inga anropare**.
 - Varje PW-tjänst har eget API i WSO2 ⇒ en OAuth2-registrering per PW-tjänst.
@@ -2403,9 +2403,9 @@ insert into metadata_label_attribute (metadata_label_id, `key`, `value`) values
 `MANUAL`, `processStartMode` utan `processKey` på samma etikett avvisas eftersom attributet är
 meningslöst ensamt, och en nyckel som stavas som `processKey` eller `processStartMode` på annat sätt —
 andra versaler, blanksteg runt — avvisas (beslut 68). Utan den tredje går `processstartmode: MANUAL`
-igenom de två första och läses som inget läge alls. Kontrollerna gäller `POST` och `PUT` av
-`/metadata/labels`, de enda vägarna som skriver etikettattribut, och varje fel namnger etiketten med dess
-sökväg av resursnamn.
+igenom de två första och läses som inget läge alls. Kontrollerna sitter på `Label.attributes` och gäller
+därmed `POST` och `PUT` av `/metadata/labels`, de enda vägarna som skriver etikettattribut. Varje fel pekar
+ut etiketten med sin fältväg, till exempel `createLabels.labels[0].labels[1].attributes`.
 
 Skälet till att kontrollerna ligger vid skrivningen och inte vid läsningen är att attributnycklar **inte**
 är whitelistade (§1.6). En etikett med `processstartmode` — litet s — skulle annars tyst betyda
