@@ -23,6 +23,10 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-relation
   json-schema:
     url: http://localhost:${wiremock.server.port:}/api-json-schema
+  telia-ace:
+    url: http://localhost:${wiremock.server.port:}/api-telia-ace
+    username: the-username
+    password: the-password
 scheduler:
   emailreader:
     cron: "-"
@@ -42,6 +46,8 @@ scheduler:
   attachment-hash:
     cron: "-"
   job:
+    cron: "-"
+  telia-ace-work-item:
     cron: "-"
 errand:
   purge:

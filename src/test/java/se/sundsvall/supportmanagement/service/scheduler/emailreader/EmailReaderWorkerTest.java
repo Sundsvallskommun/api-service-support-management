@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
+import se.sundsvall.supportmanagement.service.TeliaAceWorkItemService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -71,6 +72,9 @@ class EmailReaderWorkerTest {
 
 	@Mock
 	private ErrandNumberGeneratorService errandNumberGeneratorServiceMock;
+
+	@Mock
+	private TeliaAceWorkItemService teliaAceWorkItemServiceMock;
 
 	@Mock
 	private Consumer<String> consumerMock;
@@ -235,6 +239,27 @@ class EmailReaderWorkerTest {
 	}
 
 	@Test
+	void processEmail_deleteEmailFails_doesNotQueueTeliaAceWorkItem() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Some subject");
+		email.setId("id");
+		final var emailConfig = buildBaseConfig();
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withAssignedUserId("jep11jep").withCreated(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+		doThrow(new RuntimeException("EmailReader down")).when(emailReaderClientMock).deleteEmail(any(), any());
+
+		// Deleting the email fails every time, so the email is reprocessed on every poll. Queuing the work item here
+		// too would queue a fresh duplicate on every single retry, for as long as EmailReader stays unreachable.
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verifyNoInteractions(teliaAceWorkItemServiceMock);
+	}
+
+	@Test
 	void processEmailWithNewErrand() {
 		final var email = new Email();
 		email.setSender("user@domain.com");
@@ -297,7 +322,45 @@ class EmailReaderWorkerTest {
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
-		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock, emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, eventServiceMock);
+		verify(teliaAceWorkItemServiceMock).enqueueForNewErrand(same(errandEntity), same(email));
+		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock, emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, eventServiceMock, teliaAceWorkItemServiceMock);
+	}
+
+	@Test
+	void processEmail_existingAssignedErrand_queuesTeliaAceWorkItemForUpdate() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Some subject");
+		email.setId("id");
+		final var emailConfig = buildBaseConfig();
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withAssignedUserId("jep11jep").withCreated(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verify(teliaAceWorkItemServiceMock).enqueueForUpdatedErrand(same(errandEntity), same(email));
+		verify(teliaAceWorkItemServiceMock, never()).enqueueForNewErrand(any(), any());
+	}
+
+	@Test
+	void processEmail_teliaAceEnqueueFails_emailStillProcessed() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Some subject");
+		email.setId("id");
+		final var emailConfig = buildBaseConfig();
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withCreated(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+		doThrow(new RuntimeException("Telia ACE down")).when(teliaAceWorkItemServiceMock).enqueueForUpdatedErrand(any(), any());
+
+		assertThatNoException().isThrownBy(() -> emailReaderWorker.processEmail(email, emailConfig, consumerMock));
+
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 	}
 
 	@Test

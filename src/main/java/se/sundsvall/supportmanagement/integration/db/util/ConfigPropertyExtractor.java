@@ -20,6 +20,8 @@ public class ConfigPropertyExtractor {
 	public static final String PROPERTY_ROLE_BASED_MAPPING = "ROLE_BASED_MAPPING";
 	public static final String PROPERTY_RESOURCE_ACCESS_CONTROL = "RESOURCE_ACCESS_CONTROL";
 	public static final String PROPERTY_SINGLE_DECISION_PER_ERRAND = "SINGLE_DECISION_PER_ERRAND";
+	public static final String PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED = "TELIA_ACE_WORK_ITEM_ENABLED";
+	public static final String PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL = "TELIA_ACE_WORK_ITEM_BASE_URL";
 
 	/**
 	 * Get the value for provided key as the type that is defined for the key/value-pair or null if no property matching

@@ -61,6 +61,7 @@ TRUNCATE table subscriber_event_filter;
 TRUNCATE table subscriber_channel;
 TRUNCATE table subscriber;
 TRUNCATE table notification_dispatch;
+TRUNCATE table telia_ace_work_item;
 TRUNCATE table subscriber_notification_event;
 TRUNCATE table subscriber_notification;
 TRUNCATE table measure;

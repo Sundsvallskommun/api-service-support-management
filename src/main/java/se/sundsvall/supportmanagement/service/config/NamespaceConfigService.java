@@ -27,6 +27,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -170,9 +171,26 @@ public class NamespaceConfigService {
 		final var replacement = mapper.toEntity(request, namespace, municipalityId)
 			.withId(entity.getId())
 			.withCreated(entity.getCreated());
+		preserveUnmanagedValues(replacement, entity);
 
 		validateNoDuplicateGrants(replacement);
 		configRepository.save(replacement);
+	}
+
+	/**
+	 * {@link NamespaceConfig} only models a fixed set of properties, so {@link NamespaceConfigMapper#toEntity} only ever
+	 * writes those. Any other key/value stored directly against the namespace - a feature flag not yet part of the API
+	 * model, say - would otherwise be silently dropped by a replace, since it builds a whole new value collection rather
+	 * than patching the existing one.
+	 */
+	private void preserveUnmanagedValues(NamespaceConfigEntity replacement, NamespaceConfigEntity existing) {
+		final var managedKeys = ofNullable(replacement.getValues()).orElse(emptyList()).stream()
+			.map(value -> value.getKey().toUpperCase())
+			.collect(toSet());
+
+		ofNullable(existing.getValues()).orElse(emptyList()).stream()
+			.filter(value -> !managedKeys.contains(value.getKey().toUpperCase()))
+			.forEach(replacement::withValue);
 	}
 
 	/**

@@ -904,6 +904,19 @@
         primary key (sort_order, subscription_id)
     ) engine=InnoDB;
 
+    create table telia_ace_work_item (
+        created datetime(3) not null,
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        errand_id varchar(36) not null,
+        id varchar(36) not null,
+        content_url varchar(255),
+        from_address varchar(255),
+        predefined_agent_name varchar(255),
+        subject varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
     create table time_measurement (
         id bigint not null auto_increment,
         start_time datetime(6),
@@ -1380,10 +1393,13 @@
     create index idx_subscription_errand_id 
        on subscription (errand_id);
 
-    create index idx_subscription_subscriber_target 
+    create index idx_subscription_subscriber_target
        on subscription (subscriber_id, target_type, errand_id);
 
-    alter table if exists `type` 
+    create index idx_telia_ace_work_item_errand_id
+       on telia_ace_work_item (errand_id);
+
+    alter table if exists `type`
        add constraint uq_category_id_name unique (category_id, name);
 
     create index idx_namespace_municipality_id_type 

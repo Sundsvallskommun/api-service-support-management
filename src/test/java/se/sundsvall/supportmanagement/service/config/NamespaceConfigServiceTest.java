@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.config;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +44,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandFi
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.TITLE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.COMMUNICATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.BOOLEAN;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
 
 @ExtendWith(MockitoExtension.class)
 class NamespaceConfigServiceTest {
@@ -127,6 +131,27 @@ class NamespaceConfigServiceTest {
 			.extracting("status").isEqualTo(NOT_FOUND);
 
 		verify(configRepositoryMock).findByNamespaceAndMunicipalityId(namespace, municipalityId);
+	}
+
+	@Test
+	void replacePreservesValuesNotModeledByNamespaceConfig() {
+		final var request = NamespaceConfig.create();
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var unmanagedValue = NamespaceConfigValueEmbeddable.create().withKey("TELIA_ACE_WORK_ITEM_ENABLED").withValue("true").withType(BOOLEAN);
+		final var managedValueOnExisting = NamespaceConfigValueEmbeddable.create().withKey("DISPLAY_NAME").withValue("Old name").withType(STRING);
+		final var entity = NamespaceConfigEntity.create().withValues(new ArrayList<>(List.of(unmanagedValue, managedValueOnExisting)));
+		final var managedValueOnReplacement = NamespaceConfigValueEmbeddable.create().withKey("DISPLAY_NAME").withValue("New name").withType(STRING);
+		final var replacementEntity = NamespaceConfigEntity.create().withValues(new ArrayList<>(List.of(managedValueOnReplacement)));
+
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId(any(), any())).thenReturn(Optional.of(entity));
+		when(mapperMock.toEntity(any(), any(), any())).thenReturn(replacementEntity);
+
+		configService.replace(request, namespace, municipalityId);
+
+		verify(configRepositoryMock).save(entityCaptor.capture());
+		assertThat(entityCaptor.getValue().getValues())
+			.containsExactlyInAnyOrder(managedValueOnReplacement, unmanagedValue);
 	}
 
 	@Test

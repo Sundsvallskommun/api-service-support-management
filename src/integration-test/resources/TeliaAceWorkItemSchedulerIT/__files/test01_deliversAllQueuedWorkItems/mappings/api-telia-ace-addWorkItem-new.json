@@ -1,0 +1,32 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Basic dGhlLXVzZXJuYW1lOnRoZS1wYXNzd29yZA=="
+			}
+		},
+		"method": "POST",
+		"urlPath": "/api-telia-ace/workitem",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"from": "anna.andersson@example.com",
+					"subject": "Nytt ärende i Draken",
+					"entrance": "Draken",
+					"errand": "w01",
+					"workitem": "Öppna ärendet i Draken",
+					"contentUrl": "https://draken.sundsvall.se/kontaktsundsvall/arende/KS-100001",
+					"customKeys": {}
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test01_deliversAllQueuedWorkItems/response/api-telia-ace-addWorkItem-new-response.json",
+		"status": 200
+	},
+	"name": "api-telia-ace-addWorkItem-new"
+}

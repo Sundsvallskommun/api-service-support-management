@@ -50,6 +50,12 @@ scheduler:
     cron: 0 0 * * * *
     shedlock-lock-at-most-for: PT4M
     maximum-execution-time: PT2M
+  telia-ace-work-item:
+    name: deliver_telia_ace_work_items
+    cron: 0 */2 * * * *
+    shedlock-lock-at-most-for: PT4M
+    maximum-execution-time: PT2M
+    max-age: P3D
 errand:
   # Settings for the retention purge. Documented in ErrandPurgeProperties, which is where the defaults live.
   purge:
@@ -98,6 +104,9 @@ integration:
   json-schema:
     connectTimeout: 5
     readTimeout: 30
+  telia-ace:
+    connect-timeout: 5
+    read-timeout: 30
 logbook:
   body-filters:
     jsonPath:
@@ -124,6 +133,8 @@ resilience4j:
       relation:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
       json-schema:
+        ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
+      telia-ace:
         ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
 
 spring:

@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
+import se.sundsvall.supportmanagement.service.TeliaAceWorkItemService;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
@@ -55,9 +56,11 @@ public class EmailReaderWorker {
 
 	private final EmailWorkerConfigRepository emailWorkerConfigRepository;
 
+	private final TeliaAceWorkItemService teliaAceWorkItemService;
+
 	public EmailReaderWorker(final EmailReaderClient emailReaderClient, final EventService eventService,
 		final ErrandsRepository errandRepository, final ErrandService errandService, final CommunicationService communicationService,
-		final EmailReaderMapper emailReaderMapper, final EmailWorkerConfigRepository emailWorkerConfigRepository) {
+		final EmailReaderMapper emailReaderMapper, final EmailWorkerConfigRepository emailWorkerConfigRepository, final TeliaAceWorkItemService teliaAceWorkItemService) {
 		this.emailReaderClient = emailReaderClient;
 		this.eventService = eventService;
 		this.errandRepository = errandRepository;
@@ -65,6 +68,7 @@ public class EmailReaderWorker {
 		this.communicationService = communicationService;
 		this.emailReaderMapper = emailReaderMapper;
 		this.emailWorkerConfigRepository = emailWorkerConfigRepository;
+		this.teliaAceWorkItemService = teliaAceWorkItemService;
 	}
 
 	public Set<EmailWorkerConfigEntity> getEnabledEmailConfigs() {
@@ -93,12 +97,19 @@ public class EmailReaderWorker {
 		}
 
 		final var errandNumber = parseSubject(email.getSubject());
+		final var existingErrand = Optional.ofNullable(errandNumber)
+			.flatMap(number -> errandRepository.findByErrandNumberAndNamespaceAndMunicipalityId(number, config.getNamespace(), config.getMunicipalityId()));
 
-		getErrand(errandNumber, email, config).ifPresent(errand -> {
+		getErrand(existingErrand, email, config).ifPresent(errand -> {
+			final var isNewErrand = existingErrand.isEmpty();
 			final var emailRequest = processErrand(errand, email, config);
 
+			// Telia ACE is notified only once the email is confirmed gone from EmailReader: while deleteEmail keeps
+			// failing, the same email is reprocessed on every poll, and queuing the work item before that point would
+			// queue a duplicate on every retry.
 			try {
 				emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
+				notifyTeliaAce(errand, email, isNewErrand);
 			} catch (final Exception e) {
 				LOG.warn("Failed to delete email {} from EmailReader for errand {}: {}", email.getId(), errand.getId(), e.getMessage());
 				setUnHealthyConsumer.accept("Failed to delete email from EmailReader — email will be re-processed and may cause duplicate communications");
@@ -120,10 +131,9 @@ public class EmailReaderWorker {
 		}
 	}
 
-	private Optional<ErrandEntity> getErrand(final String errandNumber, final Email email, final EmailWorkerConfigEntity config) {
+	private Optional<ErrandEntity> getErrand(final Optional<ErrandEntity> existingErrand, final Email email, final EmailWorkerConfigEntity config) {
 
-		return Optional.ofNullable(errandNumber)
-			.flatMap(number -> errandRepository.findByErrandNumberAndNamespaceAndMunicipalityId(number, config.getNamespace(), config.getMunicipalityId()))
+		return existingErrand
 			.or(() -> errandRepository
 				.findById(errandService.createErrand(
 					config.getNamespace(),
@@ -132,6 +142,23 @@ public class EmailReaderWorker {
 						email,
 						config),
 					null)));
+	}
+
+	/**
+	 * Notifies Telia ACE of a new or updated errand, so a case worker can be alerted and jump straight to it in Draken.
+	 * Best-effort: failure here must not stop email processing, nor is Telia ACE required to even be reachable right
+	 * now - delivery is queued and retried separately by {@code TeliaAceWorkItemScheduler}.
+	 */
+	private void notifyTeliaAce(final ErrandEntity errand, final Email email, final boolean isNewErrand) {
+		try {
+			if (isNewErrand) {
+				teliaAceWorkItemService.enqueueForNewErrand(errand, email);
+			} else {
+				teliaAceWorkItemService.enqueueForUpdatedErrand(errand, email);
+			}
+		} catch (final Exception e) {
+			LOG.warn("Failed to queue Telia ACE work item for errand {}: {}", errand.getId(), e.getMessage());
+		}
 	}
 
 	private EmailRequest processErrand(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {
