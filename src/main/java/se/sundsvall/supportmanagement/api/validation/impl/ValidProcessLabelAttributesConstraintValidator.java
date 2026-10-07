@@ -15,13 +15,14 @@ import se.sundsvall.supportmanagement.api.validation.ValidProcessLabelAttributes
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
 import se.sundsvall.supportmanagement.service.ProcessRules;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.hibernate.validator.internal.engine.messageinterpolation.util.InterpolationHelper.escapeMessageParameter;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
-import static se.sundsvall.supportmanagement.service.ProcessKeySelector.BLOCKED;
 import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_BLOCKED_ATTRIBUTE;
 import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_KEY_ATTRIBUTE;
 import static se.sundsvall.supportmanagement.service.ProcessKeySelector.PROCESS_START_MODE_ATTRIBUTE;
@@ -44,7 +45,7 @@ public class ValidProcessLabelAttributesConstraintValidator implements Constrain
 
 	private static final List<String> READ_ATTRIBUTES = List.of(PROCESS_KEY_ATTRIBUTE, PROCESS_START_MODE_ATTRIBUTE, PROCESS_BLOCKED_ATTRIBUTE);
 	private static final List<String> START_MODES = Arrays.stream(ProcessStartMode.values()).map(Enum::name).toList();
-	private static final List<String> BLOCKED_VALUES = List.of(BLOCKED, "false");
+	private static final List<String> BLOCKED_VALUES = List.of(TRUE.toString(), FALSE.toString());
 
 	/** Joins the resource names of a label and its ancestors into its path, as the resource path of a label is built. */
 	private static final String RESOURCE_PATH_SEPARATOR = "/";

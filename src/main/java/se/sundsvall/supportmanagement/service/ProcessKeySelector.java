@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
@@ -44,9 +45,6 @@ public class ProcessKeySelector {
 	public static final String PROCESS_KEY_ATTRIBUTE = "processKey";
 	public static final String PROCESS_START_MODE_ATTRIBUTE = "processStartMode";
 	public static final String PROCESS_BLOCKED_ATTRIBUTE = "processBlocked";
-
-	/** The value of {@link #PROCESS_BLOCKED_ATTRIBUTE} that blocks processes, matched exactly as spelled. */
-	public static final String BLOCKED = "true";
 
 	/** How much of a key is worth showing in a message that reports what is wrong with it. */
 	private static final int KEY_EXCERPT_LENGTH = 64;
@@ -111,7 +109,7 @@ public class ProcessKeySelector {
 	 */
 	public Set<String> blockingLabelIdsOf(final Collection<ErrandLabelEmbeddable> labels) {
 		return metadataLabelsOf(labels).stream()
-			.filter(label -> BLOCKED.equals(attribute(label, PROCESS_BLOCKED_ATTRIBUTE)))
+			.filter(label -> TRUE.toString().equals(attribute(label, PROCESS_BLOCKED_ATTRIBUTE)))
 			.map(MetadataLabelEntity::getId)
 			.collect(toSet());
 	}
