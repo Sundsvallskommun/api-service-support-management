@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -8,7 +10,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
-import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
@@ -19,6 +20,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.SMS;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationChannelDispatcherTest {
@@ -26,11 +30,19 @@ class NotificationChannelDispatcherTest {
 	private static final String ERRAND_ID = "errand-id";
 	private static final String ERRAND_NUMBER = "PRH-2022-000001";
 
-	private static final List<NotificationDispatchEntity> EVENTS = List.of(NotificationDispatchEntity.create()
-		.withId("dispatch-id")
+	private static final NotificationDispatchEntity ATTACHMENT_EVENT = NotificationDispatchEntity.create()
+		.withId("dispatch-id-1")
 		.withEventType("UPDATE")
 		.withDescription("Bilaga har skapats")
-		.withSubType("ATTACHMENT"));
+		.withSubType("ATTACHMENT");
+
+	private static final NotificationDispatchEntity MESSAGE_EVENT = NotificationDispatchEntity.create()
+		.withId("dispatch-id-2")
+		.withEventType("UPDATE")
+		.withDescription("Nytt meddelande")
+		.withSubType("MESSAGE");
+
+	private static final SubscriberEntity SUBSCRIBER = SubscriberEntity.create().withId("subscriber-id");
 
 	@Mock
 	private SubscriberNotificationService subscriberNotificationServiceMock;
@@ -41,38 +53,28 @@ class NotificationChannelDispatcherTest {
 	@InjectMocks
 	private NotificationChannelDispatcher dispatcher;
 
-	private static SubscriberEntity subscriberWith(final NotificationChannelType type) {
-		return subscriberWith(type, null);
-	}
-
-	private static SubscriberEntity subscriberWith(final NotificationChannelType type, final String destination) {
-		return SubscriberEntity.create()
-			.withId("subscriber-id")
-			.withChannels(List.of(NotificationChannelEmbeddable.create().withType(type).withDestination(destination)));
+	private static Map<NotificationChannelType, List<NotificationDispatchEntity>> deliveries(final NotificationChannelType type, final List<NotificationDispatchEntity> events) {
+		final var deliveries = new EnumMap<NotificationChannelType, List<NotificationDispatchEntity>>(NotificationChannelType.class);
+		deliveries.put(type, events);
+		return deliveries;
 	}
 
 	@Test
 	void sendInternalChannelCreatesNotification() {
 
-		// Arrange
-		final var subscriber = subscriberWith(NotificationChannelType.INTERNAL);
-
 		// Act
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, deliveries(INTERNAL, List.of(ATTACHMENT_EVENT)));
 
 		// Assert
-		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(ATTACHMENT_EVENT));
 		verifyNoInteractions(subscriberEmailServiceMock);
 	}
 
 	@Test
 	void sendSmsChannelIsSkippedUntilImplemented() {
 
-		// Arrange
-		final var subscriber = subscriberWith(NotificationChannelType.SMS);
-
 		// Act
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, deliveries(SMS, List.of(ATTACHMENT_EVENT)));
 
 		// Assert
 		verifyNoInteractions(subscriberNotificationServiceMock, subscriberEmailServiceMock);
@@ -81,61 +83,49 @@ class NotificationChannelDispatcherTest {
 	@Test
 	void sendEmailChannelEnqueuesOutboxEntry() {
 
-		// Arrange
-		final var subscriber = subscriberWith(NotificationChannelType.EMAIL, "test@example.com");
-
 		// Act
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, deliveries(EMAIL, List.of(ATTACHMENT_EVENT)));
 
 		// Assert
-		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(ATTACHMENT_EVENT));
 		verifyNoInteractions(subscriberNotificationServiceMock);
 	}
 
 	@Test
-	void sendEmailChannelWithoutDestinationEnqueuesOutboxEntry() {
+	void sendDeliversEachChannelItsOwnEvents() {
 
-		// Arrange
-		final var subscriber = subscriberWith(NotificationChannelType.EMAIL);
-
-		// Act
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
-
-		// Assert
-		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
-		verifyNoInteractions(subscriberNotificationServiceMock);
-	}
-
-	@Test
-	void sendDeliversOncePerChannelType() {
-
-		// Arrange — two channels of each type must not notify the subscriber twice
-		final var subscriber = SubscriberEntity.create()
-			.withId("subscriber-id")
-			.withChannels(List.of(
-				NotificationChannelEmbeddable.create().withType(NotificationChannelType.EMAIL).withDestination("first@example.com"),
-				NotificationChannelEmbeddable.create().withType(NotificationChannelType.INTERNAL),
-				NotificationChannelEmbeddable.create().withType(NotificationChannelType.EMAIL).withDestination("second@example.com"),
-				NotificationChannelEmbeddable.create().withType(NotificationChannelType.INTERNAL)));
+		// Arrange — email only carries the message, the internal notification carries both
+		final var deliveries = deliveries(EMAIL, List.of(MESSAGE_EVENT));
+		deliveries.put(INTERNAL, List.of(ATTACHMENT_EVENT, MESSAGE_EVENT));
 
 		// Act
-		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, deliveries);
 
 		// Assert
-		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
-		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS);
+		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(MESSAGE_EVENT));
+		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(ATTACHMENT_EVENT, MESSAGE_EVENT));
 		verifyNoMoreInteractions(subscriberEmailServiceMock, subscriberNotificationServiceMock);
+	}
+
+	@Test
+	void sendWithoutDeliveriesDoesNothing() {
+
+		// Act
+		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, Map.of());
+
+		// Assert
+		verifyNoInteractions(subscriberNotificationServiceMock, subscriberEmailServiceMock);
 	}
 
 	@Test
 	void sendPropagatesFailures() {
 
 		// Arrange — failures must reach the worker so the whole group rolls back instead of being partially delivered
-		final var subscriber = subscriberWith(NotificationChannelType.INTERNAL);
 		doThrow(new RuntimeException("boom")).when(subscriberNotificationServiceMock).create(any(), any(), any(), any());
+		final var deliveries = deliveries(INTERNAL, List.of(ATTACHMENT_EVENT));
 
 		// Act + Assert
-		assertThatThrownBy(() -> dispatcher.send(ERRAND_ID, ERRAND_NUMBER, subscriber, EVENTS))
+		assertThatThrownBy(() -> dispatcher.send(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, deliveries))
 			.isInstanceOf(RuntimeException.class)
 			.hasMessage("boom");
 	}

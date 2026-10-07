@@ -284,16 +284,19 @@ class SubscriberEmailServiceTest {
 	}
 
 	@Test
-	void sendPendingDiscardsEntriesWhenSubscriberNoLongerHasEmailChannel() {
+	void sendPendingResolvesEmailFromEmployeeWhenSubscriberHasNoEmailChannel() {
+		// Email routed by a subscription profile to a subscriber that only has an internal channel
 		final var subscriber = createSubscriber(NotificationChannelEmbeddable.create().withType(INTERNAL));
 		final var entries = List.of(createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats."));
-		when(outboxRepositoryMock.findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID)).thenReturn(entries);
+		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, "joe01doe")).thenReturn(new PortalPersonData().email("joe@example.com"));
+		mockSendPending(entries, namespaceConfig(false, null));
 
 		service.sendPending(SUBSCRIBER_ID);
 
-		// The employee directory is not consulted, so the subscriber's own address is not used either
-		verify(outboxRepositoryMock).findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID);
-		verify(outboxRepositoryMock).deleteAll(entries);
+		verify(employeeServiceMock).getEmployeeByLoginName(MUNICIPALITY_ID, "joe01doe");
+		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(true), emailRequestCaptor.capture());
+		assertThat(emailRequestCaptor.getValue().getRecipients()).containsExactly("joe@example.com");
+		verifySendPending(entries);
 	}
 
 	@Test
