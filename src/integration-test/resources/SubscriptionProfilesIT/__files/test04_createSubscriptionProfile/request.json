@@ -1,0 +1,17 @@
+{
+	"name": "Mejl om tilldelning och meddelanden",
+	"description": "Används av LEX-ansvariga och LEX-utredare",
+	"eventFilters": [
+		{
+			"type": "UPDATE",
+			"subtype": "ASSIGNMENT"
+		},
+		{
+			"type": "UPDATE",
+			"subtype": "MESSAGE"
+		}
+	],
+	"channels": [
+		"EMAIL"
+	]
+}

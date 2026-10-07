@@ -1,0 +1,21 @@
+{
+	"id": "ccddeeff-0000-0000-0000-000000000002",
+	"name": "Mejl om nya arenden",
+	"description": "Används av enhetschefer och verksamhetschefer",
+	"eventFilters": [
+		{
+			"type": "CREATE",
+			"subtype": "ERRAND"
+		},
+		{
+			"type": "UPDATE",
+			"subtype": "MESSAGE"
+		}
+	],
+	"channels": [
+		"EMAIL",
+		"INTERNAL"
+	],
+	"created": "${json-unit.any-string}",
+	"modified": "${json-unit.any-string}"
+}

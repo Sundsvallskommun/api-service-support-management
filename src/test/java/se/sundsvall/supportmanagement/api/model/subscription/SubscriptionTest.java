@@ -40,6 +40,7 @@ class SubscriptionTest {
 	void testBuilderMethods() {
 		final var id = "123e4567-e89b-12d3-a456-426614174000";
 		final var target = SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId("b82bd8ac-1507-4d9a-958d-369261eecc15");
+		final var profileId = "c3f1a1e2-4b5d-4e6f-8a9b-0c1d2e3f4a5b";
 		final var eventFilters = List.of(EventFilter.create().withType("UPDATE"));
 		final var expiresAt = now().plusDays(14);
 		final var created = now();
@@ -48,6 +49,7 @@ class SubscriptionTest {
 		final var subscription = Subscription.create()
 			.withId(id)
 			.withTarget(target)
+			.withProfileId(profileId)
 			.withEventFilters(eventFilters)
 			.withExpiresAt(expiresAt)
 			.withCreated(created)
@@ -55,6 +57,7 @@ class SubscriptionTest {
 
 		assertThat(subscription.getId()).isEqualTo(id);
 		assertThat(subscription.getTarget()).isEqualTo(target);
+		assertThat(subscription.getProfileId()).isEqualTo(profileId);
 		assertThat(subscription.getEventFilters()).isEqualTo(eventFilters);
 		assertThat(subscription.getExpiresAt()).isEqualTo(expiresAt);
 		assertThat(subscription.getCreated()).isEqualTo(created);
