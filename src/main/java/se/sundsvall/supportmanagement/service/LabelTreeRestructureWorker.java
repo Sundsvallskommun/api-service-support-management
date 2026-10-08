@@ -45,7 +45,7 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 	private static final String ABORTED_MESSAGE = "Label tree restructure aborted: %s";
 	private static final String ENDED_WITHOUT_RESULT = "Label tree restructure ended without reaching a result of its own";
 	private static final String STEP_FAILED = "Step %d (%s) failed: %s";
-	private static final String SUMMARY = "%d step(s) applied, %d errand(s) restowed";
+	private static final String SUMMARY = "%d step(s) applied, %s";
 	private static final String LABEL_GONE = "Label at path '%s' no longer exists";
 	private static final String PARENT_GONE = "Parent at path '%s' no longer exists";
 	private static final String HAS_CHILDREN = "Label at path '%s' still has children";
@@ -113,24 +113,24 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 	private void restructure(final LabelRestructureRun run) {
 		// A single-element holder rather than a local var, so applyStep's per-step progress-reporter lambdas can add to
 		// it without needing restructure's own stack frame to still be the one calling jobService.updateProgress.
-		final var totalRestowed = new int[] {
-			0
+		final var total = new RestowPager.Outcome[] {
+			RestowPager.Outcome.NONE
 		};
 
 		final var steps = run.steps();
 		for (var index = 0; index < steps.size(); index++) {
 			final var step = steps.get(index);
 			try {
-				applyStep(run, step, totalRestowed);
+				applyStep(run, step, total);
 			} catch (final Exception e) {
 				throw new IllegalStateException(STEP_FAILED.formatted(index, step.getType(), e.getMessage()), e);
 			}
 		}
 
-		jobService.complete(run.jobId(), SUMMARY.formatted(steps.size(), totalRestowed[0]));
+		jobService.complete(run.jobId(), SUMMARY.formatted(steps.size(), total[0].describe()));
 	}
 
-	private void applyStep(final LabelRestructureRun run, final LabelRestructureStep step, final int[] totalRestowed) {
+	private void applyStep(final LabelRestructureRun run, final LabelRestructureStep step, final RestowPager.Outcome[] total) {
 		final var namespace = run.namespace();
 		final var municipalityId = run.municipalityId();
 
@@ -139,14 +139,16 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 			case RENAME -> applyRename(namespace, municipalityId, step);
 			case DELETE -> applyDelete(namespace, municipalityId, step);
 			case MOVE -> {
-				final var before = totalRestowed[0];
-				final var restowed = applyMove(run.jobId(), namespace, municipalityId, step, run.startedBy(), run.startedByAdAccount(), processed -> jobService.updateProgress(run.jobId(), before + processed));
-				totalRestowed[0] = before + restowed;
+				final var before = total[0];
+				final var outcome = applyMove(run.jobId(), namespace, municipalityId, step, run.startedBy(), run.startedByAdAccount(),
+					processed -> jobService.updateProgress(run.jobId(), before.processed() + processed));
+				total[0] = before.plus(outcome);
 			}
 			case MERGE -> {
-				final var before = totalRestowed[0];
-				final var restowed = applyMerge(run.jobId(), namespace, municipalityId, step, run.startedBy(), run.startedByAdAccount(), processed -> jobService.updateProgress(run.jobId(), before + processed));
-				totalRestowed[0] = before + restowed;
+				final var before = total[0];
+				final var outcome = applyMerge(run.jobId(), namespace, municipalityId, step, run.startedBy(), run.startedByAdAccount(),
+					processed -> jobService.updateProgress(run.jobId(), before.processed() + processed));
+				total[0] = before.plus(outcome);
 			}
 		}
 	}
@@ -204,7 +206,7 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 		metadataLabelRepository.deleteById(entity.getId());
 	}
 
-	private int applyMove(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final boolean startedByAdAccount,
+	private RestowPager.Outcome applyMove(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final boolean startedByAdAccount,
 		final IntConsumer progressReporter) {
 		final var sourceId = findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(step.getPath()), LABEL_GONE).getId();
 
@@ -216,7 +218,7 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 		return labelMoveWorker.moveAndRestow(jobId, municipalityId, sourceId, destinationParentId, step.getNewResourceName(), step.getDisplayName(), startedBy, startedByAdAccount, progressReporter);
 	}
 
-	private int applyMerge(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final boolean startedByAdAccount,
+	private RestowPager.Outcome applyMerge(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final boolean startedByAdAccount,
 		final IntConsumer progressReporter) {
 		final var targetId = findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(step.getPath()), LABEL_GONE).getId();
 

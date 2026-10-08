@@ -98,6 +98,30 @@ class LabelMoveWorkerTest {
 	}
 
 	@Test
+	@DisplayName("Verification that an errand keeping its labels is counted apart from the errands restowed, in the summary of the job and in the audit event")
+	void run_errandKeepingItsLabels_isCountedApartFromTheErrandsRestowed() {
+		var movedId = "moved";
+		var moved = labelEntity(movedId, labelEntity("old-parent", null, "ROOT"), "ROOT/MOVED");
+		var errand = errandWithAccessLabels(movedId).withId("errand-1");
+		var pageable = PageRequest.ofSize(BATCH_SIZE);
+
+		when(metadataLabelRepositoryMock.findById(movedId)).thenReturn(Optional.of(moved));
+		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable)).thenReturn(List.of(errand));
+		when(errandServiceMock.persistLabelMigrationBatch(List.of(errand), true)).thenReturn(1);
+
+		worker().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, STARTED_BY, true));
+
+		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).findById(movedId);
+		verify(metadataLabelRepositoryMock).saveAndFlush(moved);
+		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable);
+		verify(errandServiceMock).persistLabelMigrationBatch(List.of(errand), true);
+		verify(jobServiceMock).updateProgress(JOB_ID, 1);
+		verify(eventServiceMock).createLabelMoveEvent(eq(MUNICIPALITY_ID), eq(movedId), eq(STARTED_BY), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels")));
+		verify(jobServiceMock).complete(eq(JOB_ID), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels")));
+	}
+
+	@Test
 	void run_moveToRoot_setsParentNullAndSkipsNewParentLookup() {
 		var movedId = "moved";
 		var moved = labelEntity(movedId, labelEntity("old-parent", null, "ROOT"), "ROOT/MOVED");
@@ -168,7 +192,7 @@ class LabelMoveWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(movedId, "", pageable))
 			.thenReturn(List.of(staleErrand), List.of(freshErrand));
 		doThrow(new ObjectOptimisticLockingFailureException(ErrandEntity.class, "errand-1"))
-			.doNothing()
+			.doReturn(0)
 			.when(errandServiceMock).persistLabelMigrationBatch(any(), eq(true));
 
 		worker().run(new LabelMoveRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, movedId, null, STARTED_BY, true));

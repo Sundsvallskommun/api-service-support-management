@@ -1023,7 +1023,7 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
-		service.persistLabelMigrationBatch(List.of(errand), true);
+		assertThat(service.persistLabelMigrationBatch(List.of(errand), true)).isZero();
 
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
@@ -1050,7 +1050,7 @@ class ErrandServiceTest {
 
 		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
 
-		service.persistLabelMigrationBatch(List.of(errand), true);
+		assertThat(service.persistLabelMigrationBatch(List.of(errand), true)).isOne();
 
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
@@ -1081,7 +1081,7 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
-		service.persistLabelMergeBatch(List.of(errand), Set.of("source-1", "source-2"), targetId, false);
+		assertThat(service.persistLabelMergeBatch(List.of(errand), Set.of("source-1", "source-2"), targetId, false)).isZero();
 
 		// Both source-1 and source-2 collapse into a single targetId entry, the untouched leaf is kept as-is
 		assertThat(errand.getLabels())
@@ -1095,6 +1095,32 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(errand);
 		verify(revisionServiceMock).createErrandRevision(errand);
 		verifyNoInteractions(errandActionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a merge batch counts an errand a guard refuses as one that kept its labels, and leaves it unsaved")
+	void persistLabelMergeBatch_countsAnErrandAGuardRefuses() {
+		var stale = ErrandLabelEmbeddable.create().withMetadataLabelId("source-1");
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withVersion(3L)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId("source-1")));
+		var stored = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L).withLabels(List.of(stale));
+
+		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
+		when(processKeyGuardMock.refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), any(), anyString())).thenReturn(true);
+
+		assertThat(service.persistLabelMergeBatch(List.of(errand), Set.of("source-1"), "target-id", false)).isOne();
+
+		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
+		verify(errandRepositoryMock).findById(ERRAND_ID);
+		verify(errandLabelServiceMock).settleAccessLabels(errand);
+		verify(processBlockGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), any(), eq(false), anyString());
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
 	@Test
@@ -1114,7 +1140,7 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(stored);
 		when(revisionServiceMock.createErrandRevision(stored)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
 
-		service.persistLabelUpdate(errand, List.of(leaf), true);
+		assertThat(service.persistLabelUpdate(errand, List.of(leaf), true)).isTrue();
 
 		final var inOrder = inOrder(errandRepositoryMock, errandLabelServiceMock, processBlockGuardMock, processKeyGuardMock, revisionServiceMock, eventServiceMock);
 		inOrder.verify(errandRepositoryMock).findById(ERRAND_ID);
@@ -1138,7 +1164,7 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
 		when(processKeyGuardMock.refusesLabelChange(eq(ERRAND_ID), eq(List.of(before)), eq(List.of(after)), anyString())).thenReturn(true);
 
-		service.persistLabelUpdate(errand, List.of(after), false);
+		assertThat(service.persistLabelUpdate(errand, List.of(after), false)).isFalse();
 
 		assertThat(stored.getLabels()).containsExactly(before);
 		verify(errandRepositoryMock).findById(ERRAND_ID);
@@ -1159,7 +1185,7 @@ class ErrandServiceTest {
 		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
 		when(processBlockGuardMock.refusesLabelChange(eq(ERRAND_ID), eq(List.of(before)), eq(List.of(after)), eq(true), anyString())).thenReturn(true);
 
-		service.persistLabelUpdate(errand, List.of(after), true);
+		assertThat(service.persistLabelUpdate(errand, List.of(after), true)).isFalse();
 
 		assertThat(stored.getLabels()).containsExactly(before);
 		verify(errandRepositoryMock).findById(ERRAND_ID);

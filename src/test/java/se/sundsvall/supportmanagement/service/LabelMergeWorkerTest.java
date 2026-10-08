@@ -120,6 +120,33 @@ class LabelMergeWorkerTest {
 	}
 
 	@Test
+	@DisplayName("Verification that an errand keeping its labels is counted apart from the errands restowed, in the summary of the job and in the audit event")
+	void run_errandKeepingItsLabels_isCountedApartFromTheErrandsRestowed() {
+		var sourceIds = Set.of("source-1");
+		var errand = errandWithAccessLabels("source-1").withId("errand-1");
+		var pageable = PageRequest.ofSize(BATCH_SIZE);
+
+		when(metadataLabelRepositoryMock.existsById(TARGET_ID)).thenReturn(true);
+		when(metadataLabelRepositoryMock.existsById("source-1")).thenReturn(true);
+		when(errandsRepositoryMock.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable)).thenReturn(List.of(errand));
+		when(errandServiceMock.persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true)).thenReturn(1);
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
+
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
+
+		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
+		verify(metadataLabelRepositoryMock).existsById("source-1");
+		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true);
+		verify(jobServiceMock).updateProgress(JOB_ID, 1);
+		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels")));
+		verify(jobServiceMock).complete(eq(JOB_ID), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels")));
+	}
+
+	@Test
 	@DisplayName("Verification that an action's hasLabel condition naming a source label is retargeted to the destination label rather than left pointing at a row about to be deleted")
 	void run_actionConditionReferencesSource_isRetargetedToDestination() {
 		var sourceIds = Set.of("source-1");
@@ -203,7 +230,7 @@ class LabelMergeWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable))
 			.thenReturn(List.of(staleErrand), List.of(freshErrand));
 		doThrow(new ObjectOptimisticLockingFailureException(ErrandEntity.class, "errand-1"))
-			.doNothing()
+			.doReturn(0)
 			.when(errandServiceMock).persistLabelMergeBatch(any(), eq(sourceIds), eq(TARGET_ID), eq(true));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 

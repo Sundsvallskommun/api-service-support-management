@@ -34,8 +34,8 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 
 	private static final String ABORTED_MESSAGE = "Label merge aborted: %s";
 	private static final String ENDED_WITHOUT_RESULT = "Label merge ended without reaching a result of its own";
-	private static final String SUMMARY = "Labels %s merged into %s, %d errand(s) restowed";
-	private static final String AUDIT_MESSAGE = "Labels %s merged into %s by %s, %d errand(s) restowed";
+	private static final String SUMMARY = "Labels %s merged into %s, %s";
+	private static final String AUDIT_MESSAGE = "Labels %s merged into %s by %s, %s";
 	private static final String LABEL_GONE = "Label %s no longer exists";
 	private static final String HAS_LABEL = "hasLabel";
 	private static final int MAX_BATCH_ATTEMPTS = 3;
@@ -108,10 +108,10 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	}
 
 	private void merge(final LabelMergeRun run) {
-		final var restowed = mergeAndRestow(run.jobId(), run.namespace(), run.municipalityId(), run.targetLabelId(), run.sourceLabelIds(), run.startedBy(), run.startedByAdAccount(),
+		final var outcome = mergeAndRestow(run.jobId(), run.namespace(), run.municipalityId(), run.targetLabelId(), run.sourceLabelIds(), run.startedBy(), run.startedByAdAccount(),
 			processed -> jobService.updateProgress(run.jobId(), processed));
 
-		jobService.complete(run.jobId(), SUMMARY.formatted(run.sourceLabelIds(), run.targetLabelId(), restowed));
+		jobService.complete(run.jobId(), SUMMARY.formatted(run.sourceLabelIds(), run.targetLabelId(), outcome.describe()));
 	}
 
 	/**
@@ -126,9 +126,9 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	 *
 	 * @param  startedByAdAccount whether the merge was asked for by an ad account, which holds the errands it restows to
 	 *                            the rule that an ad account may not take a label blocking processes off an errand.
-	 * @return                    number of errands restowed.
+	 * @return                    how many errands were restowed, and how many kept the labels they had.
 	 */
-	int mergeAndRestow(final String jobId, final String namespace, final String municipalityId, final String targetLabelId, final Set<String> sourceLabelIds, final String startedBy,
+	RestowPager.Outcome mergeAndRestow(final String jobId, final String namespace, final String municipalityId, final String targetLabelId, final Set<String> sourceLabelIds, final String startedBy,
 		final boolean startedByAdAccount,
 		final IntConsumer progressReporter) {
 		if (!metadataLabelRepository.existsById(targetLabelId)) {
@@ -140,7 +140,7 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 			}
 		});
 
-		final var restowed = restowErrands(jobId, targetLabelId, sourceLabelIds, startedByAdAccount, progressReporter);
+		final var outcome = restowErrands(jobId, targetLabelId, sourceLabelIds, startedByAdAccount, progressReporter);
 
 		// An action's hasLabel condition is a plain id reference, not a foreign key the DB enforces for us - left
 		// pointing at a source id once that row is gone below, a condition would silently stop matching anything
@@ -152,9 +152,9 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 		deleteSourceLabels(sourceLabelIds);
 
 		eventService.createLabelMergeEvent(municipalityId, targetLabelId, startedBy,
-			AUDIT_MESSAGE.formatted(sourceLabelIds, targetLabelId, startedBy, restowed));
+			AUDIT_MESSAGE.formatted(sourceLabelIds, targetLabelId, startedBy, outcome.describe()));
 
-		return restowed;
+		return outcome;
 	}
 
 	/**
@@ -210,7 +210,7 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	 * {@link RestowPager}, shared with {@link LabelMoveWorker}: a page at a time, read and persisted each in a
 	 * transaction of its own.
 	 */
-	private int restowErrands(final String jobId, final String targetLabelId, final Set<String> sourceLabelIds, final boolean startedByAdAccount, final IntConsumer progressReporter) {
+	private RestowPager.Outcome restowErrands(final String jobId, final String targetLabelId, final Set<String> sourceLabelIds, final boolean startedByAdAccount, final IntConsumer progressReporter) {
 		return restowPager.restow(
 			(lastSeenId, pageable) -> errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceLabelIds, lastSeenId, pageable),
 			page -> errandService.persistLabelMergeBatch(page, sourceLabelIds, targetLabelId, startedByAdAccount),

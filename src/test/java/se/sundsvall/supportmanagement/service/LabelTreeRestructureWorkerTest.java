@@ -101,12 +101,12 @@ class LabelTreeRestructureWorkerTest {
 		when(labelMoveWorkerMock.moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("move-id"), eq("dest-parent-id"), isNull(), isNull(), eq(STARTED_BY), eq(true), any()))
 			.thenAnswer(invocation -> {
 				((IntConsumer) invocation.getArgument(8)).accept(3);
-				return 3;
+				return new RestowPager.Outcome(3, 0);
 			});
 		when(labelMergeWorkerMock.mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), eq(true), any()))
 			.thenAnswer(invocation -> {
 				((IntConsumer) invocation.getArgument(7)).accept(2);
-				return 2;
+				return new RestowPager.Outcome(1, 1);
 			});
 
 		final var steps = List.of(
@@ -144,7 +144,8 @@ class LabelTreeRestructureWorkerTest {
 		// Cumulative across both restow-reporting steps (3 from the move, then +2 from the merge), onto the one composite job.
 		verify(jobServiceMock).updateProgress(JOB_ID, 5);
 
-		verify(jobServiceMock).complete(eq(JOB_ID), argThat(message -> message.contains("5 step(s) applied") && message.contains("5 errand(s) restowed")));
+		// The errand the merge left with its labels is counted apart from the four restowed.
+		verify(jobServiceMock).complete(JOB_ID, "5 step(s) applied, 4 errand(s) restowed, 1 kept their labels");
 	}
 
 	@Test
