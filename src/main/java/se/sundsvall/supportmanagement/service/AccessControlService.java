@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -46,7 +46,7 @@ import static se.sundsvall.supportmanagement.service.access.NamespaceGrantResolv
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
-@Component
+@Service
 public class AccessControlService {
 
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";

@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.util;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ErrandNumberSequenceRepository;
@@ -14,7 +14,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
-@Component
+@Service
 public class ErrandNumberGeneratorService {
 
 	private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyMM");

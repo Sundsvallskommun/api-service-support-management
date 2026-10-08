@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.accessmapper.AccessMapperClient;
@@ -28,7 +28,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
-@Component
+@Service
 public class AccessMapperService {
 
 	private static final String LABEL_TYPE = "label";
