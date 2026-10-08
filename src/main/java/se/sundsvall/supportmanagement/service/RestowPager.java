@@ -67,6 +67,10 @@ final class RestowPager {
 	 * already-detached page would just fail the same way again, so each attempt re-reads rather than retrying the same
 	 * instances; an errand a concurrent edit has since unlabelled naturally drops out of the requery instead of being
 	 * retried at all.
+	 * <p>
+	 * A retried page is persisted from its first errand again, and only the database work of the failed attempt is rolled
+	 * back. The update event a relabelled errand writes to the event log is sent when the errand is persisted, so the
+	 * errands persisted before the conflict have the event written once more for every attempt.
 	 */
 	private PersistedPage fetchAndPersistPage(final PageFetcher fetcher, final PagePersister persister, final IntFunction<String> retryMessage, final String lastSeenId) {
 		final var pageable = PageRequest.ofSize(batchSize);
