@@ -34,9 +34,7 @@ import static se.sundsvall.supportmanagement.integration.messageexchange.configu
 @CircuitBreaker(name = CLIENT_ID)
 public interface MessageExchangeClient {
 
-	/******************
-	 * CONVERSATIONS
-	 ******************/
+	// CONVERSATIONS
 
 	/**
 	 * Create a conversation.
@@ -99,9 +97,7 @@ public interface MessageExchangeClient {
 		@PathVariable("conversationId") String conversationId,
 		@RequestBody Conversation conversation);
 
-	/******************
-	 * MESSAGES
-	 ******************/
+	// MESSAGES
 
 	/**
 	 * Create message with attachments.
