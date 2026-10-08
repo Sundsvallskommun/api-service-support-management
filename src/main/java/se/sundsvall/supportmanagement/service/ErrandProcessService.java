@@ -167,7 +167,7 @@ public class ErrandProcessService {
 			verifyBelongsToErrand(existing, errandId);
 			verifySameProcessKey(existing, report);
 
-			LOG.info("Report of {} on the {} process instance '{}' of errand '{}' leaves the instance as it is", report.getProcessStatus(), existing.getProcessStatus(), sanitizeForLogging(processInstanceId),
+			LOG.info("Report of {} on the {} process instance '{}' of errand '{}' leaves the instance as it is", sanitizeForLogging(report.getProcessStatus()), existing.getProcessStatus(), sanitizeForLogging(processInstanceId),
 				sanitizeForLogging(errandId));
 			storeActivities(existing, errandId, report);
 			return new ErrandProcessResult(toErrandProcess(existing, emptyList()), false);
