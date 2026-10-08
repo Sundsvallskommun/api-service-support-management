@@ -353,8 +353,8 @@ class ErrandPurgeIT extends AbstractAppTest {
 
 	/**
 	 * In a namespace running a process, the process is told of every errand a run removes, so that no instance is left
-	 * running for an errand that is gone. The deletion carries no process key, since the process consumer finds the
-	 * instance by the errand.
+	 * running for an errand that is gone. The errand has no process, so the deletion carries no process key: the process
+	 * consumer finds an instance by the errand all the same.
 	 */
 	@Test
 	@DisplayName("Verification that a run in a namespace running a process publishes a deletion for every errand it removes")
@@ -399,6 +399,34 @@ class ErrandPurgeIT extends AbstractAppTest {
 		assertThat(ended.getMessage()).isEqualTo("Removed 1 of 1 errands reached, 0 could not be removed");
 		assertThat(errandsRepository.existsById(FIRST_ERRAND_REACHED)).isFalse();
 		assertThat(outboxRepository.findAll()).isEmpty();
+		verifyStubs();
+	}
+
+	/**
+	 * The errand the run reaches has a process, and the deletion names it: the process is published before the removal
+	 * reaches the database, which then takes the process rows with the errand.
+	 */
+	@Test
+	@DisplayName("Verification that a run in a namespace running a process publishes the deletion of an errand with a process with the key of that process")
+	@Sql({
+		"/db/scripts/testdata-it-purge-process.sql", "/db/scripts/testdata-it-purge-process-instance.sql"
+	})
+	void test12_aPurgeOfAnErrandWithAProcessNamesItsProcess() throws Exception {
+		final var job = startPurge(PATH);
+
+		final var ended = awaitEndOf(job.getJobId());
+
+		assertThat(ended.getStatus()).isEqualTo(COMPLETED);
+		assertThat(ended.getMessage()).isEqualTo("Removed 1 of 1 errands reached, 0 could not be removed");
+		assertThat(outboxRepository.findAll())
+			.singleElement()
+			.satisfies(row -> {
+				assertThat(row.getErrandId()).isEqualTo(FIRST_ERRAND_REACHED);
+				assertThat(row.getProcessKey()).isEqualTo("alkt-ansokan");
+				assertThat(row.getEventType()).isEqualTo("DELETE");
+				assertThat(row.isStartAllowed()).isFalse();
+			});
+		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM errand_process WHERE errand_id = ?", Integer.class, FIRST_ERRAND_REACHED)).isZero();
 		verifyStubs();
 	}
 
