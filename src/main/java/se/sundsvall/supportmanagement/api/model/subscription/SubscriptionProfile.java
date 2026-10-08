@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -29,7 +30,9 @@ public class SubscriptionProfile {
 	@Schema(description = "Unique identifier of the subscription profile", examples = "123e4567-e89b-12d3-a456-426614174000", accessMode = READ_ONLY)
 	private String id;
 
+	// An update may leave out what it does not change, but may not blank or empty what it does
 	@NotBlank(groups = OnCreate.class)
+	@Pattern(regexp = ".*\\S.*", message = "must not be blank", groups = OnUpdate.class)
 	@Size(max = 255)
 	@Schema(description = "Name of the profile, unique within the namespace", examples = "Mejl om nya ärenden och meddelanden")
 	private String name;
@@ -39,11 +42,13 @@ public class SubscriptionProfile {
 	private String description;
 
 	@NotEmpty(groups = OnCreate.class)
+	@Size(min = 1, message = "must not be empty", groups = OnUpdate.class)
 	@Valid
 	@Schema(description = "Event filters selecting which events the profile delivers. An event matching any of them is delivered.")
 	private List<@NotNull EventFilter> eventFilters;
 
 	@NotEmpty(groups = OnCreate.class)
+	@Size(min = 1, message = "must not be empty", groups = OnUpdate.class)
 	@Schema(description = "Channels the events matched by the profile are delivered on")
 	private List<@NotNull NotificationChannelType> channels;
 
