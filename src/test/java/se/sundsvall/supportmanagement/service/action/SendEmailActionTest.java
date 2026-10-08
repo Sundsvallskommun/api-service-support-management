@@ -483,6 +483,26 @@ class SendEmailActionTest {
 	}
 
 	@Test
+	void executeActionWithAPercentSignInTheSubject() {
+		var errand = ErrandEntity.create()
+			.withErrandNumber(ERRAND_NUMBER);
+
+		var config = ActionConfigEntity.create();
+		config.setConditions(new ArrayList<>());
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of(RECIPIENT_ADDRESS)),
+			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of(SENDER_ADDRESS)),
+			ActionConfigParameterEntity.create().withKey("subject").withValues(List.of("50% done %s")),
+			ActionConfigParameterEntity.create().withKey("body").withValues(List.of(EMAIL_BODY)),
+			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("false")))));
+
+		sendEmailAction.executeAction(errand, config);
+
+		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
+		assertThat(emailRequestCaptor.getValue().getSubject()).isEqualTo("50% done %s - " + ERRAND_NUMBER);
+	}
+
+	@Test
 	void executeActionWithAddLinkToErrandInBody() {
 		var errand = ErrandEntity.create()
 			.withId(ERRAND_ID)

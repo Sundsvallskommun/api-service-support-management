@@ -157,7 +157,7 @@ public class SendEmailAction extends AbstractAction {
 
 		var recipient = parameterMap.get(RECIPIENT).getFirst();
 		var sender = parameterMap.get(SENDER).getFirst();
-		var subject = String.format(Optional.ofNullable(parameterMap.get(SUBJECT).getFirst()).orElse("").concat(" - %s"), errand.getErrandNumber());
+		var subject = Optional.ofNullable(parameterMap.get(SUBJECT).getFirst()).orElse("") + " - " + errand.getErrandNumber();
 		var addLink = Boolean.parseBoolean(parameterMap.get(ADD_LINK_TO_ERRAND_IN_BODY).getFirst());
 
 		var htmlBody = parameterMap.get(BODY).getFirst();
