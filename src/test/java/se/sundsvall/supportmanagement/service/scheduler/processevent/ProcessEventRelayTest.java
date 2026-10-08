@@ -443,6 +443,40 @@ class ProcessEventRelayTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a row carrying a start for an errand that no longer exists is acknowledged without being sent, while the deletion of the errand is sent")
+	void aStartForAnErrandThatIsGoneIsAcknowledgedWithoutBeingSent() {
+		final var deletion = row("row-1", ERRAND_ID, NOW.minusMinutes(2), "DELETE");
+		final var start = row("row-2", ERRAND_ID, NOW.minusMinutes(1)).withStartAllowed(true);
+		givenWaitingFor(ERRAND_ID, deletion, start);
+		givenLocked(List.of("row-1", "row-2"), deletion, start);
+		givenAccepted();
+
+		relay.relayErrand(ERRAND_ID);
+
+		verify(errandsRepositoryMock).existsById(ERRAND_ID);
+		verify(pwAlktIntegrationMock).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getEventId()).isEqualTo("row-1");
+		assertThat(List.of(deletion, start)).extracting(ProcessEventOutboxEntity::getDeliveredAt).containsOnly(NOW_IN_MILLIS);
+		verifyNoInteractions(processRepositoryMock, activityRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a row carrying a start for an errand that exists is sent")
+	void aStartForAnErrandThatExistsIsSent() {
+		final var start = row("row-1", ERRAND_ID, NOW.minusMinutes(1)).withStartAllowed(true);
+		givenWaitingFor(ERRAND_ID, start);
+		givenLocked(List.of("row-1"), start);
+		givenAccepted();
+		when(errandsRepositoryMock.existsById(ERRAND_ID)).thenReturn(true);
+
+		relay.relayErrand(ERRAND_ID);
+
+		verify(pwAlktIntegrationMock).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getEventId()).isEqualTo("row-1");
+		assertThat(start.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
+	}
+
+	@Test
 	@DisplayName("Verification that a refusal is recorded once every call in the group has been made, so that the lock on the errand is not held across calls")
 	void aRefusalIsRecordedAfterTheCalls() {
 		final var refused = row("row-1", ERRAND_ID, NOW.minusMinutes(2));

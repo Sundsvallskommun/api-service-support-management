@@ -254,6 +254,10 @@ public class ProcessEventRelay {
 	 * A row pw-alkt refuses for good is acknowledged as well. The refusals are recorded once every call in the group has
 	 * been made, so the lock that recording takes on the errand is not held across calls to pw-alkt.
 	 * <p>
+	 * A row carrying a start for an errand that no longer exists is acknowledged without being sent, since a process
+	 * started for it would have no errand to work on. Such a row is left by a write committed after the removal of the
+	 * errand, which a direct run, not waiting for the transaction buffer, may already have delivered.
+	 * <p>
 	 * The first row that does not go through, whether pw-alkt could not be reached or the row could not be made into an
 	 * event, ends the group. The rows before it are acknowledged when the transaction is committed, and the failure is
 	 * handed back once it has been. A failure to record a refusal rolls the whole group back, as a failed commit does.
@@ -271,7 +275,10 @@ public class ProcessEventRelay {
 			for (final var row : oldestFirst(outboxRepository.findByIdInAndDeliveredAtIsNull(rowIds))) {
 				tried++;
 				try {
-					if (!pwAlktIntegration.sendErrandEvent(row.getMunicipalityId(), row.getNamespace(), toErrandEvent(row))) {
+					if (isStartForAnErrandGone(row)) {
+						LOG.info("Process event {} for errand {} is acknowledged without being sent, since it would start a process for an errand that no longer exists",
+							row.getId(), row.getErrandId());
+					} else if (!pwAlktIntegration.sendErrandEvent(row.getMunicipalityId(), row.getNamespace(), toErrandEvent(row))) {
 						refused.add(row);
 					}
 				} catch (final RuntimeException e) {
@@ -284,6 +291,13 @@ public class ProcessEventRelay {
 			refused.forEach(this::recordRejection);
 			return new GroupDelivery(tried, failure);
 		});
+	}
+
+	/**
+	 * Whether the row would start a process for an errand removed since the row was written.
+	 */
+	private boolean isStartForAnErrandGone(final ProcessEventOutboxEntity row) {
+		return row.isStartAllowed() && !errandsRepository.existsById(row.getErrandId());
 	}
 
 	private void dropAllAgedOut() {

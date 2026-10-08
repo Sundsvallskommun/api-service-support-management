@@ -422,7 +422,9 @@ sparas. Krockar de ändå — direktkörning och cronjobb på samma rad — är 
 `@Lock(PESSIMISTIC_WRITE)` och tar bara rader utan `delivered_at`, så den som kommer sist väntar in den första och
 hittar sedan ingenting att göra. Samma lås är det som håller ordningen inom ett ärende, bland de rader som hunnit sparas:
 direktkörningen väntar inte ut `transaction-buffer`, så en rad från en längre transaktion kan levereras efter en
-senare. Det är ofarligt, eftersom händelsen inte bär någon ärendedata och pw läser ärendet självt (§5.4). Att vänta är avsiktligt:
+senare. Det är ofarligt, eftersom händelsen inte bär någon ärendedata och pw läser ärendet självt (§5.4). Undantaget är
+en rad med startlov som sparas efter att ärendet raderats: levererad efter raderingen hade den startat en process för ett
+ärende som inte finns. En rad med startlov för ett ärende som inte längre finns kvitteras därför utan att skickas. Att vänta är avsiktligt:
 `SKIP LOCKED` hade släppt förbi en senare rad medan en tidigare fortfarande levereras.
 
 **Låset tas på id, i läsnivån `READ COMMITTED`, och raderna sorteras i Java.** Under MariaDB:s `REPEATABLE READ`
