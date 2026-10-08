@@ -434,7 +434,7 @@ class SubscriberServiceTest {
 	}
 
 	@Test
-	void findOrCreateSubscriberForAssigneeWhenSubscriberExists() {
+	void findOrCreateSubscriberForAdAccountWhenSubscriberExists() {
 		final var assignedUserId = "joe01doe";
 		final var existing = SubscriberEntity.create().withId(randomUUID().toString())
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -443,7 +443,7 @@ class SubscriberServiceTest {
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId)).thenReturn(List.of(existing));
 
-		final var result = service.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId);
+		final var result = service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "adAccount", assignedUserId);
 
 		assertThat(result).isSameAs(existing);
 		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
@@ -454,14 +454,14 @@ class SubscriberServiceTest {
 	}
 
 	@Test
-	void findOrCreateSubscriberForAssigneeWhenSubscriberDoesNotExist() {
+	void findOrCreateSubscriberForAdAccountWhenSubscriberDoesNotExist() {
 		final var assignedUserId = "joe01doe";
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId)).thenReturn(List.of());
 		when(subscriberRepositoryMock.save(any(SubscriberEntity.class)))
 			.thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(randomUUID().toString()));
 
-		service.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId);
+		service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "adAccount", assignedUserId);
 
 		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId);

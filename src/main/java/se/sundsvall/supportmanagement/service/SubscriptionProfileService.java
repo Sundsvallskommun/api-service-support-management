@@ -41,11 +41,19 @@ public class SubscriptionProfileService {
 
 	@Transactional(readOnly = true)
 	public SubscriptionProfile findSubscriptionProfile(final String municipalityId, final String namespace, final String profileId) {
-		return toSubscriptionProfile(findEntity(municipalityId, namespace, profileId));
+		return toSubscriptionProfile(loadEntity(municipalityId, namespace, profileId));
 	}
 
 	@Transactional(readOnly = true)
 	public SubscriptionProfileEntity findEntity(final String municipalityId, final String namespace, final String profileId) {
+		return loadEntity(municipalityId, namespace, profileId);
+	}
+
+	/**
+	 * Shared by the transactional methods of this service, which call it rather than {@link #findEntity} so that each
+	 * runs in the transaction it declares itself.
+	 */
+	private SubscriptionProfileEntity loadEntity(final String municipalityId, final String namespace, final String profileId) {
 		return subscriptionProfileRepository.findByIdAndNamespaceAndMunicipalityId(profileId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, PROFILE_NOT_FOUND.formatted(profileId, namespace, municipalityId)));
 	}
@@ -60,7 +68,7 @@ public class SubscriptionProfileService {
 
 	@Transactional
 	public SubscriptionProfile updateSubscriptionProfile(final String municipalityId, final String namespace, final String profileId, final SubscriptionProfile patch) {
-		final var entity = findEntity(municipalityId, namespace, profileId);
+		final var entity = loadEntity(municipalityId, namespace, profileId);
 		updateEntity(entity, patch);
 		return toSubscriptionProfile(persistOrThrowConflict(entity));
 	}
@@ -71,7 +79,7 @@ public class SubscriptionProfileService {
 	 */
 	@Transactional
 	public void deleteSubscriptionProfile(final String municipalityId, final String namespace, final String profileId) {
-		final var entity = findEntity(municipalityId, namespace, profileId);
+		final var entity = loadEntity(municipalityId, namespace, profileId);
 		// Reporters would quietly stop being subscribed, so the namespace has to be pointed elsewhere first
 		if (namespaceConfigService.isReporterProfile(namespace, municipalityId, profileId)) {
 			throw Problem.valueOf(CONFLICT, PROFILE_IS_REPORTER_PROFILE.formatted(profileId, namespace, municipalityId));

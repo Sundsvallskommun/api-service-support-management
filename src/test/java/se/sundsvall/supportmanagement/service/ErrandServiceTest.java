@@ -60,6 +60,7 @@ import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumb
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.access.ErrandKeyAccess;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -77,8 +78,8 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
@@ -213,7 +214,7 @@ class ErrandServiceTest {
 		inOrder.verify(attachmentSequenceNumberGeneratorMock).startSequence(persisted);
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND), eq(Set.of()));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 		verifyNoInteractions(relationClientMock);
 	}
 
@@ -256,7 +257,7 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class),
-			eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND), eq(Set.of()));
+			eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 		verify(relationClientMock).createRelation(MUNICIPALITY_ID, relation);
 	}
 
@@ -270,7 +271,7 @@ class ErrandServiceTest {
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
-		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), anyBoolean(), any(), anySet());
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(RevisionResult.class), any(), any(ErrandEventOptions.class));
 
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null);
 
@@ -280,7 +281,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND), eq(Set.of()));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 	}
 
 	@Test
@@ -303,7 +304,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND), eq(Set.of()));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 		verify(relationClientMock).createRelation(any(), any());
 	}
 
@@ -453,7 +454,7 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND, Set.of());
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 	}
 
 	@Test
@@ -475,7 +476,7 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(persisted);
 		// Every label of a new errand counts as added, and an assigned new errand is logged as assigned
-		verify(eventServiceMock).createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persisted, currentRevisionMock, null, false, ERRAND, Set.of(LABEL_ID_1, LABEL_ID_2));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), eq(persisted), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of(LABEL_ID_1, LABEL_ID_2)));
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, persisted, currentRevisionMock, null, false, ASSIGNMENT);
 	}
 
@@ -502,7 +503,7 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		// Only the label the patch added is passed on, and the new assignee makes an assignment event
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND, Set.of(LABEL_ID_2));
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of(LABEL_ID_2)));
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
 	}
 
@@ -524,7 +525,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND, Set.of());
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 	}
 
 	@Test
@@ -545,7 +546,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND, Set.of());
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 	}
 
 	@Test
@@ -566,7 +567,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(persisted);
-		verify(eventServiceMock).createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, persisted, currentRevisionMock, null, false, ERRAND, Set.of());
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), eq(persisted), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, persisted, currentRevisionMock, null, false, ASSIGNMENT);
 	}
 
@@ -594,7 +595,7 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
-		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), anyBoolean(), any(), anySet());
+		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(RevisionResult.class), any(), any(ErrandEventOptions.class));
 	}
 
 	@Test
@@ -618,7 +619,7 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.CREATE);
 		// A draft notified no one, so its assignee is told of on being made active as on a new errand
-		verify(eventServiceMock).createErrandEvent(UPDATE, "Ärendet har aktiverats.", entity, currentRevisionMock, previousRevisionMock, true, ERRAND, Set.of());
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har aktiverats."), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
 	}
 
@@ -641,7 +642,7 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND, Set.of());
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 	}
 
 	@Test
@@ -738,7 +739,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND), eq(Set.of()));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 	}
 
 	@Test
@@ -1361,6 +1362,14 @@ class ErrandServiceTest {
 	// measureValidatorMock is deliberately left out - create and update consult it unconditionally, so every test would
 	// have to verify it. That it is consulted on both paths is asserted by createErrandWithInvalidMeasureType and
 	// updateErrandWithInvalidMeasureType, and what it accepts is MeasureValidatorTest's business.
+	/**
+	 * Matches the options of an errand event by what the errand service decides itself, leaving out the user who acted,
+	 * which is whoever the test runs as.
+	 */
+	private static ErrandEventOptions options(final boolean sendNotification, final Set<String> addedLabelIds) {
+		return argThat(options -> options.sendNotification() == sendNotification && addedLabelIds.equals(options.addedLabelIds()));
+	}
+
 	@AfterEach
 	void tearDown() {
 		Identifier.remove();

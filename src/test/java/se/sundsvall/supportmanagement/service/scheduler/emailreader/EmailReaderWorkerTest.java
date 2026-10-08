@@ -26,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
@@ -243,7 +244,7 @@ class EmailReaderWorkerTest {
 
 		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
-		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), any());
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), any(EventSubType.class));
 
 		assertThatNoException().isThrownBy(() -> emailReaderWorker.processEmail(email, emailConfig, consumerMock));
 
