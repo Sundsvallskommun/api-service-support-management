@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,12 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
-import se.sundsvall.supportmanagement.integration.db.SubscriptionOptOutRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionOptOutEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +47,7 @@ class SubscriptionProfileMemberServiceTest {
 	private SubscriptionRepository subscriptionRepositoryMock;
 
 	@Mock
-	private SubscriptionOptOutRepository subscriptionOptOutRepositoryMock;
+	private SubscriptionOptOutService subscriptionOptOutServiceMock;
 
 	@InjectMocks
 	private SubscriptionProfileMemberService service;
@@ -66,7 +65,7 @@ class SubscriptionProfileMemberServiceTest {
 	@AfterEach
 	void verifyNoMore() {
 		se.sundsvall.dept44.support.Identifier.remove();
-		verifyNoMoreInteractions(subscriptionProfileServiceMock, subscriberServiceMock, subscriptionRepositoryMock, subscriptionOptOutRepositoryMock);
+		verifyNoMoreInteractions(subscriptionProfileServiceMock, subscriberServiceMock, subscriptionRepositoryMock, subscriptionOptOutServiceMock);
 	}
 
 	private static SubscriberEntity subscriber(final String id, final String value) {
@@ -114,7 +113,7 @@ class SubscriptionProfileMemberServiceTest {
 
 		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID)).thenReturn(PROFILE);
 		when(subscriptionRepositoryMock.findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE)).thenReturn(List.of(membership(kept), droppedMembership));
-		when(subscriptionOptOutRepositoryMock.findAllByProfileId(PROFILE_ID)).thenReturn(List.of());
+		when(subscriptionOptOutServiceMock.findOptedOutKeys(PROFILE_ID)).thenReturn(Set.of());
 		when(subscriberServiceMock.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE_NAME, AD_ACCOUNT, "cecil03")).thenReturn(added);
 
 		// The kept member is given in other casing, which still matches
@@ -122,7 +121,7 @@ class SubscriptionProfileMemberServiceTest {
 
 		verify(subscriptionProfileServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID);
 		verify(subscriptionRepositoryMock).findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE);
-		verify(subscriptionOptOutRepositoryMock).findAllByProfileId(PROFILE_ID);
+		verify(subscriptionOptOutServiceMock).findOptedOutKeys(PROFILE_ID);
 		verify(subscriptionRepositoryMock).delete(droppedMembership);
 		verify(subscriberServiceMock).findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE_NAME, AD_ACCOUNT, "cecil03");
 		verify(subscriptionRepositoryMock).save(subscriptionCaptor.capture());
@@ -135,20 +134,35 @@ class SubscriptionProfileMemberServiceTest {
 
 	@Test
 	void syncMembersSkipsThoseWhoOptedOut() {
-		final var optedOut = subscriber("s1", "anna01");
-
+		// Anna left the profile, possibly with a subscriber she has since deleted; none is created or subscribed for her
 		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID)).thenReturn(PROFILE);
 		when(subscriptionRepositoryMock.findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE)).thenReturn(List.of());
-		when(subscriptionOptOutRepositoryMock.findAllByProfileId(PROFILE_ID))
-			.thenReturn(List.of(SubscriptionOptOutEntity.create().withSubscriber(optedOut).withProfile(PROFILE)));
-		when(subscriberServiceMock.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE_NAME, AD_ACCOUNT, "anna01")).thenReturn(optedOut);
+		when(subscriptionOptOutServiceMock.findOptedOutKeys(PROFILE_ID)).thenReturn(Set.of(SubscriptionOptOutService.keyOf(AD_ACCOUNT, "anna01")));
 
-		service.syncMembers(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID, List.of(member("anna01")));
+		service.syncMembers(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID, List.of(member("Anna01")));
 
 		verify(subscriptionProfileServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID);
 		verify(subscriptionRepositoryMock).findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE);
-		verify(subscriptionOptOutRepositoryMock).findAllByProfileId(PROFILE_ID);
-		verify(subscriberServiceMock).findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE_NAME, AD_ACCOUNT, "anna01");
+		verify(subscriptionOptOutServiceMock).findOptedOutKeys(PROFILE_ID);
+	}
+
+	@Test
+	void syncMembersRemovesEveryMembershipOfADroppedPrincipal() {
+		// joe holds the profile on two of his subscribers; dropping him from the list removes both
+		final var first = membership(subscriber("s1", "joe01doe"));
+		final var second = membership(subscriber("s2", "JOE01DOE"));
+
+		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID)).thenReturn(PROFILE);
+		when(subscriptionRepositoryMock.findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE)).thenReturn(List.of(first, second));
+		when(subscriptionOptOutServiceMock.findOptedOutKeys(PROFILE_ID)).thenReturn(Set.of());
+
+		service.syncMembers(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID, List.of());
+
+		verify(subscriptionProfileServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID);
+		verify(subscriptionRepositoryMock).findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE);
+		verify(subscriptionOptOutServiceMock).findOptedOutKeys(PROFILE_ID);
+		verify(subscriptionRepositoryMock).delete(first);
+		verify(subscriptionRepositoryMock).delete(second);
 	}
 
 	@Test
@@ -157,13 +171,13 @@ class SubscriptionProfileMemberServiceTest {
 
 		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID)).thenReturn(PROFILE);
 		when(subscriptionRepositoryMock.findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE)).thenReturn(List.of(membership));
-		when(subscriptionOptOutRepositoryMock.findAllByProfileId(PROFILE_ID)).thenReturn(List.of());
+		when(subscriptionOptOutServiceMock.findOptedOutKeys(PROFILE_ID)).thenReturn(Set.of());
 
 		service.syncMembers(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID, List.of());
 
 		verify(subscriptionProfileServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID);
 		verify(subscriptionRepositoryMock).findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE);
-		verify(subscriptionOptOutRepositoryMock).findAllByProfileId(PROFILE_ID);
+		verify(subscriptionOptOutServiceMock).findOptedOutKeys(PROFILE_ID);
 		verify(subscriptionRepositoryMock).delete(membership);
 	}
 
@@ -173,14 +187,14 @@ class SubscriptionProfileMemberServiceTest {
 
 		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID)).thenReturn(PROFILE);
 		when(subscriptionRepositoryMock.findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE)).thenReturn(List.of());
-		when(subscriptionOptOutRepositoryMock.findAllByProfileId(PROFILE_ID)).thenReturn(List.of());
+		when(subscriptionOptOutServiceMock.findOptedOutKeys(PROFILE_ID)).thenReturn(Set.of());
 		when(subscriberServiceMock.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE_NAME, AD_ACCOUNT, "anna01")).thenReturn(added);
 
 		service.syncMembers(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID, List.of(member("anna01"), member("Anna01")));
 
 		verify(subscriptionProfileServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE_NAME, PROFILE_ID);
 		verify(subscriptionRepositoryMock).findAllByProfileIdAndTargetType(PROFILE_ID, NAMESPACE);
-		verify(subscriptionOptOutRepositoryMock).findAllByProfileId(PROFILE_ID);
+		verify(subscriptionOptOutServiceMock).findOptedOutKeys(PROFILE_ID);
 		verify(subscriberServiceMock).findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE_NAME, AD_ACCOUNT, "anna01");
 		verify(subscriptionRepositoryMock).save(subscriptionCaptor.capture());
 		assertThat(subscriptionCaptor.getValue().getSubscriber()).isSameAs(added);

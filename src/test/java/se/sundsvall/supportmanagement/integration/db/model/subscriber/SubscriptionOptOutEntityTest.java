@@ -30,43 +30,42 @@ class SubscriptionOptOutEntityTest {
 		assertThat(SubscriptionOptOutEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("subscriber", "profile"),
-			hasValidBeanEqualsExcluding("subscriber", "profile"),
-			hasValidBeanToStringExcluding("subscriber", "profile")));
+			hasValidBeanHashCodeExcluding("profile"),
+			hasValidBeanEqualsExcluding("profile"),
+			hasValidBeanToStringExcluding("profile")));
 	}
 
 	@Test
 	void hasValidBuilderMethods() {
 		final var id = "123e4567-e89b-12d3-a456-426614174000";
-		final var subscriber = SubscriberEntity.create().withId("subscriber-id");
 		final var profile = SubscriptionProfileEntity.create().withId("profile-id");
+		final var identifier = IdentifierEmbeddable.create().withType("adAccount").withValue("anna01");
 		final var created = now();
 
 		final var entity = SubscriptionOptOutEntity.create()
 			.withId(id)
-			.withSubscriber(subscriber)
 			.withProfile(profile)
+			.withIdentifier(identifier)
 			.withCreated(created);
 
 		assertThat(entity).hasNoNullFieldsOrProperties();
 		assertThat(entity.getId()).isEqualTo(id);
-		assertThat(entity.getSubscriber()).isEqualTo(subscriber);
 		assertThat(entity.getProfile()).isEqualTo(profile);
+		assertThat(entity.getIdentifier()).isEqualTo(identifier);
 		assertThat(entity.getCreated()).isEqualTo(created);
 	}
 
 	@Test
-	void equalityFollowsTheIdsOfSubscriberAndProfile() {
-		final var first = SubscriptionOptOutEntity.create().withId("id")
-			.withSubscriber(SubscriberEntity.create().withId("subscriber-id").withName("one"))
-			.withProfile(SubscriptionProfileEntity.create().withId("profile-id"));
-		final var second = SubscriptionOptOutEntity.create().withId("id")
-			.withSubscriber(SubscriberEntity.create().withId("subscriber-id").withName("other"))
-			.withProfile(SubscriptionProfileEntity.create().withId("profile-id"));
+	void equalityFollowsTheIdOfTheProfile() {
+		final var identifier = IdentifierEmbeddable.create().withType("adAccount").withValue("anna01");
+		final var first = SubscriptionOptOutEntity.create().withId("id").withIdentifier(identifier)
+			.withProfile(SubscriptionProfileEntity.create().withId("profile-id").withName("one"));
+		final var second = SubscriptionOptOutEntity.create().withId("id").withIdentifier(identifier)
+			.withProfile(SubscriptionProfileEntity.create().withId("profile-id").withName("other"));
 
 		assertThat(first).isEqualTo(second).hasSameHashCodeAs(second);
-		assertThat(first.toString()).contains("subscriberId=subscriber-id", "profileId=profile-id");
-		assertThat(first).isNotEqualTo(SubscriptionOptOutEntity.create().withId("id"));
+		assertThat(first.toString()).contains("profileId=profile-id", "anna01");
+		assertThat(first).isNotEqualTo(SubscriptionOptOutEntity.create().withId("id").withIdentifier(identifier));
 	}
 
 	@Test
