@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import java.util.ArrayList;
 import java.util.List;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
@@ -15,8 +14,9 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessme
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.KEY_ORDER;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toTrimmedUniqueKeyList;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.replaceArtefactParameters;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameterEntities;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameters;
 
 public final class ErrandInvestigationMapper {
 
@@ -81,7 +81,7 @@ public final class ErrandInvestigationMapper {
 				.withRecommendationMotivation(e.getRecommendationMotivation())
 				.withSections(toInvestigationSections(e.getSections()))
 				.withAttachments(toErrandAttachments(e.getAttachments()))
-				.withParameters(toInvestigationParameters(e.getParameters()))
+				.withParameters(toArtefactParameters(e.getParameters()))
 				.withCreatedBy(e.getCreatedBy())
 				.withModifiedBy(e.getModifiedBy())
 				.withCreated(e.getCreated())
@@ -102,35 +102,7 @@ public final class ErrandInvestigationMapper {
 	 * parameter sent for a key.
 	 */
 	public static List<InvestigationParameterEntity> toInvestigationParameterEntities(final List<Parameter> parameters, final InvestigationEntity investigationEntity) {
-		return new ArrayList<>(toTrimmedUniqueKeyList(parameters).stream()
-			.map(parameter -> InvestigationParameterEntity.create()
-				.withInvestigationEntity(investigationEntity)
-				.withKey(parameter.getKey())
-				.withDisplayName(parameter.getDisplayName())
-				.withParameterGroup(parameter.getGroup())
-				.withValues(parameter.getValues()))
-			.toList());
-	}
-
-	public static Parameter toInvestigationParameter(final InvestigationParameterEntity entity) {
-		return ofNullable(entity)
-			.map(e -> Parameter.create()
-				.withKey(e.getKey())
-				.withDisplayName(e.getDisplayName())
-				.withGroup(e.getParameterGroup())
-				.withValues(e.getValues()))
-			.orElse(null);
-	}
-
-	/**
-	 * Maps the parameters of an investigation in the order of their keys, the same order whatever order the database reads
-	 * them in.
-	 */
-	public static List<Parameter> toInvestigationParameters(final List<InvestigationParameterEntity> entities) {
-		return ofNullable(entities).orElse(emptyList()).stream()
-			.map(ErrandInvestigationMapper::toInvestigationParameter)
-			.sorted(KEY_ORDER)
-			.toList();
+		return toArtefactParameterEntities(parameters, () -> InvestigationParameterEntity.create().withInvestigationEntity(investigationEntity));
 	}
 
 	/**
@@ -139,16 +111,9 @@ public final class ErrandInvestigationMapper {
 	 * investigation untouched.
 	 */
 	private static void replaceParameters(final InvestigationEntity entity, final List<Parameter> parameters) {
-		final var replacements = toInvestigationParameterEntities(parameters, entity);
-		if (toInvestigationParameters(replacements).equals(toInvestigationParameters(entity.getParameters()))) {
-			return;
+		if (replaceArtefactParameters(entity.getParameters(), entity::setParameters, toInvestigationParameterEntities(parameters, entity))) {
+			entity.markModified();
 		}
-		if (entity.getParameters() == null) {
-			entity.setParameters(new ArrayList<>());
-		}
-		entity.getParameters().clear();
-		entity.getParameters().addAll(replacements);
-		entity.markModified();
 	}
 
 	public static InvestigationSectionEntity toInvestigationSectionEntity(final InvestigationSection section, final InvestigationEntity investigationEntity) {

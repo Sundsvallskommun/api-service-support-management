@@ -6,9 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
+import se.sundsvall.supportmanagement.integration.db.model.ArtefactParameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
@@ -171,6 +174,75 @@ public final class ErrandParameterMapper {
 		return toUniqueKeyList(trimmed).stream()
 			.sorted(KEY_ORDER)
 			.toList();
+	}
+
+	/**
+	 * Maps parameters to entities of a handling artefact, one per key with the values of every parameter sent for it, in
+	 * the order of the keys. Keys are trimmed before they are compared, and the display name and group are those of the
+	 * first parameter sent for a key.
+	 *
+	 * @param  <E>        the type of the entities.
+	 * @param  parameters the parameters sent.
+	 * @param  factory    creates an entity that already points at its artefact.
+	 * @return            the entities, in a list that may be changed.
+	 */
+	public static <E extends ArtefactParameter> List<E> toArtefactParameterEntities(final List<Parameter> parameters, final Supplier<E> factory) {
+		return new ArrayList<>(toTrimmedUniqueKeyList(parameters).stream()
+			.map(parameter -> {
+				final var entity = factory.get();
+				entity.setKey(parameter.getKey());
+				entity.setDisplayName(parameter.getDisplayName());
+				entity.setParameterGroup(parameter.getGroup());
+				entity.setValues(parameter.getValues());
+				return entity;
+			})
+			.toList());
+	}
+
+	public static Parameter toArtefactParameter(final ArtefactParameter entity) {
+		return Optional.ofNullable(entity)
+			.map(e -> Parameter.create()
+				.withKey(e.getKey())
+				.withDisplayName(e.getDisplayName())
+				.withGroup(e.getParameterGroup())
+				.withValues(e.getValues()))
+			.orElse(null);
+	}
+
+	/**
+	 * Maps the parameters of a handling artefact in the order of their keys, the same order whatever order the database
+	 * reads them in.
+	 */
+	public static List<Parameter> toArtefactParameters(final List<? extends ArtefactParameter> entities) {
+		return Optional.ofNullable(entities).orElse(emptyList()).stream()
+			.map(ErrandParameterMapper::toArtefactParameter)
+			.sorted(KEY_ORDER)
+			.toList();
+	}
+
+	/**
+	 * Replaces the parameters of a handling artefact in place. Replacements that come out the same as the stored
+	 * parameters, in whatever order they were sent, leave the stored ones untouched.
+	 *
+	 * @param  <E>          the type of the entities.
+	 * @param  stored       the parameters of the artefact, or null when it has none.
+	 * @param  setter       gives the artefact a list of parameters, called only when it has none.
+	 * @param  replacements the parameters to put in place of the stored ones.
+	 * @return              true when the parameters were replaced, for the caller to mark the artefact modified.
+	 */
+	public static <E extends ArtefactParameter> boolean replaceArtefactParameters(final List<E> stored, final Consumer<List<E>> setter, final List<E> replacements) {
+		if (toArtefactParameters(replacements).equals(toArtefactParameters(stored))) {
+			return false;
+		}
+
+		if (isNull(stored)) {
+			setter.accept(new ArrayList<>(replacements));
+			return true;
+		}
+
+		stored.clear();
+		stored.addAll(replacements);
+		return true;
 	}
 
 	public static List<Parameter> toUniqueKeyList(List<Parameter> parameterList) {

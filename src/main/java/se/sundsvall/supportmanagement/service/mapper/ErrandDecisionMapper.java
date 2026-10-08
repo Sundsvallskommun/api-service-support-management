@@ -1,6 +1,5 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import java.util.ArrayList;
 import java.util.List;
 import se.sundsvall.supportmanagement.api.model.errand.Decision;
 import se.sundsvall.supportmanagement.api.model.errand.DecisionTerm;
@@ -16,8 +15,9 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.KEY_ORDER;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toTrimmedUniqueKeyList;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.replaceArtefactParameters;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameterEntities;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameters;
 
 public final class ErrandDecisionMapper {
 
@@ -105,7 +105,7 @@ public final class ErrandDecisionMapper {
 				.withErrandProcessId(e.getErrandProcessId())
 				.withTerms(toDecisionTerms(e.getTerms()))
 				.withAttachments(toErrandAttachments(e.getAttachments()))
-				.withParameters(toDecisionParameters(e.getParameters()))
+				.withParameters(toArtefactParameters(e.getParameters()))
 				.withCreatedBy(e.getCreatedBy())
 				.withModifiedBy(e.getModifiedBy())
 				.withCreated(e.getCreated())
@@ -126,35 +126,7 @@ public final class ErrandDecisionMapper {
 	 * parameter sent for a key.
 	 */
 	public static List<DecisionParameterEntity> toDecisionParameterEntities(final List<Parameter> parameters, final DecisionEntity decisionEntity) {
-		return new ArrayList<>(toTrimmedUniqueKeyList(parameters).stream()
-			.map(parameter -> DecisionParameterEntity.create()
-				.withDecisionEntity(decisionEntity)
-				.withKey(parameter.getKey())
-				.withDisplayName(parameter.getDisplayName())
-				.withParameterGroup(parameter.getGroup())
-				.withValues(parameter.getValues()))
-			.toList());
-	}
-
-	public static Parameter toDecisionParameter(final DecisionParameterEntity entity) {
-		return ofNullable(entity)
-			.map(e -> Parameter.create()
-				.withKey(e.getKey())
-				.withDisplayName(e.getDisplayName())
-				.withGroup(e.getParameterGroup())
-				.withValues(e.getValues()))
-			.orElse(null);
-	}
-
-	/**
-	 * Maps the parameters of a decision in the order of their keys, the same order whatever order the database reads them
-	 * in.
-	 */
-	public static List<Parameter> toDecisionParameters(final List<DecisionParameterEntity> entities) {
-		return ofNullable(entities).orElse(emptyList()).stream()
-			.map(ErrandDecisionMapper::toDecisionParameter)
-			.sorted(KEY_ORDER)
-			.toList();
+		return toArtefactParameterEntities(parameters, () -> DecisionParameterEntity.create().withDecisionEntity(decisionEntity));
 	}
 
 	/**
@@ -163,16 +135,9 @@ public final class ErrandDecisionMapper {
 	 * untouched.
 	 */
 	private static void replaceParameters(final DecisionEntity entity, final List<Parameter> parameters) {
-		final var replacements = toDecisionParameterEntities(parameters, entity);
-		if (toDecisionParameters(replacements).equals(toDecisionParameters(entity.getParameters()))) {
-			return;
+		if (replaceArtefactParameters(entity.getParameters(), entity::setParameters, toDecisionParameterEntities(parameters, entity))) {
+			entity.markModified();
 		}
-		if (entity.getParameters() == null) {
-			entity.setParameters(new ArrayList<>());
-		}
-		entity.getParameters().clear();
-		entity.getParameters().addAll(replacements);
-		entity.markModified();
 	}
 
 	public static DecisionTermEntity toDecisionTermEntity(final DecisionTerm term, final DecisionEntity decisionEntity) {

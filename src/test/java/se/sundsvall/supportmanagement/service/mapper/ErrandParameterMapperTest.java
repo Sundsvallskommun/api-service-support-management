@@ -1,11 +1,15 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
+import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DecisionParameterEntity;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 class ErrandParameterMapperTest {
 
@@ -179,5 +183,82 @@ class ErrandParameterMapperTest {
 	@Test
 	void toTrimmedUniqueKeyListWhenInputIsNull() {
 		assertThat(ErrandParameterMapper.toTrimmedUniqueKeyList(null)).isEmpty();
+	}
+
+	@Test
+	void toArtefactParameterEntities() {
+
+		// Arrange
+		final var decision = DecisionEntity.create().withId("decision-id");
+		final var parameters = List.of(
+			Parameter.create().withKey(" zone ").withDisplayName("Zon").withGroup("place").withValues(List.of("A")),
+			Parameter.create().withKey("zone").withDisplayName("ignored").withValues(List.of("B")));
+
+		// Act
+		final var result = ErrandParameterMapper.toArtefactParameterEntities(parameters, () -> DecisionParameterEntity.create().withDecisionEntity(decision));
+
+		// Assert
+		assertThat(result).singleElement().satisfies(entity -> {
+			assertThat(entity.getDecisionEntity()).isSameAs(decision);
+			assertThat(entity.getKey()).isEqualTo("zone");
+			assertThat(entity.getDisplayName()).isEqualTo("Zon");
+			assertThat(entity.getParameterGroup()).isEqualTo("place");
+			assertThat(entity.getValues()).containsExactly("A", "B");
+		});
+	}
+
+	@Test
+	void replaceArtefactParametersLeavesParametersComingOutTheSameUntouched() {
+
+		// Arrange
+		final var stored = new ArrayList<>(List.of(artefactParameter("b", "2"), artefactParameter("a", "1")));
+		final var replacements = List.of(artefactParameter("a", "1"), artefactParameter("b", "2"));
+
+		// Act
+		final var replaced = ErrandParameterMapper.replaceArtefactParameters(stored, _ -> fail("the artefact already has a list"), replacements);
+
+		// Assert
+		assertThat(replaced).isFalse();
+		assertThat(stored).extracting(DecisionParameterEntity::getKey).containsExactly("b", "a");
+	}
+
+	@Test
+	void replaceArtefactParametersReplacesTheStoredOnesInPlace() {
+
+		// Arrange
+		final var stored = new ArrayList<>(List.of(artefactParameter("a", "1")));
+		final var replacements = List.of(artefactParameter("a", "2"));
+
+		// Act
+		final var replaced = ErrandParameterMapper.replaceArtefactParameters(stored, _ -> fail("the artefact already has a list"), replacements);
+
+		// Assert
+		assertThat(replaced).isTrue();
+		assertThat(stored).containsExactlyElementsOf(replacements);
+	}
+
+	@Test
+	void replaceArtefactParametersGivesAnArtefactWithoutParametersAListOfItsOwn() {
+
+		// Arrange
+		final var given = new ArrayList<List<DecisionParameterEntity>>();
+		final var replacements = List.of(artefactParameter("a", "1"));
+
+		// Act
+		final var replaced = ErrandParameterMapper.replaceArtefactParameters(null, given::add, replacements);
+
+		// Assert
+		assertThat(replaced).isTrue();
+		assertThat(given).singleElement().satisfies(list -> assertThat(list).containsExactlyElementsOf(replacements));
+	}
+
+	@Test
+	void toArtefactParametersWhenInputIsNull() {
+		assertThat(ErrandParameterMapper.toArtefactParameters(null)).isEmpty();
+		assertThat(ErrandParameterMapper.toArtefactParameter(null)).isNull();
+	}
+
+	private static DecisionParameterEntity artefactParameter(final String key, final String value) {
+		return DecisionParameterEntity.create().withKey(key).withValues(List.of(value));
 	}
 }

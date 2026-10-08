@@ -21,14 +21,14 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigation;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigationEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigationParameter;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigationParameters;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigationSection;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigationSectionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigationSections;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.toInvestigations;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.updateInvestigationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandInvestigationMapper.updateInvestigationSectionEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameter;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameters;
 
 class ErrandInvestigationMapperTest {
 
@@ -274,7 +274,7 @@ class ErrandInvestigationMapperTest {
 			InvestigationParameterEntity.create().withKey("Zon"));
 
 		// Act
-		final var result = toInvestigationParameters(entities);
+		final var result = toArtefactParameters(entities);
 
 		// Assert
 		assertThat(result).extracting(Parameter::getKey).containsExactly("Area", "Zon", "zon", "ärende");
@@ -429,12 +429,12 @@ class ErrandInvestigationMapperTest {
 
 	@Test
 	void testToInvestigationParameterWithNull() {
-		assertThat(toInvestigationParameter(null)).isNull();
+		assertThat(toArtefactParameter(null)).isNull();
 	}
 
 	@Test
 	void testToInvestigationParametersWithNull() {
-		assertThat(toInvestigationParameters(null)).isEmpty();
+		assertThat(toArtefactParameters(null)).isEmpty();
 	}
 
 	@Test

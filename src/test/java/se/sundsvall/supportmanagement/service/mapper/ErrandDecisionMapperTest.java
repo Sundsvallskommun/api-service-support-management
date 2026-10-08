@@ -23,14 +23,14 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecision;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisionEntity;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisionParameter;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisionParameters;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisionTerm;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisionTermEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisionTerms;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.toDecisions;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.updateDecisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandDecisionMapper.updateDecisionTermEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameter;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameters;
 
 class ErrandDecisionMapperTest {
 
@@ -270,7 +270,7 @@ class ErrandDecisionMapperTest {
 			DecisionParameterEntity.create().withKey("Zon"));
 
 		// Act
-		final var result = toDecisionParameters(entities);
+		final var result = toArtefactParameters(entities);
 
 		// Assert
 		assertThat(result).extracting(Parameter::getKey).containsExactly("Area", "Zon", "zon", "ärende");
@@ -414,11 +414,11 @@ class ErrandDecisionMapperTest {
 
 	@Test
 	void testToDecisionParameterWithNull() {
-		assertThat(toDecisionParameter(null)).isNull();
+		assertThat(toArtefactParameter(null)).isNull();
 	}
 
 	@Test
 	void testToDecisionParametersWithNull() {
-		assertThat(toDecisionParameters(null)).isEmpty();
+		assertThat(toArtefactParameters(null)).isEmpty();
 	}
 }

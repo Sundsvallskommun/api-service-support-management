@@ -26,7 +26,7 @@ import static jakarta.persistence.FetchType.LAZY;
 @Entity
 @Table(name = "decision_parameter",
 	indexes = @Index(name = "idx_decision_parameter_decision_id", columnList = "decision_id"))
-public class DecisionParameterEntity {
+public class DecisionParameterEntity implements ArtefactParameter {
 
 	@Id
 	@UuidGenerator
