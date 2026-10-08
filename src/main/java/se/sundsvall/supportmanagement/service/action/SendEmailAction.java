@@ -135,7 +135,7 @@ public class SendEmailAction extends AbstractAction {
 	public boolean actionFulfilled(ErrandEntity errand, Map<String, List<String>> parameters) {
 		final var sender = parameters.get(SENDER).getFirst();
 		final var recipient = parameters.get(RECIPIENT).getFirst();
-		final var expectedSubject = String.format("%s - %s", parameters.get(SUBJECT).getFirst(), errand.getErrandNumber());
+		final var expectedSubject = parameters.get(SUBJECT).getFirst() + " - " + errand.getErrandNumber();
 
 		return communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errand.getErrandNumber(), errand.getNamespace(), errand.getMunicipalityId()).stream()
 			.filter(c -> c.getType() == CommunicationType.EMAIL)

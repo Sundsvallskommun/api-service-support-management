@@ -156,8 +156,8 @@ public class ErrandNoteService {
 	}
 
 	private Revision extractRevisionInformationFromHeader(final ResponseEntity<?> response, final RevisionType revision) {
-		final var rev = extractHeader(response, String.format("x-%s-revision", revision.getValue()));
-		final var ver = extractHeader(response, String.format("x-%s-version", revision.getValue()));
+		final var rev = extractHeader(response, "x-" + revision.getValue() + "-revision");
+		final var ver = extractHeader(response, "x-" + revision.getValue() + "-version");
 
 		if (rev.isPresent() && ver.isPresent()) {
 			return Revision.create()
