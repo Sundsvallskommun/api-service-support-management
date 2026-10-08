@@ -12,7 +12,6 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
-import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionOptOutEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 
@@ -28,16 +27,15 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 })
 class SubscriptionOptOutRepositoryTest {
 
+	private static final String AD_ACCOUNT = "adAccount";
+	private static final String USER = "optout01";
+
 	@Autowired
 	private SubscriptionOptOutRepository subscriptionOptOutRepository;
 
 	@Autowired
 	private SubscriptionProfileRepository subscriptionProfileRepository;
 
-	@Autowired
-	private SubscriberRepository subscriberRepository;
-
-	private SubscriberEntity subscriber;
 	private SubscriptionProfileEntity profile;
 
 	@BeforeEach
@@ -48,48 +46,50 @@ class SubscriptionOptOutRepositoryTest {
 			.withName("opt-out-test")
 			.withEventFilters(new ArrayList<>(List.of(EventFilterEmbeddable.create().withType("UPDATE"))))
 			.withChannels(new ArrayList<>(List.of(NotificationChannelType.EMAIL))));
+	}
 
-		subscriber = subscriberRepository.saveAndFlush(SubscriberEntity.create()
-			.withMunicipalityId("2281")
-			.withNamespace("namespace-opt-out-test")
-			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("optout01")));
+	private SubscriptionOptOutEntity optOut() {
+		return SubscriptionOptOutEntity.create()
+			.withProfile(profile)
+			.withIdentifier(IdentifierEmbeddable.create().withType(AD_ACCOUNT).withValue(USER));
 	}
 
 	@Test
 	void saveAndFind() {
 
 		// Act
-		final var saved = subscriptionOptOutRepository.saveAndFlush(SubscriptionOptOutEntity.create().withSubscriber(subscriber).withProfile(profile));
+		final var saved = subscriptionOptOutRepository.saveAndFlush(optOut());
 
 		// Assert
 		assertThat(saved.getId()).isNotBlank();
 		assertThat(saved.getCreated()).isNotNull();
-		assertThat(subscriptionOptOutRepository.existsBySubscriberIdAndProfileId(subscriber.getId(), profile.getId())).isTrue();
-		assertThat(subscriptionOptOutRepository.existsBySubscriberIdAndProfileId(subscriber.getId(), "other-profile")).isFalse();
+		assertThat(subscriptionOptOutRepository.existsByProfileIdAndIdentifierTypeAndIdentifierValue(profile.getId(), AD_ACCOUNT, USER)).isTrue();
+		assertThat(subscriptionOptOutRepository.existsByProfileIdAndIdentifierTypeAndIdentifierValue(profile.getId(), AD_ACCOUNT, "someone-else")).isFalse();
+		assertThat(subscriptionOptOutRepository.existsByProfileIdAndIdentifierTypeAndIdentifierValue("other-profile", AD_ACCOUNT, USER)).isFalse();
 		assertThat(subscriptionOptOutRepository.findAllByProfileId(profile.getId()))
-			.extracting(optOut -> optOut.getSubscriber().getId())
-			.containsExactly(subscriber.getId());
+			.extracting(found -> found.getIdentifier().getValue())
+			.containsExactly(USER);
 	}
 
 	@Test
-	void deleteBySubscriberIdAndProfileId() {
+	void deleteByProfileIdAndIdentifier() {
 
 		// Arrange
-		subscriptionOptOutRepository.saveAndFlush(SubscriptionOptOutEntity.create().withSubscriber(subscriber).withProfile(profile));
+		subscriptionOptOutRepository.saveAndFlush(optOut());
 
 		// Act
-		subscriptionOptOutRepository.deleteBySubscriberIdAndProfileId(subscriber.getId(), profile.getId());
+		subscriptionOptOutRepository.deleteByProfileIdAndIdentifierTypeAndIdentifierValue(profile.getId(), AD_ACCOUNT, USER);
 		subscriptionOptOutRepository.flush();
 
 		// Assert
-		assertThat(subscriptionOptOutRepository.existsBySubscriberIdAndProfileId(subscriber.getId(), profile.getId())).isFalse();
+		assertThat(subscriptionOptOutRepository.existsByProfileIdAndIdentifierTypeAndIdentifierValue(profile.getId(), AD_ACCOUNT, USER)).isFalse();
 	}
 
 	@Test
 	void deletingProfileCascadesToItsOptOuts() {
 
 		// Arrange
-		final var saved = subscriptionOptOutRepository.saveAndFlush(SubscriptionOptOutEntity.create().withSubscriber(subscriber).withProfile(profile));
+		final var saved = subscriptionOptOutRepository.saveAndFlush(optOut());
 
 		// Act
 		subscriptionProfileRepository.deleteById(profile.getId());

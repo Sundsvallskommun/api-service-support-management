@@ -1,11 +1,13 @@
 package se.sundsvall.supportmanagement.integration.db.model.subscriber;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -24,17 +26,17 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 /**
- * Records that a subscriber has left a subscription profile, so the members sync does not subscribe them to it again
+ * Records that a principal has left a subscription profile, so the members sync does not subscribe them to it again
  * for as long as the record stands.
+ * <p>
+ * Kept against the principal rather than one of their subscribers, so that it holds whichever subscriber the sync
+ * would use, and outlives the principal removing their subscribers altogether.
  */
 @Entity
 @Table(name = "subscription_opt_out",
-	indexes = {
-		@Index(name = "idx_subscription_opt_out_profile_id", columnList = "profile_id")
-	},
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uq_subscription_opt_out_subscriber_profile", columnNames = {
-			"subscriber_id", "profile_id"
+		@UniqueConstraint(name = "uq_subscription_opt_out_profile_identifier", columnNames = {
+			"profile_id", "identifier_type", "identifier_value"
 		})
 	})
 public class SubscriptionOptOutEntity {
@@ -45,14 +47,16 @@ public class SubscriptionOptOutEntity {
 	private String id;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "subscriber_id", nullable = false, foreignKey = @ForeignKey(name = "fk_subscription_opt_out_subscriber_id"))
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private SubscriberEntity subscriber;
-
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "profile_id", nullable = false, foreignKey = @ForeignKey(name = "fk_subscription_opt_out_profile_id"))
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private SubscriptionProfileEntity profile;
+
+	@Embedded
+	@AttributeOverrides({
+		@AttributeOverride(name = "type", column = @Column(name = "identifier_type", nullable = false, length = 16)),
+		@AttributeOverride(name = "value", column = @Column(name = "identifier_value", nullable = false))
+	})
+	private IdentifierEmbeddable identifier;
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
@@ -80,19 +84,6 @@ public class SubscriptionOptOutEntity {
 		return this;
 	}
 
-	public SubscriberEntity getSubscriber() {
-		return subscriber;
-	}
-
-	public void setSubscriber(final SubscriberEntity subscriber) {
-		this.subscriber = subscriber;
-	}
-
-	public SubscriptionOptOutEntity withSubscriber(final SubscriberEntity subscriber) {
-		this.subscriber = subscriber;
-		return this;
-	}
-
 	public SubscriptionProfileEntity getProfile() {
 		return profile;
 	}
@@ -103,6 +94,19 @@ public class SubscriptionOptOutEntity {
 
 	public SubscriptionOptOutEntity withProfile(final SubscriptionProfileEntity profile) {
 		this.profile = profile;
+		return this;
+	}
+
+	public IdentifierEmbeddable getIdentifier() {
+		return identifier;
+	}
+
+	public void setIdentifier(final IdentifierEmbeddable identifier) {
+		this.identifier = identifier;
+	}
+
+	public SubscriptionOptOutEntity withIdentifier(final IdentifierEmbeddable identifier) {
+		this.identifier = identifier;
 		return this;
 	}
 
@@ -121,11 +125,7 @@ public class SubscriptionOptOutEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(
-			id,
-			subscriber != null ? subscriber.getId() : null,
-			profile != null ? profile.getId() : null,
-			created);
+		return Objects.hash(id, profile != null ? profile.getId() : null, identifier, created);
 	}
 
 	@Override
@@ -138,8 +138,8 @@ public class SubscriptionOptOutEntity {
 		}
 		final SubscriptionOptOutEntity other = (SubscriptionOptOutEntity) obj;
 		return Objects.equals(id, other.id)
-			&& Objects.equals(subscriber != null ? subscriber.getId() : null, other.subscriber != null ? other.subscriber.getId() : null)
 			&& Objects.equals(profile != null ? profile.getId() : null, other.profile != null ? other.profile.getId() : null)
+			&& Objects.equals(identifier, other.identifier)
 			&& Objects.equals(created, other.created);
 	}
 
@@ -147,8 +147,8 @@ public class SubscriptionOptOutEntity {
 	public String toString() {
 		return "SubscriptionOptOutEntity{" +
 			"id='" + id + '\'' +
-			", subscriberId=" + (subscriber != null ? subscriber.getId() : null) +
 			", profileId=" + (profile != null ? profile.getId() : null) +
+			", identifier=" + identifier +
 			", created=" + created +
 			'}';
 	}
