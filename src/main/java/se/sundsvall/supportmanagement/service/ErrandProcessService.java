@@ -46,6 +46,7 @@ import static java.util.function.Function.identity;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.WARN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
@@ -166,7 +167,8 @@ public class ErrandProcessService {
 			verifyBelongsToErrand(existing, errandId);
 			verifySameProcessKey(existing, report);
 
-			LOG.info("Report of {} on the {} process instance '{}' of errand '{}' leaves the instance as it is", report.getProcessStatus(), existing.getProcessStatus(), processInstanceId, errandId);
+			LOG.info("Report of {} on the {} process instance '{}' of errand '{}' leaves the instance as it is", report.getProcessStatus(), existing.getProcessStatus(), sanitizeForLogging(processInstanceId),
+				sanitizeForLogging(errandId));
 			storeActivities(existing, errandId, report);
 			return new ErrandProcessResult(toErrandProcess(existing, emptyList()), false);
 		}
@@ -372,7 +374,7 @@ public class ErrandProcessService {
 		try {
 			return transactionTemplate.execute(_ -> attempt.get());
 		} catch (final DataIntegrityViolationException lostTheRace) {
-			LOG.warn("Retrying the write for process instance '{}' on errand '{}' after an integrity violation", processInstanceId, errandId, lostTheRace);
+			LOG.warn("Retrying the write for process instance '{}' on errand '{}' after an integrity violation", sanitizeForLogging(processInstanceId), sanitizeForLogging(errandId), lostTheRace);
 
 			return transactionTemplate.execute(_ -> attempt.get());
 		}
@@ -544,7 +546,7 @@ public class ErrandProcessService {
 	 */
 	private void logConcurrentTasks(final ErrandProcessEntity process, final String errandId, final String externalTaskId, final String displacedTaskId) {
 		LOG.warn("Concurrent external tasks on process instance '{}' of errand '{}': task '{}' reported RUNNING while task '{}' was still working",
-			process.getProcessInstanceId(), errandId, externalTaskId, displacedTaskId);
+			sanitizeForLogging(process.getProcessInstanceId()), sanitizeForLogging(errandId), sanitizeForLogging(externalTaskId), sanitizeForLogging(displacedTaskId));
 
 		if (activityRepository.existsByErrandProcessIdAndActivityType(process.getId(), CONCURRENCY_ACTIVITY_TYPE)) {
 			return;
