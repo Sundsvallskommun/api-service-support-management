@@ -77,17 +77,14 @@ class SubscriptionProfilesResourceFailureTest {
 	}
 
 	@Test
-	void updateSubscriptionProfileEmptyingFiltersAndChannels() {
+	void updateSubscriptionProfileEmptyingFilters() {
 		final var response = patch(SubscriptionProfile.create()
-			.withEventFilters(List.of())
-			.withChannels(List.of()));
+			.withEventFilters(List.of()));
 
 		assertThat(response).isNotNull();
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactlyInAnyOrder(
-				tuple("updateSubscriptionProfile.subscriptionProfile.eventFilters", "must not be empty"),
-				tuple("updateSubscriptionProfile.subscriptionProfile.channels", "must not be empty"));
+			.containsExactly(tuple("updateSubscriptionProfile.subscriptionProfile.eventFilters", "must not be empty"));
 	}
 
 	@Test
@@ -142,8 +139,7 @@ class SubscriptionProfilesResourceFailureTest {
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("createSubscriptionProfile.subscriptionProfile.name", "must not be blank"),
-				tuple("createSubscriptionProfile.subscriptionProfile.eventFilters", "must not be empty"),
-				tuple("createSubscriptionProfile.subscriptionProfile.channels", "must not be empty"));
+				tuple("createSubscriptionProfile.subscriptionProfile.eventFilters", "must not be empty"));
 	}
 
 	@Test

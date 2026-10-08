@@ -22,6 +22,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilte
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -133,16 +134,22 @@ public class NotificationDispatchWorker {
 	}
 
 	/**
-	 * The channels a subscription delivers the event on. A subscription to a profile is governed by the profile alone -
-	 * its filters select the events and its channels carry them. Any other subscription delivers what its filters accept
-	 * on the subscriber's own channels.
+	 * The channels a subscription delivers the event on. A subscription to a profile is governed by the profile - its
+	 * filters select the events and its channels carry them, unless it has none and leaves that to the subscriber's own
+	 * channels. Any other subscription delivers what its filters accept on the subscriber's own channels.
 	 */
 	private List<NotificationChannelType> channelsFor(final SubscriptionEntity subscription, final NotificationDispatchEntity entry) {
 		final var profile = subscription.getProfile();
 		if (profile != null) {
-			return matchesAny(profile.getEventFilters(), entry) ? ofNullable(profile.getChannels()).orElse(emptyList()) : emptyList();
+			return matchesAny(profile.getEventFilters(), entry) ? channelsOf(profile, subscription.getSubscriber()) : emptyList();
 		}
 		return wantsEvent(subscription, entry) ? channelsOf(subscription.getSubscriber()) : emptyList();
+	}
+
+	private static List<NotificationChannelType> channelsOf(final SubscriptionProfileEntity profile, final SubscriberEntity subscriber) {
+		return ofNullable(profile.getChannels())
+			.filter(channels -> !channels.isEmpty())
+			.orElseGet(() -> channelsOf(subscriber));
 	}
 
 	private static List<NotificationChannelType> channelsOf(final SubscriberEntity subscriber) {

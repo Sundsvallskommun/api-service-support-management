@@ -21,7 +21,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 @Schema(description = "A subscription profile is a named set of event filters and the channels the events they match are delivered on. " +
-	"A subscription pointing at a profile is governed by the profile alone - the subscriber's own event filters and channels do not apply to it.")
+	"A subscription pointing at a profile delivers the events the profile's filters select, while the subscriber's own event filters do not apply to it. " +
+	"The events are delivered on the profile's channels, or on the subscriber's own channels when the profile has none.")
 public class SubscriptionProfile {
 
 	@Null(groups = {
@@ -47,9 +48,8 @@ public class SubscriptionProfile {
 	@Schema(description = "Event filters selecting which events the profile delivers. An event matching any of them is delivered.")
 	private List<@NotNull EventFilter> eventFilters;
 
-	@NotEmpty(groups = OnCreate.class)
-	@Size(min = 1, message = "must not be empty", groups = OnUpdate.class)
-	@Schema(description = "Channels the events matched by the profile are delivered on")
+	@Schema(description = "Channels the events matched by the profile are delivered on. Leaving it out or empty delivers them on the subscriber's own " +
+		"channels instead, which lets each user choose how they are notified. An update with an empty list clears the profile's channels.")
 	private List<@NotNull NotificationChannelType> channels;
 
 	@Null(groups = {

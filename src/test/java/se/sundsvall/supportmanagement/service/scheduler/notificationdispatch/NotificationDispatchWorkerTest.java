@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
@@ -363,6 +365,23 @@ class NotificationDispatchWorkerTest {
 
 		// Assert
 		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, Map.of(EMAIL, List.of(entry)));
+		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
+	}
+
+	@ParameterizedTest
+	@NullAndEmptySource
+	void processGroupRoutesEventsOfProfileWithoutChannelsToTheSubscriberChannels(final List<NotificationChannelType> profileChannels) {
+
+		// Arrange — the profile selects the event but leaves the channels to the subscriber, whose own channel is INTERNAL
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildProfileSubscription(subscriber, "own-channels", List.of(filter(EVENT_TYPE, SUB_TYPE)), profileChannels));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(entry)));
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 

@@ -115,6 +115,23 @@ class SubscriptionProfilesResourceTest {
 	}
 
 	@Test
+	void createSubscriptionProfileWithoutChannels() {
+		final var profile = profile().withChannels(null);
+		when(serviceMock.createSubscriptionProfile(eq(MUNICIPALITY_ID), eq(NAMESPACE), any(SubscriptionProfile.class))).thenReturn(PROFILE_ID);
+
+		webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(profile)
+			.exchange()
+			.expectStatus().isCreated()
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/subscription-profiles/" + PROFILE_ID);
+
+		verify(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.SUBSCRIPTION_PROFILE, RW);
+		verify(serviceMock).createSubscriptionProfile(MUNICIPALITY_ID, NAMESPACE, profile);
+	}
+
+	@Test
 	void updateSubscriptionProfile() {
 		final var patch = SubscriptionProfile.create().withDescription("Ny beskrivning");
 		final var updated = profile().withId(PROFILE_ID).withDescription("Ny beskrivning");
