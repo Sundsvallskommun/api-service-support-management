@@ -43,7 +43,7 @@ public class SubscriptionOptOutService {
 		}
 		final var profile = subscription.getProfile();
 		final var identifier = subscription.getSubscriber().getIdentifier();
-		if (!isOptedOut(profile.getId(), identifier)) {
+		if (!subscriptionOptOutRepository.existsByProfileIdAndIdentifierTypeAndIdentifierValue(profile.getId(), identifier.getType(), identifier.getValue())) {
 			subscriptionOptOutRepository.save(SubscriptionOptOutEntity.create()
 				.withProfile(profile)
 				.withIdentifier(IdentifierEmbeddable.create().withType(identifier.getType()).withValue(identifier.getValue())));

@@ -29,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
@@ -89,7 +90,7 @@ public class EventService {
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
 		final EventSubType subtype) {
-		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype, getExecutingUser(), Set.of());
+		createErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, new ErrandEventOptions(sendNotification, getExecutingUser(), Set.of()));
 	}
 
 	/**
@@ -102,27 +103,20 @@ public class EventService {
 	 */
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
 		final EventSubType subtype, final Identifier actor) {
-		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype, actor, Set.of());
-	}
-
-	/**
-	 * Logs an errand event that added labels to the errand, on behalf of the caller of the request.
-	 */
-	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
-		final EventSubType subtype, final Set<String> addedLabelIds) {
-		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype, getExecutingUser(), addedLabelIds);
+		createErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, new ErrandEventOptions(sendNotification, actor, Set.of()));
 	}
 
 	/**
 	 * Logs the event on behalf of a given user, and notifies those it is to notify. The labels the event added to the
 	 * errand go along with it, as subscribers may filter on a label being added.
 	 *
-	 * @param actor         the user who acted, or null when nobody did
-	 * @param addedLabelIds the metadata labels the event added to the errand
+	 * @param revisions the revisions of the errand the event is about, either of which may be null
+	 * @param options   what goes along with the event beyond the event itself
 	 */
-	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
-		final EventSubType subtype, final Identifier actor, final Set<String> addedLabelIds) {
-		writeErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, actor, sendNotification ? Notice.HANDLER_AND_SUBSCRIBERS : Notice.SUBSCRIBERS, addedLabelIds);
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final RevisionResult revisions, final EventSubType subtype,
+		final ErrandEventOptions options) {
+		writeErrandEvent(eventType, message, errandEntity, ofNullable(revisions).orElse(NO_REVISION), subtype, options.actor(), options.sendNotification() ? Notice.HANDLER_AND_SUBSCRIBERS : Notice.SUBSCRIBERS,
+			options.addedLabelIds());
 		publishToProcess(errandEntity, eventType, subtype, null, false);
 	}
 
@@ -239,7 +233,7 @@ public class EventService {
 			createNotification(errandEntity, event);
 		}
 		if (notifies(errandEntity)) {
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue(), getExecutingUser(), Set.of());
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue(), new ErrandEventOptions(true, getExecutingUser(), Set.of()));
 		}
 	}
 
@@ -272,7 +266,8 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
-		if (eventType != EventType.DELETE) {
+		// An assignment is logged alongside the change to the errand it is part of, which already subscribes the assignee
+		if (eventType != EventType.DELETE && subtype != EventSubType.ASSIGNMENT) {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity, eventType == EventType.CREATE && subtype == EventSubType.ERRAND));
 		}
 
@@ -282,7 +277,7 @@ public class EventService {
 
 		// Which subscribers hear of the event is up to their subscriptions
 		if (notice != Notice.NO_ONE && notifies(errandEntity)) {
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), actor, addedLabelIds);
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), new ErrandEventOptions(notice == Notice.HANDLER_AND_SUBSCRIBERS, actor, addedLabelIds));
 		}
 	}
 
@@ -307,7 +302,7 @@ public class EventService {
 	}
 
 	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType,
-		final Identifier executingUser, final Set<String> addedLabelIds) {
+		final ErrandEventOptions options) {
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
 			.withEventId(eventId)
 			.withRequestGroupId(requestGroupId)
@@ -317,8 +312,8 @@ public class EventService {
 			.withEventType(eventType.getValue())
 			.withDescription(description)
 			.withSubType(subType)
-			.withAddedLabelIds(new HashSet<>(ofNullable(addedLabelIds).orElse(Set.of())))
-			.withExecutingUserId(ofNullable(executingUser).map(Identifier::getValue).orElse(null)));
+			.withAddedLabelIds(new HashSet<>(ofNullable(options.addedLabelIds()).orElse(Set.of())))
+			.withExecutingUserId(ofNullable(options.actor()).map(Identifier::getValue).orElse(null)));
 	}
 
 	private String extractEventId(final ResponseEntity<Void> response) {

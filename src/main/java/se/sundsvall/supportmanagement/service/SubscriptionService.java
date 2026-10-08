@@ -159,8 +159,8 @@ public class SubscriptionService {
 		if (assignedUserId == null) {
 			return;
 		}
-		final var subscriber = subscriberService.findOrCreateSubscriberForAssignee(
-			errand.getMunicipalityId(), errand.getNamespace(), assignedUserId);
+		final var subscriber = subscriberService.findOrCreateSubscriber(
+			errand.getMunicipalityId(), errand.getNamespace(), IdentifierTypeValues.AD_ACCOUNT, assignedUserId);
 		if (!subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(
 			subscriber.getId(), DbSubscriptionTargetType.ERRAND, errand.getId())) {
 			subscriptionRepository.save(SubscriptionEntity.create()
