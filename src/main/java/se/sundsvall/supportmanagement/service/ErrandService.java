@@ -31,6 +31,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -55,6 +56,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -465,7 +467,7 @@ public class ErrandService {
 	private void logCreateEvent(final ErrandEntity entity, final RevisionResult revision) {
 		try {
 			// Every label of a new errand was added by creating it
-			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision.latest(), null, false, ERRAND, labelIdsOf(entity));
+			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, new RevisionResult(null, revision.latest()), ERRAND, new ErrandEventOptions(false, getExecutingUser(), labelIdsOf(entity)));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log CREATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}
@@ -510,7 +512,7 @@ public class ErrandService {
 		}
 
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), true, ERRAND, addedLabelIds);
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult, ERRAND, new ErrandEventOptions(true, getExecutingUser(), addedLabelIds));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}

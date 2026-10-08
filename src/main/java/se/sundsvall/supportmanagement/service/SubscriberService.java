@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.supportmanagement.api.model.identifier.IdentifierTypeValues;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
@@ -113,11 +112,6 @@ public class SubscriberService {
 		ofNullable(entity.getSubscriptions()).orElse(emptyList())
 			.forEach(subscriptionOptOutService::recordOptOut);
 		subscriberRepository.delete(entity);
-	}
-
-	@Transactional
-	public SubscriberEntity findOrCreateSubscriberForAssignee(final String municipalityId, final String namespace, final String assignedUserId) {
-		return findOrCreateSubscriber(municipalityId, namespace, IdentifierTypeValues.AD_ACCOUNT, assignedUserId);
 	}
 
 	/**
