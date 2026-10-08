@@ -64,6 +64,42 @@ class SubscriptionProfilesResourceFailureTest {
 			.getResponseBody();
 	}
 
+	private ConstraintViolationProblem patch(final SubscriptionProfile body) {
+		return webTestClient.patch()
+			.uri(uriBuilder -> uriBuilder.path(PATH + "/{profileId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "profileId", PROFILE_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+	}
+
+	@Test
+	void updateSubscriptionProfileEmptyingFiltersAndChannels() {
+		final var response = patch(SubscriptionProfile.create()
+			.withEventFilters(List.of())
+			.withChannels(List.of()));
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("updateSubscriptionProfile.subscriptionProfile.eventFilters", "must not be empty"),
+				tuple("updateSubscriptionProfile.subscriptionProfile.channels", "must not be empty"));
+	}
+
+	@Test
+	void updateSubscriptionProfileBlankingName() {
+		final var response = patch(SubscriptionProfile.create().withName("   "));
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("updateSubscriptionProfile.subscriptionProfile.name", "must not be blank"));
+	}
+
 	@Test
 	void getSubscriptionProfilesWithInvalidMunicipalityId() {
 		final var response = webTestClient.get()
