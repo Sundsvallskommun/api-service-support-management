@@ -69,14 +69,13 @@ public class SubscriberService {
 
 	@Transactional(readOnly = true)
 	public Subscriber findSubscriber(final String municipalityId, final String namespace, final String subscriberId) {
-		final var entity = findEntity(municipalityId, namespace, subscriberId);
+		final var entity = loadEntity(municipalityId, namespace, subscriberId);
 		return SubscriberMapper.toSubscriber(entity, subscriptionRepository.countBySubscriberId(subscriberId));
 	}
 
 	@Transactional(readOnly = true)
 	public SubscriberEntity findEntity(final String municipalityId, final String namespace, final String subscriberId) {
-		return subscriberRepository.findByIdAndNamespaceAndMunicipalityId(subscriberId, namespace, municipalityId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, SUBSCRIBER_NOT_FOUND.formatted(subscriberId, namespace, municipalityId)));
+		return loadEntity(municipalityId, namespace, subscriberId);
 	}
 
 	@Transactional
@@ -90,7 +89,7 @@ public class SubscriberService {
 
 	@Transactional
 	public Subscriber updateSubscriber(final String municipalityId, final String namespace, final String subscriberId, final Subscriber patch) {
-		final var entity = findEntity(municipalityId, namespace, subscriberId);
+		final var entity = loadEntity(municipalityId, namespace, subscriberId);
 		verifyOwnedByRequestingUser(entity);
 		SubscriberMapper.applyPatch(entity, patch);
 		validatePauseWindow(entity);
@@ -100,7 +99,7 @@ public class SubscriberService {
 
 	@Transactional
 	public void deleteSubscriber(final String municipalityId, final String namespace, final String subscriberId) {
-		final var entity = findEntity(municipalityId, namespace, subscriberId);
+		final var entity = loadEntity(municipalityId, namespace, subscriberId);
 		verifyOwnedByRequestingUser(entity);
 		subscriberRepository.delete(entity);
 	}
@@ -127,6 +126,11 @@ public class SubscriberService {
 	 * A subscriber describes how one user is notified, so only that user may change or remove it; anyone else is
 	 * refused with 403. Listing, reading and creating are not held to ownership.
 	 */
+	private SubscriberEntity loadEntity(final String municipalityId, final String namespace, final String subscriberId) {
+		return subscriberRepository.findByIdAndNamespaceAndMunicipalityId(subscriberId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, SUBSCRIBER_NOT_FOUND.formatted(subscriberId, namespace, municipalityId)));
+	}
+
 	private void verifyOwnedByRequestingUser(final SubscriberEntity subscriber) {
 		final var owner = subscriber.getIdentifier();
 		if (isNull(owner) || !isRequestingUser(owner.getType(), owner.getValue())) {

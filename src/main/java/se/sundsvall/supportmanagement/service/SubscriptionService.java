@@ -92,7 +92,7 @@ public class SubscriptionService {
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void handleAutoSubscribeEvent(final AutoSubscribeEvent event) {
 		try {
-			autoSubscribeErrandAssignee(event.errandEntity());
+			subscribeAssignee(event.errandEntity());
 		} catch (final Exception e) {
 			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", event.errandEntity().getId(), e);
 		}
@@ -100,6 +100,10 @@ public class SubscriptionService {
 
 	@Transactional
 	public void autoSubscribeErrandAssignee(final ErrandEntity errand) {
+		subscribeAssignee(errand);
+	}
+
+	private void subscribeAssignee(final ErrandEntity errand) {
 		final var assignedUserId = errand.getAssignedUserId();
 		if (assignedUserId == null) {
 			return;
