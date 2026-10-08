@@ -202,7 +202,9 @@ public class ErrandProcessService {
 	/**
 	 * Registers a start, whether it produced an instance or failed to.
 	 * <p>
-	 * Never updates: an instance already registered is answered with what it says right now, and nothing is touched.
+	 * Never updates: an instance already registered is answered with what it says right now, whatever errand version the
+	 * registration carries, and nothing is touched. The errand version is held only against a registration that creates
+	 * the row.
 	 *
 	 * @param  namespace      the namespace of the errand.
 	 * @param  municipalityId the municipality of the errand.
@@ -223,7 +225,7 @@ public class ErrandProcessService {
 	}
 
 	private ErrandProcessResult registerInTransaction(final String namespace, final String municipalityId, final String errandId, final String processInstanceId, final ErrandProcessReport report) {
-		verifyErrandVersion(lockErrandForWriting(namespace, municipalityId, errandId), report);
+		final var errand = lockErrandForWriting(namespace, municipalityId, errandId);
 
 		return ofNullable(processInstanceId)
 			.flatMap(processRepository::findByProcessInstanceId)
@@ -231,7 +233,10 @@ public class ErrandProcessService {
 				verifyBelongsToErrand(existing, errandId);
 				return new ErrandProcessResult(toErrandProcess(existing, signalRepository.findByErrandProcessIdOrderBySortOrderAsc(existing.getId())), false);
 			})
-			.orElseGet(() -> createProcess(namespace, municipalityId, errandId, processInstanceId, report));
+			.orElseGet(() -> {
+				verifyErrandVersion(errand, report);
+				return createProcess(namespace, municipalityId, errandId, processInstanceId, report);
+			});
 	}
 
 	/**

@@ -880,7 +880,9 @@ Operaton kan nämligen lämna ut det första arbetssteget innan `startProcessIns
 Ett arbetssteg — kanske i en helt annan pod — kan alltså hinna `PUT`:a sin `RUNNING`-rapport innan pw:s
 `POST` kommer fram. Eftersom `PUT` skapar eller uppdaterar medan `POST` bara skapar spelar ordningen ingen
 roll: den som kommer först skapar raden, och den andra gör antingen ingenting eller en helt vanlig
-uppdatering. Utan den regeln hade pw fått `409` på en fullt frisk process och, enligt §9.3, avbrutit den.
+uppdatering. Utan den regeln hade pw fått `409` på en fullt frisk process och, enligt §9.3, avbrutit den. Av samma
+skäl hålls `errandVersion` bara mot den `POST` som skapar raden: finns raden redan svarar `POST` `200` vilken version den
+än bär, eftersom arbetssteget som hann före kan ha flyttat ärendet framåt.
 
 Koden får inte heller förlita sig på vilken av de unika nycklarna som råkar slå till först —
 `uq_ep_process_instance_id` och `uq_ep_one_active_per_errand` kan båda träffa på samma insert. Slå upp

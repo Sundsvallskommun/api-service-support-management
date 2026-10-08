@@ -776,6 +776,22 @@ class ErrandProcessServiceTest {
 		verify(processRepositoryMock, never()).saveAndFlush(any());
 	}
 
+	/**
+	 * A work step can report before the start is registered, and the errand may have moved on since the process was
+	 * started. The registration still finds its instance, and is answered with it rather than refused.
+	 */
+	@Test
+	void aRegistrationOfAnInstanceAlreadyReportedOnIsAnsweredWhateverVersionItWasReadAt() {
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, PROCESS, RW)).thenReturn(errand(8L));
+		when(processRepositoryMock.findByProcessInstanceId(PROCESS_INSTANCE_ID)).thenReturn(Optional.of(entity(PROCESS_INSTANCE_ID, RUNNING).withId("rowId")));
+
+		final var result = service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID).withErrandVersion(7L));
+
+		assertThat(result.created()).isFalse();
+		assertThat(result.process().getProcessInstanceId()).isEqualTo(PROCESS_INSTANCE_ID);
+		verify(processRepositoryMock, never()).saveAndFlush(any());
+	}
+
 	// ---------------------------------------------------------------------------------------------------------------
 	// Two work steps at once
 	// ---------------------------------------------------------------------------------------------------------------
