@@ -105,7 +105,7 @@ final class RestowPager {
 
 		static final Outcome NONE = new Outcome(0, 0);
 
-		private static final String RESTOWED = "%d errand(s) restowed";
+		private static final String ONLY_RESTOWED = "%d errand(s) restowed";
 		private static final String RESTOWED_AND_UNCHANGED = "%d errand(s) restowed, %d kept their labels";
 
 		/**
@@ -130,7 +130,7 @@ final class RestowPager {
 		 * @return the outcome in words.
 		 */
 		String describe() {
-			return unchanged == 0 ? RESTOWED.formatted(restowed) : RESTOWED_AND_UNCHANGED.formatted(restowed, unchanged);
+			return unchanged == 0 ? ONLY_RESTOWED.formatted(restowed) : RESTOWED_AND_UNCHANGED.formatted(restowed, unchanged);
 		}
 	}
 
