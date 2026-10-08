@@ -533,7 +533,7 @@ class HandoverServiceTest {
 
 		final var newBlobMock = mock(Blob.class);
 		final var lobHelperMock = mock(LobHelper.class);
-		when(lobHelperMock.createBlob(eq(inputStreamMock), eq(1024L))).thenReturn(newBlobMock);
+		when(lobHelperMock.createBlob(inputStreamMock, 1024L)).thenReturn(newBlobMock);
 
 		try (final MockedStatic<Hibernate> hibernateStatic = mockStatic(Hibernate.class)) {
 			hibernateStatic.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
