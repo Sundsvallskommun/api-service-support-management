@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
+import se.sundsvall.supportmanagement.service.model.ProcessLabels;
 
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static java.util.Objects.isNull;
@@ -55,10 +56,11 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
  * 1. process consumer for (municipalityId, namespace)?   no   -&gt; return
  *    event type CREATE, UPDATE or DELETE?                no   -&gt; throw, which takes the errand change down
  *    errand a draft?                                     yes  -&gt; return
- *    a label of the errand with processBlocked=true?     yes  -&gt; return
  * 2. X-Trigger-Process: false, from a non ad identity?   yes  -&gt; return                 (loop guard, layer 1)
  *                    commands (PROCESS, SIGNAL) and deletions skip steps 2, 3 and 4
  * 3. event sub type among the process triggers?          no   -&gt; return                 (layer 2)
+ *    a label of the errand with processBlocked=true?     yes  -&gt; return
+ *                    asked of commands and deletions too, out of labels read once for step 5 as well
  * 4. delivered events for the errand in the window?      over -&gt; error entry, return    (layer 3)
  *                    a decision concluded by an ad account skips this step
  * 5. process key: the command's own first, then the instance's, and the labels last
@@ -171,12 +173,23 @@ public class ProcessEventPublisher {
 
 		final var processEventType = toProcessEventType(eventType);
 
-		if (isHeldBack(errand, eventType, eventSubType, concludesDecision)) {
+		if (isHeldBack(errand, eventType, eventSubType)) {
+			return;
+		}
+
+		final var labels = processKeySelector.read(errand);
+
+		if (labels.blocked()) {
+			LOG.debug("No process event written for errand {}: a label of the errand blocks processes", sanitizeForLogging(errand.getId()));
+			return;
+		}
+
+		if (isBraked(errand, eventType, eventSubType, concludesDecision)) {
 			return;
 		}
 
 		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(errand.getId());
-		final var selection = selectFromLabels(errand, eventType);
+		final var selection = selectionFor(labels, eventType);
 		final var processKey = resolveProcessKey(command, instances, selection);
 
 		if (isNull(processKey)) {
@@ -215,23 +228,17 @@ public class ProcessEventPublisher {
 	}
 
 	/**
-	 * Whether the event is kept from the process before its key is looked for: always for a draft and for an errand a
-	 * label of which blocks processes, and for an event that is neither a command nor a deletion also when the write
-	 * asked not to wake the process, when its sub type is no process trigger of the namespace, and when the emergency
-	 * brake has tripped - which a decision concluded by a person passes.
+	 * Whether the event is kept from the process before the labels of the errand are read: always for a draft, and for an
+	 * event that is neither a command nor a deletion also when the write asked not to wake the process and when its sub
+	 * type is no process trigger of the namespace.
 	 */
-	private boolean isHeldBack(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final boolean concludesDecision) {
+	private boolean isHeldBack(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType) {
 		if (errand.isDraft()) {
 			LOG.debug("No process event written for errand {}: the errand is a draft", sanitizeForLogging(errand.getId()));
 			return true;
 		}
 
-		if (processKeySelector.isBlocked(errand)) {
-			LOG.debug("No process event written for errand {}: a label of the errand blocks processes", sanitizeForLogging(errand.getId()));
-			return true;
-		}
-
-		if (eventSubType.isCommand() || DELETE == eventType) {
+		if (isCommandOrDeletion(eventType, eventSubType)) {
 			return false;
 		}
 
@@ -240,11 +247,20 @@ public class ProcessEventPublisher {
 			return true;
 		}
 
-		if (!namespaceConfigService.getProcessTriggers(errand.getNamespace(), errand.getMunicipalityId()).contains(eventSubType)) {
-			return true;
-		}
+		return !namespaceConfigService.getProcessTriggers(errand.getNamespace(), errand.getMunicipalityId()).contains(eventSubType);
+	}
 
-		return !concludedByPerson(concludesDecision) && isRateExceeded(errand);
+	/**
+	 * Whether the emergency brake keeps the event from the process: asked for an event that is neither a command nor a
+	 * deletion, and passed by a decision concluded by a person. Asked once the labels have been found not to block
+	 * processes, so that a blocked errand trips no brake.
+	 */
+	private boolean isBraked(final ErrandEntity errand, final EventType eventType, final EventSubType eventSubType, final boolean concludesDecision) {
+		return !isCommandOrDeletion(eventType, eventSubType) && !concludedByPerson(concludesDecision) && isRateExceeded(errand);
+	}
+
+	private static boolean isCommandOrDeletion(final EventType eventType, final EventSubType eventSubType) {
+		return eventSubType.isCommand() || DELETE == eventType;
 	}
 
 	/**
@@ -302,13 +318,13 @@ public class ProcessEventPublisher {
 	}
 
 	/**
-	 * What the labels say about the process key, asked for every event but a deletion.
+	 * What the labels say about the process key, taken for every event but a deletion.
 	 * <p>
 	 * For a deletion {@link ProcessKeySelection#NONE} is returned, so a deletion is published with the key of its
 	 * instance, or with none.
 	 */
-	private ProcessKeySelection selectFromLabels(final ErrandEntity errand, final EventType eventType) {
-		return DELETE == eventType ? ProcessKeySelection.NONE : processKeySelector.select(errand);
+	private static ProcessKeySelection selectionFor(final ProcessLabels labels, final EventType eventType) {
+		return DELETE == eventType ? ProcessKeySelection.NONE : labels.selection();
 	}
 
 	/**

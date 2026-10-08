@@ -44,6 +44,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
+import se.sundsvall.supportmanagement.service.model.ProcessLabels;
 
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
@@ -159,6 +160,7 @@ class ProcessEventPublisherTest {
 
 	@BeforeEach
 	void setUp() {
+		lenient().when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, ProcessKeySelection.NONE));
 		publisher = new ProcessEventPublisher(namespaceConfigServiceMock, outboxRepositoryMock, processRepositoryMock, processKeySelectorMock, new ProcessActivityLog(activityRepositoryMock, properties, clock), properties, clock,
 			applicationEventPublisherMock);
 	}
@@ -264,6 +266,7 @@ class ProcessEventPublisherTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a sub type that is no trigger of the namespace writes nothing, and is dropped before the labels are read")
 	void aSubTypeThatIsNoTriggerOfTheNamespaceWritesNothing() {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
@@ -271,8 +274,23 @@ class ProcessEventPublisherTest {
 		publisher.publish(errand(), UPDATE, ATTACHMENT, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
-		verifyNoInteractions(processRepositoryMock, activityRepositoryMock);
-		verifyLabelsReadOnlyForABlock();
+		verifyNoInteractions(processRepositoryMock, activityRepositoryMock, processKeySelectorMock);
+	}
+
+	@Test
+	@DisplayName("Verification that the labels of an errand are read once for a publication, for the block and the key alike")
+	void theLabelsAreReadOnceForAPublication() {
+		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE);
+		givenLabels(APPLICATION, AUTOMATIC);
+		givenNoInstances();
+
+		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+
+		verify(outboxRepositoryMock).save(outboxCaptor.capture());
+		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(APPLICATION);
+		verify(processKeySelectorMock).read(any(ErrandEntity.class));
+		verifyNoMoreInteractions(processKeySelectorMock);
 	}
 
 	@Test
@@ -411,8 +429,7 @@ class ProcessEventPublisherTest {
 		publisher.publish(errand(), UPDATE, DECISION, EXECUTED_BY, REQUEST_GROUP_ID, null, true);
 
 		verify(outboxRepositoryMock, never()).save(any());
-		verifyNoInteractions(processRepositoryMock);
-		verifyLabelsReadOnlyForABlock();
+		verifyNoInteractions(processRepositoryMock, processKeySelectorMock);
 	}
 
 	@Test
@@ -442,7 +459,7 @@ class ProcessEventPublisherTest {
 		givenTriggers(MESSAGE);
 		givenNoInstances();
 		final var oversized = "a".repeat(PROCESS_KEY_LENGTH + 1);
-		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(oversized, AUTOMATIC, List.of(oversized)));
+		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(oversized, AUTOMATIC, List.of(oversized))));
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -463,7 +480,7 @@ class ProcessEventPublisherTest {
 		givenTriggers(MESSAGE);
 		givenNoInstances();
 		final var exact = "a".repeat(PROCESS_KEY_LENGTH);
-		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(exact, AUTOMATIC, List.of(exact)));
+		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(exact, AUTOMATIC, List.of(exact))));
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -477,7 +494,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
 		givenNoInstances();
-		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(null, null, List.of("b".repeat(40_000), "c".repeat(40_000))));
+		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(null, null, List.of("b".repeat(40_000), "c".repeat(40_000)))));
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -547,14 +564,16 @@ class ProcessEventPublisherTest {
 	}
 
 	@Test
-	@DisplayName("Verification that the labels of a deletion are read for a block and never for a key, since the key of a deletion comes from its instance")
+	@DisplayName("Verification that the labels of a deletion are read for a block and never give it a key, since the key of a deletion comes from its instance")
 	void aDeletionReadsTheLabelsOnlyForABlock() {
 		givenNamespaceRunsProcess();
+		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 
 		publisher.publish(errand(), DELETE, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
-		verify(outboxRepositoryMock).save(any());
+		verify(outboxRepositoryMock).save(outboxCaptor.capture());
+		assertThat(outboxCaptor.getValue().getProcessKey()).isNull();
 		verifyLabelsReadOnlyForABlock();
 	}
 
@@ -563,12 +582,12 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that an errand wearing a label that blocks processes tells the process nothing, whatever the event, and that nothing more is read or counted on its behalf")
 	void aBlockingLabelWritesNothing(final EventType eventType, final EventSubType eventSubType, final ProcessCommand command, final boolean concludesDecision) {
 		givenNamespaceRunsProcess();
+		givenEveryErrandChangeATrigger();
 		givenBlocked();
 
 		publisher.publish(errand(), eventType, eventSubType, EXECUTED_BY, REQUEST_GROUP_ID, command, concludesDecision);
 
 		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, applicationEventPublisherMock);
-		verify(namespaceConfigServiceMock, never()).getProcessTriggers(any(), any());
 		verifyLabelsReadOnlyForABlock();
 	}
 
@@ -589,6 +608,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a blocking label holds the event back whoever writes it and whatever the header says, a handler included")
 	void aBlockingLabelHoldsBackEveryCaller(final boolean adAccount, final String header) {
 		givenNamespaceRunsProcess();
+		givenEveryErrandChangeATrigger();
 		givenBlocked();
 		if (adAccount) {
 			Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTED_BY));
@@ -660,7 +680,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
 		givenNoInstances();
-		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(ProcessKeySelection.NONE);
+		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, ProcessKeySelection.NONE));
 
 		publisher.publish(errand(), UPDATE, MESSAGE, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -901,7 +921,7 @@ class ProcessEventPublisherTest {
 	void theEventTypesAProcessKnowsAreWrittenAsTheyAre(final EventType eventType) {
 		givenNamespaceRunsProcess();
 		lenient().when(namespaceConfigServiceMock.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(ERRAND));
-		lenient().when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(APPLICATION, AUTOMATIC, List.of(APPLICATION)));
+		lenient().when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(APPLICATION, AUTOMATIC, List.of(APPLICATION))));
 		givenNoInstances();
 
 		publisher.publish(errand(), eventType, ERRAND, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
@@ -960,21 +980,29 @@ class ProcessEventPublisherTest {
 		when(namespaceConfigServiceMock.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(triggers));
 	}
 
+	/**
+	 * Every errand change a test of the block sends is a trigger, so that it is the block that holds the event back. Not
+	 * asked for a command, a deletion or a write that asks not to wake the process.
+	 */
+	private void givenEveryErrandChangeATrigger() {
+		lenient().when(namespaceConfigServiceMock.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(ERRAND, ATTACHMENT, DECISION, MESSAGE));
+	}
+
 	private void givenLabels(final String processKey, final ProcessStartMode startMode) {
-		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(processKey, startMode, List.of(processKey)));
+		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(processKey, startMode, List.of(processKey))));
 	}
 
 	private void givenBlocked() {
-		when(processKeySelectorMock.isBlocked(any(ErrandEntity.class))).thenReturn(true);
+		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(true, ProcessKeySelection.NONE));
 	}
 
 	private void verifyLabelsReadOnlyForABlock() {
-		verify(processKeySelectorMock).isBlocked(any(ErrandEntity.class));
+		verify(processKeySelectorMock).read(any(ErrandEntity.class));
 		verifyNoMoreInteractions(processKeySelectorMock);
 	}
 
 	private void givenAmbiguousLabels() {
-		when(processKeySelectorMock.select(any(ErrandEntity.class))).thenReturn(new ProcessKeySelection(null, null, List.of(APPLICATION, SUPERVISION)));
+		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(null, null, List.of(APPLICATION, SUPERVISION))));
 	}
 
 	private void givenNoInstances() {

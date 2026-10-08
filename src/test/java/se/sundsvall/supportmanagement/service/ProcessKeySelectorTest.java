@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
@@ -280,6 +281,31 @@ class ProcessKeySelectorTest {
 
 		assertThat(selector.isBlocked(errandWearing(loaded(label(APPLICATION, null)), notLoaded(blocking.getId())))).isTrue();
 		verify(metadataLabelRepositoryMock).findAllById(Set.of(blocking.getId()));
+	}
+
+	@Test
+	@DisplayName("Verification that both answers are read out of labels looked up once, a block and a key alike")
+	void bothAnswersAreReadOutOfOneLookup() {
+		final var blocking = blocking("true");
+		final var application = label(APPLICATION, "MANUAL");
+		when(metadataLabelRepositoryMock.findAllById(Set.of(blocking.getId(), application.getId()))).thenReturn(List.of(blocking, application));
+
+		final var labels = selector.read(errandWearing(notLoaded(blocking.getId()), notLoaded(application.getId())));
+
+		assertThat(labels.blocked()).isTrue();
+		assertThat(labels.selection()).isEqualTo(new ProcessKeySelection(APPLICATION, MANUAL, List.of(APPLICATION)));
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(blocking.getId(), application.getId()));
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that labels blocking nothing are read as no block, beside what they select")
+	void labelsBlockingNothingAreReadAsNoBlock() {
+		final var labels = selector.read(errandWith(label(APPLICATION, null)));
+
+		assertThat(labels.blocked()).isFalse();
+		assertThat(labels.selection().processKey()).isEqualTo(APPLICATION);
+		verifyNoInteractions(metadataLabelRepositoryMock);
 	}
 
 	@Test

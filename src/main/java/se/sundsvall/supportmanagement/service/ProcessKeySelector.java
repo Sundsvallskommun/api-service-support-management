@@ -17,6 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbedda
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
+import se.sundsvall.supportmanagement.service.model.ProcessLabels;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
@@ -101,6 +102,19 @@ public class ProcessKeySelector {
 	}
 
 	/**
+	 * Both answers at once: whether the labels of an errand block processes, as {@link #isBlocked(ErrandEntity)} answers
+	 * it, and which process they select, as {@link #select(ErrandEntity)} answers it. The labels are read once for both.
+	 *
+	 * @param  errand the errand to read.
+	 * @return        whether the labels block processes, and what they select.
+	 */
+	public ProcessLabels read(final ErrandEntity errand) {
+		final var labels = metadataLabelsOf(ofNullable(errand.getLabels()).orElse(emptyList()));
+
+		return new ProcessLabels(!blockingIdsOf(labels).isEmpty(), selectFrom(labels));
+	}
+
+	/**
 	 * The ids of the labels, among labels an errand wears or would wear, that block processes. The labels are read as
 	 * {@link #select(Collection)} reads them.
 	 *
@@ -108,7 +122,11 @@ public class ProcessKeySelector {
 	 * @return        the ids of those carrying {@code processBlocked} with the value {@code true}, empty when none does.
 	 */
 	public Set<String> blockingLabelIdsOf(final Collection<ErrandLabelEmbeddable> labels) {
-		return metadataLabelsOf(labels).stream()
+		return blockingIdsOf(metadataLabelsOf(labels));
+	}
+
+	private Set<String> blockingIdsOf(final Collection<MetadataLabelEntity> labels) {
+		return labels.stream()
 			.filter(label -> TRUE.toString().equals(attribute(label, PROCESS_BLOCKED_ATTRIBUTE)))
 			.map(MetadataLabelEntity::getId)
 			.collect(toSet());

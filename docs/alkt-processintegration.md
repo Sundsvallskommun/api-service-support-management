@@ -287,6 +287,10 @@ bromsen är en `COUNT` mot outboxen. En händelse som ändå inte ska till proce
 inte heller ge en LOOP_GUARD-post för en händelse som aldrig hade publicerats. Utfallet är detsamma i vilken ordning
 de två än frågas.
 
+**Etiketterna läses en gång, efter triggerfiltret och före nödbromsen.** Samma läsning svarar på om en etikett spärrar
+processer (§7.8) och vilken nyckel etiketterna pekar ut i steg 5. En händelse som inte är en trigger kostar därför ingen
+läsning av etiketterna, och ett spärrat ärende ger ingen LOOP_GUARD-post.
+
 Typkontrollen hör också till steg 1. pw-alkt tar bara emot `CREATE`, `UPDATE` och `DELETE`. En rad med någon annan typ kan relayet aldrig leverera, men läser den ändå först vid varje körning, och den håller tillbaka ärendets senare händelser tills den åldras ut. Publiceringen kastar därför i stället, medan anroparen finns kvar, och ärendeändringen rullas tillbaka. Inget anropsställe skickar någon annan typ idag, så kontrollen är till för nästa. Den ligger före loop-skyddet, så att ett sådant anrop fallerar i första testet och inte i produktion den dag någon lägger subtypen i `PROCESS_TRIGGER`. Ett namespace utan process når aldrig kontrollen.
 
 ERROR-aktiviteterna i steg 4 och 5 skrivs **utan processinstans** — de inträffar per definition när
@@ -1826,8 +1830,8 @@ en radering som hålls tillbaka lämnar processinstansen levande i Operaton för
 `PROCESS_TRIGGER`.
 
 **En etikett med `processBlocked=true` håller tillbaka allt, kommandon och raderingar inräknade** (beslut 90). Spärren
-frågas direkt efter om ärendet är ett utkast och före undantaget för kommandon och `DELETE`, så ingen rad skrivs för
-ett spärrat ärende, oavsett händelse, skrivare och header (§7.8).
+frågas efter `X-Trigger-Process` och triggerna men före nödbromsen, och kommandon och `DELETE`, som hoppar över de två,
+hålls till den. Ingen rad skrivs alltså för ett spärrat ärende, oavsett händelse, skrivare och header (§7.8).
 
 **Skrivningen där en handläggare gör ett beslut `COMPLETED` passerar bromsen, men bara den** (beslut 54). Det
 är den händelse ett väntläge väntar på, och kastas den står ärendet still hur mycket annan trafik som än orsakade
@@ -2511,8 +2515,9 @@ avvisas med `400` när etiketten skrivs. Attributet får stå på en etikett uta
 Spärren läses ur **alla** etiketter ärendet bär, även en `deprecated`. Etiketterna lagras med sina förfäder, så en
 spärr på en föräldraetikett gäller varje ärende som bär en etikett under den.
 
-- **Publiceringen:** `ProcessEventPublisher.isHeldBack` frågar spärren direkt efter utkastet och före undantaget för
-  kommandon och `DELETE`. Ingen rad skrivs i outboxen för ett spärrat ärende — skapande, ändring, bilaga, beslut,
+- **Publiceringen:** `ProcessEventPublisher` frågar spärren efter utkastet, `X-Trigger-Process` och triggerna men före
+  nödbromsen, i samma läsning av etiketterna som ger nyckeln. Kommandon och `DELETE` hoppar över `X-Trigger-Process` och
+  triggerna men inte spärren. Ingen rad skrivs i outboxen för ett spärrat ärende — skapande, ändring, bilaga, beslut,
   meddelande, start, signal eller radering — vem som än skriver och vad `X-Trigger-Process` än säger. Händelsen skrivs
   till eventloggen som vanligt. En radering läser etiketterna innan ärendet tas bort och lägger tillbaka dem som id,
   eftersom borttagningen lämnar ärendet frikopplat från sessionen.
