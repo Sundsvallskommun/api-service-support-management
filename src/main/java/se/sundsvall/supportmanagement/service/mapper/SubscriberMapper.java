@@ -126,7 +126,7 @@ public final class SubscriberMapper {
 			.map(e -> EventFilter.create()
 				.withType(e.getType())
 				.withSubtype(e.getSubtype())
-				.withLabelAdded(e.getLabelAdded()))
+				.withLabelId(e.getLabelId()))
 			.orElse(null);
 	}
 
@@ -143,7 +143,7 @@ public final class SubscriberMapper {
 			.map(d -> EventFilterEmbeddable.create()
 				.withType(d.getType())
 				.withSubtype(d.getSubtype())
-				.withLabelAdded(d.getLabelAdded()))
+				.withLabelId(d.getLabelId()))
 			.orElse(null);
 	}
 }

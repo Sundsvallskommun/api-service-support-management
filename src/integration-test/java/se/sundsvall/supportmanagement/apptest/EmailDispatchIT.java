@@ -161,7 +161,7 @@ class EmailDispatchIT extends AbstractAppTest {
 
 	/**
 	 * A PATCH adding the HSL risk label queues an UPDATE/ERRAND event carrying the label, which the MAS profile's
-	 * labelAdded filter matches. The MAS subscriber only has the internal channel, but the profile routes the event to
+	 * labelId filter matches. The MAS subscriber only has the internal channel, but the profile routes the event to
 	 * email, so it lands in the outbox for them and for no one else.
 	 */
 	@Test

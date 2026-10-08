@@ -925,7 +925,7 @@ VALUES ('epa-it-task', 'ep-it-live', 'aa000000-0000-0000-0000-0000000000a1', 'ta
 INSERT INTO subscription_profile(id, municipality_id, namespace, name, description, created, modified)
 VALUES ('ccddeeff-0000-0000-0000-000000000099', '2281', 'CONTACTCENTER', 'Notis om meddelanden till rapportor', null, '2024-01-10 12:00:00.000', null);
 
-INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype, label_added)
+INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype, label_id)
 VALUES ('ccddeeff-0000-0000-0000-000000000099', 0, 'UPDATE', 'MESSAGE', null);
 
 INSERT INTO subscription_profile_channel(profile_id, sort_order, type)
