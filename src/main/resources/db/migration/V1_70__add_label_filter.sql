@@ -4,13 +4,13 @@
 -- ============================================================================
 
 alter table subscriber_event_filter
-    add column if not exists label_added varchar(36);
+    add column if not exists label_id varchar(36);
 
 alter table subscription_event_filter
-    add column if not exists label_added varchar(36);
+    add column if not exists label_id varchar(36);
 
 alter table subscription_profile_event_filter
-    add column if not exists label_added varchar(36);
+    add column if not exists label_id varchar(36);
 
 -- ============================================================================
 -- The labels each queued event added to the errand. Every label counts as

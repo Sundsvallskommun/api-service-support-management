@@ -281,14 +281,14 @@ class NotificationDispatchWorkerTest {
 	}
 
 	@Test
-	void processGroupMatchesLabelAddedOnlyWhenTheEventAddedTheLabel() {
+	void processGroupMatchesLabelIdOnlyWhenTheEventAddedTheLabel() {
 
 		// Arrange — the profile wants the HSL label being added; only the second event added it
 		final var otherLabel = buildEntry("other-user").withId("entry-1").withEventType("UPDATE").withSubType("ERRAND").withAddedLabelIds(Set.of("other-label"));
 		final var hslLabel = buildEntry("other-user").withId("entry-2").withEventType("UPDATE").withSubType("ERRAND").withAddedLabelIds(Set.of("other-label", "hsl-label"));
 		final var noLabels = buildEntry("other-user").withId("entry-3").withEventType("UPDATE").withSubType("ERRAND");
 		final var subscriber = buildSubscriber("joe01doe", null);
-		mockDispatchOf(buildProfileSubscription(subscriber, "hsl", List.of(filter("UPDATE", "ERRAND").withLabelAdded("hsl-label")), List.of(EMAIL)));
+		mockDispatchOf(buildProfileSubscription(subscriber, "hsl", List.of(filter("UPDATE", "ERRAND").withLabelId("hsl-label")), List.of(EMAIL)));
 
 		// Act
 		worker.processGroup(List.of(otherLabel, hslLabel, noLabels));
