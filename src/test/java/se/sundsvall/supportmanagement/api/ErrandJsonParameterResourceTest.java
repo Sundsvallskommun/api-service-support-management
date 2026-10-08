@@ -151,7 +151,7 @@ class ErrandJsonParameterResourceTest {
 			.returnResult();
 
 		assertThat(response.getResponseBody()).isNotNull();
-		assertThat(response.getResponseBody().getVersion()).isEqualTo(0L);
+		assertThat(response.getResponseBody().getVersion()).isZero();
 
 		verify(errandJsonParameterServiceMock).updateJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, KEY, null, requestBody);
 		verifyNoMoreInteractions(errandJsonParameterServiceMock);
