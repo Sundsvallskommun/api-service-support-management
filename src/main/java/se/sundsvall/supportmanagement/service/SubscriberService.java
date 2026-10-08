@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.service.mapper.SubscriberMapper;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -44,10 +45,12 @@ public class SubscriberService {
 
 	private final SubscriberRepository subscriberRepository;
 	private final SubscriptionRepository subscriptionRepository;
+	private final SubscriptionOptOutService subscriptionOptOutService;
 
-	public SubscriberService(final SubscriberRepository subscriberRepository, final SubscriptionRepository subscriptionRepository) {
+	public SubscriberService(final SubscriberRepository subscriberRepository, final SubscriptionRepository subscriptionRepository, final SubscriptionOptOutService subscriptionOptOutService) {
 		this.subscriberRepository = subscriberRepository;
 		this.subscriptionRepository = subscriptionRepository;
+		this.subscriptionOptOutService = subscriptionOptOutService;
 	}
 
 	@Transactional(readOnly = true)
@@ -98,10 +101,17 @@ public class SubscriberService {
 		return SubscriberMapper.toSubscriber(saved, subscriptionRepository.countBySubscriberId(subscriberId));
 	}
 
+	/**
+	 * Removes the subscriber and, through the cascade, its subscriptions. Removing it is the user leaving every profile
+	 * it is a member of, which is recorded first, as the members sync would otherwise give the user a new subscriber and
+	 * put them back on the profiles.
+	 */
 	@Transactional
 	public void deleteSubscriber(final String municipalityId, final String namespace, final String subscriberId) {
 		final var entity = findEntity(municipalityId, namespace, subscriberId);
 		verifyOwnedByRequestingUser(entity);
+		ofNullable(entity.getSubscriptions()).orElse(emptyList())
+			.forEach(subscriptionOptOutService::recordOptOut);
 		subscriberRepository.delete(entity);
 	}
 

@@ -134,6 +134,39 @@ class SubscriptionProfilesIT extends AbstractAppTest {
 	}
 
 	@Test
+	void test11_memberWhoDeletedTheirSubscriberIsNotSubscribedAgain() {
+		setupCall()
+			.withServicePath(PATH + "/" + PROFILE_MAIL_ID + "/members")
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequestAndVerifyResponse();
+
+		// The member removes their whole subscriber rather than the one subscription
+		setupCall()
+			.withServicePath("/" + MUNICIPALITY_2281 + "/" + NAMESPACE + "/subscribers/" + SUBSCRIBER_SERVICEDESK_ID)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequestAndVerifyResponse();
+
+		// Syncing the same list again neither gives them a new subscriber nor puts them back on the profile
+		setupCall()
+			.withServicePath(PATH + "/" + PROFILE_MAIL_ID + "/members")
+			.withHttpMethod(PUT)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(PATH + "/" + PROFILE_MAIL_ID + "/members")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
 	void test10_deleteReporterProfileConflict() {
 		// CONTACTCENTER subscribes reporters with this profile, so it cannot go before the namespace stops naming it
 		setupCall()

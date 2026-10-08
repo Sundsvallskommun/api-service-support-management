@@ -18,14 +18,12 @@ import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.SubscriptionOptOutRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionOptOutEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
@@ -33,7 +31,6 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -67,7 +64,7 @@ class SubscriptionServiceTest {
 	private SubscriptionRepository subscriptionRepositoryMock;
 
 	@Mock
-	private SubscriptionOptOutRepository subscriptionOptOutRepositoryMock;
+	private SubscriptionOptOutService subscriptionOptOutServiceMock;
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -80,9 +77,6 @@ class SubscriptionServiceTest {
 
 	@Captor
 	private ArgumentCaptor<SubscriptionEntity> entityCaptor;
-
-	@Captor
-	private ArgumentCaptor<SubscriptionOptOutEntity> optOutCaptor;
 
 	@BeforeEach
 	void setUpIdentity() {
@@ -275,10 +269,10 @@ class SubscriptionServiceTest {
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileId(SUBSCRIBER_ID, DB_NAMESPACE, PROFILE_ID);
 		verify(subscriptionRepositoryMock).saveAndFlush(entityCaptor.capture());
 		// Choosing the profile again clears an earlier opt-out
-		verify(subscriptionOptOutRepositoryMock).deleteBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID);
+		verify(subscriptionOptOutServiceMock).isOptedOut(PROFILE_ID, subscriber.getIdentifier());
 		assertThat(entityCaptor.getValue().getProfile()).isSameAs(profile);
 		assertThat(entityCaptor.getValue().getTargetType()).isEqualTo(DB_NAMESPACE);
-		verifyNoMoreInteractions(subscriberServiceMock, subscriptionProfileServiceMock, subscriptionRepositoryMock, subscriptionOptOutRepositoryMock);
+		verifyNoMoreInteractions(subscriberServiceMock, subscriptionProfileServiceMock, subscriptionRepositoryMock, subscriptionOptOutServiceMock);
 		verifyNoInteractions(errandsRepositoryMock);
 	}
 
@@ -429,62 +423,66 @@ class SubscriptionServiceTest {
 
 		verify(subscriptionRepositoryMock).findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).delete(entity);
-		verifyNoMoreInteractions(subscriptionRepositoryMock);
-		verifyNoInteractions(errandsRepositoryMock, subscriptionOptOutRepositoryMock);
+		// Whether leaving it means leaving a profile is for the opt-out service to tell
+		verify(subscriptionOptOutServiceMock).recordOptOut(entity);
+		verifyNoMoreInteractions(subscriptionRepositoryMock, subscriptionOptOutServiceMock);
+		verifyNoInteractions(errandsRepositoryMock);
 	}
 
 	@Test
-	void deleteProfileSubscriptionRecordsOptOut() {
+	void createProfileSubscriptionRejoiningOwnLeftProfileClearsOptOut() {
 		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var profile = SubscriptionProfileEntity.create().withId(PROFILE_ID);
-		final var entity = SubscriptionEntity.create().withId("sub-1").withSubscriber(subscriber).withTargetType(DB_NAMESPACE).withProfile(profile);
+		final var dto = Subscription.create().withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.NAMESPACE)).withProfileId(PROFILE_ID);
+
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(entity));
-		when(subscriptionOptOutRepositoryMock.existsBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID)).thenReturn(false);
+		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID)).thenReturn(profile);
+		when(subscriptionOptOutServiceMock.isOptedOut(PROFILE_ID, subscriber.getIdentifier())).thenReturn(true);
+		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId("new"));
 
-		service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "sub-1");
+		service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto);
 
-		verify(subscriptionOptOutRepositoryMock).existsBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID);
-		verify(subscriptionOptOutRepositoryMock).save(optOutCaptor.capture());
-		assertThat(optOutCaptor.getValue().getSubscriber()).isSameAs(subscriber);
-		assertThat(optOutCaptor.getValue().getProfile()).isSameAs(profile);
-		verify(subscriptionRepositoryMock).findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(subscriptionRepositoryMock).delete(entity);
-		verifyNoMoreInteractions(subscriptionRepositoryMock, subscriptionOptOutRepositoryMock);
+		verify(subscriptionOptOutServiceMock).isOptedOut(PROFILE_ID, subscriber.getIdentifier());
+		verify(subscriptionOptOutServiceMock).clearOptOut(profile, subscriber.getIdentifier());
+		verify(subscriptionRepositoryMock).saveAndFlush(any(SubscriptionEntity.class));
 	}
 
 	@Test
-	void deleteProfileSubscriptionAlreadyOptedOut() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
-		final var entity = SubscriptionEntity.create().withId("sub-1").withSubscriber(subscriber).withTargetType(DB_NAMESPACE)
-			.withProfile(SubscriptionProfileEntity.create().withId(PROFILE_ID));
+	void createProfileSubscriptionForColleagueWhoLeftTheProfileIsRefused() {
+		// joe01doe is the requesting user; anna01 left the profile, and only she may choose it again
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue("anna01"));
+		final var profile = SubscriptionProfileEntity.create().withId(PROFILE_ID);
+		final var dto = Subscription.create().withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.NAMESPACE)).withProfileId(PROFILE_ID);
+
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(entity));
-		when(subscriptionOptOutRepositoryMock.existsBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID)).thenReturn(true);
+		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID)).thenReturn(profile);
+		when(subscriptionOptOutServiceMock.isOptedOut(PROFILE_ID, subscriber.getIdentifier())).thenReturn(true);
 
-		service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "sub-1");
+		assertThatThrownBy(() -> service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto))
+			.isInstanceOf(Problem.class)
+			.extracting("status").isEqualTo(CONFLICT);
 
-		verify(subscriptionOptOutRepositoryMock).existsBySubscriberIdAndProfileId(SUBSCRIBER_ID, PROFILE_ID);
-		verify(subscriptionRepositoryMock).delete(entity);
-		verify(subscriptionOptOutRepositoryMock, never()).save(any());
+		verify(subscriptionOptOutServiceMock).isOptedOut(PROFILE_ID, subscriber.getIdentifier());
+		verify(subscriptionOptOutServiceMock, never()).clearOptOut(any(), any());
+		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
 	}
 
 	@Test
-	void deleteErrandProfileSubscriptionRecordsNoOptOut() {
-		// A profile subscription for a single errand is not a membership the sync manages, so leaving it needs no record
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
-		final var entity = SubscriptionEntity.create().withId("sub-1").withSubscriber(subscriber).withTargetType(DB_ERRAND)
-			.withProfile(SubscriptionProfileEntity.create().withId(PROFILE_ID));
+	void createProfileSubscriptionForColleagueWhoNeverLeft() {
+		// Subscribing a colleague to a profile is fine as long as they have not left it
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue("anna01"));
+		final var profile = SubscriptionProfileEntity.create().withId(PROFILE_ID);
+		final var dto = Subscription.create().withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.NAMESPACE)).withProfileId(PROFILE_ID);
+
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(entity));
+		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID)).thenReturn(profile);
+		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId("new"));
 
-		service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "sub-1");
+		service.createSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, dto);
 
-		verify(subscriptionRepositoryMock).delete(entity);
-		verifyNoInteractions(subscriptionOptOutRepositoryMock);
+		verify(subscriptionOptOutServiceMock).isOptedOut(PROFILE_ID, subscriber.getIdentifier());
+		verify(subscriptionOptOutServiceMock, never()).clearOptOut(any(), any());
+		verify(subscriptionRepositoryMock).saveAndFlush(any(SubscriptionEntity.class));
 	}
 
 	@Test
@@ -550,42 +548,6 @@ class SubscriptionServiceTest {
 		assertThat(saved.getTargetType()).isEqualTo(DB_ERRAND);
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock);
 		verifyNoInteractions(errandsRepositoryMock);
-	}
-
-	@Test
-	void handleAutoSubscribeEventDelegatesAndSwallowsExceptions() {
-		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withAssignedUserId("joe01doe");
-		final var event = new AutoSubscribeEvent(errand);
-		doThrow(new RuntimeException("boom")).when(subscriberServiceMock).findOrCreateSubscriberForAssignee(any(), any(), any());
-
-		service.handleAutoSubscribeEvent(event);
-
-		verify(subscriberServiceMock).findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, "joe01doe");
-		verifyNoMoreInteractions(subscriberServiceMock);
-		// The errand was not just created, so the reporter is not considered
-		verifyNoInteractions(subscriptionRepositoryMock, errandsRepositoryMock, namespaceConfigServiceMock);
-	}
-
-	@Test
-	void handleAutoSubscribeEventForCreatedErrandLooksUpTheReporterProfile() {
-		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withReporterUserId("rep01usr");
-		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
-
-		service.handleAutoSubscribeEvent(new AutoSubscribeEvent(errand, true));
-
-		verify(namespaceConfigServiceMock).findReporterProfileId(NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(subscriberServiceMock, subscriptionRepositoryMock);
-	}
-
-	@Test
-	void handleAutoSubscribeEventSwallowsReporterFailures() {
-		final var errand = new ErrandEntity().withId(ERRAND_ID).withMunicipalityId(MUNICIPALITY_ID).withNamespace(NAMESPACE).withReporterUserId("rep01usr");
-		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenThrow(new RuntimeException("boom"));
-
-		service.handleAutoSubscribeEvent(new AutoSubscribeEvent(errand, true));
-
-		verify(namespaceConfigServiceMock).findReporterProfileId(NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(subscriberServiceMock, subscriptionRepositoryMock);
 	}
 
 	@Test

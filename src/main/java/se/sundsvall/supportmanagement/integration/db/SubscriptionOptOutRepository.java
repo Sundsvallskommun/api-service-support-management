@@ -8,9 +8,9 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscripti
 @CircuitBreaker(name = "subscriptionOptOutRepository")
 public interface SubscriptionOptOutRepository extends JpaRepository<SubscriptionOptOutEntity, String> {
 
-	boolean existsBySubscriberIdAndProfileId(String subscriberId, String profileId);
+	boolean existsByProfileIdAndIdentifierTypeAndIdentifierValue(String profileId, String identifierType, String identifierValue);
 
-	void deleteBySubscriberIdAndProfileId(String subscriberId, String profileId);
+	void deleteByProfileIdAndIdentifierTypeAndIdentifierValue(String profileId, String identifierType, String identifierValue);
 
 	List<SubscriptionOptOutEntity> findAllByProfileId(String profileId);
 }

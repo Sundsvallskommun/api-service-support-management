@@ -2,14 +2,10 @@ package se.sundsvall.supportmanagement.service;
 
 import java.util.List;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
@@ -18,13 +14,11 @@ import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTarget;
 import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.SubscriptionOptOutRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionOptOutEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
@@ -35,13 +29,12 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.supportmanagement.service.SubscriptionOptOutService.isProfileMembership;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.isRequestingUser;
 
 @Service
 public class SubscriptionService {
-
-	private static final Logger LOG = LoggerFactory.getLogger(SubscriptionService.class);
 
 	private static final String ERRAND_NOT_FOUND = "Errand with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 	private static final String SUBSCRIPTION_NOT_OWNED = "Subscriptions of subscriber '%s' not accessible by user '%s'";
@@ -52,11 +45,12 @@ public class SubscriptionService {
 	private static final String DUPLICATE_NAMESPACE_SUBSCRIPTION = "Namespace subscription already exists for subscriber with id:'%s'";
 	private static final String DUPLICATE_PROFILE_SUFFIX = " with profile:'%s'";
 	private static final String PROFILE_AND_EVENT_FILTERS = "A subscription cannot have both profileId and eventFilters - the profile decides which events it delivers";
+	private static final String PROFILE_LEFT_BY_SUBSCRIBER = "Subscriber with id:'%s' has left profile:'%s', and only the subscriber may choose it again";
 
 	private final SubscriberService subscriberService;
 	private final SubscriptionProfileService subscriptionProfileService;
 	private final SubscriptionRepository subscriptionRepository;
-	private final SubscriptionOptOutRepository subscriptionOptOutRepository;
+	private final SubscriptionOptOutService subscriptionOptOutService;
 	private final ErrandsRepository errandsRepository;
 	private final NamespaceConfigService namespaceConfigService;
 
@@ -64,13 +58,13 @@ public class SubscriptionService {
 		final SubscriberService subscriberService,
 		final SubscriptionProfileService subscriptionProfileService,
 		final SubscriptionRepository subscriptionRepository,
-		final SubscriptionOptOutRepository subscriptionOptOutRepository,
+		final SubscriptionOptOutService subscriptionOptOutService,
 		final ErrandsRepository errandsRepository,
 		final NamespaceConfigService namespaceConfigService) {
 		this.subscriberService = subscriberService;
 		this.subscriptionProfileService = subscriptionProfileService;
 		this.subscriptionRepository = subscriptionRepository;
-		this.subscriptionOptOutRepository = subscriptionOptOutRepository;
+		this.subscriptionOptOutService = subscriptionOptOutService;
 		this.errandsRepository = errandsRepository;
 		this.namespaceConfigService = namespaceConfigService;
 	}
@@ -98,12 +92,26 @@ public class SubscriptionService {
 		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, errand, profile, subscription)
 			.withCreatedBy(IdentifierEmbeddableMapper.fromExecutingUser(Identifier.get()));
 
-		// Choosing a profile again undoes having left it, so the members sync keeps the subscriber on it from now on
 		if (isProfileMembership(entity)) {
-			subscriptionOptOutRepository.deleteBySubscriberIdAndProfileId(subscriberId, profile.getId());
+			rejoinProfile(subscriber, profile);
 		}
 
 		return persistOrThrowConflict(entity, subscriberId, target.getType(), errand, profile).getId();
+	}
+
+	/**
+	 * Choosing a profile again undoes having left it, so the members sync keeps the principal on it from then on. Only the
+	 * principal may make that choice: subscribing a colleague is supported, but not to a profile they have left.
+	 */
+	private void rejoinProfile(final SubscriberEntity subscriber, final SubscriptionProfileEntity profile) {
+		final var identifier = subscriber.getIdentifier();
+		if (isNull(identifier) || !subscriptionOptOutService.isOptedOut(profile.getId(), identifier)) {
+			return;
+		}
+		if (!isRequestingUser(identifier.getType(), identifier.getValue())) {
+			throw Problem.valueOf(CONFLICT, PROFILE_LEFT_BY_SUBSCRIBER.formatted(subscriber.getId(), profile.getId()));
+		}
+		subscriptionOptOutService.clearOptOut(profile, identifier);
 	}
 
 	@Transactional
@@ -112,45 +120,17 @@ public class SubscriptionService {
 		final var entity = loadSubscriptionOrThrow(municipalityId, namespace, subscriberId, subscriptionId);
 
 		// Leaving a profile is remembered, or the members sync would subscribe the subscriber to it again
-		if (isProfileMembership(entity) && !subscriptionOptOutRepository.existsBySubscriberIdAndProfileId(subscriberId, entity.getProfile().getId())) {
-			subscriptionOptOutRepository.save(SubscriptionOptOutEntity.create()
-				.withSubscriber(entity.getSubscriber())
-				.withProfile(entity.getProfile()));
-		}
-
+		subscriptionOptOutService.recordOptOut(entity);
 		subscriptionRepository.delete(entity);
-	}
-
-	/**
-	 * A namespace subscription to a profile is what membership of the profile consists of, and what the members sync
-	 * adds and removes. Subscriptions to a profile for a single errand are not memberships.
-	 */
-	private static boolean isProfileMembership(final SubscriptionEntity subscription) {
-		return subscription.getProfile() != null && subscription.getTargetType() == DbSubscriptionTargetType.NAMESPACE;
-	}
-
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public void handleAutoSubscribeEvent(final AutoSubscribeEvent event) {
-		try {
-			autoSubscribeErrandAssignee(event.errandEntity());
-		} catch (final Exception e) {
-			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", event.errandEntity().getId(), e);
-		}
-		if (event.errandCreated()) {
-			try {
-				autoSubscribeReporter(event.errandEntity());
-			} catch (final Exception e) {
-				LOG.warn("Auto-subscribe of reporter failed for errand '{}' – continuing without subscription", event.errandEntity().getId(), e);
-			}
-		}
 	}
 
 	/**
 	 * Subscribes the reporter of a newly created errand to it with the reporter profile of the namespace. Namespaces
 	 * without a reporter profile, and errands without a reporter, are left alone.
+	 * <p>
+	 * Runs in a transaction of its own, so that it neither depends on nor is undone by the assignee being subscribed.
 	 */
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void autoSubscribeReporter(final ErrandEntity errand) {
 		final var reporterUserId = errand.getReporterUserId();
 		if (reporterUserId == null) {
@@ -170,7 +150,10 @@ public class SubscriptionService {
 			});
 	}
 
-	@Transactional
+	/**
+	 * Subscribes the assignee of the errand to it. Runs in a transaction of its own, see {@link #autoSubscribeReporter}.
+	 */
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void autoSubscribeErrandAssignee(final ErrandEntity errand) {
 		final var assignedUserId = errand.getAssignedUserId();
 		if (assignedUserId == null) {

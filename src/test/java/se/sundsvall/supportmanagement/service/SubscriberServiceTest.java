@@ -19,9 +19,12 @@ import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +53,9 @@ class SubscriberServiceTest {
 
 	@Mock
 	private SubscriptionRepository subscriptionRepositoryMock;
+
+	@Mock
+	private SubscriptionOptOutService subscriptionOptOutServiceMock;
 
 	@InjectMocks
 	private SubscriberService service;
@@ -387,7 +393,29 @@ class SubscriberServiceTest {
 		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriberRepositoryMock).delete(entity);
 		verifyNoMoreInteractions(subscriberRepositoryMock);
-		verifyNoInteractions(subscriptionRepositoryMock);
+		verifyNoInteractions(subscriptionRepositoryMock, subscriptionOptOutServiceMock);
+	}
+
+	@Test
+	void deleteSubscriberLeavesEveryProfileItIsMemberOf() {
+		// Removing the subscriber is leaving its profiles, or the members sync would put the user back on them
+		final var id = randomUUID().toString();
+		final var membership = SubscriptionEntity.create().withId("sub-1").withTargetType(DbSubscriptionTargetType.NAMESPACE)
+			.withProfile(SubscriptionProfileEntity.create().withId("profile-1"));
+		final var errandSubscription = SubscriptionEntity.create().withId("sub-2").withTargetType(DbSubscriptionTargetType.ERRAND);
+		final var entity = SubscriberEntity.create().withId(id)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"))
+			.withSubscriptions(List.of(membership, errandSubscription));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		service.deleteSubscriber(MUNICIPALITY_ID, NAMESPACE, id);
+
+		// Every subscription is handed over; the opt-out service tells memberships from the rest
+		verify(subscriptionOptOutServiceMock).recordOptOut(membership);
+		verify(subscriptionOptOutServiceMock).recordOptOut(errandSubscription);
+		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
+		verify(subscriberRepositoryMock).delete(entity);
+		verifyNoMoreInteractions(subscriberRepositoryMock, subscriptionOptOutServiceMock);
 	}
 
 	@Test

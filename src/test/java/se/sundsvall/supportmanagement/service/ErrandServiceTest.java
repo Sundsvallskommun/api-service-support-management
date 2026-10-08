@@ -431,6 +431,27 @@ class ErrandServiceTest {
 	}
 
 	@Test
+	void updateErrandWithSameAssigneeInOtherCasingIsNoAssignment() {
+		// AD accounts are case-insensitive, so this names the assignee the errand already has
+		final var entity = buildErrandEntity().withAssignedUserId("anna01");
+		final var patch = Errand.create().withAssignedUserId("Anna01");
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND, Set.of());
+	}
+
+	@Test
 	void updateErrandTakingTheAssigneeAwayIsNoAssignment() {
 		final var entity = buildErrandEntity().withAssignedUserId("anna01");
 		final var patch = Errand.create().withAssignedUserId("");

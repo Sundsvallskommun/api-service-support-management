@@ -488,9 +488,10 @@ public class ErrandService {
 
 	/**
 	 * An errand counts as assigned when it gets an assignee it did not have, which leaves out taking the assignee away.
+	 * AD accounts are compared without regard to case, so writing the same assignee in other casing is no assignment.
 	 */
 	private static boolean isNewAssignment(final String previousAssignee, final String currentAssignee) {
-		return nonNull(currentAssignee) && !currentAssignee.equals(previousAssignee);
+		return nonNull(currentAssignee) && !currentAssignee.equalsIgnoreCase(previousAssignee);
 	}
 
 	private static Set<String> labelIdsOf(final ErrandEntity entity) {
