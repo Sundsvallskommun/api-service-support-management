@@ -32,9 +32,11 @@ class ErrandEntityTest {
 		assertThat(ErrandEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSettersExcluding("draft"),
-			hasValidBeanHashCodeExcluding("version", "draft"),
-			hasValidBeanEqualsExcluding("version", "draft"),
-			hasValidBeanToStringExcluding("draft")));
+			// The collections the errand holds for the search index alone are kept out of equals, hashCode and toString,
+			// so that comparing or logging an errand never loads them
+			hasValidBeanHashCodeExcluding("version", "draft", "decisions", "statements", "investigations", "communications"),
+			hasValidBeanEqualsExcluding("version", "draft", "decisions", "statements", "investigations", "communications"),
+			hasValidBeanToStringExcluding("draft", "decisions", "statements", "investigations", "communications")));
 	}
 
 	@Test
@@ -126,7 +128,7 @@ class ErrandEntityTest {
 			.withAccessLabels(accessLabels)
 			.withVersion(version);
 
-		assertThat(errandEntity).hasNoNullFieldsOrProperties();
+		assertThat(errandEntity).hasNoNullFieldsOrPropertiesExcept("decisions", "statements", "investigations", "communications");
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
 		assertThat(errandEntity.getAssignedUserId()).isEqualTo(assignedUserId);
 		assertThat(errandEntity.getAttachments()).isEqualTo(attachments);

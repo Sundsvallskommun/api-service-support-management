@@ -42,6 +42,8 @@ import se.sundsvall.supportmanagement.service.config.MessageExchangeIntegrationC
 import se.sundsvall.supportmanagement.service.config.MessageExchangeSyncConfigService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.config.ValidationService;
+import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
+import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -75,6 +77,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 	ErrandParameterService.class,
 	ErrandProcessService.class,
 	ErrandPurgeService.class,
+	ErrandReindexService.class,
+	ErrandSearchService.class,
 	ErrandService.class,
 	ErrandStatementService.class,
 	EventService.class,

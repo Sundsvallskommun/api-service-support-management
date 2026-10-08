@@ -111,7 +111,7 @@ public class ActionWorker {
 		}
 
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_ACTION, errand, revision.latest(), revision.previous(), false, ERRAND);
+			eventService.createErrandEventWithoutNotification(UPDATE, EVENT_LOG_ACTION, errand, revision.latest(), revision.previous(), ERRAND);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {} after a scheduled action: {}", sanitizeForLogging(errand.getId()), sanitizeForLogging(e.getMessage()));
 		}

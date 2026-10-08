@@ -59,7 +59,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
-import se.sundsvall.supportmanagement.service.AccessControlService.ErrandKeyAccess;
+import se.sundsvall.supportmanagement.service.access.ErrandKeyAccess;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -1123,7 +1123,7 @@ class ErrandServiceTest {
 		inOrder.verify(processKeyGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(before)), eq(List.of(leaf, ancestor)), anyString());
 		inOrder.verify(errandRepositoryMock).saveAndFlush(errand);
 		inOrder.verify(revisionServiceMock).createErrandRevision(stored);
-		inOrder.verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, stored, currentRevisionMock, previousRevisionMock, false, ERRAND);
+		inOrder.verify(eventServiceMock).createErrandEventWithoutNotification(UPDATE, EVENT_LOG_UPDATE_ERRAND, stored, currentRevisionMock, previousRevisionMock, ERRAND);
 		verifyNoInteractions(errandActionServiceMock);
 	}
 

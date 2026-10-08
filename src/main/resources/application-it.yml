@@ -41,12 +41,19 @@ scheduler:
     cron: "-"
   notification-dispatch:
     cron: "-"
+    transaction-buffer: PT0S
+    email:
+      sender-address: no-reply@test.local
+      sender-name: Sundsvalls kommun
   attachment-hash:
     cron: "-"
   process-event:
     cron: "-"
   process-cleanup:
     cron: "-"
+  search-reindex:
+    cron: "-"
+    enabled: false
   job:
     cron: "-"
 errand:
@@ -75,6 +82,19 @@ spring:
           schema-generation:
             database:
               action: validate
+      hibernate:
+        search:
+          enabled: true
+          backend:
+            # Supplied by OpenSearchContainerEnvironmentPostProcessor on the integration test classpath
+            hosts: ${opensearch.hosts}
+          schema_management:
+            strategy: drop-and-create
+          indexing:
+            plan:
+              synchronization:
+                # Tests search right after writing
+                strategy: sync
   sql:
     init:
       mode: always

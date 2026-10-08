@@ -262,7 +262,7 @@ public class ErrandService {
 	public void deleteErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
-		if (ifMatch == null) {
+		if (ifMatch == null && LOG.isDebugEnabled()) {
 			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, entity.getVersion());
@@ -509,7 +509,7 @@ public class ErrandService {
 	 * Holds the errand to the version the caller believes it is at, noting the requests that leave it to chance.
 	 */
 	private void requireMatchingVersion(final String ifMatch, final Long version, final String id, final String namespace, final String municipalityId) {
-		if (isNull(ifMatch)) {
+		if (isNull(ifMatch) && LOG.isDebugEnabled()) {
 			LOG.debug("PATCH /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 
@@ -539,14 +539,20 @@ public class ErrandService {
 
 	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
+	 *
+	 * @param notifies whether the event notifies the handler and the subscribers of the errand, or no one.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean sendNotification) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean notifies) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
-			eventService.createErrandEvent(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), sendNotification, ERRAND);
+			if (notifies) {
+				eventService.createErrandEvent(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), true, ERRAND);
+			} else {
+				eventService.createErrandEventWithoutNotification(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
+			}
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}

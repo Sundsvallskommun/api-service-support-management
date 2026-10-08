@@ -6,11 +6,13 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.util.Objects;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 @Embeddable
 public class ErrandLabelEmbeddable {
 
 	@Column(name = "metadata_label_id", nullable = false)
+	@KeywordField
 	private String metadataLabelId;
 
 	@ManyToOne

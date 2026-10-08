@@ -47,6 +47,7 @@ import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.t
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.shouldNotify;
 
 @Service
 public class EventService {
@@ -70,8 +71,22 @@ public class EventService {
 		this.processEventPublisher = processEventPublisher;
 	}
 
-	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
-		writeErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype);
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
+		final EventSubType subtype) {
+		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype, getExecutingUser());
+	}
+
+	/**
+	 * Logs an errand event on behalf of a given user rather than of the caller of the request.
+	 * <p>
+	 * For work done where no request says who acted, such as a scheduled job carrying out what a user did elsewhere. The
+	 * user is recorded as the one who acted, and so is not notified of it as a subscriber.
+	 *
+	 * @param actor the user who acted, or null when nobody did
+	 */
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
+		final EventSubType subtype, final Identifier actor) {
+		writeErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, true, subtype, actor);
 		publishToProcess(errandEntity, eventType, subtype, null, false);
 	}
 
@@ -80,11 +95,22 @@ public class EventService {
 	}
 
 	/**
+	 * Logs an errand event that notifies no one, neither the handler of the errand nor its subscribers, while the process
+	 * of the errand learns of it as of any other event. For a change no one made by hand, such as a scheduled action or
+	 * labels rebuilt after a label was moved or merged.
+	 */
+	public void createErrandEventWithoutNotification(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision,
+		final EventSubType subtype) {
+		writeErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, false, false, subtype, getExecutingUser());
+		publishToProcess(errandEntity, eventType, subtype, null, false);
+	}
+
+	/**
 	 * Writes the event of a command, and hands the command on to the process of the errand.
 	 * <p>
 	 * A command is a request aimed straight at the process rather than a change to the errand, so it makes no revision and
 	 * the event points at none. What it carries is what publication cannot work out on its own - the key a handler chose to
-	 * start, or the gate they stepped past. No one is notified.
+	 * start, or the gate they stepped past. No one is notified, neither the handler of the errand nor its subscribers.
 	 * <p>
 	 * Without a command only the event is written, for a command the process already has on its way.
 	 *
@@ -95,7 +121,7 @@ public class EventService {
 	 * @param command      what the command carries, or null when nothing is to be handed on to the process.
 	 */
 	public void createProcessCommandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final EventSubType subtype, final ProcessCommand command) {
-		writeErrandEvent(eventType, message, errandEntity, null, null, false, subtype);
+		writeErrandEvent(eventType, message, errandEntity, null, null, false, false, subtype, getExecutingUser());
 
 		if (nonNull(command)) {
 			publishToProcess(errandEntity, eventType, subtype, command, false);
@@ -125,7 +151,7 @@ public class EventService {
 	 * @param concludesDecision whether the change is the one that concludes the decision.
 	 */
 	public void createDecisionEvent(final String message, final ErrandEntity errandEntity, final boolean concludesDecision) {
-		writeErrandEvent(UPDATE, message, errandEntity, null, null, true, DECISION);
+		writeErrandEvent(UPDATE, message, errandEntity, null, null, true, true, DECISION, getExecutingUser());
 		publishToProcess(errandEntity, UPDATE, DECISION, null, concludesDecision);
 	}
 
@@ -173,9 +199,11 @@ public class EventService {
 		}
 		eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 
-		if (notifies(errandEntity, true)) {
+		if (!errandEntity.isDraft()) {
 			createNotification(errandEntity, event);
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue());
+		}
+		if (notifies(errandEntity)) {
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue(), getExecutingUser());
 		}
 	}
 
@@ -190,10 +218,17 @@ public class EventService {
 			.toList(), pageable, response.getTotalElements());
 	}
 
-	private void writeErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification, final EventSubType subtype) {
+	/**
+	 * Writes the event to the event log, and notifies those it is to notify.
+	 *
+	 * @param sendNotification whether the handler of the errand is notified.
+	 * @param reachSubscribers whether the subscribers of the errand hear of the event, as their subscriptions decide.
+	 */
+	private void writeErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
+		final boolean reachSubscribers, final EventSubType subtype, final Identifier actor) {
 		final var requestGroupId = getRequestGroupId();
 		final var metadata = toMetadataMap(errandEntity, currentRevision, previousRevision);
-		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, getExecutingUser(), subtype.getValue(), requestGroupId);
+		final var event = toEvent(eventType, message, extractId(currentRevision), Errand.class, metadata, actor, subtype.getValue(), requestGroupId);
 		String eventId = null;
 		try {
 			eventId = extractEventId(eventLogClient.createEvent(errandEntity.getMunicipalityId(), errandEntity.getId(), event));
@@ -204,17 +239,22 @@ public class EventService {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
 		}
 
-		if (notifies(errandEntity, sendNotification)) {
+		if (sendNotification && notifies(errandEntity)) {
 			createNotification(errandEntity, event);
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue());
+		}
+
+		// Which subscribers hear of the event is up to their subscriptions
+		if (reachSubscribers && notifies(errandEntity)) {
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), actor);
 		}
 	}
 
 	/**
-	 * Whether an event about the errand is to notify its handler and its subscribers. A draft notifies no one.
+	 * Whether an event about the errand may notify anyone at all, its handler or its subscribers. A draft notifies no one,
+	 * and neither does a request that asked to notify no one.
 	 */
-	private static boolean notifies(final ErrandEntity errandEntity, final boolean sendNotification) {
-		return sendNotification && !errandEntity.isDraft();
+	private static boolean notifies(final ErrandEntity errandEntity) {
+		return !errandEntity.isDraft() && shouldNotify();
 	}
 
 	/**
@@ -229,7 +269,8 @@ public class EventService {
 		return ofNullable(currentRevision).map(Revision::getId).orElse(null);
 	}
 
-	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType) {
+	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType,
+		final Identifier executingUser) {
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
 			.withEventId(eventId)
 			.withRequestGroupId(requestGroupId)
@@ -239,7 +280,7 @@ public class EventService {
 			.withEventType(eventType.getValue())
 			.withDescription(description)
 			.withSubType(subType)
-			.withExecutingUserId(getCallerIdentity()));
+			.withExecutingUserId(ofNullable(executingUser).map(Identifier::getValue).orElse(null)));
 	}
 
 	private String extractEventId(final ResponseEntity<Void> response) {

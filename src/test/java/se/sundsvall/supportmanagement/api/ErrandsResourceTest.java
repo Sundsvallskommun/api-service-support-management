@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -226,6 +227,22 @@ class ErrandsResourceTest {
 		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), eq(pageable));
 		assertThat(response).isNotNull();
 		assertThat(response.getContent()).hasSize(1);
+	}
+
+	/**
+	 * An ordering naming an association the errand holds for the search index alone is refused before it reaches Spring
+	 * Data, which would resolve it into a join of the collection and multiply the errands of the page.
+	 */
+	@Test
+	void findErrandsOrderedByAnIndexOnlyAssociation() {
+		webTestClient.get()
+			.uri(builder -> builder.path(PATH).queryParam("sort", "communications.messageBody,asc").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody()
+			.jsonPath("$.detail").isEqualTo("Sorting on 'communications' is not supported");
+
+		verifyNoInteractions(errandServiceMock);
 	}
 
 	@Test

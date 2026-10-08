@@ -9,8 +9,8 @@
 -- Attachments and decisions wake the process as well as a changed errand does, so that what holds
 -- their events back is the block and not the triggers
 INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
-VALUES (8, 'PROCESS_TRIGGER', 'ATTACHMENT', 'STRING'),
-       (8, 'PROCESS_TRIGGER', 'DECISION', 'STRING');
+VALUES (80, 'PROCESS_TRIGGER', 'ATTACHMENT', 'STRING'),
+       (80, 'PROCESS_TRIGGER', 'DECISION', 'STRING');
 
 INSERT INTO decision_outcome(id, name, display_name, sort_order, deprecated, namespace, municipality_id, created)
 VALUES ('cb000000-0000-0000-0000-0000000000f1', 'APPROVAL', 'Bifall', 1, false, 'PROCESS-NAMESPACE', '2281',

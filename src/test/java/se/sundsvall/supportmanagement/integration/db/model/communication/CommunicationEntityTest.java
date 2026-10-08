@@ -12,9 +12,9 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static com.google.code.beanmatchers.BeanMatchers.registerValueGenerator;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,9 +35,10 @@ class CommunicationEntityTest {
 		assertThat(CommunicationEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToString()));
+			// The errand is reached through the number and is there for the search index, see the entity
+			hasValidBeanHashCodeExcluding("errand"),
+			hasValidBeanEqualsExcluding("errand"),
+			hasValidBeanToStringExcluding("errand")));
 	}
 
 	@Test
@@ -88,7 +89,7 @@ class CommunicationEntityTest {
 			.withEmailHeaders(emailHeaders)
 			.withInternal(internal);
 
-		assertThat(entity).hasNoNullFieldsOrProperties();
+		assertThat(entity).hasNoNullFieldsOrPropertiesExcept("errand");
 		assertThat(entity.getId()).isEqualTo(id);
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getMunicipalityId()).isEqualTo(municipalityId);

@@ -860,17 +860,17 @@ VALUES ('f9000000-0000-0000-0000-000000000005', 'ee000000-0000-0000-0000-0000000
 -- a process report is accepted at all, and switching it on for the namespace every other test uses would change the
 -- shape of a config five NamespaceConfigIT fixtures assert on.
 INSERT INTO namespace_config(id, municipality_id, namespace, created, modified)
-VALUES (8, '2281', 'PROCESS-NAMESPACE', '2026-01-01 10:00:00.000', null);
+VALUES (80, '2281', 'PROCESS-NAMESPACE', '2026-01-01 10:00:00.000', null);
 
 INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
-VALUES (8, 'DISPLAY_NAME', 'Process namespace', 'STRING'),
-       (8, 'SHORT_CODE', 'PN', 'STRING'),
-       (8, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
-       (8, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
-       (8, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
-       (8, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
-       (8, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
-       (8, 'PROCESS_CONSUMER', 'pw-alkt', 'STRING');
+VALUES (80, 'DISPLAY_NAME', 'Process namespace', 'STRING'),
+       (80, 'SHORT_CODE', 'PN', 'STRING'),
+       (80, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
+       (80, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (80, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (80, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (80, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (80, 'PROCESS_CONSUMER', 'pw-alkt', 'STRING');
 
 -- Two errands: one already running a process, one with none at all, so that creating and updating can each be asked
 -- of an errand in the state the question needs without one test depending on another having run.

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Pattern;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -68,6 +69,17 @@ public class NamespaceConfig {
 	@Schema(
 		description = "The errand changes worth telling the process about. An event whose sub type is not listed here is not published, so a namespace with a process consumer must list ERRAND, for its processes to start, and DECISION, for a process waiting for its decision to learn that it has been made. Commands sent to the process (PROCESS, SIGNAL) are not errand changes, are never filtered by this list and may not be listed")
 	private List<@NotNull EventSubType> processTriggers;
+
+	@Schema(
+		description = "If set to true emails sent to subscribers only name the errands that were updated, without describing what happened to them. If no value is set it defaults to false.",
+		examples = "true")
+	private boolean excludeEventDescriptionsInEmail;
+
+	@Pattern(regexp = "^https?://\\S+$", message = "must be a valid http or https url")
+	@Schema(
+		description = "Base url of the web application handling errands in this namespace. Links to errands are made as <baseUrl>/<municipalityId>/<namespace>/errands/<errandNumber>. Leaving it out means emails carry no links to errands.",
+		examples = "https://draken.sundsvall.se")
+	private String baseUrl;
 
 	@Valid
 	@Schema(
@@ -268,6 +280,32 @@ public class NamespaceConfig {
 		return this;
 	}
 
+	public boolean isExcludeEventDescriptionsInEmail() {
+		return excludeEventDescriptionsInEmail;
+	}
+
+	public void setExcludeEventDescriptionsInEmail(final boolean excludeEventDescriptionsInEmail) {
+		this.excludeEventDescriptionsInEmail = excludeEventDescriptionsInEmail;
+	}
+
+	public NamespaceConfig withExcludeEventDescriptionsInEmail(final boolean excludeEventDescriptionsInEmail) {
+		this.excludeEventDescriptionsInEmail = excludeEventDescriptionsInEmail;
+		return this;
+	}
+
+	public String getBaseUrl() {
+		return baseUrl;
+	}
+
+	public void setBaseUrl(final String baseUrl) {
+		this.baseUrl = baseUrl;
+	}
+
+	public NamespaceConfig withBaseUrl(final String baseUrl) {
+		this.baseUrl = baseUrl;
+		return this;
+	}
+
 	public LimitedReadAccess getLimitedReadAccess() {
 		return limitedReadAccess;
 	}
@@ -310,7 +348,8 @@ public class NamespaceConfig {
 	@Override
 	public int hashCode() {
 		return Objects.hash(accessControl, created, displayName,
-			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand, roleFieldRestrictions, roleBasedMapping,
+			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand, excludeEventDescriptionsInEmail, baseUrl,
+			roleFieldRestrictions, roleBasedMapping,
 			shortCode);
 	}
 
@@ -321,8 +360,9 @@ public class NamespaceConfig {
 		return accessControl == other.accessControl && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
 			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(processConsumer, other.processConsumer) && Objects.equals(processTriggers,
 				other.processTriggers) && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
-					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && Objects.equals(roleFieldRestrictions,
-						other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
+					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail && Objects.equals(
+						baseUrl, other.baseUrl) && Objects.equals(roleFieldRestrictions,
+							other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
 			&& Objects.equals(shortCode, other.shortCode);
 	}
 
@@ -331,7 +371,8 @@ public class NamespaceConfig {
 		final var builder = new StringBuilder();
 		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", notificationTTLInDays=").append(
 			notificationTTLInDays).append(", created=").append(created).append(", modified=").append(modified).append(", accessControl=").append(accessControl).append(", notifyReporter=").append(notifyReporter).append(", roleBasedMapping=").append(
-				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", singleDecisionPerErrand=").append(singleDecisionPerErrand).append(", processConsumer=").append(processConsumer).append(", processTriggers=")
+				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", singleDecisionPerErrand=").append(singleDecisionPerErrand).append(", excludeEventDescriptionsInEmail=").append(excludeEventDescriptionsInEmail)
+			.append(", baseUrl=").append(baseUrl).append(", processConsumer=").append(processConsumer).append(", processTriggers=")
 			.append(
 				processTriggers).append(", limitedReadAccess=").append(limitedReadAccess).append(", reporterAccess=").append(reporterAccess).append(", roleFieldRestrictions=").append(
 					roleFieldRestrictions)

@@ -1,0 +1,16 @@
+{
+	"request": {
+		"method": "POST",
+		"url": "/api-messaging/2281/email?async=true"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"messageId": "4bef8a32-c185-4dde-8af8-94f1016a8f7c"
+		},
+		"status": 200
+	},
+	"name": "api-messaging-send-email"
+}

@@ -6,12 +6,15 @@ import java.util.function.IntConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 
+import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 /**
@@ -44,6 +47,7 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	private final JobService jobService;
 	private final EventService eventService;
 	private final RestowPager restowPager;
+	private final TransactionTemplate transactionTemplate;
 
 	LabelMergeWorker(
 		final ErrandsRepository errandsRepository,
@@ -52,7 +56,8 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 		final ErrandService errandService,
 		final JobService jobService,
 		final EventService eventService,
-		final LabelMoveProperties properties) {
+		final LabelMoveProperties properties,
+		final PlatformTransactionManager transactionManager) {
 		super(jobService);
 		this.errandsRepository = errandsRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
@@ -61,6 +66,7 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 		this.jobService = jobService;
 		this.eventService = eventService;
 		this.restowPager = new RestowPager(LOG, properties.batchSize(), MAX_BATCH_ATTEMPTS);
+		this.transactionTemplate = new TransactionTemplate(transactionManager);
 	}
 
 	@Override
@@ -143,13 +149,26 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 
 		// Only reached once every errand that referenced a source label has been restowed onto the destination - no
 		// source label is referenced by an errand any more by the time this deletes them.
-		metadataLabelRepository.deleteAllById(sourceLabelIds);
-		metadataLabelRepository.flush();
+		deleteSourceLabels(sourceLabelIds);
 
 		eventService.createLabelMergeEvent(municipalityId, targetLabelId, startedBy,
 			AUDIT_MESSAGE.formatted(sourceLabelIds, targetLabelId, startedBy, restowed));
 
 		return restowed;
+	}
+
+	/**
+	 * Deletes the source labels in one transaction, taking each out of its parent's children first.
+	 * <p>
+	 * A parent's {@code metadataLabels} cascades every operation to its children, so a parent loaded into the same
+	 * session with that collection initialized - which batch fetching does as soon as a second sibling is loaded - would
+	 * persist a removed child again when the session flushes, and the delete would quietly not happen.
+	 */
+	private void deleteSourceLabels(final Set<String> sourceLabelIds) {
+		transactionTemplate.executeWithoutResult(status -> metadataLabelRepository.findAllById(sourceLabelIds).forEach(label -> {
+			ofNullable(label.getParent()).ifPresent(parent -> parent.getMetadataLabels().remove(label));
+			metadataLabelRepository.delete(label);
+		}));
 	}
 
 	/**

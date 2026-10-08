@@ -16,10 +16,20 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.PropertyBinderRef;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
+import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
+import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 /**
  * A request for a statement and the statement that came back, in the same row. An unanswered statement leaves the
@@ -43,6 +53,7 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	 * as a stakeholder of the errand.
 	 */
 	@Column(name = "counterparty_name", nullable = false)
+	@FullTextField(analyzer = TEXT)
 	private String counterpartyName;
 
 	/**
@@ -50,21 +61,26 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	 * {@code counterpartyExternalIdType} from the external-id-type metadata of the namespace.
 	 */
 	@Column(name = "counterparty_external_id")
+	@KeywordField(normalizer = LOWERCASE)
 	private String counterpartyExternalId;
 
 	@Column(name = "counterparty_external_id_type", length = 128)
+	@KeywordField(normalizer = LOWERCASE)
 	private String counterpartyExternalIdType;
 
 	/** The reference number of the counterparty, for cross reference in their system. */
 	@Column(name = "counterparty_reference", length = 128)
+	@KeywordField(normalizer = LOWERCASE)
 	private String counterpartyReference;
 
 	/** The assignment. The title carries the heading, this carries the question being asked. */
 	@Column(name = "question", length = LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String question;
 
 	@Column(name = "sent_at")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime sentAt;
 
 	@Column(name = "reminded_at")
@@ -73,13 +89,16 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 
 	@Column(name = "responded_at")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime respondedAt;
 
 	/** One of the statement outcomes the namespace has registered, see {@link StatementOutcomeEntity}. */
 	@Column(name = "outcome")
+	@KeywordField(normalizer = LOWERCASE)
 	private String outcome;
 
 	@Column(name = "response_text", length = LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String responseText;
 
 	/**
@@ -118,6 +137,7 @@ public class StatementEntity extends AbstractErrandItemEntity<StatementEntity> {
 	 */
 	@OneToMany(mappedBy = "statementEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("key")
+	@PropertyBinding(binder = @PropertyBinderRef(type = JsonParametersBinder.class))
 	private List<StatementJsonParameterEntity> jsonParameters;
 
 	public static StatementEntity create() {

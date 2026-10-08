@@ -25,8 +25,8 @@ import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.access.AccessSnapshot;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
-import se.sundsvall.supportmanagement.service.model.AccessSnapshot;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;

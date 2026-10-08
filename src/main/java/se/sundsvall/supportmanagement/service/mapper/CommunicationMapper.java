@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.communication.SmsRequest;
 import se.sundsvall.supportmanagement.api.model.communication.WebMessageRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -150,12 +151,12 @@ public class CommunicationMapper {
 			.withViewed(false);
 	}
 
-	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final String errandNumber, final WebMessageRequest request,
+	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final ErrandEntity errand, final WebMessageRequest request,
 		final String sender, final String senderUserId) {
 		return CommunicationEntity.create()
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
-			.withErrandNumber(errandNumber)
+			.withErrand(errand)
 			.withDirection(Direction.OUTBOUND)
 			.withMessageBody(request.getMessage())
 			.withSent(OffsetDateTime.now(ZoneId.systemDefault()))

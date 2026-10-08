@@ -38,4 +38,14 @@ class ProtectedResourceTest {
 			.allSatisfy(resource -> assertThat(resource.getPath()).doesNotStartWith("errand"))
 			.contains(ProtectedResource.NAMESPACE_CONFIG, ProtectedResource.METADATA_LABEL);
 	}
+
+	@Test
+	void onlyTheResourcesTheIndexHoldsHaveSearchFields() {
+		assertThat(ProtectedResource.COMMUNICATION.getSearchFields()).containsExactly("communications.");
+		assertThat(ProtectedResource.JSON_PARAMETER.getSearchFields()).containsExactly("jsonParameters.", "jsonParametersText");
+
+		assertThat(Arrays.stream(ProtectedResource.values()).filter(resource -> !resource.getSearchFields().isEmpty()))
+			.allSatisfy(resource -> assertThat(resource.isErrandScoped()).isTrue())
+			.doesNotContain(ProtectedResource.ERRAND, ProtectedResource.NOTE, ProtectedResource.CONVERSATION);
+	}
 }

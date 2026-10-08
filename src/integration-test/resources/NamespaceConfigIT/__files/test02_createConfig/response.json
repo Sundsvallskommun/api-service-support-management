@@ -10,6 +10,7 @@
 	"roleBasedMapping": false,
 	"resourceAccessControl": false,
 	"singleDecisionPerErrand": false,
+	"excludeEventDescriptionsInEmail": false,
 	"processConsumer": "pw-alkt",
 	"processTriggers": [
 		"ATTACHMENT",

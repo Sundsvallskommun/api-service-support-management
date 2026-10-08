@@ -263,6 +263,152 @@ spring:
 - **No additional setup is required** for database initialization, as long as the database connection settings are
   correctly configured.
 
+### Errand Search
+
+`GET /{municipalityId}/{namespace}/errands/search` searches an OpenSearch index that
+[Hibernate Search](https://hibernate.org/search/) keeps in step with the errands and everything attached to them:
+stakeholders, parameters, JSON parameters, phases, measures, decisions, statements, investigations and communications.
+The `query` parameter is a Lucene query string, documented in full on the endpoint in the API documentation.
+Drafts are left out of a search and of a count, as they are left out of the listing, unless the query names `lifecycle`:
+`lifecycle:DRAFT` finds them.
+
+Search is off unless the environment has an OpenSearch instance, and the endpoint answers 503 while it is off:
+
+```yaml
+spring:
+  jpa:
+    properties:
+      hibernate:
+        search:
+          enabled: true
+          backend:
+            hosts: my-opensearch:9200
+```
+
+`GET /{municipalityId}/{namespace}/errands/search/count` answers the same query with a number instead of the errands,
+and with `groupBy` divides that number over one column: `status`, `resolution`, `channel`, `priority`, `category`,
+`type`, `reporterUserId`, `assignedUserId` or `assignedGroupId`. One column at a time, and only the single valued ones -
+labels, parameters and JSON parameters would put an errand in several buckets and make the buckets add up to more than
+the count beside them. Every one of these columns is indexed lowercased, so the casing has to be
+recovered: `status`, `category` and `type` come back as the metadata of the namespace names them, and a value the
+metadata no longer knows is answered with as the index holds it; `priority` is an enum of this API rather than namespace
+metadata, so its casing comes from the enum. `resolution`, `channel` and the three identifier columns have no catalogue
+behind them and are answered lowercased - recovering what was written would mean indexing them a second time without the
+normalizer, which is only worth doing if a client needs the exact value.
+
+A breakdown accounts for every errand the count counted - its buckets, `withoutValue` and `withheld` add up to the count -
+and that count is the count of the search however it is divided up: a client filters with a search and asks for the
+breakdown of the same filter, so the two endpoints may not disagree on what was counted. The breakdown itself is counted over the routes of the grant that may read the column: a route that
+may not read it contributes no bucket rather than refusing the request, which is what keeps a namespace excepting its
+reporters from losing grouping altogether. What the buckets do not add up to is accounted for beside them, and the two
+reasons are kept apart: `withoutValue` counts the errands carrying nothing in the column, `withheld` the errands on a
+route that may not read it - of those nothing further is said, not even whether they carry a value, that being a fact
+about the column as much as a value is. Every groupable column holds at most one value, which is what makes those
+subtractions exact.
+
+The index cannot narrow an aggregation on its own - it filters one only inside a nested object - so where the routes
+differ the breakdown is a search of its own over the routes that may read the column, and its count is what tells the two
+apart. Where every route may read it, which is every grant that restricts nothing, that is the search already made and
+the count asks the index nothing further. And a column dividing the search over more than
+`search.max-group-buckets` (a hundred) values is refused with 400 rather than answered with the largest buckets: a
+breakdown adding up to less than the number printed beside it, with nothing saying by how much, is worse than no
+breakdown.
+
+The count is cheap where the search is not: nothing is fetched and no page is mapped, which is what the search spends its
+time on. Asking for a breakdown adds one aggregation to that search, and a second count only where the routes of the
+grant differ on whether the column may be read at all. It is held to the grant exactly as the search is: the query is
+refused where the search of it would be refused, while the column it groups by refuses nothing - what a route may not
+read, it does not divide up.
+
+What the count does not do is ask the database afterwards. The search does, because an index write lost while OpenSearch
+was away could otherwise answer for labels an errand no longer carries, but a count never loads the errands it counts.
+So while the index is behind the database the number can be off by an errand or two - a number, never the content of
+anything - and the nightly rebuild settles it. The endpoint says so.
+
+A query is at most 2000 characters, and a search that has not answered within `search.timeout` (ten seconds by
+default) is given up on with 504. A query string may ask for work the index cannot do cheaply - a wildcard open at both
+ends, a regular expression, a fuzzy term over many fields - and one client asking for it is not allowed to take the
+cluster away from everyone else. The syntax stays as it is, since searching by a word with anything on either side of it
+is what the endpoint is for.
+
+One index holds every municipality and namespace, and a search is filtered on the same two fields the database filters
+on. The namespace is indexed lowercased, because the database compares it under a case insensitive collation: matching it
+case sensitively answered nothing for a namespace whose errands the listing found by another casing, and left the
+documents of one casing behind when a rebuild purged another.
+
+The index is written over from the database every night at 01:00, a namespace at a time, so that what indexing missed
+does not stay missed - `scheduler.search-reindex`, guarded by the same lock as the rebuild endpoint, so one instance
+does it and a manual rebuild and the nightly one never overlap. Nothing is rebuilt when the service starts: a deploy
+leaves the index as it is and only brings the mapping up to date. A deploy that changes what is written into the index -
+a field added to it, a binder changed - therefore needs `POST /search/reindex` once, or the errands indexed before it
+answer by the old mapping until the nightly rebuild reaches them.
+
+The database is the source of truth and the index is disposable. Indexing follows every commit without holding the
+request up, so an OpenSearch that cannot be reached is logged and never fails a request, and the index schema is created
+after startup rather than during it, so the service starts without OpenSearch. Whatever the index missed is put right by
+`POST /{municipalityId}/{namespace}/errands/search/reindex`, which rebuilds that namespace from the database in the
+background. The whole index is rebuilt by `POST /search/reindex`, which belongs to no namespace because it empties the
+search of all of them, and which asks that the caller may administer every namespace that enforces access control. Errands created before
+search was introduced are indexed the same way. `/actuator/health` reports the cluster under `openSearch`.
+
+Locally, an instance is one command away:
+
+```bash
+docker run -p 9200:9200 -e discovery.type=single-node -e DISABLE_SECURITY_PLUGIN=true -e DISABLE_INSTALL_DEMO_CONFIG=true opensearchproject/opensearch:3.6.0
+```
+
+Access control applies to the query, not only to the answer: a query naming what the user may not read - a field of a
+resource their labels do not reach (communications, decisions and so on), a field of the errand their roles keep from
+them, or a key of a parameter or JSON parameter their roles do not grant - is refused with 403, since a hit or a miss
+would tell what the field holds. The same goes for sorting on such a field, and free text looks only in what is open.
+A resource is reached whole or not at all: roles restrict the fields of the errand, not the fields of what hangs off it,
+so a role keeping the description of an errand from a user leaves the body of its communications searchable to them.
+
+An errand is searched by what the user may read of it, and that differs with how they hold it. So a search is a clause
+per route of the grant - errands the labels cover, errands they cover at limited read only, errands the user reported -
+each with its own errands and its own fields, and the clauses are unioned. A query only one route can answer is answered
+from that route rather than refused, and refused only when no route can. The rebuild endpoint is held to the namespace
+configuration grant.
+
+The label rule is "every access label of the errand is among those the user holds". An index cannot ask whether all
+values of a field lie within a set, but it can ask how many of them do, so the number to reach is written beside them -
+`accessLabelCount`, as many as the errand carries - and the filter asks for at least that many, which is the same
+question. It needs nothing but the labels of the user: no list of the namespace's labels, nothing cached that could be
+stale, and a label nobody has heard of yet keeps an errand out rather than letting it through.
+
+An errand carrying no access labels is reached by everyone holding a label, as in the database, and is asked for
+separately, since a count of none satisfies no covering query whatever it is counted against. A user holding no labels
+reaches nothing at all, that errand included, which is the database's answer too.
+
+How the pieces hold together, from the API to the index:
+
+- `ErrandField` names the properties of the API model a role may be kept from; `ErrandMapper` maps each of them from the
+  entity, and `ProtectedResource` names the resources guarded on their own.
+- `ErrandIndex` (`integration/db/search`) names the fields of the index. The entity mapping declares its fields under
+  those names, and `ErrandField` and `ProtectedResource` bind to them, so a renamed field is a compile error rather than
+  an empty search. `ErrandIndexModel` reads the rest from Hibernate Search and checks every declared name against the
+  index when the service starts. A name that does not hold switches search off on that instance - 503 from the
+  endpoints, `openSearch` DOWN with the reason - rather than keeping the service from starting, since the bindings are
+  what access control is rendered from and nothing else the service does depends on them.
+- `NamespaceGrant` (`service/access`) is what a user holds in a namespace: the label route, the limited-read route and
+  the reporter route, each with what may be read on it and the resources it reaches. `NamespaceGrantResolver` decides it from the namespace
+  configuration and one snapshot of the access mapper; `AccessControlService` fetches those, enforces the decision and
+  loads errands; `ErrandAccessSpecifications` renders it for the database.
+- `service/search` renders the same grant for the index: `SearchableFields` says what a route may search,
+  `QueryScanner` what a query names (read by Lucene's classic query parser, the one OpenSearch reads `query_string` with), `ErrandSearchAccess` puts the two together, `ErrandSearchPredicates` builds the
+  query. `SearchableFields` is an allow-list on purpose: a name is searchable only where it is bound to a field or a
+  resource the route reaches, so a name nobody thought of is refused instead of permitted. `service/search/index` is the index itself: rebuild, schema, health, and the one facade (`SearchIndexing`) the
+  services writing the database may use.
+
+JSON parameters are indexed as they come, every scalar under `jsonParameters.<key>.<path>` as text with a keyword twin
+under `.raw`, which is what makes them searchable by path without a schema. Two things follow from that. A path has to
+keep its shape across the errands of the index, a scalar in one and an object in another cannot both be mapped, and the
+errand that breaks the shape is logged and left out of the index. And values longer than 8191 characters have no
+keyword twin, only their words. The index allows 5000 fields, well beyond what the paths of a service's schemas amount
+to; the log says so if that is ever reached.
+
+The integration tests start one of their own through Testcontainers.
+
 ### Additional Notes
 
 - **Application Profiles:**

@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
@@ -96,5 +97,53 @@ class ErrandFieldTest {
 			.filter(property -> !named.contains(property)))
 			.as("properties of the errand that no ErrandField names")
 			.containsExactlyInAnyOrderElementsOf(UNRESTRICTABLE);
+	}
+
+	@Test
+	void searchFieldsFollowThePropertyUnlessSaidOtherwise() {
+		assertThat(ErrandField.TITLE.getSearchFields()).containsExactly("title");
+		assertThat(ErrandField.CLASSIFICATION.getSearchFields()).containsExactly("category", "type");
+		assertThat(ErrandField.SUSPENSION.getSearchFields()).containsExactly("suspendedFrom", "suspendedTo");
+		assertThat(ErrandField.STAKEHOLDERS.getSearchFields()).containsExactly("stakeholders.");
+		assertThat(ErrandField.JSON_PARAMETERS.getSearchFields()).containsExactly("jsonParameters.", "jsonParametersText");
+		assertThat(ErrandField.ID.getSearchFields()).isEmpty();
+		assertThat(ErrandField.VERSION.getSearchFields()).isEmpty();
+		assertThat(ErrandField.ACTIONS.getSearchFields()).isEmpty();
+		assertThat(ErrandField.ACTIVE_NOTIFICATIONS.getSearchFields()).isEmpty();
+	}
+
+	@Test
+	void sortsFollowTheBinding() {
+		assertThat(ErrandField.TITLE.getSortField("title")).contains("title_sort");
+		assertThat(ErrandField.TITLE.getSortableProperties()).containsExactly("title");
+		assertThat(ErrandField.CLASSIFICATION.getSortField("category")).contains("category");
+		assertThat(ErrandField.CLASSIFICATION.getSortField("classification")).isEmpty();
+		assertThat(ErrandField.CLASSIFICATION.getSortableProperties()).containsExactlyInAnyOrder("category", "type");
+		assertThat(ErrandField.DESCRIPTION.getSortField("description")).isEmpty();
+		assertThat(ErrandField.JSON_PARAMETERS.getIndex().keysArePaths()).isTrue();
+		assertThat(ErrandField.PARAMETERS.getIndex().keysArePaths()).isFalse();
+	}
+
+	/**
+	 * A count groups by the single valued columns, and by them alone: a multi valued field would put an errand in several
+	 * buckets and make the buckets add up to more than the count beside them.
+	 */
+	@Test
+	void groupsFollowTheBinding() {
+		assertThat(ErrandField.STATUS.getGroupField("status")).contains(ErrandIndex.STATUS);
+		assertThat(ErrandField.CLASSIFICATION.getGroupField("category")).contains(ErrandIndex.CATEGORY);
+		assertThat(ErrandField.CLASSIFICATION.getGroupField("type")).contains(ErrandIndex.TYPE);
+		assertThat(ErrandField.CLASSIFICATION.getGroupableProperties()).containsExactlyInAnyOrder("category", "type");
+
+		// Ordered by, but not counted in groups of: a title is no category, and a date is no bucket
+		assertThat(ErrandField.TITLE.getGroupableProperties()).isEmpty();
+		assertThat(ErrandField.CREATED.getGroupableProperties()).isEmpty();
+		assertThat(ErrandField.ERRAND_NUMBER.getGroupableProperties()).isEmpty();
+		assertThat(ErrandField.LABELS.getGroupableProperties()).isEmpty();
+
+		// Every group names a field the binding already holds, so nothing is grouped by a field nobody may search
+		for (final var field : ErrandField.values()) {
+			assertThat(field.getIndex().groups().values()).allSatisfy(name -> assertThat(field.getSearchFields()).contains(name));
+		}
 	}
 }

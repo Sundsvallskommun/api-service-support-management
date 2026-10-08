@@ -54,7 +54,10 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)),
 
 		Map.entry(ErrandLabelEmbeddable.class, Set.of("metadataLabel")),
-		Map.entry(ErrandEntity.class, Set.of("tempPreviousStatus")));
+		// Besides the status held over from before a change, the collections the errand holds for the search index alone.
+		// They are read and written through resources of their own and have never been part of the snapshot, and the
+		// communications point back at the errand.
+		Map.entry(ErrandEntity.class, Set.of("tempPreviousStatus", "decisions", "statements", "investigations", "communications")));
 
 	public static CircularReferenceExclusionStrategy create() {
 		return new CircularReferenceExclusionStrategy();

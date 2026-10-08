@@ -35,6 +35,7 @@ public class ServiceUtil {
 
 	public static final String REQUEST_GROUP_ID_HEADER = "X-Request-Group-Id";
 	public static final String TRIGGER_PROCESS_HEADER = "X-Trigger-Process";
+	public static final String NOTIFY_HEADER = "X-notify";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceUtil.class);
 	private static final String MIME_ERROR_MSG = "Exception when detecting mime type of file with filename '{}'";
@@ -44,6 +45,7 @@ public class ServiceUtil {
 	private static final int REQUEST_GROUP_ID_LENGTH = 36;
 	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
 	private static final ThreadLocal<String> TRIGGER_PROCESS = new ThreadLocal<>();
+	private static final ThreadLocal<Boolean> NOTIFY = new ThreadLocal<>();
 
 	private ServiceUtil() {}
 
@@ -191,6 +193,35 @@ public class ServiceUtil {
 
 	public static void clearTriggerProcess() {
 		TRIGGER_PROCESS.remove();
+	}
+
+	/**
+	 * Holds whether what the request does should notify anyone, as the caller said in the {@value #NOTIFY_HEADER}
+	 * header. Only an explicit "false" (in any case) turns notifications off. Anything else, including a missing or
+	 * unreadable value, leaves them on, since a caller that meant to stay quiet has to say so.
+	 *
+	 * @param notify the value of the header, or null when the request carries none
+	 */
+	public static void setNotify(final String notify) {
+		if (Strings.CI.equals("false", StringUtils.trim(notify))) {
+			NOTIFY.set(Boolean.FALSE);
+		} else {
+			NOTIFY.remove();
+		}
+	}
+
+	/**
+	 * Signals whether what is done on this thread should notify the subscribers of an errand.
+	 * Outside of a request, as in a scheduled job, nothing has said otherwise and notifications are on.
+	 *
+	 * @return false only when the request asked not to notify anyone
+	 */
+	public static boolean shouldNotify() {
+		return !Boolean.FALSE.equals(NOTIFY.get());
+	}
+
+	public static void clearNotify() {
+		NOTIFY.remove();
 	}
 
 	public static String computeSha256Hex(final InputStream inputStream) {

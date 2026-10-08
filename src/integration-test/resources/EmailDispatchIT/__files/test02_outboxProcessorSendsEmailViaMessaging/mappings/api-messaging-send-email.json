@@ -1,0 +1,32 @@
+{
+	"request": {
+		"method": "POST",
+		"url": "/api-messaging/2281/email?async=true",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"recipients": [
+						"chef@example.com"
+					],
+					"subject": "Uppdatering i Namespace 1",
+					"message": "Uppdatering i Namespace 1\n\nÄrende NS1-2024-000001:\n    Länk: https://draken.test.local/2281/NAMESPACE-1/errands/NS1-2024-000001\n    - Nytt meddelande",
+					"sender": {
+						"name": "Sundsvalls kommun",
+						"address": "no-reply@test.local"
+					}
+				},
+				"ignoreExtraElements": true
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"messageId": "3aef8a32-c185-4dde-8af8-94f1016a8f7b"
+		},
+		"status": 200
+	},
+	"name": "api-messaging-send-email"
+}
