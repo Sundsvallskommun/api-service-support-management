@@ -21185,10 +21185,12 @@ components:
       - type
     SubscriptionProfile:
       type: object
-      description: A subscription profile is a named set of event filters and the
-        channels the events they match are delivered on. A subscription pointing at
-        a profile is governed by the profile alone - the subscriber's own event filters
-        and channels do not apply to it.
+      description: "A subscription profile is a named set of event filters and the\
+        \ channels the events they match are delivered on. A subscription pointing\
+        \ at a profile delivers the events the profile's filters select, while the\
+        \ subscriber's own event filters do not apply to it. The events are delivered\
+        \ on the profile's channels, or on the subscriber's own channels when the\
+        \ profile has none."
       properties:
         id:
           type: string
@@ -21218,7 +21220,10 @@ components:
             $ref: "#/components/schemas/EventFilter"
         channels:
           type: array
-          description: Channels the events matched by the profile are delivered on
+          description: "Channels the events matched by the profile are delivered on.\
+            \ Leaving it out or empty delivers them on the subscriber's own channels\
+            \ instead, which lets each user choose how they are notified. An update\
+            \ with an empty list clears the profile's channels."
           items:
             type: string
             description: Channel through which a notification is delivered
@@ -21348,9 +21353,10 @@ components:
         profileId:
           type: string
           description: "Optional id of a subscription profile. When set, the profile\
-            \ alone decides which events this subscription delivers and on which channels\
-            \ - the subscriber's event filters and channels do not apply. Cannot be\
-            \ combined with eventFilters."
+            \ alone decides which events this subscription delivers, and on which\
+            \ channels unless the profile has none, when the subscriber's own channels\
+            \ are used. The subscriber's event filters do not apply. Cannot be combined\
+            \ with eventFilters."
           examples:
           - 123e4567-e89b-12d3-a456-426614174000
         eventFilters:

@@ -27,7 +27,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 /**
  * A named set of event filters and the channels the events they match are delivered on. A subscription pointing at a
- * profile is governed by the profile alone, which is what lets a role be given a fixed notification setup.
+ * profile is governed by the profile, which is what lets a role be given a fixed notification setup. A profile without
+ * channels leaves it to each subscriber how the events reach them.
  */
 @Entity
 @Table(name = "subscription_profile",

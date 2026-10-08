@@ -30,8 +30,9 @@ public class Subscription {
 	private SubscriptionTarget target;
 
 	@ValidUuid(nullable = true)
-	@Schema(description = "Optional id of a subscription profile. When set, the profile alone decides which events this subscription delivers " +
-		"and on which channels - the subscriber's event filters and channels do not apply. Cannot be combined with eventFilters.",
+	@Schema(description = "Optional id of a subscription profile. When set, the profile alone decides which events this subscription delivers, " +
+		"and on which channels unless the profile has none, when the subscriber's own channels are used. The subscriber's event filters do not apply. " +
+		"Cannot be combined with eventFilters.",
 		examples = "123e4567-e89b-12d3-a456-426614174000")
 	private String profileId;
 
