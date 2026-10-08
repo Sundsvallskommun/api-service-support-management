@@ -15,13 +15,16 @@ import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toSet;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 /**
  * Carries out label merges accepted by {@link MetadataService#startLabelMerge}.
  * <p>
  * A merge walks every errand that references any of the source labels, substitutes the destination label id for
- * whichever source id each errand carried, and once nothing references a source label any more, deletes it. Mirrors
+ * whichever source id each errand carried, and deletes every source label no errand wears any more. A source label
+ * still worn by an errand that kept its labels - refused by a process guard, or left as it is for having no access
+ * labels - is kept. Mirrors
  * {@link LabelMoveWorker} in shape - paged, keyset-walked restowing with optimistic-lock retry, one transaction per
  * page - but there is no tree re-parenting step: the destination label already sits where it is going to stay, and
  * what changes is which errands point at it. Never throws: whatever goes wrong ends the job as failed, since the
@@ -36,6 +39,7 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	private static final String ENDED_WITHOUT_RESULT = "Label merge ended without reaching a result of its own";
 	private static final String SUMMARY = "Labels %s merged into %s, %s";
 	private static final String AUDIT_MESSAGE = "Labels %s merged into %s by %s, %s";
+	private static final String SOURCES_KEPT = "%s, labels %s kept since errands still wear them";
 	private static final String LABEL_GONE = "Label %s no longer exists";
 	private static final String HAS_LABEL = "hasLabel";
 	private static final int MAX_BATCH_ATTEMPTS = 3;
@@ -116,8 +120,9 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 
 	/**
 	 * Restows every errand referencing any of {@code sourceLabelIds} onto {@code targetLabelId}, retargets any action
-	 * condition that named one of the sources, then deletes the now unreferenced source labels, reporting cumulative
-	 * progress through {@code progressReporter} as it goes.
+	 * condition that named one of the sources, then deletes the source labels no errand wears any more, reporting
+	 * cumulative progress through {@code progressReporter} as it goes. A source label an errand still wears is kept, while
+	 * the action conditions naming it name the destination, as they do for every other source label.
 	 * <p>
 	 * Extracted out of {@link #merge(LabelMergeRun)} so that {@code LabelTreeRestructureWorker} can carry out one MERGE
 	 * step of a larger restructure directly, on its own worker thread, reporting progress against its own composite job
@@ -126,9 +131,10 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	 *
 	 * @param  startedByAdAccount whether the merge was asked for by an ad account, which holds the errands it restows to
 	 *                            the rule that an ad account may not take a label blocking processes off an errand.
-	 * @return                    how many errands were restowed, and how many kept the labels they had.
+	 * @return                    how many errands were restowed and how many kept the labels they had, and which source
+	 *                            labels were kept.
 	 */
-	RestowPager.Outcome mergeAndRestow(final String jobId, final String namespace, final String municipalityId, final String targetLabelId, final Set<String> sourceLabelIds, final String startedBy,
+	MergeOutcome mergeAndRestow(final String jobId, final String namespace, final String municipalityId, final String targetLabelId, final Set<String> sourceLabelIds, final String startedBy,
 		final boolean startedByAdAccount,
 		final IntConsumer progressReporter) {
 		if (!metadataLabelRepository.existsById(targetLabelId)) {
@@ -140,21 +146,38 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 			}
 		});
 
-		final var outcome = restowErrands(jobId, targetLabelId, sourceLabelIds, startedByAdAccount, progressReporter);
+		final var restow = restowErrands(jobId, targetLabelId, sourceLabelIds, startedByAdAccount, progressReporter);
+		final var keptLabelIds = labelsStillWorn(sourceLabelIds);
 
 		// An action's hasLabel condition is a plain id reference, not a foreign key the DB enforces for us - left
 		// pointing at a source id once that row is gone below, a condition would silently stop matching anything
 		// rather than failing loudly, since an id that resolves to nothing just never equals an errand's own labels.
 		retargetActionConditions(namespace, municipalityId, sourceLabelIds, targetLabelId);
 
-		// Only reached once every errand that referenced a source label has been restowed onto the destination - no
-		// source label is referenced by an errand any more by the time this deletes them.
-		deleteSourceLabels(sourceLabelIds);
+		deleteSourceLabels(sourceLabelIds.stream()
+			.filter(sourceId -> !keptLabelIds.contains(sourceId))
+			.collect(toSet()));
+
+		if (!keptLabelIds.isEmpty()) {
+			LOG.warn("Label merge {} kept the labels {}, since errands still wear them", jobId, sanitizeForLogging(keptLabelIds.toString()));
+		}
+
+		final var outcome = new MergeOutcome(restow, keptLabelIds);
 
 		eventService.createLabelMergeEvent(municipalityId, targetLabelId, startedBy,
 			AUDIT_MESSAGE.formatted(sourceLabelIds, targetLabelId, startedBy, outcome.describe()));
 
 		return outcome;
+	}
+
+	/**
+	 * The source labels an errand still wears once the errands have been restowed: kept on it by a process guard, or
+	 * left on an errand that has no access labels to rebuild its labels from.
+	 */
+	private Set<String> labelsStillWorn(final Set<String> sourceLabelIds) {
+		return sourceLabelIds.stream()
+			.filter(sourceId -> errandsRepository.existsByLabelsMetadataLabelIdIn(Set.of(sourceId)))
+			.collect(toSet());
 	}
 
 	/**
@@ -165,6 +188,10 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 	 * persist a removed child again when the session flushes, and the delete would quietly not happen.
 	 */
 	private void deleteSourceLabels(final Set<String> sourceLabelIds) {
+		if (sourceLabelIds.isEmpty()) {
+			return;
+		}
+
 		transactionTemplate.executeWithoutResult(status -> metadataLabelRepository.findAllById(sourceLabelIds).forEach(label -> {
 			ofNullable(label.getParent()).ifPresent(parent -> parent.getMetadataLabels().remove(label));
 			metadataLabelRepository.delete(label);
@@ -173,9 +200,10 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 
 	/**
 	 * Replaces every source label id a {@code hasLabel} action condition named with the destination's id, so a merge
-	 * does not leave a condition quietly pointing at a row that is about to be deleted. Deduplicated afterward: a
-	 * condition naming both a source and the destination, or naming two sources now folding into the same id, must
-	 * not end up with the destination id repeated.
+	 * does not leave a condition quietly pointing at a row that is about to be deleted. A source label kept, since errands
+	 * still wear it, is replaced as well: a condition requires every label it names, so naming both would match no errand.
+	 * Deduplicated afterward: a condition naming both a source and the destination, or naming two sources now folding into
+	 * the same id, must not end up with the destination id repeated.
 	 */
 	private void retargetActionConditions(final String namespace, final String municipalityId, final Set<String> sourceLabelIds, final String targetLabelId) {
 		final var changed = new ArrayList<ActionConfigEntity>();
@@ -217,5 +245,25 @@ public class LabelMergeWorker extends JobRunner<LabelMergeRun> {
 			attempt -> "Label merge %s retrying a page for target %s after a concurrent edit lost the optimistic-lock race (attempt %d/%d)"
 				.formatted(jobId, sanitizeForLogging(targetLabelId), attempt, MAX_BATCH_ATTEMPTS),
 			progressReporter);
+	}
+
+	/**
+	 * What a merge did with the errands it reached, and which source labels it kept.
+	 *
+	 * @param restow       how many errands were restowed, and how many kept the labels they had.
+	 * @param keptLabelIds the source labels kept since errands still wear them, empty when every source label was
+	 *                     deleted.
+	 */
+	record MergeOutcome(RestowPager.Outcome restow, Set<String> keptLabelIds) {
+
+		/**
+		 * The outcome in words, for the summary of a job and the message of an audit event. The source labels kept are named
+		 * only when there are any.
+		 *
+		 * @return the outcome in words.
+		 */
+		String describe() {
+			return keptLabelIds.isEmpty() ? restow.describe() : SOURCES_KEPT.formatted(restow.describe(), keptLabelIds.stream().sorted().toList());
+		}
 	}
 }

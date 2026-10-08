@@ -50,6 +50,7 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 	private static final String PARENT_GONE = "Parent at path '%s' no longer exists";
 	private static final String HAS_CHILDREN = "Label at path '%s' still has children";
 	private static final String REFERENCED_BY_ERRANDS = "Label at path '%s' is referenced by one or more errands";
+	private static final String MERGE_KEPT_SOURCES = "%s, and the steps after it were checked against a tree without them";
 
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final ErrandsRepository errandsRepository;
@@ -218,6 +219,10 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 		return labelMoveWorker.moveAndRestow(jobId, municipalityId, sourceId, destinationParentId, step.getNewResourceName(), step.getDisplayName(), startedBy, startedByAdAccount, progressReporter);
 	}
 
+	/**
+	 * Carries out a MERGE step. A merge that keeps source labels, since errands still wear them, stops the run, as the
+	 * steps after it were checked against a tree in which the sources were gone.
+	 */
 	private RestowPager.Outcome applyMerge(final String jobId, final String namespace, final String municipalityId, final LabelRestructureStep step, final String startedBy, final boolean startedByAdAccount,
 		final IntConsumer progressReporter) {
 		final var targetId = findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(step.getPath()), LABEL_GONE).getId();
@@ -226,7 +231,13 @@ public class LabelTreeRestructureWorker extends JobRunner<LabelRestructureRun> {
 			.map(sourcePath -> findOrThrow(namespace, municipalityId, LabelTreeSnapshot.join(sourcePath), LABEL_GONE).getId())
 			.collect(toSet());
 
-		return labelMergeWorker.mergeAndRestow(jobId, namespace, municipalityId, targetId, sourceIds, startedBy, startedByAdAccount, progressReporter);
+		final var outcome = labelMergeWorker.mergeAndRestow(jobId, namespace, municipalityId, targetId, sourceIds, startedBy, startedByAdAccount, progressReporter);
+
+		if (!outcome.keptLabelIds().isEmpty()) {
+			throw new IllegalStateException(MERGE_KEPT_SOURCES.formatted(outcome.describe()));
+		}
+
+		return outcome.restow();
 	}
 
 	private MetadataLabelEntity findOrThrow(final String namespace, final String municipalityId, final String path, final String messageTemplate) {

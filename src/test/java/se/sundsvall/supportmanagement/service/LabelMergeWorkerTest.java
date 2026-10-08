@@ -115,6 +115,8 @@ class LabelMergeWorkerTest {
 		verify(metadataLabelRepositoryMock).delete(source2);
 		verify(transactionManagerMock).commit(transactionStatusMock);
 		assertThat(parent.getMetadataLabels()).containsExactly(target);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-2"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -142,8 +144,50 @@ class LabelMergeWorkerTest {
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels")));
 		verify(jobServiceMock).complete(eq(JOB_ID), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels")));
+	}
+
+	@Test
+	@DisplayName("Verification that a source label an errand still wears is kept rather than deleted, that an action condition naming it names the destination in its place, since a condition requires every label it names, and that the summary and the audit event name the label kept")
+	void run_sourceLabelStillWorn_isKeptWhileTheConditionsNameTheDestination() {
+		var sourceIds = Set.of("source-1", "source-2");
+		var errand = errandWithAccessLabels("source-1").withId("errand-1");
+		var pageable = PageRequest.ofSize(BATCH_SIZE);
+		var condition = ActionConfigConditionEntity.create().withKey("hasLabel").withValues(List.of("source-1", "source-2"));
+		var config = ActionConfigEntity.create().withConditions(List.of(condition));
+		var source2 = MetadataLabelEntity.create().withId("source-2");
+
+		when(metadataLabelRepositoryMock.existsById(TARGET_ID)).thenReturn(true);
+		when(metadataLabelRepositoryMock.existsById("source-1")).thenReturn(true);
+		when(metadataLabelRepositoryMock.existsById("source-2")).thenReturn(true);
+		when(errandsRepositoryMock.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable)).thenReturn(List.of(errand));
+		when(errandServiceMock.persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true)).thenReturn(1);
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(Set.of("source-1"))).thenReturn(true);
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(Set.of("source-2"))).thenReturn(false);
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
+		when(metadataLabelRepositoryMock.findAllById(Set.of("source-2"))).thenReturn(List.of(source2));
+
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
+
+		assertThat(condition.getValues()).containsExactly(TARGET_ID);
+		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
+		verify(metadataLabelRepositoryMock).existsById("source-1");
+		verify(metadataLabelRepositoryMock).existsById("source-2");
+		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true);
+		verify(jobServiceMock).updateProgress(JOB_ID, 1);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-2"));
+		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(actionConfigRepositoryMock).saveAll(List.of(config));
+		verify(metadataLabelRepositoryMock).findAllById(Set.of("source-2"));
+		verify(metadataLabelRepositoryMock).delete(source2);
+		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY),
+			argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels, labels [source-1] kept since errands still wear them")));
+		verify(jobServiceMock).complete(eq(JOB_ID), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels, labels [source-1] kept since errands still wear them")));
 	}
 
 	@Test
@@ -176,6 +220,7 @@ class LabelMergeWorkerTest {
 		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true);
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -213,6 +258,7 @@ class LabelMergeWorkerTest {
 		verify(metadataLabelRepositoryMock).existsById("source-1");
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -245,6 +291,7 @@ class LabelMergeWorkerTest {
 		verify(metadataLabelRepositoryMock).existsById("source-1");
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}

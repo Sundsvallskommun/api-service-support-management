@@ -11,6 +11,7 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.service.scheduler.action.ActionScheduler;
 
@@ -55,6 +56,8 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 	private static final String ERRAND_WITHOUT_PROCESS = "aa000000-0000-0000-0000-0000000000a2";
 	private static final String ERRAND_WITH_FINISHED_PROCESS = "aa000000-0000-0000-0000-0000000000a3";
 	private static final String MOVED_LABEL = "bb000000-0000-0000-0000-0000000000b6";
+	private static final String APPLICATION_LABEL = "bb000000-0000-0000-0000-0000000000b1";
+	private static final String SUPERVISION_LABEL = "bb000000-0000-0000-0000-0000000000b2";
 
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
@@ -64,6 +67,9 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 
 	@Autowired
 	private JobRepository jobRepository;
+
+	@Autowired
+	private MetadataLabelRepository metadataLabelRepository;
 
 	private static String errandPath(final String errandId) {
 		return "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + errandId;
@@ -236,5 +242,65 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse("response-errand-without-process.json")
 			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A label merge has no caller to answer either. The label naming the application process is merged into the one
+	 * naming the supervision process: the errand running the application process keeps the label and the refusal is
+	 * written on it, the errand that has never had a process is given the supervision label, and the errand whose process
+	 * has finished has no access labels to rebuild its labels from and is left as it is. The merged label is kept, since
+	 * errands still wear it, and the merge completes.
+	 */
+	@Test
+	@DisplayName("Verification that a label merge taking an errand off the process it runs leaves that errand as it is, keeps the merged label the errand still wears, and completes")
+	@Sql("/db/scripts/testdata-process-key-guard-merge.sql")
+	void test09_aMergedLabelNamingAnotherProcessIsKeptOnTheErrandRunningOne() throws Exception {
+		final var job = setupCall()
+			.withServicePath("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/labels/" + SUPERVISION_LABEL + "/merge")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(ACCEPTED)
+			.sendRequest()
+			.andReturnBody(JobResponse.class);
+
+		await()
+			.atMost(60, SECONDS)
+			.pollInterval(ofMillis(250))
+			.until(() -> jobRepository.findById(job.getJobId())
+				.map(JobEntity::getStatus)
+				.filter(List.of(COMPLETED, STOPPED, FAILED)::contains)
+				.isPresent());
+
+		assertThat(jobRepository.findById(job.getJobId())).hasValueSatisfying(ended -> {
+			assertThat(ended.getStatus()).isEqualTo(COMPLETED);
+			assertThat(ended.getMessage()).isEqualTo("Labels [%s] merged into %s, 1 errand(s) restowed, 2 kept their labels, labels [%s] kept since errands still wear them"
+				.formatted(APPLICATION_LABEL, SUPERVISION_LABEL, APPLICATION_LABEL));
+		});
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS) + "/process-activities")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-activities.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS))
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(null)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-errand-with-process.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITHOUT_PROCESS))
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(null)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-errand-without-process.json")
+			.sendRequestAndVerifyResponse();
+
+		assertThat(metadataLabelRepository.existsById(APPLICATION_LABEL)).isTrue();
 	}
 }
