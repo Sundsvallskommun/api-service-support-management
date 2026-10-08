@@ -65,7 +65,7 @@ VALUES ('44444444-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'RISK', '
 INSERT INTO subscription_profile(id, municipality_id, namespace, name, description, created, modified)
 VALUES ('55555555-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'Mejl: HSL-risk', null, '2024-01-01 12:00:00.000', null);
 
-INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype, label_added)
+INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype, label_id)
 VALUES ('55555555-0000-0000-0000-000000000001', 0, 'UPDATE', 'ERRAND', '44444444-0000-0000-0000-000000000001');
 
 INSERT INTO subscription_profile_channel(profile_id, sort_order, type)

@@ -21174,7 +21174,7 @@ components:
           - ATTACHMENT
           maxLength: 64
           minLength: 0
-        labelAdded:
+        labelId:
           type: string
           description: "Optional id of a metadata label. When set, only events that\
             \ added this label to the errand match - every label counts as added when\

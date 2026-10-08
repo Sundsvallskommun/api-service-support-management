@@ -874,7 +874,7 @@
 
     create table subscriber_event_filter (
         sort_order integer not null check ((sort_order>=0)),
-        label_added varchar(36),
+        label_id varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         subscriber_id varchar(255) not null,
@@ -921,7 +921,7 @@
 
     create table subscription_event_filter (
         sort_order integer not null check ((sort_order>=0)),
-        label_added varchar(36),
+        label_id varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         subscription_id varchar(255) not null,
@@ -957,7 +957,7 @@
 
     create table subscription_profile_event_filter (
         sort_order integer not null check ((sort_order>=0)),
-        label_added varchar(36),
+        label_id varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         profile_id varchar(255) not null,

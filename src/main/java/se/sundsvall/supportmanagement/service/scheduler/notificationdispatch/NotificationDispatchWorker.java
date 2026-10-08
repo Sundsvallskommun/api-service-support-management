@@ -204,6 +204,6 @@ public class NotificationDispatchWorker {
 	private boolean matches(final EventFilterEmbeddable filter, final NotificationDispatchEntity entry) {
 		return Objects.equals(filter.getType(), entry.getEventType())
 			&& (filter.getSubtype() == null || Objects.equals(filter.getSubtype(), entry.getSubType()))
-			&& (filter.getLabelAdded() == null || ofNullable(entry.getAddedLabelIds()).orElse(emptySet()).contains(filter.getLabelAdded()));
+			&& (filter.getLabelId() == null || ofNullable(entry.getAddedLabelIds()).orElse(emptySet()).contains(filter.getLabelId()));
 	}
 }

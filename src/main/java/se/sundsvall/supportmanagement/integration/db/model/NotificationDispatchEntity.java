@@ -61,7 +61,7 @@ public class NotificationDispatchEntity {
 
 	/**
 	 * The metadata labels the event added to the errand - every label on it for an errand just created - which is what
-	 * an event filter's labelAdded condition is held against. Fetched along with the entry, since the dispatch job reads
+	 * an event filter's labelId condition is held against. Fetched along with the entry, since the dispatch job reads
 	 * the entries in one transaction and matches them against filters in another.
 	 */
 	@ElementCollection(fetch = FetchType.EAGER)

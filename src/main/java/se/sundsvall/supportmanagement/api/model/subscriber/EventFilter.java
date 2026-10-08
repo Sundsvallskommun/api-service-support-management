@@ -28,7 +28,7 @@ public class EventFilter {
 	@Schema(description = "Optional id of a metadata label. When set, only events that added this label to the errand match - " +
 		"every label counts as added when the errand is created. If null, the labels of the errand do not matter.",
 		examples = "f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b")
-	private String labelAdded;
+	private String labelId;
 
 	public static EventFilter create() {
 		return new EventFilter();
@@ -60,22 +60,22 @@ public class EventFilter {
 		return this;
 	}
 
-	public String getLabelAdded() {
-		return labelAdded;
+	public String getLabelId() {
+		return labelId;
 	}
 
-	public void setLabelAdded(final String labelAdded) {
-		this.labelAdded = labelAdded;
+	public void setLabelId(final String labelId) {
+		this.labelId = labelId;
 	}
 
-	public EventFilter withLabelAdded(final String labelAdded) {
-		this.labelAdded = labelAdded;
+	public EventFilter withLabelId(final String labelId) {
+		this.labelId = labelId;
 		return this;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(type, subtype, labelAdded);
+		return Objects.hash(type, subtype, labelId);
 	}
 
 	@Override
@@ -87,11 +87,11 @@ public class EventFilter {
 			return false;
 		}
 		final EventFilter other = (EventFilter) obj;
-		return Objects.equals(type, other.type) && Objects.equals(subtype, other.subtype) && Objects.equals(labelAdded, other.labelAdded);
+		return Objects.equals(type, other.type) && Objects.equals(subtype, other.subtype) && Objects.equals(labelId, other.labelId);
 	}
 
 	@Override
 	public String toString() {
-		return "EventFilter{type='" + type + "', subtype='" + subtype + "', labelAdded='" + labelAdded + "'}";
+		return "EventFilter{type='" + type + "', subtype='" + subtype + "', labelId='" + labelId + "'}";
 	}
 }
