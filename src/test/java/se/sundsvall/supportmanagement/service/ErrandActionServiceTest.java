@@ -26,6 +26,7 @@ import se.sundsvall.supportmanagement.service.action.Action;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -470,7 +471,7 @@ class ErrandActionServiceTest {
 	}
 
 	private Action createActionMock(String name) {
-		final var mock = org.mockito.Mockito.mock(Action.class);
+		final var mock = mock(Action.class);
 		when(mock.getName()).thenReturn(name);
 		return mock;
 	}

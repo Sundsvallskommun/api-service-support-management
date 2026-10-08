@@ -14,7 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.PageImpl;
@@ -54,6 +53,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -351,7 +351,7 @@ class ConversationServiceTest {
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(EXTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
 		final var attachmentIds = List.of("att-id-1", "att-id-2");
 		final var messageRequest = MessageRequest.create().withAttachmentIds(attachmentIds);
-		final var blobMock = Mockito.mock(Blob.class);
+		final var blobMock = mock(Blob.class);
 		final var attachmentEntities = List.of(
 			AttachmentEntity.create().withFileName("file1.pdf").withMimeType("application/pdf").withFileSize(100)
 				.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock)),
@@ -389,7 +389,7 @@ class ConversationServiceTest {
 		final var attachmentIds = List.of("att-id-1");
 		final var messageRequest = MessageRequest.create().withAttachmentIds(attachmentIds);
 		final var multipartFile = new MockMultipartFile("attachments", "uploaded.txt", "text/plain", "content".getBytes());
-		final var blobMock = Mockito.mock(Blob.class);
+		final var blobMock = mock(Blob.class);
 		final var attachmentEntities = List.of(
 			AttachmentEntity.create().withFileName("referenced.pdf").withMimeType("application/pdf").withFileSize(100)
 				.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock)));
@@ -421,7 +421,7 @@ class ConversationServiceTest {
 		// Arrange
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(INTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
 		final var messageRequest = MessageRequest.create();
-		final var namespaceConfigMock = Mockito.mock(NamespaceConfig.class);
+		final var namespaceConfigMock = mock(NamespaceConfig.class);
 
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.ofNullable(conversationEntity));
 		when(messageExchangeClientMock.createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null))).thenReturn(ResponseEntity.ok().build());
@@ -449,7 +449,7 @@ class ConversationServiceTest {
 		// Arrange
 		final var conversationEntity = ConversationEntity.create().withId(CONVERSATION_ID).withType(INTERNAL.name()).withMessageExchangeId(MESSAGE_EXCHANGE_ID).withErrandId(ERRAND_ID);
 		final var messageRequest = MessageRequest.create();
-		final var namespaceConfigMock = Mockito.mock(NamespaceConfig.class);
+		final var namespaceConfigMock = mock(NamespaceConfig.class);
 
 		when(conversationRepositoryMock.findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID)).thenReturn(Optional.ofNullable(conversationEntity));
 		when(messageExchangeClientMock.createMessage(eq(MUNICIPALITY_ID), eq(MESSAGE_EXCHANGE_NAMESPACE), eq(MESSAGE_EXCHANGE_ID), any(), eq(null))).thenReturn(ResponseEntity.ok().build());
@@ -541,7 +541,7 @@ class ConversationServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.CONVERSATION_MESSAGE, RW);
 		verify(conversationRepositoryMock).findByMunicipalityIdAndNamespaceAndErrandIdAndId(MUNICIPALITY_ID, NAMESPACE, ERRAND_ID, CONVERSATION_ID);
-		verify(messageExchangeClientMock, Mockito.never()).markAsRead(any(), any(), any(), any());
+		verify(messageExchangeClientMock, never()).markAsRead(any(), any(), any(), any());
 	}
 
 	@Test
