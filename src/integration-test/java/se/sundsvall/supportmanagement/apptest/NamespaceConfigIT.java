@@ -1,22 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-import static org.springframework.http.HttpHeaders.LOCATION;
-import static org.springframework.http.HttpMethod.DELETE;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpMethod.PATCH;
-import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpMethod.PUT;
-import static org.springframework.http.HttpStatus.CREATED;
-import static org.springframework.http.HttpStatus.NO_CONTENT;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.ROLE;
-
 import java.util.List;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -27,6 +10,23 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpHeaders.LOCATION;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.ROLE;
 
 @WireMockAppTestSuite(files = "classpath:/NamespaceConfigIT/", classes = Application.class)
 @Sql({
@@ -213,6 +213,7 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
 	}
+
 	/**
 	 * The values the access configuration accepts, published as data so that exposing a new field or guarding a new
 	 * resource does not alter the contract. The fixture is the whole definition, so adding either shows up here.

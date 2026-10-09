@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.http.HttpMethod.PATCH;
-import static org.springframework.http.HttpStatus.OK;
-import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
@@ -18,6 +13,11 @@ import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.model.EmailDispatchOutboxEventEmbeddable;
 import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchScheduler;
 import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpMethod.PATCH;
+import static org.springframework.http.HttpStatus.OK;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 @WireMockAppTestSuite(files = "classpath:/EmailDispatchIT/", classes = Application.class)
 @Sql({
