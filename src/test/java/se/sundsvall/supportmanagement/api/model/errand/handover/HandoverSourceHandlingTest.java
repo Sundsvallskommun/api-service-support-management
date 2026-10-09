@@ -34,9 +34,10 @@ class HandoverSourceHandlingTest {
 			.withResolution("HANDED_OVER")
 			.withClosingComment("comment");
 
-		assertThat(a).isEqualTo(b);
-		assertThat(a).hasSameHashCodeAs(b);
-		assertThat(a).isNotEqualTo(HandoverSourceHandling.create().withResolution("OTHER"));
+		assertThat(a)
+			.isEqualTo(b)
+			.hasSameHashCodeAs(b)
+			.isNotEqualTo(HandoverSourceHandling.create().withResolution("OTHER"));
 	}
 
 	@Test

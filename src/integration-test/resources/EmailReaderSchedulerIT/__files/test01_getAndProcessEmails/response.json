@@ -3,6 +3,7 @@
 		{
 			"id": "${json-unit.any-string}",
 			"errandNumber": "${json-unit.regex}(NS1-\\d{8})",
+			"lifecycle": "ACTIVE",
 			"title": "Test subject 1",
 			"priority": "MEDIUM",
 			"stakeholders": [
@@ -57,6 +58,7 @@
 		{
 			"id": "${json-unit.any-string}",
 			"errandNumber": "${json-unit.regex}(NS1-\\d{8})",
+			"lifecycle": "ACTIVE",
 			"title": "Error subject",
 			"priority": "MEDIUM",
 			"stakeholders": [
@@ -94,6 +96,7 @@
 		{
 			"id": "${json-unit.any-string}",
 			"errandNumber": "${json-unit.regex}(NS1-\\d{8})",
+			"lifecycle": "ACTIVE",
 			"title": "Test subject 2",
 			"priority": "MEDIUM",
 			"stakeholders": [

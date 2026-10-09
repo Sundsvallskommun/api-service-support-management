@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -453,8 +455,11 @@ class MetadataServiceMoveLabelTest {
 		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
 	}
 
-	@Test
-	void startLabelMove_handsTheRunToTheWorkerWithExpectedParameters() {
+	@ParameterizedTest
+	@EnumSource(value = Identifier.Type.class, names = {
+		"AD_ACCOUNT", "CUSTOM"
+	})
+	void startLabelMove_handsTheRunToTheWorkerWithExpectedParameters(final Identifier.Type callerType) {
 		var label = labelEntityWithParent(LABEL_ID, "CHILD", "PARENT/CHILD", labelEntity(PARENT_ID, "PARENT", null));
 		var handled = new ArrayList<LabelMoveRun>();
 
@@ -476,7 +481,7 @@ class MetadataServiceMoveLabelTest {
 			handled.add(invocation.getArgument(0));
 			return null;
 		}).when(labelMoveWorkerMock).run(any());
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		Identifier.set(Identifier.create().withType(callerType).withValue("joe01doe"));
 
 		service.startLabelMove(NAMESPACE, MUNICIPALITY_ID, LABEL_ID, LabelMoveRequest.create().withDryRun(false));
 
@@ -487,6 +492,7 @@ class MetadataServiceMoveLabelTest {
 		assertThat(handled.getFirst().labelId()).isEqualTo(LABEL_ID);
 		assertThat(handled.getFirst().newParentId()).isNull();
 		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
+		assertThat(handled.getFirst().startedByAdAccount()).isEqualTo(callerType == Identifier.Type.AD_ACCOUNT);
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(LABEL_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CHILD");

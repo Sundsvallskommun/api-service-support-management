@@ -28,6 +28,7 @@ import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
@@ -35,6 +36,7 @@ import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtracto
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope.LIMITED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope.REPORTER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.FIELD;
@@ -48,10 +50,13 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_CONSUMER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_RESOURCE_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ROLE_BASED_MAPPING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SINGLE_DECISION_PER_ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getNullableValue;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getValue;
 
 @Component
@@ -72,10 +77,9 @@ public class NamespaceConfigMapper {
 		.thenComparing(FieldAtLevel::level, Comparator.nullsFirst(Comparator.naturalOrder()));
 
 	/**
-	 * The values the access configuration accepts, published so that a client configuring access reads them from here
-	 * rather than from an enum of the schema - which is what lets a field or a resource be added without altering the
-	 * contract. Each field also carries the property it names on the errand, and each resource the path it is guarded
-	 * on, so that a configuration can be matched up with what the access of an errand reports.
+	 * The values the access configuration accepts, for a client configuring access to read. Each field also carries the
+	 * property it names on the errand, and each resource the path it is guarded on, so that a configuration can be
+	 * matched up with what the access of an errand reports.
 	 */
 	public AccessDefinition toAccessDefinition() {
 		return AccessDefinition.create()
@@ -107,6 +111,12 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL, String.valueOf(config.isExcludeEventDescriptionsInEmail()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
 			.withAccessGrants(toAccessGrants(config));
+
+		ofNullable(config.getProcessConsumer())
+			.ifPresent(consumer -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_PROCESS_CONSUMER, consumer, STRING)));
+
+		ofNullable(config.getProcessTriggers()).orElse(emptyList())
+			.forEach(trigger -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_PROCESS_TRIGGER, trigger.name(), STRING)));
 
 		// A stored value may not be null, so an absent base url is left out rather than stored empty
 		ofNullable(config.getBaseUrl())
@@ -144,13 +154,37 @@ public class NamespaceConfigMapper {
 			.withExcludeEventDescriptionsInEmail(readOptionalToggle(entity, PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL))
 			.withBaseUrl(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_BASE_URL))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
+			.withProcessConsumer(getNullableValue(entity, PROPERTY_PROCESS_CONSUMER))
+			.withProcessTriggers(toProcessTriggers(entity))
 			.withLimitedReadAccess(toLimitedReadAccess(entity))
 			.withReporterAccess(toReporterAccess(entity))
 			.withRoleFieldRestrictions(toRoleAccesses(entity));
 	}
 
 	/**
-	 * Toggles added after a configuration was created read as disabled rather than failing the whole request.
+	 * Rebuilds the triggers of the namespace from all the rows holding them, read through
+	 * {@link ConfigPropertyExtractor#getValues(NamespaceConfigEntity, String)}.
+	 * <p>
+	 * Values that no longer resolve to a known event sub type are skipped with a warning.
+	 */
+	public List<EventSubType> toProcessTriggers(final NamespaceConfigEntity entity) {
+		final var triggers = ConfigPropertyExtractor.<String>getValues(entity, PROPERTY_PROCESS_TRIGGER).stream()
+			.map(value -> {
+				final var trigger = EnumUtils.getEnum(EventSubType.class, value);
+				if (trigger == null) {
+					LOG.warn("Skipping unknown process trigger '{}' for namespace '{}'", sanitizeForLogging(value), sanitizeForLogging(entity.getNamespace()));
+				}
+				return trigger;
+			})
+			.filter(Objects::nonNull)
+			.sorted()
+			.toList();
+
+		return triggers.isEmpty() ? null : triggers;
+	}
+
+	/**
+	 * Reads a toggle that a configuration may lack, a missing one as disabled.
 	 */
 	private boolean readOptionalToggle(final NamespaceConfigEntity entity, final String key) {
 		return ofNullable(ConfigPropertyExtractor.<Boolean>getNullableValue(entity, key)).orElse(false);
@@ -250,8 +284,7 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * Values that no longer resolve to a known resource are skipped, so a stale row cannot make the whole configuration
-	 * unreadable.
+	 * Values that no longer resolve to a known resource are skipped with a warning.
 	 */
 	private List<ProtectedResource> toResources(final List<NamespaceConfigAccessGrantEmbeddable> grants) {
 		final var resources = grants.stream()
@@ -277,8 +310,7 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * Values that no longer resolve to a known resource or level are skipped, so a stale row cannot make the whole
-	 * configuration unreadable.
+	 * Values that no longer resolve to a known resource or level are skipped with a warning.
 	 */
 	private List<ResourceAccess> toResourceAccesses(final List<NamespaceConfigAccessGrantEmbeddable> grants) {
 		final var resources = grants.stream()
@@ -300,12 +332,10 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * Values that no longer resolve to a known field are skipped, for the same reason.
+	 * Values that no longer resolve to a known field are skipped with a warning.
 	 * <p>
 	 * A grant carrying no key means the whole collection, so it wins over any grant naming individual keys of the same
-	 * field, mirroring how the keys of two scopes are merged when access is resolved. That only holds within one level:
-	 * a field granted wholesale at the level of the errand and restricted to read for one of its keys is two grants
-	 * saying different things, and collapsing them would lose the narrower one.
+	 * field at the same level. Grants of the same field at different levels are returned as separate field accesses.
 	 */
 	private List<FieldAccess> toFieldAccesses(final List<NamespaceConfigAccessGrantEmbeddable> grants) {
 		final Map<FieldAtLevel, List<String>> keysByField = new LinkedHashMap<>();
@@ -349,8 +379,8 @@ public class NamespaceConfigMapper {
 	}
 
 	/**
-	 * A field as one scope grants it, since the same field may be granted at more than one level - wholesale at the level
-	 * of the errand, say, with a single key of it held to read.
+	 * A field together with the level one scope grants it at, so the same field granted at more than one level - wholesale
+	 * at the level of the errand, say, with a single key of it held to read - is kept as separate grants.
 	 */
 	private record FieldAtLevel(ErrandField field, AccessLevel level) {}
 }

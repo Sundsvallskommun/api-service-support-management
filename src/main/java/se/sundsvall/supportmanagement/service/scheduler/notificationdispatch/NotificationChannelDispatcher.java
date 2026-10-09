@@ -27,8 +27,7 @@ public class NotificationChannelDispatcher {
 	 * Delivers the events a subscriber should be notified about once per type of channel the subscriber has, so a
 	 * subscriber holding several channels of one type is not notified several times over.
 	 * <p>
-	 * Failures are propagated so the caller can roll back and reschedule the whole group, rather than leaving some
-	 * subscribers notified and others not.
+	 * Failures are propagated so the caller can roll back and reschedule the whole group.
 	 */
 	public void send(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final List<NotificationDispatchEntity> events) {
 		subscriber.getChannels().stream()

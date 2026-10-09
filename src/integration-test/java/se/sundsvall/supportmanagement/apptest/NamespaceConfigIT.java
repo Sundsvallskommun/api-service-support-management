@@ -78,6 +78,15 @@ class NamespaceConfigIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(repository.existsByNamespaceAndMunicipalityId(NAMESPACE_2, MUNICIPALITY_ID)).isTrue();
+
+		// Read back, as each process trigger is stored as a row of its own under the same key
+		setupCall()
+			.withServicePath(PATH.apply(NAMESPACE_2))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -215,8 +224,8 @@ class NamespaceConfigIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The values the access configuration accepts, published as data so that exposing a new field or guarding a new
-	 * resource does not alter the contract. The fixture is the whole definition, so adding either shows up here.
+	 * The values the access configuration accepts, published as data. The response is compared against the whole
+	 * definition.
 	 */
 	@Test
 	void test12_getAccessDefinition() {

@@ -1,9 +1,8 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
 /**
- * Reserved scopes a namespace grant can be keyed by. These are resolved per errand by this service rather than supplied
- * by the access mapper, which is why they are named here. Any other scope value is the name of a role supplied by the
- * access mapper.
+ * Reserved scopes a namespace grant can be keyed by, resolved per errand by this service. Any other scope value is the
+ * name of a role supplied by the access mapper.
  */
 public enum AccessGrantScope {
 

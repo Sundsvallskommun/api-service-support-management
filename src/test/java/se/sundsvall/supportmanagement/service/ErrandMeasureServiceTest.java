@@ -82,8 +82,7 @@ class ErrandMeasureServiceTest {
 	}
 
 	/**
-	 * What the validator accepts is MeasureValidatorTest's business. What matters here is that it is consulted, and that
-	 * its rejection stops the request before the errand is even loaded.
+	 * The validator is consulted, and its rejection stops the request before the errand is loaded.
 	 */
 	@Test
 	void createErrandMeasureRejectedByValidator() {
@@ -238,7 +237,7 @@ class ErrandMeasureServiceTest {
 	}
 
 	/**
-	 * An ETag that has moved on says so rather than overwriting what somebody else just wrote.
+	 * An If-Match the version has moved on from is answered with 412, and the patch is not applied.
 	 */
 	@Test
 	void updateErrandMeasureWithStaleIfMatch() {

@@ -4,15 +4,11 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeDryRunResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMoveDryRunResponse;
@@ -33,20 +29,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class MetadataLabelResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/metadata/labels";
 	private static final String NAMESPACE = "namespace";
 	private static final String MUNICIPALITY_ID = "2281";
 
-	@MockitoBean
+	@Autowired
 	private MetadataService metadataServiceMock;
 
 	@Autowired
@@ -59,6 +52,56 @@ class MetadataLabelResourceTest {
 		final var labels = List.of(
 			Label.create().withClassification("classification").withResourceName("RESOURCE_1"),
 			Label.create().withClassification("classification").withResourceName("RESOURCE_2"));
+
+		// Act
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(labels)
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		// Assert and verify
+		verify(metadataServiceMock).createLabels(NAMESPACE, MUNICIPALITY_ID, labels);
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void createWithAttributesOfTheLongestSizeAllowed() {
+
+		// Arrange
+		final var labels = List.of(
+			Label.create().withClassification("classification").withResourceName("RESOURCE_1").withAttributes(List.of(
+				LabelAttribute.create().withKey("k".repeat(255)).withValue("v".repeat(16383))))
+				.withLabels(List.of(
+					Label.create().withClassification("classification").withResourceName("CHILD_1").withAttributes(List.of(
+						LabelAttribute.create().withKey("k".repeat(255)).withValue("v".repeat(16383)))))));
+
+		// Act
+		webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(labels)
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		// Assert and verify
+		verify(metadataServiceMock).createLabels(NAMESPACE, MUNICIPALITY_ID, labels);
+		verifyNoMoreInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void createWithProcessAttributes() {
+
+		// Arrange
+		final var labels = List.of(
+			Label.create().withClassification("classification").withResourceName("ANSOKAN").withAttributes(List.of(
+				LabelAttribute.create().withKey("processKey").withValue("alkt-ansokan"))),
+			Label.create().withClassification("classification").withResourceName("TILLSYN").withAttributes(List.of(
+				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
+				LabelAttribute.create().withKey("processStartMode").withValue("MANUAL"))));
 
 		// Act
 		webTestClient.post()

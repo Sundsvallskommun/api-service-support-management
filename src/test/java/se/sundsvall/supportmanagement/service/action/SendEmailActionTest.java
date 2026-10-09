@@ -470,7 +470,7 @@ class SendEmailActionTest {
 			ActionConfigParameterEntity.create().withKey("body").withValues(List.of(EMAIL_BODY)),
 			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("false")))));
 
-		sendEmailAction.executeAction(errand, config);
+		assertThat(sendEmailAction.executeAction(errand, config)).isFalse();
 
 		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
 		var capturedRequest = emailRequestCaptor.getValue();
@@ -480,6 +480,26 @@ class SendEmailActionTest {
 		assertThat(capturedRequest.getMessage()).isNull();
 		assertThat(capturedRequest.getHtmlMessage()).isEqualTo(EMAIL_BODY
 			+ "<br><br><em>Detta är ett automatiskt meddelande. Svara inte på detta e-postmeddelande</em>");
+	}
+
+	@Test
+	void executeActionWithAPercentSignInTheSubject() {
+		var errand = ErrandEntity.create()
+			.withErrandNumber(ERRAND_NUMBER);
+
+		var config = ActionConfigEntity.create();
+		config.setConditions(new ArrayList<>());
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("recipient").withValues(List.of(RECIPIENT_ADDRESS)),
+			ActionConfigParameterEntity.create().withKey("sender").withValues(List.of(SENDER_ADDRESS)),
+			ActionConfigParameterEntity.create().withKey("subject").withValues(List.of("50% done %s")),
+			ActionConfigParameterEntity.create().withKey("body").withValues(List.of(EMAIL_BODY)),
+			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("false")))));
+
+		sendEmailAction.executeAction(errand, config);
+
+		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
+		assertThat(emailRequestCaptor.getValue().getSubject()).isEqualTo("50% done %s - " + ERRAND_NUMBER);
 	}
 
 	@Test
@@ -503,7 +523,7 @@ class SendEmailActionTest {
 			ActionConfigParameterEntity.create().withKey("addLinkToErrandInBody").withValues(List.of("true")),
 			ActionConfigParameterEntity.create().withKey("baseUrl").withValues(List.of(ERRAND_BASE_URL)))));
 
-		sendEmailAction.executeAction(errand, config);
+		assertThat(sendEmailAction.executeAction(errand, config)).isFalse();
 
 		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
 		var capturedRequest = emailRequestCaptor.getValue();

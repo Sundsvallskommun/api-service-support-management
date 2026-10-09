@@ -48,9 +48,11 @@
     create table attachment (
         attachment_data_id integer not null,
         file_size integer,
+        sequence_number integer,
         created datetime(6),
         modified datetime(6),
         municipality_id varchar(8),
+        received datetime(6),
         namespace varchar(32),
         hash varchar(64),
         attachment_purpose_id varchar(255),
@@ -79,6 +81,12 @@
         id varchar(255) not null,
         name varchar(255) not null,
         primary key (id)
+    ) engine=InnoDB;
+
+    create table attachment_sequence (
+        last_sequence_number integer not null,
+        errand_id varchar(255) not null,
+        primary key (errand_id)
     ) engine=InnoDB;
 
     create table category (
@@ -252,6 +260,22 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table decision_parameter (
+        decision_id varchar(255) not null,
+        display_name varchar(255),
+        id varchar(255) not null,
+        parameter_group varchar(255),
+        parameters_key varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table decision_parameter_values (
+        value_order integer default 0 not null check ((value_order>=0)),
+        value varchar(3000),
+        decision_parameter_id varchar(255) not null,
+        primary key (value_order, decision_parameter_id)
+    ) engine=InnoDB;
+
     create table decision_term (
         sort_order integer,
         category varchar(128),
@@ -311,6 +335,7 @@
         suspended_to datetime(6),
         touched datetime(6),
         version bigint default 0 not null,
+        lifecycle varchar(16) default 'ACTIVE' not null check ((lifecycle in ('DRAFT','ACTIVE'))),
         namespace varchar(32) not null,
         status varchar(64),
         type varchar(128),
@@ -364,6 +389,54 @@
         errand_id varchar(255) not null,
         id varchar(255) not null,
         phase_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table errand_process (
+        active_marker bit,
+        created datetime(3) not null,
+        ended datetime(3),
+        modified datetime(3),
+        municipality_id varchar(8) not null,
+        started datetime(3),
+        namespace varchar(32) not null,
+        id varchar(36) not null,
+        error_code varchar(64),
+        outstanding_external_task_id varchar(64),
+        process_instance_id varchar(64),
+        process_service varchar(64) not null,
+        process_key varchar(128) not null,
+        error_message varchar(2048),
+        current_activity_id varchar(255),
+        current_activity_name varchar(255),
+        errand_id varchar(255) not null,
+        process_status enum ('COMPLETED','FAILED','RETRYING','RUNNING','WAITING') not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table errand_process_activity (
+        created datetime(3) not null,
+        occurred_at datetime(3) not null,
+        errand_process_id varchar(36),
+        id varchar(36) not null,
+        activity_type varchar(64) not null,
+        error_code varchar(64),
+        external_task_id varchar(64),
+        message varchar(2048),
+        activity_id varchar(255),
+        activity_name varchar(255),
+        errand_id varchar(255) not null,
+        severity enum ('ERROR','INFO','WARN') not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table errand_process_signal (
+        sort_order integer not null,
+        created datetime(3) not null,
+        errand_process_id varchar(36) not null,
+        id varchar(36) not null,
+        name varchar(128) character set utf8mb4 collate utf8mb4_nopad_bin not null,
+        label varchar(255),
         primary key (id)
     ) engine=InnoDB;
 
@@ -436,6 +509,22 @@
         schema_id varchar(255),
         value longtext,
         primary key (id)
+    ) engine=InnoDB;
+
+    create table investigation_parameter (
+        display_name varchar(255),
+        id varchar(255) not null,
+        investigation_id varchar(255) not null,
+        parameter_group varchar(255),
+        parameters_key varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table investigation_parameter_values (
+        value_order integer default 0 not null check ((value_order>=0)),
+        value varchar(3000),
+        investigation_parameter_id varchar(255) not null,
+        primary key (value_order, investigation_parameter_id)
     ) engine=InnoDB;
 
     create table investigation_section (
@@ -714,6 +803,24 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table process_event_outbox (
+        start_allowed bit not null,
+        created datetime(3) not null,
+        delivered_at datetime(3),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        errand_id varchar(36) not null,
+        id varchar(36) not null,
+        request_group_id varchar(36),
+        event_sub_type varchar(64) not null,
+        event_type varchar(64) not null,
+        process_service varchar(64) not null,
+        process_key varchar(128),
+        signal_name varchar(128),
+        executed_by varchar(255),
+        primary key (id)
+    ) engine=InnoDB;
+
     create table revision (
         version integer,
         created datetime(6),
@@ -766,7 +873,7 @@
 
     create table stakeholder_parameter_values (
         stakeholder_parameter_id bigint not null,
-        value varchar(255)
+        value varchar(3000)
     ) engine=InnoDB;
 
     create table statement (
@@ -984,6 +1091,9 @@
     alter table if exists attachment 
        add constraint uq_attachment_data_id unique (attachment_data_id);
 
+    alter table if exists attachment 
+       add constraint uq_attachment_errand_id_sequence_number unique (errand_id, sequence_number);
+
     create index idx_attachment_purpose_namespace_municipality_id 
        on attachment_purpose (namespace, municipality_id);
 
@@ -1055,6 +1165,9 @@
 
     alter table if exists decision_outcome 
        add constraint uq_decision_outcome_namespace_municipality_id_name unique (namespace, municipality_id, name);
+
+    create index idx_decision_parameter_decision_id 
+       on decision_parameter (decision_id);
 
     create index idx_decision_term_decision_id 
        on decision_term (decision_id);
@@ -1161,6 +1274,30 @@
     create index idx_errand_phase_phase_id 
        on errand_phase (phase_id);
 
+    create index idx_ep_errand_id 
+       on errand_process (errand_id);
+
+    alter table if exists errand_process 
+       add constraint uq_ep_process_instance_id unique (process_instance_id);
+
+    alter table if exists errand_process 
+       add constraint uq_ep_one_active_per_errand unique (errand_id, active_marker);
+
+    create index idx_epa_process_occurred 
+       on errand_process_activity (errand_process_id, occurred_at);
+
+    create index idx_epa_errand_occurred 
+       on errand_process_activity (errand_id, occurred_at);
+
+    create index idx_epa_retention 
+       on errand_process_activity (created);
+
+    alter table if exists errand_process_activity 
+       add constraint uq_epa_idempotency unique (errand_process_id, external_task_id, activity_id);
+
+    alter table if exists errand_process_signal 
+       add constraint uq_eps_process_name unique (errand_process_id, name);
+
     create index idx_namespace_municipality_id 
        on external_id_type (namespace, municipality_id);
 
@@ -1202,6 +1339,9 @@
 
     alter table if exists investigation_json_parameter 
        add constraint uq_investigation_json_parameter_investigation_id_key unique (investigation_id, parameter_key);
+
+    create index idx_investigation_parameter_investigation_id 
+       on investigation_parameter (investigation_id);
 
     create index idx_investigation_section_investigation_id 
        on investigation_section (investigation_id);
@@ -1319,6 +1459,15 @@
 
     create index idx_phase_transition_phase_id 
        on phase_transition (phase_id);
+
+    create index idx_peo_dispatch 
+       on process_event_outbox (delivered_at, created);
+
+    create index idx_peo_consumer 
+       on process_event_outbox (process_service, delivered_at, created);
+
+    create index idx_peo_guard 
+       on process_event_outbox (errand_id, delivered_at, created);
 
     create index revision_entity_id_index 
        on revision (entity_id);
@@ -1453,6 +1602,12 @@
        foreign key (attachment_purpose_id) 
        references attachment_purpose (id);
 
+    alter table if exists attachment_sequence 
+       add constraint fk_attachment_sequence_errand_id 
+       foreign key (errand_id) 
+       references errand (id) 
+       on delete cascade;
+
     alter table if exists communication_attachment 
        add constraint fk_communication_attachment_attachment_data 
        foreign key (attachment_data_id) 
@@ -1531,6 +1686,18 @@
        add constraint fk_decision_json_parameter_decision_id 
        foreign key (decision_id) 
        references decision (id) 
+       on delete cascade;
+
+    alter table if exists decision_parameter 
+       add constraint fk_decision_parameter_decision_id 
+       foreign key (decision_id) 
+       references decision (id) 
+       on delete cascade;
+
+    alter table if exists decision_parameter_values 
+       add constraint fk_decision_parameter_values_decision_parameter_id 
+       foreign key (decision_parameter_id) 
+       references decision_parameter (id) 
        on delete cascade;
 
     alter table if exists decision_term 
@@ -1619,6 +1786,18 @@
        add constraint fk_investigation_json_parameter_investigation_id 
        foreign key (investigation_id) 
        references investigation (id) 
+       on delete cascade;
+
+    alter table if exists investigation_parameter 
+       add constraint fk_investigation_parameter_investigation_id 
+       foreign key (investigation_id) 
+       references investigation (id) 
+       on delete cascade;
+
+    alter table if exists investigation_parameter_values 
+       add constraint fk_investigation_parameter_values_investigation_parameter_id 
+       foreign key (investigation_parameter_id) 
+       references investigation_parameter (id) 
        on delete cascade;
 
     alter table if exists investigation_section 

@@ -1,7 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
 /**
- * Assessment of an investigation section. Four values are enough, and they are neutral to the line of business.
+ * Assessment of an investigation section, neutral to the line of business.
  */
 public enum SectionAssessment {
 

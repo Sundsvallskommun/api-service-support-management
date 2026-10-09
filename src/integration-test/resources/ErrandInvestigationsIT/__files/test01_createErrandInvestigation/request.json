@@ -2,5 +2,27 @@
 	"type": "PREMISES",
 	"status": "DRAFT",
 	"title": "Utredning av lokalen",
-	"investigatorUserId": "joe01doe"
+	"investigatorUserId": "joe01doe",
+	"parameters": [
+		{
+			"key": "riskLevel",
+			"displayName": "Risknivå",
+			"values": [
+				"low"
+			]
+		},
+		{
+			"key": "checkedSources",
+			"group": "underlag",
+			"values": [
+				"Skatteverket"
+			]
+		},
+		{
+			"key": "riskLevel",
+			"values": [
+				"medium"
+			]
+		}
+	]
 }

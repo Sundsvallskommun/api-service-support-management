@@ -3,8 +3,7 @@ package se.sundsvall.supportmanagement.service.purge;
 import java.time.OffsetDateTime;
 
 /**
- * What a caller asked a run to do. Kept together because the three always travel as one: they are read from the same
- * request, handed to the same run and answered in the same status.
+ * What a caller asked a purge run to do, as read from the request, handed to the run and answered in its status.
  *
  * @param olderThan  errands last touched before this point in time are the ones the run removes.
  * @param dryRun     when true the run only counts the errands it would have removed.

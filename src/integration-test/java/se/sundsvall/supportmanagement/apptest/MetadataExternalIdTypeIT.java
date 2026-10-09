@@ -22,7 +22,7 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
- * Status Metadata IT tests.
+ * External id type Metadata IT tests.
  */
 @WireMockAppTestSuite(files = "classpath:/MetadataExternalIdTypeIT/", classes = Application.class)
 @Sql({

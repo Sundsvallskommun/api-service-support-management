@@ -53,7 +53,7 @@ class ErrandNumberGeneratorServiceTest {
 
 		final var result = stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(result).isEqualTo(String.format("%s-%s0001", SHORT_CODE, dateFormatter.format(LocalDate.now())));
+		assertThat(result).isEqualTo(SHORT_CODE + "-" + dateFormatter.format(LocalDate.now()) + "0001");
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class ErrandNumberGeneratorServiceTest {
 
 		final var result = stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(result).isEqualTo(String.format("%s-%s0124", SHORT_CODE, dateFormatter.format(LocalDate.now())));
+		assertThat(result).isEqualTo(SHORT_CODE + "-" + dateFormatter.format(LocalDate.now()) + "0124");
 	}
 
 	@Test
@@ -81,7 +81,7 @@ class ErrandNumberGeneratorServiceTest {
 
 		final var result = stringGeneratorService.generateErrandNumber(NAMESPACE, MUNICIPALITY_ID);
 
-		assertThat(result).isEqualTo(String.format("%s-%s0001", SHORT_CODE, dateFormatter.format(LocalDate.now())));
+		assertThat(result).isEqualTo(SHORT_CODE + "-" + dateFormatter.format(LocalDate.now()) + "0001");
 	}
 
 	@Test

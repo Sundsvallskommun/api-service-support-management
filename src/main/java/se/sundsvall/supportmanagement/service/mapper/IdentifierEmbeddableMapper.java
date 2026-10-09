@@ -8,7 +8,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Identifier
  * Bidirectional mapping between {@link Identifier} (API DTO), {@link IdentifierEmbeddable} (entity)
  * and the dept44 {@link se.sundsvall.dept44.support.Identifier} (executing-user context).
  *
- * Shared by both subscriber and subscription flows since both persist a createdBy identifier
+ * Used by the subscriber and subscription flows, which both persist a createdBy identifier
  * derived from the request principal.
  */
 public final class IdentifierEmbeddableMapper {

@@ -46,7 +46,7 @@ public class StakeholderParameterEntity {
 		name = "stakeholder_parameter_values",
 		joinColumns = @JoinColumn(name = "stakeholder_parameter_id",
 			foreignKey = @ForeignKey(name = "fk_stakeholder_parameter_values_stakeholder_parameter_id")))
-	@Column(name = "value")
+	@Column(name = "value", length = 3000)
 	@FullTextField(analyzer = TEXT)
 	private List<String> values;
 

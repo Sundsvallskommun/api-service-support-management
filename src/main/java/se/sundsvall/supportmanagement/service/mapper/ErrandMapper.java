@@ -40,6 +40,8 @@ import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -91,6 +93,7 @@ public final class ErrandMapper {
 			.withResolution(errand.getResolution())
 			.withStakeholders(toStakeholderEntities(errandEntity, errand.getStakeholders()))
 			.withStatus(errand.getStatus())
+			.withLifecycle(ofNullable(errand.getLifecycle()).map(ErrandLifecycle::valueOf).orElse(null))
 			.withTitle(errand.getTitle())
 			.withErrandNumber(errand.getErrandNumber())
 			.withSuspendedFrom(Optional.ofNullable(errand.getSuspension()).map(Suspension::getSuspendedFrom).orElse(null))
@@ -109,10 +112,9 @@ public final class ErrandMapper {
 	/**
 	 * Updates the errand from sent in patch, leaving the keys of keyed fields the caller may not write untouched.
 	 * <p>
-	 * Keyed fields are replaced wholesale by a patch, so without that guard a caller restricted to a few keys would
-	 * silently delete every key they are not even allowed to see, simply by patching back what they were served. The
-	 * guard is the write grant rather than the read one, since a namespace may hold a key to read: such a key is served
-	 * to the caller, so a patch of theirs carries it, and it must survive that patch exactly as it stands.
+	 * Keyed fields are replaced wholesale by a patch, apart from the keys the caller may not write: those keep exactly
+	 * what they hold, whether or not the patch carries them. The guard is the write grant, so a key the caller may read
+	 * but not write survives the patch as it stands.
 	 *
 	 * @param  entity      errand to update
 	 * @param  errand      patch to apply
@@ -138,6 +140,7 @@ public final class ErrandMapper {
 		ofNullable(errand.getExternalTags()).ifPresent(value -> updateExternalTags(entity, value, writableKey.apply(ErrandField.EXTERNAL_TAGS)));
 		ofNullable(errand.getPriority()).ifPresent(value -> entity.setPriority(value.name()));
 		ofNullable(errand.getStatus()).ifPresent(entity::setStatus);
+		ofNullable(errand.getLifecycle()).map(ErrandLifecycle::valueOf).ifPresent(entity::setLifecycle);
 		ofNullable(errand.getTitle()).ifPresent(entity::setTitle);
 		ofNullable(errand.getResolution()).ifPresent(value -> entity.setResolution(isEmpty(value) ? null : value));
 		ofNullable(errand.getDescription()).ifPresent(value -> entity.setDescription(isEmpty(value) ? null : value));
@@ -228,9 +231,8 @@ public final class ErrandMapper {
 	/**
 	 * The keys of sent in json parameters that would come out of a patch different from how they stand on the errand.
 	 * <p>
-	 * The stored value is compared as a parsed document rather than as the text it is stored as, so that a caller
-	 * patching back what they were served is not told they changed something merely by writing the same object with its
-	 * keys in another order.
+	 * The stored value is compared as a parsed document, so the same object written with its keys in another order is
+	 * no change.
 	 */
 	public static List<String> changedJsonParameterKeys(final ErrandEntity entity, final List<JsonParameter> jsonParameters) {
 		if (isNull(jsonParameters)) {
@@ -278,59 +280,60 @@ public final class ErrandMapper {
 
 	/**
 	 * Maps a single field of an errand. Keyed fields limit themselves to sent in keys, an empty set meaning the whole
-	 * collection.
+	 * collection. The enrichment carries what a field cannot read off the errand row.
 	 */
 	@FunctionalInterface
 	private interface FieldMapper {
-		void map(Errand errand, ErrandEntity entity, Set<String> keys);
+		void map(Errand errand, ErrandEntity entity, Set<String> keys, ErrandEnrichment enrichment);
 	}
 
 	/**
-	 * One entry per {@link ErrandField}, so exposing a new field is a matter of adding a constant and an entry here.
-	 * {@code ErrandMapperTest} asserts that the two stay in step.
+	 * The mapper of each {@link ErrandField}, one entry per constant.
 	 */
 	private static final Map<ErrandField, FieldMapper> FIELD_MAPPERS = new EnumMap<>(Map.ofEntries(
-		entry(ErrandField.ID, (errand, e, _) -> errand.setId(e.getId())),
-		entry(ErrandField.ERRAND_NUMBER, (errand, e, _) -> errand.setErrandNumber(e.getErrandNumber())),
-		entry(ErrandField.TITLE, (errand, e, _) -> errand.setTitle(e.getTitle())),
-		entry(ErrandField.STATUS, (errand, e, _) -> errand.setStatus(e.getStatus())),
-		entry(ErrandField.RESOLUTION, (errand, e, _) -> errand.setResolution(e.getResolution())),
-		entry(ErrandField.CHANNEL, (errand, e, _) -> errand.setChannel(e.getChannel())),
-		entry(ErrandField.CREATED, (errand, e, _) -> errand.setCreated(e.getCreated())),
-		entry(ErrandField.MODIFIED, (errand, e, _) -> errand.setModified(e.getModified())),
-		entry(ErrandField.TOUCHED, (errand, e, _) -> errand.setTouched(e.getTouched())),
-		entry(ErrandField.PRIORITY, (errand, e, _) -> errand.setPriority(Priority.valueOf(e.getPriority()))),
-		entry(ErrandField.DESCRIPTION, (errand, e, _) -> errand.setDescription(e.getDescription())),
-		entry(ErrandField.CLASSIFICATION, (errand, e, _) -> errand.setClassification(Classification.create().withCategory(e.getCategory()).withType(e.getType()))),
-		entry(ErrandField.REPORTER_USER_ID, (errand, e, _) -> errand.setReporterUserId(e.getReporterUserId())),
-		entry(ErrandField.ASSIGNED_USER_ID, (errand, e, _) -> errand.setAssignedUserId(e.getAssignedUserId())),
-		entry(ErrandField.ASSIGNED_GROUP_ID, (errand, e, _) -> errand.setAssignedGroupId(e.getAssignedGroupId())),
-		entry(ErrandField.BUSINESS_RELATED, (errand, e, _) -> errand.setBusinessRelated(e.getBusinessRelated())),
-		entry(ErrandField.SUSPENSION, (errand, e, _) -> errand.setSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))),
-		entry(ErrandField.CONTACT_REASON, (errand, e, _) -> errand.setContactReason(ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))),
-		entry(ErrandField.CONTACT_REASON_DESCRIPTION, (errand, e, _) -> errand.setContactReasonDescription(e.getContactReasonDescription())),
-		entry(ErrandField.ESCALATION_EMAIL, (errand, e, _) -> errand.setEscalationEmail(e.getEscalationEmail())),
-		entry(ErrandField.LABELS, (errand, e, _) -> errand.setLabels(toErrandLabels(e.getLabels()))),
-		entry(ErrandField.STAKEHOLDERS, (errand, e, _) -> errand.setStakeholders(toStakeholders(e.getStakeholders()))),
-		entry(ErrandField.MEASURES, (errand, e, _) -> errand.setMeasures(toMeasures(e.getMeasures()))),
-		entry(ErrandField.ACTIVE_NOTIFICATIONS, (errand, e, _) -> errand.setActiveNotifications(toActiveNotifications(e.getNotifications()))),
-		entry(ErrandField.PHASES, (errand, e, _) -> errand.setPhases(toErrandPhases(e.getPhases()))),
-		entry(ErrandField.ACTIONS, (errand, e, _) -> errand.setActions(toErrandActions(e.getActions()))),
-		entry(ErrandField.VERSION, (errand, e, _) -> errand.setVersion(e.getVersion())),
-		entry(ErrandField.PARAMETERS, (errand, e, keys) -> errand.setParameters(filterByKey(toParameterList(e.getParameters()), Parameter::getKey, keys))),
-		entry(ErrandField.JSON_PARAMETERS, (errand, e, keys) -> errand.setJsonParameters(filterByKey(toJsonParameters(e.getJsonParameters()), JsonParameter::getKey, keys))),
-		entry(ErrandField.EXTERNAL_TAGS, (errand, e, keys) -> errand.setExternalTags(filterByKey(toExternalTags(e.getExternalTags()), ExternalTag::getKey, keys)))));
+		entry(ErrandField.ID, (errand, e, _, _) -> errand.setId(e.getId())),
+		entry(ErrandField.ERRAND_NUMBER, (errand, e, _, _) -> errand.setErrandNumber(e.getErrandNumber())),
+		entry(ErrandField.TITLE, (errand, e, _, _) -> errand.setTitle(e.getTitle())),
+		entry(ErrandField.STATUS, (errand, e, _, _) -> errand.setStatus(e.getStatus())),
+		entry(ErrandField.LIFECYCLE, (errand, e, _, _) -> errand.setLifecycle(ofNullable(e.getLifecycle()).map(ErrandLifecycle::name).orElse(null))),
+		entry(ErrandField.RESOLUTION, (errand, e, _, _) -> errand.setResolution(e.getResolution())),
+		entry(ErrandField.CHANNEL, (errand, e, _, _) -> errand.setChannel(e.getChannel())),
+		entry(ErrandField.CREATED, (errand, e, _, _) -> errand.setCreated(e.getCreated())),
+		entry(ErrandField.MODIFIED, (errand, e, _, _) -> errand.setModified(e.getModified())),
+		entry(ErrandField.TOUCHED, (errand, e, _, _) -> errand.setTouched(e.getTouched())),
+		entry(ErrandField.PRIORITY, (errand, e, _, _) -> errand.setPriority(Priority.valueOf(e.getPriority()))),
+		entry(ErrandField.DESCRIPTION, (errand, e, _, _) -> errand.setDescription(e.getDescription())),
+		entry(ErrandField.CLASSIFICATION, (errand, e, _, _) -> errand.setClassification(Classification.create().withCategory(e.getCategory()).withType(e.getType()))),
+		entry(ErrandField.REPORTER_USER_ID, (errand, e, _, _) -> errand.setReporterUserId(e.getReporterUserId())),
+		entry(ErrandField.ASSIGNED_USER_ID, (errand, e, _, _) -> errand.setAssignedUserId(e.getAssignedUserId())),
+		entry(ErrandField.ASSIGNED_GROUP_ID, (errand, e, _, _) -> errand.setAssignedGroupId(e.getAssignedGroupId())),
+		entry(ErrandField.BUSINESS_RELATED, (errand, e, _, _) -> errand.setBusinessRelated(e.getBusinessRelated())),
+		entry(ErrandField.SUSPENSION, (errand, e, _, _) -> errand.setSuspension(Suspension.create().withSuspendedFrom(e.getSuspendedFrom()).withSuspendedTo(e.getSuspendedTo()))),
+		entry(ErrandField.CONTACT_REASON, (errand, e, _, _) -> errand.setContactReason(ofNullable(e.getContactReason()).map(ContactReasonEntity::getReason).orElse(null))),
+		entry(ErrandField.CONTACT_REASON_DESCRIPTION, (errand, e, _, _) -> errand.setContactReasonDescription(e.getContactReasonDescription())),
+		entry(ErrandField.ESCALATION_EMAIL, (errand, e, _, _) -> errand.setEscalationEmail(e.getEscalationEmail())),
+		entry(ErrandField.LABELS, (errand, e, _, _) -> errand.setLabels(toErrandLabels(e.getLabels()))),
+		entry(ErrandField.STAKEHOLDERS, (errand, e, _, _) -> errand.setStakeholders(toStakeholders(e.getStakeholders()))),
+		entry(ErrandField.MEASURES, (errand, e, _, _) -> errand.setMeasures(toMeasures(e.getMeasures()))),
+		entry(ErrandField.ACTIVE_NOTIFICATIONS, (errand, e, _, _) -> errand.setActiveNotifications(toActiveNotifications(e.getNotifications()))),
+		entry(ErrandField.PHASES, (errand, e, _, _) -> errand.setPhases(toErrandPhases(e.getPhases()))),
+		entry(ErrandField.ACTIONS, (errand, e, _, _) -> errand.setActions(toErrandActions(e.getActions()))),
+		entry(ErrandField.PROCESS, (errand, e, _, enrichment) -> errand.setProcess(enrichment.processOf(e.getId()))),
+		entry(ErrandField.VERSION, (errand, e, _, _) -> errand.setVersion(e.getVersion())),
+		entry(ErrandField.PARAMETERS, (errand, e, keys, _) -> errand.setParameters(filterByKey(toParameterList(e.getParameters()), Parameter::getKey, keys))),
+		entry(ErrandField.JSON_PARAMETERS, (errand, e, keys, _) -> errand.setJsonParameters(filterByKey(toJsonParameters(e.getJsonParameters()), JsonParameter::getKey, keys))),
+		entry(ErrandField.EXTERNAL_TAGS, (errand, e, keys, _) -> errand.setExternalTags(filterByKey(toExternalTags(e.getExternalTags()), ExternalTag::getKey, keys)))));
 
 	/**
-	 * Reads each field off an errand as a request carries it, so that a patch naming a field its sender does not hold
-	 * can be spotted without every caller knowing which property that is. One entry per {@link ErrandField}, held to
-	 * the constants by the same test that holds the mappers to them.
+	 * Reads each field off an errand as a request carries it, which is how a patch naming a field its sender does not
+	 * hold is spotted. One entry per {@link ErrandField}.
 	 */
 	private static final Map<ErrandField, Function<Errand, Object>> FIELD_READERS = new EnumMap<>(Map.ofEntries(
 		entry(ErrandField.ID, Errand::getId),
 		entry(ErrandField.ERRAND_NUMBER, Errand::getErrandNumber),
 		entry(ErrandField.TITLE, Errand::getTitle),
 		entry(ErrandField.STATUS, Errand::getStatus),
+		entry(ErrandField.LIFECYCLE, Errand::getLifecycle),
 		entry(ErrandField.RESOLUTION, Errand::getResolution),
 		entry(ErrandField.CHANNEL, Errand::getChannel),
 		entry(ErrandField.CREATED, Errand::getCreated),
@@ -353,6 +356,7 @@ public final class ErrandMapper {
 		entry(ErrandField.ACTIVE_NOTIFICATIONS, Errand::getActiveNotifications),
 		entry(ErrandField.PHASES, Errand::getPhases),
 		entry(ErrandField.ACTIONS, Errand::getActions),
+		entry(ErrandField.PROCESS, Errand::getProcess),
 		entry(ErrandField.VERSION, Errand::getVersion),
 		entry(ErrandField.PARAMETERS, Errand::getParameters),
 		entry(ErrandField.JSON_PARAMETERS, Errand::getJsonParameters),
@@ -378,40 +382,47 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Maps errands according to the fields the requesting user may see of each of them. A user nothing restricts, which
-	 * the resolver signals with null, receives the full errand.
+	 * Maps errands according to the fields the requesting user may see of each of them, together with what a whole page
+	 * of them has been enriched with. A user nothing restricts, which the resolver signals with null, receives the full
+	 * errand.
 	 *
 	 * @param  entities      errands to map
 	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see per errand
+	 * @param  enrichment    what the errands carry beyond their own rows
 	 * @return               mapped errands
 	 */
-	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver) {
+	public static List<Errand> toErrandsWithAccessControl(final List<ErrandEntity> entities, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver, final ErrandEnrichment enrichment) {
 		return ofNullable(entities).orElse(emptyList())
 			.stream()
-			.map(entity -> toErrandWithAccessControl(entity, fieldResolver))
+			.map(entity -> toErrandWithAccessControl(entity, fieldResolver, enrichment))
 			.toList();
 	}
 
 	/**
-	 * Maps an errand according to the fields the requesting user may see of it. A user nothing restricts, which the
-	 * resolver signals with null, receives the full errand.
+	 * Maps an errand according to the fields the requesting user may see of it, together with what it has been enriched
+	 * with. A user nothing restricts, which the resolver signals with null, receives the full errand.
+	 * <p>
+	 * The enrichment reaches the errand through the same field mappers as everything else, so a field read from outside
+	 * the errand row is filtered by the role based mapping like one read from inside it. A field the mapping does not
+	 * grant the user never has its mapper called.
 	 *
 	 * @param  entity        errand to map
 	 * @param  fieldResolver resolver of the fields, and the keys to limit them to, the user may see for the errand
+	 * @param  enrichment    what the errand carries beyond its own row
 	 * @return               mapped errand
 	 */
-	public static Errand toErrandWithAccessControl(final ErrandEntity entity, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver) {
+	public static Errand toErrandWithAccessControl(final ErrandEntity entity, final Function<ErrandEntity, Map<ErrandField, Set<String>>> fieldResolver, final ErrandEnrichment enrichment) {
 		if (isNull(entity)) {
 			return null;
 		}
 
 		final var fields = fieldResolver.apply(entity);
-		return isNull(fields) ? toErrand(entity) : toRoleMappedErrand(entity, fields);
+		return isNull(fields) ? toErrand(entity, enrichment) : toRoleMappedErrand(entity, fields, enrichment);
 	}
 
-	private static Errand toRoleMappedErrand(final ErrandEntity entity, final Map<ErrandField, Set<String>> fields) {
+	private static Errand toRoleMappedErrand(final ErrandEntity entity, final Map<ErrandField, Set<String>> fields, final ErrandEnrichment enrichment) {
 		final var errand = Errand.create();
-		fields.forEach((field, keys) -> FIELD_MAPPERS.get(field).map(errand, entity, keys));
+		fields.forEach((field, keys) -> FIELD_MAPPERS.get(field).map(errand, entity, keys, enrichment));
 		return errand;
 	}
 
@@ -420,20 +431,25 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys. The same
-	 * mappers a role mapped errand is built from, so a conversion exists in one place only and the two projections
-	 * cannot drift apart - nor can a field reach one of them and not the other, which is what left phases and actions
-	 * served to an unrestricted user and dropped from every restricted one.
+	 * Maps the whole errand, which is every restrictable field exposed without limiting any of them to keys, built by the
+	 * same field mappers as a role mapped errand.
 	 * <p>
 	 * The one property left out is activePhaseId, which is inbound only: a request names the phase to move the errand
 	 * into, and the response carries the phases themselves, of which the active one is the phase not yet ended.
 	 */
 	public static Errand toErrand(final ErrandEntity entity) {
+		return toErrand(entity, ErrandEnrichment.empty());
+	}
+
+	/**
+	 * The same, with what the errand has been enriched with.
+	 */
+	public static Errand toErrand(final ErrandEntity entity, final ErrandEnrichment enrichment) {
 		if (isNull(entity)) {
 			return null;
 		}
 
-		return toRoleMappedErrand(entity, ALL_FIELDS);
+		return toRoleMappedErrand(entity, ALL_FIELDS, enrichment);
 	}
 
 	public static List<ErrandLabel> toErrandLabels(final List<ErrandLabelEmbeddable> errandLabelEmbeddables) {
@@ -550,9 +566,8 @@ public final class ErrandMapper {
 	}
 
 	/**
-	 * Collects into a mutable list, which Hibernate requires to manage the measures of the errand. The measures are also
-	 * added to and removed from one at a time through ErrandMeasureService, and an immutable list from Stream.toList
-	 * would fail those with an UnsupportedOperationException, which dept44 translates to 501.
+	 * Maps the measures to entities of the errand, collected into a mutable list, which Hibernate needs to manage the
+	 * measures and ErrandMeasureService needs to add and remove them one at a time.
 	 */
 	private static List<MeasureEntity> toMeasureEntities(final List<Measure> measures, final ErrandEntity errandEntity) {
 		return ofNullable(measures).orElse(emptyList()).stream()

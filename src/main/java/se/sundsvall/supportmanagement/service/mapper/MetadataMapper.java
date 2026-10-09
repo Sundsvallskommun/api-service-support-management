@@ -563,9 +563,8 @@ public class MetadataMapper {
 	// =================================================================
 
 	/**
-	 * The groups a measure type belongs to, as the set the entity holds them in. A group named twice in a request means
-	 * the type belongs to it, which it already did, so the repetition is dropped rather than refused - the key on the
-	 * table would refuse it anyway, and by then the caller has a constraint violation instead of an answer.
+	 * The groups a measure type belongs to, as the set the entity holds them in. A group named more than once in a
+	 * request, in any case, is kept once, in the spelling given first.
 	 */
 	private static Set<String> toMeasureGroups(final List<String> measureGroups) {
 		// The key on the table is as case insensitive as the collation of the column, so 'MANAGERS' and 'managers' are
@@ -739,8 +738,8 @@ public class MetadataMapper {
 	}
 
 	/**
-	 * An outcome registered without saying whether it means a response is taken to mean one: the common case, and the one
-	 * that holds a statement completed with it to the time of the response rather than letting it go without.
+	 * An outcome registered without saying whether it means a response is taken to mean one, which holds a statement
+	 * completed with it to the time of the response.
 	 */
 	public static StatementOutcomeEntity toStatementOutcomeEntity(final String namespace, final String municipalityId, final StatementOutcome statementOutcome) {
 		if (anyNull(namespace, municipalityId, statementOutcome)) {

@@ -41,6 +41,9 @@ class ErrandAttachmentTest {
 		final var fileSize = 40960;
 		final var channel = "EMAIL";
 		final var created = OffsetDateTime.now();
+		final var modified = OffsetDateTime.now().plusHours(1);
+		final var received = OffsetDateTime.now().minusDays(1);
+		final var sequenceNumber = 3;
 		final var hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 		final var purpose = ErrandAttachmentPurpose.create().withId("5f79a808-0ef3-4985-99b9-b12f23e202a7").withName("RESPONSE").withDisplayName("Inkommen handling");
 
@@ -51,6 +54,9 @@ class ErrandAttachmentTest {
 			.withFileSize(fileSize)
 			.withChannel(channel)
 			.withCreated(created)
+			.withModified(modified)
+			.withReceived(received)
+			.withSequenceNumber(sequenceNumber)
 			.withHash(hash)
 			.withPurpose(purpose);
 
@@ -62,6 +68,9 @@ class ErrandAttachmentTest {
 		assertThat(bean.getFileSize()).isEqualTo(fileSize);
 		assertThat(bean.getChannel()).isEqualTo(channel);
 		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.getModified()).isEqualTo(modified);
+		assertThat(bean.getReceived()).isEqualTo(received);
+		assertThat(bean.getSequenceNumber()).isEqualTo(sequenceNumber);
 		assertThat(bean.getHash()).isEqualTo(hash);
 	}
 

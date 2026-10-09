@@ -39,8 +39,8 @@ public class NotificationDispatchWorker {
 	private Duration transactionBuffer = Duration.ofSeconds(10);
 
 	/**
-	 * How old an entry may get before it is considered too stale to notify about. Since a failed dispatch is retried
-	 * indefinitely, this is what stops an entry that can never succeed from being sent long after the fact.
+	 * How old an entry may get before it is considered too stale to notify about. A failed dispatch is retried until its
+	 * entries are older than this, and they are then dropped undelivered.
 	 */
 	@Value("${scheduler.notification-dispatch.max-age:P30D}")
 	private Duration maxAge = Duration.ofDays(30);
@@ -122,9 +122,8 @@ public class NotificationDispatchWorker {
 	}
 
 	/**
-	 * Signals whether the subscriber may still reach the errand. Evaluated as the subscriber rather than as a caller,
-	 * since this job runs without an Identifier of its own - which is why the access control specification takes the
-	 * user explicitly. A subscriber whose identifier cannot be resolved reaches nothing.
+	 * Signals whether the subscriber may still reach the errand, evaluated as the subscriber, who is handed to the access
+	 * control specification explicitly. A subscriber whose identifier cannot be resolved reaches nothing.
 	 */
 	private boolean mayReachErrand(final String errandId, final SubscriberEntity subscriber) {
 		return errandsRepository.findOne(withId(errandId)

@@ -1,23 +1,32 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
+import se.sundsvall.supportmanagement.integration.db.model.ArtefactParameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
 
+import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparing;
 import static java.util.Objects.isNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 public final class ErrandParameterMapper {
+
+	/** Keys regardless of case, and keys that differ only in case in their natural order. */
+	static final Comparator<Parameter> KEY_ORDER = comparing(Parameter::getKey, CASE_INSENSITIVE_ORDER).thenComparing(Parameter::getKey);
 
 	private ErrandParameterMapper() {
 		// Intentionally empty
@@ -51,14 +60,14 @@ public final class ErrandParameterMapper {
 	}
 
 	/**
-	 * Replaces the parameters of the errand with sent in ones, leaving keys the caller may not reach untouched.
+	 * Replaces the parameters of the errand with sent in ones, leaving keys the caller may not change untouched.
 	 * <p>
-	 * The merge deletes every key absent from the request, so without that guard a caller restricted to a few keys would
-	 * silently delete the parameters they are not even allowed to see, simply by patching back the list they were served.
+	 * A changeable key absent from the request is deleted. A key the caller may not change is left as it stands, whether or
+	 * not the request carries it.
 	 *
-	 * @param entity        errand to merge into
-	 * @param parameters    parameters replacing the reachable ones
-	 * @param accessibleKey predicate accepting the keys the caller may reach
+	 * @param entity      errand to merge into
+	 * @param parameters  parameters replacing the changeable ones
+	 * @param writableKey predicate accepting the keys the caller may change
 	 */
 	public static void mergeParameters(final ErrandEntity entity, final List<Parameter> parameters, final Predicate<String> writableKey) {
 		if (entity.getParameters() == null) {
@@ -114,8 +123,8 @@ public final class ErrandParameterMapper {
 	}
 
 	/**
-	 * Sent in key when the values of it differ from how they stand on the errand, and nothing when they do not. The
-	 * endpoint writing a single parameter only ever writes its values, so nothing else is compared.
+	 * Sent in key when the values of it differ from how they stand on the errand, and nothing when they do not. Only the
+	 * values are compared.
 	 *
 	 * @param  entity errand the parameter belongs to
 	 * @param  key    parameter being written
@@ -142,6 +151,98 @@ public final class ErrandParameterMapper {
 		return Optional.ofNullable(parameters).orElse(emptyList()).stream()
 			.map(ErrandParameterMapper::toParameter)
 			.toList();
+	}
+
+	/**
+	 * Parameters one per key, with the values of every parameter sent for it. Keys are trimmed before they are compared,
+	 * and the display name and group are those of the first parameter sent for a key. The sent parameters are left as they
+	 * were.
+	 *
+	 * @param  parameters parameters of the request
+	 * @return            one parameter per trimmed key, ordered by key regardless of case, and keys that differ only in
+	 *                    case in their natural order
+	 */
+	public static List<Parameter> toTrimmedUniqueKeyList(final List<Parameter> parameters) {
+		final var trimmed = Optional.ofNullable(parameters).orElse(emptyList()).stream()
+			.map(parameter -> Parameter.create()
+				.withKey(parameter.getKey().trim())
+				.withDisplayName(parameter.getDisplayName())
+				.withGroup(parameter.getGroup())
+				.withValues(parameter.getValues()))
+			.toList();
+
+		return toUniqueKeyList(trimmed).stream()
+			.sorted(KEY_ORDER)
+			.toList();
+	}
+
+	/**
+	 * Maps parameters to entities of a handling artefact, one per key with the values of every parameter sent for it, in
+	 * the order of the keys. Keys are trimmed before they are compared, and the display name and group are those of the
+	 * first parameter sent for a key.
+	 *
+	 * @param  <E>        the type of the entities.
+	 * @param  parameters the parameters sent.
+	 * @param  factory    creates an entity that already points at its artefact.
+	 * @return            the entities, in a list that may be changed.
+	 */
+	public static <E extends ArtefactParameter> List<E> toArtefactParameterEntities(final List<Parameter> parameters, final Supplier<E> factory) {
+		return new ArrayList<>(toTrimmedUniqueKeyList(parameters).stream()
+			.map(parameter -> {
+				final var entity = factory.get();
+				entity.setKey(parameter.getKey());
+				entity.setDisplayName(parameter.getDisplayName());
+				entity.setParameterGroup(parameter.getGroup());
+				entity.setValues(parameter.getValues());
+				return entity;
+			})
+			.toList());
+	}
+
+	public static Parameter toArtefactParameter(final ArtefactParameter entity) {
+		return Optional.ofNullable(entity)
+			.map(e -> Parameter.create()
+				.withKey(e.getKey())
+				.withDisplayName(e.getDisplayName())
+				.withGroup(e.getParameterGroup())
+				.withValues(e.getValues()))
+			.orElse(null);
+	}
+
+	/**
+	 * Maps the parameters of a handling artefact in the order of their keys, the same order whatever order the database
+	 * reads them in.
+	 */
+	public static List<Parameter> toArtefactParameters(final List<? extends ArtefactParameter> entities) {
+		return Optional.ofNullable(entities).orElse(emptyList()).stream()
+			.map(ErrandParameterMapper::toArtefactParameter)
+			.sorted(KEY_ORDER)
+			.toList();
+	}
+
+	/**
+	 * Replaces the parameters of a handling artefact in place. Replacements that come out the same as the stored
+	 * parameters, in whatever order they were sent, leave the stored ones untouched.
+	 *
+	 * @param  <E>          the type of the entities.
+	 * @param  stored       the parameters of the artefact, or null when it has none.
+	 * @param  setter       gives the artefact a list of parameters, called only when it has none.
+	 * @param  replacements the parameters to put in place of the stored ones.
+	 * @return              true when the parameters were replaced, for the caller to mark the artefact modified.
+	 */
+	public static <E extends ArtefactParameter> boolean replaceArtefactParameters(final List<E> stored, final Consumer<List<E>> setter, final List<E> replacements) {
+		if (toArtefactParameters(replacements).equals(toArtefactParameters(stored))) {
+			return false;
+		}
+
+		if (isNull(stored)) {
+			setter.accept(new ArrayList<>(replacements));
+			return true;
+		}
+
+		stored.clear();
+		stored.addAll(replacements);
+		return true;
 	}
 
 	public static List<Parameter> toUniqueKeyList(List<Parameter> parameterList) {

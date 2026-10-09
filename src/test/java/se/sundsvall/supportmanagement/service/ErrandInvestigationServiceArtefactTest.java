@@ -146,7 +146,7 @@ class ErrandInvestigationServiceArtefactTest {
 	}
 
 	/**
-	 * The parameters are the investigation's, so reading them asks for the investigation grant and nothing of the errand.
+	 * Reading the parameters of an investigation asks for the investigation grant and nothing of the errand.
 	 */
 	@Test
 	void readInvestigationJsonParameters() {

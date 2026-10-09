@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Decision with id 'de000000-0000-0000-0000-000000000001' is completed, and on an errand with a process a completed decision can no longer be changed"
+}

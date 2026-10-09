@@ -87,8 +87,7 @@ public class ErrandActionMapper {
 	}
 
 	/**
-	 * An absent list is stored as an empty set, which is what a config written before operation types existed holds and
-	 * means every operation the action supports.
+	 * An absent list is stored as an empty set, which means every operation the action supports.
 	 */
 	private static Set<OperationType> toOperationTypes(Config config) {
 		return new LinkedHashSet<>(Optional.ofNullable(config.getOperationTypes()).orElse(List.of()));

@@ -39,9 +39,8 @@ public interface JsonSchemaClient {
 	 * schema's validation usage counter), making it suitable for checking whether a schema is registered in a namespace.
 	 *
 	 * <p>
-	 * A {@code 404 Not Found} is raised as a {@code NOT_FOUND} problem (the client bypasses 404 in its error decoder rather
-	 * than wrapping it in {@code BAD_GATEWAY}), so callers can tell "schema not registered" apart from a genuine upstream
-	 * error.
+	 * A {@code 404 Not Found} is raised as a {@code NOT_FOUND} problem, not wrapped in {@code BAD_GATEWAY}, so callers can
+	 * tell "schema not registered" apart from a genuine upstream error.
 	 * </p>
 	 *
 	 * @param  municipalityId the municipality identifier

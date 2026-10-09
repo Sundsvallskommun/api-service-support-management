@@ -1,11 +1,16 @@
 package se.sundsvall.supportmanagement.service;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ContainerNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipkart.zjsonpatch.DiffFlags;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,6 +40,7 @@ import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevision;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toRevisionEntity;
 import static se.sundsvall.supportmanagement.service.mapper.RevisionMapper.toSerializedSnapshot;
@@ -50,7 +56,20 @@ public class RevisionService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RevisionService.class);
 
-	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..modified", "$..touched");
+	/** The attributes left out when two snapshots are compared or diffed, whether a snapshot carries them or not. */
+	private static final List<String> EXCLUDED_ATTRIBUTES = List.of("$..stakeholders[*].id", "$..attachments[*].id", "$..attachments[*].file", "$..attachments[*].sequenceNumber", "$..modified",
+		"$..touched", "$..labels[*].metadataLabel", "$.tempPreviousStatus");
+
+	/** The collections of an errand with no order of their own, each with the field its elements are sorted by. */
+	private static final Map<String, String> UNORDERED_COLLECTIONS = Map.of(
+		"labels", "metadataLabelId",
+		"accessLabels", "metadataLabelId",
+		"externalTags", "key");
+
+	private static final String LIFECYCLE_ATTRIBUTE = "lifecycle";
+	private static final String ATTACHMENTS_ATTRIBUTE = "attachments";
+	private static final String RECEIVED_ATTRIBUTE = "received";
+	private static final String CREATED_ATTRIBUTE = "created";
 
 	private static final String COMPARISON_ERROR_LOG_MESSAGE = "An error occurred during comparison";
 
@@ -121,7 +140,7 @@ public class RevisionService {
 		}
 
 		try {
-			return toJsonNode(currentSnapshot).equals(toJsonNode(previousSnapshot));
+			return withoutEmptyCollections(toJsonNode(currentSnapshot)).equals(withoutEmptyCollections(toJsonNode(previousSnapshot)));
 		} catch (final Exception e) { // If something fails, log and return the json objects as unequal to force creation of a new revision
 			LOG.error(COMPARISON_ERROR_LOG_MESSAGE, e);
 		}
@@ -143,16 +162,10 @@ public class RevisionService {
 	}
 
 	/**
-	 * Removes every revision of an errand.
+	 * Removes every revision of an errand. No access check is made here; any authorization is up to the caller.
 	 * <p>
-	 * A revision holds a full serialized snapshot of the errand it belongs to, so a removal that left them behind would
-	 * keep a complete copy of everything it set out to remove. No access check is made here: the callers are the errand
-	 * delete, which has already authorized its caller, and the purge, which runs on a cutoff with no caller at all.
-	 * <p>
-	 * The ids are read first and the revisions removed a chunk at a time, since it is exactly that full snapshot which
-	 * makes reading them all at once expensive: an errand with a long history holds as many copies of itself as it has
-	 * been edited. This empties the persistence context as it goes, so an entity a caller was holding is detached by
-	 * the time this returns.
+	 * The ids are read first and the revisions removed a chunk at a time. This empties the persistence context as it goes,
+	 * so an entity a caller was holding is detached by the time this returns.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId id of the municipality of the errand.
@@ -269,14 +282,71 @@ public class RevisionService {
 		return ErrandNoteMapper.toDifferenceResponse(notesClient.compareNoteRevisions(municipalityId, noteId, sourceVersion, targetVersion));
 	}
 
+	/**
+	 * Reads a snapshot the way two of them are compared and diffed: the attributes that say nothing about the errand are
+	 * left out, the collections without an order of their own are sorted by the field that tells their elements apart,
+	 * a snapshot without a life cycle reads as an active errand, and an attachment without a received date reads as
+	 * received when it was created.
+	 */
 	private com.fasterxml.jackson.databind.JsonNode toJsonNode(final String value) {
 		try {
 			final var document = JsonPath.using(JSONPATH_CONFIG).parse(value);
 			EXCLUDED_ATTRIBUTES.forEach(document::delete);
-			return JACKSON2_MAPPER.readTree(document.jsonString());
+
+			final var snapshot = JACKSON2_MAPPER.readTree(document.jsonString());
+			UNORDERED_COLLECTIONS.forEach((name, sortKey) -> sortBy(snapshot.get(name), sortKey));
+
+			if (snapshot instanceof final ObjectNode object && !object.has(LIFECYCLE_ATTRIBUTE)) {
+				object.put(LIFECYCLE_ATTRIBUTE, ACTIVE.name());
+			}
+			snapshot.findValues(ATTACHMENTS_ATTRIBUTE).forEach(RevisionService::receivedWhenCreated);
+
+			return snapshot;
 		} catch (final Exception e) {
 			throw Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 
+	/**
+	 * Gives each attachment in the list that has no received date the date it was created.
+	 */
+	private static void receivedWhenCreated(final com.fasterxml.jackson.databind.JsonNode attachments) {
+		if (attachments instanceof final ArrayNode list) {
+			list.forEach(attachment -> {
+				if (attachment instanceof final ObjectNode object && !object.has(RECEIVED_ATTRIBUTE) && object.has(CREATED_ATTRIBUTE)) {
+					object.set(RECEIVED_ATTRIBUTE, object.get(CREATED_ATTRIBUTE).deepCopy());
+				}
+			});
+		}
+	}
+
+	/**
+	 * Removes the empty collections from the node, at every level, so that a collection that is null and one that is empty
+	 * compare as equal. Used only when deciding whether to write a revision; a diff of two revisions keeps them.
+	 */
+	private static com.fasterxml.jackson.databind.JsonNode withoutEmptyCollections(final com.fasterxml.jackson.databind.JsonNode node) {
+		if (node instanceof final ObjectNode object) {
+			object.remove(object.propertyStream()
+				.filter(property -> property.getValue() instanceof final ArrayNode array && array.isEmpty())
+				.map(Map.Entry::getKey)
+				.toList());
+		}
+
+		if (node instanceof ContainerNode<?>) {
+			node.forEach(RevisionService::withoutEmptyCollections);
+		}
+
+		return node;
+	}
+
+	private static void sortBy(final com.fasterxml.jackson.databind.JsonNode node, final String sortKey) {
+		if (node instanceof final ArrayNode array) {
+			final var sorted = array.valueStream()
+				.sorted(Comparator.comparing(element -> element.path(sortKey).asText()))
+				.toList();
+
+			array.removeAll();
+			array.addAll(sorted);
+		}
+	}
 }

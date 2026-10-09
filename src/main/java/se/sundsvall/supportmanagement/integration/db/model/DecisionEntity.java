@@ -45,10 +45,8 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
 /**
  * A decision on an errand.
  * <p>
- * Fixed fields rather than a free document, because an administrative decision has a form that follows from the
- * administrative law and looks the same whether it concerns a building permit, income support or supervision: the
- * outcome, who made it, when, on what legal basis or delegation point, and why. That form belongs in the model, where
- * it is checked on the way in, shows up in the API specification and can be searched.
+ * Holds the form of an administrative decision as fixed fields: the outcome, who made it, when, on what legal basis or
+ * delegation point, and why.
  */
 @Entity
 @Table(name = "decision",
@@ -68,7 +66,7 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@KeywordField(normalizer = LOWERCASE)
 	private String outcome;
 
-	/** MANUAL or AUTOMATIC. The difference has to be answerable afterwards. */
+	/** How the decision was made: MANUAL or AUTOMATIC. */
 	@Enumerated(STRING)
 	@JdbcTypeCode(VARCHAR)
 	@Column(name = "method", length = 16, nullable = false)
@@ -107,7 +105,7 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@GenericField
 	private Boolean appealable;
 
-	/** Period of validity. LocalDate: validity is counted in days, not in points in time. */
+	/** Period of validity, counted in days. */
 	@Column(name = "valid_from")
 	@GenericField
 	private LocalDate validFrom;
@@ -116,17 +114,18 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@GenericField
 	private LocalDate validTo;
 
-	/** The investigation the decision rests on. Nullable, and set to null rather than cascading when it is removed. */
+	/** The investigation the decision rests on. Nullable, and set to null when the investigation is removed. */
 	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name = "investigation_id", foreignKey = @ForeignKey(name = "fk_decision_investigation_id"))
 	@OnDelete(action = OnDeleteAction.SET_NULL)
 	private InvestigationEntity investigationEntity;
 
 	/**
-	 * The process row that made the decision. Nullable for manual decisions, and without a JPA relation.
+	 * The id of the process row that made the decision, held without a JPA relation or foreign key. Null for manual
+	 * decisions.
 	 * <p>
-	 * Nothing writes it yet. It is the column the process integration sets when an automatic decision comes back from a
-	 * process, and it is here so that the table does not need to change then.
+	 * Set by the decision service, never taken from a request: the live process row of the errand when the decision is
+	 * automatic.
 	 */
 	@Column(name = "errand_process_id", length = 36)
 	private String errandProcessId;
@@ -159,6 +158,10 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	@OrderBy("key")
 	@PropertyBinding(binder = @PropertyBinderRef(type = JsonParametersBinder.class))
 	private List<DecisionJsonParameterEntity> jsonParameters;
+
+	/** The parameters of the decision: unstructured metadata as keys with lists of values, held in no particular order. */
+	@OneToMany(mappedBy = "decisionEntity", cascade = ALL, orphanRemoval = true)
+	private List<DecisionParameterEntity> parameters;
 
 	public static DecisionEntity create() {
 		return new DecisionEntity();
@@ -369,6 +372,19 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 
 	public DecisionEntity withJsonParameters(final List<DecisionJsonParameterEntity> jsonParameters) {
 		this.jsonParameters = jsonParameters;
+		return this;
+	}
+
+	public List<DecisionParameterEntity> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<DecisionParameterEntity> parameters) {
+		this.parameters = parameters;
+	}
+
+	public DecisionEntity withParameters(final List<DecisionParameterEntity> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 

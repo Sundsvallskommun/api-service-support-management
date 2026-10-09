@@ -40,8 +40,7 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
 	 * targeting the whole namespace or that specific errand, that have not expired, and whose subscriber is not within a
 	 * pause window.
 	 * <p>
-	 * Event filters are deliberately not applied here, since they are evaluated per dispatched event rather than per
-	 * errand.
+	 * Event filters are not applied here; they are evaluated per dispatched event.
 	 */
 	@Query("""
 		select s from SubscriptionEntity s

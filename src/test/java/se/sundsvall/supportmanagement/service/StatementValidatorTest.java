@@ -104,8 +104,8 @@ class StatementValidatorTest {
 	}
 
 	/**
-	 * A statement closed because the deadline passed has no response, so demanding a timestamp for one that never
-	 * arrived would leave no way to close it. Which outcome says so is for the namespace to register.
+	 * An outcome the namespace has registered as without a response, such as for a statement closed because the
+	 * deadline passed, completes the statement without respondedAt.
 	 */
 	@Test
 	void anOutcomeWithoutAResponseIsCompletedWithoutRespondedAt() {
@@ -118,8 +118,7 @@ class StatementValidatorTest {
 	}
 
 	/**
-	 * An outcome the namespace has since removed cannot say whether it means a response, and does not hold the statement
-	 * to one.
+	 * An outcome the namespace has since removed does not hold the statement to a response.
 	 */
 	@Test
 	void anOutcomeTheNamespaceNoLongerHoldsDoesNotRequireRespondedAt() {
@@ -132,9 +131,8 @@ class StatementValidatorTest {
 	}
 
 	/**
-	 * How the namespace registers an outcome can change after a statement was completed with it. A request that sets
-	 * neither the status nor the outcome is not held to the registration as it stands now, or the statement could no
-	 * longer be changed at all.
+	 * A request that sets neither the status nor the outcome of a completed statement is not held to how the namespace
+	 * registers the outcome now, and the namespace is not asked.
 	 */
 	@Test
 	void aCompletedStatementIsNotHeldToALaterRegistrationOfItsOutcome() {
@@ -143,8 +141,7 @@ class StatementValidatorTest {
 	}
 
 	/**
-	 * Only an answered statement has an outcome: one drafted, sent or withdrawn has not been answered yet, and one that
-	 * has been answered cannot be moved back out of COMPLETED with its outcome still on it.
+	 * Only an answered statement has an outcome: a statement in any status other than COMPLETED is refused one.
 	 */
 	@ParameterizedTest
 	@EnumSource(value = ItemStatus.class, names = "COMPLETED", mode = EXCLUDE)
@@ -165,7 +162,7 @@ class StatementValidatorTest {
 	}
 
 	/**
-	 * A patch that says nothing about the outcome leaves the stored one standing, so there is nothing to ask.
+	 * A patch that says nothing about the outcome leaves the stored one standing, and the namespace is not asked.
 	 */
 	@Test
 	void aMissingOutcomeIsLeftAlone() {

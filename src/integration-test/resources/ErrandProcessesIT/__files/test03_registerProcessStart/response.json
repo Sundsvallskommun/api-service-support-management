@@ -1,0 +1,9 @@
+{
+	"id": "${json-unit.any-string}",
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processInstanceId": "pi-it-registered",
+	"processStatus": "RUNNING",
+	"awaitingSignals": [],
+	"created": "${json-unit.any-string}"
+}

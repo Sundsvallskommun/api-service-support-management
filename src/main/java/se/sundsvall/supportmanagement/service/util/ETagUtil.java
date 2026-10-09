@@ -14,8 +14,7 @@ public final class ETagUtil {
 	/**
 	 * The ETag of a resource that may not have been written yet.
 	 * <p>
-	 * Returns null rather than a tag for a missing version, and a null header value is left out of the response - an
-	 * empty ETag would be a worse answer than none.
+	 * Returns null for a missing version, and a null header value is left out of the response.
 	 */
 	public static String formatOrNull(final Long version) {
 		return version != null ? format(version.longValue()) : null;

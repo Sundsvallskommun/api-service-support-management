@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "The process instance 'pi-it-live' does not wait for the signal 'granskning-godkand'. Read the errand again to see what it waits for now"
+}

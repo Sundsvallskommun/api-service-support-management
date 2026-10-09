@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db.util;
 
+import java.util.List;
 import org.apache.commons.lang3.Strings;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
@@ -20,6 +21,8 @@ public class ConfigPropertyExtractor {
 	public static final String PROPERTY_ROLE_BASED_MAPPING = "ROLE_BASED_MAPPING";
 	public static final String PROPERTY_RESOURCE_ACCESS_CONTROL = "RESOURCE_ACCESS_CONTROL";
 	public static final String PROPERTY_SINGLE_DECISION_PER_ERRAND = "SINGLE_DECISION_PER_ERRAND";
+	public static final String PROPERTY_PROCESS_CONSUMER = "PROCESS_CONSUMER";
+	public static final String PROPERTY_PROCESS_TRIGGER = "PROCESS_TRIGGER";
 	public static final String PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL = "EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL";
 	public static final String PROPERTY_BASE_URL = "BASE_URL";
 
@@ -40,6 +43,26 @@ public class ConfigPropertyExtractor {
 			.map(ValueType::getAsTypedClass)
 			.findFirst()
 			.orElse(null);
+	}
+
+	/**
+	 * Get every value stored for provided key, as the type that is defined for the key/value-pair, or an empty list if no
+	 * property matching provided key is found.
+	 * <p>
+	 * The multivalued counterpart to {@link #getNullableValue(NamespaceConfigEntity, String)}, which takes the first row
+	 * and discards the rest. A key that may hold several rows must be read through this method.
+	 *
+	 * @param  nullableNamespaceConfigEntity config entity to find property values in
+	 * @param  key                           value of key to match
+	 * @return                               every value stored under provided key, in the order the rows are held
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T extends Object> List<T> getValues(NamespaceConfigEntity nullableNamespaceConfigEntity, String key) {
+		return (List<T>) ofNullable(nullableNamespaceConfigEntity).orElse(NamespaceConfigEntity.create())
+			.getValues().stream()
+			.filter(configValue -> Strings.CI.equals(key, configValue.getKey()))
+			.map(ValueType::getAsTypedClass)
+			.toList();
 	}
 
 	/**

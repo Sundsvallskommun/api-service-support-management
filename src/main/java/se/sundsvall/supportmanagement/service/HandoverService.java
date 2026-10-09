@@ -29,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.HandoverIdempotencyEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.HandoverMapper;
@@ -36,6 +37,9 @@ import se.sundsvall.supportmanagement.service.mapper.HandoverMapper;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsLast;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -45,6 +49,7 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 
 @Service
 public class HandoverService {
@@ -68,6 +73,7 @@ public class HandoverService {
 	private final EventService eventService;
 	private final RelationClient relationClient;
 	private final HandoverIdempotencyRepository idempotencyRepository;
+	private final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator;
 
 	public HandoverService(
 		final AccessControlService accessControlService,
@@ -80,7 +86,8 @@ public class HandoverService {
 		final RevisionService revisionService,
 		final EventService eventService,
 		final RelationClient relationClient,
-		final HandoverIdempotencyRepository idempotencyRepository) {
+		final HandoverIdempotencyRepository idempotencyRepository,
+		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator) {
 
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
@@ -93,6 +100,7 @@ public class HandoverService {
 		this.eventService = eventService;
 		this.relationClient = relationClient;
 		this.idempotencyRepository = idempotencyRepository;
+		this.attachmentSequenceNumberGenerator = attachmentSequenceNumberGenerator;
 	}
 
 	@Transactional
@@ -138,6 +146,7 @@ public class HandoverService {
 			.withTargetMunicipalityId(request.getTarget().getMunicipalityId()));
 
 		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.ERRAND, RW);
+		requireActive(source);
 
 		final var targetErrand = HandoverMapper.buildTargetErrand(source, request);
 
@@ -245,7 +254,9 @@ public class HandoverService {
 	private void copyAttachments(final ErrandEntity source, final ErrandEntity target, final String targetNamespace, final String targetMunicipalityId) {
 		final var freshSource = errandsRepository.findByIdAndNamespaceAndMunicipalityId(source.getId(), source.getNamespace(), source.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to re-fetch source errand '%s' for attachment copy".formatted(source.getId())));
-		final var sourceAttachments = Optional.ofNullable(freshSource.getAttachments()).orElse(List.of());
+		final var sourceAttachments = Optional.ofNullable(freshSource.getAttachments()).orElse(List.of()).stream()
+			.sorted(comparing(AttachmentEntity::getSequenceNumber, nullsLast(naturalOrder())))
+			.toList();
 		for (final var sourceAttachment : sourceAttachments) {
 			final var sourceData = sourceAttachment.getAttachmentData();
 			if (isNull(sourceData) || isNull(sourceData.getFile())) {
@@ -262,6 +273,8 @@ public class HandoverService {
 						.withFileName(sourceAttachment.getFileName())
 						.withMimeType(sourceAttachment.getMimeType())
 						.withChannel(sourceAttachment.getChannel())
+						.withReceived(sourceAttachment.getReceived())
+						.withSequenceNumber(attachmentSequenceNumberGenerator.nextSequenceNumber(target))
 						.withFileSize(sourceAttachment.getFileSize())
 						.withAttachmentData(AttachmentDataEntity.create().withFile(newBlob));
 					attachmentRepository.saveAndFlush(newAttachment);

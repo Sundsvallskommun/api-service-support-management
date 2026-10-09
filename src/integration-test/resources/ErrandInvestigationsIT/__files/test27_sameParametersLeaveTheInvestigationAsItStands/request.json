@@ -1,0 +1,24 @@
+{
+	"parameters": [
+		{
+			"key": "riskLevel",
+			"values": [
+				"low"
+			]
+		},
+		{
+			"key": "checkedSources",
+			"displayName": "Kontrollerade källor",
+			"group": "underlag",
+			"values": [
+				"Skatteverket"
+			]
+		},
+		{
+			"key": "checkedSources",
+			"values": [
+				"Kronofogden"
+			]
+		}
+	]
+}

@@ -35,8 +35,19 @@ public class ErrandAttachment {
 	}, nullable = true)
 	private String channel;
 
+	@Schema(description = "The number of the attachment within the errand, counted from 1 in the order the attachments were added. A number is never reused within the errand. Left out for an attachment that has not been given a number yet",
+		examples = "1",
+		accessMode = READ_ONLY)
+	private Integer sequenceNumber;
+
+	@Schema(description = "When the attachment came in. The same as created unless given", examples = "2023-01-01T00:00:00Z")
+	private OffsetDateTime received;
+
 	@Schema(description = "The attachment created date", examples = "2023-01-01T00:00:00Z")
 	private OffsetDateTime created;
+
+	@Schema(description = "The attachment modified date", examples = "2023-01-01T00:00:00Z", accessMode = READ_ONLY)
+	private OffsetDateTime modified;
 
 	@Schema(description = "SHA-256 hash (hex encoded) of the attachment's raw content", accessMode = READ_ONLY, examples = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 	private String hash;
@@ -126,6 +137,45 @@ public class ErrandAttachment {
 		return this;
 	}
 
+	public Integer getSequenceNumber() {
+		return sequenceNumber;
+	}
+
+	public void setSequenceNumber(final Integer sequenceNumber) {
+		this.sequenceNumber = sequenceNumber;
+	}
+
+	public ErrandAttachment withSequenceNumber(final Integer sequenceNumber) {
+		this.sequenceNumber = sequenceNumber;
+		return this;
+	}
+
+	public OffsetDateTime getReceived() {
+		return received;
+	}
+
+	public void setReceived(final OffsetDateTime received) {
+		this.received = received;
+	}
+
+	public ErrandAttachment withReceived(final OffsetDateTime received) {
+		this.received = received;
+		return this;
+	}
+
+	public OffsetDateTime getModified() {
+		return modified;
+	}
+
+	public void setModified(final OffsetDateTime modified) {
+		this.modified = modified;
+	}
+
+	public ErrandAttachment withModified(final OffsetDateTime modified) {
+		this.modified = modified;
+		return this;
+	}
+
 	public String getHash() {
 		return hash;
 	}
@@ -157,14 +207,16 @@ public class ErrandAttachment {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		final ErrandAttachment that = (ErrandAttachment) o;
-		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(fileSize, that.fileSize) && Objects.equals(channel, that.channel) && Objects.equals(created, that.created)
+		return Objects.equals(id, that.id) && Objects.equals(fileName, that.fileName) && Objects.equals(mimeType, that.mimeType) && Objects.equals(fileSize, that.fileSize) && Objects.equals(channel, that.channel) && Objects.equals(sequenceNumber,
+			that.sequenceNumber)
+			&& Objects.equals(received, that.received) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified)
 			&& Objects.equals(hash, that.hash) && Objects
 				.equals(purpose, that.purpose);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, fileName, mimeType, fileSize, channel, created, hash, purpose);
+		return Objects.hash(id, fileName, mimeType, fileSize, channel, sequenceNumber, received, created, modified, hash, purpose);
 	}
 
 	@Override
@@ -175,7 +227,10 @@ public class ErrandAttachment {
 			", mimeType='" + mimeType + '\'' +
 			", fileSize=" + fileSize +
 			", channel='" + channel + '\'' +
+			", sequenceNumber=" + sequenceNumber +
+			", received=" + received +
 			", created=" + created +
+			", modified=" + modified +
 			", hash='" + hash + '\'' +
 			", purpose=" + purpose +
 			'}';

@@ -1,0 +1,14 @@
+[
+	{
+		"id": "${json-unit.any-string}",
+		"fileName": "test.txt",
+		"mimeType": "text/plain",
+		"fileSize": 11,
+		"channel": "EMAIL",
+		"sequenceNumber": 2,
+		"received": "${json-unit.any-string}",
+		"created": "${json-unit.any-string}",
+		"modified": "${json-unit.any-string}",
+		"hash": "1102077e35fa001a1b65eaad6d4421213d95ec953993b73d3736326841971c5b"
+	}
+]

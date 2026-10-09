@@ -124,6 +124,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updat
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatementOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatusEntity;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 
 @Service
 public class MetadataService {
@@ -469,25 +470,9 @@ public class MetadataService {
 	/**
 	 * Starts a label move as an asynchronous job, reported through {@code GET .../jobs/{jobId}}.
 	 * <p>
-	 * Refused outright if another job is already under way for the namespace, not just for this label and not just for
-	 * moves — two moves in the same namespace can target overlapping subtrees (one label and one of its own
-	 * descendants, or a label and the destination it is headed into) without either id matching the other, so a check
-	 * scoped to this label alone would let them run at the same time and race on the same errands. And a merge or a
-	 * restructure run touches labels the same way a move does, so a check scoped to {@code MOVE_LABEL} alone would let
-	 * this run alongside one of those and race the same tree just as easily — hence the type-agnostic
-	 * {@link JobService#hasActiveJob(String, String)}, mirroring {@link #startLabelTreeRestructure}. Namespace-wide
-	 * serialization costs nothing here, since label moves are rare.
-	 * <p>
-	 * Deliberately not itself {@code @Transactional}, and validation, job creation and dispatch are kept in three
-	 * separate steps rather than one enclosing transaction — mirrors {@link ErrandPurgeService#startPurge}. Wrapping
-	 * the whole method would flush {@link JobService#create}'s row without committing it before the worker is handed
-	 * to the executor, and the worker's {@link JobService#setRunning} runs in its own {@code REQUIRES_NEW} transaction
-	 * on a different thread that cannot see an uncommitted row — it would find no job, log a warning, and leave the
-	 * job stuck PENDING until the stale-job sweep eventually fails it. Validation still needs a session of its own:
-	 * {@link #validateAndFindLabelToMove}'s cycle check walks LAZY {@code parent} proxies one hop at a time, and each
-	 * hop past the first needs the session to still be there to load from - hence {@link #readOnlyTransactionTemplate}
-	 * rather than a plain call, which would only cover the very first repository call before the session behind it
-	 * closes.
+	 * The move is validated, and refused with 409 while any label job, of whatever kind, is under way in the namespace.
+	 * The job is created with the number of affected errands as its total, and is committed before the move is handed to
+	 * {@link LabelMoveWorker} on a thread of its own, so the method is not transactional.
 	 */
 	public JobResponse startLabelMove(final String namespace, final String municipalityId, final String labelId, final LabelMoveRequest request) {
 		var context = readOnlyTransactionTemplate.execute(status -> validateAndFindLabelToMove(namespace, municipalityId, labelId, request.getNewParentId()));
@@ -503,9 +488,10 @@ public class MetadataService {
 		// worker dispatched right after is free to look the job up from another thread.
 		var jobId = jobService.create(namespace, municipalityId, MOVE_LABEL, (int) affectedErrandCount, canonicalLabelId);
 		var startedBy = startedBy();
+		var startedByAdAccount = nonNull(getAdUser());
 
 		try {
-			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), startedBy)));
+			labelMoveTaskExecutor.execute(() -> labelMoveWorker.run(new LabelMoveRun(jobId, namespace, municipalityId, canonicalLabelId, request.getNewParentId(), startedBy, startedByAdAccount)));
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
 			jobService.fail(jobId, COULD_NOT_START.formatted(e.getMessage()));
@@ -539,9 +525,7 @@ public class MetadataService {
 	}
 
 	/**
-	 * The moved label plus the descendants that move with it — read once by {@link #validateAndFindLabelToMove} and
-	 * reused by both callers, so that neither {@link #moveLabel} nor {@link #startLabelMove} re-reads the descendant
-	 * tree that validation already fetched.
+	 * The moved label plus the descendants that move with it, as read by {@link #validateAndFindLabelToMove}.
 	 */
 	private record LabelMoveContext(MetadataLabelEntity labelToMove, List<MetadataLabelEntity> descendants) {
 	}
@@ -582,9 +566,8 @@ public class MetadataService {
 	}
 
 	/**
-	 * {@code labelId} must be the moved label's id as stored, not the raw path variable — a client sending the same
-	 * UUID in a different case would otherwise never match {@code current.getId()} on the way up, since both sides
-	 * of the comparison have to come from the same, canonical source to line up.
+	 * Rejects a new parent that is the moved label itself or one of its descendants. {@code labelId} must be the moved
+	 * label's id as stored, not the raw path variable, as the ids are compared case-sensitively.
 	 */
 	private static void validateNoCycle(final String labelId, final MetadataLabelEntity newParent) {
 		if (newParent == null) {
@@ -606,15 +589,14 @@ public class MetadataService {
 	private void validatePathNotTaken(final String namespace, final String municipalityId, final String movingLabelId, final String candidatePath) {
 		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePath(namespace, municipalityId, candidatePath)
 			.filter(existing -> !Objects.equals(existing.getId(), movingLabelId))
-			.ifPresent(existing -> {
+			.ifPresent(_ -> {
 				throw Problem.valueOf(CONFLICT, "A label with path '%s' already exists under the destination".formatted(candidatePath));
 			});
 	}
 
 	/**
-	 * A descendant's resulting path can collide just as easily as the moved label's own, since both land under a
-	 * destination neither of them has occupied before — checked here, once the subtree {@link #validateResourcePathLength}
-	 * also needs has been read, rather than folded into the moved label's own check above.
+	 * Rejects the move with 409 when the new path of any descendant the moved label carries along is held by another
+	 * label. Checked before any row is touched.
 	 */
 	private void validateNoDescendantPathCollision(final String namespace, final String municipalityId, final MetadataLabelEntity labelToMove, final String newPath, final List<MetadataLabelEntity> descendants) {
 		var oldPrefixLength = labelToMove.getResourcePath().length();
@@ -622,9 +604,8 @@ public class MetadataService {
 	}
 
 	/**
-	 * The moved label's new path, and the new path every descendant it carries along would get, must each fit the
-	 * resource_path column — rejected here, before any row is touched, rather than surfacing as a database error
-	 * partway through the restructuring.
+	 * Rejects the move when the new path of the moved label, or the new path of any descendant it carries along, is longer
+	 * than the resource_path column allows. Checked before any row is touched.
 	 */
 	private static void validateResourcePathLength(final MetadataLabelEntity labelToMove, final String newPath, final List<MetadataLabelEntity> descendants) {
 		rejectIfTooLong(newPath);
@@ -682,9 +663,10 @@ public class MetadataService {
 		// worker dispatched right after is free to look the job up from another thread.
 		var jobId = jobService.create(namespace, municipalityId, MERGE_LABELS, (int) affectedErrandCount, context.targetId());
 		var startedBy = startedBy();
+		var startedByAdAccount = nonNull(getAdUser());
 
 		try {
-			labelMoveTaskExecutor.execute(() -> labelMergeWorker.run(new LabelMergeRun(jobId, namespace, municipalityId, context.targetId(), context.sourceIds(), startedBy)));
+			labelMoveTaskExecutor.execute(() -> labelMergeWorker.run(new LabelMergeRun(jobId, namespace, municipalityId, context.targetId(), context.sourceIds(), startedBy, startedByAdAccount)));
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
 			jobService.fail(jobId, COULD_NOT_START_MERGE.formatted(e.getMessage()));
@@ -755,8 +737,7 @@ public class MetadataService {
 	/**
 	 * Resolves the labels of the namespace matching each group of resource path patterns.
 	 * <p>
-	 * The labels are read once for every group rather than once per group, so that the groups are answered from a single
-	 * state of the label table and a caller resolving several of them pays one read.
+	 * The labels of the namespace are read once for all groups, and not at all when no group carries a pattern.
 	 *
 	 * @param  namespace            namespace
 	 * @param  municipalityId       municipality id
@@ -833,9 +814,10 @@ public class MetadataService {
 		// worker dispatched right after is free to look the job up from another thread.
 		final var jobId = jobService.create(namespace, municipalityId, RESTRUCTURE_LABEL_TREE, estimatedTotal);
 		final var startedBy = startedBy();
+		final var startedByAdAccount = nonNull(getAdUser());
 
 		try {
-			labelMoveTaskExecutor.execute(() -> labelTreeRestructureWorker.run(new LabelRestructureRun(jobId, namespace, municipalityId, request.getSteps(), startedBy)));
+			labelMoveTaskExecutor.execute(() -> labelTreeRestructureWorker.run(new LabelRestructureRun(jobId, namespace, municipalityId, request.getSteps(), startedBy, startedByAdAccount)));
 		} catch (final Exception e) {
 			// The job is already there and would otherwise sit waiting for a run that never comes.
 			jobService.fail(jobId, COULD_NOT_START_RESTRUCTURE.formatted(e.getMessage()));
@@ -1292,11 +1274,7 @@ public class MetadataService {
 	// =================================================================
 
 	/**
-	 * A measure type belongs to at least one group - a type in no group cannot be found by the one thing measure types
-	 * are looked up by.
-	 * <p>
-	 * Held here rather than on the model, which the update shares: a constraint there would demand the groups of every
-	 * patch, where every other property of a measure type may be left out.
+	 * Rejects a measure type that names no group. A measure type belongs to at least one group.
 	 */
 	private static void verifyMeasureGroupsNamed(final List<String> measureGroups) {
 		if (isEmpty(measureGroups)) {
@@ -1359,10 +1337,6 @@ public class MetadataService {
 
 	/**
 	 * The properties a measure type may be sorted by, which is every scalar it carries.
-	 * <p>
-	 * The groups became a collection, and a collection cannot be sorted on. A request naming one sorted a measure type
-	 * before that and would otherwise reach the query derivation as a property that is not there, which answers 500
-	 * without saying what is wrong.
 	 */
 	private static final Set<String> SORTABLE_MEASURE_TYPE_PROPERTIES = Arrays.stream(MeasureTypeEntity.class.getDeclaredFields())
 		.filter(field -> !field.isSynthetic())

@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -29,8 +31,10 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
+import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.eventlog.ExecutingUser.TypeEnum.AD_USER;
@@ -43,13 +47,17 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearNotify;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setNotify;
@@ -71,6 +79,9 @@ class EventServiceTest {
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
+
+	@Mock
+	private ProcessEventPublisher processEventPublisherMock;
 
 	@Mock
 	private PageEvent pageEventMock;
@@ -518,6 +529,195 @@ class EventServiceTest {
 		assertThat(pagedEvents.getContent()).hasSize(6)
 			.extracting(se.sundsvall.supportmanagement.api.model.event.Event::getType)
 			.containsOnly(se.sundsvall.supportmanagement.api.model.event.EventType.UNKNOWN);
+	}
+
+	/**
+	 * A write made by a process engine gives a notification whose sender is the value of the identifier, although it is
+	 * not an ad account.
+	 */
+	@Test
+	void aNotificationOfAWriteMadeByAProcessNamesTheProcessAsItsSender() {
+		Identifier.set(Identifier.parse("pw-alkt; type=processEngine"));
+
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(notificationServiceMock).createNotification(any(), any(), any(), notificationCaptor.capture());
+		assertThat(notificationCaptor.getValue().getCreatedBy()).isEqualTo("pw-alkt");
+	}
+
+	@Test
+	void aNotificationOfAWriteMadeWithoutAnIdentityHasNoSender() {
+		Identifier.remove();
+
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(notificationServiceMock).createNotification(any(), any(), any(), notificationCaptor.capture());
+		assertThat(notificationCaptor.getValue().getCreatedBy()).isNull();
+	}
+
+	@Test
+	void everyErrandEventIsHandedToTheProcessPublisher() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, ERRAND, "executingUserId", null, null, false);
+	}
+
+	@Test
+	@DisplayName("Verification that an event which sends no notification still reaches the process, since an outbox row is no notice to a handler")
+	void anEventThatNotifiesNobodyIsStillPublished() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createErrandEvent(EventType.DELETE, "message", entity, null, null, false, ERRAND);
+
+		verify(notificationServiceMock, never()).createNotification(any(), any(), any(), any());
+		verify(processEventPublisherMock).publish(entity, EventType.DELETE, ERRAND, "executingUserId", null, null, false);
+	}
+
+	@Test
+	@DisplayName("Verification that the removal of an errand is told to its process without an event being written or anyone notified")
+	void aDeletionIsPublishedWithoutAnEvent() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.publishDeletionToProcess(entity);
+
+		verify(processEventPublisherMock).publish(entity, EventType.DELETE, ERRAND, "executingUserId", null, null, false);
+		verifyNoInteractions(eventLogClientMock, notificationServiceMock, notificationDispatchRepositoryMock, eventPublisherMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a command carries the key a handler chose through to publication, where it is never resolved again")
+	void aCommandIsCarriedThroughToThePublisher() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+		final var command = new ProcessCommand("alkt-tillsyn", null);
+
+		service.createProcessCommandEvent(EventType.CREATE, "message", entity, PROCESS, command);
+
+		verify(processEventPublisherMock).publish(entity, EventType.CREATE, PROCESS, "executingUserId", null, command, false);
+	}
+
+	@Test
+	@DisplayName("Verification that a command is logged on the errand like any other event, but points at no revision since a command changes nothing on the errand")
+	void aCommandIsLoggedWithoutARevision() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createProcessCommandEvent(EventType.UPDATE, "message", entity, SIGNAL, new ProcessCommand(null, "granskning-godkand"));
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getHistoryReference()).isNull();
+		assertThat(eventCaptor.getValue().getMetadata()).extracting(Metadata::getKey).doesNotContain("CurrentRevision", "CurrentVersion", "PreviousRevision", "PreviousVersion");
+	}
+
+	@Test
+	@DisplayName("Verification that an event without notification is logged and reaches the process, but notifies neither the handler of the errand nor its subscribers")
+	void anErrandEventWithoutNotificationNotifiesNoOne() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createErrandEventWithoutNotification(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), any());
+		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, ERRAND, "executingUserId", null, null, false);
+		verifyNoInteractions(notificationServiceMock, notificationDispatchRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a command notifies neither the handler of the errand nor its subscribers")
+	void aCommandNotifiesNoOne() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createProcessCommandEvent(EventType.UPDATE, "message", entity, SIGNAL, new ProcessCommand(null, "granskning-godkand"));
+		service.createProcessCommandEvent(EventType.UPDATE, "message", entity, PROCESS, new ProcessCommand("alkt-tillsyn", null));
+
+		verify(eventLogClientMock, times(2)).createEvent(eq("2281"), eq(entity.getId()), any());
+		verifyNoInteractions(notificationServiceMock, notificationDispatchRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a command without anything to hand on - one the process already has on its way - is logged like any other, and not handed on to the process")
+	void aCommandOnItsWayIsLoggedWithoutBeingPublished() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createProcessCommandEvent(EventType.UPDATE, "message", entity, PROCESS, null);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getType()).isEqualTo(EventType.UPDATE);
+		assertThat(eventCaptor.getValue().getSubType()).isEqualTo("PROCESS");
+		assertThat(eventCaptor.getValue().getMessage()).isEqualTo("message");
+		assertThat(eventCaptor.getValue().getHistoryReference()).isNull();
+		verifyNoInteractions(processEventPublisherMock);
+	}
+
+	/**
+	 * A change to a decision is logged as an update of the errand without a revision, and whether it concludes the
+	 * decision is carried through to the publisher untouched.
+	 */
+	@ParameterizedTest
+	@ValueSource(booleans = {
+		true, false
+	})
+	@DisplayName("Verification that a change to a decision is logged and published as an update with the sub type DECISION")
+	void aDecisionEventIsLoggedAndPublished(final boolean concludesDecision) {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createDecisionEvent("message", entity, concludesDecision);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getType()).isEqualTo(EventType.UPDATE);
+		assertThat(eventCaptor.getValue().getSubType()).isEqualTo("DECISION");
+		assertThat(eventCaptor.getValue().getMessage()).isEqualTo("message");
+		assertThat(eventCaptor.getValue().getHistoryReference()).isNull();
+		verify(notificationServiceMock).createNotification(eq("2281"), eq("ALKT"), eq(entity.getId()), any());
+		verify(notificationDispatchRepositoryMock).save(any());
+		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, DECISION, "executingUserId", null, null, concludesDecision);
+	}
+
+	@Test
+	@DisplayName("Verification that an event about a draft is logged but notifies neither its handler nor its subscribers")
+	void anErrandEventOfADraftNotifiesNobody() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId").withLifecycle(ErrandLifecycle.DRAFT);
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+		service.createDecisionEvent("message", entity, true);
+
+		verify(eventLogClientMock, times(2)).createEvent(eq("2281"), eq(entity.getId()), any());
+		verifyNoInteractions(notificationServiceMock, notificationDispatchRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a note event about a draft is logged but notifies neither its handler nor its subscribers")
+	void aNoteEventOfADraftNotifiesNobody() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId").withLifecycle(ErrandLifecycle.DRAFT);
+
+		service.createErrandNoteEvent(EventType.CREATE, "message", "logKey", entity, randomUUID().toString(), null, null);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq("logKey"), any());
+		verifyNoInteractions(notificationServiceMock, notificationDispatchRepositoryMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an event about an active errand notifies its handler and its subscribers")
+	void anErrandEventOfAnActiveErrandNotifies() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString()).withAssignedUserId("assignedUserId").withLifecycle(ErrandLifecycle.ACTIVE);
+
+		service.createErrandEvent(EventType.UPDATE, "message", entity, null, null, ERRAND);
+
+		verify(notificationServiceMock).createNotification(eq("2281"), eq("ALKT"), eq(entity.getId()), any());
+		verify(notificationDispatchRepositoryMock).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a note event is no errand event, and reaches no process")
+	void aNoteEventIsNotPublished() {
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withNamespace("ALKT").withId(randomUUID().toString());
+
+		service.createErrandNoteEvent(EventType.CREATE, "message", "logKey", entity, randomUUID().toString(), null, null);
+
+		verifyNoInteractions(processEventPublisherMock);
 	}
 
 	@Test

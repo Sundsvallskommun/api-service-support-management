@@ -135,7 +135,7 @@ public class SendEmailAction extends AbstractAction {
 	public boolean actionFulfilled(ErrandEntity errand, Map<String, List<String>> parameters) {
 		final var sender = parameters.get(SENDER).getFirst();
 		final var recipient = parameters.get(RECIPIENT).getFirst();
-		final var expectedSubject = String.format("%s - %s", parameters.get(SUBJECT).getFirst(), errand.getErrandNumber());
+		final var expectedSubject = parameters.get(SUBJECT).getFirst() + " - " + errand.getErrandNumber();
 
 		return communicationRepository.findByErrandNumberAndNamespaceAndMunicipalityId(errand.getErrandNumber(), errand.getNamespace(), errand.getMunicipalityId()).stream()
 			.filter(c -> c.getType() == CommunicationType.EMAIL)
@@ -151,13 +151,13 @@ public class SendEmailAction extends AbstractAction {
 	}
 
 	@Override
-	public void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
+	public boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
 		var parameterMap = actionConfigEntity.getParameters().stream()
 			.collect(Collectors.toMap(ActionConfigParameterEntity::getKey, ActionConfigParameterEntity::getValues));
 
 		var recipient = parameterMap.get(RECIPIENT).getFirst();
 		var sender = parameterMap.get(SENDER).getFirst();
-		var subject = String.format(Optional.ofNullable(parameterMap.get(SUBJECT).getFirst()).orElse("").concat(" - %s"), errand.getErrandNumber());
+		var subject = Optional.ofNullable(parameterMap.get(SUBJECT).getFirst()).orElse("") + " - " + errand.getErrandNumber();
 		var addLink = Boolean.parseBoolean(parameterMap.get(ADD_LINK_TO_ERRAND_IN_BODY).getFirst());
 
 		var htmlBody = parameterMap.get(BODY).getFirst();
@@ -177,6 +177,8 @@ public class SendEmailAction extends AbstractAction {
 
 		communicationService.sendEmail(errand, emailRequest);
 		LOG.info("SEND_EMAIL action executed for errand '{}'", errand.getId());
+
+		return false;
 	}
 
 	@Override

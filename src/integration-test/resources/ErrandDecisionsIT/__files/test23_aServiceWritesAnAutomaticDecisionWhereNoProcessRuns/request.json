@@ -1,0 +1,10 @@
+{
+	"type": "PERMIT",
+	"status": "COMPLETED",
+	"title": "Automatiskt beslut",
+	"outcome": "PARTIAL_APPROVAL",
+	"method": "AUTOMATIC",
+	"decidedBy": "e-service",
+	"decidedAt": "2024-02-10T10:00:00+01:00",
+	"appealable": true
+}

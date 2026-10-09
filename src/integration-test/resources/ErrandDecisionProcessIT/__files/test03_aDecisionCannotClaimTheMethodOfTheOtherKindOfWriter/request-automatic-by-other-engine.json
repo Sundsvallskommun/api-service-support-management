@@ -1,0 +1,11 @@
+{
+	"type": "PERMIT",
+	"status": "ACTIVE",
+	"outcome": "APPROVAL",
+	"method": "AUTOMATIC",
+	"decidedBy": "other-engine",
+	"decidedAt": "2026-09-17T10:12:00+02:00",
+	"legalBasis": "8 kap. 12 § alkohollagen",
+	"justification": "Sökanden bedöms lämplig efter samlad prövning av vandel och ekonomi",
+	"errandProcessId": null
+}

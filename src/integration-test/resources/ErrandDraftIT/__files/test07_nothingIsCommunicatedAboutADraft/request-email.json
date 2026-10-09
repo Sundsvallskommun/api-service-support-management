@@ -1,0 +1,7 @@
+{
+	"sender": "handlaggare@sundsvall.se",
+	"subject": "Om ditt ärende",
+	"recipient": "sokande@example.com",
+	"message": "Ett meddelande som aldrig skickas",
+	"htmlMessage": "<p>Ett meddelande som aldrig skickas</p>"
+}

@@ -14,13 +14,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStat
 /**
  * Upholds what the life cycle of a statement means.
  * <p>
- * The rules are checked against the state the statement would end up in rather than against what the request carries,
- * since a patch that only sets the status has to be judged together with the values already stored. That is why the
- * entity is validated after the patch has been applied to it and before it is saved.
- * <p>
- * Which statuses there are is declared by the model, and bean validation has rejected anything else before the request
- * reaches the service. Which outcomes there are is for the namespace to say, in its metadata - and so is what the life
- * cycle needs to know about an outcome: whether it means that the counterparty responded.
+ * The rules are checked against the state the statement would end up in, so the entity is validated after the patch
+ * has been applied to it and before it is saved. The outcomes, and whether each of them means that the counterparty
+ * responded, are read from the metadata of the namespace.
  */
 @Component
 public class StatementValidator {
@@ -38,15 +34,12 @@ public class StatementValidator {
 	}
 
 	/**
-	 * Rejects an outcome the namespace has not registered.
-	 * <p>
-	 * Checked against what the request carries rather than against what is stored, so that an outcome the namespace has
-	 * since removed does not stand in the way of every later change to a statement that was given it.
+	 * Rejects an outcome the namespace has not registered. Only the outcome the request carries is checked, not the one
+	 * already stored.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId municipality of the errand.
-	 * @param outcome        the outcome the request carries. Null is left alone, since a patch says nothing about the
-	 *                       fields it omits.
+	 * @param outcome        the outcome the request carries. Null is left alone.
 	 */
 	public void validateOutcome(final String namespace, final String municipalityId, final String outcome) {
 		ofNullable(outcome).ifPresent(value -> {
@@ -59,13 +52,11 @@ public class StatementValidator {
 	/**
 	 * Rejects a statement whose life cycle does not add up.
 	 * <p>
-	 * An outcome belongs to a completed statement only. A patch cannot clear a value, so a statement that has been given
-	 * one stays COMPLETED - which is what the life cycle says: a statement is withdrawn before it is answered, not after.
+	 * An active statement needs sentAt, and an outcome belongs to a completed statement only. A patch cannot clear a
+	 * value, so a statement that has been given an outcome stays COMPLETED.
 	 * <p>
 	 * Whether a completed statement needs the time of the response is read from how the namespace has registered its
-	 * outcome, and that registration can change after the statement was completed. It is judged only when the request sets
-	 * the status or the outcome, so that a statement completed under one registration is not made unchangeable by a later
-	 * one.
+	 * outcome. It is judged only when the request sets the status or the outcome.
 	 *
 	 * @param entity              the statement as it would be stored.
 	 * @param setsStatusOrOutcome whether the request sets the status or the outcome, which a creation always does.
@@ -92,11 +83,8 @@ public class StatementValidator {
 	}
 
 	/**
-	 * Whether the outcome, as the namespace registered it, means that the counterparty responded. A statement closed
-	 * because the deadline passed has no response, and demanding a timestamp for one that never arrived would leave no
-	 * way to close it.
-	 * <p>
-	 * An outcome the namespace no longer holds cannot say, and does not hold the statement to a response.
+	 * Whether the outcome, as the namespace registered it, means that the counterparty responded. An outcome the
+	 * namespace no longer holds does not hold the statement to a response.
 	 */
 	private boolean meansAResponse(final StatementEntity entity, final String outcome) {
 		return statementOutcomeRepository.findByNamespaceAndMunicipalityIdAndName(entity.getNamespace(), entity.getMunicipalityId(), outcome)

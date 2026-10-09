@@ -1,0 +1,16 @@
+[
+	{
+		"classification": "CATEGORY",
+		"resourceName": "NY_TILLSYN",
+		"attributes": [
+			{
+				"key": "processKey",
+				"value": "alkt-tillsyn"
+			},
+			{
+				"key": "processStartMode",
+				"value": "MANUAL"
+			}
+		]
+	}
+]

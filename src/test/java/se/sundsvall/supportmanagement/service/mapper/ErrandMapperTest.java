@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactChannelEntity;
@@ -42,6 +43,8 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import tools.jackson.databind.ObjectMapper;
 
 import static java.time.OffsetDateTime.now;
@@ -56,6 +59,7 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotification;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
@@ -160,6 +164,7 @@ class ErrandMapperTest {
 			.withPriority(Priority.valueOf(PRIORITY))
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatus(STATUS)
+			.withLifecycle("ACTIVE")
 			.withTitle(TITLE)
 			.withTouched(TOUCHED)
 			.withResolution(RESOLUTION)
@@ -216,6 +221,7 @@ class ErrandMapperTest {
 			.withPriority(PRIORITY)
 			.withReporterUserId(REPORTER_USER_ID)
 			.withStatus(STATUS)
+			.withLifecycle(ErrandLifecycle.ACTIVE)
 			.withTitle(TITLE)
 			.withType(TYPE)
 			.withTouched(TOUCHED)
@@ -343,7 +349,7 @@ class ErrandMapperTest {
 				Measure::getDescription, Measure::getAccept, Measure::getAcceptMotivation, Measure::getCreated, Measure::getModified)
 			.containsExactly(tuple(MEASURE_ID, MEASURE_RESPONSIBLE_USER, MEASURE_TYPE, MEASURE_PLANNED_START, MEASURE_PLANNED_COMPLETE, MEASURE_EXECUTED, MEASURE_ADDED_BY_USER, MEASURE_ADDED_BY_ROLE, MEASURE_GOAL, MEASURE_DESCRIPTION,
 				MEASURE_ACCEPT.name(), MEASURE_ACCEPT_MOTIVATION, MEASURE_CREATED, MEASURE_MODIFIED));
-		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
+		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version", "process");
 	}
 
 	@Test
@@ -359,7 +365,7 @@ class ErrandMapperTest {
 		fields.put(ErrandField.TITLE, Set.of());
 		fields.put(ErrandField.STATUS, Set.of());
 
-		final var errand = toErrandWithAccessControl(createEntity(), _ -> fields);
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> fields, ErrandEnrichment.empty());
 
 		assertThat(errand).hasAllNullFieldsOrPropertiesExcept("id", "errandNumber", "title", "status");
 		assertThat(errand.getId()).isEqualTo(ID);
@@ -374,7 +380,7 @@ class ErrandMapperTest {
 		final var configuredKey = entity.getParameters().getFirst().getKey();
 		final var fields = Map.of(ErrandField.PARAMETERS, Set.of(configuredKey));
 
-		final var errand = toErrandWithAccessControl(entity, _ -> fields);
+		final var errand = toErrandWithAccessControl(entity, _ -> fields, ErrandEnrichment.empty());
 
 		assertThat(errand.getParameters()).hasSize(1).extracting(Parameter::getKey).containsExactly(configuredKey);
 	}
@@ -384,28 +390,61 @@ class ErrandMapperTest {
 		final var entity = createEntity();
 		final var fields = Map.of(ErrandField.PARAMETERS, Set.<String>of());
 
-		final var errand = toErrandWithAccessControl(entity, _ -> fields);
+		final var errand = toErrandWithAccessControl(entity, _ -> fields, ErrandEnrichment.empty());
 
 		assertThat(errand.getParameters()).hasSameSizeAs(entity.getParameters());
 	}
 
 	@Test
 	void testToErrandWithAccessControlMapsFullErrandWhenNothingRestrictsTheUser() {
-		final var errand = toErrandWithAccessControl(createEntity(), _ -> null);
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> null, enrichmentWithProcess());
 
 		assertThat(errand).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
 	}
 
+	/**
+	 * The process of an errand is read outside the errand row, and is filtered by the role based mapping all the same.
+	 */
+	@Test
+	void testProcessIsMappedWhenTheRestrictionNamesIt() {
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> Map.of(ErrandField.PROCESS, Set.of()), enrichmentWithProcess());
+
+		assertThat(errand.getProcess()).isNotNull();
+		assertThat(errand.getProcess().getProcessKey()).isEqualTo("alkt-ansokan");
+	}
+
+	@Test
+	void testProcessIsLeftOutWhenTheRestrictionDoesNotNameIt() {
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> Map.of(ErrandField.ID, Set.of()), enrichmentWithProcess());
+
+		assertThat(errand.getId()).isEqualTo(ID);
+		assertThat(errand.getProcess()).isNull();
+	}
+
+	@Test
+	void testAnErrandWithoutAProcessCarriesNoProcessField() {
+		assertThat(toErrand(createEntity()).getProcess()).isNull();
+		assertThat(toErrand(createEntity(), new ErrandEnrichment(Map.of("anotherErrand", ErrandProcess.create()))).getProcess()).isNull();
+	}
+
+	private static ErrandEnrichment enrichmentWithProcess() {
+		return new ErrandEnrichment(Map.of(ID, ErrandProcess.create()
+			.withId("processRowId")
+			.withProcessService("pw-alkt")
+			.withProcessKey("alkt-ansokan")
+			.withProcessStatus(RUNNING)));
+	}
+
 	@Test
 	void testToErrandWithAccessControlMapsNoFieldsWhenRestrictionResolvesToNone() {
-		final var errand = toErrandWithAccessControl(createEntity(), _ -> Map.of());
+		final var errand = toErrandWithAccessControl(createEntity(), _ -> Map.of(), ErrandEnrichment.empty());
 
 		assertThat(errand).hasAllNullFieldsOrProperties();
 	}
 
 	@Test
 	void testToErrandWithAccessControlFromNull() {
-		assertThat(toErrandWithAccessControl(null, _ -> Map.of(ErrandField.ID, Set.of()))).isNull();
+		assertThat(toErrandWithAccessControl(null, _ -> Map.of(ErrandField.ID, Set.of()), ErrandEnrichment.empty())).isNull();
 	}
 
 	@Test
@@ -416,18 +455,17 @@ class ErrandMapperTest {
 		// The full errand is exactly the role mapped errand of every field - nothing is added to it afterwards, which is
 		// what keeps a field from reaching one projection and not the other.
 		assertThat(toErrand(entity)).usingRecursiveComparison()
-			.isEqualTo(toErrandWithAccessControl(entity, _ -> allFields));
+			.isEqualTo(toErrandWithAccessControl(entity, _ -> allFields, ErrandEnrichment.empty()));
 	}
 
 	/**
-	 * Phases and actions were served to a caller nothing restricted and dropped from every restricted one, with no grant
-	 * that could give them back. They are fields like any other now, so a restriction naming them carries them.
+	 * Phases and actions are fields like any other, so a restriction naming them carries them.
 	 */
 	@Test
 	void testToErrandWithAccessControlMapsPhasesAndActionsWhenTheyAreGranted() {
 		final var entity = createEntity();
 
-		final var granted = toErrandWithAccessControl(entity, _ -> Map.of(ErrandField.PHASES, Set.of(), ErrandField.ACTIONS, Set.of()));
+		final var granted = toErrandWithAccessControl(entity, _ -> Map.of(ErrandField.PHASES, Set.of(), ErrandField.ACTIONS, Set.of()), ErrandEnrichment.empty());
 
 		assertThat(granted.getPhases()).isNotEmpty().isEqualTo(toErrand(entity).getPhases());
 		assertThat(granted.getActions()).isNotEmpty().isEqualTo(toErrand(entity).getActions());
@@ -436,7 +474,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandWithAccessControlOmitsPhasesAndActionsWhenTheyAreNotGranted() {
-		final var granted = toErrandWithAccessControl(createEntity(), _ -> Map.of(ErrandField.ID, Set.of()));
+		final var granted = toErrandWithAccessControl(createEntity(), _ -> Map.of(ErrandField.ID, Set.of()), ErrandEnrichment.empty());
 
 		assertThat(granted.getPhases()).isNull();
 		assertThat(granted.getActions()).isNull();
@@ -448,9 +486,7 @@ class ErrandMapperTest {
 	}
 
 	/**
-	 * A field without a reader is not merely unread: verifyWritableFields walks the readers, so a field missing one is a
-	 * field a patch may name without holding it. The mappers are held to the constants above, and these have to be held
-	 * to them for the same reason.
+	 * Every errand field has a reader, which verifyWritableFields walks when it checks the fields a patch names.
 	 */
 	@Test
 	void testEveryErrandFieldHasAReader() {
@@ -514,7 +550,7 @@ class ErrandMapperTest {
 					notification.setErrandId("cb20c51f-fcf3-42c0-b613-de563634a8ec");
 				}))));
 
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version");
+		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version", "process");
 	}
 
 	@Test
@@ -523,7 +559,7 @@ class ErrandMapperTest {
 		final var fullyMapped = createEntity().withErrandNumber("full").withBusinessRelated(false);
 
 		final var result = toErrandsWithAccessControl(List.of(roleMapped, fullyMapped),
-			entity -> "role-mapped".equals(entity.getErrandNumber()) ? Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of()) : null);
+			entity -> "role-mapped".equals(entity.getErrandNumber()) ? Map.of(ErrandField.ERRAND_NUMBER, Set.<String>of()) : null, enrichmentWithProcess());
 
 		assertThat(result).hasSize(2);
 
@@ -545,7 +581,7 @@ class ErrandMapperTest {
 
 	@Test
 	void testToErrandsWithAccessControlFromNull() {
-		assertThat(toErrandsWithAccessControl(null, _ -> Map.of())).isEmpty();
+		assertThat(toErrandsWithAccessControl(null, _ -> Map.of(), ErrandEnrichment.empty())).isEmpty();
 	}
 
 	@Test
@@ -667,9 +703,8 @@ class ErrandMapperTest {
 	}
 
 	/**
-	 * Measures are added to and removed from one at a time through ErrandMeasureService, so the list Hibernate ends up
-	 * managing has to be mutable. Stream.toList would make every later create or delete of a measure fail with an
-	 * UnsupportedOperationException, which dept44 reports as 501.
+	 * The measure list of the mapped entity is mutable, so that ErrandMeasureService can add and remove measures one at a
+	 * time.
 	 */
 	@Test
 	void testToErrandEntityGivesAMutableMeasureList() {
@@ -881,6 +916,24 @@ class ErrandMapperTest {
 	@Test
 	void testUpdateEntityWithNull() {
 		assertThat(updateEntity(createEntity(), null)).usingRecursiveComparison().isEqualTo(createEntity());
+	}
+
+	@Test
+	void testLifecycleIsMappedToTheEntityAndLeftToTheListenerWhenNotSent() {
+		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand().withLifecycle("DRAFT")).getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
+		assertThat(toErrandEntity(NAMESPACE, MUNICIPALITY_ID, createErrand().withLifecycle(null)).getLifecycle()).isNull();
+	}
+
+	@Test
+	void testLifecycleIsMappedToTheErrand() {
+		assertThat(toErrand(createEntity().withLifecycle(ErrandLifecycle.DRAFT)).getLifecycle()).isEqualTo("DRAFT");
+		assertThat(toErrand(createEntity().withLifecycle(null)).getLifecycle()).isNull();
+	}
+
+	@Test
+	void testUpdateEntitySetsTheLifecycleOnlyWhenThePatchCarriesIt() {
+		assertThat(updateEntity(createEntity().withLifecycle(ErrandLifecycle.DRAFT), Errand.create().withLifecycle("ACTIVE")).getLifecycle()).isEqualTo(ErrandLifecycle.ACTIVE);
+		assertThat(updateEntity(createEntity().withLifecycle(ErrandLifecycle.DRAFT), Errand.create().withTitle(TITLE)).getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
 	}
 
 	@Test

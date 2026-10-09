@@ -3,6 +3,7 @@
 	"fileName": "protokoll.txt",
 	"mimeType": "text/plain",
 	"fileSize": 3,
+	"sequenceNumber": 2,
 	"purpose": {
 		"id": "f6000000-0000-0000-0000-000000000005",
 		"name": "PROTOCOL",

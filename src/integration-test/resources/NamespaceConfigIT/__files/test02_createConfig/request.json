@@ -1,6 +1,13 @@
 {
 	"displayName": "Namespace 1",
 	"shortCode": "NS1",
-	"accessControl": true,
-	"notifyReporter": true
+	"accessControl": false,
+	"notifyReporter": true,
+	"processConsumer": "pw-alkt",
+	"processTriggers": [
+		"ERRAND",
+		"MESSAGE",
+		"ATTACHMENT",
+		"DECISION"
+	]
 }

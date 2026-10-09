@@ -13,6 +13,8 @@ import org.apache.commons.lang3.Strings;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
@@ -23,6 +25,8 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.UUID.fromString;
 import static org.apache.commons.lang3.Strings.CI;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -30,13 +34,17 @@ import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 public class ServiceUtil {
 
 	public static final String REQUEST_GROUP_ID_HEADER = "X-Request-Group-Id";
+	public static final String TRIGGER_PROCESS_HEADER = "X-Trigger-Process";
 	public static final String NOTIFY_HEADER = "X-notify";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceUtil.class);
 	private static final String MIME_ERROR_MSG = "Exception when detecting mime type of file with filename '{}'";
 	private static final String HASH_ALGORITHM = "SHA-256";
+	private static final String ERRAND_IS_A_DRAFT = "The errand '%s' is a draft. Make the errand active first";
 	private static final Tika DETECTOR = new Tika();
+	private static final int REQUEST_GROUP_ID_LENGTH = 36;
 	private static final ThreadLocal<String> REQUEST_GROUP_ID = new ThreadLocal<>();
+	private static final ThreadLocal<String> TRIGGER_PROCESS = new ThreadLocal<>();
 	private static final ThreadLocal<Boolean> NOTIFY = new ThreadLocal<>();
 
 	private ServiceUtil() {}
@@ -74,9 +82,43 @@ public class ServiceUtil {
 	}
 
 	/**
+	 * The ad account the request is made by, for an operation only a person may perform.
+	 *
+	 * @param  reason                                       why the operation needs an ad account, which is what a caller
+	 *                                                      that is not one is told.
+	 * @return                                              the value of the ad account.
+	 * @throws se.sundsvall.dept44.problem.ThrowableProblem 403 when the request is not made by an ad account.
+	 */
+	public static String requireAdUser(final String reason) {
+		return ofNullable(getAdUser()).orElseThrow(() -> Problem.valueOf(FORBIDDEN, reason));
+	}
+
+	/**
+	 * Refuses a draft with 409, for what is done only with an active errand: communicating about it, notifying about it,
+	 * starting its process and handing it over.
+	 *
+	 * @param  errand                                       the errand to act on.
+	 * @throws se.sundsvall.dept44.problem.ThrowableProblem 409 when the errand is a draft.
+	 */
+	public static void requireActive(final ErrandEntity errand) {
+		if (errand.isDraft()) {
+			throw draftConflict(errand.getId());
+		}
+	}
+
+	/**
+	 * The 409 a draft is refused with.
+	 *
+	 * @param  errandId the id of the draft.
+	 * @return          the problem to throw.
+	 */
+	public static ThrowableProblem draftConflict(final String errandId) {
+		return Problem.valueOf(CONFLICT, ERRAND_IS_A_DRAFT.formatted(errandId));
+	}
+
+	/**
 	 * Who wrote the request, whoever they are - an ad account when a caseworker writes, a consumer name when a process
-	 * does. Unlike {@link #getAdUser()} this does not insist on a person, since the handling artefacts are written by
-	 * both and recording only one of them would leave half the writes unattributed.
+	 * does. Unlike {@link #getAdUser()} this does not insist on a person.
 	 *
 	 * @return the identity of the caller, or null when the request carries none.
 	 */
@@ -88,15 +130,12 @@ public class ServiceUtil {
 
 	/**
 	 * Signals if sent in identifier belongs to the user making the request, which is what ownership of a subscriber, a
-	 * subscription or a notification is decided on. The access mapper says nothing about ownership - being allowed to
-	 * reach an errand does not make someone the owner of another user's settings for it.
+	 * subscription or a notification is decided on.
 	 * <p>
 	 * Identifiers are stored in their wire form ("adAccount"), which is {@link Identifier#getTypeString()} rather than
 	 * the {@link Identifier.Type} enum. A request without an identifier owns nothing.
 	 * <p>
-	 * Compared without regard to case, matching how a reporter is recognised in AccessControlService. Ad account names
-	 * are not case sensitive and nothing normalises the value on the way in, so a subscriber stored as JO12DOE would
-	 * otherwise be locked out of their own settings the moment they arrive as jo12doe.
+	 * Both type and value are compared without regard to case.
 	 *
 	 * @param  identifierType  type of the stored identifier, in wire form
 	 * @param  identifierValue value of the stored identifier
@@ -113,11 +152,16 @@ public class ServiceUtil {
 		return Identifier.get();
 	}
 
+	/**
+	 * Holds the group the request belongs to, cut to the width the tables storing it give it.
+	 *
+	 * @param requestGroupId the raw header value, or null when the request carried none
+	 */
 	public static void setRequestGroupId(final String requestGroupId) {
 		if (StringUtils.isBlank(requestGroupId)) {
 			REQUEST_GROUP_ID.remove();
 		} else {
-			REQUEST_GROUP_ID.set(requestGroupId);
+			REQUEST_GROUP_ID.set(StringUtils.truncate(requestGroupId, REQUEST_GROUP_ID_LENGTH));
 		}
 	}
 
@@ -127,6 +171,28 @@ public class ServiceUtil {
 
 	public static void clearRequestGroupId() {
 		REQUEST_GROUP_ID.remove();
+	}
+
+	/**
+	 * Holds what the request said about waking the process of the errand it writes to. Stored as it arrived: what counts
+	 * as a refusal is decided where the process event is published, not here.
+	 *
+	 * @param triggerProcess the raw header value, or null when the request carried none
+	 */
+	public static void setTriggerProcess(final String triggerProcess) {
+		if (StringUtils.isBlank(triggerProcess)) {
+			TRIGGER_PROCESS.remove();
+		} else {
+			TRIGGER_PROCESS.set(triggerProcess);
+		}
+	}
+
+	public static String getTriggerProcess() {
+		return TRIGGER_PROCESS.get();
+	}
+
+	public static void clearTriggerProcess() {
+		TRIGGER_PROCESS.remove();
 	}
 
 	/**

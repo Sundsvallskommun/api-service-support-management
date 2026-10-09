@@ -1,0 +1,5 @@
+{
+	"detail": "The process service 'pw-someone-else' is not the process consumer of namespace 'PROCESS-NAMESPACE', which is 'pw-alkt'",
+	"title": "Bad Request",
+	"status": 400
+}

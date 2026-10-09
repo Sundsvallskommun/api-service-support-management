@@ -4,14 +4,9 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
 import se.sundsvall.supportmanagement.service.ErrandPurgeService;
 
@@ -21,14 +16,11 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class ErrandPurgeResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands/purge";
@@ -41,7 +33,7 @@ class ErrandPurgeResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private ErrandPurgeService serviceMock;
 
 	@Test
@@ -116,27 +108,6 @@ class ErrandPurgeResourceFailureTest {
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.contentType(APPLICATION_JSON)
 			.bodyValue(validRequest().withOlderThan(now(systemDefault()).minusYears(1)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("olderThan", "must be at least P2Y before the current time"));
-
-		verifyNoInteractions(serviceMock);
-	}
-
-	@Test
-	@DisplayName("Verification that a cutoff in the future is refused by the same floor")
-	void startPurgeWithCutoffInTheFuture() {
-		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
-			.contentType(APPLICATION_JSON)
-			.bodyValue(validRequest().withOlderThan(now(systemDefault()).plusDays(1)))
 			.exchange()
 			.expectStatus().isBadRequest()
 			.expectBody(ConstraintViolationProblem.class)

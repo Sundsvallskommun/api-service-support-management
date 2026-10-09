@@ -21,6 +21,11 @@
 			"keyed": false
 		},
 		{
+			"field": "LIFECYCLE",
+			"property": "lifecycle",
+			"keyed": false
+		},
+		{
 			"field": "RESOLUTION",
 			"property": "resolution",
 			"keyed": false
@@ -131,6 +136,11 @@
 			"keyed": false
 		},
 		{
+			"field": "PROCESS",
+			"property": "process",
+			"keyed": false
+		},
+		{
 			"field": "VERSION",
 			"property": "version",
 			"keyed": false
@@ -235,6 +245,16 @@
 		{
 			"resource": "NOTIFICATION",
 			"path": "errand/notification",
+			"errandScoped": true
+		},
+		{
+			"resource": "PROCESS",
+			"path": "errand/process",
+			"errandScoped": true
+		},
+		{
+			"resource": "PROCESS_ACTIVITY",
+			"path": "errand/process-activity",
 			"errandScoped": true
 		},
 		{

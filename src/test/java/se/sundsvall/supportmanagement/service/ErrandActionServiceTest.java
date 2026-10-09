@@ -19,12 +19,14 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.action.Action;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -222,6 +224,23 @@ class ErrandActionServiceTest {
 	}
 
 	// processErrandActions tests
+
+	@Test
+	void processErrandActionsLeavesADraftAlone() {
+		final var existing = ErrandActionEntity.create().withActionConfigEntity(createEntity().withId(CONFIG_ID));
+		final var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withLifecycle(ErrandLifecycle.DRAFT)
+			.withActions(new ArrayList<>(List.of(existing)));
+
+		createService().processErrandActions(errand, CREATE);
+
+		assertThat(errand.getActions()).containsExactly(existing);
+		verifyNoInteractions(actionConfigRepositoryMock);
+		verify(actionMock, never()).actionFulfilled(any(), any());
+		verify(actionMock, never()).createAction(any(), any());
+	}
 
 	@Test
 	void processErrandActionsAddsAction() {
@@ -452,7 +471,7 @@ class ErrandActionServiceTest {
 	}
 
 	private Action createActionMock(String name) {
-		final var mock = org.mockito.Mockito.mock(Action.class);
+		final var mock = mock(Action.class);
 		when(mock.getName()).thenReturn(name);
 		return mock;
 	}

@@ -6,6 +6,7 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import tools.jackson.databind.ObjectMapper;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
@@ -73,6 +74,7 @@ class ErrandTest {
 		final var activeNotifications = List.of(Notification.create());
 		final var actions = List.of(ErrandAction.create().withId("action-id").withActionName("ADD_LABEL"));
 		final var measures = List.of(Measure.create().withId("measure-id").withResponsibleUser("responsibleUser"));
+		final var process = ErrandProcess.create().withProcessKey("alkt-ansokan");
 
 		final var bean = Errand.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -88,6 +90,7 @@ class ErrandTest {
 			.withPriority(priority)
 			.withReporterUserId(reporterUserId)
 			.withStatus(status)
+			.withLifecycle("DRAFT")
 			.withTitle(title)
 			.withErrandNumber(errandNumber)
 			.withTouched(touched)
@@ -105,6 +108,7 @@ class ErrandTest {
 			.withActiveNotifications(activeNotifications)
 			.withActions(actions)
 			.withMeasures(measures)
+			.withProcess(process)
 			.withVersion(1L);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
@@ -122,6 +126,7 @@ class ErrandTest {
 		assertThat(bean.getPriority()).isEqualTo(priority);
 		assertThat(bean.getReporterUserId()).isEqualTo(reporterUserId);
 		assertThat(bean.getStatus()).isEqualTo(status);
+		assertThat(bean.getLifecycle()).isEqualTo("DRAFT");
 		assertThat(bean.getTitle()).isEqualTo(title);
 		assertThat(bean.getTouched()).isEqualTo(touched);
 		assertThat(bean.getResolution()).isEqualTo(resolution);
@@ -139,6 +144,7 @@ class ErrandTest {
 		assertThat(bean.getActiveNotifications()).isEqualTo(activeNotifications);
 		assertThat(bean.getActions()).isEqualTo(actions);
 		assertThat(bean.getMeasures()).isEqualTo(measures);
+		assertThat(bean.getProcess()).isEqualTo(process);
 	}
 
 	@Test

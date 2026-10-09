@@ -56,5 +56,20 @@
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
 		"excludeEventDescriptionsInEmail": false
+	},
+	{
+		"namespace": "PROCESS-NAMESPACE",
+		"municipalityId": "2281",
+		"displayName": "Process namespace",
+		"shortCode": "PN",
+		"notificationTTLInDays": 10,
+		"created": "2026-01-01T10:00:00+01:00",
+		"accessControl": false,
+		"notifyReporter": false,
+		"roleBasedMapping": false,
+		"resourceAccessControl": false,
+		"singleDecisionPerErrand": false,
+		"excludeEventDescriptionsInEmail": false,
+		"processConsumer": "pw-alkt"
 	}
 ]

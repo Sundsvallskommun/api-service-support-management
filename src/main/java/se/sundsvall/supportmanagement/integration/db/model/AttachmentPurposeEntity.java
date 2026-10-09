@@ -22,8 +22,7 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
  * The purposes an attachment of the errand may be given, registered per namespace.
  * <p>
  * The recommended values - SUPPORTING, RESPONSE, DECISION, APPENDIX, PROTOCOL - are not seeded. A namespace registers
- * the ones it uses, which is what keeps the purpose free per line of business while still rejecting a value nobody
- * meant to write.
+ * the ones it uses, and a purpose it has not registered is rejected.
  */
 @Entity
 @Table(name = "attachment_purpose",

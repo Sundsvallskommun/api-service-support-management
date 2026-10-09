@@ -2,8 +2,10 @@ package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.ConvertGroup;
 import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -18,10 +20,7 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 /**
- * An investigation of an errand.
- * <p>
- * The sections are read here but written through their own resource, since each has a life of its own and an
- * assessment that is asked about across errands.
+ * An investigation of an errand. The sections are read here but written through their own resource.
  */
 @Schema(description = "Investigation model")
 public class Investigation {
@@ -92,6 +91,13 @@ public class Investigation {
 	@ArraySchema(schema = @Schema(implementation = ErrandAttachment.class, accessMode = READ_ONLY),
 		arraySchema = @Schema(description = "Attachments of the errand linked to this investigation"))
 	private List<ErrandAttachment> attachments;
+
+	@Schema(description = "Parameters of the investigation, unstructured metadata as keys with lists of values, returned in the order of their keys. "
+		+ "Keys are trimmed, and parameters sent for the same key are merged: their values are joined in the order sent, and the display name and group "
+		+ "are those of the first. On update the sent list replaces the stored one; an omitted list leaves them as they are and an empty list removes them all")
+	private List<@NotNull(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) @Valid @ConvertGroup(from = OnUpdate.class, to = Default.class) Parameter> parameters;
 
 	@Schema(description = "User who created the investigation", examples = "jo12doe", accessMode = READ_ONLY)
 	private String createdBy;
@@ -309,6 +315,19 @@ public class Investigation {
 		return this;
 	}
 
+	public List<Parameter> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<Parameter> parameters) {
+		this.parameters = parameters;
+	}
+
+	public Investigation withParameters(final List<Parameter> parameters) {
+		this.parameters = parameters;
+		return this;
+	}
+
 	public String getCreatedBy() {
 		return createdBy;
 	}
@@ -376,7 +395,8 @@ public class Investigation {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, type, status, title, description, dueAt, completedAt, investigatorUserId, startedAt, summary, conclusion, recommendation, recommendationMotivation, sections, attachments, createdBy, modifiedBy, created, modified, version);
+		return Objects.hash(id, type, status, title, description, dueAt, completedAt, investigatorUserId, startedAt, summary, conclusion, recommendation, recommendationMotivation, sections, attachments, parameters, createdBy, modifiedBy, created, modified,
+			version);
 	}
 
 	@Override
@@ -402,6 +422,7 @@ public class Investigation {
 			&& Objects.equals(recommendationMotivation, other.recommendationMotivation)
 			&& Objects.equals(sections, other.sections)
 			&& Objects.equals(attachments, other.attachments)
+			&& Objects.equals(parameters, other.parameters)
 			&& Objects.equals(createdBy, other.createdBy)
 			&& Objects.equals(modifiedBy, other.modifiedBy)
 			&& Objects.equals(created, other.created)
@@ -427,6 +448,7 @@ public class Investigation {
 			", recommendationMotivation='" + recommendationMotivation + '\'' +
 			", sections=" + sections +
 			", attachments=" + attachments +
+			", parameters=" + parameters +
 			", createdBy='" + createdBy + '\'' +
 			", modifiedBy='" + modifiedBy + '\'' +
 			", created=" + created +

@@ -4,13 +4,13 @@ import jakarta.persistence.EntityManagerFactory;
 import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProjection;
@@ -19,17 +19,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
 
 /**
- * What these tests are here for is the one thing about attachments that cannot be read off the code: whether removing
- * them loads the files they hold. A file is a blob of up to fifty megabytes, an errand may carry any number of them,
- * and a retention purge walks errands by the thousand - so a removal that loads what it removes is a removal that ends
- * the service rather than the errand.
+ * Verifies that removing attachments does not load the files they hold.
  * <p>
- * Statistics are what answers that, since a load leaves no other trace. They are switched on for this test alone.
+ * Hibernate statistics, switched on for each test that reads them and off again after it, tell whether a file was
+ * loaded.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
 @ActiveProfiles("junit")
-@TestPropertySource(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"
@@ -53,7 +50,6 @@ class AttachmentRepositoryTest {
 	@DisplayName("Verification that the id of an attachment's data row can be read without the file in it being loaded")
 	void findByIdInReadsTheDataIdsWithoutTheFiles() {
 		final var statistics = statistics();
-		statistics.clear();
 
 		final var dataIds = attachmentRepository.findByIdIn(List.of("ATTACHMENT_ID-2", ATTACHMENT_ID)).stream()
 			.map(AttachmentDataIdProjection::getAttachmentDataId)
@@ -73,7 +69,6 @@ class AttachmentRepositoryTest {
 	@DisplayName("Verification that an attachment and the file it holds are both removed, and that neither is loaded on the way")
 	void deleteAllByIdInBatchRemovesBothRowsWithoutLoadingTheFile() {
 		final var statistics = statistics();
-		statistics.clear();
 
 		// The attachment first: it is the one holding the foreign key.
 		attachmentRepository.deleteAllByIdInBatch(List.of(ATTACHMENT_ID));
@@ -90,7 +85,18 @@ class AttachmentRepositoryTest {
 		return statistics.getEntityStatistics(AttachmentDataEntity.class.getName()).getLoadCount();
 	}
 
+	@AfterEach
+	void switchStatisticsOff() {
+		entityManagerFactory.unwrap(SessionFactory.class).getStatistics().setStatisticsEnabled(false);
+	}
+
+	/**
+	 * The statistics of the session factory, switched on and cleared.
+	 */
 	private Statistics statistics() {
-		return entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+		final var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+		statistics.setStatisticsEnabled(true);
+		statistics.clear();
+		return statistics;
 	}
 }

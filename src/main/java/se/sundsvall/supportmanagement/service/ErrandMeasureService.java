@@ -186,8 +186,8 @@ public class ErrandMeasureService {
 	}
 
 	/**
-	 * Where the measure comes from, resolved through the errand rather than taken as an id and trusted. A decision or a
-	 * statement belonging to another errand finds nothing and is answered as the 404 it is.
+	 * Where the measure comes from, resolved through the errand. A decision or a statement belonging to another errand
+	 * finds nothing and is answered with 404.
 	 */
 	private void applyProvenance(final String namespace, final String municipalityId, final String errandId, final Measure measure, final MeasureEntity entity) {
 		ofNullable(measure.getDecisionId()).ifPresent(id -> entity.setDecisionEntity(

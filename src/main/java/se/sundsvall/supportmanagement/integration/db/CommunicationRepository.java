@@ -13,11 +13,7 @@ public interface CommunicationRepository extends JpaRepository<CommunicationEnti
 	List<CommunicationEntity> findByErrandNumberAndNamespaceAndMunicipalityId(String errandNumber, String namespace, String municipalityId);
 
 	/**
-	 * Find the ids of the communications of an errand.
-	 * <p>
-	 * Only the ids are read, and that is the point of the method. A communication carries its message twice over, as
-	 * text and as html, and both are stored as long text, so reading whole communications before removing any holds an
-	 * entire correspondence in the heap at once.
+	 * Find the ids of the communications of an errand. Only the ids are read, not the communications themselves.
 	 *
 	 * @param  errandNumber   number of the errand.
 	 * @param  namespace      namespace of the errand.

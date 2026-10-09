@@ -33,8 +33,8 @@ public interface SubscriberNotificationRepository extends JpaRepository<Subscrib
 		String id, String municipalityId, String namespace);
 
 	/**
-	 * Removes every notification held for an errand. Each notification takes its events with it through the cascade on
-	 * the notification, which is why the entities are loaded rather than deleted in bulk.
+	 * Removes every notification held for an errand. The notifications are loaded and removed as entities, so each takes
+	 * its events with it through the cascade on the notification.
 	 *
 	 * @param  errandId the id of the errand the notifications belong to.
 	 * @return          the number of removed notifications.

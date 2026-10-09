@@ -4,6 +4,7 @@ import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,25 +30,33 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
+import se.sundsvall.supportmanagement.api.model.errand.ErrandLabel;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ProcessError;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.access.ErrandKeyAccess;
@@ -61,28 +70,34 @@ import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -142,10 +157,25 @@ class ErrandServiceTest {
 	private ErrandPhaseService errandPhaseServiceMock;
 
 	@Mock
+	private ErrandProcessService errandProcessServiceMock;
+
+	@Mock
+	private ProcessKeyGuard processKeyGuardMock;
+
+	@Mock
+	private ProcessBlockGuard processBlockGuardMock;
+
+	@Mock
+	private DecisionValidator decisionValidatorMock;
+
+	@Mock
 	private LabelClassificationService labelClassificationServiceMock;
 
 	@Mock
 	private jakarta.persistence.EntityManager entityManagerMock;
+
+	@Mock
+	private AttachmentSequenceNumberGenerator attachmentSequenceNumberGeneratorMock;
 
 	@Spy
 	private FilterSpecificationConverter filterSpecificationConverterSpy;
@@ -160,7 +190,8 @@ class ErrandServiceTest {
 	void createErrand() {
 		final var errand = buildErrand();
 
-		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
+		final var persisted = ErrandEntity.create().withId(ERRAND_ID);
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(persisted);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
@@ -170,9 +201,11 @@ class ErrandServiceTest {
 		assertThat(result).isEqualTo(ERRAND_ID);
 
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
-		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		final var inOrder = inOrder(errandRepositoryMock, attachmentSequenceNumberGeneratorMock);
+		inOrder.verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		inOrder.verify(attachmentSequenceNumberGeneratorMock).startSequence(persisted);
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
@@ -212,7 +245,7 @@ class ErrandServiceTest {
 		assertThat(result).isEqualTo(ERRAND_ID);
 
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
@@ -238,7 +271,7 @@ class ErrandServiceTest {
 
 		assertThat(result).isEqualTo(ERRAND_ID);
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
@@ -261,7 +294,7 @@ class ErrandServiceTest {
 
 		assertThat(result).isEqualTo(ERRAND_ID);
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
@@ -347,6 +380,50 @@ class ErrandServiceTest {
 		verifyNoInteractions(errandRepositoryMock);
 	}
 
+	/**
+	 * The process shown on an errand is its latest one, live or not, so an errand whose start failed shows the failure.
+	 */
+	@Test
+	void readErrandShowsTheProcessOfTheErrand() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
+		when(errandProcessServiceMock.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of(ERRAND_ID))).thenReturn(Map.of(ERRAND_ID, ErrandProcess.create()
+			.withProcessKey("alkt-ansokan")
+			.withProcessStatus(FAILED)
+			.withError(ProcessError.create().withCode("START_FAILED").withMessage("boom"))));
+
+		final var response = service.readErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThat(response.getProcess().getProcessStatus()).isEqualTo(FAILED.name());
+		assertThat(response.getProcess().getError().getMessage()).isEqualTo("boom");
+	}
+
+	/**
+	 * The list view asks for the processes of the whole page in one call, and what is asserted here is the shape of that
+	 * call.
+	 */
+	@Test
+	void findErrandsReadsTheProcessesOfThePageInOneCall() {
+		final var first = buildErrandEntity().withId("errand-1");
+		final var second = buildErrandEntity().withId("errand-2");
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn((_, _, criteriaBuilder) -> criteriaBuilder.conjunction());
+		when(errandRepositoryMock.findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), any(Pageable.class)))
+			.thenReturn(new PageImpl<>(List.of(first, second)));
+		when(accessControlServiceMock.roleBasedFieldResolver(any(), any(), any())).thenReturn(_ -> null);
+		when(errandProcessServiceMock.findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1", "errand-2")))
+			.thenReturn(Map.of("errand-2", ErrandProcess.create().withProcessKey("alkt-ansokan").withProcessStatus(RUNNING)));
+
+		final var matches = service.findErrands(NAMESPACE, MUNICIPALITY_ID, null, PageRequest.of(0, 20));
+
+		assertThat(matches.getContent()).extracting(Errand::getProcess).containsExactly(null, ErrandProcess.create().withProcessKey("alkt-ansokan").withProcessStatus(RUNNING));
+		verify(errandProcessServiceMock, times(1)).findLatestProcesses(NAMESPACE, MUNICIPALITY_ID, List.of("errand-1", "errand-2"));
+	}
+
 	@Test
 	void updateExistingErrand() {
 		final var entity = buildErrandEntity();
@@ -367,11 +444,11 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, ERRAND);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND);
 	}
 
 	@Test
@@ -393,12 +470,75 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	@DisplayName("Verification that a draft made active runs the actions of a creation and is logged as activated")
+	void updateErrandActivatingADraft() {
+		final var entity = buildErrandEntity().withLifecycle(ErrandLifecycle.DRAFT);
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withLifecycle("ACTIVE"));
+
+		assertThat(entity.getLifecycle()).isEqualTo(ErrandLifecycle.ACTIVE);
+		assertThat(response.getLifecycle()).isEqualTo("ACTIVE");
+		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
+		verify(errandPhaseServiceMock).applyPhaseChange(entity, null, entity.getStatus(), NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.CREATE);
+		verify(eventServiceMock).createErrandEvent(UPDATE, "Ärendet har aktiverats.", entity, currentRevisionMock, previousRevisionMock, true, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that a patch leaving a draft a draft is an ordinary update")
+	void updateErrandKeepingADraft() {
+		final var entity = buildErrandEntity().withLifecycle(ErrandLifecycle.DRAFT);
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withTitle("new title").withLifecycle("DRAFT"));
+
+		assertThat(entity.getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
+		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
+		verify(errandPhaseServiceMock).applyPhaseChange(entity, null, entity.getStatus(), NAMESPACE, MUNICIPALITY_ID);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that an active errand is never made a draft again, and that nothing is touched when that is asked")
+	void updateErrandRefusesToMakeAnActiveErrandADraft() {
+		final var entity = buildErrandEntity().withLifecycle(ErrandLifecycle.ACTIVE);
+		final var patch = Errand.create().withLifecycle("DRAFT");
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasFieldOrPropertyWithValue("status", BAD_REQUEST)
+			.hasMessage("Bad Request: The errand '%s' is active, and an active errand never becomes a draft again".formatted(entity.getId()));
+
+		assertThat(entity.getLifecycle()).isEqualTo(ErrandLifecycle.ACTIVE);
+		verifyNoInteractions(errandRepositoryMock, errandActionServiceMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@Test
@@ -414,7 +554,7 @@ class ErrandServiceTest {
 		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
 			.isInstanceOf(IllegalStateException.class);
 
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
 
 		// Failing to read them leaves nothing behind that a rollback cannot undo
 		verifyNoInteractions(errandRepositoryMock, errandActionServiceMock, revisionServiceMock, eventServiceMock, entityManagerMock);
@@ -456,7 +596,150 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
-		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+	}
+
+	@Test
+	@DisplayName("Verification that the labels an errand is created with are held to naming one process, after the ancestors have been settled onto it")
+	void createErrandHoldsTheLabelsToOneProcess() {
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(ErrandEntity.create().withId(ERRAND_ID));
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
+
+		service.createErrand(NAMESPACE, MUNICIPALITY_ID, buildErrand(), null);
+
+		final var order = inOrder(errandLabelServiceMock, processKeyGuardMock, errandRepositoryMock);
+		order.verify(errandLabelServiceMock).settleAccessLabels(any(ErrandEntity.class));
+		order.verify(processKeyGuardMock).verifyNewLabels(any());
+		order.verify(errandRepositoryMock).save(any(ErrandEntity.class));
+
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+	}
+
+	@Test
+	@DisplayName("Verification that labels naming two processes take the creation down before the errand is written")
+	void createErrandRefusesLabelsNamingTwoProcesses() {
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.of(ContactReasonEntity.create().withReason("reason")));
+		doThrow(Problem.valueOf(BAD_REQUEST, "the labels would name more than one process")).when(processKeyGuardMock).verifyNewLabels(any());
+
+		final var errand = buildErrand();
+
+		assertThatThrownBy(() -> service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null))
+			.isInstanceOf(ThrowableProblem.class)
+			.extracting("status").isEqualTo(BAD_REQUEST);
+
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).settleAccessLabels(any(ErrandEntity.class));
+		verify(errandRepositoryMock, never()).save(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock, errandActionServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a patch changing the labels is held against the process the errand runs, and that the guard sees both the old labels and the settled new ones")
+	void updateErrandHoldsALabelChangeAgainstTheProcessKey() {
+		final var existing = ErrandLabelEmbeddable.create().withMetadataLabelId("old-label-id");
+		final var entity = buildErrandEntity().withLabels(new ArrayList<>(List.of(existing)));
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create()
+			.withLabels(List.of(ErrandLabel.create().withId("new-label-id"))));
+
+		final var before = ArgumentCaptor.<Collection<ErrandLabelEmbeddable>>captor();
+		final var after = ArgumentCaptor.<Collection<ErrandLabelEmbeddable>>captor();
+
+		final var order = inOrder(errandLabelServiceMock, processBlockGuardMock, processKeyGuardMock, errandRepositoryMock);
+		// The ancestors settled onto the errand are labels it wears, so the guards have to be asked after they are added
+		// and before anything is written.
+		order.verify(errandLabelServiceMock).settleAccessLabels(entity);
+		order.verify(processBlockGuardMock).verifyLabelChange(eq(ERRAND_ID), before.capture(), after.capture());
+		order.verify(processKeyGuardMock).verifyLabelChange(eq(ERRAND_ID), before.capture(), after.capture());
+		order.verify(errandRepositoryMock).saveAndFlush(entity);
+
+		assertThat(before.getAllValues()).allSatisfy(labels -> assertThat(labels).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly("old-label-id"));
+		assertThat(after.getAllValues()).allSatisfy(labels -> assertThat(labels).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly("new-label-id"));
+
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(revisionServiceMock).createErrandRevision(entity);
+	}
+
+	@Test
+	@DisplayName("Verification that a refused label change takes the whole patch down rather than leaving half of it written")
+	void updateErrandRefusesALabelChangeThatMovesTheProcessKey() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		doThrow(Problem.valueOf(BAD_REQUEST, "the labels would move the process key"))
+			.when(processKeyGuardMock).verifyLabelChange(eq(ERRAND_ID), any(), any());
+
+		final var patch = Errand.create().withLabels(List.of(ErrandLabel.create().withId("new-label-id")));
+
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch))
+			.isInstanceOf(ThrowableProblem.class)
+			.extracting("status").isEqualTo(BAD_REQUEST);
+
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).settleAccessLabels(entity);
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a patch taking a label blocking processes off the errand is refused with 409 before the process key is asked about, and takes the whole patch down")
+	void updateErrandRefusesALabelChangeThatTakesABlockOff() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		doThrow(Problem.valueOf(CONFLICT, "the change would take the block off"))
+			.when(processBlockGuardMock).verifyLabelChange(eq(ERRAND_ID), any(), any());
+
+		final var patch = Errand.create().withLabels(List.of(ErrandLabel.create().withId("new-label-id")));
+
+		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch))
+			.isInstanceOf(ThrowableProblem.class)
+			.extracting("status").isEqualTo(CONFLICT);
+
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).settleAccessLabels(entity);
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(processKeyGuardMock, errandActionServiceMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a patch leaving the labels alone is not held against the process at all")
+	void updateErrandWithoutLabelsDoesNotAskTheGuard() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withTitle("new title"));
+
+		verifyNoInteractions(processBlockGuardMock, processKeyGuardMock);
+		verify(errandLabelServiceMock, never()).settleAccessLabels(any());
+
+		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
 	}
 
 	@Test
@@ -509,12 +792,30 @@ class ErrandServiceTest {
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
+		verify(decisionValidatorMock).validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(List.of("id")));
 		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that an errand holding a decision that can no longer be changed is not deleted, and nothing is removed")
+	void deleteErrandHoldingALockedDecision() {
+		final var entity = buildErrandEntity();
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(CONFLICT));
+
+		verifyNoInteractions(errandDataDeleterMock, errandAttachmentServiceMock, eventServiceMock);
+		verify(errandRepositoryMock, never()).deleteById(any());
+		verify(revisionServiceMock, never()).deleteErrandRevisions(any(), any(), any());
 	}
 
 	@Test
@@ -564,6 +865,33 @@ class ErrandServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that the errand carries the ids of its labels into the delete event, without the metadata labels the removal leaves detached, so the deletion can be held back by a label blocking processes")
+	void deleteErrandKeepsTheLabelIdsForTheEvent() {
+		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId("label-id").withMetadataLabel(MetadataLabelEntity.create().withId("label-id"));
+		final var entity = buildErrandEntity().withLabels(new ArrayList<>(List.of(label)));
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
+		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+		doAnswer(invocation -> {
+			invocation.<ErrandEntity>getArgument(0).setLabels(null);
+			return null;
+		}).when(errandDataDeleterMock).deleteRelatedData(any(), any());
+
+		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+		assertThat(entity.getLabels()).singleElement().satisfies(kept -> {
+			assertThat(kept.getMetadataLabelId()).isEqualTo("label-id");
+			assertThat(kept.getMetadataLabel()).isNull();
+		});
+	}
+
+	@Test
 	@DisplayName("Verification that delete still removes the errand row when the event log is unreachable")
 	void deleteErrandWhenEventLogFailsErrandIsStillDeleted() {
 		final var entity = buildErrandEntity();
@@ -585,7 +913,7 @@ class ErrandServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a purge removes the errand, everything belonging to it and its revisions, without an access check and without an event")
+	@DisplayName("Verification that a purge removes the errand, everything belonging to it and its revisions, without an access check and without an event, and tells the process that the errand is gone")
 	void purgeErrand() {
 		final var entity = buildErrandEntity();
 
@@ -598,7 +926,33 @@ class ErrandServiceTest {
 		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(emptyList()));
 		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
-		verifyNoInteractions(eventServiceMock, accessControlServiceMock, errandAttachmentServiceMock);
+		verify(eventServiceMock).publishDeletionToProcess(entity);
+		verifyNoMoreInteractions(eventServiceMock);
+		verifyNoInteractions(accessControlServiceMock, errandAttachmentServiceMock, decisionValidatorMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a purge tells the process about an errand still carrying the ids of its labels, so the deletion can be held back by a label blocking processes")
+	void purgeErrandKeepsTheLabelIdsForTheProcess() {
+		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId("label-id").withMetadataLabel(MetadataLabelEntity.create().withId("label-id"));
+		final var entity = buildErrandEntity().withLabels(new ArrayList<>(List.of(label)));
+
+		when(errandRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+		doAnswer(invocation -> {
+			invocation.<ErrandEntity>getArgument(0).setLabels(null);
+			return null;
+		}).when(errandDataDeleterMock).deleteRelatedData(any(), any());
+
+		service.purgeErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		verify(errandRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventServiceMock).publishDeletionToProcess(entity);
+		assertThat(entity.getLabels()).singleElement().satisfies(kept -> {
+			assertThat(kept.getMetadataLabelId()).isEqualTo("label-id");
+			assertThat(kept.getMetadataLabel()).isNull();
+		});
 	}
 
 	@Test
@@ -616,6 +970,7 @@ class ErrandServiceTest {
 		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(List.of("attachmentId")));
 		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventServiceMock).publishDeletionToProcess(entity);
 		verifyNoInteractions(errandAttachmentServiceMock);
 	}
 
@@ -654,26 +1009,33 @@ class ErrandServiceTest {
 	@DisplayName("Verification that a migration batch restows each errand's labels from its access labels and settles them through ErrandLabelService")
 	void persistLabelMigrationBatch_rebuildsEachErrandsLabelsFromItsAccessLabels() {
 		var leafId = "leaf-id";
+		var stale = ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id");
 		var errand = ErrandEntity.create()
 			.withId(ERRAND_ID)
+			.withVersion(3L)
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
-			// A stale chain from before the move - restowing must replace it, not merge into it
-			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
-			.withAccessLabels(List.of(se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(leafId)));
+			.withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId(leafId)));
+		// A stale chain from before the move - restowing must replace it, not merge into it
+		var stored = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L).withLabels(List.of(stale));
 
 		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
-		service.persistLabelMigrationBatch(List.of(errand));
+		assertThat(service.persistLabelMigrationBatch(List.of(errand), true)).isZero();
 
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactly(leafId);
 		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
+		verify(errandRepositoryMock).findById(ERRAND_ID);
 		verify(errandLabelServiceMock).settleAccessLabels(errand);
+		verify(processBlockGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), eq(errand.getLabels()), eq(true), anyString());
+		verify(processKeyGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), eq(errand.getLabels()), anyString());
 		verify(errandRepositoryMock).saveAndFlush(errand);
-		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+		verify(revisionServiceMock).createErrandRevision(errand);
+		verifyNoInteractions(errandActionServiceMock, eventServiceMock);
 	}
 
 	@Test
@@ -688,13 +1050,13 @@ class ErrandServiceTest {
 
 		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
 
-		service.persistLabelMigrationBatch(List.of(errand));
+		assertThat(service.persistLabelMigrationBatch(List.of(errand), true)).isOne();
 
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactly("real-id");
 		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
-		verifyNoInteractions(errandLabelServiceMock, errandActionServiceMock, revisionServiceMock, eventServiceMock);
+		verifyNoInteractions(errandLabelServiceMock, processBlockGuardMock, processKeyGuardMock, errandActionServiceMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@Test
@@ -702,44 +1064,157 @@ class ErrandServiceTest {
 	void persistLabelMergeBatch_substitutesSourceIdsForTargetAndDedupes() {
 		var targetId = "target-id";
 		var otherLeafId = "other-leaf-id";
+		var stale = ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id");
 		var errand = ErrandEntity.create()
 			.withId(ERRAND_ID)
+			.withVersion(3L)
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
-			// A stale chain from before the merge - restowing must replace it, not merge into it
-			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id")))
 			.withAccessLabels(List.of(
-				se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId("source-1"),
-				se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId("source-2"),
-				se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable.create().withMetadataLabelId(otherLeafId)));
+				AccessLabelEmbeddable.create().withMetadataLabelId("source-1"),
+				AccessLabelEmbeddable.create().withMetadataLabelId("source-2"),
+				AccessLabelEmbeddable.create().withMetadataLabelId(otherLeafId)));
+		// A stale chain from before the merge - restowing must replace it, not merge into it
+		var stored = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L).withLabels(List.of(stale));
 
 		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
 		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
 
-		service.persistLabelMergeBatch(List.of(errand), Set.of("source-1", "source-2"), targetId);
+		assertThat(service.persistLabelMergeBatch(List.of(errand), Set.of("source-1", "source-2"), targetId, false)).isZero();
 
 		// Both source-1 and source-2 collapse into a single targetId entry, the untouched leaf is kept as-is
 		assertThat(errand.getLabels())
 			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(targetId, otherLeafId);
 		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
+		verify(errandRepositoryMock).findById(ERRAND_ID);
 		verify(errandLabelServiceMock).settleAccessLabels(errand);
+		verify(processBlockGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), eq(errand.getLabels()), eq(false), anyString());
+		verify(processKeyGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), eq(errand.getLabels()), anyString());
 		verify(errandRepositoryMock).saveAndFlush(errand);
-		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+		verify(revisionServiceMock).createErrandRevision(errand);
+		verifyNoInteractions(errandActionServiceMock, eventServiceMock);
 	}
 
 	@Test
-	void persistLabelUpdate_settlesAccessLabelsAndSaves() {
-		var errand = ErrandEntity.create();
+	@DisplayName("Verification that a merge batch counts an errand a guard refuses as one that kept its labels, and leaves it unsaved")
+	void persistLabelMergeBatch_countsAnErrandAGuardRefuses() {
+		var stale = ErrandLabelEmbeddable.create().withMetadataLabelId("source-1");
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withVersion(3L)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId("source-1")));
+		var stored = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L).withLabels(List.of(stale));
 
-		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(errand);
+		when(errandRepositoryMock.findIdsWithNonEmptyLabels(List.of(ERRAND_ID))).thenReturn(Set.of(ERRAND_ID));
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
+		when(processKeyGuardMock.refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), any(), anyString())).thenReturn(true);
 
-		var result = service.persistLabelUpdate(errand);
+		assertThat(service.persistLabelMergeBatch(List.of(errand), Set.of("source-1"), "target-id", false)).isOne();
 
-		assertThat(result).isSameAs(errand);
+		verify(errandRepositoryMock).findIdsWithNonEmptyLabels(List.of(ERRAND_ID));
+		verify(errandRepositoryMock).findById(ERRAND_ID);
 		verify(errandLabelServiceMock).settleAccessLabels(errand);
-		verify(errandRepositoryMock).saveAndFlush(errand);
-		verifyNoInteractions(errandActionServiceMock, revisionServiceMock, eventServiceMock);
+		verify(processBlockGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), any(), eq(false), anyString());
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that rebuilt labels are expanded and settled, asked of the guard against the labels stored, saved, and recorded as a revision and an event that notifies no one")
+	void persistLabelUpdate() {
+		final var before = ErrandLabelEmbeddable.create().withMetadataLabelId("before");
+		final var leaf = ErrandLabelEmbeddable.create().withMetadataLabelId("after");
+		final var ancestor = ErrandLabelEmbeddable.create().withMetadataLabelId("ancestor");
+		final var stored = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L).withLabels(new ArrayList<>(List.of(before)));
+		final var errand = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L);
+
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
+		doAnswer(_ -> {
+			errand.setLabels(List.of(leaf, ancestor));
+			return null;
+		}).when(errandLabelServiceMock).settleAccessLabels(errand);
+		when(errandRepositoryMock.saveAndFlush(errand)).thenReturn(stored);
+		when(revisionServiceMock.createErrandRevision(stored)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		assertThat(service.persistLabelUpdate(errand, List.of(leaf), true)).isTrue();
+
+		final var inOrder = inOrder(errandRepositoryMock, errandLabelServiceMock, processBlockGuardMock, processKeyGuardMock, revisionServiceMock, eventServiceMock);
+		inOrder.verify(errandRepositoryMock).findById(ERRAND_ID);
+		inOrder.verify(errandLabelServiceMock).settleAccessLabels(errand);
+		inOrder.verify(processBlockGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(before)), eq(List.of(leaf, ancestor)), eq(true), anyString());
+		inOrder.verify(processKeyGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(before)), eq(List.of(leaf, ancestor)), anyString());
+		inOrder.verify(errandRepositoryMock).saveAndFlush(errand);
+		inOrder.verify(revisionServiceMock).createErrandRevision(stored);
+		inOrder.verify(eventServiceMock).createErrandEventWithoutNotification(UPDATE, EVENT_LOG_UPDATE_ERRAND, stored, currentRevisionMock, previousRevisionMock, ERRAND);
+		verifyNoInteractions(errandActionServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that rebuilt labels moving the errand off its process are left off, and the errand is neither saved nor recorded")
+	void persistLabelUpdateRefusedByTheGuard() {
+		final var before = ErrandLabelEmbeddable.create().withMetadataLabelId("before");
+		final var after = ErrandLabelEmbeddable.create().withMetadataLabelId("after");
+		final var stored = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L).withLabels(new ArrayList<>(List.of(before)));
+		final var errand = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L);
+
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
+		when(processKeyGuardMock.refusesLabelChange(eq(ERRAND_ID), eq(List.of(before)), eq(List.of(after)), anyString())).thenReturn(true);
+
+		assertThat(service.persistLabelUpdate(errand, List.of(after), false)).isFalse();
+
+		assertThat(stored.getLabels()).containsExactly(before);
+		verify(errandRepositoryMock).findById(ERRAND_ID);
+		verify(errandLabelServiceMock).settleAccessLabels(errand);
+		verify(processBlockGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(before)), eq(List.of(after)), eq(false), anyString());
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that rebuilt labels taking a label blocking processes off the errand, in a job started by an ad account, are left off without asking the process key guard, and the errand is neither saved nor recorded")
+	void persistLabelUpdateRefusedByTheBlockGuard() {
+		final var before = ErrandLabelEmbeddable.create().withMetadataLabelId("blocking");
+		final var after = ErrandLabelEmbeddable.create().withMetadataLabelId("after");
+		final var stored = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L).withLabels(new ArrayList<>(List.of(before)));
+		final var errand = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L);
+
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(Optional.of(stored));
+		when(processBlockGuardMock.refusesLabelChange(eq(ERRAND_ID), eq(List.of(before)), eq(List.of(after)), eq(true), anyString())).thenReturn(true);
+
+		assertThat(service.persistLabelUpdate(errand, List.of(after), true)).isFalse();
+
+		assertThat(stored.getLabels()).containsExactly(before);
+		verify(errandRepositoryMock).findById(ERRAND_ID);
+		verify(errandLabelServiceMock).settleAccessLabels(errand);
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(processKeyGuardMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@ParameterizedTest
+	@MethodSource("argumentsForPersistLabelUpdateOnAnErrandNoLongerAsRead")
+	@DisplayName("Verification that an errand changed or removed since it was read is answered with an optimistic lock failure, before its labels are touched")
+	void persistLabelUpdateOnAnErrandNoLongerAsRead(final Optional<ErrandEntity> stored) {
+		final var errand = ErrandEntity.create().withId(ERRAND_ID).withVersion(3L);
+		final var labels = List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("after"));
+
+		when(errandRepositoryMock.findById(ERRAND_ID)).thenReturn(stored);
+
+		assertThatThrownBy(() -> service.persistLabelUpdate(errand, labels, true))
+			.isInstanceOf(ObjectOptimisticLockingFailureException.class);
+
+		assertThat(errand.getLabels()).isNull();
+		verify(errandRepositoryMock).findById(ERRAND_ID);
+		verifyNoInteractions(errandLabelServiceMock, processBlockGuardMock, processKeyGuardMock, revisionServiceMock, eventServiceMock);
+	}
+
+	static Stream<Arguments> argumentsForPersistLabelUpdateOnAnErrandNoLongerAsRead() {
+		return Stream.of(
+			argumentSet("changed since read", Optional.of(ErrandEntity.create().withId(ERRAND_ID).withVersion(4L))),
+			argumentSet("removed since read", Optional.empty()));
 	}
 
 	@ParameterizedTest

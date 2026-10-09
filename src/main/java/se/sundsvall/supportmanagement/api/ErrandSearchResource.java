@@ -43,7 +43,7 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 class ErrandSearchResource {
 
 	private static final String ERRAND_FIELDS = "`" + ErrandIndex.ERRAND_NUMBER + "`, `" + ErrandIndex.TITLE + "`, `" + ErrandIndex.DESCRIPTION + "`, `" + ErrandIndex.CONTACT_REASON_DESCRIPTION
-		+ "`, `" + ErrandIndex.CONTACT_REASON + ".reason`, `" + ErrandIndex.STATUS + "`, `" + ErrandIndex.CATEGORY + "`, `" + ErrandIndex.TYPE + "`, `" + ErrandIndex.RESOLUTION + "`, `"
+		+ "`, `" + ErrandIndex.CONTACT_REASON + ".reason`, `" + ErrandIndex.STATUS + "`, `" + ErrandIndex.LIFECYCLE + "`, `" + ErrandIndex.CATEGORY + "`, `" + ErrandIndex.TYPE + "`, `" + ErrandIndex.RESOLUTION + "`, `"
 		+ ErrandIndex.CHANNEL + "`, `" + ErrandIndex.PRIORITY + "`, `" + ErrandIndex.REPORTER_USER_ID + "`, `" + ErrandIndex.ASSIGNED_USER_ID + "`, `" + ErrandIndex.ASSIGNED_GROUP_ID + "`, `"
 		+ ErrandIndex.ESCALATION_EMAIL + "`, `" + ErrandIndex.BUSINESS_RELATED + "`, `" + ErrandIndex.CREATED + "`, `" + ErrandIndex.MODIFIED + "`, `" + ErrandIndex.TOUCHED + "`, `"
 		+ ErrandIndex.SUSPENDED_FROM + "`, `" + ErrandIndex.SUSPENDED_TO + "`, `" + ErrandIndex.EXTERNAL_TAGS + ".key`, `" + ErrandIndex.EXTERNAL_TAG_VALUE + "`, `" + ErrandIndex.LABELS + "."
@@ -116,6 +116,8 @@ class ErrandSearchResource {
 		wildcard open at both ends, a regular expression or a fuzzy term over many fields can ask for more than the \
 		index can do.""";
 
+	static final String DRAFT_DESCRIPTION = "Drafts are left out unless the query names lifecycle, e.g. lifecycle:DRAFT.";
+
 	static final String GROUPABLE_DESCRIPTION = "status, resolution, channel, priority, category, type, reporterUserId, assignedUserId, assignedGroupId. " +
 		"Labels, parameters and JSON parameters cannot be grouped by, since an errand may carry several of each and the buckets would add up to more than the count.";
 
@@ -133,7 +135,7 @@ class ErrandSearchResource {
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Search errands",
-		description = "Searches the errands the requesting user has access to, ranked by how well they match. " + SORT_DESCRIPTION
+		description = "Searches the errands the requesting user has access to, ranked by how well they match. " + DRAFT_DESCRIPTION + " " + SORT_DESCRIPTION
 			+ " The total counts what the index answered, and the database has the last word on every hit, so a page may hold fewer errands than the total implies while an errand is indexed as something it no longer is."
 			+ " A rebuild of the index puts the two back in step.",
 		responses = {
@@ -158,7 +160,7 @@ class ErrandSearchResource {
 
 	@GetMapping(path = "/count", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Count matching errands",
-		description = "Counts the errands a query matches, without answering with the errands themselves. The query is the one the search takes, read and refused by the same rules."
+		description = "Counts the errands a query matches, without answering with the errands themselves. The query is the one the search takes, read and refused by the same rules. " + DRAFT_DESCRIPTION
 			+ " Optionally divides the count over one column of the errand with groupBy, which accepts: " + GROUPABLE_DESCRIPTION
 			+ " The values come back in the casing the metadata of the namespace gives them, or, for priority, the casing of the enum; the identifiers and the uncatalogued strings come back lowercased as the index holds them."
 			+ " The count is the count of the search however it is divided up, so the same query may be sent to both endpoints, and the breakdown accounts for all of it:"

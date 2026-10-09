@@ -161,7 +161,7 @@ class SubscriptionRepositoryTest {
 
 	/**
 	 * Creates an isolated errand + subscriber with one ERRAND-scoped and one NAMESPACE-scoped subscription.
-	 * Returns just the ids needed for assertions, keeping the cascade test focused on what it verifies.
+	 * Returns just the ids needed for assertions.
 	 */
 	private CascadeFixture createIsolatedCascadeFixture() {
 		final var errand = errandsRepository.saveAndFlush(ErrandEntity.create()

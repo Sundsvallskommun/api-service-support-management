@@ -2,16 +2,10 @@ package se.sundsvall.supportmanagement.api;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.MessageExchangeSync;
 import se.sundsvall.supportmanagement.service.config.MessageExchangeSyncConfigService;
 
@@ -25,9 +19,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class MessageExchangeSyncConfigResourceFailureTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
@@ -40,7 +32,7 @@ class MessageExchangeSyncConfigResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private MessageExchangeSyncConfigService serviceMock;
 
 	@Test

@@ -25,10 +25,14 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
 import tools.jackson.databind.ObjectMapper;
@@ -105,7 +109,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
-		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
+		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(toSerializedSnapshot(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isZero();
 		assertThat(response.latest()).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
 	}
@@ -129,7 +133,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
-		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
+		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(toSerializedSnapshot(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
 		assertThat(response.previous()).isNotNull().extracting(Revision::getVersion).isEqualTo(version);
 		assertThat(response.latest()).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
@@ -154,7 +158,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
-		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(errandEntity));
+		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(toSerializedSnapshot(errandEntity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
 		assertThat(response.previous()).isNotNull().extracting(Revision::getVersion).isEqualTo(version);
 		assertThat(response.latest()).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
@@ -179,7 +183,7 @@ class RevisionServiceTest {
 		verify(revisionRepositoryMock).save(entityCaptor.capture());
 
 		assertThat(entityCaptor.getValue().getEntityType()).isEqualTo("ErrandEntity");
-		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(objectMapperSpy.writeValueAsString(entity));
+		assertThat(entityCaptor.getValue().getSerializedSnapshot()).isEqualTo(toSerializedSnapshot(entity));
 		assertThat(entityCaptor.getValue().getVersion()).isEqualTo(version + 1);
 		assertThat(response.previous()).isNotNull().extracting(Revision::getVersion).isEqualTo(version);
 		assertThat(response.latest()).isNotNull().extracting(Revision::getId).isEqualTo(revisionId);
@@ -201,6 +205,149 @@ class RevisionServiceTest {
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that what a snapshot written earlier carries of the loaded state is not read as a change, since snapshots written now leave it out")
+	void shouldNotCreateErrandRevisionWhenOnlyTheLoadedStateOfTheLastSnapshotDiffers() {
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create()
+				.withMetadataLabelId("label-id")
+				.withMetadataLabel(MetadataLabelEntity.create().withId("label-id").withDisplayName("Ansokan"))));
+		final var earlierSnapshot = """
+			{"id":"%s","namespace":"%s","municipalityId":"%s","tempPreviousStatus":"STATUS-1",
+			 "labels":[{"metadataLabelId":"label-id","metadataLabel":{"id":"label-id","displayName":"Ansokan","metadataLabels":[]}}]}"""
+			.formatted(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(earlierSnapshot)));
+
+		assertThat(service.createErrandRevision(entity)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a snapshot written before errands had a life cycle reads as an active errand, so that it is not taken for a change")
+	void shouldNotCreateErrandRevisionWhenTheLastSnapshotHasNoLifecycleAndTheErrandIsActive() {
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.ACTIVE);
+		final var earlierSnapshot = """
+			{"id":"%s","namespace":"%s","municipalityId":"%s"}""".formatted(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(earlierSnapshot)));
+
+		assertThat(service.createErrandRevision(entity)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a snapshot written before attachments had a sequence number and a received date is not taken for a change")
+	void shouldNotCreateErrandRevisionWhenTheLastSnapshotHasAttachmentsWithoutSequenceNumberAndReceived() {
+		final var created = OffsetDateTime.parse("2024-03-01T10:15:30+01:00");
+		final var earlier = errandWithAttachment(AttachmentEntity.create().withId("attachment-1").withFileName("a.txt").withCreated(created));
+		final var current = errandWithAttachment(AttachmentEntity.create().withId("attachment-1").withFileName("a.txt").withCreated(created).withReceived(created).withSequenceNumber(1));
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(toSerializedSnapshot(earlier))));
+
+		assertThat(service.createErrandRevision(current)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a received date moved away from the creation date is a change")
+	void shouldCreateErrandRevisionWhenTheReceivedDateOfAnAttachmentIsChanged() {
+		final var created = OffsetDateTime.parse("2024-03-01T10:15:30+01:00");
+		final var earlier = errandWithAttachment(AttachmentEntity.create().withId("attachment-1").withFileName("a.txt").withCreated(created));
+		final var current = errandWithAttachment(AttachmentEntity.create().withId("attachment-1").withFileName("a.txt").withCreated(created).withReceived(created.minusDays(2)).withSequenceNumber(1));
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(toSerializedSnapshot(earlier))));
+		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withVersion(4));
+
+		assertThat(service.createErrandRevision(current)).isNotNull();
+
+		verify(revisionRepositoryMock).save(any(RevisionEntity.class));
+	}
+
+	private static ErrandEntity errandWithAttachment(final AttachmentEntity attachment) {
+		return ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.ACTIVE)
+			.withAttachments(List.of(attachment));
+	}
+
+	@Test
+	@DisplayName("Verification that a draft made active is a change")
+	void shouldCreateErrandRevisionWhenADraftIsMadeActive() {
+		final var draft = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.DRAFT);
+		final var active = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.ACTIVE);
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(0).withSerializedSnapshot(toSerializedSnapshot(draft))));
+		when(revisionRepositoryMock.save(any(RevisionEntity.class))).thenReturn(RevisionEntity.create().withVersion(1));
+
+		assertThat(service.createErrandRevision(active)).isNotNull();
+
+		verify(revisionRepositoryMock).save(any(RevisionEntity.class));
+	}
+
+	@Test
+	@DisplayName("Verification that an errand just written reads like the same errand just read: empty collections are no collections, and labels and tags come in any order")
+	void shouldNotCreateErrandRevisionWhenOnlyEmptyCollectionsAndTheOrderOfUnorderedOnesDiffer() {
+		final var justRead = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("b"), ErrandLabelEmbeddable.create().withMetadataLabelId("a")))
+			.withExternalTags(List.of(DbExternalTag.create().withKey("z").withValue("1"), DbExternalTag.create().withKey("y").withValue("2")))
+			.withActions(List.of())
+			.withNotifications(List.of())
+			.withStakeholders(List.of(StakeholderEntity.create().withFirstName("x").withContactChannels(List.of())));
+		final var justWritten = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID)
+			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("a"), ErrandLabelEmbeddable.create().withMetadataLabelId("b")))
+			.withExternalTags(List.of(DbExternalTag.create().withKey("y").withValue("2"), DbExternalTag.create().withKey("z").withValue("1")))
+			.withStakeholders(List.of(StakeholderEntity.create().withFirstName("x")));
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(0).withSerializedSnapshot(toSerializedSnapshot(justWritten))));
+
+		assertThat(service.createErrandRevision(justRead)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("Verification that a diff leaves out a change of order in the collections that have none of their own, and still shows a collection going from none to empty")
+	void compareErrandRevisionVersionsIgnoresTheOrderOfUnorderedCollections() {
+		final var before = """
+			{"labels":[{"metadataLabelId":"b"},{"metadataLabelId":"a"}],"accessLabels":[{"metadataLabelId":"b"},{"metadataLabelId":"a"}],
+			 "externalTags":[{"key":"z","value":"1"},{"key":"y","value":"2"}]}""";
+		final var after = """
+			{"labels":[{"metadataLabelId":"a"},{"metadataLabelId":"b"}],"accessLabels":[{"metadataLabelId":"a"},{"metadataLabelId":"b"}],
+			 "externalTags":[{"key":"y","value":"2"},{"key":"z","value":"1"}],"actions":[]}""";
+
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 0)).thenReturn(Optional.of(createRevisionEntity().withSerializedSnapshot(before)));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 1)).thenReturn(Optional.of(createRevisionEntity().withSerializedSnapshot(after)));
+
+		assertThat(service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 0, 1).getOperations())
+			.extracting(Operation::getOp, Operation::getPath)
+			.containsExactly(tuple("add", "/actions"));
+	}
+
+	@Test
+	@DisplayName("Verification that the order of a list that has one is still a change, and so is a label that is really gone")
+	void compareErrandRevisionVersionsStillSeesRealChangesToCollections() {
+		final var before = """
+			{"parameters":[{"key":"a"},{"key":"b"}],"labels":[{"metadataLabelId":"a"},{"metadataLabelId":"b"}]}""";
+		final var after = """
+			{"parameters":[{"key":"b"},{"key":"a"}],"labels":[{"metadataLabelId":"b"}]}""";
+
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 0)).thenReturn(Optional.of(createRevisionEntity().withSerializedSnapshot(before)));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 1)).thenReturn(Optional.of(createRevisionEntity().withSerializedSnapshot(after)));
+
+		assertThat(service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, 0, 1).getOperations())
+			.extracting(Operation::getPath)
+			.contains("/labels/0")
+			.anyMatch(path -> path.startsWith("/parameters/"));
 	}
 
 	@Test
@@ -389,6 +536,22 @@ class RevisionServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that comparing a revision written with label metadata to one written without it shows no difference, since only the metadata differs")
+	void compareErrandRevisionVersionsIgnoresTheLabelMetadataOfEarlierRevisions() {
+		final var sourceVersion = 1;
+		final var targetVersion = 2;
+
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion)).thenReturn(Optional.of(createRevisionEntity()
+			.withSerializedSnapshot("{\"labels\":[{\"metadataLabelId\":\"label-id\",\"metadataLabel\":{\"id\":\"label-id\",\"displayName\":\"Ansokan\"}}]}")));
+		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, targetVersion)).thenReturn(Optional.of(createRevisionEntity()
+			.withSerializedSnapshot("{\"labels\":[{\"metadataLabelId\":\"label-id\"}]}")));
+
+		final var result = service.compareErrandRevisionVersions(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, sourceVersion, targetVersion);
+
+		assertThat(result.getOperations()).isEmpty();
+	}
+
+	@Test
 	void compareErrandRevisionVersionsThrowsException() {
 		// Setup
 		final var sourceVersion = 5;
@@ -498,7 +661,7 @@ class RevisionServiceTest {
 
 	/**
 	 * Hands every chunk straight back to what the caller passed, so that a test sees the removal the deleter would have
-	 * carried out rather than only the call asking for it.
+	 * carried out.
 	 */
 	private void runChunksImmediately() {
 		doAnswer(invocation -> {

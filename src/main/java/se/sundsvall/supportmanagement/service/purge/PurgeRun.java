@@ -4,8 +4,8 @@ package se.sundsvall.supportmanagement.service.purge;
  * A purge run on its way to the thread that carries it out.
  * <p>
  * Everything the run needs to know is settled when it is accepted: which job it reports against, where it walks, who
- * asked for it and what it was told to do. The identifier of a caller in particular has to travel this way, since it
- * lives on the request thread and the run is carried out on another.
+ * asked for it and what it was told to do. It carries the identity of the caller from the request thread to the thread
+ * the run is carried out on.
  *
  * @param jobId          id of the job the run reports its progress against.
  * @param namespace      namespace to purge within.

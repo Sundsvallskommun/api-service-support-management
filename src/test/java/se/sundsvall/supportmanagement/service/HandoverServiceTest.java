@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,13 +40,16 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.HandoverIdempotencyEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,9 +60,11 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @ExtendWith(MockitoExtension.class)
@@ -108,6 +114,9 @@ class HandoverServiceTest {
 
 	@Mock
 	private MetadataService metadataServiceMock;
+
+	@Mock
+	private AttachmentSequenceNumberGenerator attachmentSequenceNumberGeneratorMock;
 
 	@InjectMocks
 	private HandoverService service;
@@ -386,6 +395,26 @@ class HandoverServiceTest {
 	}
 
 	@Test
+	void handoverOfADraftIsAConflictAndCreatesNothing() {
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, RW)).thenReturn(sourceEntity().withLifecycle(ErrandLifecycle.DRAFT));
+		mockValidations();
+
+		final var request = minimalRequest();
+
+		assertThatException()
+			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
+			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+				assertThat(problem.getDetail()).isEqualTo("The errand '%s' is a draft. Make the errand active first".formatted(ERRAND_ID));
+			});
+
+		verify(errandServiceMock, never()).createErrand(any(), any(), any(), any());
+		verifyNoInteractions(relationClientMock, eventServiceMock, attachmentRepositoryMock);
+	}
+
+	@Test
 	void handoverWithCloseSourceHandling() {
 		mockGoldenPath();
 		final var request = minimalRequest()
@@ -489,18 +518,22 @@ class HandoverServiceTest {
 		when(blobMock.getBinaryStream()).thenReturn(inputStreamMock);
 		when(blobMock.length()).thenReturn(1024L);
 
+		final var received = OffsetDateTime.parse("2024-03-01T09:15:30Z");
 		final var sourceAttachment = AttachmentEntity.create()
 			.withFileName("document.pdf")
 			.withMimeType("application/pdf")
 			.withChannel("EMAIL")
 			.withFileSize(1024)
+			.withSequenceNumber(7)
+			.withReceived(received)
 			.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock));
 		final var freshSource = sourceEntity().withAttachments(new ArrayList<>(List.of(sourceAttachment)));
 		final var target = targetEntity();
+		when(attachmentSequenceNumberGeneratorMock.nextSequenceNumber(target)).thenReturn(1);
 
 		final var newBlobMock = mock(Blob.class);
 		final var lobHelperMock = mock(LobHelper.class);
-		when(lobHelperMock.createBlob(eq(inputStreamMock), eq(1024L))).thenReturn(newBlobMock);
+		when(lobHelperMock.createBlob(inputStreamMock, 1024L)).thenReturn(newBlobMock);
 
 		try (final MockedStatic<Hibernate> hibernateStatic = mockStatic(Hibernate.class)) {
 			hibernateStatic.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
@@ -525,10 +558,53 @@ class HandoverServiceTest {
 			assertThat(captor.getValue().getFileName()).isEqualTo("document.pdf");
 			assertThat(captor.getValue().getMimeType()).isEqualTo("application/pdf");
 			assertThat(captor.getValue().getChannel()).isEqualTo("EMAIL");
+			assertThat(captor.getValue().getReceived()).isEqualTo(received);
+			assertThat(captor.getValue().getSequenceNumber()).isEqualTo(1);
 			assertThat(captor.getValue().getFileSize()).isEqualTo(1024);
 			assertThat(captor.getValue().getNamespace()).isEqualTo(TARGET_NAMESPACE);
 			assertThat(captor.getValue().getMunicipalityId()).isEqualTo(TARGET_MUNICIPALITY_ID);
 			assertThat(captor.getValue().getAttachmentData().getFile()).isEqualTo(newBlobMock);
+		}
+	}
+
+	@Test
+	void handoverWithIncludeAttachmentsNumbersCopiesInSourceOrder() throws Exception {
+		final var blobMock = mock(Blob.class);
+		when(blobMock.getBinaryStream()).thenAnswer(_ -> mock(InputStream.class));
+		when(blobMock.length()).thenReturn(10L);
+
+		final var addedLast = AttachmentEntity.create().withFileName("a.pdf").withSequenceNumber(5).withAttachmentData(AttachmentDataEntity.create().withFile(blobMock));
+		final var addedFirst = AttachmentEntity.create().withFileName("b.pdf").withSequenceNumber(2).withAttachmentData(AttachmentDataEntity.create().withFile(blobMock));
+		final var freshSource = sourceEntity().withAttachments(new ArrayList<>(List.of(addedLast, addedFirst)));
+		final var target = targetEntity();
+		when(attachmentSequenceNumberGeneratorMock.nextSequenceNumber(target)).thenReturn(1, 2);
+
+		final var copiedBlobMock = mock(Blob.class);
+		final var lobHelperMock = mock(LobHelper.class);
+		when(lobHelperMock.createBlob(any(InputStream.class), eq(10L))).thenReturn(copiedBlobMock);
+
+		try (final MockedStatic<Hibernate> hibernateStatic = mockStatic(Hibernate.class)) {
+			hibernateStatic.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+
+			when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+			when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+			when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, RW)).thenReturn(sourceEntity());
+			when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(freshSource));
+			mockValidations();
+			when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
+			when(errandsRepositoryMock.findById(NEW_ERRAND_ID)).thenReturn(Optional.of(target));
+			when(relationClientMock.createRelation(eq(TARGET_MUNICIPALITY_ID), any()))
+				.thenReturn(ResponseEntity.created(URI.create("/2282/relations/" + RELATION_ID)).build());
+			when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(Revision.create());
+			when(attachmentRepositoryMock.saveAndFlush(any(AttachmentEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+			service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest().withInclude(HandoverInclude.create().withAttachments(true)));
+
+			final var captor = ArgumentCaptor.forClass(AttachmentEntity.class);
+			verify(attachmentRepositoryMock, times(2)).saveAndFlush(captor.capture());
+			assertThat(captor.getAllValues())
+				.extracting(AttachmentEntity::getFileName, AttachmentEntity::getSequenceNumber)
+				.containsExactly(tuple("b.pdf", 1), tuple("a.pdf", 2));
 		}
 	}
 

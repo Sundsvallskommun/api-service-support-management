@@ -94,6 +94,12 @@ This microservice depends on the following services:
   - **Purpose:** Used for fetching messaging settings per municipality.
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-messaging-settings)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
+- **pw-alkt**
+  - **Purpose:** Runs the case handling processes (Operaton) for alcohol and tobacco permits. SupportManagement
+    delivers errand events to it, and it reports the state of its processes back. Only needed for namespaces that run
+    processes — see [Process Integration](#process-integration).
+  - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/pw-alkt)
+  - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 
 Ensure that these services are running and properly configured before starting this microservice.
 
@@ -163,6 +169,8 @@ Configuration is crucial for the application to run successfully. Ensure all nec
       url: http://dependency_service_url
     notes:
       url: http://dependency_service_url
+    pw-alkt:
+      url: http://dependency_service_url
     relation:
       url: http://dependency_service_url
     web-message-collector:
@@ -192,6 +200,8 @@ Configuration is crucial for the application to run successfully. Ensure all nec
             messaging-settings:
               token-uri: http://dependency_service_token_url
             notes:
+              token-uri: http://dependency_service_token_url
+            pw-alkt:
               token-uri: http://dependency_service_token_url
             relation:
               token-uri: http://dependency_service_token_url
@@ -228,6 +238,9 @@ Configuration is crucial for the application to run successfully. Ensure all nec
             notes:
               client-id: the-client-id
               client-secret: the-client-secret
+            pw-alkt:
+              client-id: the-client-id
+              client-secret: the-client-secret
             relation:
               client-id: the-client-id
               client-secret: the-client-secret
@@ -256,6 +269,8 @@ spring:
 [Hibernate Search](https://hibernate.org/search/) keeps in step with the errands and everything attached to them:
 stakeholders, parameters, JSON parameters, phases, measures, decisions, statements, investigations and communications.
 The `query` parameter is a Lucene query string, documented in full on the endpoint in the API documentation.
+Drafts are left out of a search and of a count, as they are left out of the listing, unless the query names `lifecycle`:
+`lifecycle:DRAFT` finds them.
 
 Search is off unless the environment has an OpenSearch instance, and the endpoint answers 503 while it is off:
 
@@ -452,6 +467,8 @@ The access mapper is queried per AD identity with three group types, each carryi
 
 **Layer A — visibility and write filtering.** A JPA specification restricts which errands come back and whether a
 write is allowed, based on the caller's label grants. An errand carrying no access labels is accessible to everyone.
+The labels an errand is given must belong to its own namespace and municipality; `POST` and `PATCH` answer `400`
+otherwise, since a label brings its access rules along.
 
 The level a label grant must reach depends on *what* is being written. `RW` is demanded for the errand itself, which is
 what the labels are held against. For a resource **of** the errand the resource grant carries the write and the labels
@@ -699,6 +716,352 @@ it is reported as `allKeys: true` and overstates what the write paths accept. No
 
 `AccessControlSpecificationParityTest` holds the in-memory answer this endpoint reports to the JPA specification that
 actually guards every endpoint, so the two cannot drift apart.
+
+## Process Integration
+
+A namespace can have its errands driven by a case handling process running in a process engine. Like access control,
+this is **opt-in per namespace** and off by default: a namespace without a process consumer publishes nothing and is
+unaffected by everything below. The full design, in Swedish, is in
+[`docs/alkt-processintegration.md`](docs/alkt-processintegration.md).
+
+### Onboarding a new process
+
+How a new line of business gets its errands driven by a process. There are two cases, and they differ in what they
+cost:
+
+|                                 Case                                 |                                     What it takes                                      | Release of SupportManagement? |
+|----------------------------------------------------------------------|----------------------------------------------------------------------------------------|-------------------------------|
+| A new process in a process service that is already known (`pw-alkt`) | Configuration in SupportManagement, and the process deployed in the process service    | No                            |
+| A new process service                                                | Code and configuration in SupportManagement, a new API in WSO2, and the service itself | Yes                           |
+
+Every environment needs `integration.pw-alkt.url` and the OAuth2 client `pw-alkt` (`token-uri`, `client-id` and
+`client-secret`) whether or not any namespace runs a process: the service does not start without them.
+
+#### A new process in a known process service
+
+1. **Model and deploy the process** in the process service. Its process definition key is what SupportManagement
+   calls the process key, and it is matched exactly. Follow the modelling rules in §9.2 of the
+   [design document](docs/alkt-processintegration.md): a wait
+   state reads the errand again when it is entered, a manual gate is a named message event (never a user task), no
+   parallel branches change the errand, and the last step before every end event is a work step reporting the process
+   as completed. SupportManagement does not check that a key is deployed; the process service answers `422` for one it
+   does not know, and the event is then dropped with an `ERROR` entry on the errand.
+2. **Connect the namespace** in its namespace config (`POST` or `PUT /{municipalityId}/{namespace}/namespace-config`):
+   - `processConsumer`: `pw-alkt`;
+   - `processTriggers`: at least `ERRAND` and `DECISION`, plus every other sub type the process should be woken by, such
+     as `MESSAGE` or `ATTACHMENT`;
+   - `accessControl`: `false`, since a process consumer cannot be combined with access control.
+
+   See [Turning it on](#turning-it-on).
+
+3. **Point the labels at the process.** Give the label, or labels, of the errands the process is to run the attribute
+   `processKey` with the process definition key, and `processStartMode` `MANUAL` to begin with
+   (`PUT /{municipalityId}/{namespace}/metadata/labels`). An errand's labels may name one process key only. See
+   [Which process an errand belongs to](#which-process-an-errand-belongs-to) and [Label rules](#label-rules).
+
+4. **Try it by hand.** Create an errand wearing the label. `GET .../errands/{errandId}/processes` answers
+   `startable.status` `AVAILABLE` with the key, `POST .../processes/start` starts the process, and within seconds the
+   instance shows in the list and its entries in `GET .../process-activities`. See
+   [Starting a process by hand](#starting-a-process-by-hand).
+
+5. **Switch to automatic start** by setting `processStartMode` to `AUTOMATIC`, or removing it, once the chain behaves.
+   From then on every errand event that passes the triggers starts the process for an errand that has neither a live
+   nor a completed process — and that includes **existing errands already wearing the label, the next time they
+   change**. Switching back is the same attribute change; neither needs a release.
+
+Whether events are getting through is visible in the health indicator `process_event_relay`, which turns unhealthy
+when the oldest undelivered event is older than `scheduler.process-event.unhealthy-after`.
+
+The process life of an errand and the locks on its decisions rest on the process service reporting a process as
+`COMPLETED` when it ends, and on it reconciling instances that vanish from the process engine without a report. Without
+both, a process can stand as `RUNNING` for good: its decisions never lock, and the errand can never be started again.
+
+#### A new process service
+
+The relay delivers only to `pw-alkt`, through one Feign client. A process service of its own is therefore a release of
+SupportManagement:
+
+|                                              Step                                              |           Where            |
+|------------------------------------------------------------------------------------------------|----------------------------|
+| An OAuth2 client registration and provider for the service                                     | `application.yml`          |
+| A Feign client with its configuration and properties, like `PwAlktClient`                      | code and `application.yml` |
+| The relay delivering to the new consumer, and the validation of `processConsumer` accepting it | code                       |
+| An API for the service in WSO2, which all REST traffic between the services passes             | WSO2                       |
+
+After that the namespace is connected exactly as above, with the new consumer's name in `processConsumer`.
+
+The process service in turn has to keep the contract `pw-alkt` keeps:
+
+- **Take events** at `POST /{municipalityId}/{namespace}/process/errand-events` (see
+  [`pw-alkt-api.yaml`](src/main/resources/integrations/pw-alkt-api.yaml)). Answer `202` when the event is taken, and
+  `422` only for an event it can never take, such as an unknown process key — that event is dropped for good, while
+  every other answer is retried until `scheduler.process-event.max-age`. The same event can arrive twice.
+- **Start a process** only when the errand has no live instance, the event carries a `processKey` and `startAllowed`
+  is `true`, with the errand id as business key. Register the start with `POST .../errands/{errandId}/processes`, a
+  failed one included, and abort the new instance if the answer is `409`.
+- **Wake the process** on every other event: correlate the message `errandUpdated`, or `signalName` when the sub type
+  is `SIGNAL`. A correlation that finds no wait state is normal and answered `202`.
+- **Delete the instance** when the event type is `DELETE`.
+- **Report** the state of the instance from every work step with `PUT .../processes/{processInstanceId}`: the status,
+  the current activity, the activities performed, `awaitingSignals` for the gate it waits at, and `errandVersion` for
+  the version of the errand the step read. A step that changes the errand sends `If-Match` with that version. A `412`
+  means the errand changed since; the step is retried against the errand as it now is. Report `COMPLETED` from the
+  last step, and reconcile instances that end without a report: the process life and the decision locks rest on it.
+- **Identify itself** in every call with `X-Sent-By: <consumer>; type=processEngine` and `processService` set to the
+  consumer name, and send `X-Trigger-Process: false` on its writes, so that they do not wake the process again.
+
+### Turning it on
+
+Two namespace config values decide it:
+
+|       Field       |     Config key     |                                                                          Meaning                                                                           |
+|-------------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `processConsumer` | `PROCESS_CONSUMER` | The process engine running the namespace's processes, and the address its events go to. The only one known is `pw-alkt`. Leaving it out means no processes |
+| `processTriggers` | `PROCESS_TRIGGER`  | The errand event sub types worth waking the process for                                                                                                    |
+
+A process consumer **cannot be combined with access control**. The access mapper only grants access to AD accounts, so
+every read and write the process makes would be denied. A namespace config with both is refused with `400`.
+
+A namespace with a process consumer **must list `ERRAND` and `DECISION` among its triggers**, or the config is refused
+with `400`. Without `ERRAND` an errand given its process label after it was created never starts its process, and
+without `DECISION` a process waiting for its decision is never told that it has been made. The commands `PROCESS` and
+`SIGNAL` may never be listed: they always reach the process, and listing them would suggest otherwise. A config stored
+before these rules is not checked until it is written again.
+
+### Which process an errand belongs to
+
+The answer is read from the errand's **own** labels, through three label attributes:
+
+|     Attribute      |             Values              |                                                   Meaning                                                    |
+|--------------------|---------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `processKey`       | the key of a process            | Which process the errand runs                                                                                |
+| `processStartMode` | `AUTOMATIC` (default), `MANUAL` | Whether SupportManagement starts the process itself. Read from the label that gave the key                   |
+| `processBlocked`   | `true`, `false`                 | `true` keeps every process away from the errand, see [Blocking processes](#blocking-processes-for-an-errand) |
+
+The label tree is not walked, so the answer stays the same as long as the errand wears the same labels. Renaming a
+label leaves it alone, while moving one gives the errands wearing it new ancestors, which the label rules below hold
+like any other change. Deprecated labels are not read for the key, but a deprecated label with `processBlocked` set
+to `true` still blocks.
+
+A label write (`POST` or `PUT` of `/metadata/labels`) is refused with `400` when `processStartMode` is anything but
+exactly `AUTOMATIC` or `MANUAL`, when it stands on a label without `processKey`, when `processBlocked` is anything but
+exactly `true` or `false`, when an attribute key is spelled like `processKey`, `processStartMode` or `processBlocked`
+in any other way (another case, surrounding blanks), or when `processKey` is longer than 128 characters.
+`processBlocked` may stand on a label without `processKey`.
+
+| The labels resolve to |                          Result                          |
+|-----------------------|----------------------------------------------------------|
+| Exactly one key       | That process                                             |
+| No key                | No process. Not an error                                 |
+| Two or more keys      | No automatic start, and an `ERROR` entry naming the keys |
+
+SupportManagement does not check that a key names a process that is actually deployed — only the process engine knows,
+and it answers `422` for one it does not recognise.
+
+### Label rules
+
+Labels can silently stop answering which process an errand belongs to: two labels naming two processes resolve to
+neither, and a key exchanged for another leaves the running process with nothing to wake it. Neither fails anywhere —
+the errand just stops moving. Two rules therefore hold whenever labels are written:
+
+1. **An errand's labels may name at most one `processKey`.** This holds for every errand, with or without a process.
+2. **Once an errand has a process — live or completed — or a start of one on its way, a label change may not move it
+   to another.** The keys the labels resolve to after the change must be the keys they resolved to before, so taking
+   every key away is refused as well. A change that leaves them naming the process the errand actually runs, or is
+   being started with, is always allowed, which is the way back for an errand whose label has lost its key.
+
+Only the key is held still: `processStartMode` may be changed freely, even on an errand with a process.
+
+|                                                  Writer                                                   |  Rules  |                                   When refused                                    |
+|-----------------------------------------------------------------------------------------------------------|---------|-----------------------------------------------------------------------------------|
+| `POST /errands` (also handover and e-mail intake)                                                         | 1       | `400` — a new errand has no process yet                                           |
+| `PATCH /errands/{errandId}`                                                                               | 1 and 2 | `400`                                                                             |
+| The `ADD_LABEL` action (scheduled)                                                                        | 1 and 2 | The labels are not added, and an `ERROR` entry is written on the errand           |
+| Labels moved or merged in the metadata (`LabelMoveWorker`, `LabelMergeWorker`, also within a restructure) | 1 and 2 | The errand keeps the labels it had, and an `ERROR` entry is written on the errand |
+
+A scheduled action, or a label move or merge, that goes through is recorded as a revision and an errand event without a
+notification, and reaches the process like any other change.
+
+The rules are checked against the labels the errand would actually wear, including the ancestors added to them.
+
+An errand can still end up naming two processes if `processKey` is added to a label the errand already wears, since no
+write to the errand happens. Such an errand gets `400` on every label change until one of the labels is removed — which
+is always allowed, as it resolves the errand to a single key.
+
+### Blocking processes for an errand
+
+An errand wearing a label with `processBlocked` set to `true` is kept away from every process. Labels are stored
+together with their ancestors, so a block on a parent label holds for every errand wearing a label under it.
+
+- **Nothing about the errand reaches a process.** No outbox row is written for any event of the errand — a creation,
+  a change, an attachment, a decision, a message, a start, a signal or a deletion — whoever writes it, whatever
+  `X-Trigger-Process` says, and whatever other labels the errand wears. The event itself is written to the event log as
+  usual. The block is asked right after whether the errand is a draft, before anything else.
+- `startable.status` is `PROCESS_BLOCKED`, and `POST .../processes/start` and `POST .../processes/{id}/signals` answer
+  `409`.
+- **An AD account cannot take the label off.** A change to the labels made by an AD account that would leave the
+  errand without a label carrying `processBlocked=true` is refused with `409`, and nothing of the change is written. A
+  service identity may take the label off. Adding the label is open to both.
+- A label move, merge or restructure carries the identity of the one who asked for it. Asked for by an AD account, it
+  leaves an errand whose blocking label it would take off with the labels it had, and writes an `ERROR` entry
+  `LABEL_REMOVES_PROCESS_BLOCK` on it. Asked for by a service identity, the label is taken off.
+- Once the label is off, the next event of the errand reaches the process as usual. The events held back while the
+  errand was blocked are not sent afterwards.
+
+### How events reach the process
+
+- Every errand event that matches the triggers becomes a row in an outbox, **in the same transaction** as the change.
+  If the row cannot be written, the change is rolled back.
+- A relay delivers the rows: right after the commit, for the rows of that errand, and on the schedule in
+  `scheduler.process-event` for whatever the direct run did not reach.
+- Rows are delivered per errand, oldest first. The first row that does not go through ends the delivery for its errand:
+  the rows before it are acknowledged, and it and the later rows of the errand are tried again on the next run. The
+  scheduled run then goes on with the rows of other errands, counting an errand that failed as one row against
+  `batch-size`, so an errand that never gets through holds back no other.
+- `422` from the process engine is permanent — the row is consumed, a live instance is marked `FAILED` and an `ERROR`
+  entry is written. Anything else is retried until the row passes `scheduler.process-event.max-age`.
+- The process engine sets `X-Trigger-Process: false` on its own writes, so that they do not wake it again. The header is
+  **ignored for AD accounts**, so a handler's change always reaches the process.
+- An emergency brake stops publishing for an errand once `process-engine.loop-guard.max-events-per-errand` events (20
+  by default) have been delivered to its process within `window` (10 minutes). Further events are dropped and an
+  `ERROR` entry is written. Only delivered events are counted, so a delivery outage never trips it.
+- A deletion passes the trigger filter, the header and the brake alike, though not a block (see above): it cannot loop, and holding it back would leave
+  the process running for an errand that no longer exists.
+- So does a command, a handler's start or signal: it is a person pressing a button rather than something that
+  happened to the errand.
+- Every event carries `startAllowed`, which says whether the process engine may start a process for it. It is set for
+  a start command, and otherwise only when the errand has no live and no completed process, no start of another
+  process is on its way, and the label naming the key of the event has `processStartMode` `AUTOMATIC`.
+- A decision concluded by an AD account passes the brake, and nothing else. It is the event a waiting process needs,
+  and a person is no loop. A decision the process concludes itself is held to the brake like any other write of the
+  process.
+- The retention purge tells the process of every errand it removes, with a `DELETE` event that writes nothing to the
+  event log and notifies no one.
+- The relay and the nightly cleanup are configured under `scheduler.process-event` and `scheduler.process-cleanup`. The
+  settings of their own, and their defaults, are documented in `ProcessEventRelayProperties` and
+  `ProcessEventCleanupProperties`.
+- The namespace config is cached per pod for ten minutes, and a change to it evicts the cache only in the pod that took
+  it. A changed `processConsumer` or trigger list can therefore take up to ten minutes to hold in every pod.
+
+### Endpoints
+
+All under `/{municipalityId}/{namespace}/errands/{errandId}`:
+
+| Method |                   Path                   |                                       Purpose                                        |
+|--------|------------------------------------------|--------------------------------------------------------------------------------------|
+| `PUT`  | `/processes/{processInstanceId}`         | The process engine reports the state of an instance                                  |
+| `POST` | `/processes`                             | The process engine registers a start, including one that failed                      |
+| `GET`  | `/processes`                             | Every process the errand has had, newest first, and whether a new one may be started |
+| `POST` | `/processes/start`                       | A handler starts the handling of the errand                                          |
+| `POST` | `/processes/{processInstanceId}/signals` | A handler steps the process past the gate it waits at                                |
+| `GET`  | `/process-activities`                    | The activity log of the errand, optionally narrowed to one instance                  |
+
+The errand itself carries its process in `errand.process`: the live one, or the latest when none lives. A namespace
+without a process consumer reads no process at all.
+
+A report on an instance that has already run to its end (`COMPLETED`) that says anything else is answered `200` with
+the instance as it stands: the activities it carries are stored, and nothing else changes. A report that would make an
+instance live or completed while another instance of the errand lives is `409`; a `FAILED` report is taken beside it.
+
+### Starting a process by hand
+
+`GET .../processes` answers with `startable` beside the list, which is what a start button is lit, dimmed and
+explained by:
+
+| `startable.status`  |                                Meaning                                |
+|---------------------|-----------------------------------------------------------------------|
+| `AVAILABLE`         | A process may be started now, with one of the keys in `processKeys`   |
+| `LIVE_INSTANCE`     | A process is already running for the errand                           |
+| `PROCESS_COMPLETED` | A process has run to its end. A new process means a new errand        |
+| `START_PENDING`     | A start is on its way to the process engine and not yet delivered     |
+| `NO_PROCESS_KEY`    | No label of the errand names a process the errand can be started with |
+| `NO_PROCESS_ENGINE` | The namespace runs no processes                                       |
+| `PROCESS_BLOCKED`   | A label of the errand carries `processBlocked=true`                   |
+
+`processKeys` is empty whenever the status is not `AVAILABLE`, and holds two or more keys when the labels point at
+different processes. Once an errand has had a process, a start that failed included, only the key of that process is
+offered, and a key longer than 128 characters is never offered. The start mode of the labels does not affect the
+answer.
+
+A handler starts the process with `POST .../processes/start`, and `{ "processKey": "<key>" }` when more than one key is
+offered — the body may be left out otherwise, and a blank key counts as none:
+
+| Code  |                                                                            When                                                                            |
+|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `202` | The start is recorded and handed on to the process                                                                                                         |
+| `400` | No label names a process to start, several do and the request names none, the key is not among those offered, or the namespace runs no processes           |
+| `403` | The caller is not an AD account                                                                                                                            |
+| `404` | The errand does not exist in the namespace                                                                                                                 |
+| `409` | The errand has a live process, its process has run to its end, a start of another process is already on its way, or a label of the errand blocks processes |
+
+- An accepted start writes an entry of type `START` to the activity log, naming the sender and belonging to no process
+  instance, and an errand event with the sub type `PROCESS` carrying the chosen key and `startAllowed`. It changes
+  nothing on the errand and **sends no notification**.
+- The command works in both start modes. In `AUTOMATIC` mode it is the way a start that failed is tried again.
+- A start pressed while one with the same key is still undelivered — sent by hand, or an automatic start — is answered
+  `202` and recorded like any other, with its entry and its event, but hands the process no second start.
+- The process shows in `GET .../processes` once the process engine has registered it. While the start is undelivered
+  `startable` says `START_PENDING`, and the user interface should show the start as on its way. Between delivery and
+  registration it says `AVAILABLE` again for a moment; a second start in that gap is turned away by the process
+  engine and by the `409` of the registration.
+
+### Stepping a process by hand
+
+Whether a step waits for a person is decided in the process model, not in SupportManagement. A gate that waits for a
+named message is a manual one, and the process engine reports the names it waits for in `awaitingSignals` of its
+report — a name and a display label each. SupportManagement stores them without interpreting them, replaces them as a
+whole with every report, and shows them on `errand.process`. An empty list means the process waits for no person, and
+a process that has ended always waits for no one.
+
+A handler answers with `POST .../processes/{processInstanceId}/signals` and `{ "signal": "<name>" }`:
+
+| Code  |                                                                    When                                                                    |
+|-------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `202` | The signal is recorded and handed on to the process                                                                                        |
+| `400` | `signal` is missing or blank, or the namespace has no process consumer                                                                     |
+| `403` | The caller is not an AD account                                                                                                            |
+| `404` | The errand does not exist, or has no such process instance                                                                                 |
+| `409` | The process does not wait for the signal right now, or has ended — read the errand again. Also when a label of the errand blocks processes |
+
+- The name has to match one of `awaitingSignals` **exactly**, case included, since that is what the process engine
+  correlates on. Names are stored and compared exactly too, so names differing only in case are two signals. A button
+  pressed after the process has reported that it moved on is a `409`, not a second step.
+- **Sending a signal consumes nothing.** Until the process reports where it went, the same signal is accepted again: a
+  double click writes two entries and two events, and the process engine correlates the first and ignores the second.
+  The user interface should therefore not offer a button again once it has been pressed, until the errand is read anew.
+- An accepted signal writes an entry of type `SIGNAL` to the activity log, naming the sender, and an errand event with
+  the sub type `SIGNAL`, which carries the name to the process in `signalName`. It changes nothing on the errand,
+  moves no version and **sends no notification**.
+- Only AD accounts may send one: the entry it leaves has to say which person stepped the process on, and a service
+  name answers nothing. Publication does not depend on the check — commands pass the loop guard of their own accord.
+- The signal carries a name and nothing else. A reason for the step belongs in a note on the errand, which is kept as
+  long as the errand, while the activity log is swept after a year.
+
+### The decision
+
+The decision is the ordinary `/decisions` resource of the errand, the same for errands with and without a process. What
+a process adds:
+
+- **Creating, changing and deleting a decision** is logged as an errand event with the sub type `DECISION`, notifies
+  the handler and the subscribers, and moves the version of the errand, so that a work step holding an older `ETag`
+  gets `412`. This holds in every namespace, with or without a process; only the publication to the process needs a
+  process consumer. Its terms, attachment links and JSON parameters do none of it.
+- **Who may claim which method:** `MANUAL` is written by an AD account, and `AUTOMATIC` by a caller that is not one. In
+  a namespace with a process consumer, `AUTOMATIC` is written only by that consumer, recognised by the value of
+  `X-Sent-By`. Anything else is `403`. The process row that made an automatic
+  decision is set by SupportManagement in `errandProcessId`, and is never taken from the request.
+- **When a decision is locked**, and only on an errand that has a process:
+  - once the process has run to its end (`COMPLETED`), no decision of the errand can be created, changed or deleted;
+  - once a decision is `COMPLETED`, it can no longer be changed or deleted, nor can its terms or attachment links;
+  - an attachment of the errand linked to a locked decision cannot be deleted, nor can an investigation a locked
+    decision rests on;
+  - the errand itself cannot be deleted with `DELETE /errands/{errandId}` while it holds a locked decision.
+
+  Every one of these is answered with `409`. The retention purge is held to none of them. The JSON parameters of a decision are never locked, since legal force and
+  service of the decision are known only after it is made. An errand without a process is never locked. A decision
+  that has to be corrected once it is locked is corrected in a new errand, referred from the first.
+
+- **The justification** nearly always holds personal data, and is masked in the payload log (`logbook.body-filters`).
 
 ## Contributing
 

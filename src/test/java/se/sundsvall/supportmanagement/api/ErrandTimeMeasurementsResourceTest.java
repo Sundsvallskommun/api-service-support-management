@@ -5,13 +5,8 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.TimeMeasurement;
 import se.sundsvall.supportmanagement.service.TimeMeasurementService;
 
@@ -20,14 +15,11 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class ErrandTimeMeasurementsResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/time-measure";
@@ -39,7 +31,7 @@ class ErrandTimeMeasurementsResourceTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private TimeMeasurementService serviceMock;
 
 	@Test

@@ -16,6 +16,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueTyp
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 class ConfigPropertyExtractorTest {
@@ -66,6 +67,44 @@ class ConfigPropertyExtractorTest {
 		final var result = ConfigPropertyExtractor.getNullableValue(NamespaceConfigEntity.create(), PROPERTY_SHORT_CODE);
 
 		assertThat(result).isNull();
+	}
+
+	@Test
+	void testExtractEveryValueForKey() {
+		final var namespaceConfig = NamespaceConfigEntity.create()
+			.withValues(List.of(
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_PROCESS_TRIGGER).withValue("ERRAND").withType(STRING),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withValue("NS1").withType(STRING),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_PROCESS_TRIGGER).withValue("MESSAGE").withType(STRING),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_PROCESS_TRIGGER).withValue("DECISION").withType(STRING)));
+
+		final var result = ConfigPropertyExtractor.<String>getValues(namespaceConfig, PROPERTY_PROCESS_TRIGGER);
+
+		// The single valued reader takes the first row and drops the rest, which is what this method exists to avoid
+		assertThat((String) ConfigPropertyExtractor.getNullableValue(namespaceConfig, PROPERTY_PROCESS_TRIGGER)).isEqualTo("ERRAND");
+		assertThat(result).containsExactly("ERRAND", "MESSAGE", "DECISION");
+	}
+
+	@Test
+	void testExtractValuesOfTypeOtherThanString() {
+		final var namespaceConfig = NamespaceConfigEntity.create()
+			.withValues(List.of(
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withValue("10").withType(INTEGER),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withValue("20").withType(INTEGER)));
+
+		final var result = ConfigPropertyExtractor.<Integer>getValues(namespaceConfig, PROPERTY_NOTIFICATION_TTL_IN_DAYS);
+
+		assertThat(result).containsExactly(10, 20);
+	}
+
+	@Test
+	void testExtractValuesWithNoMatch() {
+		assertThat(ConfigPropertyExtractor.getValues(NamespaceConfigEntity.create(), PROPERTY_PROCESS_TRIGGER)).isEmpty();
+	}
+
+	@Test
+	void testExtractValuesWhenConfigMissing() {
+		assertThat(ConfigPropertyExtractor.getValues(null, PROPERTY_PROCESS_TRIGGER)).isEmpty();
 	}
 
 	@Test

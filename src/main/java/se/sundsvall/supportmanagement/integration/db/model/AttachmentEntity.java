@@ -39,6 +39,9 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_attachment_data_id", columnNames = {
 			"attachment_data_id"
+		}),
+		@UniqueConstraint(name = "uq_attachment_errand_id_sequence_number", columnNames = {
+			"errand_id", "sequence_number"
 		})
 	})
 public class AttachmentEntity {
@@ -68,6 +71,20 @@ public class AttachmentEntity {
 	@Column(name = "file_size")
 	private Integer fileSize;
 
+	/**
+	 * The number of the attachment within its errand, counted from 1 in the order the attachments were added. Never
+	 * reused within the errand. Null for an attachment that has not been given a number yet.
+	 */
+	@Column(name = "sequence_number")
+	private Integer sequenceNumber;
+
+	/**
+	 * When the attachment came in. Set to the time of creation unless given, and editable afterwards.
+	 */
+	@Column(name = "received")
+	@TimeZoneStorage(NORMALIZE)
+	private OffsetDateTime received;
+
 	@Column(name = "hash", length = 64)
 	private String hash;
 
@@ -75,13 +92,13 @@ public class AttachmentEntity {
 	 * What the attachment is for, as registered for the namespace. Optional - an attachment without one is shown as any
 	 * other.
 	 * <p>
-	 * A property of the file rather than of any link to it, so the errand can show it in its own attachment list and an
-	 * attachment belonging to no handling artefact can still carry one. The consequence is that it is a single value: an
-	 * attachment serving one purpose for a statement serves the same purpose everywhere it is linked.
+	 * A property of the file, not of any link to it: the errand shows it in its own attachment list, an attachment
+	 * belonging to no handling artefact can carry one, and an attachment serving one purpose for a statement serves the
+	 * same purpose everywhere it is linked.
 	 * <p>
-	 * A reference rather than a copy of the name, the way the labels of an errand are, so a purpose given a new name or
-	 * display name in the metadata is shown as such wherever it is used. Nothing cascades either way: clearing the
-	 * reference leaves the purpose in the metadata, and a purpose still referenced cannot be removed from it.
+	 * A reference to the purpose in the metadata, so a purpose given a new name or display name there is shown as such
+	 * wherever it is used. Nothing cascades either way: clearing the reference leaves the purpose in the metadata, and a
+	 * purpose still referenced cannot be removed from it.
 	 */
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "attachment_purpose_id", foreignKey = @ForeignKey(name = "fk_attachment_attachment_purpose_id"))
@@ -117,6 +134,7 @@ public class AttachmentEntity {
 	@PrePersist
 	void onCreate() {
 		created = now(ZoneId.systemDefault()).truncatedTo(MILLIS);
+		received = ofNullable(received).orElse(created);
 	}
 
 	@PreUpdate
@@ -216,8 +234,8 @@ public class AttachmentEntity {
 	}
 
 	/**
-	 * The id of the data row this attachment points at, without the row being loaded. Read only: the association is
-	 * what sets it, which is why there is no setter to go with this.
+	 * The id of the data row this attachment points at, without the row being loaded. Read only: it is set through the
+	 * association.
 	 *
 	 * @return the id of the data row, or null for an attachment that has not been written yet.
 	 */
@@ -277,6 +295,32 @@ public class AttachmentEntity {
 		return this;
 	}
 
+	public Integer getSequenceNumber() {
+		return sequenceNumber;
+	}
+
+	public void setSequenceNumber(final Integer sequenceNumber) {
+		this.sequenceNumber = sequenceNumber;
+	}
+
+	public AttachmentEntity withSequenceNumber(final Integer sequenceNumber) {
+		this.sequenceNumber = sequenceNumber;
+		return this;
+	}
+
+	public OffsetDateTime getReceived() {
+		return received;
+	}
+
+	public void setReceived(final OffsetDateTime received) {
+		this.received = received;
+	}
+
+	public AttachmentEntity withReceived(final OffsetDateTime received) {
+		this.received = received;
+		return this;
+	}
+
 	public String getHash() {
 		return hash;
 	}
@@ -309,7 +353,8 @@ public class AttachmentEntity {
 			return false;
 		final AttachmentEntity that = (AttachmentEntity) o;
 		return Objects.equals(id, that.id) && Objects.equals(namespace, that.namespace) && Objects.equals(municipalityId, that.municipalityId) && Objects.equals(fileName, that.fileName) && Objects.equals(
-			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(hash, that.hash) && Objects.equals(attachmentData, that.attachmentData)
+			mimeType, that.mimeType) && Objects.equals(channel, that.channel) && Objects.equals(fileSize, that.fileSize) && Objects.equals(sequenceNumber, that.sequenceNumber)
+			&& Objects.equals(received, that.received) && Objects.equals(hash, that.hash) && Objects.equals(attachmentData, that.attachmentData)
 			&& Objects.equals(
 				created, that.created) && Objects.equals(modified, that.modified)
 			&& Objects.equals(errandEntity, that.errandEntity);
@@ -317,7 +362,7 @@ public class AttachmentEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, channel, fileSize, hash, attachmentData, created, modified, errandEntity);
+		return Objects.hash(id, namespace, municipalityId, fileName, mimeType, channel, fileSize, sequenceNumber, received, hash, attachmentData, created, modified, errandEntity);
 	}
 
 	@Override
@@ -330,6 +375,8 @@ public class AttachmentEntity {
 			", mimeType='" + mimeType + '\'' +
 			", channel='" + channel + '\'' +
 			", fileSize=" + fileSize +
+			", sequenceNumber=" + sequenceNumber +
+			", received=" + received +
 			", hash='" + hash + '\'' +
 			", purpose=" + ofNullable(purpose).map(AttachmentPurposeEntity::getId).orElse(null) +
 			", attachmentData=" + attachmentData +

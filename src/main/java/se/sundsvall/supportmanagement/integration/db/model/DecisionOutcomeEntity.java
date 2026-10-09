@@ -21,10 +21,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 /**
  * The outcomes a decision may have, registered per namespace.
  * <p>
- * Nothing is seeded. The outcomes of administrative law - approval, partial approval, rejection, dismissal and
- * discontinuation - hold in most lines of business, but which of them a namespace uses, and what else it needs, is for
- * the namespace to say. The code decides nothing on the name of an outcome. The recommendation of an investigation is
- * held to the same outcomes as the decision it proposes.
+ * Nothing is seeded: each namespace registers the outcomes it uses. The code decides nothing on the name of an outcome.
+ * The recommendation of an investigation is held to the same outcomes as the decision it proposes.
  */
 @Entity
 @Table(name = "decision_outcome",

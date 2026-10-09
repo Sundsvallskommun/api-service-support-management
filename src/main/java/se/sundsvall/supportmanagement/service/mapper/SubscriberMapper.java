@@ -18,11 +18,8 @@ import static java.util.stream.Collectors.toCollection;
  *
  * <p>
  * Collection-returning methods that produce entity embeddables ({@link #toChannelEmbeddables},
- * {@link #toEventFilterEmbeddables}) return <strong>mutable</strong> ArrayLists. This is required
- * so Hibernate can manage {@code @ElementCollection @OrderColumn} lists during update flush —
- * {@code Stream.toList()} returns an immutable list which would cause
- * {@code UnsupportedOperationException}, translated by dept44 to {@code 501 NOT_IMPLEMENTED}.
- * See {@code SubscribersIT.test07_updateSubscriber} for regression coverage.
+ * {@link #toEventFilterEmbeddables}) return <strong>mutable</strong> ArrayLists, which Hibernate
+ * manages as {@code @ElementCollection @OrderColumn} lists during update flush.
  */
 public final class SubscriberMapper {
 
