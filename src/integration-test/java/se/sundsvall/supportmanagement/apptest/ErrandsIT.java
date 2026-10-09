@@ -19,10 +19,10 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -323,7 +323,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath(PATH.replace("NAMESPACE-1", "CONTACTCENTER"))
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(INTERNAL_SERVER_ERROR)
+			.withExpectedResponseStatus(BAD_GATEWAY)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
@@ -337,7 +337,7 @@ class ErrandsIT extends AbstractAppTest {
 			.withServicePath(PATH + "/" + id)
 			.withHttpMethod(PATCH)
 			.withRequest(REQUEST_FILE)
-			.withExpectedResponseStatus(INTERNAL_SERVER_ERROR)
+			.withExpectedResponseStatus(BAD_GATEWAY)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
