@@ -25,7 +25,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 /**
  * Label classification metadata IT tests. Runs against NAMESPACE-2584, whose two labels share the classification CLASS.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataLabelClassificationIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/MetadataLabelClassificationIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

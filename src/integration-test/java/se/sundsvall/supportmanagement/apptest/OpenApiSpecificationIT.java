@@ -18,7 +18,7 @@ import tools.jackson.dataformat.yaml.YAMLMapper;
 import static java.nio.file.Files.writeString;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
-@WireMockAppTestSuite(files = "classpath:/OpenApiSpecificationIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/OpenApiSpecificationIT/", classes = Application.class)
 class OpenApiSpecificationIT {
 
 	private static final YAMLMapper YAML_MAPPER = new YAMLMapper();

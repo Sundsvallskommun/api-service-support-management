@@ -23,7 +23,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
  * in a response, that a created row answers with a Location pointing at itself, and that the refusals reach the caller
  * as the status codes the process engine acts on.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandProcessesIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandProcessesIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

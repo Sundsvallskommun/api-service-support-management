@@ -44,7 +44,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * / TYPE-2 / SUBTYPE-4, with two DEEPSUBTYPE children under it, and errand 1be673c0 referencing both SUBTYPE-3 and
  * SUBTYPE-4 directly.
  */
-@WireMockAppTestSuite(files = "classpath:/LabelMoveIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/LabelMoveIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

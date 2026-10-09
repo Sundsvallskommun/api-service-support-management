@@ -43,7 +43,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
  * so every event written stays undelivered until a test delivers it. The tests of the intake, the action and the
  * deletion turn NAMESPACE-1 into a namespace that runs a process as well (testdata-process-event.sql).
  */
-@WireMockAppTestSuite(files = "classpath:/ProcessStartModeIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ProcessStartModeIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

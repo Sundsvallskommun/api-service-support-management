@@ -41,7 +41,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
 /**
  * Label Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataLabelIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/MetadataLabelIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

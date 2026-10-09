@@ -26,7 +26,7 @@ import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 /**
  * Subscription IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/SubscriptionsIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/SubscriptionsIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

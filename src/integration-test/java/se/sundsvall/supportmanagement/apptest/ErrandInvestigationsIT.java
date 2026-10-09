@@ -35,7 +35,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
  * Errand Investigations IT tests, including the sections an investigation is assessed in, the attachments linked to it,
  * the JSON parameters it and its sections own and the parameters it carries.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandInvestigationsIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandInvestigationsIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

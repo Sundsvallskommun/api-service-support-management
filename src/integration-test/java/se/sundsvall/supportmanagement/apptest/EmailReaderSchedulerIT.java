@@ -17,7 +17,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-@WireMockAppTestSuite(files = "classpath:/EmailReaderSchedulerIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/EmailReaderSchedulerIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

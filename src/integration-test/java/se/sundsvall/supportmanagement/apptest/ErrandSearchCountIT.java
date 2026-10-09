@@ -29,7 +29,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
  * Counts the OpenSearch index, and divides the count over one column. The index is rebuilt from the database before
  * every test, since the test data is loaded by SQL, which Hibernate Search never sees.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandSearchCountIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandSearchCountIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

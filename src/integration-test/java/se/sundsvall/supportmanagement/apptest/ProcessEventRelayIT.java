@@ -57,7 +57,7 @@ import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE
  * The order pw-alkt receives events in is held by scenarios in the stubs: each event is only answered in the state the
  * one before it leaves behind.
  */
-@WireMockAppTestSuite(files = "classpath:/ProcessEventRelayIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ProcessEventRelayIT/", classes = Application.class)
 @TestPropertySource(properties = {
 	"process-engine.direct-run.enabled=true",
 	"integration.pw-alkt.read-timeout=3",

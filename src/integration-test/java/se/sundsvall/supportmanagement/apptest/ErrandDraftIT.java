@@ -31,7 +31,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
  * starts its process on its own (testdata-process-start-mode.sql), and the direct run is off, so every event written
  * stays in the outbox.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandDraftIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandDraftIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

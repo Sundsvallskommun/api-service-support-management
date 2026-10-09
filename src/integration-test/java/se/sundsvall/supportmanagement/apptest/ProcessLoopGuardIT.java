@@ -70,7 +70,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setTrigger
  * engine, which those endpoints refuse, are issued through {@link EventService#createProcessCommandEvent}, which is
  * where the endpoints hand them over.
  */
-@WireMockAppTestSuite(files = "classpath:/ProcessLoopGuardIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ProcessLoopGuardIT/", classes = Application.class)
 @TestPropertySource(properties = "process-engine.direct-run.enabled=true")
 @Sql({
 	"/db/scripts/truncate.sql",

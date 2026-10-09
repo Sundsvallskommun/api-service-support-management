@@ -29,7 +29,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 /**
  * Errand time measurements IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandTimeMeasurementsIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandTimeMeasurementsIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

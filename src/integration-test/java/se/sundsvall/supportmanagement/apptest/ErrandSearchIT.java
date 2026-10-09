@@ -30,7 +30,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
  * Searches the OpenSearch index. The index is rebuilt from the database before every test, since the test data is
  * loaded by SQL, which Hibernate Search never sees.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandSearchIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandSearchIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

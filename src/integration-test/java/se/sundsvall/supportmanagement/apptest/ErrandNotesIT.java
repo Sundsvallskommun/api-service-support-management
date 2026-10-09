@@ -22,7 +22,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 /**
  * ErrandNotes IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandNotesIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandNotesIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

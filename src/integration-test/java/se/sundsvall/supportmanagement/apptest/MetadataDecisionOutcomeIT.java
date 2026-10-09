@@ -27,7 +27,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 /**
  * DecisionOutcome Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataDecisionOutcomeIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/MetadataDecisionOutcomeIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

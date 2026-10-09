@@ -22,7 +22,7 @@ import static org.springframework.http.HttpStatus.OK;
 /**
  * Contact Reason Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataContactReasonIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/MetadataContactReasonIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

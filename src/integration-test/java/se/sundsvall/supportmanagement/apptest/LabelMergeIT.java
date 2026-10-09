@@ -46,7 +46,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * third leaf, DEEPSUBTYPE-3, is added under the same parent by test01's own {@code @Sql} to serve as the merge
  * destination - nothing in the shared fixture is itself a spare leaf sibling.
  */
-@WireMockAppTestSuite(files = "classpath:/LabelMergeIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/LabelMergeIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

@@ -19,7 +19,7 @@ import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpStatus.OK;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
-@WireMockAppTestSuite(files = "classpath:/EmailDispatchIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/EmailDispatchIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-email-dispatch-it.sql"

@@ -41,7 +41,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * A label change made by a scheduled action or a label move is refused as well, and the refusal is written on the
  * errand, since there is no caller to answer.
  */
-@WireMockAppTestSuite(files = "classpath:/ProcessKeyGuardIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ProcessKeyGuardIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

@@ -16,7 +16,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 
-@WireMockAppTestSuite(files = "classpath:/SubscriberNotificationIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/SubscriberNotificationIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

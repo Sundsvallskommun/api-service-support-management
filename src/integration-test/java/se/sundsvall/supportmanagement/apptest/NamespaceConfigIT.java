@@ -28,7 +28,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.ROLE;
 
-@WireMockAppTestSuite(files = "classpath:/NamespaceConfigIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/NamespaceConfigIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

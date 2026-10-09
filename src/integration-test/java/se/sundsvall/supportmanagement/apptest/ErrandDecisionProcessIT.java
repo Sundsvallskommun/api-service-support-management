@@ -45,7 +45,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.TRIGGER_PR
  * Every write expected to reach the process is also held to having been logged as an errand event with the sub type
  * DECISION. The relay is not run, so the rows written stay undelivered.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandDecisionProcessIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandDecisionProcessIT/", classes = Application.class)
 @ExtendWith(OutputCaptureExtension.class)
 @Sql({
 	"/db/scripts/truncate.sql",

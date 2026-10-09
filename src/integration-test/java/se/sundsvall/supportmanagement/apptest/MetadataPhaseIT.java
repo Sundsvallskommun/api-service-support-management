@@ -23,7 +23,7 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 /**
  * Phase Metadata IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/MetadataPhaseIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/MetadataPhaseIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

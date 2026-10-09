@@ -56,7 +56,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * resolve a label an earlier step in the very same request added - the one piece of behaviour that has no equivalent
  * in the standalone {@code /move}/{@code /merge} endpoints.
  */
-@WireMockAppTestSuite(files = "classpath:/LabelRestructureIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/LabelRestructureIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

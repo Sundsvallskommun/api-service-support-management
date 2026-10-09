@@ -27,7 +27,7 @@ import static org.springframework.http.HttpStatus.OK;
  * uses is free for the others. The parameters of an artefact go with it, where an attachment linked to it stays on the
  * errand. Each case checks both what went and what stayed, counted with SQL in the database.
  */
-@WireMockAppTestSuite(files = "classpath:/ArtefactJsonParameterCascadeIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ArtefactJsonParameterCascadeIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

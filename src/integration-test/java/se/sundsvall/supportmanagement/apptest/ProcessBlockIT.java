@@ -51,7 +51,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.TRIGGER_PR
  * process on a changed errand, an attachment and a decision, so what holds an event back is the block and not the
  * triggers. The errand aa..a4 wears the application label alone, and is published as before.
  */
-@WireMockAppTestSuite(files = "classpath:/ProcessBlockIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ProcessBlockIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql",

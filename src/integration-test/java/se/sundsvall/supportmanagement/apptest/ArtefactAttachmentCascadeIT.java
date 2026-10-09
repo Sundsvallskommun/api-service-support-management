@@ -31,7 +31,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
  * Every removal case verifies <b>both</b> halves of its requirement - that the right row went, and that the right row
  * stayed. The rows are counted with SQL, in the database.
  */
-@WireMockAppTestSuite(files = "classpath:/ArtefactAttachmentCascadeIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ArtefactAttachmentCascadeIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"

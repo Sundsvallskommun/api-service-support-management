@@ -22,7 +22,7 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 /**
  * ErrandJsonParameters IT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/ErrandJsonParametersIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/ErrandJsonParametersIT/", classes = Application.class)
 @Sql({
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"
