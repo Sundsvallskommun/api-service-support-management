@@ -1,5 +1,12 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -11,14 +18,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.test.context.jdbc.Sql;
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
 
 /**
  * ErrandJsonParameters IT tests.

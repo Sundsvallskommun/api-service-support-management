@@ -76,8 +76,8 @@ class OpenApiSpecificationIT {
 	/**
 	 * Attempts to convert the given YAML (no YAML-check...) to JSON.
 	 *
-	 * @param yaml the YAML to convert
-	 * @return a JSON string
+	 * @param  yaml the YAML to convert
+	 * @return      a JSON string
 	 */
 	private String toJson(final String yaml) {
 		return YAML_MAPPER.readTree(yaml).toString();
