@@ -34,10 +34,10 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 
 /**
- * The start mode of the labels over the wire: the permission an ordinary errand event carries to pw-alkt, and the checks
- * a label write is held to. Also the publication from the writes that reach an errand through neither the API nor the
- * errand service: the email intake, which writes no revision, and a scheduled action, which has no request behind it,
- * and the deletion of an errand through the API, which is published whatever its labels say.
+ * The start mode of the labels over the wire: the permission an ordinary errand event carries to pw-alkt, and the
+ * checks a label write is held to. Also the publication from the writes that reach an errand through neither the API
+ * nor the errand service: the email intake, which writes no revision, and a scheduled action, which has no request
+ * behind it, and the deletion of an errand through the API, which is published whatever its labels say.
  * <p>
  * A changed errand wakes the process of PROCESS-NAMESPACE (testdata-process-loop-guard.sql), and the direct run is off,
  * so every event written stays undelivered until a test delivers it. The tests of the intake, the action and the

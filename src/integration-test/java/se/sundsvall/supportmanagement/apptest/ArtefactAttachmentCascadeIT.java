@@ -1,11 +1,22 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
+import java.util.Map;
+import net.javacrumbs.jsonunit.core.Option;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.CREATED;
@@ -13,19 +24,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
-
-import java.util.List;
-import java.util.Map;
-import net.javacrumbs.jsonunit.core.Option;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
 
 /**
  * The five removal cases the attachment link has to survive, and the linking and purpose of an errand attachment.
@@ -141,8 +139,8 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Case 5 - the errand is removed. Everything goes: all four artefacts with their sections, terms and parameters, their links and
-	 * the attachments.
+	 * Case 5 - the errand is removed. Everything goes: all four artefacts with their sections, terms and parameters,
+	 * their links and the attachments.
 	 */
 	@Test
 	void test05_deletingErrandRemovesEverything() {

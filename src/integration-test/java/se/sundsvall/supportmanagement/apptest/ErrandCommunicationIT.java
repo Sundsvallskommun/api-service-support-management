@@ -1,5 +1,16 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -15,19 +26,6 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.util.MimeTypeUtils.IMAGE_JPEG_VALUE;
 import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.List;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.JsonNode;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
 
 /**
  * ErrandCommunication IT tests.
@@ -297,7 +295,8 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Test to verify email is sent to reporter when administrator creates a message in an internal conversation for an errand where stakeholder with reporter role is present.
+	 * Test to verify email is sent to reporter when administrator creates a message in an internal conversation for an
+	 * errand where stakeholder with reporter role is present.
 	 */
 	@Test
 	void test20_createInternalConversationMessageToReporter() throws FileNotFoundException {
@@ -312,7 +311,8 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Test to verify email is NOT sent to reporter when reporter creates a message in an internal conversation for an errand where stakeholder with reporter role is present.
+	 * Test to verify email is NOT sent to reporter when reporter creates a message in an internal conversation for an
+	 * errand where stakeholder with reporter role is present.
 	 */
 	@Test
 	void test21_createInternalConversationMessageToAdministrator() throws FileNotFoundException {

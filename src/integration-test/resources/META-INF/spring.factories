@@ -1,2 +1,5 @@
 org.springframework.boot.env.EnvironmentPostProcessor=\
 se.sundsvall.supportmanagement.OpenSearchContainerEnvironmentPostProcessor
+
+org.springframework.test.context.TestExecutionListener=\
+se.sundsvall.supportmanagement.ResetSharedStateTestExecutionListener

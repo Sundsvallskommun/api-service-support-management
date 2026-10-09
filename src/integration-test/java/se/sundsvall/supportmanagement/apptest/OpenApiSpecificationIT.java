@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.web.util.UriComponentsBuilder;
-import se.sundsvall.dept44.util.ResourceUtils;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.dept44.util.ResourceUtils;
 import se.sundsvall.supportmanagement.Application;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
@@ -64,8 +64,8 @@ class OpenApiSpecificationIT {
 	/**
 	 * Attempts to convert the given YAML (no YAML-check...) to JSON.
 	 *
-	 * @param yaml the YAML to convert
-	 * @return a JSON string
+	 * @param  yaml the YAML to convert
+	 * @return      a JSON string
 	 */
 	private String toJson(final String yaml) {
 		return YAML_MAPPER.readTree(yaml).toString();

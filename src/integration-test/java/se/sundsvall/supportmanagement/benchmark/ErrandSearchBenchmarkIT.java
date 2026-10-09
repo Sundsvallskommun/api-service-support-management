@@ -69,7 +69,9 @@ class ErrandSearchBenchmarkIT {
 	private static final int WARMUP = 5;
 	private static final int RUNS = 30;
 
-	/** In the title of every thousandth errand, so that a free text search over them finds a hundred of a hundred thousand. */
+	/**
+	 * In the title of every thousandth errand, so that a free text search over them finds a hundred of a hundred thousand.
+	 */
 	private static final String RARE = "kvarnbacken";
 	/** In the description of every other errand. */
 	private static final String COMMON = "gatubelysning";

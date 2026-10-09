@@ -38,8 +38,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * The refusal reaches the caller as a 400 whose detail names what is wrong, and is decided by the process rows in the
  * database - a live process, one that has run to its end, and none at all.
  * <p>
- * A label change made by a scheduled action or a label move is refused as well, and the refusal is written on the errand,
- * since there is no caller to answer.
+ * A label change made by a scheduled action or a label move is refused as well, and the refusal is written on the
+ * errand, since there is no caller to answer.
  */
 @WireMockAppTestSuite(files = "classpath:/ProcessKeyGuardIT/", classes = Application.class, sharedContext = true)
 @Sql({
