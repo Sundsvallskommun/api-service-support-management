@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.supportmanagement.api.model.identifier.IdentifierTypeValues;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
@@ -24,6 +23,7 @@ import se.sundsvall.supportmanagement.service.mapper.SubscriberMapper;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -44,10 +44,12 @@ public class SubscriberService {
 
 	private final SubscriberRepository subscriberRepository;
 	private final SubscriptionRepository subscriptionRepository;
+	private final SubscriptionOptOutService subscriptionOptOutService;
 
-	public SubscriberService(final SubscriberRepository subscriberRepository, final SubscriptionRepository subscriptionRepository) {
+	public SubscriberService(final SubscriberRepository subscriberRepository, final SubscriptionRepository subscriptionRepository, final SubscriptionOptOutService subscriptionOptOutService) {
 		this.subscriberRepository = subscriberRepository;
 		this.subscriptionRepository = subscriptionRepository;
+		this.subscriptionOptOutService = subscriptionOptOutService;
 	}
 
 	@Transactional(readOnly = true)
@@ -98,17 +100,29 @@ public class SubscriberService {
 		return SubscriberMapper.toSubscriber(saved, subscriptionRepository.countBySubscriberId(subscriberId));
 	}
 
+	/**
+	 * Removes the subscriber and, through the cascade, its subscriptions. Removing it is the user leaving every profile
+	 * it is a member of, which is recorded first, as the members sync would otherwise give the user a new subscriber and
+	 * put them back on the profiles.
+	 */
 	@Transactional
 	public void deleteSubscriber(final String municipalityId, final String namespace, final String subscriberId) {
 		final var entity = findEntity(municipalityId, namespace, subscriberId);
 		verifyOwnedByRequestingUser(entity);
+		ofNullable(entity.getSubscriptions()).orElse(emptyList())
+			.forEach(subscriptionOptOutService::recordOptOut);
 		subscriberRepository.delete(entity);
 	}
 
+	/**
+	 * The subscriber of the given principal, created with only the internal channel when there is none yet. A principal
+	 * holding several subscribers gets the first of them, so subscriptions made on their behalf gather on one subscriber
+	 * rather than spawning another.
+	 */
 	@Transactional
-	public SubscriberEntity findOrCreateSubscriberForAssignee(final String municipalityId, final String namespace, final String assignedUserId) {
+	public SubscriberEntity findOrCreateSubscriber(final String municipalityId, final String namespace, final String identifierType, final String identifierValue) {
 		final var existing = subscriberRepository.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
-			namespace, municipalityId, IdentifierTypeValues.AD_ACCOUNT, assignedUserId);
+			namespace, municipalityId, identifierType, identifierValue);
 		if (!existing.isEmpty()) {
 			return existing.get(0);
 		}
@@ -116,8 +130,8 @@ public class SubscriberService {
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withIdentifier(IdentifierEmbeddable.create()
-				.withType(IdentifierTypeValues.AD_ACCOUNT)
-				.withValue(assignedUserId))
+				.withType(identifierType)
+				.withValue(identifierValue))
 			.withChannels(new ArrayList<>(List.of(
 				NotificationChannelEmbeddable.create()
 					.withType(NotificationChannelType.INTERNAL)))));

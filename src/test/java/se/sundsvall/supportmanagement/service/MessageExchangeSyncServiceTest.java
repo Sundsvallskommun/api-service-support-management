@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
@@ -134,7 +135,7 @@ class MessageExchangeSyncServiceTest {
 		// Assert
 		verify(errandsRepositoryMock).getReferenceById(errandId);
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >123", Pageable.unpaged());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse för topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(EventSubType.MESSAGE), eq(null));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse för topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(EventSubType.MESSAGE), isNull(se.sundsvall.dept44.support.Identifier.class));
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 
 		final var savedEntity = conversationEntityCaptor.getValue();

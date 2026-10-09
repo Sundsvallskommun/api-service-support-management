@@ -333,6 +333,11 @@
 			"errandScoped": false
 		},
 		{
+			"resource": "SUBSCRIPTION_PROFILE",
+			"path": "subscription-profile",
+			"errandScoped": false
+		},
+		{
 			"resource": "SUBSCRIBER_NOTIFICATION",
 			"path": "subscriber-notification",
 			"errandScoped": false

@@ -3,9 +3,13 @@ package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
@@ -20,6 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.NotificationDispatchReposit
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
@@ -27,6 +32,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Identifier
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -39,6 +45,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationDispatchWorkerTest {
@@ -70,7 +78,7 @@ class NotificationDispatchWorkerTest {
 	private NotificationDispatchWorker worker;
 
 	@Captor
-	private ArgumentCaptor<List<NotificationDispatchEntity>> eventsCaptor;
+	private ArgumentCaptor<Map<NotificationChannelType, List<NotificationDispatchEntity>>> eventsCaptor;
 
 	@Captor
 	private ArgumentCaptor<OffsetDateTime> offsetDateTimeCaptor;
@@ -93,7 +101,7 @@ class NotificationDispatchWorkerTest {
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue(identifierValue))
-			.withChannels(List.of(NotificationChannelEmbeddable.create()))
+			.withChannels(List.of(NotificationChannelEmbeddable.create().withType(INTERNAL)))
 			.withEventFilters(eventFilters);
 	}
 
@@ -107,6 +115,22 @@ class NotificationDispatchWorkerTest {
 
 	private static EventFilterEmbeddable filter(final String type, final String subtype) {
 		return EventFilterEmbeddable.create().withType(type).withSubtype(subtype);
+	}
+
+	private static SubscriptionEntity buildProfileSubscription(final SubscriberEntity subscriber, final String id, final List<EventFilterEmbeddable> eventFilters,
+		final List<NotificationChannelType> channels) {
+		return SubscriptionEntity.create()
+			.withId(id)
+			.withSubscriber(subscriber)
+			.withTargetType(DbSubscriptionTargetType.NAMESPACE)
+			.withProfile(SubscriptionProfileEntity.create()
+				.withId("profile-" + id)
+				.withEventFilters(eventFilters)
+				.withChannels(channels));
+	}
+
+	private static Map<NotificationChannelType, List<NotificationDispatchEntity>> internal(final List<NotificationDispatchEntity> events) {
+		return Map.of(INTERNAL, events);
 	}
 
 	private void mockDispatchOf(final SubscriptionEntity... subscriptions) {
@@ -136,7 +160,7 @@ class NotificationDispatchWorkerTest {
 		worker.processGroup(List.of(entry));
 
 		// Assert
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(entry));
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(entry)));
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
 	}
 
@@ -154,7 +178,7 @@ class NotificationDispatchWorkerTest {
 
 		// Assert — one delivery carrying both events, not one delivery per event
 		verify(channelDispatcherMock).send(eq(ERRAND_ID), eq(ERRAND_NUMBER), eq(subscriber), eventsCaptor.capture());
-		assertThat(eventsCaptor.getValue()).containsExactly(created, updated);
+		assertThat(eventsCaptor.getValue().get(INTERNAL)).containsExactly(created, updated);
 	}
 
 	@Test
@@ -170,7 +194,7 @@ class NotificationDispatchWorkerTest {
 		worker.processGroup(List.of(bySelf, byOther));
 
 		// Assert
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(byOther));
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(byOther)));
 		verify(dispatchRepositoryMock).deleteAll(List.of(bySelf, byOther));
 	}
 
@@ -240,7 +264,7 @@ class NotificationDispatchWorkerTest {
 		worker.processGroup(List.of(entry));
 
 		// Assert
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(entry));
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(entry)));
 	}
 
 	@Test
@@ -255,7 +279,24 @@ class NotificationDispatchWorkerTest {
 		worker.processGroup(List.of(entry));
 
 		// Assert
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(entry));
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(entry)));
+	}
+
+	@Test
+	void processGroupMatchesLabelIdOnlyWhenTheEventAddedTheLabel() {
+
+		// Arrange — the profile wants the HSL label being added; only the second event added it
+		final var otherLabel = buildEntry("other-user").withId("entry-1").withEventType("UPDATE").withSubType("ERRAND").withAddedLabelIds(Set.of("other-label"));
+		final var hslLabel = buildEntry("other-user").withId("entry-2").withEventType("UPDATE").withSubType("ERRAND").withAddedLabelIds(Set.of("other-label", "hsl-label"));
+		final var noLabels = buildEntry("other-user").withId("entry-3").withEventType("UPDATE").withSubType("ERRAND");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildProfileSubscription(subscriber, "hsl", List.of(filter("UPDATE", "ERRAND").withLabelId("hsl-label")), List.of(EMAIL)));
+
+		// Act
+		worker.processGroup(List.of(otherLabel, hslLabel, noLabels));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, Map.of(EMAIL, List.of(hslLabel)));
 	}
 
 	@Test
@@ -288,7 +329,7 @@ class NotificationDispatchWorkerTest {
 		worker.processGroup(List.of(entry));
 
 		// Assert
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(entry));
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(entry)));
 	}
 
 	@Test
@@ -308,7 +349,112 @@ class NotificationDispatchWorkerTest {
 
 		// Assert
 		verify(channelDispatcherMock).send(eq(ERRAND_ID), eq(ERRAND_NUMBER), eq(subscriber), eventsCaptor.capture());
-		assertThat(eventsCaptor.getValue()).containsExactly(created, updated);
+		assertThat(eventsCaptor.getValue().get(INTERNAL)).containsExactly(created, updated);
+	}
+
+	@Test
+	void processGroupRoutesProfileEventsToTheProfileChannels() {
+
+		// Arrange — the subscriber's own channel is INTERNAL, but the profile routes to EMAIL alone
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildProfileSubscription(subscriber, "mail", List.of(filter(EVENT_TYPE, SUB_TYPE)), List.of(EMAIL)));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, Map.of(EMAIL, List.of(entry)));
+		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
+	}
+
+	@ParameterizedTest
+	@NullAndEmptySource
+	void processGroupRoutesEventsOfProfileWithoutChannelsToTheSubscriberChannels(final List<NotificationChannelType> profileChannels) {
+
+		// Arrange — the profile selects the event but leaves the channels to the subscriber, whose own channel is INTERNAL
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(buildProfileSubscription(subscriber, "own-channels", List.of(filter(EVENT_TYPE, SUB_TYPE)), profileChannels));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(entry)));
+		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
+	}
+
+	@Test
+	void processGroupLetsProfileIgnoreSubscriberFilters() {
+
+		// Arrange — the subscriber-level filter would reject the event, but a profile subscription is governed by the profile
+		// alone
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", List.of(filter("OTHER_TYPE", null)));
+		mockDispatchOf(buildProfileSubscription(subscriber, "mail", List.of(filter(EVENT_TYPE, null)), List.of(EMAIL)));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, Map.of(EMAIL, List.of(entry)));
+	}
+
+	@Test
+	void processGroupWithNonMatchingProfileSendsNothing() {
+
+		// Arrange — a profile without filters matches nothing, unlike a subscriber without filters
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(
+			buildProfileSubscription(subscriber, "other", List.of(filter("OTHER_TYPE", null)), List.of(EMAIL)),
+			buildProfileSubscription(subscriber, "empty", null, List.of(INTERNAL)));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
+	}
+
+	@Test
+	void processGroupMergesProfilesIntoOneDeliveryPerChannel() {
+
+		// Arrange — a message reaches the subscriber through two profiles; email only through one of them for the attachment
+		final var attachment = buildEntry("other-user").withId("entry-1").withEventType("UPDATE").withSubType("ATTACHMENT");
+		final var message = buildEntry("other-user").withId("entry-2").withEventType("UPDATE").withSubType("MESSAGE");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(
+			buildProfileSubscription(subscriber, "notice", List.of(filter("UPDATE", "MESSAGE")), List.of(INTERNAL)),
+			buildProfileSubscription(subscriber, "mail", List.of(filter("UPDATE", "MESSAGE"), filter("UPDATE", "ATTACHMENT")), List.of(EMAIL)));
+
+		// Act
+		worker.processGroup(List.of(attachment, message));
+
+		// Assert — one call, each channel carrying its own events, the message not duplicated on any channel
+		verify(channelDispatcherMock).send(eq(ERRAND_ID), eq(ERRAND_NUMBER), eq(subscriber), eventsCaptor.capture());
+		assertThat(eventsCaptor.getValue()).containsOnlyKeys(INTERNAL, EMAIL);
+		assertThat(eventsCaptor.getValue().get(INTERNAL)).containsExactly(message);
+		assertThat(eventsCaptor.getValue().get(EMAIL)).containsExactly(attachment, message);
+	}
+
+	@Test
+	void processGroupCombinesProfileAndOwnSubscription() {
+
+		// Arrange — the subscriber's own errand subscription adds INTERNAL to what the profile sends by email
+		final var entry = buildEntry("other-user");
+		final var subscriber = buildSubscriber("joe01doe", null);
+		mockDispatchOf(
+			buildProfileSubscription(subscriber, "mail", List.of(filter(EVENT_TYPE, null)), List.of(EMAIL)),
+			buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(entry));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, Map.of(EMAIL, List.of(entry), INTERNAL, List.of(entry)));
 	}
 
 	@Test
@@ -325,7 +471,7 @@ class NotificationDispatchWorkerTest {
 		worker.processGroup(List.of(stale, fresh));
 
 		// Assert — the stale entry is never sent, but is still cleaned up with the rest of the group
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, List.of(fresh));
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(fresh)));
 		verify(dispatchRepositoryMock).deleteAll(List.of(stale, fresh));
 	}
 
@@ -361,7 +507,7 @@ class NotificationDispatchWorkerTest {
 		worker.processGroup(List.of(entry));
 
 		// Assert
-		verify(channelDispatcherMock).send(ERRAND_ID, null, subscriber, List.of(entry));
+		verify(channelDispatcherMock).send(ERRAND_ID, null, subscriber, internal(List.of(entry)));
 	}
 
 	@Test

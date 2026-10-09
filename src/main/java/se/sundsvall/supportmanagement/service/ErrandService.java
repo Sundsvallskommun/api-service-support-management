@@ -2,7 +2,9 @@ package se.sundsvall.supportmanagement.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -38,11 +41,14 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
@@ -50,6 +56,7 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -62,6 +69,7 @@ public class ErrandService {
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+	private static final String EVENT_LOG_ASSIGN_ERRAND = "Ärendet har tilldelats.";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
@@ -135,6 +143,9 @@ public class ErrandService {
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		logCreateEvent(persistedEntity, revision);
+		if (nonNull(persistedEntity.getAssignedUserId())) {
+			logAssignmentEvent(persistedEntity, revision);
+		}
 
 		if (isNotBlank(referredFrom)) {
 			final var relation = ErrandMapper.toReferredFromRelation(namespace, expandRelation(referredFrom), persistedEntity.getId());
@@ -190,6 +201,10 @@ public class ErrandService {
 
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
+		// Copied before patching, since the patch changes the errand in place and its events tell what changed
+		final var previousAssignee = errandEntityToUpdate.getAssignedUserId();
+		final var previousLabelIds = labelIdsOf(errandEntityToUpdate);
+
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
 		ofNullable(contactReason).ifPresent(errandEntity::withContactReason);
 
@@ -202,7 +217,14 @@ public class ErrandService {
 			: repository.saveAndFlush(errandEntity);
 
 		errandActionService.processErrandActions(entity, OperationType.UPDATE);
-		logUpdateEvent(entity, revisionService.createErrandRevision(entity));
+		final var revisionResult = revisionService.createErrandRevision(entity);
+
+		final var addedLabelIds = labelIdsOf(entity);
+		addedLabelIds.removeAll(previousLabelIds);
+		logUpdateEvent(entity, revisionResult, addedLabelIds);
+		if (isNewAssignment(previousAssignee, entity.getAssignedUserId())) {
+			logAssignmentEvent(entity, revisionResult);
+		}
 
 		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable()), classificationDisplayNames);
 	}
@@ -444,22 +466,53 @@ public class ErrandService {
 	 */
 	private void logCreateEvent(final ErrandEntity entity, final RevisionResult revision) {
 		try {
-			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, revision.latest(), null, false, ERRAND);
+			// Every label of a new errand was added by creating it
+			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, new RevisionResult(null, revision.latest()), ERRAND, new ErrandEventOptions(false, getExecutingUser(), labelIdsOf(entity)));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log CREATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}
 	}
 
 	/**
+	 * Logs that the errand was assigned, apart from the change it is part of, so that subscribers may be notified of
+	 * assignments alone. No direct notification is made, as the change itself already makes one.
+	 */
+	private void logAssignmentEvent(final ErrandEntity entity, final RevisionResult revisionResult) {
+		try {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity,
+				ofNullable(revisionResult).map(RevisionResult::latest).orElse(null),
+				ofNullable(revisionResult).map(RevisionResult::previous).orElse(null),
+				false, ASSIGNMENT);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log assignment event for errand {}: {}", entity.getId(), e.getMessage());
+		}
+	}
+
+	/**
+	 * An errand counts as assigned when it gets an assignee it did not have, which leaves out taking the assignee away.
+	 * AD accounts are compared without regard to case, so writing the same assignee in other casing is no assignment.
+	 */
+	private static boolean isNewAssignment(final String previousAssignee, final String currentAssignee) {
+		return nonNull(currentAssignee) && !currentAssignee.equalsIgnoreCase(previousAssignee);
+	}
+
+	private static Set<String> labelIdsOf(final ErrandEntity entity) {
+		return ofNullable(entity.getLabels()).orElse(emptyList()).stream()
+			.map(ErrandLabelEmbeddable::getMetadataLabelId)
+			.filter(Objects::nonNull)
+			.collect(toCollection(LinkedHashSet::new));
+	}
+
+	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final Set<String> addedLabelIds) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, revisionResult, ERRAND, new ErrandEventOptions(true, getExecutingUser(), addedLabelIds));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}

@@ -28,7 +28,9 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 
 /**
  * Errand IT tests.
@@ -45,6 +47,7 @@ class ErrandsIT extends AbstractAppTest {
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
+	private static final String REPORTER_PROFILE_ID = "ccddeeff-0000-0000-0000-000000000099";
 	private static final String ACCESS_CONTROLLED_ERRAND = "/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8";
 
 	@Autowired
@@ -52,6 +55,9 @@ class ErrandsIT extends AbstractAppTest {
 
 	@Autowired
 	private RevisionRepository revisionRepository;
+
+	@Autowired
+	private SubscriptionRepository subscriptionRepository;
 
 	@Test
 	void test01_getAllErrandsSortedByTouched() {
@@ -98,12 +104,22 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequest()
 			.getResponseHeaders();
 
+		final var location = headers.get(LOCATION).stream().findFirst().get();
 		setupCall()
-			.withServicePath(headers.get(LOCATION).stream().findFirst().get())
+			.withServicePath(location)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+
+		// CONTACTCENTER has a reporter profile, so the reporter is subscribed to the new errand with it
+		final var errandId = location.substring(location.lastIndexOf('/') + 1);
+		assertThat(subscriptionRepository.findAllByProfileIdAndTargetType(REPORTER_PROFILE_ID, DbSubscriptionTargetType.ERRAND))
+			.singleElement()
+			.satisfies(subscription -> {
+				assertThat(subscription.getErrand().getId()).isEqualTo(errandId);
+				assertThat(subscription.getSubscriber().getIdentifier().getValue()).isEqualTo("joe01doe");
+			});
 	}
 
 	@Test

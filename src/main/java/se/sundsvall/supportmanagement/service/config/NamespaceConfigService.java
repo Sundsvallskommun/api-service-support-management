@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.config;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import org.apache.commons.lang3.EnumUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,6 +18,7 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
@@ -45,11 +47,15 @@ public class NamespaceConfigService {
 	private static final String LEVEL_NOT_ALLOWED = "Level may not be set for field '%s' of '%s' as the field holds no keyed collection";
 	private static final String LEVEL_NOT_SUPPORTED = "Level '%s' may not be set for field '%s' of '%s' as a field is held at read or read/write";
 
+	private static final String REPORTER_PROFILE_NOT_FOUND = "Reporter profile '%s' is not a subscription profile in namespace '%s' for municipality '%s'";
+
 	private final NamespaceConfigRepository configRepository;
+	private final SubscriptionProfileRepository subscriptionProfileRepository;
 	private final NamespaceConfigMapper mapper;
 
-	public NamespaceConfigService(NamespaceConfigRepository configRepository, NamespaceConfigMapper mapper) {
+	public NamespaceConfigService(NamespaceConfigRepository configRepository, SubscriptionProfileRepository subscriptionProfileRepository, NamespaceConfigMapper mapper) {
 		this.configRepository = configRepository;
+		this.subscriptionProfileRepository = subscriptionProfileRepository;
 		this.mapper = mapper;
 	}
 
@@ -63,9 +69,41 @@ public class NamespaceConfigService {
 			throw Problem.valueOf(BAD_REQUEST, CONFIG_ENTITY_ALREADY_EXISTS.formatted(namespace, municipalityId));
 		}
 		validateAccessConfiguration(request);
+		validateReporterProfile(request, namespace, municipalityId);
 		final var config = mapper.toEntity(request, namespace, municipalityId);
 		validateNoDuplicateGrants(config);
 		configRepository.save(config);
+	}
+
+	/**
+	 * Verifies that the reporter profile, when one is named, is a subscription profile of the namespace itself, since
+	 * reporters are subscribed with it as their errands are created.
+	 */
+	private void validateReporterProfile(NamespaceConfig request, String namespace, String municipalityId) {
+		ofNullable(request.getReporterProfileId())
+			.filter(profileId -> subscriptionProfileRepository.findByIdAndNamespaceAndMunicipalityId(profileId, namespace, municipalityId).isEmpty())
+			.ifPresent(profileId -> {
+				throw Problem.valueOf(BAD_REQUEST, REPORTER_PROFILE_NOT_FOUND.formatted(profileId, namespace, municipalityId));
+			});
+	}
+
+	/**
+	 * The profile the namespace subscribes reporters with as their errands are created, if any. Most namespaces have
+	 * none, and a namespace without configuration has none either.
+	 */
+	public Optional<String> findReporterProfileId(String namespace, String municipalityId) {
+		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.map(mapper::toNamespaceConfig)
+			.map(NamespaceConfig::getReporterProfileId);
+	}
+
+	/**
+	 * Signals whether the namespace subscribes reporters with the given profile.
+	 */
+	public boolean isReporterProfile(String namespace, String municipalityId, String profileId) {
+		return findReporterProfileId(namespace, municipalityId)
+			.filter(profileId::equals)
+			.isPresent();
 	}
 
 	/**
@@ -164,6 +202,7 @@ public class NamespaceConfigService {
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
+		validateReporterProfile(request, namespace, municipalityId);
 		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
 

@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Subscription profile with id:'ccddeeff-0000-0000-0000-000000000099' is the reporter profile of namespace:'CONTACTCENTER' for municipality with id:'2281' and cannot be deleted"
+}

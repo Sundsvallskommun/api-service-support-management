@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.Objects;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
 @Schema(description = "Filter on event type/subtype, used to limit which eventlog events trigger a notification")
 public class EventFilter {
@@ -22,6 +23,12 @@ public class EventFilter {
 	@Size(max = 64)
 	@Schema(description = "Event subtype. If null, all subtypes of the given type match.", examples = "ATTACHMENT")
 	private String subtype;
+
+	@ValidUuid(nullable = true)
+	@Schema(description = "Optional id of a metadata label. When set, only events that added this label to the errand match - " +
+		"every label counts as added when the errand is created. If null, the labels of the errand do not matter.",
+		examples = "f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b")
+	private String labelId;
 
 	public static EventFilter create() {
 		return new EventFilter();
@@ -53,9 +60,22 @@ public class EventFilter {
 		return this;
 	}
 
+	public String getLabelId() {
+		return labelId;
+	}
+
+	public void setLabelId(final String labelId) {
+		this.labelId = labelId;
+	}
+
+	public EventFilter withLabelId(final String labelId) {
+		this.labelId = labelId;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(type, subtype);
+		return Objects.hash(type, subtype, labelId);
 	}
 
 	@Override
@@ -67,11 +87,11 @@ public class EventFilter {
 			return false;
 		}
 		final EventFilter other = (EventFilter) obj;
-		return Objects.equals(type, other.type) && Objects.equals(subtype, other.subtype);
+		return Objects.equals(type, other.type) && Objects.equals(subtype, other.subtype) && Objects.equals(labelId, other.labelId);
 	}
 
 	@Override
 	public String toString() {
-		return "EventFilter{type='" + type + "', subtype='" + subtype + "'}";
+		return "EventFilter{type='" + type + "', subtype='" + subtype + "', labelId='" + labelId + "'}";
 	}
 }

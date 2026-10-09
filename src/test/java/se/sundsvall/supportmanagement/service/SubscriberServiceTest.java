@@ -19,9 +19,12 @@ import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +53,9 @@ class SubscriberServiceTest {
 
 	@Mock
 	private SubscriptionRepository subscriptionRepositoryMock;
+
+	@Mock
+	private SubscriptionOptOutService subscriptionOptOutServiceMock;
 
 	@InjectMocks
 	private SubscriberService service;
@@ -387,7 +393,29 @@ class SubscriberServiceTest {
 		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriberRepositoryMock).delete(entity);
 		verifyNoMoreInteractions(subscriberRepositoryMock);
-		verifyNoInteractions(subscriptionRepositoryMock);
+		verifyNoInteractions(subscriptionRepositoryMock, subscriptionOptOutServiceMock);
+	}
+
+	@Test
+	void deleteSubscriberLeavesEveryProfileItIsMemberOf() {
+		// Removing the subscriber is leaving its profiles, or the members sync would put the user back on them
+		final var id = randomUUID().toString();
+		final var membership = SubscriptionEntity.create().withId("sub-1").withTargetType(DbSubscriptionTargetType.NAMESPACE)
+			.withProfile(SubscriptionProfileEntity.create().withId("profile-1"));
+		final var errandSubscription = SubscriptionEntity.create().withId("sub-2").withTargetType(DbSubscriptionTargetType.ERRAND);
+		final var entity = SubscriberEntity.create().withId(id)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"))
+			.withSubscriptions(List.of(membership, errandSubscription));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		service.deleteSubscriber(MUNICIPALITY_ID, NAMESPACE, id);
+
+		// Every subscription is handed over; the opt-out service tells memberships from the rest
+		verify(subscriptionOptOutServiceMock).recordOptOut(membership);
+		verify(subscriptionOptOutServiceMock).recordOptOut(errandSubscription);
+		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
+		verify(subscriberRepositoryMock).delete(entity);
+		verifyNoMoreInteractions(subscriberRepositoryMock, subscriptionOptOutServiceMock);
 	}
 
 	@Test
@@ -406,7 +434,7 @@ class SubscriberServiceTest {
 	}
 
 	@Test
-	void findOrCreateSubscriberForAssigneeWhenSubscriberExists() {
+	void findOrCreateSubscriberForAdAccountWhenSubscriberExists() {
 		final var assignedUserId = "joe01doe";
 		final var existing = SubscriberEntity.create().withId(randomUUID().toString())
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -415,7 +443,7 @@ class SubscriberServiceTest {
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId)).thenReturn(List.of(existing));
 
-		final var result = service.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId);
+		final var result = service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "adAccount", assignedUserId);
 
 		assertThat(result).isSameAs(existing);
 		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
@@ -426,14 +454,14 @@ class SubscriberServiceTest {
 	}
 
 	@Test
-	void findOrCreateSubscriberForAssigneeWhenSubscriberDoesNotExist() {
+	void findOrCreateSubscriberForAdAccountWhenSubscriberDoesNotExist() {
 		final var assignedUserId = "joe01doe";
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId)).thenReturn(List.of());
 		when(subscriberRepositoryMock.save(any(SubscriberEntity.class)))
 			.thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(randomUUID().toString()));
 
-		service.findOrCreateSubscriberForAssignee(MUNICIPALITY_ID, NAMESPACE, assignedUserId);
+		service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "adAccount", assignedUserId);
 
 		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId);
@@ -445,6 +473,25 @@ class SubscriberServiceTest {
 		assertThat(saved.getIdentifier().getValue()).isEqualTo(assignedUserId);
 		assertThat(saved.getChannels()).hasSize(1);
 		assertThat(saved.getChannels().get(0).getType()).isEqualTo(NotificationChannelType.INTERNAL);
+		verifyNoMoreInteractions(subscriberRepositoryMock);
+		verifyNoInteractions(subscriptionRepositoryMock);
+	}
+
+	@Test
+	void findOrCreateSubscriberForPartyId() {
+		final var partyId = "c4e9b1f7-1111-2222-3333-444455556666";
+		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "partyId", partyId)).thenReturn(List.of());
+		when(subscriberRepositoryMock.save(any(SubscriberEntity.class)))
+			.thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(randomUUID().toString()));
+
+		service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "partyId", partyId);
+
+		verify(subscriberRepositoryMock).findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "partyId", partyId);
+		verify(subscriberRepositoryMock).save(entityCaptor.capture());
+		assertThat(entityCaptor.getValue().getIdentifier().getType()).isEqualTo("partyId");
+		assertThat(entityCaptor.getValue().getIdentifier().getValue()).isEqualTo(partyId);
 		verifyNoMoreInteractions(subscriberRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
 	}

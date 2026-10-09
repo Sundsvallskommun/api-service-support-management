@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,12 +10,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
@@ -40,6 +43,9 @@ class SubscriptionRepositoryTest {
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
+
+	@Autowired
+	private SubscriptionProfileRepository subscriptionProfileRepository;
 
 	@Test
 	void createSubscription() {
@@ -105,23 +111,23 @@ class SubscriptionRepositoryTest {
 	}
 
 	@Test
-	void existsBySubscriberIdAndTargetTypeAndErrandId() {
+	void existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull() {
 
 		// Act + Assert
-		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandId(
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(
 			"subscriber-id-1", DbSubscriptionTargetType.ERRAND, "ERRAND_ID-1")).isTrue();
-		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandId(
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(
 			"subscriber-id-1", DbSubscriptionTargetType.ERRAND, "ERRAND_ID-2")).isFalse();
 	}
 
 	@Test
-	void existsBySubscriberIdAndTargetTypeAndErrandIsNull() {
+	void existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileIsNull() {
 
 		// Act + Assert — subscriber-id-1 has a NAMESPACE-scoped subscription
-		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNull(
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileIsNull(
 			"subscriber-id-1", DbSubscriptionTargetType.NAMESPACE)).isTrue();
 		// subscriber-id-2 only has an ERRAND subscription
-		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNull(
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileIsNull(
 			"subscriber-id-2", DbSubscriptionTargetType.NAMESPACE)).isFalse();
 	}
 
@@ -188,6 +194,101 @@ class SubscriptionRepositoryTest {
 	}
 
 	private record CascadeFixture(String errandId, String subscriberId, String errandSubscriptionId, String namespaceSubscriptionId) {}
+
+	@Test
+	void existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileId() {
+
+		// Arrange — a profile subscription is told apart from the subscriber's own namespace subscription
+		final var fixture = createIsolatedProfileFixture();
+
+		// Act + Assert
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileId(
+			fixture.subscriberId, DbSubscriptionTargetType.NAMESPACE, fixture.profileId)).isTrue();
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileId(
+			fixture.subscriberId, DbSubscriptionTargetType.NAMESPACE, "other-profile")).isFalse();
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIsNullAndProfileIsNull(
+			fixture.subscriberId, DbSubscriptionTargetType.NAMESPACE)).isFalse();
+	}
+
+	@Test
+	void existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId() {
+
+		// Arrange
+		final var fixture = createIsolatedProfileFixture();
+		final var subscriber = subscriberRepository.findById(fixture.subscriberId).orElseThrow();
+		final var profile = subscriptionProfileRepository.findById(fixture.profileId).orElseThrow();
+		final var errand = errandsRepository.findById("ERRAND_ID-3").orElseThrow();
+		subscriptionRepository.saveAndFlush(SubscriptionEntity.create()
+			.withSubscriber(subscriber)
+			.withTargetType(DbSubscriptionTargetType.ERRAND)
+			.withErrand(errand)
+			.withProfile(profile));
+
+		// Act + Assert
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(
+			fixture.subscriberId, DbSubscriptionTargetType.ERRAND, "ERRAND_ID-3", fixture.profileId)).isTrue();
+		assertThat(subscriptionRepository.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(
+			fixture.subscriberId, DbSubscriptionTargetType.ERRAND, "ERRAND_ID-3")).isFalse();
+	}
+
+	@Test
+	void findAllByProfileIdAndTargetType() {
+
+		// Arrange
+		final var fixture = createIsolatedProfileFixture();
+
+		// Act
+		final var namespaceMembers = subscriptionRepository.findAllByProfileIdAndTargetType(fixture.profileId, DbSubscriptionTargetType.NAMESPACE);
+		final var errandSubscriptions = subscriptionRepository.findAllByProfileIdAndTargetType(fixture.profileId, DbSubscriptionTargetType.ERRAND);
+
+		// Assert
+		assertThat(namespaceMembers).extracting(SubscriptionEntity::getId).containsExactly(fixture.subscriptionId);
+		assertThat(namespaceMembers.getFirst().getSubscriber().getIdentifier().getValue()).isEqualTo("profile01");
+		assertThat(errandSubscriptions).isEmpty();
+	}
+
+	@Test
+	void deletingProfileCascadesToItsSubscriptions() {
+
+		// Arrange
+		final var fixture = createIsolatedProfileFixture();
+
+		// Act
+		subscriptionProfileRepository.deleteById(fixture.profileId);
+		subscriptionProfileRepository.flush();
+
+		// Assert
+		assertThat(subscriptionRepository.existsById(fixture.subscriptionId)).isFalse();
+		assertThat(subscriberRepository.existsById(fixture.subscriberId)).isTrue();
+	}
+
+	/**
+	 * Creates an isolated subscriber with a single NAMESPACE subscription pointing at a profile, kept apart from the
+	 * shared fixture so the counts the other tests rely on stay untouched.
+	 */
+	private ProfileFixture createIsolatedProfileFixture() {
+		final var profile = subscriptionProfileRepository.saveAndFlush(SubscriptionProfileEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("namespace-profile-test")
+			.withName("profile-test")
+			.withEventFilters(new ArrayList<>(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("MESSAGE"))))
+			.withChannels(new ArrayList<>(List.of(NotificationChannelType.EMAIL))));
+
+		final var subscriber = subscriberRepository.saveAndFlush(SubscriberEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("namespace-profile-test")
+			.withName("profile-test-subscriber")
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("profile01")));
+
+		final var subscription = subscriptionRepository.saveAndFlush(SubscriptionEntity.create()
+			.withSubscriber(subscriber)
+			.withTargetType(DbSubscriptionTargetType.NAMESPACE)
+			.withProfile(profile));
+
+		return new ProfileFixture(profile.getId(), subscriber.getId(), subscription.getId());
+	}
+
+	private record ProfileFixture(String profileId, String subscriberId, String subscriptionId) {}
 
 	@Test
 	void deletingSubscriptionDoesNotDeleteSubscriberOrErrand() {

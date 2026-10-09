@@ -667,6 +667,12 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table notification_dispatch_added_label (
+        dispatch_id varchar(36) not null,
+        metadata_label_id varchar(36) not null,
+        primary key (dispatch_id, metadata_label_id)
+    ) engine=InnoDB;
+
     create table parameter (
         version bigint default 0 not null,
         display_name varchar(255),
@@ -868,6 +874,7 @@
 
     create table subscriber_event_filter (
         sort_order integer not null check ((sort_order>=0)),
+        label_id varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         subscriber_id varchar(255) not null,
@@ -907,16 +914,54 @@
         created_by_value varchar(255),
         errand_id varchar(255),
         id varchar(255) not null,
+        profile_id varchar(255),
         subscriber_id varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
     create table subscription_event_filter (
         sort_order integer not null check ((sort_order>=0)),
+        label_id varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         subscription_id varchar(255) not null,
         primary key (sort_order, subscription_id)
+    ) engine=InnoDB;
+
+    create table subscription_opt_out (
+        created datetime(6),
+        identifier_type varchar(16) not null,
+        id varchar(255) not null,
+        identifier_value varchar(255) not null,
+        profile_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table subscription_profile (
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        description varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table subscription_profile_channel (
+        sort_order integer not null check ((sort_order>=0)),
+        type varchar(32) not null check ((type in ('INTERNAL','SMS','EMAIL'))),
+        profile_id varchar(255) not null,
+        primary key (sort_order, profile_id)
+    ) engine=InnoDB;
+
+    create table subscription_profile_event_filter (
+        sort_order integer not null check ((sort_order>=0)),
+        label_id varchar(36),
+        subtype varchar(64),
+        type varchar(64) not null,
+        profile_id varchar(255) not null,
+        primary key (sort_order, profile_id)
     ) engine=InnoDB;
 
     create table time_measurement (
@@ -1401,6 +1446,18 @@
     create index idx_subscription_subscriber_target 
        on subscription (subscriber_id, target_type, errand_id);
 
+    create index idx_subscription_profile_id 
+       on subscription (profile_id);
+
+    alter table if exists subscription_opt_out 
+       add constraint uq_subscription_opt_out_profile_identifier unique (profile_id, identifier_type, identifier_value);
+
+    create index idx_subscription_profile_municipality_id_namespace 
+       on subscription_profile (municipality_id, namespace);
+
+    alter table if exists subscription_profile 
+       add constraint uq_subscription_profile_municipality_namespace_name unique (municipality_id, namespace, name);
+
     alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);
 
@@ -1704,6 +1761,11 @@
        foreign key (errand_id) 
        references errand (id);
 
+    alter table if exists notification_dispatch_added_label 
+       add constraint fk_notification_dispatch_added_label_dispatch_id 
+       foreign key (dispatch_id) 
+       references notification_dispatch (id);
+
     alter table if exists parameter 
        add constraint fk_parameter_errand_id 
        foreign key (errand_id) 
@@ -1785,6 +1847,12 @@
        on delete cascade;
 
     alter table if exists subscription 
+       add constraint fk_subscription_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id) 
+       on delete cascade;
+
+    alter table if exists subscription 
        add constraint fk_subscription_subscriber_id 
        foreign key (subscriber_id) 
        references subscriber (id) 
@@ -1794,6 +1862,22 @@
        add constraint fk_subscription_event_filter_subscription_id 
        foreign key (subscription_id) 
        references subscription (id);
+
+    alter table if exists subscription_opt_out 
+       add constraint fk_subscription_opt_out_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id) 
+       on delete cascade;
+
+    alter table if exists subscription_profile_channel 
+       add constraint fk_subscription_profile_channel_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id);
+
+    alter table if exists subscription_profile_event_filter 
+       add constraint fk_subscription_profile_event_filter_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id);
 
     alter table if exists time_measurement 
        add constraint fk_errand_time_measure_errand_id 

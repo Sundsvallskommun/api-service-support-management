@@ -55,3 +55,28 @@ VALUES ('33333333-0000-0000-0000-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeee
 -- test03: CREATE/ERRAND event
 INSERT INTO notification_dispatch(id, errand_id, municipality_id, namespace, event_id, request_group_id, event_type, sub_type, description, executing_user_id, created)
 VALUES ('33333333-0000-0000-0000-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2281', 'NAMESPACE-1', 'evt-002', 'grp-002', 'CREATE', 'ERRAND', 'Nytt arende', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE));
+
+-- -----------------------------------
+-- MAS/MAR: a profile mailing when the HSL risk label is added to an errand
+-- -----------------------------------
+INSERT INTO metadata_label(id, municipality_id, namespace, classification, display_name, resource_name, resource_path, deprecated, version, created)
+VALUES ('44444444-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'RISK', 'HSL-risk 4 eller hogre', 'HSL_RISK_HIGH', 'HSL_RISK_HIGH', 0, 0, '2024-01-01 12:00:00.000');
+
+INSERT INTO subscription_profile(id, municipality_id, namespace, name, description, created, modified)
+VALUES ('55555555-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'Mejl: HSL-risk', null, '2024-01-01 12:00:00.000', null);
+
+INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype, label_id)
+VALUES ('55555555-0000-0000-0000-000000000001', 0, 'UPDATE', 'ERRAND', '44444444-0000-0000-0000-000000000001');
+
+INSERT INTO subscription_profile_channel(profile_id, sort_order, type)
+VALUES ('55555555-0000-0000-0000-000000000001', 0, 'EMAIL');
+
+-- The MAS subscriber has only the internal channel, as subscribers created by the members sync do
+INSERT INTO subscriber(id, municipality_id, namespace, name, identifier_type, identifier_value, paused_from, paused_until, created, modified, created_by_type, created_by_value)
+VALUES ('11111111-0000-0000-0000-000000000003', '2281', 'NAMESPACE-1', null, 'adAccount', 'mas01usr', null, null, '2024-01-01 12:00:00.000', null, 'adAccount', 'job01');
+
+INSERT INTO subscriber_channel(subscriber_id, sort_order, type, destination)
+VALUES ('11111111-0000-0000-0000-000000000003', 0, 'INTERNAL', null);
+
+INSERT INTO subscription(id, subscriber_id, target_type, errand_id, profile_id, expires_at, created, created_by_type, created_by_value)
+VALUES ('22222222-0000-0000-0000-000000000003', '11111111-0000-0000-0000-000000000003', 'NAMESPACE', null, '55555555-0000-0000-0000-000000000001', null, '2024-01-10 12:00:00.000', 'adAccount', 'job01');
