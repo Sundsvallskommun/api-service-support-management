@@ -19,12 +19,15 @@ import se.sundsvall.supportmanagement.integration.db.MessageExchangeIntegrationC
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MessageExchangeIntegrationConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.IdentifierMapper.resolveChannel;
 
@@ -61,7 +64,7 @@ public class MessageExchangeSyncService {
 			final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
 			final var synced = syncMessages(conversationEntity, errandEntity);
 			try {
-				eventService.createErrandEvent(UPDATE, EVENT_LOG_CONVERSATION.formatted(conversation.getTopic()), errandEntity, null, null, synced.fromOthers(), MESSAGE,
+				eventService.createErrandEvent(UPDATE, EVENT_LOG_CONVERSATION.formatted(conversation.getTopic()), errandEntity, null, null, synced.fromOthers(), messageSubtypeOf(conversationEntity),
 					synced.author());
 			} catch (final Exception e) {
 				LOG.warn("Failed to log conversation event for errand {}: {}", errandEntity.getId(), e.getMessage());
@@ -81,6 +84,18 @@ public class MessageExchangeSyncService {
 	 *                   of it as a subscriber. Null where the messages have more than one author, or one that is not known
 	 */
 	record SyncedMessages(boolean fromOthers, Identifier author) {}
+
+	/**
+	 * The subtype the messages of the conversation are logged with, which tells messages in conversations kept among the
+	 * staff from messages exchanged with someone outside. A conversation that is not external is presumed internal, as it
+	 * is when its messages are sent.
+	 */
+	static EventSubType messageSubtypeOf(final ConversationEntity conversationEntity) {
+		return ofNullable(conversationEntity.getType())
+			.filter(EXTERNAL.name()::equals)
+			.map(_ -> MESSAGE_EXTERNAL)
+			.orElse(MESSAGE_INTERNAL);
+	}
 
 	SyncedMessages syncMessages(final ConversationEntity conversationEntity, final ErrandEntity errandEntity) {
 

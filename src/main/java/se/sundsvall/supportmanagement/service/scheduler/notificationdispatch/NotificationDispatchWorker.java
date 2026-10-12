@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.integration.db.NotificationDispatchReposit
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
@@ -209,7 +210,7 @@ public class NotificationDispatchWorker {
 
 	private boolean matches(final EventFilterEmbeddable filter, final NotificationDispatchEntity entry) {
 		return Objects.equals(filter.getType(), entry.getEventType())
-			&& (filter.getSubtype() == null || Objects.equals(filter.getSubtype(), entry.getSubType()))
+			&& (filter.getSubtype() == null || EventSubType.selects(filter.getSubtype(), entry.getSubType()))
 			&& (filter.getLabelId() == null || ofNullable(entry.getAddedLabelIds()).orElse(emptySet()).contains(filter.getLabelId()));
 	}
 }

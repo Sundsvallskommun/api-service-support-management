@@ -12,7 +12,7 @@ VALUES (1, 'DISPLAY_NAME', 'Namespace 1', 'STRING'),
        (1, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
        (1, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
        (1, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
-       (1, 'BASE_URL', 'https://draken.test.local', 'STRING');
+       (1, 'BASE_URL', 'https://draken.test.local/NS1/arende/', 'STRING');
 
 -- -----------------------------------
 -- Errand
