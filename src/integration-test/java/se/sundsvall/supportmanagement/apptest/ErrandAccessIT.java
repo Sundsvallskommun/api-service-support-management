@@ -30,8 +30,7 @@ class ErrandAccessIT extends AbstractAppTest {
 
 	/**
 	 * A namespace that has not switched access control on restricts nobody, which is reported as every field and every
-	 * resource of the errand at read/write rather than as an absence of restrictions, so that a client reads one answer
-	 * the same way whatever the namespace does.
+	 * resource of the errand at read/write.
 	 */
 	@Test
 	void test01_unrestrictedNamespace() {
@@ -115,9 +114,8 @@ class ErrandAccessIT extends AbstractAppTest {
 	 * A first line officer of a namespace weighing resource grants, whose labels reach the errand at read while the
 	 * access mapper grants them the messages of its conversations at read/write.
 	 * <p>
-	 * The errand is reported at read, since no grant vouches for writing the errand itself, and the resource at
-	 * read/write, which is what the endpoint serving it accepts. Only the resources the access mapper grants are
-	 * reported at all - the rest are out of reach whatever the labels say.
+	 * The errand is reported at read and the resource at read/write. Only the resources the access mapper grants are
+	 * reported at all.
 	 */
 	@Test
 	void test07_resourceGrantCarriesTheWrite() {

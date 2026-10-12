@@ -28,20 +28,17 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 /**
  * Walks a namespace and removes the errands that have passed their retention period.
  * <p>
- * Errands are read in batches but removed one at a time, each in a transaction of its own. A namespace can hold far
- * more errands than fit in one transaction, and an errand that cannot be removed must cost only itself: it is counted
- * as failed, its id is logged, and the walk carries on.
+ * Errands are read in batches but removed one at a time, each in a transaction of its own. An errand that cannot be
+ * removed is counted as failed, its id is logged, and the walk carries on.
  * <p>
- * The batch query is keyed on the id of the last errand reached rather than on an offset, which is what lets the walk
- * pass an errand that failed instead of meeting it again on the next batch.
+ * The batch query is keyed on the id of the last errand reached, so the walk passes an errand that failed instead of
+ * meeting it again on the next batch.
  * <p>
  * Progress is written to the job at every batch boundary, and from inside a batch that outlasts the interval a run
- * reports on. A job that has gone quiet is taken to have ended with the instance carrying it out, so a run that is only
- * slow has to keep saying so - a batch is quick only while the services a removal reaches into are.
+ * reports on.
  * <p>
- * Whether the job has been asked to stop is read at the batch boundary alone. A run therefore stops on a batch
- * boundary, and it does so wherever the stop was asked for, since the answer comes from the job table rather than from
- * this instance.
+ * Whether the job has been asked to stop is read from the job table at the batch boundary alone. A run therefore stops
+ * on a batch boundary, on whichever instance the stop was asked for.
  */
 @Service
 public class ErrandPurgeWorker {
@@ -91,8 +88,7 @@ public class ErrandPurgeWorker {
 	}
 
 	/**
-	 * Runs a purge to its end. Never throws: whatever goes wrong ends the job as failed, since the thread this runs on
-	 * has nobody to report to.
+	 * Runs a purge to its end. Never throws: whatever goes wrong ends the job as failed.
 	 *
 	 * @param run the run to carry out.
 	 */
@@ -207,8 +203,7 @@ public class ErrandPurgeWorker {
 	/**
 	 * The ids of the next batch, in ascending id order and starting after the id the previous batch ended on.
 	 * <p>
-	 * Only the ids are read. An errand carries collections that are fetched with it, and a walk that loaded whole
-	 * errands only to remove them one at a time in transactions of their own would pay for all of that twice.
+	 * Only the ids are read.
 	 */
 	private List<String> nextBatch(final PurgeRun run, final String cursor, final int size) {
 		final var specification = ofNullable(cursor)
@@ -237,16 +232,15 @@ public class ErrandPurgeWorker {
 	}
 
 	/**
-	 * How many more errands the run may handle before it reaches the limit it was started with. A run without a limit is
-	 * given one that outlasts the service, so that the counting needs no special case.
+	 * How many more errands the run may handle before it reaches the limit it was started with, or
+	 * {@link Long#MAX_VALUE} for a run without a limit.
 	 */
 	private static long remainingBudget(final PurgeRun run, final Counters counters) {
 		return isNull(run.settings().maxErrands()) ? Long.MAX_VALUE : (long) run.settings().maxErrands() - counters.processed;
 	}
 
 	/**
-	 * Whether the job has left the state a run works in. A job that is gone counts as stopped too: there is nothing left
-	 * to report against, so there is no reason to keep removing errands on its behalf.
+	 * Whether the job has left the state a run works in. A job that is gone counts as stopped too.
 	 */
 	private boolean isStopped(final PurgeRun run) {
 		return !jobService.statusOf(run.jobId())
@@ -261,8 +255,7 @@ public class ErrandPurgeWorker {
 	}
 
 	/**
-	 * The tally of a single run. Written and read by the one thread carrying the run out, which is why it needs nothing
-	 * to make it safe across threads: what the outside world reads is the job, not this.
+	 * The tally of a single run. Written and read only by the thread carrying the run out, and not safe across threads.
 	 */
 	private static final class Counters {
 		private int processed;

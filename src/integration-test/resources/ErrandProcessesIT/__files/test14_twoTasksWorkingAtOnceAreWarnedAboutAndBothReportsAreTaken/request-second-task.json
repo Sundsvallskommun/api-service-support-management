@@ -1,0 +1,8 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "RUNNING",
+	"currentActivityId": "besluta",
+	"currentActivityName": "Besluta",
+	"externalTaskId": "task-branch-two"
+}

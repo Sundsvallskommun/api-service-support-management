@@ -8,9 +8,8 @@ import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 /**
- * Moving a label reshuffles every errand under it and cannot be undone, so dryRun carries no default. Leaving it out
- * is far more likely to be an oversight than a considered request to start that, and a caller that has to write the
- * intent out cannot make that mistake silently.
+ * Request for moving a label to a new parent. Moving a label reshuffles every errand under it and cannot be undone,
+ * and dryRun carries no default, so the caller always has to state whether the move is started.
  */
 @Schema(description = "Request for moving a label to a new parent")
 public class LabelMoveRequest {

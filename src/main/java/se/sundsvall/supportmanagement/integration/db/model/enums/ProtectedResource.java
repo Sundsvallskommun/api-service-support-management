@@ -30,6 +30,8 @@ public enum ProtectedResource {
 	INVESTIGATION("errand/investigation", ErrandIndex.under(ErrandIndex.INVESTIGATIONS)),
 	DECISION("errand/decision", ErrandIndex.under(ErrandIndex.DECISIONS)),
 	NOTIFICATION("errand/notification"),
+	PROCESS("errand/process"),
+	PROCESS_ACTIVITY("errand/process-activity"),
 	REVISION("errand/revision"),
 	TIME_MEASURE("errand/time-measure"),
 
@@ -76,8 +78,7 @@ public enum ProtectedResource {
 
 	/**
 	 * Signals if the resource belongs to an errand rather than to the namespace itself, which is what separates the
-	 * resources guarded per errand from those guarded on the access mapper alone. Kept next to the paths, since it is the
-	 * paths it reads.
+	 * resources guarded per errand from those guarded on the access mapper alone.
 	 */
 	public boolean isErrandScoped() {
 		return ERRAND.path.equals(path) || path.startsWith(ERRAND.path + "/");

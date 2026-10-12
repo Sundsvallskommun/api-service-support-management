@@ -66,8 +66,8 @@ public class ActionConfigEntity {
 	private List<ActionConfigParameterEntity> parameters = new ArrayList<>();
 
 	/**
-	 * The operations this config reacts to. Empty means every operation the action itself supports, which is what every
-	 * config written before this existed means - the set may only ever narrow that, never widen it.
+	 * The operations this config reacts to. Empty means every operation the action itself supports; the set may only
+	 * ever narrow that, never widen it.
 	 */
 	@ElementCollection(fetch = EAGER)
 	@CollectionTable(name = "action_config_operation_type", joinColumns = @JoinColumn(name = "action_config_id", foreignKey = @ForeignKey(name = "fk_action_config_operation_type_action_config_id")))

@@ -38,24 +38,26 @@ final class RestowPager {
 	 *                          concurrent-edit conflict, retried against a fresh read up to the configured attempt
 	 *                          limit.
 	 * @param  retryMessage     the WARN message to log for a given attempt number, once a retry is about to happen.
-	 * @param  progressReporter cumulative count of errands restowed so far.
-	 * @return                  number of errands restowed.
+	 * @param  progressReporter cumulative count of errands walked so far, those that kept their labels included.
+	 * @return                  how many errands were restowed, and how many kept the labels they had.
 	 */
-	int restow(final PageFetcher fetcher, final PagePersister persister, final IntFunction<String> retryMessage, final IntConsumer progressReporter) {
+	Outcome restow(final PageFetcher fetcher, final PagePersister persister, final IntFunction<String> retryMessage, final IntConsumer progressReporter) {
 		var lastSeenId = "";
 		var processed = 0;
+		var unchanged = 0;
 		var page = fetchAndPersistPage(fetcher, persister, retryMessage, lastSeenId);
 
-		while (!page.isEmpty()) {
-			processed += page.size();
+		while (!page.errands().isEmpty()) {
+			processed += page.errands().size();
+			unchanged += page.unchanged();
 			progressReporter.accept(processed);
-			lastSeenId = page.get(page.size() - 1).getId();
+			lastSeenId = page.errands().getLast().getId();
 
 			// A page shorter than requested is necessarily the last one - skip the round-trip that would only confirm it.
-			page = page.size() < batchSize ? List.of() : fetchAndPersistPage(fetcher, persister, retryMessage, lastSeenId);
+			page = page.errands().size() < batchSize ? PersistedPage.EMPTY : fetchAndPersistPage(fetcher, persister, retryMessage, lastSeenId);
 		}
 
-		return processed;
+		return new Outcome(processed - unchanged, unchanged);
 	}
 
 	/**
@@ -65,8 +67,12 @@ final class RestowPager {
 	 * already-detached page would just fail the same way again, so each attempt re-reads rather than retrying the same
 	 * instances; an errand a concurrent edit has since unlabelled naturally drops out of the requery instead of being
 	 * retried at all.
+	 * <p>
+	 * A retried page is persisted from its first errand again, and only the database work of the failed attempt is rolled
+	 * back. The update event a relabelled errand writes to the event log is sent when the errand is persisted, so the
+	 * errands persisted before the conflict have the event written once more for every attempt.
 	 */
-	private List<ErrandEntity> fetchAndPersistPage(final PageFetcher fetcher, final PagePersister persister, final IntFunction<String> retryMessage, final String lastSeenId) {
+	private PersistedPage fetchAndPersistPage(final PageFetcher fetcher, final PagePersister persister, final IntFunction<String> retryMessage, final String lastSeenId) {
 		final var pageable = PageRequest.ofSize(batchSize);
 		var attempt = 0;
 
@@ -74,12 +80,11 @@ final class RestowPager {
 			attempt++;
 			final var page = fetcher.fetch(lastSeenId, pageable);
 			if (page.isEmpty()) {
-				return page;
+				return PersistedPage.EMPTY;
 			}
 
 			try {
-				persister.persist(page);
-				return page;
+				return new PersistedPage(page, persister.persist(page));
 			} catch (final ObjectOptimisticLockingFailureException e) {
 				if (attempt == maxAttempts) {
 					throw e;
@@ -89,6 +94,54 @@ final class RestowPager {
 		}
 	}
 
+	/**
+	 * What a walk did with the errands it reached.
+	 *
+	 * @param restowed  the errands given their rebuilt labels.
+	 * @param unchanged the errands that kept the labels they had, refused by a guard or left as they are for having no
+	 *                  access labels.
+	 */
+	record Outcome(int restowed, int unchanged) {
+
+		static final Outcome NONE = new Outcome(0, 0);
+
+		private static final String ONLY_RESTOWED = "%d errand(s) restowed";
+		private static final String RESTOWED_AND_UNCHANGED = "%d errand(s) restowed, %d kept their labels";
+
+		/**
+		 * @return every errand reached, restowed or not.
+		 */
+		int processed() {
+			return restowed + unchanged;
+		}
+
+		/**
+		 * @param  other the outcome of another walk.
+		 * @return       the two outcomes added together.
+		 */
+		Outcome plus(final Outcome other) {
+			return new Outcome(restowed + other.restowed, unchanged + other.unchanged);
+		}
+
+		/**
+		 * The outcome in words, for the summary of a job and the message of an audit event. The errands that kept their
+		 * labels are named only when there are any.
+		 *
+		 * @return the outcome in words.
+		 */
+		String describe() {
+			return unchanged == 0 ? ONLY_RESTOWED.formatted(restowed) : RESTOWED_AND_UNCHANGED.formatted(restowed, unchanged);
+		}
+	}
+
+	/**
+	 * A page as persisted, with how many of its errands kept their labels.
+	 */
+	private record PersistedPage(List<ErrandEntity> errands, int unchanged) {
+
+		private static final PersistedPage EMPTY = new PersistedPage(List.of(), 0);
+	}
+
 	@FunctionalInterface
 	interface PageFetcher {
 		List<ErrandEntity> fetch(String lastSeenId, Pageable pageable);
@@ -96,6 +149,11 @@ final class RestowPager {
 
 	@FunctionalInterface
 	interface PagePersister {
-		void persist(List<ErrandEntity> page);
+
+		/**
+		 * @param  page the errands to persist.
+		 * @return      how many of them kept the labels they had.
+		 */
+		int persist(List<ErrandEntity> page);
 	}
 }

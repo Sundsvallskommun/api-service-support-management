@@ -9,9 +9,8 @@ import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 /**
  * Reads the investigations of an errand through its errand.
  * <p>
- * Every lookup names the namespace, the municipality and the errand, so that belonging to the errand is a consequence
- * of the query rather than a check somebody has to remember. Asking for an artefact of another errand finds nothing,
- * and the caller turns that into a 404.
+ * Every lookup names the namespace, the municipality and the errand, so asking for an investigation of another errand
+ * finds nothing, and the caller turns that into a 404.
  */
 @CircuitBreaker(name = "investigationRepository")
 public interface InvestigationRepository extends JpaRepository<InvestigationEntity, String> {

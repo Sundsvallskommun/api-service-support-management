@@ -4,19 +4,13 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
-import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 import se.sundsvall.supportmanagement.service.ErrandStatementService;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -29,14 +23,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class ErrandStatementsResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/statements";
@@ -54,11 +45,8 @@ class ErrandStatementsResourceTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private ErrandStatementService serviceMock;
-
-	@MockitoBean
-	private JsonSchemaClient jsonSchemaClientMock;
 
 	@Test
 	void createErrandStatement() {
@@ -299,9 +287,8 @@ class ErrandStatementsResourceTest {
 	}
 
 	/**
-	 * The key is mandatory in the body even though the path carries it too - {@code JsonParameter.key} is
-	 * {@code @NotBlank},
-	 * so a body that omits it never reaches the check that compares the two.
+	 * The key is mandatory in the body even though the path carries it too: {@code JsonParameter.key} is
+	 * {@code @NotBlank}, so a body that omits it is refused with 400.
 	 */
 	@Test
 	void updateStatementJsonParameterWithoutAKeyInTheBody() {
@@ -318,8 +305,7 @@ class ErrandStatementsResourceTest {
 	}
 
 	/**
-	 * A key in the body that disagrees with the one in the path is a mistake worth naming rather than silently picking
-	 * one of.
+	 * A key in the body that disagrees with the one in the path is refused with 400.
 	 */
 	@Test
 	void updateStatementJsonParameterWithMismatchingKey() {

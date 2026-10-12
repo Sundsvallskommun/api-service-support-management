@@ -2,9 +2,11 @@ package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.ConvertGroup;
 import jakarta.validation.groups.Default;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -23,9 +25,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 /**
  * A decision on an errand.
  * <p>
- * The outcome, who made it, when, on what legal basis and why are fixed fields rather than a free document, because an
- * administrative decision has a form that follows from the law. Whether the decision was made by a person or by a
- * process is recorded in the method, and has to remain answerable afterwards.
+ * The outcome, who made it, when, on what legal basis and why are fixed fields. Whether the decision was made by a
+ * person or by a process is recorded in the method.
  */
 @Schema(description = "Decision model")
 public class Decision {
@@ -144,6 +145,13 @@ public class Decision {
 	@ArraySchema(schema = @Schema(implementation = ErrandAttachment.class, accessMode = READ_ONLY),
 		arraySchema = @Schema(description = "Attachments of the errand linked to this decision"))
 	private List<ErrandAttachment> attachments;
+
+	@Schema(description = "Parameters of the decision, unstructured metadata as keys with lists of values, returned in the order of their keys. "
+		+ "Keys are trimmed, and parameters sent for the same key are merged: their values are joined in the order sent, and the display name and group "
+		+ "are those of the first. On update the sent list replaces the stored one; an omitted list leaves them as they are and an empty list removes them all")
+	private List<@NotNull(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) @Valid @ConvertGroup(from = OnUpdate.class, to = Default.class) Parameter> parameters;
 
 	@Schema(description = "User who created the decision", examples = "jo12doe", accessMode = READ_ONLY)
 	private String createdBy;
@@ -452,6 +460,19 @@ public class Decision {
 		return this;
 	}
 
+	public List<Parameter> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<Parameter> parameters) {
+		this.parameters = parameters;
+	}
+
+	public Decision withParameters(final List<Parameter> parameters) {
+		this.parameters = parameters;
+		return this;
+	}
+
 	public String getCreatedBy() {
 		return createdBy;
 	}
@@ -520,7 +541,7 @@ public class Decision {
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, type, status, title, description, dueAt, completedAt, outcome, method, decidedBy, decidedByRole, decidedAt, legalBasis, delegationReference, justification, appealable, validFrom, validTo, investigationId, errandProcessId,
-			terms, attachments, createdBy, modifiedBy, created, modified, version);
+			terms, attachments, parameters, createdBy, modifiedBy, created, modified, version);
 	}
 
 	@Override
@@ -553,6 +574,7 @@ public class Decision {
 			&& Objects.equals(errandProcessId, other.errandProcessId)
 			&& Objects.equals(terms, other.terms)
 			&& Objects.equals(attachments, other.attachments)
+			&& Objects.equals(parameters, other.parameters)
 			&& Objects.equals(createdBy, other.createdBy)
 			&& Objects.equals(modifiedBy, other.modifiedBy)
 			&& Objects.equals(created, other.created)
@@ -585,6 +607,7 @@ public class Decision {
 			", errandProcessId='" + errandProcessId + '\'' +
 			", terms=" + terms +
 			", attachments=" + attachments +
+			", parameters=" + parameters +
 			", createdBy='" + createdBy + '\'' +
 			", modifiedBy='" + modifiedBy + '\'' +
 			", created=" + created +

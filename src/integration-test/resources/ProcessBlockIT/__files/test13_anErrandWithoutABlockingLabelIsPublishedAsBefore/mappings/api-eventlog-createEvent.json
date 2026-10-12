@@ -1,0 +1,22 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPattern": "/api-eventlog/2281/aa000000-0000-0000-0000-0000000000a4",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"type": "UPDATE",
+					"subType": "ERRAND"
+				},
+				"ignoreExtraElements": true
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createEvent"
+}

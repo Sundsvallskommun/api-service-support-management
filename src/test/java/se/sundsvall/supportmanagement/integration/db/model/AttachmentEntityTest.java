@@ -66,6 +66,8 @@ class AttachmentEntityTest {
 		final var namespace = "namespace";
 		final var municipalityId = "municipalityId";
 		final var fileSize = 100;
+		final var sequenceNumber = 7;
+		final var received = now().minusDays(3).truncatedTo(SECONDS);
 		final var hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 		final var purpose = AttachmentPurposeEntity.create().withId(UUID.randomUUID().toString()).withName("RESPONSE");
 
@@ -81,6 +83,8 @@ class AttachmentEntityTest {
 			.withCreated(now().truncatedTo(SECONDS))
 			.withModified(now().truncatedTo(SECONDS))
 			.withFileSize(fileSize)
+			.withSequenceNumber(sequenceNumber)
+			.withReceived(received)
 			.withHash(hash)
 			.withPurpose(purpose);
 
@@ -95,6 +99,8 @@ class AttachmentEntityTest {
 		assertThat(attachmentEntity.getChannel()).isEqualTo(channel);
 		assertThat(attachmentEntity.getErrandEntity()).isEqualTo(errandEntity);
 		assertThat(attachmentEntity.getFileSize()).isEqualTo(fileSize);
+		assertThat(attachmentEntity.getSequenceNumber()).isEqualTo(sequenceNumber);
+		assertThat(attachmentEntity.getReceived()).isEqualTo(received);
 		assertThat(attachmentEntity.getHash()).isEqualTo(hash);
 	}
 
@@ -113,7 +119,18 @@ class AttachmentEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created");
+		assertThat(entity.getReceived()).isEqualTo(entity.getCreated());
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("created", "received");
+	}
+
+	@Test
+	void testOnCreateKeepsGivenReceived() {
+		final var received = now().minusDays(3);
+		final var entity = AttachmentEntity.create().withReceived(received);
+		entity.onCreate();
+
+		assertThat(entity.getReceived()).isEqualTo(received);
+		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
 	}
 
 	@Test

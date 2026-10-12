@@ -157,8 +157,7 @@ class ArtefactJsonParameterServiceTest {
 	}
 
 	/**
-	 * A key differing only in case is the one the owner holds - the database would refuse it as a second one - and the
-	 * parameter keeps the key it was stored under.
+	 * A key differing only in case is the one the owner holds, and the parameter keeps the key it was stored under.
 	 */
 	@Test
 	void upsertMatchesTheKeyWithoutRegardToCase() {
@@ -179,7 +178,7 @@ class ArtefactJsonParameterServiceTest {
 	}
 
 	/**
-	 * An ETag that has moved on says so rather than overwriting what somebody else just wrote.
+	 * An ETag that has moved on is refused, and what somebody else just wrote is left as it stands.
 	 */
 	@Test
 	void upsertWithAStaleIfMatchIsRejected() {
@@ -228,7 +227,7 @@ class ArtefactJsonParameterServiceTest {
 	}
 
 	/**
-	 * There is nothing for an ETag to be held against before the parameter exists.
+	 * A key the owner does not hold is created whatever If-Match the request carries.
 	 */
 	@Test
 	void upsertOfANewKeyDoesNotHoldItToIfMatch() {
@@ -262,7 +261,7 @@ class ArtefactJsonParameterServiceTest {
 	}
 
 	/**
-	 * If-Match is opt-in. A request without one is let through rather than turned away.
+	 * If-Match is opt-in. A request without one is let through.
 	 */
 	@Test
 	void deleteWithoutIfMatch() {
@@ -295,7 +294,7 @@ class ArtefactJsonParameterServiceTest {
 	}
 
 	/**
-	 * An ETag that has moved on says so rather than removing what somebody else just wrote.
+	 * An ETag that has moved on is refused, and what somebody else just wrote is not removed.
 	 */
 	@Test
 	void deleteWithAStaleIfMatchIsRejected() {

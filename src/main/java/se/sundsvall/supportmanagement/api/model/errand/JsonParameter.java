@@ -20,8 +20,8 @@ public class JsonParameter {
 
 	/**
 	 * Keys are unique per owner in a column compared without regard to case, and looked up the same way. Held to the
-	 * length of that column and to characters every such comparison agrees on, so that no key the lookup tells apart
-	 * from a stored one is one the database takes for it.
+	 * length of that column and to characters every such comparison agrees on, so the lookup and the database always
+	 * agree on whether two keys are the same.
 	 */
 	@Schema(description = "Parameter key/name", examples = "formData1")
 	@NotBlank

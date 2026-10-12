@@ -1,0 +1,15 @@
+{
+	"title": "test40_aPatchChangingNothingRightAfterACreationWritesNoRevision",
+	"priority": "MEDIUM",
+	"status": "STATUS-1",
+	"reporterUserId": "joe01doe",
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	},
+	"labels": [
+		{
+			"id": "cd99569f-6b6d-4d7a-b04c-9ae528be8258"
+		}
+	]
+}

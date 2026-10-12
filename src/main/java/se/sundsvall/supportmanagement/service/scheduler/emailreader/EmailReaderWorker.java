@@ -115,7 +115,7 @@ public class EmailReaderWorker {
 	}
 
 	private void sendEmail(final ErrandEntity errand, final EmailRequest emailRequest) {
-		if (emailRequest != null) {
+		if (emailRequest != null && !errand.isDraft()) {
 			communicationService.sendEmail(errand, emailRequest);
 		}
 	}

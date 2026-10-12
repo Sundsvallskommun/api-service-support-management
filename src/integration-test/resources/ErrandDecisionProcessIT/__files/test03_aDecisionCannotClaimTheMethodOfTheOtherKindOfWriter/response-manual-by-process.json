@@ -1,0 +1,5 @@
+{
+	"title": "Forbidden",
+	"status": 403,
+	"detail": "A decision with method MANUAL has to be written by an ad account"
+}

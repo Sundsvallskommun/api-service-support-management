@@ -29,6 +29,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.AccessControlService;
+import se.sundsvall.supportmanagement.service.ErrandProcessService;
+import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
 import se.sundsvall.supportmanagement.service.search.index.SearchAvailability;
 
@@ -59,9 +61,10 @@ public class ErrandSearchService {
 	private final SearchAvailability availability;
 	private final SearchProperties properties;
 	private final CountGroupMapper countGroups;
+	private final ErrandProcessService errandProcessService;
 
 	public ErrandSearchService(final EntityManager entityManager, final AccessControlService accessControlService, final ErrandSearchAccess searchAccess,
-		final ErrandSearchPredicates predicates, final SearchAvailability availability, final SearchProperties properties, final CountGroupMapper countGroups) {
+		final ErrandSearchPredicates predicates, final SearchAvailability availability, final SearchProperties properties, final CountGroupMapper countGroups, final ErrandProcessService errandProcessService) {
 		this.countGroups = countGroups;
 		this.entityManager = entityManager;
 		this.accessControlService = accessControlService;
@@ -69,10 +72,12 @@ public class ErrandSearchService {
 		this.predicates = predicates;
 		this.availability = availability;
 		this.properties = properties;
+		this.errandProcessService = errandProcessService;
 	}
 
 	/**
-	 * Searches the errands of a namespace the requesting user reaches.
+	 * Searches the errands of a namespace the requesting user reaches. Drafts are left out unless the query names the
+	 * life cycle, see {@link ErrandSearchPredicates#lifecycle}.
 	 *
 	 * @param  namespace                                      namespace
 	 * @param  municipalityId                                 municipality id
@@ -100,6 +105,7 @@ public class ErrandSearchService {
 			result = Search.session(entityManager).search(ErrandEntity.class)
 				.where(f -> f.bool()
 					.filter(predicates.tenant(f, namespace, municipalityId))
+					.filter(predicates.lifecycle(f, query))
 					.must(predicates.clauses(f, plan.clauses(), query)))
 				.sort(f -> toSort(f, pageable.getSort()))
 				// A query the index cannot answer within this is given up on, rather than held against everyone else
@@ -116,7 +122,8 @@ public class ErrandSearchService {
 		final var hits = result.hits().stream().filter(reached).toList();
 
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, user);
-		return new PageImpl<>(toErrandsWithAccessControl(hits, fieldResolver), pageable, result.total().hitCount());
+		final var enrichment = new ErrandEnrichment(errandProcessService.findLatestProcesses(namespace, municipalityId, hits.stream().map(ErrandEntity::getId).toList()));
+		return new PageImpl<>(toErrandsWithAccessControl(hits, fieldResolver, enrichment), pageable, result.total().hitCount());
 	}
 
 	/**
@@ -206,6 +213,7 @@ public class ErrandSearchService {
 		return Search.session(entityManager).search(ErrandEntity.class)
 			.where(f -> f.bool()
 				.filter(predicates.tenant(f, namespace, municipalityId))
+				.filter(predicates.lifecycle(f, query))
 				.must(predicates.clauses(f, clauses, query)));
 	}
 

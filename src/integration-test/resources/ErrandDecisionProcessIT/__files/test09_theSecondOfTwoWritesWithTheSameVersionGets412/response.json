@@ -1,0 +1,5 @@
+{
+	"title": "Precondition Failed",
+	"status": 412,
+	"detail": "If-Match version does not match current resource version"
+}

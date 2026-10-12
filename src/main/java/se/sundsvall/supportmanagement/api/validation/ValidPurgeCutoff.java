@@ -10,11 +10,8 @@ import java.lang.annotation.Target;
 import se.sundsvall.supportmanagement.api.validation.impl.ValidPurgeCutoffConstraintValidator;
 
 /**
- * Guards the cutoff of a purge against being set too close to the present.
- * <p>
- * A purge cannot be undone and a mistyped timestamp is indistinguishable from a deliberate one by the time it reaches
- * the database. The floor is what stands between a slip of the keyboard and the loss of an entire namespace, so a
- * cutoff nearer than the configured minimum age is refused rather than merely discouraged.
+ * Guards the cutoff of a purge against being set too close to the present: a cutoff nearer than the configured minimum
+ * age is refused.
  */
 @Documented
 @Target({

@@ -21,9 +21,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 /**
  * A request for a statement and the statement that came back.
  * <p>
- * The required fields are demanded on creation only. Patching says nothing about the fields it leaves out, which is why
- * the OnUpdate group omits them - but every value that is supplied is checked in both, since an unknown one would
- * otherwise reach the mapper and surface as a 500 rather than the bad request it is.
+ * The required fields are demanded on creation only, and the OnUpdate group omits them. Every value that is supplied
+ * is checked on both creation and update.
  */
 @Schema(description = "Statement model")
 public class Statement {

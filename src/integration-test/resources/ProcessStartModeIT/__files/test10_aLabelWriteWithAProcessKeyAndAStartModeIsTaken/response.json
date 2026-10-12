@@ -1,0 +1,99 @@
+{
+	"labelStructure": [
+		{
+			"id": "dd000000-0000-0000-0000-0000000000d2",
+			"version": 0,
+			"classification": "CATEGORY",
+			"displayName": "Ansokan",
+			"resourcePath": "ANSOKAN",
+			"resourceName": "ANSOKAN",
+			"deprecated": false,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-ansokan"
+				}
+			],
+			"labels": []
+		},
+		{
+			"id": "ef000000-0000-0000-0000-0000000000f1",
+			"version": 0,
+			"classification": "CATEGORY",
+			"displayName": "Ansokan, manuell start",
+			"resourcePath": "ANSOKAN_MANUELL",
+			"resourceName": "ANSOKAN_MANUELL",
+			"deprecated": false,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-ansokan"
+				},
+				{
+					"key": "processStartMode",
+					"value": "MANUAL"
+				}
+			],
+			"labels": []
+		},
+		{
+			"id": "ef000000-0000-0000-0000-0000000000f2",
+			"version": 0,
+			"classification": "CATEGORY",
+			"displayName": "Tillsyn, automatisk start",
+			"resourcePath": "TILLSYN_AUTOMATISK",
+			"resourceName": "TILLSYN_AUTOMATISK",
+			"deprecated": false,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-tillsyn"
+				},
+				{
+					"key": "processStartMode",
+					"value": "AUTOMATIC"
+				}
+			],
+			"labels": []
+		},
+		{
+			"id": "ef000000-0000-0000-0000-0000000000f3",
+			"version": 0,
+			"classification": "CATEGORY",
+			"displayName": "Ansokan, automatisk start",
+			"resourcePath": "ANSOKAN_AUTOMATISK",
+			"resourceName": "ANSOKAN_AUTOMATISK",
+			"deprecated": false,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-ansokan"
+				},
+				{
+					"key": "processStartMode",
+					"value": "AUTOMATIC"
+				}
+			],
+			"labels": []
+		},
+		{
+			"id": "${json-unit.any-string}",
+			"version": 0,
+			"classification": "CATEGORY",
+			"resourcePath": "NY_TILLSYN",
+			"resourceName": "NY_TILLSYN",
+			"deprecated": false,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-tillsyn"
+				},
+				{
+					"key": "processStartMode",
+					"value": "MANUAL"
+				}
+			],
+			"labels": []
+		}
+	]
+}

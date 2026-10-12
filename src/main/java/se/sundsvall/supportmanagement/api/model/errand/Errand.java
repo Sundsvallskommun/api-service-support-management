@@ -8,13 +8,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import se.sundsvall.dept44.common.validators.annotation.OneOf;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.api.validation.UniqueExternalTagKeys;
 import se.sundsvall.supportmanagement.api.validation.ValidClassificationCreate;
 import se.sundsvall.supportmanagement.api.validation.ValidClassificationUpdate;
@@ -60,7 +63,9 @@ public class Errand {
 
 	@Schema(description = "Parameters for the errand")
 	@Valid
-	private List<Parameter> parameters;
+	private List<@NotNull(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) Parameter> parameters;
 
 	@Schema(description = "JSON parameters for the errand")
 	@Valid
@@ -83,6 +88,23 @@ public class Errand {
 		OnCreate.class, OnUpdate.class
 	})
 	private String status;
+
+	@Schema(description = """
+		Life cycle of the errand, the same in every namespace and independent of its status. DRAFT - the errand is being \
+		prepared: no process is started or woken for it, no action is created, nothing is communicated about it, no one \
+		is notified about it, it is not handed over, and a search leaves it out unless its filter names lifecycle. ACTIVE - \
+		the errand is \
+		handled as any errand is. Left out on create, the errand is ACTIVE. A draft is made active by a patch setting ACTIVE, which \
+		starts a process the labels start on their own, unless the patch asks not to wake the process. An active errand \
+		never becomes a draft again.""", examples = "ACTIVE", allowableValues = {
+		"DRAFT", "ACTIVE"
+	})
+	@OneOf(value = {
+		"DRAFT", "ACTIVE"
+	}, nullable = true, groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private String lifecycle;
 
 	@Schema(description = "Resolution status for closed errands. Value can be set to anything", examples = "FIXED")
 	private String resolution;
@@ -132,8 +154,8 @@ public class Errand {
 	@Schema(description = "Flag to indicate if the errand is business related", examples = "true")
 	private Boolean businessRelated;
 
-	@Schema(description = "List of labels for the errand")
-	private List<ErrandLabel> labels;
+	@Schema(description = "List of labels for the errand. Every label must belong to the namespace of the errand")
+	private List<@Valid ErrandLabel> labels;
 
 	@Schema(description = "Phase history for the errand", accessMode = READ_ONLY)
 	@Null(groups = {
@@ -158,6 +180,15 @@ public class Errand {
 		OnCreate.class, OnUpdate.class
 	})
 	private List<ErrandAction> actions;
+
+	@Schema(description = """
+		The process driving this errand, and its state. Null for a namespace that runs no processes, and for an errand \
+		that never had one. Shows the most recent process rather than a running one, so that a start which failed is \
+		visible as a failure instead of as an errand without a process.""", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private ErrandProcess process;
 
 	@Valid
 	@Schema(description = "List of measures for the errand")
@@ -321,6 +352,19 @@ public class Errand {
 
 	public Errand withStatus(final String status) {
 		this.status = status;
+		return this;
+	}
+
+	public String getLifecycle() {
+		return lifecycle;
+	}
+
+	public void setLifecycle(final String lifecycle) {
+		this.lifecycle = lifecycle;
+	}
+
+	public Errand withLifecycle(final String lifecycle) {
+		this.lifecycle = lifecycle;
 		return this;
 	}
 
@@ -571,6 +615,19 @@ public class Errand {
 		return this;
 	}
 
+	public ErrandProcess getProcess() {
+		return process;
+	}
+
+	public void setProcess(final ErrandProcess process) {
+		this.process = process;
+	}
+
+	public Errand withProcess(final ErrandProcess process) {
+		this.process = process;
+		return this;
+	}
+
 	public List<Measure> getMeasures() {
 		return measures;
 	}
@@ -600,7 +657,7 @@ public class Errand {
 	@Override
 	public int hashCode() {
 		return Objects.hash(activePhaseId, actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters,
-			labels, measures, activeNotifications, modified,
+			labels, lifecycle, measures, activeNotifications, modified, process,
 			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched, version);
 	}
 
@@ -616,8 +673,9 @@ public class Errand {
 			&& Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(classification, other.classification) && Objects.equals(contactReason, other.contactReason)
 			&& Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
 			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(jsonParameters, other.jsonParameters) && Objects.equals(labels, other.labels)
+			&& Objects.equals(lifecycle, other.lifecycle)
 			&& Objects.equals(measures, other.measures) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && Objects.equals(phases, other.phases)
-			&& Objects.equals(priority, other.priority)
+			&& Objects.equals(priority, other.priority) && Objects.equals(process, other.process)
 			&& Objects.equals(reporterUserId, other.reporterUserId) && Objects.equals(resolution, other.resolution) && Objects.equals(stakeholders, other.stakeholders) && Objects.equals(status, other.status)
 			&& Objects.equals(suspension, other.suspension) && Objects.equals(title, other.title) && Objects.equals(touched, other.touched) && Objects.equals(version, other.version);
 	}
@@ -636,6 +694,7 @@ public class Errand {
 			", jsonParameters=" + jsonParameters +
 			", classification=" + classification +
 			", status='" + status + '\'' +
+			", lifecycle='" + lifecycle + '\'' +
 			", resolution='" + resolution + '\'' +
 			", description='" + description + '\'' +
 			", channel='" + channel + '\'' +
@@ -649,6 +708,7 @@ public class Errand {
 			", businessRelated=" + businessRelated +
 			", labels=" + labels +
 			", phases=" + phases +
+			", process=" + process +
 			", activePhaseId='" + activePhaseId + '\'' +
 			", activeNotifications=" + activeNotifications +
 			", measures=" + measures +

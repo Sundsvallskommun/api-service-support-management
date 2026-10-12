@@ -4,25 +4,20 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Reproduces the time_measurement orphan bug: when an errand status is changed and persisted directly via
- * {@link ErrandsRepository#save} (as the scheduler workers do, e.g. EmailReaderWorker / MessageExchangeSyncService),
- * the
- * {@code ErrandListener#onUpdate} lifecycle callback adds a new TimeMeasurementEntity to the unidirectional
- * {@code @OneToMany @JoinColumn} collection. The FK (errand_id) is owned solely by the collection, so the row is
- * inserted but errand_id is left
- * null.
+ * Verifies that when an errand status is changed and persisted directly via {@link ErrandsRepository#save} (as the
+ * scheduler workers do, e.g. EmailReaderWorker / MessageExchangeSyncService), the TimeMeasurementEntity that the
+ * {@code ErrandListener#onUpdate} lifecycle callback adds to the unidirectional {@code @OneToMany @JoinColumn}
+ * collection is inserted with its errand_id set.
  */
-@SpringBootTest
-@ActiveProfiles("junit")
+@ApplicationTest
 @Sql(scripts = {
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"

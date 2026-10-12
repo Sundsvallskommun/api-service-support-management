@@ -18,7 +18,7 @@ public class ValidationMapper {
 
 	/**
 	 * Maps the stored validations to a complete list, holding one entry per existing {@link EntityType}. Types without a
-	 * stored entity are returned as not validated, which is how they are treated when errands are validated.
+	 * stored entity are returned as not validated.
 	 */
 	public List<Validation> toValidations(final List<ValidationEntity> entities) {
 		final var entityByType = ofNullable(entities).orElse(emptyList()).stream()

@@ -1,0 +1,9 @@
+[
+	{
+		"entityType": "ErrandEntity",
+		"created": "${json-unit.any-string}",
+		"entityId": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
+		"id": "${json-unit.any-string}",
+		"version": 0
+	}
+]

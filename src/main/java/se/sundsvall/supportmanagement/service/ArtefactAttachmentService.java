@@ -17,15 +17,13 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachment;
 
 /**
- * Linking attachments of the errand to a handling artefact, written once for all four of them.
+ * Linking attachments of the errand to a handling artefact, the same way for all four kinds of artefact.
  * <p>
- * Each artefact holds the attachments it uses in a collection of its own, backed by a join table, and nothing here
- * depends on which artefact it is - the caller passes in that collection, and gets the lookup, the invariant and the
- * duplicate check from here. What that buys is that the rule about an attachment belonging to the same errand as the
- * artefact holds in one place rather than in four.
+ * Each artefact holds the attachments it uses in a collection of its own, backed by a join table. The caller passes in
+ * that collection, and gets the lookup, the rule that the attachment belongs to the same errand as the artefact, and
+ * the duplicate check from here.
  * <p>
- * What the attachment is for is not among the things written here. That belongs to the attachment rather than to any
- * one link to it, and is written through the attachment resource of the errand.
+ * The purpose of an attachment is not written here; it is written through the attachment resource of the errand.
  */
 @Service
 public class ArtefactAttachmentService {
@@ -62,10 +60,8 @@ public class ArtefactAttachmentService {
 	/**
 	 * Links an attachment that is already on the errand.
 	 * <p>
-	 * The attachment is fetched <em>through the errand</em>, which is what upholds the invariant JPA cannot express: the
-	 * two foreign keys of the join table know nothing about each other, so nothing else would stop an attachment of one
-	 * errand from being linked to an artefact of another. Fetching it this way makes belonging a consequence of the
-	 * lookup, and the outcome a 404 rather than a 400.
+	 * The attachment is fetched <em>through the errand</em>, so an attachment of another errand is not found and the
+	 * outcome is a 404.
 	 *
 	 * @param attachments the attachments of the artefact, which the attachment is added to.
 	 */
@@ -75,11 +71,8 @@ public class ArtefactAttachmentService {
 	}
 
 	/**
-	 * Removes the link. The attachment stays on the errand, which is the whole point of the link being a relation on top of
-	 * the ownership rather than an ownership of its own.
-	 * <p>
-	 * Matched by id rather than by equality, since an attachment compares its data and its errand, and reaching those
-	 * would load the file and the errand for nothing.
+	 * Removes the link. The attachment stays on the errand. The attachment is matched by id, ignoring case, and a 404 is
+	 * thrown when it is not linked.
 	 *
 	 * @param attachments the attachments of the artefact, which the attachment is taken out of.
 	 */

@@ -20,14 +20,8 @@ import static org.zalando.fauxpas.FauxPas.throwingFunction;
 /**
  * Reminds developers to route errand access through {@link AccessControlService}.
  * <p>
- * Reaching {@link ErrandsRepository} directly is how access control gets forgotten: the errand is fetched, the caller
- * is
- * never checked, and nothing fails. A new user facing service therefore has to make a deliberate choice here rather
- * than silently bypassing the guard.
- * <p>
- * This is an early warning, not a proof of correctness. Holding an {@link AccessControlService} says nothing about
- * whether it is actually consulted on every path, so code review and acceptance testing in a test environment are
- * still required.
+ * Every component injecting {@link ErrandsRepository} has to inject {@link AccessControlService} as well, or be listed
+ * as exempt. Whether the service is actually consulted on every path is not verified.
  */
 class AccessControlChokePointTest {
 
@@ -47,6 +41,13 @@ class AccessControlChokePointTest {
 		se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker.class,
+		// The process event relay reads nothing out of the errand. It locks the row only so that failing the process of an
+		// errand after a refusal for good is serialised against the reports of that process.
+		se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventRelay.class,
+		// The attachment sequence number generator reads nothing out of the errand either. It locks the row so that
+		// attachments added to the same errand at once are numbered one at a time, and is only called by services that have
+		// already authorized the caller, or by workers that have none.
+		se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator.class,
 		se.sundsvall.supportmanagement.service.scheduler.supensions.SuspensionWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.webmessagecollector.WebMessageCollectorWorker.class,
 		se.sundsvall.supportmanagement.service.MessageExchangeSyncService.class,
@@ -124,7 +125,7 @@ class AccessControlChokePointTest {
 		return scanner.findCandidateComponents(getClass().getPackageName()).stream()
 			.map(BeanDefinition::getBeanClassName)
 			.filter(Objects::nonNull)
-			.map(throwingFunction(Class::forName))
+			.<Class<?>>map(throwingFunction(Class::forName))
 			.filter(type -> injects(type, dependency));
 	}
 

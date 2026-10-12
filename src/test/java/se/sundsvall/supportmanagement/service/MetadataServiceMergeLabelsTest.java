@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -339,8 +341,11 @@ class MetadataServiceMergeLabelsTest {
 		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
 	}
 
-	@Test
-	void startLabelMerge_handsTheRunToTheWorkerWithExpectedParameters() {
+	@ParameterizedTest
+	@EnumSource(value = Identifier.Type.class, names = {
+		"AD_ACCOUNT", "CUSTOM"
+	})
+	void startLabelMerge_handsTheRunToTheWorkerWithExpectedParameters(final Identifier.Type callerType) {
 		var target = leafLabel(TARGET_ID, "TARGET");
 		var source = leafLabel(SOURCE_ID, "SOURCE");
 		var handled = new ArrayList<LabelMergeRun>();
@@ -365,7 +370,7 @@ class MetadataServiceMergeLabelsTest {
 			handled.add(invocation.getArgument(0));
 			return null;
 		}).when(labelMergeWorkerMock).run(any());
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		Identifier.set(Identifier.create().withType(callerType).withValue("joe01doe"));
 
 		service.startLabelMerge(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(SOURCE_ID)).withDryRun(false));
 
@@ -376,6 +381,7 @@ class MetadataServiceMergeLabelsTest {
 		assertThat(handled.getFirst().targetLabelId()).isEqualTo(TARGET_ID);
 		assertThat(handled.getFirst().sourceLabelIds()).containsExactly(SOURCE_ID);
 		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
+		assertThat(handled.getFirst().startedByAdAccount()).isEqualTo(callerType == Identifier.Type.AD_ACCOUNT);
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");

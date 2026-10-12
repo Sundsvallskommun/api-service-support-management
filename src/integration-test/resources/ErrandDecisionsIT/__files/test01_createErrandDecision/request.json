@@ -8,5 +8,27 @@
 	"decidedByRole": "DELEGATE",
 	"decidedAt": "2024-02-10T10:00:00+01:00",
 	"legalBasis": "8 kap. 12 § alkohollagen",
-	"appealable": true
+	"appealable": true,
+	"parameters": [
+		{
+			"key": "zone",
+			"displayName": "Zon",
+			"values": [
+				"A"
+			]
+		},
+		{
+			"key": "area",
+			"group": "lokal",
+			"values": [
+				"north"
+			]
+		},
+		{
+			"key": "zone",
+			"values": [
+				"B"
+			]
+		}
+	]
 }

@@ -3,14 +3,9 @@ package se.sundsvall.supportmanagement.api;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Measure;
 import se.sundsvall.supportmanagement.service.ErrandMeasureService;
 
@@ -18,13 +13,10 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class ErrandMeasuresResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/measures";
@@ -37,7 +29,7 @@ class ErrandMeasuresResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private ErrandMeasureService serviceMock;
 
 	@Test
@@ -67,8 +59,7 @@ class ErrandMeasuresResourceFailureTest {
 	}
 
 	/**
-	 * The columns behind these were widened to 3000 without the limit reaching the model, so text past it met the
-	 * database rather than the caller.
+	 * Goal and description longer than 3000 characters, the size of their columns, are refused with 400.
 	 */
 	@Test
 	void createErrandMeasureWithOverlongText() {
@@ -256,8 +247,8 @@ class ErrandMeasuresResourceFailureTest {
 	}
 
 	/**
-	 * The patch body is validated exactly as the create body is. Without that, an unknown accept value reaches the mapper
-	 * and comes back as a 500 rather than the bad request it is.
+	 * The values of a patch body are validated as those of a create body are, so an unknown accept value is refused with
+	 * 400.
 	 */
 	@Test
 	void updateErrandMeasureWithInvalidAccept() {

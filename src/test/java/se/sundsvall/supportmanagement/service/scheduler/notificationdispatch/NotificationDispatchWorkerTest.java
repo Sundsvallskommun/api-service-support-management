@@ -373,8 +373,10 @@ class NotificationDispatchWorkerTest {
 		mockDispatchOf(buildSubscription(subscriber, null));
 		doThrow(new RuntimeException("boom")).when(channelDispatcherMock).send(any(), any(), any(), any());
 
+		final var group = List.of(entry);
+
 		// Act + Assert — the failure must reach the caller so the transaction rolls back and the group is retried later
-		assertThatThrownBy(() -> worker.processGroup(List.of(entry)))
+		assertThatThrownBy(() -> worker.processGroup(group))
 			.isInstanceOf(RuntimeException.class)
 			.hasMessage("boom");
 		verify(dispatchRepositoryMock, never()).deleteAll(any());

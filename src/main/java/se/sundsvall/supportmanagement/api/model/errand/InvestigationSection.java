@@ -19,8 +19,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 /**
  * One assessed area of an investigation.
  * <p>
- * The assessment is the only structured thing here, and therefore the only thing that can be counted across errands.
- * Whatever needs more structure than free text goes in a JSON parameter on the section.
+ * The assessment is the only structured value here. Whatever needs more structure than free text goes in a JSON
+ * parameter on the section.
  */
 @Schema(description = "Investigation section model")
 public class InvestigationSection {

@@ -32,11 +32,20 @@
 			"fileName": "yttrande.txt",
 			"mimeType": "text/plain",
 			"fileSize": 3,
+			"sequenceNumber": 1,
 			"purpose": {
 				"id": "f6000000-0000-0000-0000-000000000001",
 				"name": "SUPPORTING",
 				"displayName": "Underlag"
 			}
+		}
+	],
+	"parameters": [
+		{
+			"key": "riskLevel",
+			"values": [
+				"medium"
+			]
 		}
 	],
 	"createdBy": "joe01doe",

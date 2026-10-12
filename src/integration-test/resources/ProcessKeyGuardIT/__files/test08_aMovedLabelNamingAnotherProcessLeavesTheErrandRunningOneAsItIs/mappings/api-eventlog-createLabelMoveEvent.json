@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-eventlog/2281/bb000000-0000-0000-0000-0000000000b6"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createLabelMoveEvent"
+}

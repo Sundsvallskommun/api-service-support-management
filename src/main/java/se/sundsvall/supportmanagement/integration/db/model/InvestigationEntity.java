@@ -34,8 +34,8 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
 /**
  * An investigation of an errand.
  * <p>
- * The frame is shared; the areas being assessed are rows, not columns. One line of business has four of them, another
- * has three others - and neither should force a migration on the other.
+ * The frame is shared; the areas being assessed are rows, not columns, so each line of business assesses areas of its
+ * own.
  */
 @Entity
 @Table(name = "investigation",
@@ -70,8 +70,7 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 
 	/**
 	 * The proposed decision, expressed in the language of the decision: one of the decision outcomes the namespace has
-	 * registered, like {@code DecisionEntity.outcome}. The same outcomes on purpose - it makes it answerable how often the
-	 * decision follows what the investigation proposed.
+	 * registered, like {@code DecisionEntity.outcome}, and comparable with the outcome of the decision.
 	 */
 	@Column(name = "recommendation")
 	@KeywordField(normalizer = LOWERCASE)
@@ -110,6 +109,12 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 	@OrderBy("key")
 	@PropertyBinding(binder = @PropertyBinderRef(type = JsonParametersBinder.class))
 	private List<InvestigationJsonParameterEntity> jsonParameters;
+
+	/**
+	 * The parameters of the investigation: unstructured metadata as keys with lists of values, held in no particular order.
+	 */
+	@OneToMany(mappedBy = "investigationEntity", cascade = ALL, orphanRemoval = true)
+	private List<InvestigationParameterEntity> parameters;
 
 	public static InvestigationEntity create() {
 		return new InvestigationEntity();
@@ -229,6 +234,19 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 
 	public InvestigationEntity withJsonParameters(final List<InvestigationJsonParameterEntity> jsonParameters) {
 		this.jsonParameters = jsonParameters;
+		return this;
+	}
+
+	public List<InvestigationParameterEntity> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<InvestigationParameterEntity> parameters) {
+		this.parameters = parameters;
+	}
+
+	public InvestigationEntity withParameters(final List<InvestigationParameterEntity> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 

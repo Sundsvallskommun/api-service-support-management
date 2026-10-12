@@ -23,7 +23,7 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
- * Status Metadata IT tests.
+ * Category Metadata IT tests.
  */
 @WireMockAppTestSuite(files = "classpath:/MetadataCategoryIT/", classes = Application.class)
 @Sql({

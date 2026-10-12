@@ -13,7 +13,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +34,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -91,7 +91,7 @@ class MessageExchangeWorkerTest {
 			.withMunicipalityId("municipalityId")
 			.withNamespace("namespace")
 			.withLatestSyncedSequenceNumber(33L);
-		final var pageableMock = Mockito.mock(Pageable.class);
+		final var pageableMock = mock(Pageable.class);
 		final var conversationPage = new PageImpl<>(List.of(new Conversation()));
 		when(messageExchangeClientMock.getConversations(any(), any(), any(), any(), any())).thenReturn(ResponseEntity.ok(conversationPage));
 
@@ -119,7 +119,7 @@ class MessageExchangeWorkerTest {
 
 		when(conversationRepositoryMock.findByMessageExchangeId(any())).thenReturn(conversationEntities);
 		when(relationClientMock.getRelation(any(), any())).thenReturn(
-			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("toBeAddedErrand").service("support-management"), new ResourceIdentifier().resourceId("other-id"))), // relation 1
+			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("toBeAddedErrand").service("supportmanagement"), new ResourceIdentifier().resourceId("other-id"))), // relation 1
 			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("existingErrandId").service("support-management"), new ResourceIdentifier().resourceId("other-id")))); // relation 2
 		when(errandsRepositoryMock.findById("toBeAddedErrand")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("toBeAddedErrand")));
 		when(errandsRepositoryMock.findById("existingErrandId")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("existingErrandId")));

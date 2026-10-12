@@ -1,0 +1,25 @@
+{
+	"startable": {
+		"status": "LIVE_INSTANCE",
+		"processKeys": []
+	},
+	"processes": [
+		{
+			"id": "${json-unit.any-string}",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processInstanceId": "pi-loop-guard",
+			"processStatus": "WAITING",
+			"currentActivityId": "granska-ansokan",
+			"currentActivityName": "Granska ansokan",
+			"awaitingSignals": [
+				{
+					"name": "granskning-godkand",
+					"label": "Godkänn granskning"
+				}
+			],
+			"created": "${json-unit.any-string}",
+			"modified": "${json-unit.any-string}"
+		}
+	]
+}

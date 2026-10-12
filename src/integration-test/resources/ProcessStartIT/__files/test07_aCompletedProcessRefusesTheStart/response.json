@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "The errand 'ab000000-0000-0000-0000-0000000000b4' has a process that ran to its end, and a completed process is never started again. A new process means a new errand"
+}

@@ -10,15 +10,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
@@ -35,20 +30,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class MetadataLabelResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/metadata/labels";
 
-	@MockitoBean
+	@Autowired
 	private MetadataService metadataServiceMock;
 
 	@Autowired
@@ -106,17 +98,71 @@ class MetadataLabelResourceFailureTest {
 
 	private static Stream<Arguments> labelsArguments(String method) {
 		return Stream.of(
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "TILLSYN",
+				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
+				LabelAttribute.create().withKey("processStartMode").withValue("manual"))),
+				tuples(
+					tuple(method + ".labels[0].attributes", "the processStartMode 'manual' must be exactly one of [AUTOMATIC, MANUAL]"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "ALKT").withLabels(List.of(
+				createLabelWithAttributes("class", "TILLSYN",
+					LabelAttribute.create().withKey("processStartMode").withValue("MANUAL"))))),
+				tuples(
+					tuple(method + ".labels[0].labels[0].attributes", "a processStartMode needs a processKey on the same label, since a start mode means nothing without the process it starts"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "TILLSYN",
+				LabelAttribute.create().withKey("processKey").withValue("alkt-tillsyn"),
+				LabelAttribute.create().withKey("processstartmode").withValue("MANUAL"))),
+				tuples(
+					tuple(method + ".labels[0].attributes", "the attribute 'processstartmode' is read only when spelled exactly 'processStartMode'"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "SPARRAD",
+				LabelAttribute.create().withKey("processBlocked").withValue("TRUE"))),
+				tuples(
+					tuple(method + ".labels[0].attributes", "the processBlocked 'TRUE' must be exactly one of [true, false]"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "SPARRAD",
+				LabelAttribute.create().withKey("processblocked").withValue("true"))),
+				tuples(
+					tuple(method + ".labels[0].attributes", "the attribute 'processblocked' is read only when spelled exactly 'processBlocked'"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "ALKT",
+				LabelAttribute.create().withKey("processkey").withValue("alkt-ansokan"))
+				.withLabels(List.of(
+					createLabel("class", "ANSOKAN"),
+					createLabelWithAttributes("class", "TILLSYN",
+						LabelAttribute.create().withKey("processStartMode").withValue("manual"))))),
+				tuples(
+					tuple(method + ".labels[0].attributes", "the attribute 'processkey' is read only when spelled exactly 'processKey'"),
+					tuple(method + ".labels[0].labels[1].attributes", "the processStartMode 'manual' must be exactly one of [AUTOMATIC, MANUAL]"),
+					tuple(method + ".labels[0].labels[1].attributes", "a processStartMode needs a processKey on the same label, since a start mode means nothing without the process it starts"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
 				LabelAttribute.create().withKey("dup").withValue("a"),
 				LabelAttribute.create().withKey("dup").withValue("b"))),
 				tuples(
-					tuple(method + ".labels", "each label must have unique attribute keys"))),
+					tuple(method + ".labels[0].attributes", "attribute keys must be unique"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RES").withLabels(List.of(
 				createLabelWithAttributes("class", "CHILD",
 					LabelAttribute.create().withKey("k").withValue("v1"),
 					LabelAttribute.create().withKey("k").withValue("v2"))))),
 				tuples(
-					tuple(method + ".labels", "each label must have unique attribute keys"))),
+					tuple(method + ".labels[0].labels[0].attributes", "attribute keys must be unique"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
+				LabelAttribute.create().withKey("k".repeat(256)).withValue("v"))),
+				tuples(
+					tuple(method + ".labels[0].attributes[0].key", "size must be between 0 and 255"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabelWithAttributes("class", "RES",
+				LabelAttribute.create().withKey("k").withValue("v".repeat(16384)))),
+				tuples(
+					tuple(method + ".labels[0].attributes[0].value", "size must be between 0 and 16383"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RES").withLabels(List.of(
+				createLabelWithAttributes("class", "CHILD",
+					LabelAttribute.create().withKey("k".repeat(256)).withValue("v"),
+					LabelAttribute.create().withKey("k").withValue("v".repeat(16384)))))),
+				tuples(
+					tuple(method + ".labels[0].labels[0].attributes[0].key", "size must be between 0 and 255"),
+					tuple(method + ".labels[0].labels[0].attributes[1].value", "size must be between 0 and 16383"))),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RES").withLabels(List.of(
+				createLabel(null, "CHILD"),
+				createLabel("class", "child")))),
+				tuples(
+					tuple(method + ".labels[0].labels[0].classification", "must not be blank"),
+					tuple(method + ".labels[0].labels[1].resourceName", "can only contain A-Z, 0-9 and _"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME_1"), createLabel("class", "RESOURCE_NAME_1")),
 				tuples(
 					tuple(method + ".labels", "each entry must have unique resourceName compared to its siblings"))),

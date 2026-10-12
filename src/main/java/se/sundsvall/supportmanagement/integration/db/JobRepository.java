@@ -18,8 +18,7 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
 	Optional<JobEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	/**
-	 * A job of one kind, for a caller that reaches the job table through a resource of its own and has no business
-	 * touching the work of another kind that happens to share the table.
+	 * A job of one kind within a namespace and municipality. An id belonging to a job of another kind finds nothing.
 	 */
 	Optional<JobEntity> findByIdAndNamespaceAndMunicipalityIdAndType(String id, String namespace, String municipalityId, JobType type);
 
@@ -42,8 +41,8 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
 	 * Jobs in one of the sent in states that have never been written to since they were created, and were created before
 	 * the sent in point in time.
 	 * <p>
-	 * A job gets a modified of its own the first time the work reports on it, so one that never got that far has none to
-	 * be found by and is reached through the moment it was created instead.
+	 * A job gets its modified timestamp the first time the work reports on it, so a job never reported on is found by the
+	 * moment it was created.
 	 *
 	 * @param  statuses the states to look among.
 	 * @param  before   the point in time a job must have been created before to be returned.

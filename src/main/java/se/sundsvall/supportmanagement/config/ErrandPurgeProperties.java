@@ -6,21 +6,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Settings for the retention purge, gathered in one place so that the defaults cannot drift apart from the values in
- * application.yml the way scattered annotations do.
+ * Settings for the retention purge.
  *
  * @param minimumAge        floor for how recent a purge cutoff may be, guarding against a mistyped timestamp emptying a
- *                          namespace. Subtracted as a calendar amount rather than a fixed number of days, so that the
- *                          floor lands on the same date of the year regardless of leap years.
+ *                          namespace. Subtracted as a calendar amount, so that the floor lands on the same date of the
+ *                          year regardless of leap years.
  * @param batchSize         errands read per batch. Each errand is still removed in a transaction of its own.
- * @param maxConcurrentRuns highest number of runs carried out at the same time. One run per namespace is already the
- *                          rule, but nothing stops several namespaces from being purged at once, and each run reaches
- *                          into the same database and the same neighbouring services.
+ * @param maxConcurrentRuns highest number of runs carried out at the same time, across all namespaces. A namespace has
+ *                          at most one run at a time.
  * @param progressInterval  how long a run may go without writing to its job before it reports from inside the batch it
- *                          is on. A batch is normally a minute's work, but one whose neighbouring services have gone
- *                          slow can take far longer, and a job that goes quiet is ended as abandoned. This is what
- *                          keeps the quiet stretch down to a single errand instead of a whole batch, and is therefore
- *                          what lets {@link JobProperties#staleAfter()} be measured in minutes rather than days.
+ *                          is on. The check is made after every errand, so a slow batch still writes to its job often
+ *                          enough not to be taken as abandoned by {@link JobProperties#staleAfter()}.
  */
 @ConfigurationProperties(prefix = "errand.purge")
 public record ErrandPurgeProperties(

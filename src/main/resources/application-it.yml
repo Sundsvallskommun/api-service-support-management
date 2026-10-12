@@ -23,6 +23,8 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-relation
   json-schema:
     url: http://localhost:${wiremock.server.port:}/api-json-schema
+  pw-alkt:
+    url: http://localhost:${wiremock.server.port:}/api-pw-alkt
 scheduler:
   emailreader:
     cron: "-"
@@ -45,6 +47,10 @@ scheduler:
       sender-name: Sundsvalls kommun
   attachment-hash:
     cron: "-"
+  process-event:
+    cron: "-"
+  process-cleanup:
+    cron: "-"
   search-reindex:
     cron: "-"
     enabled: false
@@ -54,6 +60,11 @@ errand:
   purge:
     # Small enough that a run over the purge test data walks several batches, which is what moves the cursor
     batch-size: 2
+process-engine:
+  direct-run:
+    # Off, since a direct run calls pw-alkt on a thread of its own after every publication, and would reach WireMock
+    # in tests that have no stub for it. The relay test turns it on
+    enabled: false
 spring:
   cache:
     type: none
@@ -84,6 +95,11 @@ spring:
               synchronization:
                 # Tests search right after writing
                 strategy: sync
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/scripts/truncate-procedure.sql
+      separator: "^^^ END OF SCRIPT ^^^"
   security:
     oauth2:
       client:
@@ -111,6 +127,8 @@ spring:
           relation:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
           json-schema:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+          pw-alkt:
             token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
         registration:
           accessmapper:
@@ -147,5 +165,8 @@ spring:
             client-id: the-client-id
             client-secret: the-client-secret
           json-schema:
+            client-id: the-client-id
+            client-secret: the-client-secret
+          pw-alkt:
             client-id: the-client-id
             client-secret: the-client-secret

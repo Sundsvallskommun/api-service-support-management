@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
@@ -46,7 +46,7 @@ import static se.sundsvall.supportmanagement.service.access.NamespaceGrantResolv
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
-@Component
+@Service
 public class AccessControlService {
 
 	private static final String ENTITY_NOT_FOUND = "An errand with id '%s' could not be found in namespace '%s' for municipality with id '%s'";
@@ -70,22 +70,16 @@ public class AccessControlService {
 	 * Resolves which fields of an errand the requesting user may see.
 	 * <p>
 	 * An errand their labels only grant limited read for is trimmed to the limited read fields of the namespace, whatever
-	 * roles the user holds, since a role says what they see of errands they properly have access to. That trimming does not
-	 * depend on role
-	 * based mapping, as limited read may never silently mean full read. Role field restrictions, on the other hand, only
-	 * apply while the namespace maps errands per role.
+	 * roles the user holds and whether or not the namespace maps errands per role. Role field restrictions apply to the
+	 * errands their labels cover fully, and only while the namespace maps errands per role.
 	 * <p>
-	 * Fields given to the reporter of an errand union on top of whatever restriction applies, so someone who both reported
-	 * an errand and handles it keeps the fuller view. They never restrict a user nothing else restricts, since reporting an
-	 * errand may not
-	 * reduce what its reporter sees. A reporter no label of theirs reaches the errand through is held to the reporter
-	 * fields alone, since limited read was never granted to them and so has nothing to add: the two grants are independent,
-	 * and either may be the narrower one.
+	 * Fields given to the reporter of an errand are added on top of whatever restriction applies, and never restrict a
+	 * user nothing else restricts. A reporter no label of theirs reaches the errand through is held to the reporter fields
+	 * alone.
 	 * <p>
 	 * A null result means no restriction applies at all and the errand is mapped in full, which is what an unrestricted
 	 * role yields. An empty result, in contrast, is a restriction resolving to no fields whatsoever. A limited read never
-	 * resolves to
-	 * nothing, since a namespace that has not said what limited read exposes falls back to a built in minimum.
+	 * resolves to nothing: a namespace that has not said what limited read exposes falls back to a built in minimum.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -99,11 +93,9 @@ public class AccessControlService {
 	/**
 	 * Resolves what the user may read of an errand and what of it they may write, in one pass.
 	 * <p>
-	 * The two answer different questions and a caller needing both should ask once: a field grant may hold a field to
-	 * read while the errand itself is writable, so the keys a caller may see are not always the keys they may change.
-	 * What may be written is by construction a subset of what may be read - a level on a grant only ever restricts it
-	 * further, and a grant carrying no level simply follows the errand, which is what every grant did before levels
-	 * existed.
+	 * A field grant may hold a field to read while the errand itself is writable, so the keys a caller may see are not
+	 * always the keys they may change. What may be written is always a subset of what may be read: a level on a grant
+	 * only ever restricts it further, and a grant carrying no level follows the errand.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -160,12 +152,9 @@ public class AccessControlService {
 	 * Reports what the user may do with one errand, so that a client can render only the controls their next request
 	 * would actually be allowed to make.
 	 * <p>
-	 * Answered from the same grants the write paths enforce rather than from a second reading of the configuration:
-	 * {@link #highestLevel} mirrors the specification guarding every endpoint, and the fields come from the very
-	 * resolver {@code readErrand} maps its response with, so what is reported and what is served cannot drift apart.
-	 * <p>
-	 * The configuration and the access snapshot are resolved once and the fields once, since both underlying lookups are
-	 * cached per request at best and resolving them twice is what quietly turns one read into several.
+	 * The levels are resolved by {@link #highestLevel}, which mirrors the specification guarding every endpoint, and the
+	 * fields by the same resolver {@code readErrand} maps its response with. The configuration and the access snapshot
+	 * are each resolved once per call.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -242,10 +231,8 @@ public class AccessControlService {
 	}
 
 	/**
-	 * The same answer as {@link #readableKeyPredicate}, for every keyed field of one errand at once. A request touching
-	 * several fields resolves the grants once instead of once per field, which matters since resolving them queries the
-	 * database and would
-	 * otherwise flush a half updated errand mid transaction.
+	 * The same answer as {@link #readableKeyPredicate}, for every keyed field of one errand at once. The grants are
+	 * resolved once, when this is called, and asking the returned resolver for a field queries nothing.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -258,17 +245,16 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Throws 401 unless the user may reach sent in key of sent in field. A key the user cannot read is also a key they
-	 * cannot write, so that no one can overwrite or remove data they are not allowed to see. The converse does not hold:
-	 * a key they may read is not necessarily one they may change, which {@link #verifyWritableKeys} answers.
+	 * Throws 403 unless the user may reach sent in key of sent in field. A key the user cannot read is also a key they
+	 * cannot write. A key they may read is not necessarily one they may change, which {@link #verifyWritableKeys}
+	 * answers.
 	 */
 	public void verifyAccessibleKey(String namespace, String municipalityId, ErrandEntity errandEntity, ErrandField field, String key) {
 		verifyAccessibleKeys(namespace, municipalityId, errandEntity, field, List.of(key));
 	}
 
 	/**
-	 * Throws 401 unless the user may reach every one of sent in keys. Resolves the grants once, so it stays a single pass
-	 * regardless of how many keys a request carries.
+	 * Throws 403 unless the user may reach every one of sent in keys. Resolves the grants once for all keys.
 	 */
 	public void verifyAccessibleKeys(String namespace, String municipalityId, ErrandEntity errandEntity, ErrandField field, Collection<String> keys) {
 		if (isNull(keys)) {
@@ -279,8 +265,8 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Throws 401 unless the user may reach every one of sent in keys, according to an already resolved predicate. Lets a
-	 * caller needing the predicate itself resolve the grants once instead of once per use.
+	 * Throws 403 unless the user may reach every one of sent in keys, according to an already resolved predicate. Lets a
+	 * caller that also needs the predicate itself resolve the grants only once.
 	 */
 	public void verifyAccessibleKeys(Predicate<String> accessibleKey, Collection<String> keys) {
 		if (isNull(keys)) {
@@ -296,11 +282,10 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Throws 401 unless the user may change every one of sent in keys, according to an already resolved predicate.
+	 * Throws 403 unless the user may change every one of sent in keys, according to an already resolved predicate.
 	 * <p>
-	 * Sent in keys are the ones a request would actually change, not every key it carries: a namespace holding a key to
-	 * read leaves it readable, so a caller patching back what they were served may name it as long as they leave it as
-	 * it stands.
+	 * Sent in keys are expected to be the ones a request would actually change, not every key it carries, so a key held
+	 * to read may be sent back unchanged.
 	 */
 	public void verifyWritableKeys(Predicate<String> writableKey, Collection<String> keys) {
 		if (isNull(keys)) {
@@ -316,7 +301,7 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Throws 401 unless the user may change sent in key of sent in field, resolving the grants for it.
+	 * Throws 403 unless the user may change sent in key of sent in field, resolving the grants for it.
 	 */
 	public void verifyWritableKey(String namespace, String municipalityId, ErrandEntity errandEntity, ErrandField field, String key) {
 		verifyWritableKeys(writableKeyPredicate(namespace, municipalityId, Identifier.get(), errandEntity, field), List.of(key));
@@ -327,8 +312,7 @@ public class AccessControlService {
 	 * the merge and the response need.
 	 * <p>
 	 * Two questions are asked of each field. A key the caller cannot see at all is refused outright, whichever endpoint
-	 * they write it through. A key they may see but not change is refused only when the patch would actually change it,
-	 * since a caller patching back what they were served carries it unchanged.
+	 * they write it through. A key they may see but not change is refused only when the patch would actually change it.
 	 *
 	 * @param  namespace      namespace
 	 * @param  municipalityId municipality id
@@ -390,12 +374,9 @@ public class AccessControlService {
 	}
 
 	/**
-	 * Refuses a patch naming a field its sender does not hold.
+	 * Refuses a patch carrying a value for a field that is not keyed and that its sender does not hold.
 	 * <p>
-	 * A field carries no level of its own unless it is keyed - a namespace may not hold a whole field to read, which
-	 * {@code validateFields} refuses - so a field that is not keyed is theirs to read and to write, or not theirs at
-	 * all. A value for one they do not hold is therefore a value they were never served, and is refused rather than
-	 * quietly dropped: a patch that is half applied is worse to debug than one that is turned away.
+	 * A field that is not keyed carries no level of its own, so it is theirs to read and to write, or not theirs at all.
 	 * <p>
 	 * The keyed fields are left to {@link #verifyKeys}, which weighs them key by key.
 	 */
@@ -488,13 +469,11 @@ public class AccessControlService {
 
 	/**
 	 * Verifies that the requesting user may reach a resource belonging to the namespace itself rather than to any errand,
-	 * such as its configuration or its metadata. Labels say nothing about these, so the access mapper resources decide on
-	 * their own.
+	 * such as its configuration or its metadata. The resource grants of the access mapper decide on their own, labels
+	 * are not consulted.
 	 * <p>
-	 * Enforced whenever access control is active for the namespace. A namespace without configuration enforces nothing,
-	 * since access control cannot be active without it, which is also what lets a configuration be created in the first
-	 * place. Because the
-	 * check reads the persisted configuration, switching access control off is itself guarded.
+	 * Enforced whenever access control is active for the namespace, as read from its persisted configuration. A
+	 * namespace without configuration enforces nothing, and switching access control off is itself guarded.
 	 *
 	 * @param namespace      namespace
 	 * @param municipalityId municipality id
@@ -535,7 +514,7 @@ public class AccessControlService {
 
 	/**
 	 * Verify existence of errand and that user has access to it if access control is enabled in namespace. Throws Problem
-	 * 404 if errand does not exist. Throws 401 if user does not have access.
+	 * 404 if errand does not exist. Throws 403 if user does not have access.
 	 *
 	 * @param namespace      namespace
 	 * @param municipalityId municipality id

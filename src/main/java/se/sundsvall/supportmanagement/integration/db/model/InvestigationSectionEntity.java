@@ -32,9 +32,9 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
 /**
  * One assessed area of an investigation.
  * <p>
- * The assessment is a column and not a JSON key because it is the question the business asks: how many investigations
- * had a deficiency in the financial section? The rest of the section is free text, and whoever needs more structure
- * puts it in a JSON parameter with a registered schema.
+ * The assessment is held in a column of its own, so it can be counted across investigations - how many investigations
+ * had a deficiency in the financial section, say. The rest of the section is free text, and more structure goes in a
+ * JSON parameter with a registered schema.
  */
 @Entity
 @Table(name = "investigation_section",
@@ -65,7 +65,7 @@ public class InvestigationSectionEntity {
 	@Column(name = "sort_order")
 	private Integer sortOrder;
 
-	/** The only structured thing in the section, and therefore the only thing that can be counted. */
+	/** The assessment of the area, the one structured value of the section. */
 	@Enumerated(STRING)
 	@JdbcTypeCode(VARCHAR)
 	@Column(name = "assessment", length = 32, nullable = false)
