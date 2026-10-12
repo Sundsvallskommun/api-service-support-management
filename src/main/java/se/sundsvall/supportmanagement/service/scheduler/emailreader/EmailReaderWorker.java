@@ -147,7 +147,7 @@ public class EmailReaderWorker {
 		}
 		saveEmail(email, errand);
 		try {
-			eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, EventSubType.MESSAGE);
+			eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, EventSubType.MESSAGE_EXTERNAL);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log new-message event for errand {}: {}", errand.getId(), e.getMessage());
 		}

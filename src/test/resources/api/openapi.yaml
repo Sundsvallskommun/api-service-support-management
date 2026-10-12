@@ -20574,11 +20574,12 @@ components:
           - true
         baseUrl:
           type: string
-          description: Base url of the web application handling errands in this namespace.
-            Links to errands are made as <baseUrl>/<municipalityId>/<namespace>/errands/<errandNumber>.
-            Leaving it out means emails carry no links to errands.
+          description: "Address of an errand in the web application handling errands\
+            \ in this namespace, short of the errand number. Links to errands are\
+            \ made as <baseUrl>/<errandNumber>, a trailing slash on the base url being\
+            \ ignored. Leaving it out means emails carry no links to errands."
           examples:
-          - https://draken.sundsvall.se
+          - https://draken.sundsvall.se/VOF/arende
           pattern: ^https?://\S+$
         reporterProfileId:
           type: string
@@ -21169,7 +21170,7 @@ components:
           pattern: ^(CREATE|READ|UPDATE|DELETE|ACCESS|EXECUTE|CANCEL|DROP)$
         subtype:
           type: string
-          description: "Event subtype. If null, all subtypes of the given type match."
+          description: "Event subtype. If null, all subtypes of the given type match. MESSAGE matches every message, while MESSAGE_INTERNAL and MESSAGE_EXTERNAL match only messages in internal conversations and messages from outside respectively."
           examples:
           - ATTACHMENT
           maxLength: 64

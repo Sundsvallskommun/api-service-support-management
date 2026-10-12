@@ -315,6 +315,38 @@ class NotificationDispatchWorkerTest {
 	}
 
 	@Test
+	void processGroupLetsMessageFilterSelectRefinedMessages() {
+
+		// Arrange — the filter on MESSAGE predates the internal and external messages, and still selects both
+		final var internal = buildEntry("other-user").withSubType("MESSAGE_INTERNAL");
+		final var external = buildEntry("other-user").withSubType("MESSAGE_EXTERNAL");
+		final var subscriber = buildSubscriber("joe01doe", List.of(filter(EVENT_TYPE, "MESSAGE")));
+		mockDispatchOf(buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(internal, external));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(internal, external)));
+	}
+
+	@Test
+	void processGroupLetsFilterOnRefinedMessageSkipTheOtherMessages() {
+
+		// Arrange — a reporter, say, is told of messages from outside alone, not of those in internal conversations
+		final var internal = buildEntry("other-user").withSubType("MESSAGE_INTERNAL");
+		final var external = buildEntry("other-user").withSubType("MESSAGE_EXTERNAL");
+		final var subscriber = buildSubscriber("joe01doe", List.of(filter(EVENT_TYPE, "MESSAGE_EXTERNAL")));
+		mockDispatchOf(buildSubscription(subscriber, null));
+
+		// Act
+		worker.processGroup(List.of(internal, external));
+
+		// Assert
+		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(external)));
+	}
+
+	@Test
 	void processGroupSendsOnceToSubscriberCoveredByMultipleSubscriptions() {
 
 		// Arrange — the same subscriber reaches this errand through both a namespace and an errand subscription

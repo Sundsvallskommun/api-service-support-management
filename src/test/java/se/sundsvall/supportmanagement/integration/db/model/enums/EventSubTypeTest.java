@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.integration.db.model.enums;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
@@ -10,6 +12,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
@@ -19,7 +23,8 @@ class EventSubTypeTest {
 
 	@Test
 	void enums() {
-		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, NOTE, SYSTEM, SUSPENSION);
+		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, MESSAGE_EXTERNAL, MESSAGE_INTERNAL, NOTE, SYSTEM,
+			SUSPENSION);
 	}
 
 	@Test
@@ -28,8 +33,35 @@ class EventSubTypeTest {
 		assertThat(DECISION.getValue()).isEqualTo("DECISION");
 		assertThat(ERRAND.getValue()).isEqualTo("ERRAND");
 		assertThat(MESSAGE.getValue()).isEqualTo("MESSAGE");
+		assertThat(MESSAGE_EXTERNAL.getValue()).isEqualTo("MESSAGE_EXTERNAL");
+		assertThat(MESSAGE_INTERNAL.getValue()).isEqualTo("MESSAGE_INTERNAL");
 		assertThat(NOTE.getValue()).isEqualTo("NOTE");
 		assertThat(SYSTEM.getValue()).isEqualTo("SYSTEM");
 		assertThat(SUSPENSION.getValue()).isEqualTo("SUSPENSION");
+	}
+
+	@ParameterizedTest
+	@CsvSource(nullValues = "null", value = {
+		// A filter on a subtype selects that subtype
+		"MESSAGE, MESSAGE, true",
+		"ATTACHMENT, ATTACHMENT, true",
+		// and every subtype refining it
+		"MESSAGE, MESSAGE_INTERNAL, true",
+		"MESSAGE, MESSAGE_EXTERNAL, true",
+		// while a filter on a refined subtype selects only that one
+		"MESSAGE_INTERNAL, MESSAGE_INTERNAL, true",
+		"MESSAGE_INTERNAL, MESSAGE_EXTERNAL, false",
+		"MESSAGE_EXTERNAL, MESSAGE, false",
+		"MESSAGE_INTERNAL, MESSAGE, false",
+		// Unrelated subtypes do not select one another
+		"ATTACHMENT, MESSAGE, false",
+		"HANDOVER_IN, HANDOVER_OUT, false",
+		// A subtype not known here is selected by itself alone
+		"CUSTOM, CUSTOM, true",
+		"MESSAGE, CUSTOM, false",
+		"MESSAGE, null, false"
+	})
+	void selects(final String filterSubtype, final String eventSubtype, final boolean expected) {
+		assertThat(EventSubType.selects(filterSubtype, eventSubtype)).isEqualTo(expected);
 	}
 }

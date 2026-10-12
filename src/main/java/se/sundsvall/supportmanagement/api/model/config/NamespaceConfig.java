@@ -68,8 +68,8 @@ public class NamespaceConfig {
 
 	@Pattern(regexp = "^https?://\\S+$", message = "must be a valid http or https url")
 	@Schema(
-		description = "Base url of the web application handling errands in this namespace. Links to errands are made as <baseUrl>/<municipalityId>/<namespace>/errands/<errandNumber>. Leaving it out means emails carry no links to errands.",
-		examples = "https://draken.sundsvall.se")
+		description = "Address of an errand in the web application handling errands in this namespace, short of the errand number. Links to errands are made as <baseUrl>/<errandNumber>, a trailing slash on the base url being ignored. Leaving it out means emails carry no links to errands.",
+		examples = "https://draken.sundsvall.se/VOF/arende")
 	private String baseUrl;
 
 	@ValidUuid(nullable = true)

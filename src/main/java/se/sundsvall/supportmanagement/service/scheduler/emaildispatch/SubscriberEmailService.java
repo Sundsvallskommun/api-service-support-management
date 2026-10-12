@@ -46,7 +46,6 @@ public class SubscriberEmailService {
 	private static final String ERRAND_HEADING_TEMPLATE = "Ärende %s:";
 	private static final String EVENT_LINE_TEMPLATE = "    - %s";
 	private static final String LINK_LINE_TEMPLATE = "    Länk: %s/%s";
-	private static final String ERRANDS_URL_TEMPLATE = "%s/%s/%s/errands";
 	private static final boolean ASYNCHRONOUSLY = true;
 
 	private final EmailDispatchOutboxRepository outboxRepository;
@@ -140,9 +139,10 @@ public class SubscriberEmailService {
 		final boolean excludeDescriptions = namespaceConfig
 			.map(NamespaceConfig::isExcludeEventDescriptionsInEmail)
 			.orElse(false);
+		// The base url is the address of an errand short of its number, so the number is all that is appended
 		final var errandsUrl = namespaceConfig
 			.map(NamespaceConfig::getBaseUrl)
-			.map(baseUrl -> ERRANDS_URL_TEMPLATE.formatted(Strings.CS.removeEnd(baseUrl, "/"), municipalityId, namespace));
+			.map(baseUrl -> Strings.CS.removeEnd(baseUrl, "/"));
 
 		final var subject = SUBJECT_TEMPLATE.formatted(displayName);
 
