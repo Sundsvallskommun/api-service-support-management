@@ -249,7 +249,9 @@ public class ProcessEventPublisher {
 			return true;
 		}
 
-		return !namespaceConfigService.getProcessTriggers(errand.getNamespace(), errand.getMunicipalityId()).contains(eventSubType);
+		// A trigger selects the sub types refining it as well, as MESSAGE selects internal and external messages
+		return namespaceConfigService.getProcessTriggers(errand.getNamespace(), errand.getMunicipalityId()).stream()
+			.noneMatch(trigger -> EventSubType.selects(trigger.getValue(), eventSubType.getValue()));
 	}
 
 	/**

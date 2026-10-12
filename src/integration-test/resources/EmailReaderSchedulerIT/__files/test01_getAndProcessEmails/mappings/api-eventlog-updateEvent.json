@@ -10,7 +10,7 @@
 			{
 				"equalToJson": {
 					"type": "UPDATE",
-					"subType": "MESSAGE",
+					"subType": "MESSAGE_EXTERNAL",
 					"owner": "SupportManagement",
 					"metadata": [
 						{

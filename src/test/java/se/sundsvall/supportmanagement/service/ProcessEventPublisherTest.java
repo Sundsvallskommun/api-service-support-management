@@ -80,6 +80,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
@@ -278,6 +280,31 @@ class ProcessEventPublisherTest {
 
 		verify(outboxRepositoryMock, never()).save(any());
 		verifyNoInteractions(processRepositoryMock, activityRepositoryMock, processKeySelectorMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a trigger selects the sub types refining it, so MESSAGE lets an external message through while MESSAGE_INTERNAL does not")
+	void aTriggerSelectsTheSubTypesRefiningIt() {
+		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE);
+		givenLabels(APPLICATION, AUTOMATIC);
+		givenNoInstances();
+
+		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+
+		verify(outboxRepositoryMock).save(outboxCaptor.capture());
+		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo(MESSAGE_EXTERNAL.getValue());
+	}
+
+	@Test
+	@DisplayName("Verification that a refined trigger selects only itself, so MESSAGE_INTERNAL holds back an external message")
+	void aRefinedTriggerSelectsOnlyItself() {
+		givenNamespaceRunsProcess();
+		givenTriggers(MESSAGE_INTERNAL);
+
+		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+
+		verify(outboxRepositoryMock, never()).save(any());
 	}
 
 	@Test

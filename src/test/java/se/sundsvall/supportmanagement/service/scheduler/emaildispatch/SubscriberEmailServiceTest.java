@@ -163,7 +163,7 @@ class SubscriberEmailServiceTest {
 			createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats."),
 			createEntry(subscriber, ERRAND_ID_2, "Ärendet har uppdaterats."),
 			createEntry(subscriber, ERRAND_ID_1, "En anteckning har skapats."));
-		mockSendPending(entries, namespaceConfig(false, "https://draken.example.com/"));
+		mockSendPending(entries, namespaceConfig(false, "https://draken.example.com/AVV/arende/"));
 
 		service.sendPending(SUBSCRIBER_ID);
 
@@ -172,12 +172,12 @@ class SubscriberEmailServiceTest {
 			Uppdatering i Avvikelser
 
 			Ärende ABC123:
-			    Länk: https://draken.example.com/2281/NAMESPACE-1/errands/ABC123
+			    Länk: https://draken.example.com/AVV/arende/ABC123
 			    - Ärendet har uppdaterats.
 			    - En anteckning har skapats.
 
 			Ärende ABC456:
-			    Länk: https://draken.example.com/2281/NAMESPACE-1/errands/ABC456
+			    Länk: https://draken.example.com/AVV/arende/ABC456
 			    - Ärendet har uppdaterats.""");
 		verifySendPending(entries);
 	}
@@ -186,7 +186,7 @@ class SubscriberEmailServiceTest {
 	void sendPendingWithBaseUrlExcludingEventDescriptions() {
 		final var subscriber = createSubscriber(emailChannel("chef@example.com"));
 		final var entries = List.of(createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats."));
-		mockSendPending(entries, namespaceConfig(true, "https://draken.example.com"));
+		mockSendPending(entries, namespaceConfig(true, "https://draken.example.com/AVV/arende"));
 
 		service.sendPending(SUBSCRIBER_ID);
 
@@ -195,7 +195,7 @@ class SubscriberEmailServiceTest {
 			Uppdatering i Avvikelser
 
 			Ärende ABC123:
-			    Länk: https://draken.example.com/2281/NAMESPACE-1/errands/ABC123""");
+			    Länk: https://draken.example.com/AVV/arende/ABC123""");
 		verifySendPending(entries);
 	}
 
