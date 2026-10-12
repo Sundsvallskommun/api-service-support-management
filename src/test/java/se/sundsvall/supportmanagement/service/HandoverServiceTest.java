@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.relation.Relation;
+import generated.se.sundsvall.relation.ResourceIdentifier;
 import java.io.InputStream;
 import java.net.URI;
 import java.sql.Blob;
@@ -225,6 +227,24 @@ class HandoverServiceTest {
 		assertThat(finalRecord.getNewErrandId()).isEqualTo(NEW_ERRAND_ID);
 		assertThat(finalRecord.getNewErrandNumber()).isEqualTo(NEW_ERRAND_NUMBER);
 		assertThat(finalRecord.getRelationId()).isEqualTo(RELATION_ID);
+	}
+
+	@Test
+	void handoverRelatesTheSourceErrandToTheNewErrand() {
+		mockGoldenPath();
+
+		service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, minimalRequest());
+
+		final var captor = ArgumentCaptor.forClass(Relation.class);
+		verify(relationClientMock).createRelation(eq(TARGET_MUNICIPALITY_ID), captor.capture());
+		final var relation = captor.getValue();
+		assertThat(relation.getType()).isEqualTo("HANDOVER");
+		assertThat(relation.getSource())
+			.extracting(ResourceIdentifier::getResourceId, ResourceIdentifier::getType, ResourceIdentifier::getService, ResourceIdentifier::getNamespace)
+			.containsExactly(ERRAND_ID, "case", "supportmanagement", NAMESPACE);
+		assertThat(relation.getTarget())
+			.extracting(ResourceIdentifier::getResourceId, ResourceIdentifier::getType, ResourceIdentifier::getService, ResourceIdentifier::getNamespace)
+			.containsExactly(NEW_ERRAND_ID, "case", "supportmanagement", TARGET_NAMESPACE);
 	}
 
 	@Test

@@ -56,6 +56,7 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static se.sundsvall.supportmanagement.Constants.RELATION_SERVICE;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.mergeParameters;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
@@ -67,7 +68,6 @@ public final class ErrandMapper {
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandMapper.class);
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
-	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "support-management";
 
 	private ErrandMapper() {}
 
@@ -604,7 +604,7 @@ public final class ErrandMapper {
 			.target(new ResourceIdentifier()
 				.resourceId(newErrandId)
 				.type(REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE)
-				.service(REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE)
+				.service(RELATION_SERVICE)
 				.namespace(namespace));
 	}
 

@@ -119,7 +119,7 @@ class MessageExchangeWorkerTest {
 
 		when(conversationRepositoryMock.findByMessageExchangeId(any())).thenReturn(conversationEntities);
 		when(relationClientMock.getRelation(any(), any())).thenReturn(
-			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("toBeAddedErrand").service("support-management"), new ResourceIdentifier().resourceId("other-id"))), // relation 1
+			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("toBeAddedErrand").service("supportmanagement"), new ResourceIdentifier().resourceId("other-id"))), // relation 1
 			ResponseEntity.ok(new Relation(null, new ResourceIdentifier().resourceId("existingErrandId").service("support-management"), new ResourceIdentifier().resourceId("other-id")))); // relation 2
 		when(errandsRepositoryMock.findById("toBeAddedErrand")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("toBeAddedErrand")));
 		when(errandsRepositoryMock.findById("existingErrandId")).thenReturn(Optional.of(ErrandEntity.create().withMunicipalityId("municipalityId").withNamespace("support-management-namespace").withId("existingErrandId")));

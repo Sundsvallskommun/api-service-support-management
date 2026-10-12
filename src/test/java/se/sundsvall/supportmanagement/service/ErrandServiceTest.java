@@ -109,7 +109,7 @@ class ErrandServiceTest {
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
-	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "support-management";
+	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "supportmanagement";
 
 	@Mock
 	private ErrandNumberGeneratorService stringGeneratorServiceMock;

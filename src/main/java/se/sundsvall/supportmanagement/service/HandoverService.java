@@ -46,6 +46,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.Constants.RELATION_SERVICE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
@@ -58,7 +59,6 @@ public class HandoverService {
 
 	private static final String RELATION_TYPE_HANDOVER = "HANDOVER";
 	private static final String RELATION_RESOURCE_TYPE = "case";
-	private static final String RELATION_SERVICE = "support-management";
 	private static final String EVENT_HANDOVER_OUT = "Ärendet har överlåtits till ett annat namespace.";
 	private static final String EVENT_HANDOVER_IN = "Ärendet har mottagits via överlåtelse.";
 

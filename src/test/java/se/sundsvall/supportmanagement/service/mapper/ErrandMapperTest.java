@@ -973,7 +973,7 @@ class ErrandMapperTest {
 			.containsExactly(
 				newErrandId,
 				"case",
-				"support-management",
+				"supportmanagement",
 				NAMESPACE);
 	}
 }
