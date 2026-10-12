@@ -12,12 +12,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.notification.SubscriberNotification;
+import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 
 import static java.util.UUID.randomUUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -36,6 +38,10 @@ class SubscriberNotificationsResourceTest {
 
 	@MockitoBean
 	private SubscriberNotificationService serviceMock;
+
+	// Ownership is checked by the service alone, so that a user holding no access group - a reporter - can handle their own
+	@MockitoBean
+	private AccessControlService accessControlServiceMock;
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -63,6 +69,7 @@ class SubscriberNotificationsResourceTest {
 			.jsonPath("$.totalElements").isEqualTo(1);
 
 		verify(serviceMock).getNotifications(any(), any(), any(), any(), any());
+		verifyNoInteractions(accessControlServiceMock);
 	}
 
 	@Test
@@ -76,6 +83,7 @@ class SubscriberNotificationsResourceTest {
 			.expectStatus().isNoContent();
 
 		verify(serviceMock).deleteNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID);
+		verifyNoInteractions(accessControlServiceMock);
 	}
 
 	@Test
@@ -89,6 +97,7 @@ class SubscriberNotificationsResourceTest {
 			.expectStatus().isNoContent();
 
 		verify(serviceMock).acknowledgeNotification(MUNICIPALITY_ID, NAMESPACE, NOTIFICATION_ID);
+		verifyNoInteractions(accessControlServiceMock);
 	}
 
 	@Test

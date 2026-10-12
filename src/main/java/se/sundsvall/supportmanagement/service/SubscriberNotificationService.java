@@ -81,6 +81,9 @@ public class SubscriberNotificationService {
 	 * ownership rather than access control: the access mapper says nothing about who owns a notification, and being
 	 * allowed to reach an errand does not make someone the recipient of another user's notifications about it.
 	 * <p>
+	 * It is also the only check, for reading as for acknowledging and deleting. Someone who holds no access group at all -
+	 * the reporter of an errand, typically - is still notified, so they must be able to handle their notifications too.
+	 * <p>
 	 * The stored identifier type is the wire form ("adAccount"), which is what {@link Identifier#getTypeString()}
 	 * returns. A request without an identifier owns nothing and is refused.
 	 */
