@@ -22,7 +22,13 @@
 			"displayName": "Ansokan",
 			"resourcePath": "ANSOKAN",
 			"resourceName": "ANSOKAN",
-			"version": 0
+			"version": 0,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-ansokan"
+				}
+			]
 		},
 		{
 			"id": "bb000000-0000-0000-0000-0000000000b6",

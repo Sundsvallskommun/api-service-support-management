@@ -22,7 +22,13 @@
 			"displayName": "Tillsyn",
 			"resourcePath": "TILLSYN",
 			"resourceName": "TILLSYN",
-			"version": 0
+			"version": 0,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-tillsyn"
+				}
+			]
 		}
 	],
 	"measures": [],

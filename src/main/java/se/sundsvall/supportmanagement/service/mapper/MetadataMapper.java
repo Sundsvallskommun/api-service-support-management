@@ -340,7 +340,7 @@ public class MetadataMapper {
 		return label.withLabels(children);
 	}
 
-	private static List<LabelAttribute> toLabelAttributes(List<LabelAttributeEmbeddable> embeddables) {
+	static List<LabelAttribute> toLabelAttributes(List<LabelAttributeEmbeddable> embeddables) {
 		return ofNullable(embeddables).orElse(emptyList()).stream()
 			.filter(Objects::nonNull)
 			.map(e -> LabelAttribute.create().withKey(e.getKey()).withValue(e.getValue()))

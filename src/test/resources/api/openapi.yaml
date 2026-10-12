@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "17.1"
+  version: "17.2"
 servers:
 - url: http://localhost:38151
   description: Generated server url
@@ -25666,6 +25666,13 @@ components:
           description: Resource name
           examples:
           - keycard
+          readOnly: true
+        attributes:
+          type: array
+          description: "Attributes of the label, as registered for the namespace.\
+            \ Changed through the label metadata, never through the errand"
+          items:
+            $ref: "#/components/schemas/LabelAttribute"
           readOnly: true
     ErrandPhase:
       type: object
