@@ -37,7 +37,13 @@
 			"displayName": "SOME_CATEGORY_1",
 			"resourcePath": "LABEL-1",
 			"resourceName": "CATEGORY-1",
-			"version": 0
+			"version": 0,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-ansokan"
+				}
+			]
 		}
 	],
 	"activeNotifications": [

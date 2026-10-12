@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -35,6 +36,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ParameterEntity;
@@ -138,14 +140,17 @@ class ErrandMapperTest {
 	private static final OffsetDateTime MEASURE_MODIFIED = now().minusDays(1);
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-	private static final ErrandLabel LABEL_1 = ErrandLabel.create().withId("id1");
-	private static final ErrandLabel LABEL_2 = ErrandLabel.create().withId("id2");
+	private static final String LABEL_ATTRIBUTE_KEY = "escalationEmail";
+	private static final String LABEL_ATTRIBUTE_VALUE = "escalation@example.com";
+	private static final ErrandLabel LABEL_1 = ErrandLabel.create().withId("id1").withAttributes(List.of(LabelAttribute.create().withKey(LABEL_ATTRIBUTE_KEY).withValue(LABEL_ATTRIBUTE_VALUE)));
+	private static final ErrandLabel LABEL_2 = ErrandLabel.create().withId("id2").withAttributes(emptyList());
 	private static final ErrandLabelEmbeddable LABEL_EMBEDDABLE_1 = ErrandLabelEmbeddable.create().withMetadataLabelId("id1");
 	private static final ErrandLabelEmbeddable LABEL_EMBEDDABLE_2 = ErrandLabelEmbeddable.create().withMetadataLabelId("id2");
 
 	@BeforeAll
 	static void setup() {
-		ReflectionTestUtils.setField(LABEL_EMBEDDABLE_1, "metadataLabel", MetadataLabelEntity.create().withId("id1"));
+		ReflectionTestUtils.setField(LABEL_EMBEDDABLE_1, "metadataLabel", MetadataLabelEntity.create().withId("id1")
+			.withAttributes(List.of(LabelAttributeEmbeddable.create().withKey(LABEL_ATTRIBUTE_KEY).withValue(LABEL_ATTRIBUTE_VALUE))));
 		ReflectionTestUtils.setField(LABEL_EMBEDDABLE_2, "metadataLabel", MetadataLabelEntity.create().withId("id2"));
 	}
 
@@ -906,6 +911,32 @@ class ErrandMapperTest {
 
 		assertThat(entity.getParameters()).extracting(ParameterEntity::getKey, ParameterEntity::getValues)
 			.containsExactly(tuple("read-only", List.of("kept")));
+	}
+
+	@Test
+	void testUpdateEntityWritesNoLabelAttributes() {
+		final var entity = createEntity();
+		final var patch = Errand.create()
+			.withLabels(List.of(ErrandLabel.create().withId("id1").withAttributes(List.of(LabelAttribute.create().withKey(LABEL_ATTRIBUTE_KEY).withValue("sent-by-client")))));
+
+		updateEntity(entity, patch);
+
+		assertThat(entity.getLabels()).singleElement().satisfies(label -> {
+			assertThat(label.getMetadataLabelId()).isEqualTo("id1");
+			assertThat(label.getMetadataLabel()).isNull();
+		});
+		assertThat(LABEL_EMBEDDABLE_1.getMetadataLabel().getAttributes()).extracting(LabelAttributeEmbeddable::getKey, LabelAttributeEmbeddable::getValue)
+			.containsExactly(tuple(LABEL_ATTRIBUTE_KEY, LABEL_ATTRIBUTE_VALUE));
+	}
+
+	@Test
+	void testToErrandLeavesAttributesOutOfALabelWithoutMetadata() {
+		final var entity = createEntity().withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("id3")));
+
+		assertThat(toErrand(entity).getLabels()).singleElement().satisfies(label -> {
+			assertThat(label.getId()).isEqualTo("id3");
+			assertThat(label.getAttributes()).isNull();
+		});
 	}
 
 	@Test

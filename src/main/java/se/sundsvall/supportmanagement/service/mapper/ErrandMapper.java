@@ -60,6 +60,7 @@ import static se.sundsvall.supportmanagement.Constants.RELATION_SERVICE;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.mergeParameters;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toErrandParameterEntityList;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toParameterList;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toLabelAttributes;
 import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toParameterList;
 import static se.sundsvall.supportmanagement.service.mapper.StakeholderParameterMapper.toStakeholderParameterEntityList;
 
@@ -461,7 +462,8 @@ public final class ErrandMapper {
 				.withId(errandLabelEmbeddable.getMetadataLabelId())
 				.withVersion(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? errandLabelEmbeddable.getMetadataLabel().getVersion() : null)
 				.withResourceName(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? errandLabelEmbeddable.getMetadataLabel().getResourceName() : null)
-				.withResourcePath(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? errandLabelEmbeddable.getMetadataLabel().getResourcePath() : null))
+				.withResourcePath(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? errandLabelEmbeddable.getMetadataLabel().getResourcePath() : null)
+				.withAttributes(nonNull(errandLabelEmbeddable.getMetadataLabel()) ? toLabelAttributes(errandLabelEmbeddable.getMetadataLabel().getAttributes()) : null))
 			.toList();
 	}
 

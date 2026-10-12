@@ -22,7 +22,13 @@
 			"displayName": "Sparrad",
 			"resourcePath": "SPARRAD",
 			"resourceName": "SPARRAD",
-			"version": 0
+			"version": 0,
+			"attributes": [
+				{
+					"key": "processBlocked",
+					"value": "true"
+				}
+			]
 		},
 		{
 			"id": "cb000000-0000-0000-0000-0000000000c2",
@@ -38,7 +44,13 @@
 			"displayName": "Ansokan",
 			"resourcePath": "ANSOKAN",
 			"resourceName": "ANSOKAN",
-			"version": 0
+			"version": 0,
+			"attributes": [
+				{
+					"key": "processKey",
+					"value": "alkt-ansokan"
+				}
+			]
 		}
 	],
 	"measures": [],
