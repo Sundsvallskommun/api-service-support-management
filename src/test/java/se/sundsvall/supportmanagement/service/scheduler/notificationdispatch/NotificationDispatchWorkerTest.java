@@ -1,5 +1,9 @@
 package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -16,6 +20,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.support.Identifier;
@@ -212,6 +217,38 @@ class NotificationDispatchWorkerTest {
 		// Assert
 		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
 		verify(dispatchRepositoryMock).deleteAll(List.of(entry));
+	}
+
+	@Test
+	void processGroupLogsTheFiltersOfSubscriberWantingNoEvent() {
+
+		// Arrange
+		final var logger = (Logger) LoggerFactory.getLogger(NotificationDispatchWorker.class);
+		final var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+		logger.setLevel(Level.DEBUG);
+
+		final var entry = buildEntry("other-user").withAddedLabelIds(Set.of("label-id"));
+		final var subscriber = buildSubscriber("joe01doe", List.of(filter("OTHER_TYPE", null)));
+		final var profileSubscription = buildProfileSubscription(subscriber, "risk", List.of(filter("UPDATE", null).withLabelId("other-label-id")), List.of(EMAIL));
+		profileSubscription.getProfile().setName("MAS/MAR");
+		mockDispatchOf(profileSubscription, buildSubscription(subscriber, null));
+
+		try {
+			// Act
+			worker.processGroup(List.of(entry));
+		} finally {
+			logger.detachAppender(appender);
+			logger.setLevel(null);
+		}
+
+		// Assert
+		verify(channelDispatcherMock, never()).send(any(), any(), any(), any());
+		assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage).anySatisfy(message -> assertThat(message)
+			.contains("Event dispatch-id on errand errand-id (CREATE/ATTACHMENT, added labels [label-id]) is wanted by no subscription of subscriber subscriber-id")
+			.contains("profile MAS/MAR [EventFilterEmbeddable{type='UPDATE', subtype='null', labelId='other-label-id'}]")
+			.contains("subscription subscription-id [EventFilterEmbeddable{type='OTHER_TYPE', subtype='null', labelId='null'}]"));
 	}
 
 	@Test

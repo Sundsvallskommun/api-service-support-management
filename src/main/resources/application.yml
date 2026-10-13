@@ -162,6 +162,7 @@ logbook:
 logging:
   level:
     root: INFO
+    se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker: DEBUG
 openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}
