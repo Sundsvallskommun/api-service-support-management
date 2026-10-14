@@ -139,7 +139,7 @@ class NamespaceConfigMapperTest {
 
 		final var config = mapper.toNamespaceConfig(entity);
 
-		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
+		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions", "teliaAceWorkItemBaseUrl");
 		assertThat(config.getNamespace()).isEqualTo(namespace);
 		assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -149,6 +149,36 @@ class NamespaceConfigMapperTest {
 		assertThat(config.isAccessControl()).isEqualTo(accessControl);
 		assertThat(config.isNotifyReporter()).isEqualTo(notifyReporter);
 		assertThat(config.getBaseUrl()).isEqualTo(BASE_URL);
+	}
+
+	@Test
+	void toEntityAndBackRoundTripsTeliaAceWorkItemConfig() {
+		final var teliaAceWorkItemBaseUrl = "https://draken.sundsvall.se/kontaktsundsvall";
+		final var config = NamespaceConfig.create()
+			.withDisplayName("displayName")
+			.withShortCode("shortCode")
+			.withTeliaAceWorkItemEnabled(true)
+			.withTeliaAceWorkItemBaseUrl(teliaAceWorkItemBaseUrl);
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED)).isTrue();
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL)).isEqualTo(teliaAceWorkItemBaseUrl);
+
+		final var roundTripped = mapper.toNamespaceConfig(entity);
+
+		assertThat(roundTripped.isTeliaAceWorkItemEnabled()).isTrue();
+		assertThat(roundTripped.getTeliaAceWorkItemBaseUrl()).isEqualTo(teliaAceWorkItemBaseUrl);
+	}
+
+	@Test
+	void toEntityLeavesOutTeliaAceWorkItemBaseUrlWhenNull() {
+		final var config = NamespaceConfig.create().withDisplayName("displayName").withShortCode("shortCode");
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL);
+		assertThat(mapper.toNamespaceConfig(entity).getTeliaAceWorkItemBaseUrl()).isNull();
 	}
 
 	@Test
@@ -180,7 +210,7 @@ class NamespaceConfigMapperTest {
 		final var configs = mapper.toNamespaceConfigs(entities);
 
 		assertThat(configs).hasSize(1).satisfiesExactly(config -> {
-			assertThat(config).hasNoNullFieldsOrPropertiesExcept("limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
+			assertThat(config).hasNoNullFieldsOrPropertiesExcept("limitedReadAccess", "reporterAccess", "roleFieldRestrictions", "teliaAceWorkItemBaseUrl");
 			assertThat(config.getNamespace()).isEqualTo(namespace);
 			assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(config.getDisplayName()).isEqualTo(displayName);

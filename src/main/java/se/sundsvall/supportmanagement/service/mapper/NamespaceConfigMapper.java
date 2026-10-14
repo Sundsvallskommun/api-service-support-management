@@ -52,6 +52,8 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ROLE_BASED_MAPPING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SINGLE_DECISION_PER_ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getValue;
 
 @Component
@@ -106,11 +108,15 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_SINGLE_DECISION_PER_ERRAND, String.valueOf(config.isSingleDecisionPerErrand()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL, String.valueOf(config.isExcludeEventDescriptionsInEmail()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
+			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED, String.valueOf(config.isTeliaAceWorkItemEnabled()), BOOLEAN))
 			.withAccessGrants(toAccessGrants(config));
 
-		// A stored value may not be null, so an absent base url is left out rather than stored empty
+		// A stored value may not be null, so an absent url is left out rather than stored empty
+		ofNullable(config.getTeliaAceWorkItemBaseUrl())
+			.ifPresent(baseUrl -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL, baseUrl, STRING)));
 		ofNullable(config.getBaseUrl())
 			.ifPresent(baseUrl -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_BASE_URL, baseUrl, STRING)));
+
 		return entity;
 	}
 
@@ -144,6 +150,8 @@ public class NamespaceConfigMapper {
 			.withExcludeEventDescriptionsInEmail(readOptionalToggle(entity, PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL))
 			.withBaseUrl(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_BASE_URL))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
+			.withTeliaAceWorkItemEnabled(readOptionalToggle(entity, PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED))
+			.withTeliaAceWorkItemBaseUrl(ConfigPropertyExtractor.<String>getNullableValue(entity, PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL))
 			.withLimitedReadAccess(toLimitedReadAccess(entity))
 			.withReporterAccess(toReporterAccess(entity))
 			.withRoleFieldRestrictions(toRoleAccesses(entity));

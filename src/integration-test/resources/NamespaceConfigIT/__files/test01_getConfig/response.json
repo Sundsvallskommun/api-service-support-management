@@ -11,5 +11,6 @@
 	"roleBasedMapping": false,
 	"resourceAccessControl": false,
 	"singleDecisionPerErrand": false,
+	"teliaAceWorkItemEnabled": false,
 	"excludeEventDescriptionsInEmail": false
 }

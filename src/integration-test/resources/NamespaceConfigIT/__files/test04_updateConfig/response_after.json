@@ -11,6 +11,7 @@
 	"roleBasedMapping": false,
 	"resourceAccessControl": false,
 	"singleDecisionPerErrand": false,
+	"teliaAceWorkItemEnabled": false,
 	"excludeEventDescriptionsInEmail": false,
 	"baseUrl": "https://draken.example.com"
 }

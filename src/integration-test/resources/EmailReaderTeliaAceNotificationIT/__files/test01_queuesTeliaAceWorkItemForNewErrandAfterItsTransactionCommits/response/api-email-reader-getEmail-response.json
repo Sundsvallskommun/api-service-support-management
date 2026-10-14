@@ -1,0 +1,23 @@
+[
+	{
+		"headers": {
+			"MESSAGE_ID": [
+				"<a1b2c3d4-e5f6-4a5b-9c8d-123456789abc@this.is.a.test>"
+			]
+		},
+		"metadata": {
+			"classification.type": "TYPE-TA",
+			"classification.category": "CATEGORY-TA"
+		},
+		"attachments": [],
+		"sender": "anna.andersson@example.com",
+		"recipients": [
+			"name@this.is.a.test"
+		],
+		"subject": "Ansökan om bygglov för fastighet TESTVÄGEN 1",
+		"id": "7854c6e3-a188-45cb-90bd-c6b135e66500",
+		"message": "Hej, jag undrar hur det går med mitt ärende.",
+		"htmlMessage": "Hej, jag undrar hur det går med mitt ärende.",
+		"receivedAt": "2026-10-12T13:20:27+02:00"
+	}
+]

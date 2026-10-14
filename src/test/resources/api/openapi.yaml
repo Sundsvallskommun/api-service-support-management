@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.0"
 servers:
-- url: http://localhost:38151
+- url: http://localhost:65312
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -19778,16 +19778,16 @@ components:
     Problem:
       type: object
       properties:
+        title:
+          type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
-        detail:
-          type: string
-        title:
-          type: string
         status:
           type: integer
           format: int32
@@ -19806,11 +19806,11 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
+        detail:
+          type: string
         instance:
           type: string
           format: uri
-        detail:
-          type: string
     Violation:
       type: object
       properties:
@@ -19956,6 +19956,23 @@ components:
             \ occur. If no value is set it defaults to false."
           examples:
           - true
+        teliaAceWorkItemEnabled:
+          type: boolean
+          description: "If set to true, errands created or updated via EmailReader\
+            \ are notified to Telia ACE as work items. If no value is set it defaults\
+            \ to false."
+          examples:
+          - true
+        teliaAceWorkItemBaseUrl:
+          type: string
+          description: "Base URL used to build the Draken link sent to Telia ACE,\
+            \ e.g. https://draken.sundsvall.se/kontaktsundsvall. Required when teliaAceWorkItemEnabled\
+            \ is true."
+          examples:
+          - https://draken.sundsvall.se/kontaktsundsvall
+          maxLength: 230
+          minLength: 0
+          pattern: ^https?://\S+$
         excludeEventDescriptionsInEmail:
           type: boolean
           description: "If set to true emails sent to subscribers only name the errands\
@@ -20260,16 +20277,6 @@ components:
     JsonNode:
       type: object
       properties:
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
-          type: boolean
         container:
           type: boolean
         number:
@@ -20296,8 +20303,6 @@ components:
           type: boolean
         pojo:
           type: boolean
-        floatingPointNumber:
-          type: boolean
         short:
           type: boolean
         int:
@@ -20316,6 +20321,18 @@ components:
         boolean:
           type: boolean
         binary:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        empty:
+          type: boolean
+        array:
+          type: boolean
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         embeddedValue:
           type: boolean
