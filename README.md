@@ -394,6 +394,23 @@ to; the log says so if that is ever reached.
 
 The integration tests start one of their own through Testcontainers.
 
+### Subscriber Notifications
+
+The `process_notification_dispatch` job (`scheduler.notification-dispatch.*`) delivers the events of an errand to its
+subscribers on the channels their subscriptions route them to:
+
+|  Channel   |                                          Delivered as                                          |                                                               Recipient                                                                |
+|------------|------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `INTERNAL` | A subscriber notification, read through `subscriber-notifications`                             | The subscriber                                                                                                                         |
+| `EMAIL`    | One email per subscriber and run, naming each errand and what happened to it                   | The channel's destination, or the email address of the employee when it has none                                                       |
+| `SMS`      | One sms per subscriber and run, only naming the errands (at most five) and linking to each one | The channel's destination (an MSISDN, e.g. `+46701234567`), or the mobile number of the employee when it has none, made into an MSISDN |
+
+Email and sms are written to an outbox together with the rest of the dispatch and sent at the end of the same run, so
+a failure to send is retried on the next run. Sms costs money and is therefore opt-in per namespace:
+`smsNotificationsEnabled` in the namespace config has to be set for anything to be texted, otherwise events routed to
+sms are not delivered on that channel. Links require `baseUrl` in the namespace config, and the sender name of an sms
+is set by `scheduler.notification-dispatch.sms.sender` (3–11 characters).
+
 ### Additional Notes
 
 - **Application Profiles:**

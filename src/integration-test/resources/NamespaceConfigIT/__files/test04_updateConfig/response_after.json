@@ -12,5 +12,6 @@
 	"resourceAccessControl": false,
 	"singleDecisionPerErrand": false,
 	"excludeEventDescriptionsInEmail": false,
+	"smsNotificationsEnabled": false,
 	"baseUrl": "https://draken.example.com"
 }

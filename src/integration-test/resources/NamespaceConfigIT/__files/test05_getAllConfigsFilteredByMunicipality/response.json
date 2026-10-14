@@ -12,7 +12,8 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -27,6 +28,7 @@
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
 		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false,
 		"reporterProfileId": "ccddeeff-0000-0000-0000-000000000099"
 	},
 	{
@@ -42,7 +44,8 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false
 	},
 	{
 		"municipalityId": "2281",
@@ -56,6 +59,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false
 	}
 ]

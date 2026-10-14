@@ -48,6 +48,7 @@ class NamespaceConfigTest {
 		final var notifyReporter = true;
 		final var roleBasedMapping = true;
 		final var resourceAccessControl = true;
+		final var smsNotificationsEnabled = true;
 		final var roleFieldRestrictions = List.of(RoleFieldRestriction.create().withRole("FIRST_LINE_CASE_OFFICER"));
 		final var limitedReadAccess = LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
 		final var reporterAccess = ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
@@ -64,6 +65,7 @@ class NamespaceConfigTest {
 			.withNotifyReporter(notifyReporter)
 			.withRoleBasedMapping(roleBasedMapping)
 			.withResourceAccessControl(resourceAccessControl)
+			.withSmsNotificationsEnabled(smsNotificationsEnabled)
 			.withRoleFieldRestrictions(roleFieldRestrictions)
 			.withLimitedReadAccess(limitedReadAccess)
 			.withReporterAccess(reporterAccess)
@@ -82,6 +84,7 @@ class NamespaceConfigTest {
 		assertThat(bean.isNotifyReporter()).isEqualTo(notifyReporter);
 		assertThat(bean.isRoleBasedMapping()).isEqualTo(roleBasedMapping);
 		assertThat(bean.isResourceAccessControl()).isEqualTo(resourceAccessControl);
+		assertThat(bean.isSmsNotificationsEnabled()).isEqualTo(smsNotificationsEnabled);
 		assertThat(bean.getRoleFieldRestrictions()).isEqualTo(roleFieldRestrictions);
 		assertThat(bean.getLimitedReadAccess()).isEqualTo(limitedReadAccess);
 		assertThat(bean.getReporterAccess()).isEqualTo(reporterAccess);
@@ -93,18 +96,22 @@ class NamespaceConfigTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail").satisfies(namespaceConfig -> {
-			assertThat(namespaceConfig.isAccessControl()).isFalse();
-			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
-			assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
-			assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
-		});
-		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail").satisfies(namespaceConfig -> {
-			assertThat(namespaceConfig.isAccessControl()).isFalse();
-			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
-			assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
-			assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
+		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail", "smsNotificationsEnabled")
+			.satisfies(namespaceConfig -> {
+				assertThat(namespaceConfig.isAccessControl()).isFalse();
+				assertThat(namespaceConfig.isNotifyReporter()).isFalse();
+				assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
+				assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
+				assertThat(namespaceConfig.isSmsNotificationsEnabled()).isFalse();
+			});
+		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail", "smsNotificationsEnabled").satisfies(
+			namespaceConfig -> {
+				assertThat(namespaceConfig.isAccessControl()).isFalse();
+				assertThat(namespaceConfig.isNotifyReporter()).isFalse();
+				assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
+				assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
+				assertThat(namespaceConfig.isSmsNotificationsEnabled()).isFalse();
 
-		});
+			});
 	}
 }

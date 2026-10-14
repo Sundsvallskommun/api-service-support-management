@@ -4,6 +4,7 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -19,8 +20,10 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 
+import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
@@ -28,11 +31,11 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 
 @Entity
-@Table(name = "email_dispatch_outbox",
+@Table(name = "notification_dispatch_outbox",
 	indexes = {
-		@Index(name = "idx_email_dispatch_outbox_subscriber_created", columnList = "subscriber_id, created")
+		@Index(name = "idx_notification_dispatch_outbox_subscriber_channel_created", columnList = "subscriber_id, channel, created")
 	})
-public class EmailDispatchOutboxEntity {
+public class NotificationDispatchOutboxEntity {
 
 	@Id
 	@UuidGenerator
@@ -41,9 +44,14 @@ public class EmailDispatchOutboxEntity {
 
 	// The database removes the rows of a subscriber that is deleted, so nothing is left to be sent to them
 	@ManyToOne(fetch = LAZY, optional = false)
-	@JoinColumn(name = "subscriber_id", nullable = false, foreignKey = @ForeignKey(name = "fk_email_dispatch_outbox_subscriber_id"))
+	@JoinColumn(name = "subscriber_id", nullable = false, foreignKey = @ForeignKey(name = "fk_notification_dispatch_outbox_subscriber_id"))
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private SubscriberEntity subscriber;
+
+	// Each channel is emptied on its own, so a subscriber's email and sms go out independently of each other
+	@Enumerated(STRING)
+	@Column(name = "channel", nullable = false, length = 32)
+	private NotificationChannelType channel;
 
 	@Column(name = "errand_id", nullable = false, length = 36)
 	private String errandId;
@@ -52,17 +60,17 @@ public class EmailDispatchOutboxEntity {
 	private String errandNumber;
 
 	@ElementCollection
-	@CollectionTable(name = "email_dispatch_outbox_event",
-		joinColumns = @JoinColumn(name = "outbox_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_email_dispatch_outbox_event_outbox_id")))
+	@CollectionTable(name = "notification_dispatch_outbox_event",
+		joinColumns = @JoinColumn(name = "outbox_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_notification_dispatch_outbox_event_outbox_id")))
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private List<EmailDispatchOutboxEventEmbeddable> events;
+	private List<NotificationDispatchOutboxEventEmbeddable> events;
 
 	@Column(name = "created", nullable = false, columnDefinition = "datetime(3)")
 	@TimeZoneStorage(NORMALIZE)
 	private OffsetDateTime created;
 
-	public static EmailDispatchOutboxEntity create() {
-		return new EmailDispatchOutboxEntity();
+	public static NotificationDispatchOutboxEntity create() {
+		return new NotificationDispatchOutboxEntity();
 	}
 
 	@PrePersist
@@ -78,7 +86,7 @@ public class EmailDispatchOutboxEntity {
 		this.id = id;
 	}
 
-	public EmailDispatchOutboxEntity withId(final String id) {
+	public NotificationDispatchOutboxEntity withId(final String id) {
 		this.id = id;
 		return this;
 	}
@@ -91,8 +99,21 @@ public class EmailDispatchOutboxEntity {
 		this.subscriber = subscriber;
 	}
 
-	public EmailDispatchOutboxEntity withSubscriber(final SubscriberEntity subscriber) {
+	public NotificationDispatchOutboxEntity withSubscriber(final SubscriberEntity subscriber) {
 		this.subscriber = subscriber;
+		return this;
+	}
+
+	public NotificationChannelType getChannel() {
+		return channel;
+	}
+
+	public void setChannel(final NotificationChannelType channel) {
+		this.channel = channel;
+	}
+
+	public NotificationDispatchOutboxEntity withChannel(final NotificationChannelType channel) {
+		this.channel = channel;
 		return this;
 	}
 
@@ -104,7 +125,7 @@ public class EmailDispatchOutboxEntity {
 		this.errandId = errandId;
 	}
 
-	public EmailDispatchOutboxEntity withErrandId(final String errandId) {
+	public NotificationDispatchOutboxEntity withErrandId(final String errandId) {
 		this.errandId = errandId;
 		return this;
 	}
@@ -117,20 +138,20 @@ public class EmailDispatchOutboxEntity {
 		this.errandNumber = errandNumber;
 	}
 
-	public EmailDispatchOutboxEntity withErrandNumber(final String errandNumber) {
+	public NotificationDispatchOutboxEntity withErrandNumber(final String errandNumber) {
 		this.errandNumber = errandNumber;
 		return this;
 	}
 
-	public List<EmailDispatchOutboxEventEmbeddable> getEvents() {
+	public List<NotificationDispatchOutboxEventEmbeddable> getEvents() {
 		return events;
 	}
 
-	public void setEvents(final List<EmailDispatchOutboxEventEmbeddable> events) {
+	public void setEvents(final List<NotificationDispatchOutboxEventEmbeddable> events) {
 		this.events = events;
 	}
 
-	public EmailDispatchOutboxEntity withEvents(final List<EmailDispatchOutboxEventEmbeddable> events) {
+	public NotificationDispatchOutboxEntity withEvents(final List<NotificationDispatchOutboxEventEmbeddable> events) {
 		this.events = events;
 		return this;
 	}
@@ -143,14 +164,14 @@ public class EmailDispatchOutboxEntity {
 		this.created = created;
 	}
 
-	public EmailDispatchOutboxEntity withCreated(final OffsetDateTime created) {
+	public NotificationDispatchOutboxEntity withCreated(final OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, subscriberId(), errandId, errandNumber, events, created);
+		return Objects.hash(id, subscriberId(), channel, errandId, errandNumber, events, created);
 	}
 
 	@Override
@@ -161,9 +182,10 @@ public class EmailDispatchOutboxEntity {
 		if (obj == null || getClass() != obj.getClass()) {
 			return false;
 		}
-		final EmailDispatchOutboxEntity other = (EmailDispatchOutboxEntity) obj;
+		final NotificationDispatchOutboxEntity other = (NotificationDispatchOutboxEntity) obj;
 		return Objects.equals(id, other.id)
 			&& Objects.equals(subscriberId(), other.subscriberId())
+			&& channel == other.channel
 			&& Objects.equals(errandId, other.errandId)
 			&& Objects.equals(errandNumber, other.errandNumber)
 			&& Objects.equals(events, other.events)
@@ -172,9 +194,10 @@ public class EmailDispatchOutboxEntity {
 
 	@Override
 	public String toString() {
-		return "EmailDispatchOutboxEntity{" +
+		return "NotificationDispatchOutboxEntity{" +
 			"id='" + id + '\'' +
 			", subscriberId='" + subscriberId() + '\'' +
+			", channel=" + channel +
 			", errandId='" + errandId + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", events=" + events +
