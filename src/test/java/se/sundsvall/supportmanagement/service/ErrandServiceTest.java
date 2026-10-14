@@ -46,6 +46,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -60,6 +62,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.time.OffsetDateTime.now;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
@@ -87,6 +90,8 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -467,6 +472,61 @@ class ErrandServiceTest {
 
 		assertThat(entity.getAssignedUserId()).isNull();
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+	}
+
+	@Test
+	void updateErrandChangingStatusAndPhase() {
+		final var initialPhase = PhaseEntity.create().withId("phase-1").withName("Inledande");
+		final var nextPhase = PhaseEntity.create().withId("phase-2").withName("Utredning");
+		final var entity = buildErrandEntity()
+			.withStatus("NEW")
+			.withPhases(new ArrayList<>(List.of(ErrandPhaseEntity.create().withPhaseEntity(initialPhase))));
+		final var patch = Errand.create().withStatus("ONGOING").withActivePhaseId(nextPhase.getId());
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		// Moves the errand into the next phase, as the phase service does
+		doAnswer(_ -> {
+			entity.getPhases().getFirst().setEnded(now());
+			entity.getPhases().add(ErrandPhaseEntity.create().withPhaseEntity(nextPhase));
+			return null;
+		}).when(errandPhaseServiceMock).applyPhaseChange(eq(entity), eq(nextPhase.getId()), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(entity, nextPhase.getId(), "ONGOING", NAMESPACE, MUNICIPALITY_ID);
+		verify(errandLabelServiceMock).validateVersions(any());
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		// The change is logged as such, and its status and its phase each by itself
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+		verify(eventServiceMock).createErrandEvent(UPDATE, "Status har ändrats till ONGOING", entity, currentRevisionMock, previousRevisionMock, false, STATUS);
+		verify(eventServiceMock).createErrandEvent(UPDATE, "Fasen har ändrats till Utredning", entity, currentRevisionMock, previousRevisionMock, false, PHASE);
+	}
+
+	@Test
+	void updateErrandKeepingStatusAndPhaseLogsNeitherAsChanged() {
+		final var entity = buildErrandEntity()
+			.withStatus("NEW")
+			.withPhases(new ArrayList<>(List.of(ErrandPhaseEntity.create().withPhaseEntity(PhaseEntity.create().withId("phase-1").withName("Inledande")))));
+		final var patch = Errand.create().withStatus("NEW").withActivePhaseId("phase-1");
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(entity, "phase-1", "NEW", NAMESPACE, MUNICIPALITY_ID);
 		verify(errandLabelServiceMock).validateVersions(any());
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);

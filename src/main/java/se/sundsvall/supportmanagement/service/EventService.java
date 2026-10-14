@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.net.URI;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -38,7 +39,10 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
@@ -52,6 +56,8 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.shouldNoti
 public class EventService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
+
+	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, PHASE, STATUS);
 
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
@@ -108,8 +114,9 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
-		// An assignment is logged alongside the change to the errand it is part of, which already subscribes the assignee
-		if (eventType != EventType.DELETE && subtype != EventSubType.ASSIGNMENT) {
+		// An assignment, a change of status and a change of phase are logged alongside the change to the errand they are part
+		// of, which already subscribes the assignee
+		if (eventType != EventType.DELETE && !LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype)) {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity, eventType == EventType.CREATE && subtype == EventSubType.ERRAND));
 		}
 
