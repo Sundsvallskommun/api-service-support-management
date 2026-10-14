@@ -12,6 +12,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false
 	},
 	{
@@ -26,6 +27,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false
 	},
 	{
@@ -41,7 +43,8 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"teliaAceWorkItemEnabled": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -55,6 +58,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false
 	},
 	{
@@ -104,6 +108,7 @@
 		],
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false,
 		"reporterAccess": {
 			"resources": [
@@ -188,6 +193,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false
 	},
 	{
@@ -202,6 +208,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": true,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false
 	}
 ]

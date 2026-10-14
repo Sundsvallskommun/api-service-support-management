@@ -9,6 +9,8 @@ import se.sundsvall.supportmanagement.integration.db.AttachmentDataRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.HandoverIdempotencyRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.TeliaAceContactRepository;
+import se.sundsvall.supportmanagement.integration.db.TeliaAceWorkItemRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
@@ -50,6 +52,8 @@ public class ErrandDataDeleter {
 	private final NotesClient notesClient;
 	private final SubscriberNotificationRepository subscriberNotificationRepository;
 	private final HandoverIdempotencyRepository handoverIdempotencyRepository;
+	private final TeliaAceWorkItemRepository teliaAceWorkItemRepository;
+	private final TeliaAceContactRepository teliaAceContactRepository;
 	private final EntityManager entityManager;
 	private final ChunkedDeleter chunkedDeleter;
 	private final SearchIndexing searchIndexing;
@@ -62,6 +66,8 @@ public class ErrandDataDeleter {
 		final NotesClient notesClient,
 		final SubscriberNotificationRepository subscriberNotificationRepository,
 		final HandoverIdempotencyRepository handoverIdempotencyRepository,
+		final TeliaAceWorkItemRepository teliaAceWorkItemRepository,
+		final TeliaAceContactRepository teliaAceContactRepository,
 		final EntityManager entityManager,
 		final ChunkedDeleter chunkedDeleter,
 		final SearchIndexing searchIndexing) {
@@ -73,6 +79,8 @@ public class ErrandDataDeleter {
 		this.notesClient = notesClient;
 		this.subscriberNotificationRepository = subscriberNotificationRepository;
 		this.handoverIdempotencyRepository = handoverIdempotencyRepository;
+		this.teliaAceWorkItemRepository = teliaAceWorkItemRepository;
+		this.teliaAceContactRepository = teliaAceContactRepository;
 		this.entityManager = entityManager;
 		this.chunkedDeleter = chunkedDeleter;
 		this.searchIndexing = searchIndexing;
@@ -133,6 +141,13 @@ public class ErrandDataDeleter {
 
 		// A handover is recorded against both ends, and the errand being removed may be either of them.
 		handoverIdempotencyRepository.deleteAllBySourceErrandIdOrNewErrandId(errandId, errandId);
+
+		// A work item still queued for delivery to Telia ACE would otherwise outlive the errand it points at, and keep
+		// the sender's email address around after the errand it belonged to is gone.
+		teliaAceWorkItemRepository.deleteAllByErrandId(errandId);
+
+		// The emailUid correlating this errand to its Telia ACE work item is meaningless once the errand is gone.
+		teliaAceContactRepository.deleteAllByErrandId(errandId);
 	}
 
 	/**

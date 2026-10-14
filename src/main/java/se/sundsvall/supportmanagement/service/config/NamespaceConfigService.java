@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -44,6 +45,7 @@ public class NamespaceConfigService {
 	private static final String DUPLICATE_GRANT = "'%s' occurs more than once as %s in '%s'";
 	private static final String LEVEL_NOT_ALLOWED = "Level may not be set for field '%s' of '%s' as the field holds no keyed collection";
 	private static final String LEVEL_NOT_SUPPORTED = "Level '%s' may not be set for field '%s' of '%s' as a field is held at read or read/write";
+	private static final String TELIA_ACE_BASE_URL_REQUIRED = "'teliaAceWorkItemBaseUrl' is mandatory when 'teliaAceWorkItemEnabled' is true";
 
 	private final NamespaceConfigRepository configRepository;
 	private final NamespaceConfigMapper mapper;
@@ -63,9 +65,19 @@ public class NamespaceConfigService {
 			throw Problem.valueOf(BAD_REQUEST, CONFIG_ENTITY_ALREADY_EXISTS.formatted(namespace, municipalityId));
 		}
 		validateAccessConfiguration(request);
+		validateTeliaAceWorkItemConfig(request);
 		final var config = mapper.toEntity(request, namespace, municipalityId);
 		validateNoDuplicateGrants(config);
 		configRepository.save(config);
+	}
+
+	/**
+	 * Rejects a request that enables the Telia ACE work item feature without also setting its base URL.
+	 */
+	private void validateTeliaAceWorkItemConfig(NamespaceConfig request) {
+		if (request.isTeliaAceWorkItemEnabled() && StringUtils.isBlank(request.getTeliaAceWorkItemBaseUrl())) {
+			throw Problem.valueOf(BAD_REQUEST, TELIA_ACE_BASE_URL_REQUIRED);
+		}
 	}
 
 	/**
@@ -164,6 +176,7 @@ public class NamespaceConfigService {
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
+		validateTeliaAceWorkItemConfig(request);
 		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
 

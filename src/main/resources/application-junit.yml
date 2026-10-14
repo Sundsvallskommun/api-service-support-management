@@ -29,6 +29,10 @@ integration:
     url: http://relation.url
   json-schema:
     url: http://json-schema.url
+  telia-ace:
+    url: http://telia-ace.url
+    username: the-username
+    password: the-password
 spring:
   cache:
     type: none
@@ -148,4 +152,8 @@ scheduler:
     enabled: false
   job:
     cron: "-"
+  telia-ace-work-item:
+    cron: "-"
+    # The default is off, but EmailReaderTeliaAceNotificationIT tests the queuing itself, so it needs this on.
+    enabled: true
 

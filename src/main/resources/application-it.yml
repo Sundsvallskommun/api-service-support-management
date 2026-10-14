@@ -23,6 +23,10 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-relation
   json-schema:
     url: http://localhost:${wiremock.server.port:}/api-json-schema
+  telia-ace:
+    url: http://localhost:${wiremock.server.port:}/api-telia-ace
+    username: the-username
+    password: the-password
 scheduler:
   emailreader:
     cron: "-"
@@ -50,6 +54,11 @@ scheduler:
     enabled: false
   job:
     cron: "-"
+  telia-ace-work-item:
+    cron: "-"
+    # The default is off; apptests that exercise the feature (EmailReaderTeliaAceNotificationIT,
+    # TeliaAceWorkItemSchedulerIT) rely on it being on here, same as the per-namespace toggle they seed.
+    enabled: true
 errand:
   purge:
     # Small enough that a run over the purge test data walks several batches, which is what moves the cursor
