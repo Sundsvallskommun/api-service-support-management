@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -101,6 +102,32 @@ class ServiceUtilTest {
 		ServiceUtil.setRequestGroupId("x".repeat(40));
 
 		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo("x".repeat(36));
+	}
+
+	@Test
+	void inNewRequestGroupRunsTheWorkInAGroupOfItsOwn() {
+		final var groupIds = new ArrayList<String>();
+
+		ServiceUtil.inNewRequestGroup(() -> groupIds.add(ServiceUtil.getRequestGroupId()));
+		ServiceUtil.inNewRequestGroup(() -> groupIds.add(ServiceUtil.getRequestGroupId()));
+
+		assertThat(groupIds).hasSize(2).doesNotContainNull().doesNotHaveDuplicates();
+		assertThat(ServiceUtil.getRequestGroupId()).isNull();
+	}
+
+	@Test
+	void inNewRequestGroupRestoresTheGroupTheThreadWasIn() {
+		final var requestGroupId = UUID.randomUUID().toString();
+		final var groupIdDuringWork = new String[1];
+		ServiceUtil.setRequestGroupId(requestGroupId);
+
+		assertThatThrownBy(() -> ServiceUtil.inNewRequestGroup(() -> {
+			groupIdDuringWork[0] = ServiceUtil.getRequestGroupId();
+			throw new IllegalStateException("boom");
+		})).isInstanceOf(IllegalStateException.class);
+
+		assertThat(groupIdDuringWork[0]).isNotNull().isNotEqualTo(requestGroupId);
+		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo(requestGroupId);
 	}
 
 	@Test

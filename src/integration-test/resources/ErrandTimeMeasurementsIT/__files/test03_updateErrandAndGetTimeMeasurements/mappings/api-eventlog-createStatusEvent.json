@@ -9,6 +9,9 @@
 		"bodyPatterns": [
 			{
 				"matchesJsonPath": "$[?(@.type == 'UPDATE' && @.subType == 'STATUS' && @.message == 'Status har ändrats till STATUS-3')]"
+			},
+			{
+				"matchesJsonPath": "$.requestGroupId"
 			}
 		],
 		"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
