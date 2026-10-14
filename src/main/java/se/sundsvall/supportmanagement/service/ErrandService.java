@@ -5,6 +5,7 @@ import jakarta.persistence.LockModeType;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,9 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
@@ -55,6 +59,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLi
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
@@ -80,6 +86,8 @@ public class ErrandService {
 	private static final String EVENT_LOG_ASSIGN_ERRAND = "Ärendet har tilldelats.";
 	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had. Give the errand labels that name the process it runs, or put the labels back as they were.";
 	private static final String LABELS_NOT_REBUILT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had.";
+	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till %s";
+	private static final String EVENT_LOG_CHANGE_PHASE = "Fasen har ändrats till %s";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
@@ -171,7 +179,7 @@ public class ErrandService {
 
 		logCreateEvent(persistedEntity, revision);
 		if (nonNull(persistedEntity.getAssignedUserId())) {
-			logAssignmentEvent(persistedEntity, revision);
+			logChangeEvent(EVENT_LOG_ASSIGN_ERRAND, persistedEntity, revision, ASSIGNMENT);
 		}
 
 		if (isNotBlank(referredFrom)) {
@@ -250,6 +258,8 @@ public class ErrandService {
 		// Copied before patching, since the patch changes the errand in place and its events tell what changed
 		final var previousAssignee = errandEntityToUpdate.getAssignedUserId();
 		final var previousLabelIds = labelIdsOf(errandEntityToUpdate);
+		final var previousStatus = errandEntityToUpdate.getStatus();
+		final var previousPhaseId = activePhaseOf(errandEntityToUpdate).map(PhaseEntity::getId).orElse(null);
 
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
 		ofNullable(contactReason).ifPresent(errandEntity::withContactReason);
@@ -276,8 +286,14 @@ public class ErrandService {
 		}
 		logUpdateEvent(entity, revisionResult, activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true, addedLabelIds);
 		if (isNewAssignment(activates ? null : previousAssignee, entity.getAssignedUserId())) {
-			logAssignmentEvent(entity, revisionResult);
+			logChangeEvent(EVENT_LOG_ASSIGN_ERRAND, entity, revisionResult, ASSIGNMENT);
 		}
+		if (nonNull(entity.getStatus()) && !Objects.equals(previousStatus, entity.getStatus())) {
+			logChangeEvent(EVENT_LOG_CHANGE_STATUS.formatted(entity.getStatus()), entity, revisionResult, STATUS);
+		}
+		activePhaseOf(entity)
+			.filter(phase -> !Objects.equals(previousPhaseId, phase.getId()))
+			.ifPresent(phase -> logChangeEvent(EVENT_LOG_CHANGE_PHASE.formatted(phase.getName()), entity, revisionResult, PHASE));
 
 		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity))), classificationDisplayNames);
 	}
@@ -586,18 +602,30 @@ public class ErrandService {
 	}
 
 	/**
-	 * Logs that the errand was assigned, apart from the change it is part of, so that subscribers may be notified of
-	 * assignments alone. No direct notification is made, as the change itself already makes one.
+	 * Logs a part of a change to the errand, such as it being assigned or its status or phase changing, apart from the
+	 * change it is part of, so that subscribers may be notified of that part alone. No direct notification is made, as the
+	 * change itself already makes one.
 	 */
-	private void logAssignmentEvent(final ErrandEntity entity, final RevisionResult revisionResult) {
+	private void logChangeEvent(final String message, final ErrandEntity entity, final RevisionResult revisionResult, final EventSubType subtype) {
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity,
+			eventService.createErrandEvent(UPDATE, message, entity,
 				ofNullable(revisionResult).map(RevisionResult::latest).orElse(null),
 				ofNullable(revisionResult).map(RevisionResult::previous).orElse(null),
-				false, ASSIGNMENT);
+				false, subtype);
 		} catch (final Exception e) {
-			LOG.warn("Failed to log assignment event for errand {}: {}", entity.getId(), e.getMessage());
+			LOG.warn("Failed to log {} event for errand {}: {}", subtype, entity.getId(), e.getMessage());
 		}
+	}
+
+	/**
+	 * The phase the errand is in, which is the one it has entered and not yet left.
+	 */
+	private static Optional<PhaseEntity> activePhaseOf(final ErrandEntity entity) {
+		return ofNullable(entity.getPhases()).orElse(emptyList()).stream()
+			.filter(phase -> isNull(phase.getEnded()))
+			.map(ErrandPhaseEntity::getPhaseEntity)
+			.filter(Objects::nonNull)
+			.findFirst();
 	}
 
 	/**

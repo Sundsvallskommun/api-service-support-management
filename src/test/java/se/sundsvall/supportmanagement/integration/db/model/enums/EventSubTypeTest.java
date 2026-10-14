@@ -20,8 +20,10 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.values;
@@ -40,16 +42,18 @@ class EventSubTypeTest {
 			arguments(MESSAGE_EXTERNAL, false),
 			arguments(MESSAGE_INTERNAL, false),
 			arguments(NOTE, false),
+			arguments(PHASE, false),
 			arguments(PROCESS, true),
 			arguments(SIGNAL, true),
+			arguments(STATUS, false),
 			arguments(SYSTEM, false),
 			arguments(SUSPENSION, false));
 	}
 
 	@Test
 	void enums() {
-		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, MESSAGE_EXTERNAL, MESSAGE_INTERNAL, NOTE, PROCESS, SIGNAL, SYSTEM,
-			SUSPENSION);
+		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, MESSAGE_EXTERNAL, MESSAGE_INTERNAL, NOTE, PHASE, PROCESS, SIGNAL,
+			STATUS, SYSTEM, SUSPENSION);
 	}
 
 	@Test
@@ -61,8 +65,10 @@ class EventSubTypeTest {
 		assertThat(MESSAGE_EXTERNAL.getValue()).isEqualTo("MESSAGE_EXTERNAL");
 		assertThat(MESSAGE_INTERNAL.getValue()).isEqualTo("MESSAGE_INTERNAL");
 		assertThat(NOTE.getValue()).isEqualTo("NOTE");
+		assertThat(PHASE.getValue()).isEqualTo("PHASE");
 		assertThat(PROCESS.getValue()).isEqualTo("PROCESS");
 		assertThat(SIGNAL.getValue()).isEqualTo("SIGNAL");
+		assertThat(STATUS.getValue()).isEqualTo("STATUS");
 		assertThat(SYSTEM.getValue()).isEqualTo("SYSTEM");
 		assertThat(SUSPENSION.getValue()).isEqualTo("SUSPENSION");
 	}
@@ -88,11 +94,18 @@ class EventSubTypeTest {
 		// and every subtype refining it
 		"MESSAGE, MESSAGE_INTERNAL, true",
 		"MESSAGE, MESSAGE_EXTERNAL, true",
+		"ERRAND, STATUS, true",
+		"ERRAND, PHASE, true",
 		// while a filter on a refined subtype selects only that one
 		"MESSAGE_INTERNAL, MESSAGE_INTERNAL, true",
 		"MESSAGE_INTERNAL, MESSAGE_EXTERNAL, false",
 		"MESSAGE_EXTERNAL, MESSAGE, false",
 		"MESSAGE_INTERNAL, MESSAGE, false",
+		"STATUS, STATUS, true",
+		"STATUS, ERRAND, false",
+		"STATUS, PHASE, false",
+		"PHASE, ERRAND, false",
+		"PHASE, STATUS, false",
 		// Unrelated subtypes do not select one another
 		"ATTACHMENT, MESSAGE, false",
 		"HANDOVER_IN, HANDOVER_OUT, false",

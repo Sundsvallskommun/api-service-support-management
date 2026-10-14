@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -33,6 +34,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
@@ -55,7 +57,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
@@ -413,20 +414,23 @@ class EventServiceTest {
 		verifyNoInteractions(notificationServiceMock);
 	}
 
-	@Test
-	void createAssignmentEventLeavesSubscribingToTheChangeItIsPartOf() {
-		// The errand event logged alongside already subscribes the assignee, so the assignment does not do it again
+	@ParameterizedTest
+	@EnumSource(value = EventSubType.class, names = {
+		"ASSIGNMENT", "PHASE", "STATUS"
+	})
+	void createEventLoggedAlongsideErrandChangeLeavesSubscribingAndTheProcessToTheChangeItIsPartOf(final EventSubType subtype) {
+		// The errand event logged alongside already subscribes the assignee and tells the process, so this event does neither
 		final var entity = ErrandEntity.create()
 			.withMunicipalityId("2281")
 			.withNamespace("MY_NAMESPACE")
 			.withId(randomUUID().toString())
 			.withAssignedUserId("anna01");
 
-		service.createErrandEvent(EventType.UPDATE, "Ärendet har tilldelats.", entity, null, null, false, ASSIGNMENT);
+		service.createErrandEvent(EventType.UPDATE, "Ärendet har ändrats.", entity, null, null, false, subtype);
 
 		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
-		assertThat(dispatchCaptor.getValue().getSubType()).isEqualTo(ASSIGNMENT.getValue());
-		verifyNoInteractions(eventPublisherMock, notificationServiceMock);
+		assertThat(dispatchCaptor.getValue().getSubType()).isEqualTo(subtype.getValue());
+		verifyNoInteractions(eventPublisherMock, notificationServiceMock, processEventPublisherMock);
 	}
 
 	@Test

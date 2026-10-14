@@ -28,6 +28,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.IdentifierMapper.resolveChannel;
 
@@ -37,6 +38,7 @@ public class MessageExchangeSyncService {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageExchangeSyncService.class);
 
 	private static final String EVENT_LOG_CONVERSATION = "Ny händelse för %s";
+	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till %s";
 
 	private final MessageExchangeClient messageExchangeClient;
 	private final ErrandAttachmentService attachmentService;
@@ -151,7 +153,20 @@ public class MessageExchangeSyncService {
 			.ifPresent(config -> {
 				errandEntity.setStatus(config.getStatusChangeTo());
 				errandsRepository.save(errandEntity);
+				logStatusChange(errandEntity);
 			});
+	}
+
+	/**
+	 * Logs that the messages changed the status of the errand, so that subscribers may be notified of it along with the
+	 * messages. No direct notification is made, as the messages themselves make one.
+	 */
+	private void logStatusChange(final ErrandEntity errandEntity) {
+		try {
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_CHANGE_STATUS.formatted(errandEntity.getStatus()), errandEntity, null, null, false, STATUS);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log status change event for errand {}: {}", errandEntity.getId(), e.getMessage());
+		}
 	}
 
 	private static boolean shouldTriggerStatusChange(final MessageExchangeIntegrationConfigEntity config, final ErrandEntity errandEntity) {

@@ -329,6 +329,8 @@ class MessageExchangeSyncServiceTest {
 		assertThat(shouldNotify.fromOthers()).isTrue();
 		assertThat(errand.getStatus()).isEqualTo("OPEN");
 		verify(errandsRepositoryMock).save(errand);
+		// The change of status is logged by itself, for the subscribers alone
+		verify(eventServiceMock).createErrandEvent(EventType.UPDATE, "Status har ändrats till OPEN", errand, null, null, false, EventSubType.STATUS);
 	}
 
 	@Test
