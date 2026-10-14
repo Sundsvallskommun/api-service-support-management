@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.net.URI;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -41,9 +42,12 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
@@ -58,6 +62,9 @@ public class EventService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
 	private static final RevisionResult NO_REVISION = new RevisionResult(null, null);
+
+	/** The parts of a change to an errand that are logged alongside the change itself, for subscribers to filter on. */
+	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, PHASE, STATUS);
 
 	/**
 	 * Who an event about an errand notifies, beyond what a draft or a request asking to notify no one rules out.
@@ -117,7 +124,10 @@ public class EventService {
 		final ErrandEventOptions options) {
 		writeErrandEvent(eventType, message, errandEntity, ofNullable(revisions).orElse(NO_REVISION), subtype, options.actor(), options.sendNotification() ? Notice.HANDLER_AND_SUBSCRIBERS : Notice.SUBSCRIBERS,
 			options.addedLabelIds());
-		publishToProcess(errandEntity, eventType, subtype, null, false);
+		// The process is told of the change to the errand itself, of which these are only a part
+		if (!LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype)) {
+			publishToProcess(errandEntity, eventType, subtype, null, false);
+		}
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {
@@ -266,8 +276,9 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
-		// An assignment is logged alongside the change to the errand it is part of, which already subscribes the assignee
-		if (eventType != EventType.DELETE && subtype != EventSubType.ASSIGNMENT) {
+		// An assignment, a change of status and a change of phase are logged alongside the change to the errand they are part
+		// of, which already subscribes the assignee
+		if (eventType != EventType.DELETE && !LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype)) {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity, eventType == EventType.CREATE && subtype == EventSubType.ERRAND));
 		}
 

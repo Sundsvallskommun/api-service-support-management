@@ -655,7 +655,7 @@ class NamespaceConfigServiceTest {
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"NOTE", "SYSTEM"
+		"NOTE", "SYSTEM", "ASSIGNMENT", "PHASE", "STATUS"
 	})
 	void createAndReplaceWithAnUnpublishedSubTypeAmongTheProcessTriggers(final EventSubType subType) {
 		final var withoutConsumer = NamespaceConfig.create()

@@ -41,6 +41,7 @@ public class EmailReaderWorker {
 	private static final Logger LOG = LoggerFactory.getLogger(EmailReaderWorker.class);
 
 	private static final String EVENT_LOG_COMMUNICATION = "Nytt meddelande";
+	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till %s";
 	private static final String EMAIL_NEW_SUBJECT_PREFIX = "Bekräftelse ärende ";
 
 	private final EmailReaderClient emailReaderClient;
@@ -167,6 +168,7 @@ public class EmailReaderWorker {
 		} else if ((config.getTriggerStatusChangeOn() != null) && errand.getStatus().equals(config.getTriggerStatusChangeOn())) {
 			errand.setStatus(config.getStatusChangeTo());
 			errandRepository.save(errand);
+			logStatusChange(errand);
 		}
 		saveEmail(email, errand);
 		try {
@@ -175,6 +177,18 @@ public class EmailReaderWorker {
 			LOG.warn("Failed to log new-message event for errand {}: {}", errand.getId(), e.getMessage());
 		}
 		return emailRequest;
+	}
+
+	/**
+	 * Logs that the email changed the status of the errand, so that subscribers may be notified of it along with the
+	 * message. No direct notification is made, as the message itself makes one.
+	 */
+	private void logStatusChange(final ErrandEntity errand) {
+		try {
+			eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_CHANGE_STATUS.formatted(errand.getStatus()), errand, null, null, false, EventSubType.STATUS);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log status change event for errand {}: {}", errand.getId(), e.getMessage());
+		}
 	}
 
 	private void saveEmail(final Email email, final ErrandEntity errand) {

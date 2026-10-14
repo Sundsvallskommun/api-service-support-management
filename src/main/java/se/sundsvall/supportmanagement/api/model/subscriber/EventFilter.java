@@ -22,7 +22,8 @@ public class EventFilter {
 
 	@Size(max = 64)
 	@Schema(description = "Event subtype. If null, all subtypes of the given type match. MESSAGE matches every message, while MESSAGE_INTERNAL " +
-		"and MESSAGE_EXTERNAL match only messages in internal conversations and messages from outside respectively.", examples = "ATTACHMENT")
+		"and MESSAGE_EXTERNAL match only messages in internal conversations and messages from outside respectively. Likewise ERRAND matches every change " +
+		"to an errand, while STATUS and PHASE match only changes of its status and of its phase respectively.", examples = "ATTACHMENT")
 	private String subtype;
 
 	@ValidUuid(nullable = true)
