@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
@@ -139,7 +138,7 @@ class MessageExchangeSyncServiceTest {
 		// Assert
 		verify(errandsRepositoryMock).getReferenceById(errandId);
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >123", Pageable.unpaged());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Ny händelse för topic"), same(errandEntity), eq(null), eq(null), eq(true), eq(EventSubType.MESSAGE_INTERNAL), isNull(se.sundsvall.dept44.support.Identifier.class));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), eq(null), eq(null), eq(true), eq(EventSubType.MESSAGE_INTERNAL), isNull(se.sundsvall.dept44.support.Identifier.class));
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 
 		final var savedEntity = conversationEntityCaptor.getValue();
@@ -167,21 +166,27 @@ class MessageExchangeSyncServiceTest {
 
 		service.syncConversation(entity, conversation);
 
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), any(), same(errandEntity), isNull(), isNull(), eq(true), eq(EventSubType.MESSAGE_EXTERNAL),
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(true), eq(EventSubType.MESSAGE_EXTERNAL),
 			any(se.sundsvall.dept44.support.Identifier.class));
 		assertThat(groupIdDuringSync[0]).isNotNull();
 		assertThat(getRequestGroupId()).isNull();
 	}
 
-	@ParameterizedTest
-	@CsvSource(nullValues = "null", value = {
-		"EXTERNAL, MESSAGE_EXTERNAL",
-		"INTERNAL, MESSAGE_INTERNAL",
-		"unknownType, MESSAGE_INTERNAL",
-		"null, MESSAGE_INTERNAL"
-	})
-	void messageSubtypeOf(final String conversationType, final EventSubType expected) {
-		assertThat(MessageExchangeSyncService.messageSubtypeOf(ConversationEntity.create().withType(conversationType))).isEqualTo(expected);
+	@Test
+	void syncConversationLogsMessagesWrittenByTheStaff() {
+		// Staff may write through other channels than this service, so their messages are logged as any other
+		final var entity = baseConversation("municipalityId", "messageExchangeId").withType("INTERNAL");
+		final var conversation = new Conversation().latestSequenceNumber(100L);
+		final var errandEntity = ErrandEntity.create().withAssignedUserId("handler");
+
+		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
+		when(messageExchangeClientMock.getMessages(eq("municipalityId"), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().type("adAccount").value("colleague"))))));
+
+		service.syncConversation(entity, conversation);
+
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(true), eq(EventSubType.MESSAGE_INTERNAL),
+			any(se.sundsvall.dept44.support.Identifier.class));
 	}
 
 	@Test
