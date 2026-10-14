@@ -20,6 +20,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
 
 @Component
 public class WebMessageCollectorWorker {
@@ -50,8 +51,16 @@ public class WebMessageCollectorWorker {
 		return webMessageCollectorClient.getMessages(municipalityId, familyId, instance);
 	}
 
+	/**
+	 * Processes the message in a request group of its own, so that what it does to the errand reaches the subscribers as
+	 * one notification.
+	 */
 	@Transactional
 	public void processMessage(final MessageDTO message, final String municipalityId, final Consumer<String> setUnHealthyConsumer) {
+		inNewRequestGroup(() -> doProcessMessage(message, municipalityId, setUnHealthyConsumer));
+	}
+
+	private void doProcessMessage(final MessageDTO message, final String municipalityId, final Consumer<String> setUnHealthyConsumer) {
 
 		final var entity = errandsRepository.findOne(hasMatchingTags(List.of(
 			DbExternalTag.create().withKey("caseId").withValue(message.getExternalCaseId()),

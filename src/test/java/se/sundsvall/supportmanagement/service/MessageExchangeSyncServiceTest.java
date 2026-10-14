@@ -38,16 +38,19 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
 
 @ExtendWith(MockitoExtension.class)
 class MessageExchangeSyncServiceTest {
@@ -148,6 +151,26 @@ class MessageExchangeSyncServiceTest {
 		assertThat(savedEntity.getLatestSyncedSequenceNumber()).isEqualTo(newLatestSyncedSequenceNumber);
 
 		verifyNoMoreInteractions(messageExchangeClientMock, attachmentServiceMock);
+	}
+
+	@Test
+	void syncConversationLogsTheMessagesInAGroupOfTheirOwn() {
+		final var entity = baseConversation("municipalityId", "messageExchangeId").withType("EXTERNAL");
+		final var conversation = new Conversation().latestSequenceNumber(100L);
+		final var errandEntity = ErrandEntity.create().withAssignedUserId("handler");
+		final var groupIdDuringSync = new String[1];
+
+		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
+		when(messageExchangeClientMock.getMessages(eq("municipalityId"), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().type("partyId").value("citizen"))))));
+		doAnswer(_ -> groupIdDuringSync[0] = getRequestGroupId()).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), anyBoolean(), any(EventSubType.class), any());
+
+		service.syncConversation(entity, conversation);
+
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), any(), same(errandEntity), isNull(), isNull(), eq(true), eq(EventSubType.MESSAGE_EXTERNAL),
+			any(se.sundsvall.dept44.support.Identifier.class));
+		assertThat(groupIdDuringSync[0]).isNotNull();
+		assertThat(getRequestGroupId()).isNull();
 	}
 
 	@ParameterizedTest
