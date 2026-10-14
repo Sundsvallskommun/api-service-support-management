@@ -5,12 +5,16 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import static java.util.Optional.ofNullable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,14 +43,21 @@ class RequestHeaderFilterTest {
 		clearNotify();
 	}
 
-	@Test
-	void setsNullAndNoResponseHeaderWhenHeaderMissing() throws Exception {
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = " ")
+	void startsAGroupOfItsOwnWhenHeaderMissing(final String header) throws Exception {
 		final var request = new MockHttpServletRequest();
+		ofNullable(header).ifPresent(value -> request.addHeader(REQUEST_GROUP_ID_HEADER, value));
 		final var response = new MockHttpServletResponse();
+		final var groupIdDuringRequest = new String[1];
+		doAnswer(_ -> groupIdDuringRequest[0] = getRequestGroupId()).when(filterChainMock).doFilter(any(), any());
 
 		filter.doFilterInternal(request, response, filterChainMock);
 
-		assertThat(response.getHeader(REQUEST_GROUP_ID_HEADER)).isNull();
+		assertThat(groupIdDuringRequest[0]).isNotBlank().satisfies(groupId -> assertThat(UUID.fromString(groupId)).hasToString(groupId));
+		assertThat(response.getHeader(REQUEST_GROUP_ID_HEADER)).isEqualTo(groupIdDuringRequest[0]);
+		assertThat(getRequestGroupId()).isNull();
 		verify(filterChainMock).doFilter(request, response);
 	}
 

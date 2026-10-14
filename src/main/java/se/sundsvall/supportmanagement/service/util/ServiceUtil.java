@@ -24,6 +24,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.UUID.fromString;
+import static java.util.UUID.randomUUID;
 import static org.apache.commons.lang3.Strings.CI;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -193,6 +194,23 @@ public class ServiceUtil {
 
 	public static void clearTriggerProcess() {
 		TRIGGER_PROCESS.remove();
+	}
+
+	/**
+	 * Runs the work in a request group of its own, so that whatever events it logs are grouped together and reach the
+	 * subscribers as one notification. For work done where no request groups the events, such as a scheduled job. The
+	 * group the thread was in before, if any, is restored afterwards.
+	 *
+	 * @param work the work to run
+	 */
+	public static void inNewRequestGroup(final Runnable work) {
+		final var previousRequestGroupId = getRequestGroupId();
+		setRequestGroupId(randomUUID().toString());
+		try {
+			work.run();
+		} finally {
+			setRequestGroupId(previousRequestGroupId);
+		}
 	}
 
 	/**

@@ -35,6 +35,7 @@ import static se.sundsvall.supportmanagement.service.scheduler.emailreader.Email
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isNoReplyAddress;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.shouldSuppressConfirmation;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
 
 @Service
 public class EmailReaderWorker {
@@ -83,8 +84,16 @@ public class EmailReaderWorker {
 		return emailReaderClient.getEmails(config.getMunicipalityId(), config.getNamespace());
 	}
 
+	/**
+	 * Processes the email in a request group of its own, so that the errand it may create and the message it brings reach
+	 * the subscribers as one notification.
+	 */
 	@Transactional
 	public void processEmail(final Email email, final EmailWorkerConfigEntity config, final Consumer<String> setUnHealthyConsumer) {
+		inNewRequestGroup(() -> doProcessEmail(email, config, setUnHealthyConsumer));
+	}
+
+	private void doProcessEmail(final Email email, final EmailWorkerConfigEntity config, final Consumer<String> setUnHealthyConsumer) {
 
 		if (config.isIgnoreAutoReply() && isAutoReply(email) && !isDeliveryStatusReport(email)) {
 			LOG.info("Email '{}' is an auto-reply and will be deleted per namespace config", email.getId());

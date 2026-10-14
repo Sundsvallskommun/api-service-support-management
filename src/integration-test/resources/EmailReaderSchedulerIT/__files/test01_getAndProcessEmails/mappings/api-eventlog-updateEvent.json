@@ -28,6 +28,7 @@
 					],
 					"message": "Nytt meddelande",
 					"sourceType": "Errand",
+					"requestGroupId": "${json-unit.any-string}",
 					"created": "${json-unit.any-string}"
 				},
 				"ignoreArrayOrder": true

@@ -31,6 +31,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.IdentifierMapper.resolveChannel;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
 
 @Service
 public class MessageExchangeSyncService {
@@ -61,7 +62,15 @@ public class MessageExchangeSyncService {
 		this.messageExchangeIntegrationConfigRepository = messageExchangeIntegrationConfigRepository;
 	}
 
+	/**
+	 * Syncs the conversation in a request group of its own, so that the messages it brings, their attachments and the
+	 * change of status they may cause reach the subscribers as one notification.
+	 */
 	public void syncConversation(final ConversationEntity conversationEntity, final generated.se.sundsvall.messageexchange.Conversation conversation) {
+		inNewRequestGroup(() -> doSyncConversation(conversationEntity, conversation));
+	}
+
+	private void doSyncConversation(final ConversationEntity conversationEntity, final generated.se.sundsvall.messageexchange.Conversation conversation) {
 		if (ofNullable(conversationEntity.getLatestSyncedSequenceNumber()).orElse(0L) < ofNullable(conversation.getLatestSequenceNumber()).orElse(0L)) {
 			final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
 			final var synced = syncMessages(conversationEntity, errandEntity);
