@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -55,6 +56,7 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearNotify;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setNotify;
@@ -160,7 +162,7 @@ class EventServiceTest {
 		assertThat(event.getType()).isEqualTo(eventType);
 
 		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
-		verify(notificationServiceMock).createNotification(eq(entity.getMunicipalityId()), eq(entity.getNamespace()), eq(entity.getId()), notificationCaptor.capture());
+		verify(notificationServiceMock).createNotification(same(entity), notificationCaptor.capture());
 		final var notification = notificationCaptor.getValue();
 		assertThat(notification.getCreatedBy()).isEqualTo(executingUserId);
 
@@ -404,6 +406,23 @@ class EventServiceTest {
 		verifyNoInteractions(notificationServiceMock);
 	}
 
+	@Test
+	void createErrandEventReachesTheSubscribersAlthoughTheAssignedUserCannotBeNotified() {
+		// The one who acted may be refused something on the errand, which must not keep the subscribers from hearing of it
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("MY_NAMESPACE")
+			.withId(randomUUID().toString())
+			.withAssignedUserId("anna01");
+		when(notificationServiceMock.createNotification(same(entity), any())).thenThrow(new RuntimeException("Forbidden"));
+
+		service.createErrandEvent(EventType.UPDATE, "Meddelande skickat", entity, null, null, true, MESSAGE_INTERNAL);
+
+		verify(notificationServiceMock).createNotification(same(entity), any());
+		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getValue().getSubType()).isEqualTo(MESSAGE_INTERNAL.getValue());
+	}
+
 	@ParameterizedTest
 	@EnumSource(value = EventSubType.class, names = {
 		"ASSIGNMENT", "PHASE", "STATUS"
@@ -505,7 +524,7 @@ class EventServiceTest {
 		// Verify the note is logged, auto subscribed to and notifies the assigned user as before, but reaches no subscriber
 		verify(eventLogClientMock).createEvent(eq(municipalityId), eq(logKey), any());
 		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(errandEntity));
-		verify(notificationServiceMock).createNotification(eq(municipalityId), eq(namespace), eq(errandId), any());
+		verify(notificationServiceMock).createNotification(same(errandEntity), any());
 		verifyNoInteractions(notificationDispatchRepositoryMock);
 	}
 

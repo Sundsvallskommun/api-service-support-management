@@ -230,10 +230,19 @@ public class EventService {
 			.orElse(null);
 	}
 
+	/**
+	 * Notifies the assigned user of the event. The notification is made on their behalf, not on behalf of the one who
+	 * acted, so it is not held to what the one who acted may do with the notifications of the errand - whoever may act on
+	 * an errand may have its assigned user told of it. A notification that cannot be made is logged and left out, so that
+	 * the subscribers are still notified of the event.
+	 */
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
 		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(_ -> {
-			final var notification = toNotification(event, errandEntity, getAdUser());
-			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
+			try {
+				notificationService.createNotification(errandEntity, toNotification(event, errandEntity, getAdUser()));
+			} catch (final Exception e) {
+				LOG.warn("Failed to notify the assigned user of errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
+			}
 		});
 	}
 
