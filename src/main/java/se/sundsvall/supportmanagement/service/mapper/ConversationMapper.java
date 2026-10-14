@@ -19,10 +19,14 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.ReadB
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ReadByCountEntry;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.util.BlobMultipartFile;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 
 public final class ConversationMapper {
 
@@ -137,6 +141,18 @@ public final class ConversationMapper {
 				ofNullable(entity.getFileSize()).orElse(0),
 				entity.getAttachmentData().getFile()))
 			.toList();
+	}
+
+	/**
+	 * The subtype the messages of the conversation are logged with, which tells messages in conversations kept among the
+	 * staff from messages exchanged with someone outside. A conversation that is not external is presumed internal, as it
+	 * is when its messages are sent.
+	 */
+	public static EventSubType toMessageSubtype(final ConversationEntity conversationEntity) {
+		return ofNullable(conversationEntity.getType())
+			.filter(EXTERNAL.name()::equals)
+			.map(_ -> MESSAGE_EXTERNAL)
+			.orElse(MESSAGE_INTERNAL);
 	}
 
 	public static generated.se.sundsvall.messageexchange.Message toMessageRequest(final MessageRequest messageRequest) {
