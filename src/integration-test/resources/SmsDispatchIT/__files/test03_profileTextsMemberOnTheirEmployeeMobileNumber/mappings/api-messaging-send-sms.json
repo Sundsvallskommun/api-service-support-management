@@ -1,0 +1,26 @@
+{
+	"request": {
+		"method": "POST",
+		"url": "/api-messaging/2281/sms?async=true",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"sender": "Sundsvall",
+					"mobileNumber": "+46701112233",
+					"message": "Uppdatering i Namespace 1:\nÄrende NS1-2024-000001: https://draken.test.local/NS1/arende/NS1-2024-000001"
+				},
+				"ignoreExtraElements": true
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"jsonBody": {
+			"messageId": "3aef8a32-c185-4dde-8af8-94f1016a8f7b"
+		},
+		"status": 200
+	},
+	"name": "api-messaging-send-sms"
+}

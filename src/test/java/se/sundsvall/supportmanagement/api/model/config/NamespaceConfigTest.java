@@ -52,6 +52,7 @@ class NamespaceConfigTest {
 		final var resourceAccessControl = true;
 		final var processConsumer = "pw-alkt";
 		final var processTriggers = List.of(ERRAND, DECISION);
+		final var smsNotificationsEnabled = true;
 		final var roleFieldRestrictions = List.of(RoleFieldRestriction.create().withRole("FIRST_LINE_CASE_OFFICER"));
 		final var limitedReadAccess = LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
 		final var reporterAccess = ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
@@ -72,6 +73,7 @@ class NamespaceConfigTest {
 			.withResourceAccessControl(resourceAccessControl)
 			.withProcessConsumer(processConsumer)
 			.withProcessTriggers(processTriggers)
+			.withSmsNotificationsEnabled(smsNotificationsEnabled)
 			.withRoleFieldRestrictions(roleFieldRestrictions)
 			.withLimitedReadAccess(limitedReadAccess)
 			.withReporterAccess(reporterAccess)
@@ -94,6 +96,7 @@ class NamespaceConfigTest {
 		assertThat(bean.isResourceAccessControl()).isEqualTo(resourceAccessControl);
 		assertThat(bean.getProcessConsumer()).isEqualTo(processConsumer);
 		assertThat(bean.getProcessTriggers()).isEqualTo(processTriggers);
+		assertThat(bean.isSmsNotificationsEnabled()).isEqualTo(smsNotificationsEnabled);
 		assertThat(bean.getRoleFieldRestrictions()).isEqualTo(roleFieldRestrictions);
 		assertThat(bean.getLimitedReadAccess()).isEqualTo(limitedReadAccess);
 		assertThat(bean.getReporterAccess()).isEqualTo(reporterAccess);
@@ -107,19 +110,23 @@ class NamespaceConfigTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail", "teliaAceWorkItemEnabled")
+		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail", "teliaAceWorkItemEnabled",
+			"smsNotificationsEnabled")
 			.satisfies(namespaceConfig -> {
 				assertThat(namespaceConfig.isAccessControl()).isFalse();
 				assertThat(namespaceConfig.isNotifyReporter()).isFalse();
 				assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
 				assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
+				assertThat(namespaceConfig.isSmsNotificationsEnabled()).isFalse();
 			});
-		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail", "teliaAceWorkItemEnabled")
+		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail", "teliaAceWorkItemEnabled",
+			"smsNotificationsEnabled")
 			.satisfies(namespaceConfig -> {
 				assertThat(namespaceConfig.isAccessControl()).isFalse();
 				assertThat(namespaceConfig.isNotifyReporter()).isFalse();
 				assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
 				assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
+				assertThat(namespaceConfig.isSmsNotificationsEnabled()).isFalse();
 			});
 	}
 }

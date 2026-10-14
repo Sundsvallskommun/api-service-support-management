@@ -16,12 +16,12 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
-import se.sundsvall.supportmanagement.integration.db.EmailDispatchOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
-import se.sundsvall.supportmanagement.integration.db.model.EmailDispatchOutboxEntity;
-import se.sundsvall.supportmanagement.integration.db.model.EmailDispatchOutboxEventEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.NotificationDispatchOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchOutboxEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchOutboxEventEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
@@ -56,7 +56,7 @@ class SubscriberEmailServiceTest {
 	private static final Duration MAX_AGE = Duration.ofDays(30);
 
 	@Mock
-	private EmailDispatchOutboxRepository outboxRepositoryMock;
+	private NotificationDispatchOutboxRepository outboxRepositoryMock;
 
 	@Mock
 	private NamespaceConfigRepository namespaceConfigRepositoryMock;
@@ -71,7 +71,7 @@ class SubscriberEmailServiceTest {
 	private EmployeeService employeeServiceMock;
 
 	@Captor
-	private ArgumentCaptor<EmailDispatchOutboxEntity> outboxCaptor;
+	private ArgumentCaptor<NotificationDispatchOutboxEntity> outboxCaptor;
 
 	@Captor
 	private ArgumentCaptor<EmailRequest> emailRequestCaptor;
@@ -102,29 +102,30 @@ class SubscriberEmailServiceTest {
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		final var saved = outboxCaptor.getValue();
 		assertThat(saved.getSubscriber()).isSameAs(subscriber);
+		assertThat(saved.getChannel()).isEqualTo(EMAIL);
 		assertThat(saved.getErrandId()).isEqualTo(ERRAND_ID_1);
 		assertThat(saved.getErrandNumber()).isEqualTo("ABC123");
 		assertThat(saved.getEvents()).containsExactly(
-			EmailDispatchOutboxEventEmbeddable.create().withEventId("event-1").withDescription("Ärendet har uppdaterats."),
-			EmailDispatchOutboxEventEmbeddable.create().withEventId("event-2").withDescription("En anteckning har skapats."));
+			NotificationDispatchOutboxEventEmbeddable.create().withEventId("event-1").withDescription("Ärendet har uppdaterats."),
+			NotificationDispatchOutboxEventEmbeddable.create().withEventId("event-2").withDescription("En anteckning har skapats."));
 	}
 
 	@Test
 	void findPendingSubscriberIds() {
-		when(outboxRepositoryMock.findDistinctSubscriberIds()).thenReturn(List.of(SUBSCRIBER_ID));
+		when(outboxRepositoryMock.findDistinctSubscriberIdsByChannel(EMAIL)).thenReturn(List.of(SUBSCRIBER_ID));
 
 		assertThat(service.findPendingSubscriberIds()).containsExactly(SUBSCRIBER_ID);
 
-		verify(outboxRepositoryMock).findDistinctSubscriberIds();
+		verify(outboxRepositoryMock).findDistinctSubscriberIdsByChannel(EMAIL);
 	}
 
 	@Test
 	void sendPendingWithNothingInOutbox() {
-		when(outboxRepositoryMock.findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID)).thenReturn(List.of());
+		when(outboxRepositoryMock.findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL)).thenReturn(List.of());
 
 		service.sendPending(SUBSCRIBER_ID);
 
-		verify(outboxRepositoryMock).findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID);
+		verify(outboxRepositoryMock).findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL);
 	}
 
 	@Test
@@ -223,7 +224,7 @@ class SubscriberEmailServiceTest {
 	void sendPendingWithoutNamespaceConfigOrErrandNumberFallsBackToIds() {
 		final var subscriber = createSubscriber(emailChannel("chef@example.com"));
 		final var entries = List.of(createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats.").withErrandNumber(null));
-		when(outboxRepositoryMock.findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID)).thenReturn(entries);
+		when(outboxRepositoryMock.findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL)).thenReturn(entries);
 		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 
 		service.sendPending(SUBSCRIBER_ID);
@@ -235,7 +236,7 @@ class SubscriberEmailServiceTest {
 
 			Ärende errand-id-1:
 			    - Ärendet har uppdaterats.""");
-		verify(outboxRepositoryMock).findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID);
+		verify(outboxRepositoryMock).findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL);
 		verify(namespaceConfigRepositoryMock).findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(outboxRepositoryMock).deleteAll(entries);
 	}
@@ -303,12 +304,12 @@ class SubscriberEmailServiceTest {
 	void sendPendingDiscardsEntriesWhenEmailCannotBeResolved() {
 		final var subscriber = createSubscriber(emailChannel(null));
 		final var entries = List.of(createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats."));
-		when(outboxRepositoryMock.findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID)).thenReturn(entries);
+		when(outboxRepositoryMock.findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL)).thenReturn(entries);
 		when(employeeServiceMock.getEmployeeByLoginName(MUNICIPALITY_ID, "joe01doe")).thenReturn(null);
 
 		service.sendPending(SUBSCRIBER_ID);
 
-		verify(outboxRepositoryMock).findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID);
+		verify(outboxRepositoryMock).findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL);
 		verify(employeeServiceMock).getEmployeeByLoginName(MUNICIPALITY_ID, "joe01doe");
 		verify(outboxRepositoryMock).deleteAll(entries);
 		verify(messagingClientMock, never()).sendEmail(any(), eq(true), any());
@@ -319,11 +320,11 @@ class SubscriberEmailServiceTest {
 		final var subscriber = createSubscriber(emailChannel(null))
 			.withIdentifier(IdentifierEmbeddable.create().withType("partyId").withValue("some-party-id"));
 		final var entries = List.of(createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats."));
-		when(outboxRepositoryMock.findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID)).thenReturn(entries);
+		when(outboxRepositoryMock.findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL)).thenReturn(entries);
 
 		service.sendPending(SUBSCRIBER_ID);
 
-		verify(outboxRepositoryMock).findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID);
+		verify(outboxRepositoryMock).findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL);
 		verify(outboxRepositoryMock).deleteAll(entries);
 	}
 
@@ -350,11 +351,11 @@ class SubscriberEmailServiceTest {
 	void sendPendingDiscardsEntriesWhenAllAreOlderThanMaxAge() {
 		final var subscriber = createSubscriber(emailChannel("chef@example.com"));
 		final var entries = List.of(createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats.").withCreated(OffsetDateTime.now().minus(MAX_AGE).minusDays(1)));
-		when(outboxRepositoryMock.findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID)).thenReturn(entries);
+		when(outboxRepositoryMock.findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL)).thenReturn(entries);
 
 		service.sendPending(SUBSCRIBER_ID);
 
-		verify(outboxRepositoryMock).findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID);
+		verify(outboxRepositoryMock).findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL);
 		verify(outboxRepositoryMock).deleteAll(entries);
 	}
 
@@ -369,21 +370,21 @@ class SubscriberEmailServiceTest {
 			.isInstanceOf(RuntimeException.class)
 			.hasMessage("send failed");
 
-		verify(outboxRepositoryMock).findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID);
+		verify(outboxRepositoryMock).findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL);
 		verify(namespaceConfigRepositoryMock).findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(namespaceConfigMapperMock).toNamespaceConfig(namespaceConfigEntity);
 		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(true), any());
 		verify(outboxRepositoryMock, never()).deleteAll(any());
 	}
 
-	private void mockSendPending(final List<EmailDispatchOutboxEntity> entries, final NamespaceConfig namespaceConfig) {
-		when(outboxRepositoryMock.findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID)).thenReturn(entries);
+	private void mockSendPending(final List<NotificationDispatchOutboxEntity> entries, final NamespaceConfig namespaceConfig) {
+		when(outboxRepositoryMock.findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL)).thenReturn(entries);
 		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(namespaceConfigEntity));
 		when(namespaceConfigMapperMock.toNamespaceConfig(namespaceConfigEntity)).thenReturn(namespaceConfig);
 	}
 
-	private void verifySendPending(final List<EmailDispatchOutboxEntity> entries) {
-		verify(outboxRepositoryMock).findBySubscriberIdOrderByCreatedAsc(SUBSCRIBER_ID);
+	private void verifySendPending(final List<NotificationDispatchOutboxEntity> entries) {
+		verify(outboxRepositoryMock).findBySubscriberIdAndChannelOrderByCreatedAsc(SUBSCRIBER_ID, EMAIL);
 		verify(namespaceConfigRepositoryMock).findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(namespaceConfigMapperMock).toNamespaceConfig(namespaceConfigEntity);
 		verify(outboxRepositoryMock).deleteAll(entries);
@@ -402,12 +403,12 @@ class SubscriberEmailServiceTest {
 		return NotificationChannelEmbeddable.create().withType(EMAIL).withDestination(destination);
 	}
 
-	private static EmailDispatchOutboxEntity createEntry(final SubscriberEntity subscriber, final String errandId, final String description) {
-		return EmailDispatchOutboxEntity.create()
+	private static NotificationDispatchOutboxEntity createEntry(final SubscriberEntity subscriber, final String errandId, final String description) {
+		return NotificationDispatchOutboxEntity.create()
 			.withSubscriber(subscriber)
 			.withErrandId(errandId)
 			.withErrandNumber(ERRAND_NUMBERS.get(errandId))
-			.withEvents(List.of(EmailDispatchOutboxEventEmbeddable.create().withDescription(description)));
+			.withEvents(List.of(NotificationDispatchOutboxEventEmbeddable.create().withDescription(description)));
 	}
 
 	private static NamespaceConfig namespaceConfig(final boolean excludeEventDescriptions, final String baseUrl) {

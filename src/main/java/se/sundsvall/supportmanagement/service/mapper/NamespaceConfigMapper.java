@@ -57,6 +57,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ROLE_BASED_MAPPING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SINGLE_DECISION_PER_ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SMS_NOTIFICATIONS_ENABLED;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getNullableValue;
@@ -112,6 +113,7 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_RESOURCE_ACCESS_CONTROL, String.valueOf(config.isResourceAccessControl()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_SINGLE_DECISION_PER_ERRAND, String.valueOf(config.isSingleDecisionPerErrand()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL, String.valueOf(config.isExcludeEventDescriptionsInEmail()), BOOLEAN))
+			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_SMS_NOTIFICATIONS_ENABLED, String.valueOf(config.isSmsNotificationsEnabled()), BOOLEAN))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED, String.valueOf(config.isTeliaAceWorkItemEnabled()), BOOLEAN))
 			.withAccessGrants(toAccessGrants(config));
@@ -161,6 +163,7 @@ public class NamespaceConfigMapper {
 			.withResourceAccessControl(readOptionalToggle(entity, PROPERTY_RESOURCE_ACCESS_CONTROL))
 			.withSingleDecisionPerErrand(readOptionalToggle(entity, PROPERTY_SINGLE_DECISION_PER_ERRAND))
 			.withExcludeEventDescriptionsInEmail(readOptionalToggle(entity, PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL))
+			.withSmsNotificationsEnabled(readOptionalToggle(entity, PROPERTY_SMS_NOTIFICATIONS_ENABLED))
 			.withBaseUrl(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_BASE_URL))
 			.withReporterProfileId(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_REPORTER_PROFILE_ID))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
