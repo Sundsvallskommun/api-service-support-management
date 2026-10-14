@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationCha
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
+import se.sundsvall.supportmanagement.service.scheduler.smsdispatch.SubscriberSmsService;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +51,9 @@ class NotificationChannelDispatcherTest {
 	@Mock
 	private SubscriberEmailService subscriberEmailServiceMock;
 
+	@Mock
+	private SubscriberSmsService subscriberSmsServiceMock;
+
 	@InjectMocks
 	private NotificationChannelDispatcher dispatcher;
 
@@ -67,16 +71,17 @@ class NotificationChannelDispatcherTest {
 
 		// Assert
 		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(ATTACHMENT_EVENT));
-		verifyNoInteractions(subscriberEmailServiceMock);
+		verifyNoInteractions(subscriberEmailServiceMock, subscriberSmsServiceMock);
 	}
 
 	@Test
-	void sendSmsChannelIsSkippedUntilImplemented() {
+	void sendSmsChannelEnqueuesOutboxEntry() {
 
 		// Act
 		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, deliveries(SMS, List.of(ATTACHMENT_EVENT)));
 
 		// Assert
+		verify(subscriberSmsServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(ATTACHMENT_EVENT));
 		verifyNoInteractions(subscriberNotificationServiceMock, subscriberEmailServiceMock);
 	}
 
@@ -88,7 +93,7 @@ class NotificationChannelDispatcherTest {
 
 		// Assert
 		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(ATTACHMENT_EVENT));
-		verifyNoInteractions(subscriberNotificationServiceMock);
+		verifyNoInteractions(subscriberNotificationServiceMock, subscriberSmsServiceMock);
 	}
 
 	@Test
@@ -105,6 +110,7 @@ class NotificationChannelDispatcherTest {
 		verify(subscriberEmailServiceMock).enqueue(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(MESSAGE_EVENT));
 		verify(subscriberNotificationServiceMock).create(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, List.of(ATTACHMENT_EVENT, MESSAGE_EVENT));
 		verifyNoMoreInteractions(subscriberEmailServiceMock, subscriberNotificationServiceMock);
+		verifyNoInteractions(subscriberSmsServiceMock);
 	}
 
 	@Test
@@ -114,7 +120,7 @@ class NotificationChannelDispatcherTest {
 		dispatcher.send(ERRAND_ID, ERRAND_NUMBER, SUBSCRIBER, Map.of());
 
 		// Assert
-		verifyNoInteractions(subscriberNotificationServiceMock, subscriberEmailServiceMock);
+		verifyNoInteractions(subscriberNotificationServiceMock, subscriberEmailServiceMock, subscriberSmsServiceMock);
 	}
 
 	@Test

@@ -285,21 +285,6 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table email_dispatch_outbox (
-        created datetime(3) not null,
-        errand_id varchar(36) not null,
-        id varchar(36) not null,
-        errand_number varchar(255),
-        subscriber_id varchar(255) not null,
-        primary key (id)
-    ) engine=InnoDB;
-
-    create table email_dispatch_outbox_event (
-        event_id varchar(36),
-        outbox_id varchar(36) not null,
-        description varchar(255)
-    ) engine=InnoDB;
-
     create table email_worker_config (
         add_sender_as_stakeholder bit,
         days_of_inactivity_before_reject integer,
@@ -762,6 +747,22 @@
         primary key (dispatch_id, metadata_label_id)
     ) engine=InnoDB;
 
+    create table notification_dispatch_outbox (
+        created datetime(3) not null,
+        errand_id varchar(36) not null,
+        id varchar(36) not null,
+        errand_number varchar(255),
+        subscriber_id varchar(255) not null,
+        channel enum ('EMAIL','INTERNAL','SMS') not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table notification_dispatch_outbox_event (
+        event_id varchar(36),
+        outbox_id varchar(36) not null,
+        description varchar(255)
+    ) engine=InnoDB;
+
     create table parameter (
         version bigint default 0 not null,
         display_name varchar(255),
@@ -1044,26 +1045,6 @@
         primary key (id)
     ) engine=InnoDB;
 
-    create table telia_ace_contact (
-        created datetime(3) not null,
-        errand_id varchar(36) not null,
-        email_uid varchar(255) not null,
-        primary key (errand_id)
-    ) engine=InnoDB;
-
-    create table telia_ace_work_item (
-        created datetime(3) not null,
-        municipality_id varchar(8) not null,
-        namespace varchar(32) not null,
-        errand_id varchar(36) not null,
-        id varchar(36) not null,
-        content_url varchar(255),
-        from_address varchar(255),
-        predefined_agent_name varchar(255),
-        subject varchar(255),
-        primary key (id)
-    ) engine=InnoDB;
-
     create table subscription_profile (
         created datetime(6),
         modified datetime(6),
@@ -1089,6 +1070,26 @@
         type varchar(64) not null,
         profile_id varchar(255) not null,
         primary key (sort_order, profile_id)
+    ) engine=InnoDB;
+
+    create table telia_ace_contact (
+        created datetime(3) not null,
+        errand_id varchar(36) not null,
+        email_uid varchar(255) not null,
+        primary key (errand_id)
+    ) engine=InnoDB;
+
+    create table telia_ace_work_item (
+        created datetime(3) not null,
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        errand_id varchar(36) not null,
+        id varchar(36) not null,
+        content_url varchar(255),
+        from_address varchar(255),
+        predefined_agent_name varchar(255),
+        subject varchar(255),
+        primary key (id)
     ) engine=InnoDB;
 
     create table time_measurement (
@@ -1236,9 +1237,6 @@
 
     create index idx_decision_term_decision_id 
        on decision_term (decision_id);
-
-    create index idx_email_dispatch_outbox_subscriber_created 
-       on email_dispatch_outbox (subscriber_id, created);
 
     create index idx_namespace_municipality_id 
        on email_worker_config (namespace, municipality_id);
@@ -1513,6 +1511,9 @@
     create index idx_dispatch_errand_id 
        on notification_dispatch (errand_id);
 
+    create index idx_notification_dispatch_outbox_subscriber_channel_created 
+       on notification_dispatch_outbox (subscriber_id, channel, created);
+
     create index idx_phase_municipality_id_namespace 
        on phase (municipality_id, namespace);
 
@@ -1615,12 +1616,6 @@
     create index idx_subscription_subscriber_target 
        on subscription (subscriber_id, target_type, errand_id);
 
-    create index idx_telia_ace_work_item_errand_id 
-       on telia_ace_work_item (errand_id);
-
-    create index idx_telia_ace_work_item_created 
-       on telia_ace_work_item (created);
-
     create index idx_subscription_profile_id 
        on subscription (profile_id);
 
@@ -1632,6 +1627,12 @@
 
     alter table if exists subscription_profile 
        add constraint uq_subscription_profile_municipality_namespace_name unique (municipality_id, namespace, name);
+
+    create index idx_telia_ace_work_item_errand_id 
+       on telia_ace_work_item (errand_id);
+
+    create index idx_telia_ace_work_item_created 
+       on telia_ace_work_item (created);
 
     alter table if exists `type` 
        add constraint uq_category_id_name unique (category_id, name);
@@ -1787,18 +1788,6 @@
        add constraint fk_decision_term_decision_id 
        foreign key (decision_id) 
        references decision (id) 
-       on delete cascade;
-
-    alter table if exists email_dispatch_outbox 
-       add constraint fk_email_dispatch_outbox_subscriber_id 
-       foreign key (subscriber_id) 
-       references subscriber (id) 
-       on delete cascade;
-
-    alter table if exists email_dispatch_outbox_event 
-       add constraint fk_email_dispatch_outbox_event_outbox_id 
-       foreign key (outbox_id) 
-       references email_dispatch_outbox (id) 
        on delete cascade;
 
     alter table if exists errand 
@@ -1970,6 +1959,18 @@
        add constraint fk_notification_dispatch_added_label_dispatch_id 
        foreign key (dispatch_id) 
        references notification_dispatch (id);
+
+    alter table if exists notification_dispatch_outbox 
+       add constraint fk_notification_dispatch_outbox_subscriber_id 
+       foreign key (subscriber_id) 
+       references subscriber (id) 
+       on delete cascade;
+
+    alter table if exists notification_dispatch_outbox_event 
+       add constraint fk_notification_dispatch_outbox_event_outbox_id 
+       foreign key (outbox_id) 
+       references notification_dispatch_outbox (id) 
+       on delete cascade;
 
     alter table if exists parameter 
        add constraint fk_parameter_errand_id 

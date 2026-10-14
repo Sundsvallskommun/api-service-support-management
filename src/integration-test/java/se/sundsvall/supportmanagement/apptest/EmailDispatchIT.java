@@ -7,10 +7,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.EmailDispatchOutboxRepository;
+import se.sundsvall.supportmanagement.integration.db.NotificationDispatchOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
-import se.sundsvall.supportmanagement.integration.db.model.EmailDispatchOutboxEventEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchOutboxEventEmbeddable;
 import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchScheduler;
 import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker;
 
@@ -41,7 +41,7 @@ class EmailDispatchIT extends AbstractAppTest {
 	private NotificationDispatchScheduler notificationDispatchScheduler;
 
 	@Autowired
-	private EmailDispatchOutboxRepository emailDispatchOutboxRepository;
+	private NotificationDispatchOutboxRepository notificationDispatchOutboxRepository;
 
 	@Autowired
 	private NotificationDispatchRepository notificationDispatchRepository;
@@ -68,7 +68,7 @@ class EmailDispatchIT extends AbstractAppTest {
 		notificationDispatchWorker.processGroup(dispatchEntries);
 
 		transactionTemplate.executeWithoutResult(_ -> {
-			final var outboxEntries = emailDispatchOutboxRepository.findAll();
+			final var outboxEntries = notificationDispatchOutboxRepository.findAll();
 			assertThat(outboxEntries).hasSize(1);
 
 			final var outbox = outboxEntries.getFirst();
@@ -76,7 +76,7 @@ class EmailDispatchIT extends AbstractAppTest {
 			assertThat(outbox.getErrandId()).isEqualTo(ERRAND_ID);
 			assertThat(outbox.getErrandNumber()).isEqualTo("NS1-2024-000001");
 			assertThat(outbox.getCreated()).isNotNull();
-			assertThat(outbox.getEvents()).containsExactly(EmailDispatchOutboxEventEmbeddable.create().withEventId("evt-001").withDescription("Nytt meddelande"));
+			assertThat(outbox.getEvents()).containsExactly(NotificationDispatchOutboxEventEmbeddable.create().withEventId("evt-001").withDescription("Nytt meddelande"));
 		});
 	}
 
@@ -92,7 +92,7 @@ class EmailDispatchIT extends AbstractAppTest {
 		notificationDispatchScheduler.processDispatch();
 
 		assertThat(notificationDispatchRepository.findAll()).isEmpty();
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		assertThat(notificationDispatchOutboxRepository.findAll()).isEmpty();
 		verifyStubs();
 	}
 
@@ -108,7 +108,7 @@ class EmailDispatchIT extends AbstractAppTest {
 		notificationDispatchScheduler.processDispatch();
 
 		assertThat(notificationDispatchRepository.findAll()).isEmpty();
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		assertThat(notificationDispatchOutboxRepository.findAll()).isEmpty();
 		verifyStubs();
 	}
 
@@ -123,11 +123,11 @@ class EmailDispatchIT extends AbstractAppTest {
 			.filter(e -> "grp-001".equals(e.getRequestGroupId()))
 			.toList();
 		notificationDispatchWorker.processGroup(dispatchEntries);
-		assertThat(emailDispatchOutboxRepository.findAll()).hasSize(1);
+		assertThat(notificationDispatchOutboxRepository.findAll()).hasSize(1);
 
 		subscriberRepository.deleteById(EMAIL_SUBSCRIBER_ID);
 
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		assertThat(notificationDispatchOutboxRepository.findAll()).isEmpty();
 	}
 
 	/**
@@ -156,7 +156,7 @@ class EmailDispatchIT extends AbstractAppTest {
 
 		notificationDispatchWorker.processGroup(processable);
 
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		assertThat(notificationDispatchOutboxRepository.findAll()).isEmpty();
 	}
 
 	/**
@@ -184,7 +184,7 @@ class EmailDispatchIT extends AbstractAppTest {
 
 		notificationDispatchWorker.processGroup(processable);
 
-		transactionTemplate.executeWithoutResult(_ -> assertThat(emailDispatchOutboxRepository.findAll())
+		transactionTemplate.executeWithoutResult(_ -> assertThat(notificationDispatchOutboxRepository.findAll())
 			.singleElement()
 			.satisfies(outbox -> assertThat(outbox.getSubscriber().getId()).isEqualTo(MAS_SUBSCRIBER_ID)));
 	}
