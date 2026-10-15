@@ -17,7 +17,9 @@ import static se.sundsvall.supportmanagement.integration.teliaace.configuration.
 @CircuitBreaker(name = CLIENT_ID)
 public interface TeliaAceClient {
 
-	@PostMapping("/workitem")
+	// Telia's own example posts to ".../workitem/" with a trailing slash, unlike the spec's path table. Matching it
+	// exactly: a request without the slash got a 403 from their gateway with no other apparent cause.
+	@PostMapping("/workitem/")
 	AddWorkItemResponse addWorkItem(@RequestBody AddWorkItemRequest request);
 
 	@PutMapping("/workitem/emailUid/{emailUid}")
