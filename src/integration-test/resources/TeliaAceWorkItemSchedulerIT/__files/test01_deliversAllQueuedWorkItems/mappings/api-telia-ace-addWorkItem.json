@@ -6,7 +6,7 @@
 			}
 		},
 		"method": "POST",
-		"urlPath": "/api-telia-ace/workitem",
+		"urlPath": "/api-telia-ace/workitem/",
 		"bodyPatterns": [
 			{
 				"equalToJson": {
