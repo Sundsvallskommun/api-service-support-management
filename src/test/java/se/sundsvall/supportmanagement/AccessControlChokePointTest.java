@@ -49,6 +49,7 @@ class AccessControlChokePointTest {
 		// already authorized the caller, or by workers that have none.
 		se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator.class,
 		se.sundsvall.supportmanagement.service.scheduler.supensions.SuspensionWorker.class,
+		se.sundsvall.supportmanagement.service.scheduler.teliaace.TeliaAceWorkItemWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.webmessagecollector.WebMessageCollectorWorker.class,
 		se.sundsvall.supportmanagement.service.MessageExchangeSyncService.class,
 

@@ -16,6 +16,8 @@ import se.sundsvall.supportmanagement.integration.db.AttachmentDataRepository;
 import se.sundsvall.supportmanagement.integration.db.AttachmentRepository;
 import se.sundsvall.supportmanagement.integration.db.HandoverIdempotencyRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberNotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.TeliaAceContactRepository;
+import se.sundsvall.supportmanagement.integration.db.TeliaAceWorkItemRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataIdProjection;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -79,6 +81,12 @@ class ErrandDataDeleterTest {
 	private HandoverIdempotencyRepository handoverIdempotencyRepositoryMock;
 
 	@Mock
+	private TeliaAceWorkItemRepository teliaAceWorkItemRepositoryMock;
+
+	@Mock
+	private TeliaAceContactRepository teliaAceContactRepositoryMock;
+
+	@Mock
 	private EntityManager entityManagerMock;
 
 	private ErrandDataDeleter deleter;
@@ -90,7 +98,7 @@ class ErrandDataDeleterTest {
 	void setUp() {
 		deleter = new ErrandDataDeleter(conversationServiceMock, communicationServiceMock, attachmentRepositoryMock,
 			attachmentDataRepositoryMock, notesClientMock, subscriberNotificationRepositoryMock,
-			handoverIdempotencyRepositoryMock, entityManagerMock, new ChunkedDeleter(entityManagerMock), searchIndexingMock);
+			handoverIdempotencyRepositoryMock, teliaAceWorkItemRepositoryMock, teliaAceContactRepositoryMock, entityManagerMock, new ChunkedDeleter(entityManagerMock), searchIndexingMock);
 	}
 
 	@Test
@@ -112,8 +120,10 @@ class ErrandDataDeleterTest {
 		verify(notesClientMock).deleteNoteById(MUNICIPALITY_ID, "noteId");
 		verify(subscriberNotificationRepositoryMock).deleteAllByErrandId(ERRAND_ID);
 		verify(handoverIdempotencyRepositoryMock).deleteAllBySourceErrandIdOrNewErrandId(ERRAND_ID, ERRAND_ID);
+		verify(teliaAceWorkItemRepositoryMock).deleteAllByErrandId(ERRAND_ID);
+		verify(teliaAceContactRepositoryMock).deleteAllByErrandId(ERRAND_ID);
 		verifyNoMoreInteractions(conversationServiceMock, communicationServiceMock, attachmentRepositoryMock,
-			attachmentDataRepositoryMock, notesClientMock, subscriberNotificationRepositoryMock, handoverIdempotencyRepositoryMock);
+			attachmentDataRepositoryMock, notesClientMock, subscriberNotificationRepositoryMock, handoverIdempotencyRepositoryMock, teliaAceWorkItemRepositoryMock, teliaAceContactRepositoryMock);
 	}
 
 	@Test
@@ -131,7 +141,7 @@ class ErrandDataDeleterTest {
 		// Carrying on would remove the rest of the errand for a transaction that cannot commit, and answer the caller
 		// with a removal that never happened.
 		verifyNoInteractions(communicationServiceMock, attachmentRepositoryMock, attachmentDataRepositoryMock, notesClientMock,
-			subscriberNotificationRepositoryMock, handoverIdempotencyRepositoryMock);
+			subscriberNotificationRepositoryMock, handoverIdempotencyRepositoryMock, teliaAceWorkItemRepositoryMock, teliaAceContactRepositoryMock);
 	}
 
 	@Test
@@ -148,6 +158,8 @@ class ErrandDataDeleterTest {
 		verify(notesClientMock, never()).deleteNoteById(anyString(), anyString());
 		verify(subscriberNotificationRepositoryMock).deleteAllByErrandId(ERRAND_ID);
 		verify(handoverIdempotencyRepositoryMock).deleteAllBySourceErrandIdOrNewErrandId(ERRAND_ID, ERRAND_ID);
+		verify(teliaAceWorkItemRepositoryMock).deleteAllByErrandId(ERRAND_ID);
+		verify(teliaAceContactRepositoryMock).deleteAllByErrandId(ERRAND_ID);
 	}
 
 	@Test
@@ -165,6 +177,8 @@ class ErrandDataDeleterTest {
 		verifyNoInteractions(attachmentRepositoryMock, attachmentDataRepositoryMock);
 		verify(subscriberNotificationRepositoryMock).deleteAllByErrandId(ERRAND_ID);
 		verify(handoverIdempotencyRepositoryMock).deleteAllBySourceErrandIdOrNewErrandId(ERRAND_ID, ERRAND_ID);
+		verify(teliaAceWorkItemRepositoryMock).deleteAllByErrandId(ERRAND_ID);
+		verify(teliaAceContactRepositoryMock).deleteAllByErrandId(ERRAND_ID);
 	}
 
 	@Test

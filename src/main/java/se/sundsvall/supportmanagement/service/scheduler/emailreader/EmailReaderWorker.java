@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
@@ -25,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
+import se.sundsvall.supportmanagement.service.TeliaAceNotificationRequestedEvent;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
@@ -55,9 +57,11 @@ public class EmailReaderWorker {
 
 	private final EmailWorkerConfigRepository emailWorkerConfigRepository;
 
+	private final ApplicationEventPublisher eventPublisher;
+
 	public EmailReaderWorker(final EmailReaderClient emailReaderClient, final EventService eventService,
 		final ErrandsRepository errandRepository, final ErrandService errandService, final CommunicationService communicationService,
-		final EmailReaderMapper emailReaderMapper, final EmailWorkerConfigRepository emailWorkerConfigRepository) {
+		final EmailReaderMapper emailReaderMapper, final EmailWorkerConfigRepository emailWorkerConfigRepository, final ApplicationEventPublisher eventPublisher) {
 		this.emailReaderClient = emailReaderClient;
 		this.eventService = eventService;
 		this.errandRepository = errandRepository;
@@ -65,6 +69,7 @@ public class EmailReaderWorker {
 		this.communicationService = communicationService;
 		this.emailReaderMapper = emailReaderMapper;
 		this.emailWorkerConfigRepository = emailWorkerConfigRepository;
+		this.eventPublisher = eventPublisher;
 	}
 
 	public Set<EmailWorkerConfigEntity> getEnabledEmailConfigs() {
@@ -80,7 +85,6 @@ public class EmailReaderWorker {
 	@Transactional
 	public void processEmail(final Email email, final EmailWorkerConfigEntity config, final Consumer<String> setUnHealthyConsumer) {
 
-		// Delete and skip entirely when configured to fully ignore
 		if (config.isIgnoreAutoReply() && isAutoReply(email) && !isDeliveryStatusReport(email)) {
 			LOG.info("Email '{}' is an auto-reply and will be deleted per namespace config", email.getId());
 			emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
@@ -92,13 +96,14 @@ public class EmailReaderWorker {
 			return;
 		}
 
-		final var errandNumber = parseSubject(email.getSubject());
-
-		getErrand(errandNumber, email, config).ifPresent(errand -> {
+		getErrand(email, config).ifPresent(errand -> {
 			final var emailRequest = processErrand(errand, email, config);
 
 			try {
 				emailReaderClient.deleteEmail(config.getMunicipalityId(), email.getId());
+				if (shouldNotifyTeliaAce(errand, config, email)) {
+					notifyTeliaAce(errand, email, setUnHealthyConsumer);
+				}
 			} catch (final Exception e) {
 				LOG.warn("Failed to delete email {} from EmailReader for errand {}: {}", email.getId(), errand.getId(), e.getMessage());
 				setUnHealthyConsumer.accept("Failed to delete email from EmailReader — email will be re-processed and may cause duplicate communications");
@@ -120,7 +125,8 @@ public class EmailReaderWorker {
 		}
 	}
 
-	private Optional<ErrandEntity> getErrand(final String errandNumber, final Email email, final EmailWorkerConfigEntity config) {
+	private Optional<ErrandEntity> getErrand(final Email email, final EmailWorkerConfigEntity config) {
+		final var errandNumber = parseSubject(email.getSubject());
 
 		return Optional.ofNullable(errandNumber)
 			.flatMap(number -> errandRepository.findByErrandNumberAndNamespaceAndMunicipalityId(number, config.getNamespace(), config.getMunicipalityId()))
@@ -132,6 +138,23 @@ public class EmailReaderWorker {
 						email,
 						config),
 					null)));
+	}
+
+	/**
+	 * A draft, an inactive errand, a delivery status report or an auto-reply is not a case worker needing to act, so
+	 * none of them should page an agent in Telia ACE to open the errand.
+	 */
+	private boolean shouldNotifyTeliaAce(final ErrandEntity errand, final EmailWorkerConfigEntity config, final Email email) {
+		return !errand.isDraft() && !isErrandInactive(errand, config) && !isDeliveryStatusReport(email) && !isAutoReply(email);
+	}
+
+	/**
+	 * Publishes rather than calls {@code TeliaAceWorkItemService} directly: the listener is deferred to after this
+	 * transaction commits, so the errand it is about is guaranteed to exist by the time it runs. See
+	 * {@link TeliaAceNotificationRequestedEvent}.
+	 */
+	private void notifyTeliaAce(final ErrandEntity errand, final Email email, final Consumer<String> setUnHealthyConsumer) {
+		eventPublisher.publishEvent(new TeliaAceNotificationRequestedEvent(errand, email, setUnHealthyConsumer));
 	}
 
 	private EmailRequest processErrand(final ErrandEntity errand, final Email email, final EmailWorkerConfigEntity config) {

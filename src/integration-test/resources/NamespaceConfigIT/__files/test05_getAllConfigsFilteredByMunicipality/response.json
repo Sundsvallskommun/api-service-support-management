@@ -12,6 +12,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false
 	},
 	{
@@ -26,6 +27,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false
 	},
 	{
@@ -41,7 +43,8 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"teliaAceWorkItemEnabled": false
 	},
 	{
 		"municipalityId": "2281",
@@ -55,6 +58,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false
 	},
 	{
@@ -69,6 +73,7 @@
 		"roleBasedMapping": false,
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
+		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false,
 		"processConsumer": "pw-alkt"
 	}

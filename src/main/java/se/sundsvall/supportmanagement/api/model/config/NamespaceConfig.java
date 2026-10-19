@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -60,6 +61,14 @@ public class NamespaceConfig {
 		description = "If set to true an errand may hold at most one decision. Leave false where interim decisions, partial decisions or reconsideration occur. If no value is set it defaults to false.",
 		examples = "true")
 	private boolean singleDecisionPerErrand;
+
+	@Schema(description = "If set to true, errands created or updated via EmailReader are notified to Telia ACE as work items. If no value is set it defaults to false.", examples = "true")
+	private boolean teliaAceWorkItemEnabled;
+
+	@Pattern(regexp = "^https?://\\S+$", message = "must be a valid http or https url")
+	@Size(max = 230, message = "must be at most 230 characters, leaving room for the errand link appended to it")
+	@Schema(description = "Base URL used to build the Draken link sent to Telia ACE, e.g. https://draken.sundsvall.se/kontaktsundsvall. Required when teliaAceWorkItemEnabled is true.", examples = "https://draken.sundsvall.se/kontaktsundsvall")
+	private String teliaAceWorkItemBaseUrl;
 
 	@Schema(
 		description = "The process engine running the processes of this namespace, which is also the address its events are delivered to. The only one known is pw-alkt. A namespace has exactly one, and leaving it out means the namespace runs no processes at all. It cannot be combined with access control, as the access mapper only grants access to AD accounts",
@@ -306,6 +315,32 @@ public class NamespaceConfig {
 		return this;
 	}
 
+	public boolean isTeliaAceWorkItemEnabled() {
+		return teliaAceWorkItemEnabled;
+	}
+
+	public void setTeliaAceWorkItemEnabled(final boolean teliaAceWorkItemEnabled) {
+		this.teliaAceWorkItemEnabled = teliaAceWorkItemEnabled;
+	}
+
+	public NamespaceConfig withTeliaAceWorkItemEnabled(final boolean teliaAceWorkItemEnabled) {
+		this.teliaAceWorkItemEnabled = teliaAceWorkItemEnabled;
+		return this;
+	}
+
+	public String getTeliaAceWorkItemBaseUrl() {
+		return teliaAceWorkItemBaseUrl;
+	}
+
+	public void setTeliaAceWorkItemBaseUrl(final String teliaAceWorkItemBaseUrl) {
+		this.teliaAceWorkItemBaseUrl = teliaAceWorkItemBaseUrl;
+	}
+
+	public NamespaceConfig withTeliaAceWorkItemBaseUrl(final String teliaAceWorkItemBaseUrl) {
+		this.teliaAceWorkItemBaseUrl = teliaAceWorkItemBaseUrl;
+		return this;
+	}
+
 	public LimitedReadAccess getLimitedReadAccess() {
 		return limitedReadAccess;
 	}
@@ -350,7 +385,8 @@ public class NamespaceConfig {
 		return Objects.hash(accessControl, created, displayName,
 			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand, excludeEventDescriptionsInEmail, baseUrl,
 			roleFieldRestrictions, roleBasedMapping,
-			shortCode);
+			shortCode,
+			teliaAceWorkItemEnabled, teliaAceWorkItemBaseUrl);
 	}
 
 	@Override
@@ -363,7 +399,7 @@ public class NamespaceConfig {
 					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail && Objects.equals(
 						baseUrl, other.baseUrl) && Objects.equals(roleFieldRestrictions,
 							other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
-			&& Objects.equals(shortCode, other.shortCode);
+			&& Objects.equals(shortCode, other.shortCode) && teliaAceWorkItemEnabled == other.teliaAceWorkItemEnabled && Objects.equals(teliaAceWorkItemBaseUrl, other.teliaAceWorkItemBaseUrl);
 	}
 
 	@Override
@@ -376,6 +412,7 @@ public class NamespaceConfig {
 			.append(
 				processTriggers).append(", limitedReadAccess=").append(limitedReadAccess).append(", reporterAccess=").append(reporterAccess).append(", roleFieldRestrictions=").append(
 					roleFieldRestrictions)
+			.append(", teliaAceWorkItemEnabled=").append(teliaAceWorkItemEnabled).append(", teliaAceWorkItemBaseUrl=").append(teliaAceWorkItemBaseUrl)
 			.append("]");
 		return builder.toString();
 	}

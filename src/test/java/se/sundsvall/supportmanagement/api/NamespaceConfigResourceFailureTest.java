@@ -222,6 +222,54 @@ class NamespaceConfigResourceFailureTest {
 	}
 
 	@Test
+	void createWithInvalidTeliaAceWorkItemBaseUrl() {
+		final var namespaceConfig = createValidNamespaceConfig().withTeliaAceWorkItemBaseUrl("not-a-url");
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(namespaceConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("teliaAceWorkItemBaseUrl", "must be a valid http or https url"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void createWithTooLongTeliaAceWorkItemBaseUrl() {
+		final var namespaceConfig = createValidNamespaceConfig().withTeliaAceWorkItemBaseUrl("https://draken.sundsvall.se/" + "a".repeat(230));
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(namespaceConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("teliaAceWorkItemBaseUrl", "must be at most 230 characters, leaving room for the errand link appended to it"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
 	void readWithInvalidNamespace() {
 		final var response = webTestClient.get()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", INVALID, "municipalityId", MUNICIPALITY_ID)))

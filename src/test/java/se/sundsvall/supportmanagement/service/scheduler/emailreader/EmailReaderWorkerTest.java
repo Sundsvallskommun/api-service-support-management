@@ -11,9 +11,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.ApplicationEventPublisher;
 import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.integration.db.EmailWorkerConfigRepository;
@@ -28,6 +31,7 @@ import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
+import se.sundsvall.supportmanagement.service.TeliaAceNotificationRequestedEvent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -74,10 +78,16 @@ class EmailReaderWorkerTest {
 	private ErrandNumberGeneratorService errandNumberGeneratorServiceMock;
 
 	@Mock
+	private ApplicationEventPublisher eventPublisherMock;
+
+	@Mock
 	private Consumer<String> consumerMock;
 
 	@InjectMocks
 	private EmailReaderWorker emailReaderWorker;
+
+	@Captor
+	private ArgumentCaptor<TeliaAceNotificationRequestedEvent> teliaAceEventCaptor;
 
 	@BeforeEach
 	void setUp() {
@@ -261,6 +271,25 @@ class EmailReaderWorkerTest {
 	}
 
 	@Test
+	void processEmail_deleteEmailFails_doesNotQueueTeliaAceWorkItem() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Some subject");
+		email.setId("id");
+		final var emailConfig = buildBaseConfig();
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withAssignedUserId("jep11jep").withCreated(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+		doThrow(new RuntimeException("EmailReader down")).when(emailReaderClientMock).deleteEmail(any(), any());
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verifyNoInteractions(eventPublisherMock);
+	}
+
+	@Test
 	void processEmailWithNewErrand() {
 		final var email = new Email();
 		email.setSender("user@domain.com");
@@ -323,7 +352,101 @@ class EmailReaderWorkerTest {
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE));
-		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock, emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, eventServiceMock);
+		verify(eventPublisherMock).publishEvent(teliaAceEventCaptor.capture());
+		assertThat(teliaAceEventCaptor.getValue().errand()).isSameAs(errandEntity);
+		assertThat(teliaAceEventCaptor.getValue().email()).isSameAs(email);
+		verifyNoMoreInteractions(emailWorkerConfigRepositoryMock, emailReaderClientMock, errandServiceMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, eventServiceMock, eventPublisherMock);
+	}
+
+	@Test
+	void processEmail_existingErrand_notifiesTeliaAce() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Some subject");
+		email.setId("id");
+		final var emailConfig = buildBaseConfig();
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withAssignedUserId("jep11jep").withCreated(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verify(eventPublisherMock).publishEvent(teliaAceEventCaptor.capture());
+		assertThat(teliaAceEventCaptor.getValue().errand()).isSameAs(errandEntity);
+		assertThat(teliaAceEventCaptor.getValue().email()).isSameAs(email);
+	}
+
+	@Test
+	void processEmail_draftErrand_doesNotNotifyTeliaAce() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Some subject");
+		email.setId("id");
+		final var emailConfig = buildBaseConfig();
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withLifecycle(ErrandLifecycle.DRAFT).withAssignedUserId("jep11jep").withCreated(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verifyNoInteractions(eventPublisherMock, consumerMock);
+	}
+
+	@Test
+	void processEmail_inactiveErrand_doesNotNotifyTeliaAce() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Some subject");
+		email.setId("id");
+		final var emailConfig = buildBaseConfig().withDaysOfInactivityBeforeReject(5).withInactiveStatus("SOLVED");
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(6)).withTouched(OffsetDateTime.now().minusDays(6));
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verifyNoInteractions(eventPublisherMock);
+	}
+
+	@Test
+	void processEmail_autoReplyWhenNotIgnored_doesNotNotifyTeliaAce() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Out of office");
+		email.setId("id");
+		email.setHeaders(Map.of("AUTO_SUBMITTED", List.of("auto-replied")));
+		final var emailConfig = buildBaseConfig();
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withCreated(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verifyNoInteractions(eventPublisherMock);
+	}
+
+	@Test
+	void processEmail_deliveryStatusReport_doesNotNotifyTeliaAce() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000001 Delivery failure");
+		email.setId("id");
+		email.setHeaders(Map.of("CONTENT_TYPE", List.of("multipart/report; report-type=delivery-status")));
+		final var emailConfig = buildBaseConfig().withIgnoreAutoReply(true);
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withCreated(OffsetDateTime.now()).withTouched(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verifyNoInteractions(eventPublisherMock);
 	}
 
 	@Test

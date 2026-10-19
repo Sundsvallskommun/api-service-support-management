@@ -919,8 +919,9 @@ public class ErrandEntity {
 					.equals(actions, that.actions) && Objects.equals(phases, that.phases) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(
 						suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(accessLabels, that.accessLabels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(
 							touched, that.touched) && Objects.equals(errandNumber,
-								that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(timeMeasures, that.timeMeasures) && Objects.equals(measures,
-									that.measures);
+								that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(
+									timeMeasures,
+									that.timeMeasures) && Objects.equals(measures, that.measures);
 	}
 
 	@Override

@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -56,6 +57,7 @@ public class NamespaceConfigService {
 	private static final String PROCESS_CONSUMER_EXCLUDES_ACCESS_CONTROL = "Access control may not be active for a namespace with the process consumer '%s'. A process consumer is not an AD account, and the access mapper grants access to nothing else, so every read and write the process makes for the namespace would be denied";
 	private static final String COMMAND_AS_PROCESS_TRIGGER = "'%s' is a command to the process rather than a change to the errand. Commands always reach the process and are never filtered by the process triggers, so it may not be listed among them";
 	private static final String MISSING_PROCESS_TRIGGERS = "A namespace with the process consumer '%s' must list %s among its process triggers. Without ERRAND an errand given its process label after it was created never starts its process, and without DECISION a process waiting for a decision is never told that it has been made";
+	private static final String TELIA_ACE_BASE_URL_REQUIRED = "'teliaAceWorkItemBaseUrl' is mandatory when 'teliaAceWorkItemEnabled' is true";
 
 	/** The errand changes every process depends on being told about, in the order they are named when missing. */
 	private static final List<EventSubType> REQUIRED_PROCESS_TRIGGERS = List.of(EventSubType.ERRAND, EventSubType.DECISION);
@@ -82,9 +84,19 @@ public class NamespaceConfigService {
 		}
 		validateAccessConfiguration(request);
 		validateProcessConfiguration(request);
+		validateTeliaAceWorkItemConfig(request);
 		final var config = mapper.toEntity(request, namespace, municipalityId);
 		validateNoDuplicateGrants(config);
 		configRepository.save(config);
+	}
+
+	/**
+	 * Rejects a request that enables the Telia ACE work item feature without also setting its base URL.
+	 */
+	private void validateTeliaAceWorkItemConfig(NamespaceConfig request) {
+		if (request.isTeliaAceWorkItemEnabled() && StringUtils.isBlank(request.getTeliaAceWorkItemBaseUrl())) {
+			throw Problem.valueOf(BAD_REQUEST, TELIA_ACE_BASE_URL_REQUIRED);
+		}
 	}
 
 	/**
@@ -223,6 +235,7 @@ public class NamespaceConfigService {
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
 		validateProcessConfiguration(request);
+		validateTeliaAceWorkItemConfig(request);
 		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
 
