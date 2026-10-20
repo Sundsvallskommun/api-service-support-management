@@ -207,6 +207,43 @@ class ErrandProcessServiceTest {
 		verifyNoInteractions(processRepositoryMock, accessControlServiceMock, namespaceConfigServiceMock);
 	}
 
+	@Test
+	void aReportFromAnAdAccountIsRejectedEvenWhenItIsNamedAfterTheConsumer() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue(PROCESS_SERVICE));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(COMPLETED)))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus().value()).isEqualTo(400);
+				assertThat(problem.getDetail()).contains(PROCESS_SERVICE).contains(NAMESPACE).contains("X-Sent-By");
+			});
+
+		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
+	}
+
+	@Test
+	void aRegistrationFromAnAdAccountIsRejected() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		final var report = report(RUNNING).withProcessInstanceId(PROCESS_INSTANCE_ID);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.registerProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, report))
+			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(400));
+
+		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
+	}
+
+	@Test
+	void aReportFromAnotherServiceNamingTheConsumerInTheBodyIsRejected() {
+		Identifier.set(Identifier.create().withType(Identifier.Type.CUSTOM).withTypeString("processEngine").withValue("pw-someone-else"));
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.reportProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, report(RUNNING)))
+			.satisfies(problem -> assertThat(problem.getStatus().value()).isEqualTo(400));
+
+		verifyNoInteractions(processRepositoryMock, accessControlServiceMock);
+	}
+
 	// ---------------------------------------------------------------------------------------------------------------
 	// Reporting on an instance
 	// ---------------------------------------------------------------------------------------------------------------

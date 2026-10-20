@@ -66,6 +66,8 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessStartable;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.toProcessStatus;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandProcessMapper.updateErrandProcessEntity;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 
 /**
@@ -86,6 +88,7 @@ public class ErrandProcessService {
 	private static final String PROCESS_LIFE_OVER = "The errand '%s' has a process that ran to its end, and a completed process is never started again";
 	private static final String WRONG_PROCESS_CONSUMER = "The process service '%s' is not the process consumer of namespace '%s', which is '%s'";
 	private static final String MISSING_IDENTIFIER = "A report must name its sender in the '%s' header";
+	private static final String SENDER_NOT_PROCESS_CONSUMER = "A report is taken only from the process consumer '%s' of namespace '%s', named in the '%s' header";
 	private static final String ERRAND_CHANGED = "The errand has changed since version %s, which the report says it was read at";
 	private static final String UNSORTABLE_ACTIVITY_PROPERTY = "The activity log cannot be sorted by '%s'. It can be sorted by: %s";
 
@@ -396,8 +399,9 @@ public class ErrandProcessService {
 	/**
 	 * Checks a report against the process configuration of the namespace before anything is written.
 	 * <p>
-	 * Answers 400 when the {@code X-Sent-By} header is missing, when the namespace has no process consumer, and when the
-	 * report names another process service than the process consumer of the namespace.
+	 * Answers 400 when the {@code X-Sent-By} header is missing, when the namespace has no process consumer, when the
+	 * report names another process service than the process consumer of the namespace, and when the header names
+	 * someone other than the process consumer, an ad account included.
 	 */
 	private void verifySenderOfReport(final String namespace, final String municipalityId, final ErrandProcessReport report) {
 		if (isNull(getExecutingUser())) {
@@ -408,6 +412,10 @@ public class ErrandProcessService {
 
 		if (!consumer.equals(report.getProcessService())) {
 			throw Problem.valueOf(BAD_REQUEST, WRONG_PROCESS_CONSUMER.formatted(report.getProcessService(), namespace, consumer));
+		}
+
+		if (nonNull(getAdUser()) || !consumer.equals(getCallerIdentity())) {
+			throw Problem.valueOf(BAD_REQUEST, SENDER_NOT_PROCESS_CONSUMER.formatted(consumer, namespace, SENT_BY_HEADER));
 		}
 	}
 

@@ -808,7 +808,8 @@ The process service in turn has to keep the contract `pw-alkt` keeps:
   means the errand changed since; the step is retried against the errand as it now is. Report `COMPLETED` from the
   last step, and reconcile instances that end without a report: the process life and the decision locks rest on it.
 - **Identify itself** in every call with `X-Sent-By: <consumer>; type=processEngine` and `processService` set to the
-  consumer name, and send `X-Trigger-Process: false` on its writes, so that they do not wake the process again.
+  consumer name, and send `X-Trigger-Process: false` on its writes, so that they do not wake the process again. A report
+  or a registration whose `X-Sent-By` names anyone else, an AD account included, is refused with `400`.
 
 ### Turning it on
 

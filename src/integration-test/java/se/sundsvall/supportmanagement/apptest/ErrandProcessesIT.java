@@ -36,6 +36,7 @@ class ErrandProcessesIT extends AbstractAppTest {
 	private static final String ERRAND_WITHOUT_PROCESS = "aa000000-0000-0000-0000-0000000000a2";
 	private static final String LIVE_INSTANCE_ID = "pi-it-live";
 	private static final String PROCESS_ENGINE = "pw-alkt; type=processEngine";
+	private static final String HANDLER_IDENTITY = "joe01doe; type=adAccount";
 
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
@@ -258,6 +259,29 @@ class ErrandProcessesIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A handler naming the process consumer in the body is still not the process consumer, and the instance stands where
+	 * it did afterwards.
+	 */
+	@Test
+	void test15_reportFromAHandlerIsRejected() {
+		setupCall()
+			.withServicePath(processesPath(ERRAND_WITH_PROCESS) + "/" + LIVE_INSTANCE_ID)
+			.withHttpMethod(PUT)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(processesPath(ERRAND_WITH_PROCESS))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-processes.json")
 			.sendRequestAndVerifyResponse();
 	}
 }
