@@ -2,9 +2,11 @@ package se.sundsvall.supportmanagement.service.scheduler.action;
 
 import java.time.ZoneId;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,14 +18,17 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.RevisionService;
 import se.sundsvall.supportmanagement.service.action.Action;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.time.OffsetDateTime.now;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
@@ -79,11 +84,18 @@ public class ActionWorker {
 			return;
 		}
 
+		final var previousLabelIds = labelIdsOf(errand);
 		final var changed = action.executeAction(errand, configEntity);
 		removeAction(errand, actionEntity);
 
 		if (changed) {
 			logChange(errand);
+		}
+
+		final var addedLabelIds = labelIdsOf(errand);
+		addedLabelIds.removeAll(previousLabelIds);
+		if (!addedLabelIds.isEmpty()) {
+			logLabelEvents(errand, addedLabelIds);
 		}
 	}
 
@@ -115,6 +127,25 @@ public class ActionWorker {
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {} after a scheduled action: {}", sanitizeForLogging(errand.getId()), sanitizeForLogging(e.getMessage()));
 		}
+	}
+
+	/**
+	 * Logs the labels the action added to the errand, so that subscribers may be notified of them. Nobody acted, so nobody
+	 * is left out as the one who did. A log that cannot be written is not worth undoing the action for.
+	 */
+	private void logLabelEvents(final ErrandEntity errand, final Set<String> addedLabelIds) {
+		try {
+			eventService.createLabelEvents(UPDATE, errand, null, addedLabelIds, null);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log LABEL events for errand {}: {}", errand.getId(), e.getMessage());
+		}
+	}
+
+	private static Set<String> labelIdsOf(final ErrandEntity errand) {
+		return ofNullable(errand.getLabels()).orElse(emptyList()).stream()
+			.map(ErrandLabelEmbeddable::getMetadataLabelId)
+			.filter(Objects::nonNull)
+			.collect(toCollection(LinkedHashSet::new));
 	}
 
 	private Map<String, List<String>> toParameterMap(final ActionConfigEntity configEntity) {

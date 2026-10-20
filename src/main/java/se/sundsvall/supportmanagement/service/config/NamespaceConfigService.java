@@ -67,10 +67,11 @@ public class NamespaceConfigService {
 
 	/**
 	 * The sub types no event published to a process ever has: notes are kept by the notes service, outside the transaction
-	 * an outbox row is written in, system events are written about labels rather than errands, and an assignment or a
-	 * change of status or phase reaches the process as the change to the errand it is part of.
+	 * an outbox row is written in, system events are written about labels rather than errands, and an assignment, a
+	 * label being added or a change of status or phase reaches the process as the change to the errand it is part of.
 	 */
-	private static final Set<EventSubType> UNPUBLISHED_PROCESS_TRIGGERS = EnumSet.of(EventSubType.NOTE, EventSubType.SYSTEM, EventSubType.ASSIGNMENT, EventSubType.PHASE, EventSubType.STATUS);
+	private static final Set<EventSubType> UNPUBLISHED_PROCESS_TRIGGERS = EnumSet.of(EventSubType.NOTE, EventSubType.SYSTEM, EventSubType.ASSIGNMENT, EventSubType.LABEL, EventSubType.PHASE,
+		EventSubType.STATUS);
 
 	private static final String REPORTER_PROFILE_NOT_FOUND = "Reporter profile '%s' is not a subscription profile in namespace '%s' for municipality '%s'";
 

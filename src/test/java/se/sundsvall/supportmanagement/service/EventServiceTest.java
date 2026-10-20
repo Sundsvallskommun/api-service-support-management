@@ -27,6 +27,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -39,6 +40,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResour
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.eventlog.ExecutingUser.TypeEnum.AD_USER;
@@ -60,6 +62,7 @@ import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
@@ -88,6 +91,9 @@ class EventServiceTest {
 
 	@Mock
 	private ProcessEventPublisher processEventPublisherMock;
+
+	@Mock
+	private MetadataLabelRepository metadataLabelRepositoryMock;
 
 	@Mock
 	private PageEvent pageEventMock;
@@ -417,6 +423,55 @@ class EventServiceTest {
 	}
 
 	@Test
+	void createLabelEventsLogsOneEventForEveryLabel() {
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("MY_NAMESPACE")
+			.withId(randomUUID().toString())
+			.withAssignedUserId("anna01");
+		final var actor = Identifier.create().withType(AD_ACCOUNT).withValue("bert02");
+		final var labelIds = List.of("lex-label", "path-label", "gone-label");
+		when(metadataLabelRepositoryMock.findAllById(labelIds)).thenReturn(List.of(
+			MetadataLabelEntity.create().withId("lex-label").withDisplayName("LEX").withResourcePath("ACCESS/LEX"),
+			MetadataLabelEntity.create().withId("path-label").withResourcePath("RISK/HIGH_HSL")));
+
+		service.createLabelEvents(EventType.UPDATE, entity, new RevisionResult(null, null), labelIds, actor);
+
+		// Each label is told of by its display name, or by what there is of it without one
+		verify(eventLogClientMock, times(3)).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getAllValues())
+			.extracting(Event::getType, Event::getSubType, Event::getMessage)
+			.containsExactly(
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett LEX"),
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett RISK/HIGH_HSL"),
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett gone-label"));
+		assertThat(eventCaptor.getAllValues()).allSatisfy(event -> assertThat(event.getExecutingUser().getValue()).isEqualTo("bert02"));
+
+		// and carries the one label it is about to the subscribers
+		verify(notificationDispatchRepositoryMock, times(3)).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getAllValues())
+			.extracting(NotificationDispatchEntity::getSubType, NotificationDispatchEntity::getAddedLabelIds, NotificationDispatchEntity::getExecutingUserId)
+			.containsExactly(
+				tuple(LABEL.getValue(), Set.of("lex-label"), "bert02"),
+				tuple(LABEL.getValue(), Set.of("path-label"), "bert02"),
+				tuple(LABEL.getValue(), Set.of("gone-label"), "bert02"));
+
+		// The change the labels were added in notifies the assigned user and subscribes them, so the labels do neither
+		verifyNoInteractions(notificationServiceMock);
+		verify(eventPublisherMock, never()).publishEvent(any());
+	}
+
+	@Test
+	void createLabelEventsWithoutLabelsLogsNothing() {
+		final var entity = ErrandEntity.create().withId(randomUUID().toString());
+
+		service.createLabelEvents(EventType.CREATE, entity, null, Set.of(), null);
+		service.createLabelEvents(EventType.CREATE, entity, null, null, null);
+
+		verifyNoInteractions(metadataLabelRepositoryMock, eventLogClientMock, notificationDispatchRepositoryMock, notificationServiceMock, eventPublisherMock);
+	}
+
+	@Test
 	void createErrandEventReachesTheSubscribersAlthoughTheAssignedUserCannotBeNotified() {
 		// The one who acted may be refused something on the errand, which must not keep the subscribers from hearing of it
 		final var entity = ErrandEntity.create()
@@ -435,7 +490,7 @@ class EventServiceTest {
 
 	@ParameterizedTest
 	@EnumSource(value = EventSubType.class, names = {
-		"ASSIGNMENT", "PHASE", "STATUS"
+		"ASSIGNMENT", "LABEL", "PHASE", "STATUS"
 	})
 	void createEventLoggedAlongsideErrandChangeLeavesSubscribingAndTheProcessToTheChangeItIsPartOf(final EventSubType subtype) {
 		// The errand event logged alongside already subscribes the assignee and tells the process, so this event does neither

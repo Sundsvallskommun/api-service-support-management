@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.RevisionService;
 import se.sundsvall.supportmanagement.service.action.Action;
@@ -30,6 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
@@ -98,6 +102,7 @@ class ActionWorkerTest {
 		verify(actionMock).actionFulfilled(errand, Map.of("label", List.of("priority-high")));
 		verify(errandActionRepositoryMock).delete(actionEntity);
 		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);
+		verifyNoInteractions(eventServiceMock);
 	}
 
 	@Test
@@ -123,6 +128,56 @@ class ActionWorkerTest {
 		verify(actionMock).executeAction(errand, config);
 		verify(errandActionRepositoryMock).delete(actionEntity);
 		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);
+		// The action added no label, so there is none to tell of
+		verifyNoInteractions(eventServiceMock);
+	}
+
+	@Test
+	void processActionLogsTheLabelsTheActionAdded() {
+		final var errand = ErrandEntity.create().withId("errand-id")
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("existing-label"))));
+		final var config = ActionConfigEntity.create()
+			.withName("testAction")
+			.withParameters(List.of(ActionConfigParameterEntity.create().withKey("label").withValues(List.of("lex-label"))));
+		final var actionEntity = ErrandActionEntity.create()
+			.withId("action-id")
+			.withErrandEntity(errand)
+			.withActionConfigEntity(config);
+
+		when(actionMock.actionFulfilled(errand, Map.of("label", List.of("lex-label")))).thenReturn(false);
+		when(actionMock.conditionsFulfilled(errand, config)).thenReturn(true);
+		when(errandsRepositoryMock.findWithLockingById(any())).thenReturn(Optional.of(errand));
+		doAnswer(_ -> errand.getLabels().add(ErrandLabelEmbeddable.create().withMetadataLabelId("lex-label")))
+			.when(actionMock).executeAction(errand, config);
+
+		actionWorker.processAction(actionEntity);
+
+		// Only the label the action added is told of, and by nobody
+		verify(eventServiceMock).createLabelEvents(UPDATE, errand, null, Set.of("lex-label"), null);
+		verify(errandActionRepositoryMock).delete(actionEntity);
+	}
+
+	@Test
+	void processActionKeepsTheActionWhenTheLabelEventsCannotBeLogged() {
+		final var errand = ErrandEntity.create().withId("errand-id").withLabels(new ArrayList<>());
+		final var config = ActionConfigEntity.create()
+			.withName("testAction")
+			.withParameters(List.of(ActionConfigParameterEntity.create().withKey("label").withValues(List.of("lex-label"))));
+		final var actionEntity = ErrandActionEntity.create()
+			.withId("action-id")
+			.withErrandEntity(errand)
+			.withActionConfigEntity(config);
+
+		when(actionMock.actionFulfilled(errand, Map.of("label", List.of("lex-label")))).thenReturn(false);
+		when(actionMock.conditionsFulfilled(errand, config)).thenReturn(true);
+		when(errandsRepositoryMock.findWithLockingById(any())).thenReturn(Optional.of(errand));
+		doAnswer(_ -> errand.getLabels().add(ErrandLabelEmbeddable.create().withMetadataLabelId("lex-label")))
+			.when(actionMock).executeAction(errand, config);
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createLabelEvents(any(), any(), isNull(), any(), isNull());
+
+		actionWorker.processAction(actionEntity);
+
+		verify(errandActionRepositoryMock).delete(actionEntity);
 	}
 
 	@Test
