@@ -47,8 +47,10 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getTrigger
 /**
  * Turns an errand event into a row in the outbox, in the same transaction as the change the event is about.
  * <p>
- * Called last in {@link EventService#createErrandEvent}, which every errand event goes through, the email intake and
- * the web messages included. A command comes in through {@link EventService#createProcessCommandEvent}.
+ * Called last in {@link EventService#createErrandEvent} and {@link EventService#createErrandEventWithoutNotification},
+ * which the errand events go through, the email intake and the web messages included, and in
+ * {@link EventService#createDecisionEvent} and {@link EventService#publishDeletionToProcess}. A command comes in
+ * through {@link EventService#createProcessCommandEvent}. Events about notes never get here.
  * <p>
  * The rule it applies, step by step:
  *

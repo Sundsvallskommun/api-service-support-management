@@ -582,6 +582,31 @@ class NamespaceConfigServiceTest {
 	}
 
 	/**
+	 * A sub type no event published to a process has is refused among the process triggers, whether the namespace runs a
+	 * process or not, on create as on replace.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"NOTE", "SYSTEM"
+	})
+	void createAndReplaceWithAnUnpublishedSubTypeAmongTheProcessTriggers(final EventSubType subType) {
+		final var withoutConsumer = NamespaceConfig.create()
+			.withProcessTriggers(List.of(EventSubType.ERRAND, subType));
+		final var withConsumer = NamespaceConfig.create()
+			.withProcessConsumer("pw-alkt")
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.DECISION, subType));
+		final var expectedMessage = "Bad Request: '%s' may not be listed among the process triggers, since no event of that sub type is ever published to a process".formatted(subType);
+
+		assertThat(assertThrows(ThrowableProblem.class, () -> configService.create(withoutConsumer, "namespace", "municipalityId")))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST))
+			.hasMessage(expectedMessage);
+		assertThat(assertThrows(ThrowableProblem.class, () -> configService.replace(withConsumer, "namespace", "municipalityId")))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST))
+			.hasMessage(expectedMessage);
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	/**
 	 * Triggers without a consumer are accepted and kept.
 	 */
 	@Test

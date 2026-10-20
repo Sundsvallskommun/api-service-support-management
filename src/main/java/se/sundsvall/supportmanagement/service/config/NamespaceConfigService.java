@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.config;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -56,11 +57,18 @@ public class NamespaceConfigService {
 	private static final String UNKNOWN_PROCESS_CONSUMER = "'%s' is not a known process consumer. The process consumer of a namespace is the address events are delivered to, and must be '%s'";
 	private static final String PROCESS_CONSUMER_EXCLUDES_ACCESS_CONTROL = "Access control may not be active for a namespace with the process consumer '%s'. A process consumer is not an AD account, and the access mapper grants access to nothing else, so every read and write the process makes for the namespace would be denied";
 	private static final String COMMAND_AS_PROCESS_TRIGGER = "'%s' is a command to the process rather than a change to the errand. Commands always reach the process and are never filtered by the process triggers, so it may not be listed among them";
+	private static final String UNPUBLISHED_PROCESS_TRIGGER = "'%s' may not be listed among the process triggers, since no event of that sub type is ever published to a process";
 	private static final String MISSING_PROCESS_TRIGGERS = "A namespace with the process consumer '%s' must list %s among its process triggers. Without ERRAND an errand given its process label after it was created never starts its process, and without DECISION a process waiting for a decision is never told that it has been made";
 	private static final String TELIA_ACE_BASE_URL_REQUIRED = "'teliaAceWorkItemBaseUrl' is mandatory when 'teliaAceWorkItemEnabled' is true";
 
 	/** The errand changes every process depends on being told about, in the order they are named when missing. */
 	private static final List<EventSubType> REQUIRED_PROCESS_TRIGGERS = List.of(EventSubType.ERRAND, EventSubType.DECISION);
+
+	/**
+	 * The sub types no event published to a process ever has: notes are kept by the notes service, outside the transaction
+	 * an outbox row is written in, and system events are written about labels rather than errands.
+	 */
+	private static final Set<EventSubType> UNPUBLISHED_PROCESS_TRIGGERS = EnumSet.of(EventSubType.NOTE, EventSubType.SYSTEM);
 
 	private final NamespaceConfigRepository configRepository;
 	private final NamespaceConfigMapper mapper;
@@ -135,9 +143,9 @@ public class NamespaceConfigService {
 	/**
 	 * Verifies the process configuration of the namespace.
 	 * <p>
-	 * A trigger may be listed only once, and a command may not be listed at all. The consumer, when set, must be the one
-	 * process engine the service delivers to, access control may not be active alongside it, and the namespace has to
-	 * trigger on {@link #REQUIRED_PROCESS_TRIGGERS}.
+	 * A trigger may be listed only once, and neither a command nor one of {@link #UNPUBLISHED_PROCESS_TRIGGERS} may be
+	 * listed at all. The consumer, when set, must be the one process engine the service delivers to, access control may
+	 * not be active alongside it, and the namespace has to trigger on {@link #REQUIRED_PROCESS_TRIGGERS}.
 	 */
 	private void validateProcessConfiguration(NamespaceConfig request) {
 		final var triggers = ofNullable(request.getProcessTriggers()).orElse(emptyList());
@@ -155,6 +163,13 @@ public class NamespaceConfigService {
 			.findFirst()
 			.ifPresent(trigger -> {
 				throw Problem.valueOf(BAD_REQUEST, COMMAND_AS_PROCESS_TRIGGER.formatted(trigger));
+			});
+
+		triggers.stream()
+			.filter(UNPUBLISHED_PROCESS_TRIGGERS::contains)
+			.findFirst()
+			.ifPresent(trigger -> {
+				throw Problem.valueOf(BAD_REQUEST, UNPUBLISHED_PROCESS_TRIGGER.formatted(trigger));
 			});
 
 		ofNullable(request.getProcessConsumer()).ifPresent(consumer -> {

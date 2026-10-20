@@ -23203,7 +23203,8 @@ components:
             \ a process consumer must list ERRAND, for its processes to start, and\
             \ DECISION, for a process waiting for its decision to learn that it has\
             \ been made. Commands sent to the process (PROCESS, SIGNAL) are not errand\
-            \ changes, are never filtered by this list and may not be listed"
+            \ changes, are never filtered by this list and may not be listed. Nor\
+            \ may NOTE and SYSTEM, as no event of theirs is ever published to a process"
           items:
             type: string
             enum:
