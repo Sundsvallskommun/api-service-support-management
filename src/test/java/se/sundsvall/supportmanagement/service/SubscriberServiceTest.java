@@ -21,10 +21,12 @@ import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,6 +58,9 @@ class SubscriberServiceTest {
 
 	@Mock
 	private SubscriptionOptOutService subscriptionOptOutServiceMock;
+
+	@Mock
+	private NamespaceConfigService namespaceConfigServiceMock;
 
 	@InjectMocks
 	private SubscriberService service;
@@ -460,6 +465,7 @@ class SubscriberServiceTest {
 			NAMESPACE, MUNICIPALITY_ID, "adAccount", assignedUserId)).thenReturn(List.of());
 		when(subscriberRepositoryMock.save(any(SubscriberEntity.class)))
 			.thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(randomUUID().toString()));
+		when(namespaceConfigServiceMock.findNewSubscriberChannels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType.INTERNAL));
 
 		service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "adAccount", assignedUserId);
 
@@ -478,12 +484,31 @@ class SubscriberServiceTest {
 	}
 
 	@Test
+	void findOrCreateSubscriberGivesTheChannelsOfTheNamespace() {
+		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
+			NAMESPACE, MUNICIPALITY_ID, "adAccount", "joe01doe")).thenReturn(List.of());
+		when(subscriberRepositoryMock.save(any(SubscriberEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+		when(namespaceConfigServiceMock.findNewSubscriberChannels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(
+			se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType.INTERNAL,
+			se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType.EMAIL));
+
+		service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "adAccount", "joe01doe");
+
+		// The channels carry no destination, so that the user's own address is used
+		verify(subscriberRepositoryMock).save(entityCaptor.capture());
+		assertThat(entityCaptor.getValue().getChannels())
+			.extracting(NotificationChannelEmbeddable::getType, NotificationChannelEmbeddable::getDestination)
+			.containsExactly(tuple(NotificationChannelType.INTERNAL, null), tuple(NotificationChannelType.EMAIL, null));
+	}
+
+	@Test
 	void findOrCreateSubscriberForPartyId() {
 		final var partyId = "c4e9b1f7-1111-2222-3333-444455556666";
 		when(subscriberRepositoryMock.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
 			NAMESPACE, MUNICIPALITY_ID, "partyId", partyId)).thenReturn(List.of());
 		when(subscriberRepositoryMock.save(any(SubscriberEntity.class)))
 			.thenAnswer(inv -> inv.<SubscriberEntity>getArgument(0).withId(randomUUID().toString()));
+		when(namespaceConfigServiceMock.findNewSubscriberChannels(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType.INTERNAL));
 
 		service.findOrCreateSubscriber(MUNICIPALITY_ID, NAMESPACE, "partyId", partyId);
 

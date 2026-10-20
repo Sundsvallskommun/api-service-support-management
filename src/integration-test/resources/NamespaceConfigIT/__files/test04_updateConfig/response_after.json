@@ -13,5 +13,9 @@
 	"singleDecisionPerErrand": false,
 	"excludeEventDescriptionsInEmail": false,
 	"smsNotificationsEnabled": false,
-	"baseUrl": "https://draken.example.com"
+	"baseUrl": "https://draken.example.com",
+	"newSubscriberChannels": [
+		"INTERNAL",
+		"EMAIL"
+	]
 }

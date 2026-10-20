@@ -5,10 +5,12 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -82,6 +84,12 @@ public class NamespaceConfig {
 		description = "Id of a subscription profile in this namespace. When set, the reporter of an errand is subscribed to the errand with this profile as the errand is created. Leaving it out subscribes no reporter.",
 		examples = "123e4567-e89b-12d3-a456-426614174000")
 	private String reporterProfileId;
+
+	@Size(min = 1)
+	@Schema(
+		description = "The channels a subscriber is given when the service creates one for a user, as when a user is assigned an errand without being a subscriber in the namespace. Leaving it out gives such a subscriber the INTERNAL channel alone. Subscribers already present keep their own channels.",
+		examples = "[\"INTERNAL\", \"EMAIL\"]")
+	private List<@NotNull NotificationChannelType> newSubscriberChannels;
 
 	@Valid
 	@Schema(
@@ -308,6 +316,19 @@ public class NamespaceConfig {
 		return this;
 	}
 
+	public List<NotificationChannelType> getNewSubscriberChannels() {
+		return newSubscriberChannels;
+	}
+
+	public void setNewSubscriberChannels(final List<NotificationChannelType> newSubscriberChannels) {
+		this.newSubscriberChannels = newSubscriberChannels;
+	}
+
+	public NamespaceConfig withNewSubscriberChannels(final List<NotificationChannelType> newSubscriberChannels) {
+		this.newSubscriberChannels = newSubscriberChannels;
+		return this;
+	}
+
 	public LimitedReadAccess getLimitedReadAccess() {
 		return limitedReadAccess;
 	}
@@ -351,7 +372,7 @@ public class NamespaceConfig {
 	public int hashCode() {
 		return Objects.hash(accessControl, created, displayName,
 			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, reporterAccess, resourceAccessControl, singleDecisionPerErrand, excludeEventDescriptionsInEmail, smsNotificationsEnabled, baseUrl, reporterProfileId,
-			roleFieldRestrictions,
+			newSubscriberChannels, roleFieldRestrictions,
 			roleBasedMapping,
 			shortCode);
 	}
@@ -364,7 +385,7 @@ public class NamespaceConfig {
 			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
 				other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail
 			&& smsNotificationsEnabled == other.smsNotificationsEnabled && Objects.equals(baseUrl,
-				other.baseUrl) && Objects.equals(reporterProfileId, other.reporterProfileId) && Objects.equals(
+				other.baseUrl) && Objects.equals(reporterProfileId, other.reporterProfileId) && Objects.equals(newSubscriberChannels, other.newSubscriberChannels) && Objects.equals(
 					roleFieldRestrictions,
 					other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
 			&& Objects.equals(shortCode, other.shortCode);
@@ -376,8 +397,9 @@ public class NamespaceConfig {
 		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", notificationTTLInDays=").append(
 			notificationTTLInDays).append(", created=").append(created).append(", modified=").append(modified).append(", accessControl=").append(accessControl).append(", notifyReporter=").append(notifyReporter).append(", roleBasedMapping=").append(
 				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", singleDecisionPerErrand=").append(singleDecisionPerErrand).append(", excludeEventDescriptionsInEmail=").append(excludeEventDescriptionsInEmail)
-			.append(", smsNotificationsEnabled=").append(smsNotificationsEnabled).append(", baseUrl=").append(baseUrl).append(", reporterProfileId=").append(reporterProfileId).append(", limitedReadAccess=").append(limitedReadAccess).append(
-				", reporterAccess=")
+			.append(", smsNotificationsEnabled=").append(smsNotificationsEnabled).append(", baseUrl=").append(baseUrl).append(", reporterProfileId=").append(reporterProfileId).append(", newSubscriberChannels=").append(newSubscriberChannels).append(
+				", limitedReadAccess=").append(limitedReadAccess).append(
+					", reporterAccess=")
 			.append(reporterAccess).append(", roleFieldRestrictions=").append(
 				roleFieldRestrictions)
 			.append("]");

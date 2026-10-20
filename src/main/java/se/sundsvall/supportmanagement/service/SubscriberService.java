@@ -18,12 +18,14 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Identifier
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriberMapper;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -45,11 +47,14 @@ public class SubscriberService {
 	private final SubscriberRepository subscriberRepository;
 	private final SubscriptionRepository subscriptionRepository;
 	private final SubscriptionOptOutService subscriptionOptOutService;
+	private final NamespaceConfigService namespaceConfigService;
 
-	public SubscriberService(final SubscriberRepository subscriberRepository, final SubscriptionRepository subscriptionRepository, final SubscriptionOptOutService subscriptionOptOutService) {
+	public SubscriberService(final SubscriberRepository subscriberRepository, final SubscriptionRepository subscriptionRepository, final SubscriptionOptOutService subscriptionOptOutService,
+		final NamespaceConfigService namespaceConfigService) {
 		this.subscriberRepository = subscriberRepository;
 		this.subscriptionRepository = subscriptionRepository;
 		this.subscriptionOptOutService = subscriptionOptOutService;
+		this.namespaceConfigService = namespaceConfigService;
 	}
 
 	@Transactional(readOnly = true)
@@ -115,7 +120,8 @@ public class SubscriberService {
 	}
 
 	/**
-	 * The subscriber of the given principal, created with only the internal channel when there is none yet. A principal
+	 * The subscriber of the given principal, created with the channels the namespace gives new subscribers when there is
+	 * none yet. A principal
 	 * holding several subscribers gets the first of them, so subscriptions made on their behalf gather on one subscriber
 	 * rather than spawning another.
 	 */
@@ -132,9 +138,18 @@ public class SubscriberService {
 			.withIdentifier(IdentifierEmbeddable.create()
 				.withType(identifierType)
 				.withValue(identifierValue))
-			.withChannels(new ArrayList<>(List.of(
-				NotificationChannelEmbeddable.create()
-					.withType(NotificationChannelType.INTERNAL)))));
+			.withChannels(newSubscriberChannels(namespace, municipalityId)));
+	}
+
+	/**
+	 * The channels the namespace gives new subscribers, without destinations, so that they go to the user's own address
+	 * and number in the employee directory.
+	 */
+	private List<NotificationChannelEmbeddable> newSubscriberChannels(final String namespace, final String municipalityId) {
+		return namespaceConfigService.findNewSubscriberChannels(namespace, municipalityId).stream()
+			.map(channel -> NotificationChannelEmbeddable.create()
+				.withType(NotificationChannelType.valueOf(channel.name())))
+			.collect(toCollection(ArrayList::new));
 	}
 
 	/**

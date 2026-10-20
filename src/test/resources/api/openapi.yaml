@@ -20596,6 +20596,25 @@ components:
             \ as the errand is created. Leaving it out subscribes no reporter."
           examples:
           - 123e4567-e89b-12d3-a456-426614174000
+        newSubscriberChannels:
+          type: array
+          description: "The channels a subscriber is given when the service creates\
+            \ one for a user, as when a user is assigned an errand without being a\
+            \ subscriber in the namespace. Leaving it out gives such a subscriber\
+            \ the INTERNAL channel alone. Subscribers already present keep their own\
+            \ channels."
+          examples:
+          - - INTERNAL
+            - EMAIL
+          items:
+            type: string
+            description: Channel through which a notification is delivered
+            enum:
+            - INTERNAL
+            - EMAIL
+            - SMS
+          maxItems: 2147483647
+          minItems: 1
         limitedReadAccess:
           $ref: "#/components/schemas/LimitedReadAccess"
           description: "What a user whose labels only grant them limited read for\

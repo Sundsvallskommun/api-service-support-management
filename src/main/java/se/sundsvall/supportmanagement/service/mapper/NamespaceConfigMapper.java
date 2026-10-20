@@ -23,6 +23,7 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigAccessGrantEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
@@ -34,6 +35,7 @@ import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtracto
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope.LIMITED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope.REPORTER;
@@ -46,6 +48,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_BASE_URL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NEW_SUBSCRIBER_CHANNELS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_REPORTER_PROFILE_ID;
@@ -68,6 +71,11 @@ public class NamespaceConfigMapper {
 	 * separates, so keys may themselves contain the separator.
 	 */
 	private static final String KEY_SEPARATOR = ":";
+
+	/**
+	 * Separates the channels of the stored list of channels new subscribers are given.
+	 */
+	private static final String CHANNEL_SEPARATOR = ",";
 
 	private static final Comparator<FieldAtLevel> FIELD_AT_LEVEL_ORDER = Comparator
 		.comparing(FieldAtLevel::field)
@@ -111,11 +119,14 @@ public class NamespaceConfigMapper {
 			.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NOTIFICATION_TTL_IN_DAYS, String.valueOf(ofNullable(config.getNotificationTTLInDays()).orElse(DEFAULT_NOTIFICATION_TTL_IN_DAYS)), INTEGER))
 			.withAccessGrants(toAccessGrants(config));
 
-		// A stored value may not be null, so an absent base url or reporter profile is left out rather than stored empty
+		// A stored value may not be null, so an absent base url, reporter profile or list of channels is left out rather than
+		// stored empty
 		ofNullable(config.getBaseUrl())
 			.ifPresent(baseUrl -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_BASE_URL, baseUrl, STRING)));
 		ofNullable(config.getReporterProfileId())
 			.ifPresent(profileId -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_REPORTER_PROFILE_ID, profileId, STRING)));
+		ofNullable(config.getNewSubscriberChannels())
+			.ifPresent(channels -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_NEW_SUBSCRIBER_CHANNELS, toStoredChannels(channels), STRING)));
 		return entity;
 	}
 
@@ -150,10 +161,35 @@ public class NamespaceConfigMapper {
 			.withSmsNotificationsEnabled(readOptionalToggle(entity, PROPERTY_SMS_NOTIFICATIONS_ENABLED))
 			.withBaseUrl(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_BASE_URL))
 			.withReporterProfileId(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_REPORTER_PROFILE_ID))
+			.withNewSubscriberChannels(toChannels(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_NEW_SUBSCRIBER_CHANNELS)))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
 			.withLimitedReadAccess(toLimitedReadAccess(entity))
 			.withReporterAccess(toReporterAccess(entity))
 			.withRoleFieldRestrictions(toRoleAccesses(entity));
+	}
+
+	/**
+	 * The channels new subscribers are given, stored as one value listing them in order.
+	 */
+	private static String toStoredChannels(final List<NotificationChannelType> channels) {
+		return channels.stream()
+			.distinct()
+			.map(NotificationChannelType::name)
+			.collect(joining(CHANNEL_SEPARATOR));
+	}
+
+	/**
+	 * The channels new subscribers are given, or null for a configuration that leaves them to the default. A stored
+	 * channel no longer known is passed over.
+	 */
+	private static List<NotificationChannelType> toChannels(final String storedChannels) {
+		return ofNullable(storedChannels)
+			.map(value -> Arrays.stream(value.split(CHANNEL_SEPARATOR))
+				.map(String::trim)
+				.map(name -> EnumUtils.getEnum(NotificationChannelType.class, name))
+				.filter(Objects::nonNull)
+				.toList())
+			.orElse(null);
 	}
 
 	/**
