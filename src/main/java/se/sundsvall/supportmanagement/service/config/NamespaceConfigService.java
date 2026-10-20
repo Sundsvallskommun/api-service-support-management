@@ -21,6 +21,7 @@ import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
@@ -72,6 +73,8 @@ public class NamespaceConfigService {
 	 */
 	private static final Set<EventSubType> UNPUBLISHED_PROCESS_TRIGGERS = EnumSet.of(EventSubType.NOTE, EventSubType.SYSTEM, EventSubType.ASSIGNMENT, EventSubType.LABEL, EventSubType.PHASE,
 		EventSubType.STATUS);
+
+	private static final List<NotificationChannelType> DEFAULT_NEW_SUBSCRIBER_CHANNELS = List.of(NotificationChannelType.INTERNAL);
 
 	private static final String REPORTER_PROFILE_NOT_FOUND = "Reporter profile '%s' is not a subscription profile in namespace '%s' for municipality '%s'";
 
@@ -135,6 +138,18 @@ public class NamespaceConfigService {
 		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.map(mapper::toNamespaceConfig)
 			.map(NamespaceConfig::getReporterProfileId);
+	}
+
+	/**
+	 * The channels a subscriber is given when the service creates one in the namespace. A namespace naming none, or
+	 * without configuration, gives the INTERNAL channel alone.
+	 */
+	public List<NotificationChannelType> findNewSubscriberChannels(String namespace, String municipalityId) {
+		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.map(mapper::toNamespaceConfig)
+			.map(NamespaceConfig::getNewSubscriberChannels)
+			.filter(channels -> !channels.isEmpty())
+			.orElse(DEFAULT_NEW_SUBSCRIBER_CHANNELS);
 	}
 
 	/**
