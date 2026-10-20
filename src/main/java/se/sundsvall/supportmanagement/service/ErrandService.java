@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
+import generated.se.sundsvall.eventlog.EventType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.util.LinkedHashSet;
@@ -59,6 +60,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLi
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
@@ -169,15 +171,20 @@ public class ErrandService {
 			.withContactReasonDescription(errand.getContactReasonDescription()));
 
 		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
+		// Read before the labels are expanded to their ancestors, since only the labels set on the errand are told of
+		final var requestedLabelIds = labelIdsOf(errandEntity);
 		errandLabelService.settleAccessLabels(errandEntity);
 		processKeyGuard.verifyNewLabels(errandEntity.getLabels());
 
 		final var persistedEntity = repository.save(errandEntity);
+		final var expandedLabelIds = labelIdsOf(persistedEntity);
 		attachmentSequenceNumberGenerator.startSequence(persistedEntity);
 		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		logCreateEvent(persistedEntity, revision);
+		// Every label set on a new errand was added by creating it
+		logLabelEvents(CREATE, persistedEntity, new RevisionResult(null, revision.latest()), labelIdsSet(persistedEntity, requestedLabelIds, expandedLabelIds));
 		if (nonNull(persistedEntity.getAssignedUserId())) {
 			logChangeEvent(EVENT_LOG_ASSIGN_ERRAND, persistedEntity, revision, ASSIGNMENT);
 		}
@@ -268,6 +275,8 @@ public class ErrandService {
 		// phase is judged by what its status will be and not only by whether the patch happens to name one.
 		errandPhaseService.applyPhaseChange(errandEntity, errand.getActivePhaseId(), errandEntity.getStatus(), namespace, municipalityId);
 
+		// Read before the labels are expanded to their ancestors, since only the labels set on the errand are told of
+		final var requestedLabelIds = labelIdsOf(errandEntity);
 		if (nonNull(errand.getLabels())) {
 			errandLabelService.settleAccessLabels(errandEntity);
 			processBlockGuard.verifyLabelChange(id, labelsBeforePatch, errandEntity.getLabels());
@@ -275,16 +284,18 @@ public class ErrandService {
 		}
 
 		final var entity = repository.saveAndFlush(errandEntity);
+		final var expandedLabelIds = labelIdsOf(entity);
 		errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
 		final var revisionResult = revisionService.createErrandRevision(entity);
 
-		// A draft notified no one, so the draft made active tells of every label it has and of its assignee as a new errand
-		// would
-		final var addedLabelIds = labelIdsOf(entity);
+		// A draft notified no one, so the draft made active tells of every label set on it and of its assignee as a new
+		// errand would
+		final var addedLabelIds = labelIdsSet(entity, requestedLabelIds, expandedLabelIds);
 		if (!activates) {
 			addedLabelIds.removeAll(previousLabelIds);
 		}
-		logUpdateEvent(entity, revisionResult, activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true, addedLabelIds);
+		logUpdateEvent(entity, revisionResult, activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true);
+		logLabelEvents(UPDATE, entity, revisionResult, addedLabelIds);
 		if (isNewAssignment(activates ? null : previousAssignee, entity.getAssignedUserId())) {
 			logChangeEvent(EVENT_LOG_ASSIGN_ERRAND, entity, revisionResult, ASSIGNMENT);
 		}
@@ -542,7 +553,7 @@ public class ErrandService {
 		}
 
 		final var saved = repository.saveAndFlush(errand);
-		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, false, Set.of());
+		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, false);
 		return true;
 	}
 
@@ -585,8 +596,7 @@ public class ErrandService {
 	 */
 	private void logCreateEvent(final ErrandEntity entity, final RevisionResult revision) {
 		try {
-			// Every label of a new errand was added by creating it
-			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, new RevisionResult(null, revision.latest()), ERRAND, new ErrandEventOptions(false, getExecutingUser(), labelIdsOf(entity)));
+			eventService.createErrandEvent(CREATE, EVENT_LOG_CREATE_ERRAND, entity, new RevisionResult(null, revision.latest()), ERRAND, new ErrandEventOptions(false, getExecutingUser(), Set.of()));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log CREATE event for errand {}: {}", entity.getId(), e.getMessage());
 		}
@@ -618,6 +628,22 @@ public class ErrandService {
 	}
 
 	/**
+	 * Logs the labels having been added to the errand, one event for every label, apart from the change they were added
+	 * by. A log that cannot be written is not worth failing the request it describes.
+	 */
+	private void logLabelEvents(final EventType eventType, final ErrandEntity entity, final RevisionResult revisionResult, final Set<String> labelIds) {
+		if (labelIds.isEmpty()) {
+			return;
+		}
+
+		try {
+			eventService.createLabelEvents(eventType, entity, revisionResult, labelIds, getExecutingUser());
+		} catch (final Exception e) {
+			LOG.warn("Failed to log {} events for errand {}: {}", LABEL, entity.getId(), e.getMessage());
+		}
+	}
+
+	/**
 	 * The phase the errand is in, which is the one it has entered and not yet left.
 	 */
 	private static Optional<PhaseEntity> activePhaseOf(final ErrandEntity entity) {
@@ -636,6 +662,19 @@ public class ErrandService {
 		return nonNull(currentAssignee) && !currentAssignee.equalsIgnoreCase(previousAssignee);
 	}
 
+	/**
+	 * The labels set on the errand, which are those the request named and those its actions added. The ancestors the
+	 * labels were expanded with are left out, unless the request named them too.
+	 *
+	 * @param requestedLabelIds the labels of the errand before they were expanded to their ancestors
+	 * @param expandedLabelIds  the labels of the errand once expanded, before its actions were run
+	 */
+	private static Set<String> labelIdsSet(final ErrandEntity entity, final Set<String> requestedLabelIds, final Set<String> expandedLabelIds) {
+		final var labelIds = labelIdsOf(entity);
+		labelIds.removeIf(labelId -> expandedLabelIds.contains(labelId) && !requestedLabelIds.contains(labelId));
+		return labelIds;
+	}
+
 	private static Set<String> labelIdsOf(final ErrandEntity entity) {
 		return ofNullable(entity.getLabels()).orElse(emptyList()).stream()
 			.map(ErrandLabelEmbeddable::getMetadataLabelId)
@@ -646,17 +685,16 @@ public class ErrandService {
 	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
 	 *
-	 * @param notifies      whether the event notifies the handler and the subscribers of the errand, or no one.
-	 * @param addedLabelIds the metadata labels the update added to the errand.
+	 * @param notifies whether the event notifies the handler and the subscribers of the errand, or no one.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean notifies, final Set<String> addedLabelIds) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean notifies) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
 			if (notifies) {
-				eventService.createErrandEvent(UPDATE, message, entity, revisionResult, ERRAND, new ErrandEventOptions(true, getExecutingUser(), addedLabelIds));
+				eventService.createErrandEvent(UPDATE, message, entity, revisionResult, ERRAND, new ErrandEventOptions(true, getExecutingUser(), Set.of()));
 			} else {
 				eventService.createErrandEventWithoutNotification(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
 			}

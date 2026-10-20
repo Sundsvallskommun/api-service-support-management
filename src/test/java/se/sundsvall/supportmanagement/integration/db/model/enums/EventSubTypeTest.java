@@ -16,6 +16,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
@@ -38,6 +39,7 @@ class EventSubTypeTest {
 			arguments(ERRAND, false),
 			arguments(HANDOVER_IN, false),
 			arguments(HANDOVER_OUT, false),
+			arguments(LABEL, false),
 			arguments(MESSAGE, false),
 			arguments(MESSAGE_EXTERNAL, false),
 			arguments(MESSAGE_INTERNAL, false),
@@ -52,8 +54,8 @@ class EventSubTypeTest {
 
 	@Test
 	void enums() {
-		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, MESSAGE, MESSAGE_EXTERNAL, MESSAGE_INTERNAL, NOTE, PHASE, PROCESS, SIGNAL,
-			STATUS, SYSTEM, SUSPENSION);
+		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, LABEL, MESSAGE, MESSAGE_EXTERNAL, MESSAGE_INTERNAL, NOTE, PHASE, PROCESS,
+			SIGNAL, STATUS, SYSTEM, SUSPENSION);
 	}
 
 	@Test
@@ -61,6 +63,7 @@ class EventSubTypeTest {
 		assertThat(ATTACHMENT.getValue()).isEqualTo("ATTACHMENT");
 		assertThat(DECISION.getValue()).isEqualTo("DECISION");
 		assertThat(ERRAND.getValue()).isEqualTo("ERRAND");
+		assertThat(LABEL.getValue()).isEqualTo("LABEL");
 		assertThat(MESSAGE.getValue()).isEqualTo("MESSAGE");
 		assertThat(MESSAGE_EXTERNAL.getValue()).isEqualTo("MESSAGE_EXTERNAL");
 		assertThat(MESSAGE_INTERNAL.getValue()).isEqualTo("MESSAGE_INTERNAL");
@@ -106,6 +109,10 @@ class EventSubTypeTest {
 		"STATUS, PHASE, false",
 		"PHASE, ERRAND, false",
 		"PHASE, STATUS, false",
+		// A label being added is no change to the errand to a filter on ERRAND, nor the other way around
+		"LABEL, LABEL, true",
+		"ERRAND, LABEL, false",
+		"LABEL, ERRAND, false",
 		// Unrelated subtypes do not select one another
 		"ATTACHMENT, MESSAGE, false",
 		"HANDOVER_IN, HANDOVER_OUT, false",
