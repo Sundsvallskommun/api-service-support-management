@@ -37,7 +37,6 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED;
 import static org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.pwalkt.configuration.PwAlktConfiguration.CLIENT_ID;
 import static se.sundsvall.supportmanagement.service.ProcessActivityLog.DELIVERY_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.mapper.ProcessEventMapper.toErrandEvent;
@@ -353,9 +352,9 @@ public class ProcessEventRelay {
 	/**
 	 * Records a refusal for good in the process history of the errand, at most once per errand and window.
 	 * <p>
-	 * The live process instance of the errand, if it has one, is failed with the error code and message; without one,
-	 * only the history entry is written. The message advises correcting the label only for an errand that has no process
-	 * row.
+	 * The entry belongs to the live process instance of the errand, if it has one, and leaves its status as it is: the
+	 * status of an instance is set only by the reports of its process. The message advises correcting the label only for
+	 * an errand that has no process row.
 	 * <p>
 	 * The errand is locked first, which serialises this against the other reports of the process. Nothing is written
 	 * for a deletion or for an errand that no longer exists.
@@ -368,15 +367,13 @@ public class ProcessEventRelay {
 
 		final var instances = processRepository.findByErrandIdOrderByCreatedDesc(row.getErrandId());
 		final var message = (instances.isEmpty() ? REJECTED : REJECTED_FOR_ITS_PROCESS).formatted(row.getProcessService(), row.getProcessKey());
-		final var instance = instances.stream().filter(ErrandProcessEntity::isLive).findFirst().orElse(null);
+		final var liveInstanceId = instances.stream()
+			.filter(ErrandProcessEntity::isLive)
+			.findFirst()
+			.map(ErrandProcessEntity::getId)
+			.orElse(null);
 
-		if (nonNull(instance)) {
-			instance.applyStatus(FAILED, clock);
-			instance.setErrorCode(REJECTION_ERROR_CODE);
-			instance.setErrorMessage(message);
-		}
-
-		activityLog.writeOncePerWindow(row.getErrandId(), ofNullable(instance).map(ErrandProcessEntity::getId).orElse(null), DELIVERY_ACTIVITY_TYPE, REJECTION_ERROR_CODE, message);
+		activityLog.writeOncePerWindow(row.getErrandId(), liveInstanceId, DELIVERY_ACTIVITY_TYPE, REJECTION_ERROR_CODE, message);
 	}
 
 	/**

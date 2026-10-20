@@ -1,0 +1,18 @@
+{
+	"startable": {
+		"status": "LIVE_INSTANCE",
+		"processKeys": []
+	},
+	"processes": [
+		{
+			"id": "ep-relay-it",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processInstanceId": "pi-relay-it",
+			"processStatus": "RUNNING",
+			"started": "2026-01-01T10:00:00+01:00",
+			"awaitingSignals": [],
+			"created": "2026-01-01T10:00:00+01:00"
+		}
+	]
+}

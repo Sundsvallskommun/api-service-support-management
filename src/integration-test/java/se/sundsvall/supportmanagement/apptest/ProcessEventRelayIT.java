@@ -131,9 +131,9 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a 422 consumes the row without trying again, fails the live instance and writes an error entry on it")
+	@DisplayName("Verification that a 422 consumes the row without trying again and writes an error entry on the live instance, whose status stays as its process reported it")
 	@Sql("/db/scripts/testdata-process-event-live-instance.sql")
-	void test02_aRefusalForGoodFailsTheProcess() {
+	void test02_aRefusalForGoodLeavesTheProcessAsItIs() {
 		givenRow("row-1", ERRAND_ID, Duration.ofMinutes(1));
 		setupCall();
 

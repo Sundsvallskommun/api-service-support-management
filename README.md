@@ -922,8 +922,9 @@ together with their ancestors, so a block on a parent label holds for every erra
   the rows before it are acknowledged, and it and the later rows of the errand are tried again on the next run. The
   scheduled run then goes on with the rows of other errands, counting an errand that failed as one row against
   `batch-size`, so an errand that never gets through holds back no other.
-- `422` from the process engine is permanent — the row is consumed, a live instance is marked `FAILED` and an `ERROR`
-  entry is written. Anything else is retried until the row passes `scheduler.process-event.max-age`.
+- `422` from the process engine is permanent — the row is consumed and an `ERROR` entry is written. The status of an
+  instance is left to the reports of its process. Anything else is retried until the row passes
+  `scheduler.process-event.max-age`.
 - The process engine sets `X-Trigger-Process: false` on its own writes, so that they do not wake it again. The header is
   **ignored for AD accounts**, so a handler's change always reaches the process.
 - An emergency brake stops publishing for an errand once `process-engine.loop-guard.max-events-per-errand` events (20

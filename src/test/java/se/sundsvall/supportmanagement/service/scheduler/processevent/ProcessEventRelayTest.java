@@ -382,8 +382,8 @@ class ProcessEventRelayTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a refusal for good consumes the row, fails the live instance and writes an error entry on it")
-	void aRefusalForGoodFailsTheLiveInstance() {
+	@DisplayName("Verification that a refusal for good consumes the row and writes an error entry on the live instance, whose status is left to the reports of its process")
+	void aRefusalForGoodLeavesTheLiveInstanceAsItIs() {
 		final var row = row("row-1", ERRAND_ID, NOW.minusMinutes(1));
 		final var instance = liveInstance();
 		givenRefused(row);
@@ -392,10 +392,10 @@ class ProcessEventRelayTest {
 		relay.relayErrand(ERRAND_ID);
 
 		assertThat(row.getDeliveredAt()).isEqualTo(NOW_IN_MILLIS);
-		assertThat(instance.getProcessStatus()).isEqualTo(FAILED);
-		assertThat(instance.getActiveMarker()).isNull();
-		assertThat(instance.getErrorCode()).isEqualTo(REJECTION_ERROR_CODE);
-		assertThat(instance.getErrorMessage()).startsWith("pw-alkt refused an event on this errand for good").contains("'" + PROCESS_KEY + "'");
+		assertThat(instance.getProcessStatus()).isEqualTo(WAITING);
+		assertThat(instance.getActiveMarker()).isTrue();
+		assertThat(instance.getErrorCode()).isNull();
+		assertThat(instance.getErrorMessage()).isNull();
 
 		verify(activityRepositoryMock).save(activityCaptor.capture());
 		assertThat(activityCaptor.getValue()).satisfies(entry -> {
@@ -404,7 +404,7 @@ class ProcessEventRelayTest {
 			assertThat(entry.getActivityType()).isEqualTo(DELIVERY_ACTIVITY_TYPE);
 			assertThat(entry.getSeverity()).isEqualTo(ERROR);
 			assertThat(entry.getErrorCode()).isEqualTo(REJECTION_ERROR_CODE);
-			assertThat(entry.getMessage()).isEqualTo(instance.getErrorMessage());
+			assertThat(entry.getMessage()).startsWith("pw-alkt refused an event on this errand for good").contains("'" + PROCESS_KEY + "'");
 			assertThat(entry.getOccurredAt()).isEqualTo(NOW_IN_MILLIS);
 		});
 	}
@@ -436,7 +436,7 @@ class ProcessEventRelayTest {
 		relay.relayErrand(ERRAND_ID);
 
 		verify(activityRepositoryMock).save(activityCaptor.capture());
-		assertThat(activityCaptor.getValue().getErrandProcessId()).as("a failed instance is not failed again").isNull();
+		assertThat(activityCaptor.getValue().getErrandProcessId()).as("the entry belongs to a live instance alone").isNull();
 		assertThat(activityCaptor.getValue().getMessage())
 			.endsWith("correcting the label does not help: deploy the process under that key")
 			.doesNotContain("correct the processKey attribute");
@@ -523,7 +523,7 @@ class ProcessEventRelayTest {
 	}
 
 	@Test
-	@DisplayName("Verification that the entry is written once per errand and window, while the instance is failed all the same")
+	@DisplayName("Verification that the entry is written once per errand and window, and the instance is left as it is")
 	void theEntryIsWrittenOncePerErrandAndWindow() {
 		final var row = row("row-1", ERRAND_ID, NOW.minusMinutes(1));
 		final var instance = liveInstance();
@@ -536,7 +536,7 @@ class ProcessEventRelayTest {
 
 		relay.relayErrand(ERRAND_ID);
 
-		assertThat(instance.getProcessStatus()).isEqualTo(FAILED);
+		assertThat(instance.getProcessStatus()).isEqualTo(WAITING);
 		verify(activityRepositoryMock, never()).save(any());
 	}
 
