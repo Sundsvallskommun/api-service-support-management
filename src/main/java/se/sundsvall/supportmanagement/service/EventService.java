@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.net.URI;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,6 +22,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -37,9 +39,11 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
@@ -57,21 +61,25 @@ public class EventService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
 
-	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, PHASE, STATUS);
+	private static final String EVENT_LOG_ADD_LABEL = "Ärendet uppdaterat med etikett %s";
+
+	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, LABEL, PHASE, STATUS);
 
 	private final EventlogClient eventLogClient;
 	private final NotificationService notificationService;
 	private final ApplicationEventPublisher eventPublisher;
 	private final NotificationDispatchRepository notificationDispatchRepository;
 	private final AccessControlService accessControlService;
+	private final MetadataLabelRepository metadataLabelRepository;
 
 	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository,
-		final AccessControlService accessControlService) {
+		final AccessControlService accessControlService, final MetadataLabelRepository metadataLabelRepository) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
 		this.eventPublisher = eventPublisher;
 		this.notificationDispatchRepository = notificationDispatchRepository;
 		this.accessControlService = accessControlService;
+		this.metadataLabelRepository = metadataLabelRepository;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
@@ -114,8 +122,9 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
-		// An assignment, a change of status and a change of phase are logged alongside the change to the errand they are part
-		// of, which already subscribes the assignee
+		// An assignment, a label being added and a change of status or phase are logged alongside the change to the errand
+		// they are part of, which already subscribes the assignee. A label added by a scheduled action has no such change,
+		// and subscribes no one either.
 		if (eventType != EventType.DELETE && !LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype)) {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity, eventType == EventType.CREATE && subtype == EventSubType.ERRAND));
 		}
@@ -134,6 +143,37 @@ public class EventService {
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {
 		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true, subtype);
+	}
+
+	/**
+	 * Logs the labels having been added to the errand, one event for every label, so that subscribers may be notified of a
+	 * label being added apart from the change it was part of. Each event carries the one label it is about, which is what a
+	 * filter on a label matches. No direct notification is made, as the change that added the labels makes one where there
+	 * is one.
+	 *
+	 * @param revisions the revisions of the errand the labels were added in, either of which may be null
+	 * @param labelIds  the ids of the metadata labels added
+	 * @param actor     the user who added the labels, or null when nobody did
+	 */
+	public void createLabelEvents(final EventType eventType, final ErrandEntity errandEntity, final RevisionResult revisions, final Collection<String> labelIds, final Identifier actor) {
+		if (labelIds == null || labelIds.isEmpty()) {
+			return;
+		}
+
+		final var labelNames = metadataLabelRepository.findAllById(labelIds).stream()
+			.collect(toMap(MetadataLabelEntity::getId, EventService::nameOf));
+
+		labelIds.forEach(labelId -> createErrandEvent(eventType, EVENT_LOG_ADD_LABEL.formatted(labelNames.getOrDefault(labelId, labelId)), errandEntity, revisions, LABEL,
+			new ErrandEventOptions(false, actor, Set.of(labelId))));
+	}
+
+	/**
+	 * The name a label is told by, which is its display name, or its resource path for a label without one.
+	 */
+	private static String nameOf(final MetadataLabelEntity label) {
+		return ofNullable(label.getDisplayName())
+			.or(() -> ofNullable(label.getResourcePath()))
+			.orElse(label.getId());
 	}
 
 	/**

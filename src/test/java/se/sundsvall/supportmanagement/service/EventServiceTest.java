@@ -26,6 +26,7 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -36,6 +37,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.eventlog.ExecutingUser.TypeEnum.AD_USER;
@@ -49,12 +51,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
@@ -78,6 +82,9 @@ class EventServiceTest {
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
+
+	@Mock
+	private MetadataLabelRepository metadataLabelRepositoryMock;
 
 	@Mock
 	private PageEvent pageEventMock;
@@ -404,6 +411,55 @@ class EventServiceTest {
 		assertThat(dispatchCaptor.getValue().getAddedLabelIds()).containsExactlyInAnyOrder("label-1", "label-2");
 		verify(eventPublisherMock).publishEvent(new AutoSubscribeEvent(entity));
 		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void createLabelEventsLogsOneEventForEveryLabel() {
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("MY_NAMESPACE")
+			.withId(randomUUID().toString())
+			.withAssignedUserId("anna01");
+		final var actor = Identifier.create().withType(AD_ACCOUNT).withValue("bert02");
+		final var labelIds = List.of("lex-label", "path-label", "gone-label");
+		when(metadataLabelRepositoryMock.findAllById(labelIds)).thenReturn(List.of(
+			MetadataLabelEntity.create().withId("lex-label").withDisplayName("LEX").withResourcePath("ACCESS/LEX"),
+			MetadataLabelEntity.create().withId("path-label").withResourcePath("RISK/HIGH_HSL")));
+
+		service.createLabelEvents(EventType.UPDATE, entity, new RevisionResult(null, null), labelIds, actor);
+
+		// Each label is told of by its display name, or by what there is of it without one
+		verify(eventLogClientMock, times(3)).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getAllValues())
+			.extracting(Event::getType, Event::getSubType, Event::getMessage)
+			.containsExactly(
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett LEX"),
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett RISK/HIGH_HSL"),
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett gone-label"));
+		assertThat(eventCaptor.getAllValues()).allSatisfy(event -> assertThat(event.getExecutingUser().getValue()).isEqualTo("bert02"));
+
+		// and carries the one label it is about to the subscribers
+		verify(notificationDispatchRepositoryMock, times(3)).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getAllValues())
+			.extracting(NotificationDispatchEntity::getSubType, NotificationDispatchEntity::getAddedLabelIds, NotificationDispatchEntity::getExecutingUserId)
+			.containsExactly(
+				tuple(LABEL.getValue(), Set.of("lex-label"), "bert02"),
+				tuple(LABEL.getValue(), Set.of("path-label"), "bert02"),
+				tuple(LABEL.getValue(), Set.of("gone-label"), "bert02"));
+
+		// The change the labels were added in notifies the assigned user and subscribes them, so the labels do neither
+		verifyNoInteractions(notificationServiceMock);
+		verify(eventPublisherMock, never()).publishEvent(any());
+	}
+
+	@Test
+	void createLabelEventsWithoutLabelsLogsNothing() {
+		final var entity = ErrandEntity.create().withId(randomUUID().toString());
+
+		service.createLabelEvents(EventType.CREATE, entity, null, Set.of(), null);
+		service.createLabelEvents(EventType.CREATE, entity, null, null, null);
+
+		verifyNoInteractions(metadataLabelRepositoryMock, eventLogClientMock, notificationDispatchRepositoryMock, notificationServiceMock, eventPublisherMock);
 	}
 
 	@Test

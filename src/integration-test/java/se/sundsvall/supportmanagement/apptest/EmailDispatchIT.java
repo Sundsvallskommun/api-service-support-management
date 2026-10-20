@@ -160,7 +160,7 @@ class EmailDispatchIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A PATCH adding the HSL risk label queues an UPDATE/ERRAND event carrying the label, which the MAS profile's
+	 * A PATCH adding the HSL risk label queues an UPDATE/LABEL event carrying the label, which the MAS profile's
 	 * labelId filter matches. The MAS subscriber only has the internal channel, but the profile routes the event to
 	 * email, so it lands in the outbox for them and for no one else.
 	 */
@@ -178,9 +178,12 @@ class EmailDispatchIT extends AbstractAppTest {
 
 		final var processable = notificationDispatchWorker.fetchProcessable();
 		transactionTemplate.executeWithoutResult(_ -> assertThat(notificationDispatchRepository.findAll())
-			.filteredOn(entry -> "ERRAND".equals(entry.getSubType()))
+			.filteredOn(entry -> "LABEL".equals(entry.getSubType()))
 			.singleElement()
-			.satisfies(entry -> assertThat(entry.getAddedLabelIds()).containsExactly(HSL_LABEL_ID)));
+			.satisfies(entry -> {
+				assertThat(entry.getAddedLabelIds()).containsExactly(HSL_LABEL_ID);
+				assertThat(entry.getDescription()).isEqualTo("Ärendet uppdaterat med etikett HSL-risk 4 eller hogre");
+			}));
 
 		notificationDispatchWorker.processGroup(processable);
 
