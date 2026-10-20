@@ -395,9 +395,9 @@ public class ProcessEventPublisher {
 	/**
 	 * Takes the errand change down with the row that could not be written.
 	 * <p>
-	 * The transaction is marked rollback only and the failure is handed on to the caller without being logged here, a
-	 * checked one wrapped in an {@link IllegalStateException}. With no transaction there is nothing to roll back and the
-	 * errand is already saved, so the failure is logged as an error and not rethrown.
+	 * The failure is logged as an error, the transaction is marked rollback only and the failure is handed on to the
+	 * caller, a checked one wrapped in an {@link IllegalStateException}. With no transaction there is nothing to roll back
+	 * and the errand is already saved, so the failure is logged as an error and not rethrown.
 	 * <p>
 	 * The transaction status is reached through the aspect, and is bound by the transaction annotation of
 	 * {@link #publish}, also for a caller running its own transaction template. The propagation is supports, so a write
@@ -409,6 +409,7 @@ public class ProcessEventPublisher {
 			return;
 		}
 
+		LOG.error("Failed to publish process event for errand {}, so the change to the errand is rolled back", sanitizeForLogging(errand.getId()), cause);
 		TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
 
 		if (cause instanceof final RuntimeException runtimeException) {

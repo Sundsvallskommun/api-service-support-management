@@ -23,6 +23,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -91,6 +93,7 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearTrigg
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setTriggerProcess;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 class ProcessEventPublisherTest {
 
 	private static final String NAMESPACE = "ALKT";
@@ -883,8 +886,8 @@ class ProcessEventPublisherTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a publication which cannot be written takes the errand change down with it, whatever the caller does with the exception")
-	void aFailureWithATransactionMarksItRollbackOnly() {
+	@DisplayName("Verification that a publication which cannot be written takes the errand change down with it, whatever the caller does with the exception, and says why in the log")
+	void aFailureWithATransactionMarksItRollbackOnly(final CapturedOutput output) {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
 		givenLabels(APPLICATION, AUTOMATIC);
@@ -899,6 +902,9 @@ class ProcessEventPublisherTest {
 
 		verify(status).setRollbackOnly();
 		verifyNoInteractions(applicationEventPublisherMock);
+		assertThat(output.getAll())
+			.contains("Failed to publish process event for errand " + ERRAND_ID + ", so the change to the errand is rolled back")
+			.contains("java.lang.IllegalStateException: the row could not be written");
 	}
 
 	@Test

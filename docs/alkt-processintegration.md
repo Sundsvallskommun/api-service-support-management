@@ -357,6 +357,8 @@ throw ...;   // anroparen far svalja detta; transaktionen gar anda inte att spar
 Poängen är att en utebliven outbox-rad drar med sig hela ärendeändringen
 (`UnexpectedRollbackException` när transaktionen ska sparas), oavsett vad anropsstället gör med
 undantaget. Namespace utan `PROCESS_CONSUMER` vänder redan i steg 1 och märker aldrig något av det här.
+Publiceraren loggar felet som ERROR med stackspår innan den märker transaktionen, eftersom anropsställets
+fångst bara loggar en WARN med meddelandet och `UnexpectedRollbackException` inte säger något om orsaken.
 
 **`publish` måste bära `@Transactional(propagation = SUPPORTS)` för att raden ovan ska fungera.**
 `currentTransactionStatus()` läser den status som *transaktionsaspekten* lagt undan, inte den som finns.

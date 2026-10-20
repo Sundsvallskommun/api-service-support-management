@@ -914,7 +914,8 @@ together with their ancestors, so a block on a parent label holds for every erra
 ### How events reach the process
 
 - Every errand event that matches the triggers becomes a row in an outbox, **in the same transaction** as the change.
-  If the row cannot be written, the change is rolled back. Events about notes are never published.
+  If the row cannot be written, the change is rolled back and the cause is logged as an error. Events about notes are
+  never published.
 - A relay delivers the rows: right after the commit, for the rows of that errand, and on the schedule in
   `scheduler.process-event` for whatever the direct run did not reach.
 - Rows are delivered per errand, oldest first. The first row that does not go through ends the delivery for its errand:
