@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -60,6 +61,7 @@ class NamespaceConfigTest {
 		final var teliaAceWorkItemBaseUrl = "https://draken.sundsvall.se/kontaktsundsvall";
 		final var baseUrl = "https://draken.example.com";
 		final var reporterProfileId = "123e4567-e89b-12d3-a456-426614174000";
+		final var newSubscriberChannels = List.of(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL);
 
 		final var bean = NamespaceConfig.create()
 			.withNamespace(namespace)
@@ -79,6 +81,7 @@ class NamespaceConfigTest {
 			.withReporterAccess(reporterAccess)
 			.withBaseUrl(baseUrl)
 			.withReporterProfileId(reporterProfileId)
+			.withNewSubscriberChannels(newSubscriberChannels)
 			.withCreated(created)
 			.withModified(modified)
 			.withTeliaAceWorkItemEnabled(teliaAceWorkItemEnabled)
@@ -102,6 +105,7 @@ class NamespaceConfigTest {
 		assertThat(bean.getReporterAccess()).isEqualTo(reporterAccess);
 		assertThat(bean.getBaseUrl()).isEqualTo(baseUrl);
 		assertThat(bean.getReporterProfileId()).isEqualTo(reporterProfileId);
+		assertThat(bean.getNewSubscriberChannels()).isEqualTo(newSubscriberChannels);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
 		assertThat(bean.isTeliaAceWorkItemEnabled()).isEqualTo(teliaAceWorkItemEnabled);

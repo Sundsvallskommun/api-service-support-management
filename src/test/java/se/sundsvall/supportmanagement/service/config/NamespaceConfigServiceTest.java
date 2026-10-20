@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
@@ -166,6 +167,31 @@ class NamespaceConfigServiceTest {
 		assertThat(configService.findReporterProfileId("namespace", "municipalityId")).isEmpty();
 		assertThat(configService.findReporterProfileId("other-namespace", "municipalityId")).isEmpty();
 		assertThat(configService.isReporterProfile("other-namespace", "municipalityId", REPORTER_PROFILE_ID)).isFalse();
+	}
+
+	@Test
+	void findNewSubscriberChannels() {
+		final var entity = NamespaceConfigEntity.create();
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create().withNewSubscriberChannels(List.of(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL)));
+
+		assertThat(configService.findNewSubscriberChannels("namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL);
+	}
+
+	@Test
+	void findNewSubscriberChannelsWithoutAny() {
+		final var entity = NamespaceConfigEntity.create();
+		final var emptyEntity = NamespaceConfigEntity.create().withNamespace("empty-namespace");
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create());
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("empty-namespace", "municipalityId")).thenReturn(Optional.of(emptyEntity));
+		when(mapperMock.toNamespaceConfig(emptyEntity)).thenReturn(NamespaceConfig.create().withNewSubscriberChannels(List.of()));
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("other-namespace", "municipalityId")).thenReturn(Optional.empty());
+
+		// Naming no channels, as having no configuration, gives new subscribers the internal channel alone
+		assertThat(configService.findNewSubscriberChannels("namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL);
+		assertThat(configService.findNewSubscriberChannels("empty-namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL);
+		assertThat(configService.findNewSubscriberChannels("other-namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL);
 	}
 
 	@Test
