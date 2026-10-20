@@ -4,10 +4,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.Default;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.validation.ValidEventFilter;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 @Schema(description = "Filter on event type/subtype, used to limit which eventlog events trigger a notification")
+@ValidEventFilter(groups = {
+	Default.class, OnCreate.class, OnUpdate.class
+})
 public class EventFilter {
 
 	@NotBlank
@@ -23,12 +30,14 @@ public class EventFilter {
 	@Size(max = 64)
 	@Schema(description = "Event subtype. If null, all subtypes of the given type match. MESSAGE matches every message, while MESSAGE_INTERNAL " +
 		"and MESSAGE_EXTERNAL match only messages in internal conversations and messages from outside respectively. Likewise ERRAND matches every change " +
-		"to an errand, while STATUS and PHASE match only changes of its status and of its phase respectively.", examples = "ATTACHMENT")
+		"to an errand, while STATUS and PHASE match only changes of its status and of its phase respectively. LABEL matches a label being added to an " +
+		"errand, logged once for every label added - as CREATE/LABEL for the labels an errand is created with and as UPDATE/LABEL for those added later.",
+		examples = "ATTACHMENT")
 	private String subtype;
 
 	@ValidUuid(nullable = true)
-	@Schema(description = "Optional id of a metadata label. When set, only events that added this label to the errand match - " +
-		"every label counts as added when the errand is created. If null, the labels of the errand do not matter.",
+	@Schema(description = "Optional id of a metadata label, only allowed together with subtype LABEL. When set, only the event of this label " +
+		"being added to the errand matches. If null, which label was added does not matter.",
 		examples = "f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b")
 	private String labelId;
 
