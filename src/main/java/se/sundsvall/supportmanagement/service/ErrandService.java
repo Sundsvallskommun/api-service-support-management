@@ -88,7 +88,7 @@ public class ErrandService {
 	private static final String EVENT_LOG_ASSIGN_ERRAND = "Ärendet har tilldelats.";
 	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had. Give the errand labels that name the process it runs, or put the labels back as they were.";
 	private static final String LABELS_NOT_REBUILT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had.";
-	private static final String EVENT_LOG_CHANGE_PHASE = "Fasen har ändrats till %s";
+	private static final String EVENT_LOG_CHANGE_PHASE = "Fasen har ändrats till \"%s\"";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;

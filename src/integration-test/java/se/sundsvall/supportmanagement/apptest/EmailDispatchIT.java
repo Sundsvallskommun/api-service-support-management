@@ -182,7 +182,7 @@ class EmailDispatchIT extends AbstractAppTest {
 			.singleElement()
 			.satisfies(entry -> {
 				assertThat(entry.getAddedLabelIds()).containsExactly(HSL_LABEL_ID);
-				assertThat(entry.getDescription()).isEqualTo("Ärendet uppdaterat med etikett HSL-risk 4 eller hogre");
+				assertThat(entry.getDescription()).isEqualTo("Ärendet uppdaterat med etikett \"HSL-risk 4 eller hogre\"");
 			}));
 
 		notificationDispatchWorker.processGroup(processable);

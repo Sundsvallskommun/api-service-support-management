@@ -644,10 +644,10 @@ class ErrandServiceTest {
 	@ParameterizedTest
 	@CsvSource(nullValues = "null", value = {
 		// The phase is told of by its display name
-		"Utredning, Fasen har ändrats till Utredning",
+		"Utredning, Fasen har ändrats till \"Utredning\"",
 		// or by its name, for a phase without a display name
-		"null, Fasen har ändrats till INVESTIGATION",
-		"' ', Fasen har ändrats till INVESTIGATION"
+		"null, Fasen har ändrats till \"INVESTIGATION\"",
+		"' ', Fasen har ändrats till \"INVESTIGATION\""
 	})
 	void updateErrandChangingStatusAndPhase(final String phaseDisplayName, final String expectedPhaseMessage) {
 		final var initialPhase = PhaseEntity.create().withId("phase-1").withName("INITIAL");

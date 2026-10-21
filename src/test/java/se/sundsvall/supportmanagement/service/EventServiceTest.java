@@ -450,9 +450,9 @@ class EventServiceTest {
 		assertThat(eventCaptor.getAllValues())
 			.extracting(Event::getType, Event::getSubType, Event::getMessage)
 			.containsExactly(
-				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett LEX"),
-				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett RISK/HIGH_HSL"),
-				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett gone-label"));
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett \"LEX\""),
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett \"RISK/HIGH_HSL\""),
+				tuple(EventType.UPDATE, LABEL.getValue(), "Ärendet uppdaterat med etikett \"gone-label\""));
 		assertThat(eventCaptor.getAllValues()).allSatisfy(event -> assertThat(event.getExecutingUser().getValue()).isEqualTo("bert02"));
 
 		// and carries the one label it is about to the subscribers
@@ -472,10 +472,10 @@ class EventServiceTest {
 	@ParameterizedTest
 	@CsvSource(nullValues = "null", value = {
 		// The status is told of by its display name
-		"Pågående, Status har ändrats till Pågående",
+		"Pågående, Status har ändrats till \"Pågående\"",
 		// or by its name, for a status without a display name
-		"null, Status har ändrats till ONGOING",
-		"' ', Status har ändrats till ONGOING"
+		"null, Status har ändrats till \"ONGOING\"",
+		"' ', Status har ändrats till \"ONGOING\""
 	})
 	void createStatusChangeEvent(final String displayName, final String expectedMessage) {
 		final var entity = ErrandEntity.create()
@@ -511,7 +511,7 @@ class EventServiceTest {
 		service.createStatusChangeEvent(entity, null, null);
 
 		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
-		assertThat(eventCaptor.getValue().getMessage()).isEqualTo("Status har ändrats till REMOVED");
+		assertThat(eventCaptor.getValue().getMessage()).isEqualTo("Status har ändrats till \"REMOVED\"");
 	}
 
 	@Test

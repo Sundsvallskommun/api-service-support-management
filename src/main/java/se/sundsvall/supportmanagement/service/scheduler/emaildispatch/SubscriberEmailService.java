@@ -182,6 +182,8 @@ public class SubscriberEmailService {
 			.flatMap(entry -> ofNullable(entry.getEvents()).orElse(emptyList()).stream())
 			.map(NotificationDispatchOutboxEventEmbeddable::getDescription)
 			.filter(Objects::nonNull)
+			// Several events of an errand often tell the same thing, such as each update telling the errand was updated
+			.distinct()
 			.map(EVENT_LINE_TEMPLATE::formatted);
 
 		return Stream.of(Stream.of(ERRAND_HEADING_TEMPLATE.formatted(errandNumber)), link, descriptions)
