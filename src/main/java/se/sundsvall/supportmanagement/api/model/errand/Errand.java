@@ -183,8 +183,8 @@ public class Errand {
 
 	@Schema(description = """
 		The process driving this errand, and its state. Null for a namespace that runs no processes, and for an errand \
-		that never had one. Shows the most recent process rather than a running one, so that a start which failed is \
-		visible as a failure instead of as an errand without a process.""", accessMode = READ_ONLY)
+		that never had one. Shows the live process when the errand has one, and otherwise the most recent, so that a \
+		start which failed is visible as a failure instead of as an errand without a process.""", accessMode = READ_ONLY)
 	@Null(groups = {
 		OnCreate.class, OnUpdate.class
 	})
